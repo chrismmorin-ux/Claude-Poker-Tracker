@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T16:25:27.810Z",
-  "updated_by_event": "ev-1781108727810-7e56f0f669e2",
+  "updated_at": "2026-06-10T16:48:44.781Z",
+  "updated_by_event": "ev-1781110124781-cc3bce90367e",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -514,10 +514,10 @@
     "WS-023": {
       "id": "WS-023",
       "title": "Per-seed-anchor snapshot tests (RT-108 pattern)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 15,
       "category": "exploit-anchor-library",
-      "effort": "M",
+      "effort": "S",
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": "",
@@ -5409,5 +5409,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781108727810-7e56f0f669e2"
+  "last_event_log_head": "ev-1781110124781-cc3bce90367e"
 }

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-06-10T16:18:42.637Z",
-  "updated_by_event": "ev-1781108322637-e0ef6a88fecb",
+  "updated_at": "2026-06-10T16:48:44.849Z",
+  "updated_by_event": "ev-1781110124848-94f52b65aabc",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -1214,7 +1214,7 @@
       "health_score": 4,
       "health_ceiling": 7,
       "findings_open": 0,
-      "work_items_open": 0,
+      "work_items_open": 1,
       "problem_classes": [
         {
           "name": "Principle Violation",
@@ -1286,5 +1286,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1781108322637-e0ef6a88fecb"
+  "last_event_log_head": "ev-1781110124848-94f52b65aabc"
 }

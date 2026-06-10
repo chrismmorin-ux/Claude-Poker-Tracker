@@ -1,0 +1,29 @@
+id: "SPR-114"
+title: "Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)"
+status: done
+approved_at: "2026-06-10T16:42:11.347Z"
+completed_at: "2026-06-10T16:48:44.114Z"
+completed_by_commit: "92c9320"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-10T16:42:11.347Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-023 selected (15 × no damping = 15).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-023"
+    title: "Per-seed-anchor snapshot tests (RT-108 pattern)"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-10T16:48:44.114Z"
+
+created_at: "2026-06-10T16:42:11.347Z"

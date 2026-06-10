@@ -2,10 +2,11 @@ id: "WS-023"
 title: "Per-seed-anchor snapshot tests (RT-108 pattern)"
 legacy_id: "EAL-G5-SS"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "92c9320"
 priority_score: 15.0
 priority_label: "P2"
 category: "exploit-anchor-library"
@@ -38,3 +39,4 @@ source:
   source_line: 119
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781110124152-29e0ac17d902"

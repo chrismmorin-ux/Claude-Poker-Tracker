@@ -4,10 +4,10 @@
 
 total_items: 211
 by_status:
-  done: 138
+  done: 139
   decomposed: 1
   in_progress: 3
-  backlog: 55
+  backlog: 54
   deferred: 5
   dismissed: 1
   completed: 7
@@ -21,6 +21,7 @@ by_category:
   exploit-anchor-library: 16
   fix-wave: 4
   hero-state-primitive: 18
+  infrastructure: 1
   input-ux: 1
   invariant-coverage-program: 4
   line-study-content: 1
@@ -278,10 +279,10 @@ items:
 
   - id: "WS-023"
     title: "Per-seed-anchor snapshot tests (RT-108 pattern)"
-    status: backlog
+    status: done
     priority_score: 15
     category: exploit-anchor-library
-    effort: M
+    effort: S
     program: domain-correctness
     capability: core
 

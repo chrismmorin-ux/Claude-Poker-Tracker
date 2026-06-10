@@ -1,0 +1,33 @@
+{
+  "composed_at": "2026-06-10T16:42:03.027Z",
+  "goal": "Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)",
+  "program_focus": "domain-correctness",
+  "override_class": null,
+  "items": [
+    {
+      "id": "WS-023",
+      "title": "Per-seed-anchor snapshot tests (RT-108 pattern)",
+      "raw_score": 15,
+      "adjusted_score": 15,
+      "effort": "M",
+      "program": "domain-correctness",
+      "source_class": "untagged",
+      "blocked_by_note": null,
+      "soft_block_factor": 1,
+      "source_damping": 1,
+      "mode": "plan-first",
+      "queue_item_known": true
+    }
+  ],
+  "decisions_needed": [],
+  "anti_goal_check": {
+    "status": "passed",
+    "matches": []
+  },
+  "composition_notes": "Anchor: WS-023 selected (15 × no damping = 15).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "cap_used": {
+    "items": 1,
+    "effort_sessions": 1.5,
+    "ceremony": "standard"
+  }
+}

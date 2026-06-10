@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-10T16:18:42.564Z",
-  "updated_by_event": "ev-1781108322564-3492579f762d",
+  "updated_at": "2026-06-10T16:48:44.781Z",
+  "updated_by_event": "ev-1781110124781-cc3bce90367e",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1849,7 +1849,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-114": {
+      "id": "SPR-114",
+      "title": "Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-10T16:42:11.347Z",
+      "approved_at": "2026-06-10T16:42:11.347Z",
+      "completed_at": "2026-06-10T16:48:44.114Z",
+      "goal": "Ship WS-023: Per-seed-anchor snapshot tests (RT-108 pattern)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781108322564-3492579f762d"
+  "last_event_log_head": "ev-1781110124781-cc3bce90367e"
 }
