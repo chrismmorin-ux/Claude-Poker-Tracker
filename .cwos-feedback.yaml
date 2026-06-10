@@ -196,6 +196,22 @@ friction_log:
     detail: "HomeBase kit upgrade 3.5.0 → 3.8.0 (run from HomeBase) shipped an INCOMPLETE kit/scripts set: 121 of the runtime scripts installed, but 6 of them imported sibling modules that were NOT copied into the adopter — cwos-pulse.js→./cwos-value-ratio, cwos-verify.js→./cwos-runtime-dispatch-audit + ./cwos-readpath-lint, cwos-adopt-install.js + cwos-migrate.js→./lib/cwos-kit-dirs + ./lib/cwos-bundle-validate, cwos-engine-complete.js→./lib/cwos-skill-telemetry. Result: /pulse, /verify, /adopt-install, /migrate, /engine-complete crash on load (unresolvable import). Caught by npm run preflight:staged (deploy CI gate) BEFORE commit — a commit would have broken CI + shipped non-functional commands. This is a HomeBase distribution-MANIFEST bug: the adopter copy-set omits transitive runtime deps of the scripts it does copy. Affects any repo adopted/upgraded via the same MANIFEST — fleet-level."
     component: cwos-adopt-install / kit-MANIFEST (distribution surface)
     workaround: "Computed the transitive missing-dep closure (exactly 6 files; they pull in nothing further) and copied them verbatim from HomeBase kit/scripts/ into this repo to complete the dependency graph. Re-ran preflight (✓ 130 files resolve) + smoke-confirmed cwos-pulse + cwos-verify load. UPSTREAM FIX NEEDED at HomeBase: add cwos-value-ratio.js, cwos-runtime-dispatch-audit.js, cwos-readpath-lint.js, lib/cwos-kit-dirs.js, lib/cwos-bundle-validate.js, lib/cwos-skill-telemetry.js to the adopter copy-set in kit/MANIFEST.yaml (or whatever drives cwos-adopt-install's file selection) so future adopts/upgrades ship them."
+  - id: fr-016
+    timestamp: "2026-06-10T22:40:00Z"
+    session_id: "session-2026-06-10-spr116"
+    category: workaround
+    severity: medium
+    detail: "cwos-next.js compose anchored WS-150, a stale umbrella ticket: 5 of its 7 children were already done (SPR-102..106) but the master still carried priority 14 and won the ranking, proposing a 3-session sprint against the 2-session cap (compose rendered the overage but did not flag or block it). Candidate scoring has no awareness of child-completion state for master/umbrella tickets — same family as feedback_cap_breach_distorts_composition: stale queue entries distort deterministic composition until manually cleared. 4th occurrence of the verify-premise-at-composition pattern (new variant: stale umbrella rather than count inflation)."
+    component: cwos-next-compose
+    workaround: "Premise-checked the anchor's YAML at composition (per fb-001 discipline); founder approved closing WS-150 (item_closed event ev-1781129963371) + re-deferring WS-157; recomposed via compose --candidates-file with WS-213 first. Possible kit fix: compose should warn when an anchor exceeds max_effort_sessions, and/or down-rank items whose enables/children are mostly done."
+  - id: fr-017
+    timestamp: "2026-06-10T22:40:00Z"
+    session_id: "session-2026-06-10-spr116"
+    category: manual_fix
+    severity: low
+    detail: "cwos-next.js approve emitted sprint_approved and wrote SPR-116.yaml but did NOT claim the queue item (WS-213 stayed status:backlog, sprint_id empty) despite /next skill doc stating approve 'claims items'. Also fr-012 still live: gate returned active_sprint:null for the just-approved status:approved sprint — invisible to resume until execution starts."
+    component: cwos-next-approve
+    workaround: "Hand-stamped WS-213 status:in_progress + sprint_id:SPR-116 before execution; cwos-next done closed it correctly afterward. Kit fix: approve should write status:claimed + sprint_id into each item's queue YAML (and gate should match status:approved sprints per fr-012)."
 
 # Pre-existing entry (kept for context):
 # Entry format:
@@ -210,17 +226,17 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 15
+  total_friction_events: 17
   total_user_feedback: 3
   unresolved_feedback: 3
   by_severity:
     high: 2
-    medium: 4
-    low: 9
+    medium: 5
+    low: 10
   by_category:
     file_not_found: 9
-    manual_fix: 4
-    workaround: 2
+    manual_fix: 5
+    workaround: 3
   by_component:
     cwos-constitutional-audit.js: 1
     cwos-reconcile.js: 1
@@ -233,7 +249,9 @@ summary:
     findings-reconciliation: 1
     next-step1-resume-check: 1
     queue-index: 2
-  most_recent_friction: "fr-015 — 2026-06-09 — kit 3.8.0 upgrade shipped incomplete kit/scripts (6 missing runtime deps → /pulse,/verify,/adopt-install,/migrate,/engine-complete crash); caught by preflight pre-commit, fixed by copying deps from HomeBase; upstream MANIFEST fix needed"
+    cwos-next-compose: 1
+    cwos-next-approve: 1
+  most_recent_friction: "fr-017 — 2026-06-10 — cwos-next approve doesn't claim queue items (hand-stamped WS-213); fr-016 same session: compose anchored stale umbrella WS-150 (5/7 children done) over the session cap without flagging"
   most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
