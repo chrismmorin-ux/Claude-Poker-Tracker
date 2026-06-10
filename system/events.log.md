@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1781131380041-b6f937179d6b"
-generated_content_hash: "d4319b34415396b3735c4befc63973b18877baddf906139193b8a2e5613384b4"
-generated_at: "2026-06-10T22:43:00.070Z"
+generated_from_event: "ev-1781134087067-ea2f0afcdc58"
+generated_content_hash: "12f71e2ae1828ff0f26516117f7c9e2fae9f87e36e3e33ea5246520ebc052484"
+generated_at: "2026-06-10T23:28:07.221Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl"]
-event_count: 248
+event_count: 253
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 181
-- Events recorded: 248
+- Commands recorded: 186
+- Events recorded: 253
 - Source chunks: 2
 
 ## Command `auto:42416:1781030643103`
@@ -1894,3 +1894,53 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-06-10T22:43:00.041Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |
+
+## Command `cmd-itemdeferred-mq8o5p4he80dee433e6e`
+
+- Start: 2026-06-10T22:57:36.884Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-10T22:57:36.884Z | T6:workstream | C:/Program Files/Git/next | item="WS-091", program="domain-correctness", +3 more |
+
+## Command `cmd-itemdeferred-mq8o5p9qa6ce56ea40cc`
+
+- Start: 2026-06-10T22:57:37.075Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-10T22:57:37.075Z | T6:workstream | C:/Program Files/Git/next | item="WS-094", program="domain-correctness", +3 more |
+
+## Command `cmd-itemdeferred-mq8o5pfb91876ec9087f`
+
+- Start: 2026-06-10T22:57:37.275Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-10T22:57:37.275Z | T6:workstream | C:/Program Files/Git/next | item="WS-096", program="domain-correctness", +3 more |
+
+## Command `cmd-sprintapprove-mq8odhs97fc7f86ef11c`
+
+- Start: 2026-06-10T23:03:40.620Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-10T23:03:40.620Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-117", +8 more |
+
+## Command `cmd-itemcreated-mq8p8xau9a7d91c79560`
+
+- Start: 2026-06-10T23:28:07.067Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-10T23:28:07.067Z | T6:workstream | C:/Program Files/Git/next | item="WS-223", program="domain-correctness", +3 more |

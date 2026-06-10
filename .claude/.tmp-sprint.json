@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-06-10T22:20:52.354Z",
-  "goal": "Harden the CWOS YAML reader against inline-comment misparses (root-cause fix for two /next malfunctions)",
-  "program_focus": "self-compliance",
+  "composed_at": "2026-06-10T23:03:40.457Z",
+  "goal": "Ship WS-214: Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
+  "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-213",
-      "title": "Harden naive YAML reader to strip inline comments on scalar values",
+      "id": "WS-214",
+      "title": "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
       "raw_score": 12,
       "adjusted_score": 12,
-      "effort": "S",
-      "program": "self-compliance",
+      "effort": "M",
+      "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-213 selected (12 × no damping = 12).\nCap usage: 0.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-214 selected (12 × no damping = 12).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 0.5,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }

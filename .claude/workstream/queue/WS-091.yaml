@@ -2,7 +2,7 @@ id: "WS-091"
 title: "Future content-fix batches per audit"
 legacy_id: "LSW-F*"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -27,5 +27,7 @@ source:
   origin: "backlog-md-migration-2026-05-01"
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
   source_line: 569
+deferred_at: "2026-06-10"
+deferred_reason: "LAZY ticket-generation placeholder from backlog-md migration (legacy LSW-F*): meta-rule 'one F entry per audit with category-B P0/P1 findings' — no concrete audit findings attached, not executable. Won /next composition as anchor 2026-06-10 (5th stale-umbrella occurrence per premise-verification rule). Rule recorded in domain-correctness program doc. Reversible: open concrete WS items per future audit instead, or set status back to backlog."
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-10"

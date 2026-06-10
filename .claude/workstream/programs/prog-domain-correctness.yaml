@@ -250,6 +250,11 @@ protocols:
         backs? Or implementation choices that no theory entry justifies?
 
 accountability:
+  # NOTE (2026-06-10): the legacy LSW ticket-generation rule ("one F/G/H entry per audit
+  # finding" — content-fix / engine-change / surface-quality batches) is superseded by
+  # on_finding below: audits auto-create concrete work items per finding. The migrated
+  # placeholders WS-091/WS-094/WS-096 were deferred 2026-06-10 (premise-verification at
+  # /next composition — they carried no concrete findings and kept winning the anchor slot).
   on_finding:
     action: create_work_item
     max_open_items: 5

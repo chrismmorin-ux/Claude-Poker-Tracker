@@ -1,0 +1,53 @@
+id: "WS-223"
+title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 27.0
+priority_label: "P1"
+category: "seam-integrity"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Discovered by the WS-214 seam tests (SPR-117, 2026-06-10). rangeRules.js
+  line 117 gates `range-never-3bets-position-{POS}` on
+  `rangeSummary[pos].facedRaise.threeBet === 0` — that field is the Bayesian
+  range WIDTH, which always carries population-prior mass (AA/KK/QQ cells)
+  once any facedRaise opportunity is observed. Real buildRangeProfile output
+  therefore never satisfies `=== 0`, so the rule is dead code on the live
+  seam: a villain observed never 3-betting across 16+ opportunities still
+  shows width 1. The producer exposes the field the rule MEANS to check:
+  `facedRaiseFreqs.threeBet` (observed frequency), which is 0 for that
+  villain.
+
+  Fix: switch the gate to the observed frequency
+  (`s.facedRaiseFreqs?.threeBet === 0` with `s.facedRaiseHands >= MIN_N_RANGE`),
+  keeping the existing testProportionRaw confidence check. Then flip the
+  pinned KNOWN-GAP test in rangeExploitSeam.test.js (block A, "KNOWN GAP
+  (WS-223)") to assert the rule FIRES on the never-3bet fixture.
+
+  Root-cause class: rule authored against a hand-typed fixture contract
+  (threeBet: 0) the real producer never emits — exactly the bug class the
+  WS-214 seam family exists to catch. Audit sibling rules for the same
+  width-vs-frequency confusion while in there (range-open-wider-than-gto
+  and range-cold-call-too-wide use width deliberately and fire correctly —
+  verify intent and document which contract each rule reads).
+accept_criteria:
+  - "range-never-3bets-position-LATE fires on the rangeExploitSeam.test.js never-3bet fixture (16 facedRaise opportunities, 0 observed 3-bets)"
+  - "KNOWN GAP test in rangeExploitSeam.test.js flipped to a firing assertion"
+  - "Sibling range-profile rules audited for width-vs-frequency intent; one-line comment per rule documenting which contract it reads"
+effort: "S"
+files_involved:
+  - src/utils/exploitEngine/rangeRules.js
+  - src/utils/exploitEngine/__tests__/rangeExploitSeam.test.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: finding
+  created_by: ai-during-sprint
+  origin: "WS-214 seam-test authoring, SPR-117 (2026-06-10)"
+created_at: "2026-06-10"

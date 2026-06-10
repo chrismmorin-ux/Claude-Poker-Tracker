@@ -949,9 +949,18 @@ items:
     program: domain-correctness
     capability: core
 
+  - id: "WS-223"
+    title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
+    status: backlog
+    priority_score: 27
+    category: seam-integrity
+    effort: S
+    program: domain-correctness
+    capability: core
+
   - id: "WS-091"
     title: "Future content-fix batches per audit"
-    status: backlog
+    status: deferred
     priority_score: 12
     category: line-study-slice-widening
     effort: M
@@ -978,7 +987,7 @@ items:
 
   - id: "WS-094"
     title: "Future engine change tickets from audit findings"
-    status: backlog
+    status: deferred
     priority_score: 12
     category: line-study-slice-widening
     effort: M
@@ -997,7 +1006,7 @@ items:
 
   - id: "WS-096"
     title: "Future surface-quality tickets from audit findings"
-    status: backlog
+    status: deferred
     priority_score: 12
     category: line-study-slice-widening
     effort: M
