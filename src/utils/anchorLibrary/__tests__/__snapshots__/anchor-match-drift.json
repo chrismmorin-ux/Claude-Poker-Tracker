@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "generator": "WS-023 per-seed-anchor match drift CI",
+  "anchors": [
+    {
+      "seedId": "SEED-01",
+      "id": "anchor:nit:river:overfold:4flush",
+      "archetypeName": "Nit Over-Fold to River Overbet on 4-Flush Scare",
+      "status": "active",
+      "polarity": "overfold",
+      "derivedStyle": "Nit",
+      "derivedStreet": "river",
+      "derivedTierKey": "tier-2",
+      "lineSequence": [
+        {
+          "street": "flop",
+          "villainAction": {
+            "kind": "call"
+          },
+          "boardCondition": {
+            "texture": "any"
+          }
+        },
+        {
+          "street": "turn",
+          "heroAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.6,
+              1
+            ]
+          },
+          "villainAction": {
+            "kind": "call"
+          },
+          "boardCondition": {
+            "texture": "wet"
+          }
+        },
+        {
+          "street": "river",
+          "heroAction": {
+            "kind": "bet",
+            "sizingRange": [
+              1,
+              1.8
+            ]
+          },
+          "boardCondition": {
+            "texture": "flush-complete",
+            "scareKind": "4-flush"
+          }
+        }
+      ]
+    },
+    {
+      "seedId": "SEED-02",
+      "id": "anchor:lag:river:overbluff:turnxx",
+      "archetypeName": "LAG Over-Bluff to River Probe After Turn Check-Check",
+      "status": "active",
+      "polarity": "overbluff",
+      "derivedStyle": "LAG",
+      "derivedStreet": "river",
+      "derivedTierKey": "tier-2",
+      "lineSequence": [
+        {
+          "street": "flop",
+          "heroAction": {
+            "kind": "call"
+          },
+          "villainAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.5,
+              0.75
+            ]
+          },
+          "boardCondition": {
+            "texture": "any"
+          }
+        },
+        {
+          "street": "turn",
+          "heroAction": {
+            "kind": "check"
+          },
+          "villainAction": {
+            "kind": "check"
+          },
+          "boardCondition": {
+            "texture": "any"
+          }
+        },
+        {
+          "street": "river",
+          "villainAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.66,
+              0.8
+            ]
+          },
+          "boardCondition": {
+            "texture": "any"
+          }
+        }
+      ]
+    },
+    {
+      "seedId": "SEED-03",
+      "id": "anchor:fish:turn:overcall:drypaired",
+      "archetypeName": "Fish Over-Call to Turn Double-Barrel on Dry Paired Board",
+      "status": "active",
+      "polarity": "overcall",
+      "derivedStyle": "Fish",
+      "derivedStreet": "turn",
+      "derivedTierKey": "tier-2",
+      "lineSequence": [
+        {
+          "street": "flop",
+          "heroAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.5,
+              0.67
+            ]
+          },
+          "villainAction": {
+            "kind": "call"
+          },
+          "boardCondition": {
+            "texture": "paired"
+          }
+        },
+        {
+          "street": "turn",
+          "heroAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.66,
+              0.75
+            ]
+          },
+          "boardCondition": {
+            "texture": "paired"
+          }
+        }
+      ]
+    },
+    {
+      "seedId": "SEED-04",
+      "id": "anchor:tag:flop:overfold:donk-wet",
+      "archetypeName": "TAG Over-Fold to Flop Donk on Wet Connected Board",
+      "status": "candidate",
+      "polarity": "overfold",
+      "derivedStyle": "TAG",
+      "derivedStreet": "flop",
+      "derivedTierKey": "tier-2",
+      "lineSequence": [
+        {
+          "street": "preflop",
+          "heroAction": {
+            "kind": "call"
+          },
+          "villainAction": {
+            "kind": "raise"
+          }
+        },
+        {
+          "street": "flop",
+          "heroAction": {
+            "kind": "bet",
+            "sizingRange": [
+              0.33,
+              0.5
+            ]
+          },
+          "boardCondition": {
+            "texture": "wet"
+          }
+        }
+      ]
+    }
+  ],
+  "crossMatch": [
+    {
+      "situation": "SEED-01",
+      "anchor": "SEED-01",
+      "matches": true
+    },
+    {
+      "situation": "SEED-01",
+      "anchor": "SEED-02",
+      "matches": false
+    },
+    {
+      "situation": "SEED-01",
+      "anchor": "SEED-03",
+      "matches": false
+    },
+    {
+      "situation": "SEED-01",
+      "anchor": "SEED-04",
+      "matches": false
+    },
+    {
+      "situation": "SEED-02",
+      "anchor": "SEED-01",
+      "matches": false
+    },
+    {
+      "situation": "SEED-02",
+      "anchor": "SEED-02",
+      "matches": true
+    },
+    {
+      "situation": "SEED-02",
+      "anchor": "SEED-03",
+      "matches": false
+    },
+    {
+      "situation": "SEED-02",
+      "anchor": "SEED-04",
+      "matches": false
+    },
+    {
+      "situation": "SEED-03",
+      "anchor": "SEED-01",
+      "matches": false
+    },
+    {
+      "situation": "SEED-03",
+      "anchor": "SEED-02",
+      "matches": false
+    },
+    {
+      "situation": "SEED-03",
+      "anchor": "SEED-03",
+      "matches": true
+    },
+    {
+      "situation": "SEED-03",
+      "anchor": "SEED-04",
+      "matches": false
+    },
+    {
+      "situation": "SEED-04",
+      "anchor": "SEED-01",
+      "matches": false
+    },
+    {
+      "situation": "SEED-04",
+      "anchor": "SEED-02",
+      "matches": false
+    },
+    {
+      "situation": "SEED-04",
+      "anchor": "SEED-03",
+      "matches": false
+    },
+    {
+      "situation": "SEED-04",
+      "anchor": "SEED-04",
+      "matches": true
+    }
+  ],
+  "firingSets": [
+    {
+      "situation": "SEED-01",
+      "live": [
+        "anchor:nit:river:overfold:4flush"
+      ],
+      "studyMode": [
+        "anchor:nit:river:overfold:4flush"
+      ]
+    },
+    {
+      "situation": "SEED-02",
+      "live": [
+        "anchor:lag:river:overbluff:turnxx"
+      ],
+      "studyMode": [
+        "anchor:lag:river:overbluff:turnxx"
+      ]
+    },
+    {
+      "situation": "SEED-03",
+      "live": [
+        "anchor:fish:turn:overcall:drypaired"
+      ],
+      "studyMode": [
+        "anchor:fish:turn:overcall:drypaired"
+      ]
+    },
+    {
+      "situation": "SEED-04",
+      "live": [],
+      "studyMode": [
+        "anchor:tag:flop:overfold:donk-wet"
+      ]
+    }
+  ],
+  "liveBridge": [
+    {
+      "situation": "SEED-01",
+      "derivedSituation": {
+        "actionHistory": {
+          "flop": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.5
+            },
+            "villainAction": {
+              "kind": "call"
+            }
+          },
+          "turn": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.75
+            },
+            "villainAction": {
+              "kind": "call"
+            }
+          },
+          "river": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 1.2
+            },
+            "board": {
+              "texture": "flush-complete",
+              "scareKind": "4-flush"
+            }
+          }
+        },
+        "villainStyle": "Nit"
+      },
+      "live": [],
+      "studyMode": []
+    },
+    {
+      "situation": "SEED-02",
+      "derivedSituation": {
+        "actionHistory": {
+          "flop": {
+            "heroAction": {
+              "kind": "call"
+            },
+            "villainAction": {
+              "kind": "bet",
+              "sizing": 0.6
+            }
+          },
+          "turn": {
+            "heroAction": {
+              "kind": "check"
+            },
+            "villainAction": {
+              "kind": "check"
+            }
+          },
+          "river": {
+            "villainAction": {
+              "kind": "bet",
+              "sizing": 0.72
+            },
+            "board": {
+              "texture": "dry"
+            }
+          }
+        },
+        "villainStyle": "LAG"
+      },
+      "live": [],
+      "studyMode": []
+    },
+    {
+      "situation": "SEED-03",
+      "derivedSituation": {
+        "actionHistory": {
+          "flop": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.6
+            },
+            "villainAction": {
+              "kind": "call"
+            }
+          },
+          "turn": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.7
+            },
+            "board": {
+              "texture": "paired"
+            }
+          }
+        },
+        "villainStyle": "Fish"
+      },
+      "live": [],
+      "studyMode": []
+    },
+    {
+      "situation": "SEED-04",
+      "derivedSituation": {
+        "actionHistory": {
+          "preflop": {
+            "heroAction": {
+              "kind": "call"
+            },
+            "villainAction": {
+              "kind": "raise",
+              "sizing": 3
+            }
+          },
+          "flop": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.4
+            },
+            "board": {
+              "texture": "wet"
+            }
+          }
+        },
+        "villainStyle": "TAG"
+      },
+      "live": [],
+      "studyMode": [
+        "anchor:tag:flop:overfold:donk-wet"
+      ]
+    }
+  ]
+}

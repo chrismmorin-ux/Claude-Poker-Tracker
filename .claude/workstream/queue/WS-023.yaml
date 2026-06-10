@@ -12,11 +12,18 @@ category: "exploit-anchor-library"
 capability: "core"
 program: "domain-correctness"
 description: |
-  Per-seed-anchor snapshot tests (RT-108 pattern)
+  Per-seed-anchor snapshot tests (RT-108 pattern). RESCOPED 2026-06-10 SPR-114
+  (founder-approved via sprint-enhance): matcher-only — no applier module exists;
+  "MATCHER+APPLIER" wording was stale. Snapshot computed match results per seed
+  anchor (which anchors fire, derived style/street match path) plus
+  deriveLiveSituation output shape, frozen in
+  src/utils/anchorLibrary/__tests__/__snapshots__/ per RT-108 precedent
+  (engineAuthoredDrift.test.js). CI failure is automatic via vitest — no wiring
+  deliverable.
 accept_criteria:
   - "4 scenarios green"
   - "engine-drift fails CI"
-effort: "M"
+effort: "S"
 files_involved: []
 blocked_by: []
 blocked_by_legacy:
