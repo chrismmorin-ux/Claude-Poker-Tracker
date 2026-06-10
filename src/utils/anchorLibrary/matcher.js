@@ -198,14 +198,22 @@ const matchesAction = (constraint, actual) => {
 /**
  * Match a board condition. Anchor 'any' texture is wildcard. Both texture
  * and scareKind are independent constraints.
+ *
+ * A constraint with no effective demand (texture absent or 'any', no
+ * scareKind) matches even when the entry has no board info — 'any' means
+ * "no constraint", not "board info required". When the constraint DOES
+ * demand a real texture or scareKind and the entry has no board, the step
+ * fails (can't verify → don't fire; fail-safe).
  */
 const matchesBoardCondition = (constraint, actual) => {
+  const wantsTexture = Boolean(constraint.texture) && constraint.texture !== 'any';
+  const wantsScare = Boolean(constraint.scareKind);
+  if (!wantsTexture && !wantsScare) return true;
+
   if (!actual || typeof actual !== 'object') return false;
 
-  if (constraint.texture && constraint.texture !== 'any') {
-    if (constraint.texture !== actual.texture) return false;
-  }
-  if (constraint.scareKind && constraint.scareKind !== actual.scareKind) return false;
+  if (wantsTexture && constraint.texture !== actual.texture) return false;
+  if (wantsScare && constraint.scareKind !== actual.scareKind) return false;
   return true;
 };
 

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseBlinds, calculatePot, getCurrentBet, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
+import { parseBlinds, calculatePot, calculatePotProgression, getCurrentBet, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 describe('parseBlinds', () => {
@@ -253,5 +253,70 @@ describe('calculateStartingPot', () => {
   it('defaults seatCount to 2 when not specified', () => {
     const ante = { amount: 5, format: 'per-player' };
     expect(calculateStartingPot({ sb: 1, bb: 2 }, ante)).toBe(13); // 1 + 2 + 10
+  });
+});
+
+describe('calculatePotProgression', () => {
+  const blinds = { sb: 1, bb: 2 };
+
+  it('returns empty array for empty/null sequence', () => {
+    expect(calculatePotProgression([], blinds)).toEqual([]);
+    expect(calculatePotProgression(null, blinds)).toEqual([]);
+  });
+
+  it('reports pot BEFORE each action, aligned by index', () => {
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', amount: 6 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop' }, // auto-call 6
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'flop', amount: 8 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'flop' }, // auto-call 8
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'turn', amount: 23 },
+    ];
+    expect(calculatePotProgression(seq, blinds)).toEqual([
+      { potBefore: 3, estimated: false },  // sb + bb
+      { potBefore: 9, estimated: false },  // after raise to 6
+      { potBefore: 15, estimated: false }, // after auto-call 6
+      { potBefore: 23, estimated: false }, // after flop bet 8
+      { potBefore: 31, estimated: false }, // after auto-call 8
+    ]);
+  });
+
+  it('matches calculatePot final total (same walk semantics)', () => {
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', amount: 6 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop' },
+      { seat: 4, action: PRIMITIVE_ACTIONS.BET, street: 'flop', amount: 9 },
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', amount: 27 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'flop' },
+      { seat: 1, action: PRIMITIVE_ACTIONS.CHECK, street: 'turn' },
+    ];
+    const progression = calculatePotProgression(seq, blinds);
+    const last = progression[progression.length - 1];
+    // pot before the final check === calculatePot total of everything prior;
+    // a check adds nothing, so it also equals the full-sequence total.
+    expect(last.potBefore).toBe(calculatePot(seq, blinds).total);
+  });
+
+  it('flips estimated from the first amountless bet/raise onward', () => {
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'flop' }, // no amount
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'flop' },
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'turn', amount: 10 },
+    ];
+    const progression = calculatePotProgression(seq, blinds);
+    expect(progression[0].estimated).toBe(false); // pot before the bad entry is still good
+    expect(progression[1].estimated).toBe(true);
+    expect(progression[2].estimated).toBe(true);
+  });
+
+  it('skips null entries without losing alignment', () => {
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', amount: 6 },
+      null,
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop' },
+    ];
+    const progression = calculatePotProgression(seq, blinds);
+    expect(progression).toHaveLength(3);
+    expect(progression[2].potBefore).toBe(9);
   });
 });

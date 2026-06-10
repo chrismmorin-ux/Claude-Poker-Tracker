@@ -99,6 +99,81 @@ export const calculatePot = (actionSequence, blinds) => {
 };
 
 /**
+ * Pot size BEFORE each action in the sequence. Mirrors `calculatePot`'s walk
+ * semantics exactly (street resets, auto-call matches current bet, straddle
+ * raises the bet level) but emits a per-entry view instead of a final total.
+ *
+ * `estimated` flips true from the first amountless bet/raise/straddle onward —
+ * downstream pot values are no longer trustworthy from that point. Consumers
+ * converting amounts to pot fractions (anchor matcher bridge) must skip
+ * conversion when `estimated` is set or `potBefore` is 0.
+ *
+ * @param {Array} actionSequence - Array of ActionEntry objects
+ * @param {{ sb: number, bb: number }} blinds - Blind amounts
+ * @returns {Array<{ potBefore: number, estimated: boolean }>} aligned by index
+ */
+export const calculatePotProgression = (actionSequence, blinds) => {
+  const { sb, bb } = blinds || { sb: 1, bb: 2 };
+  let total = sb + bb;
+  let currentBet = bb;
+  let currentStreet = 'preflop';
+  let estimated = false;
+  let seatContribs = {};
+  const progression = [];
+
+  if (!Array.isArray(actionSequence)) return progression;
+
+  for (const entry of actionSequence) {
+    if (!entry || typeof entry !== 'object') {
+      progression.push({ potBefore: total, estimated });
+      continue;
+    }
+    if (entry.street !== currentStreet) {
+      currentStreet = entry.street;
+      currentBet = 0;
+      seatContribs = {};
+    }
+
+    progression.push({ potBefore: total, estimated });
+
+    switch (entry.action) {
+      case PRIMITIVE_ACTIONS.FOLD:
+      case PRIMITIVE_ACTIONS.CHECK:
+        break;
+
+      case PRIMITIVE_ACTIONS.CALL:
+        if (entry.amount !== undefined) {
+          total += entry.amount;
+          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
+        } else {
+          const alreadyIn = seatContribs[entry.seat] || 0;
+          const increment = Math.max(0, currentBet - alreadyIn);
+          total += increment;
+          seatContribs[entry.seat] = currentBet;
+        }
+        break;
+
+      case PRIMITIVE_ACTIONS.BET:
+      case PRIMITIVE_ACTIONS.RAISE:
+      case PRIMITIVE_ACTIONS.STRADDLE:
+        if (entry.amount !== undefined) {
+          total += entry.amount;
+          currentBet = entry.amount;
+          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
+        } else {
+          estimated = true;
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return progression;
+};
+
+/**
  * Get the current bet amount on a given street from the action sequence.
  *
  * @param {Array} actionSequence - Array of ActionEntry objects

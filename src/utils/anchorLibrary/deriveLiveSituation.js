@@ -7,8 +7,7 @@
  *
  * Walks `actionSequence` (gameReducer-shaped entries: `{seat, street, action, amount?}`)
  * and groups by street, extracting the focused villain's and hero's actions per
- * street as the last bet/raise/call/check on that street. Texture (when known
- * for the current street) is folded into the matching street's board condition.
+ * street as the last bet/raise/call/check on that street.
  *
  * Per `matcher.js:35-60` the `situation` shape is:
  *
@@ -22,9 +21,20 @@
  * subset of fields is fine — the matcher will still match anchors whose steps
  * don't constrain the missing fields.
  *
+ * Sizing convention (matches anchor `sizingRange` semantics, schema-delta §2.2 +
+ * POKER_THEORY §6.2): pot-fraction at decision time — `amount / potBefore`,
+ * where potBefore comes from `calculatePotProgression`. Raises use the
+ * raise-to amount over the pot before the raise. FAIL-SAFE: when blinds are
+ * unavailable or the pot is estimated/zero (an earlier bet lacked an amount),
+ * sizing is OMITTED — sizing-constrained anchor steps then don't fire, rather
+ * than firing on a wrong number.
+ *
+ * Board conditions are derived per street from `communityCards` via
+ * `deriveAnchorBoardCondition` (anchor texture vocabulary + turn/river
+ * scareKind). Streets whose board prefix isn't fully entered carry no board
+ * slot; the matcher treats no-effective-demand conditions ('any') as matching.
+ *
  * v1 scope:
- *   - heroAction / villainAction kind + sizing extracted from actionSequence
- *   - board.texture from current-street boardTexture (when supplied)
  *   - spr is omitted (v2 work — requires effective stack accounting)
  *
  * AP-07 / Red Line #8 implications: this module produces only the matcher input;
@@ -32,6 +42,8 @@
  */
 
 import { ACTIONS } from '../../constants/gameConstants';
+import { calculatePotProgression } from '../potCalculator';
+import { deriveAnchorBoardCondition } from './deriveAnchorBoardCondition';
 
 const STREETS = Object.freeze(['preflop', 'flop', 'turn', 'river']);
 
@@ -62,6 +74,9 @@ const ACTION_KIND_MAP = Object.freeze({
   [ACTIONS.FOLD_TO_CBET]: 'fold',
 });
 
+/** Round pot fractions for stable comparisons and snapshots. */
+const roundSizing = (n) => Number(n.toFixed(4));
+
 /**
  * Normalize a raw action constant to the conceptual kind the matcher expects.
  * Returns null for unmappable actions (showdown actions, MUCKED, WON, etc.).
@@ -79,20 +94,23 @@ const normalizeKind = (rawAction) => {
  * specific seat. "Meaningful" excludes folds (folded villains are filtered
  * upstream; including a fold would cause matcher false-positives on
  * fold-action anchors that aren't intended to fire here).
+ *
+ * Sizing is attached as a pot-fraction only when the pot before the action is
+ * known and trustworthy (see module doc, fail-safe rule).
  */
-const findLastActionForSeat = (streetEntries, seat) => {
+const findLastActionForSeat = (streetEntries, seat, progression) => {
   if (!Array.isArray(streetEntries) || typeof seat !== 'number') return null;
   for (let i = streetEntries.length - 1; i >= 0; i--) {
-    const entry = streetEntries[i];
+    const { entry, index } = streetEntries[i];
     if (!entry || entry.seat !== seat) continue;
     const kind = normalizeKind(entry.action);
     if (!kind || kind === 'fold') continue;
     const actionRecord = { kind };
-    // Sizing in pot-fraction terms. v1 stores raw amount; the matcher's
-    // sizingRange check requires a number, so we pass through. Callers that
-    // know pot size at the action-time may want to convert before this call.
-    if (typeof entry.amount === 'number' && entry.amount >= 0) {
-      actionRecord.sizing = entry.amount;
+    if (typeof entry.amount === 'number' && entry.amount >= 0 && progression) {
+      const pot = progression[index];
+      if (pot && !pot.estimated && pot.potBefore > 0) {
+        actionRecord.sizing = roundSizing(entry.amount / pot.potBefore);
+      }
     }
     return actionRecord;
   }
@@ -100,17 +118,19 @@ const findLastActionForSeat = (streetEntries, seat) => {
 };
 
 /**
- * Group an action sequence into per-street arrays. Returns a frozen object
- * keyed by street with sorted entries (sequence order preserved).
+ * Group an action sequence into per-street arrays of `{entry, index}` where
+ * `index` is the entry's position in the full sequence (aligns with the pot
+ * progression array).
  */
 const groupByStreet = (actionSequence) => {
   const grouped = { preflop: [], flop: [], turn: [], river: [] };
   if (!Array.isArray(actionSequence)) return grouped;
-  for (const entry of actionSequence) {
+  for (let index = 0; index < actionSequence.length; index++) {
+    const entry = actionSequence[index];
     if (!entry || typeof entry !== 'object') continue;
     const s = entry.street;
     if (s in grouped) {
-      grouped[s].push(entry);
+      grouped[s].push({ entry, index });
     }
   }
   return grouped;
@@ -125,7 +145,10 @@ const groupByStreet = (actionSequence) => {
  * @param {number|null} params.heroSeat
  * @param {number|null} params.villainSeat
  * @param {string|null} params.villainStyle — 'Nit' | 'LAG' | 'TAG' | 'Fish' | etc.
- * @param {Object|null} params.boardTexture — { texture, scareKind } for current street
+ * @param {{sb: number, bb: number}|null} params.blinds — blind amounts in the
+ *        same units as actionSequence amounts; absent → sizing omitted
+ * @param {string[]|null} params.communityCards — raw card strings (5-slot
+ *        array); absent → board slots omitted
  * @returns {Object} situation
  */
 export const deriveLiveSituation = ({
@@ -134,7 +157,8 @@ export const deriveLiveSituation = ({
   heroSeat,
   villainSeat,
   villainStyle,
-  boardTexture,
+  blinds,
+  communityCards,
 }) => {
   const situation = {
     actionHistory: {},
@@ -147,6 +171,13 @@ export const deriveLiveSituation = ({
   if (!STREETS.includes(currentStreet)) {
     return situation;
   }
+
+  const blindsUsable = blinds
+    && typeof blinds.sb === 'number' && blinds.sb > 0
+    && typeof blinds.bb === 'number' && blinds.bb > 0;
+  const progression = blindsUsable
+    ? calculatePotProgression(actionSequence, blinds)
+    : null;
 
   const grouped = groupByStreet(actionSequence);
   const currentIndex = STREETS.indexOf(currentStreet);
@@ -161,21 +192,14 @@ export const deriveLiveSituation = ({
 
     const entry = {};
 
-    const heroAction = findLastActionForSeat(streetEntries, heroSeat);
+    const heroAction = findLastActionForSeat(streetEntries, heroSeat, progression);
     if (heroAction) entry.heroAction = heroAction;
 
-    const villainAction = findLastActionForSeat(streetEntries, villainSeat);
+    const villainAction = findLastActionForSeat(streetEntries, villainSeat, progression);
     if (villainAction) entry.villainAction = villainAction;
 
-    // Board texture only applied to the current street; older streets'
-    // textures aren't tracked in v1. Matcher's anchor 'any' texture is a
-    // wildcard so the minimum case still works.
-    if (street === currentStreet && boardTexture && typeof boardTexture === 'object') {
-      const board = {};
-      if (typeof boardTexture.texture === 'string') board.texture = boardTexture.texture;
-      if (typeof boardTexture.scareKind === 'string') board.scareKind = boardTexture.scareKind;
-      if (Object.keys(board).length > 0) entry.board = board;
-    }
+    const board = deriveAnchorBoardCondition(communityCards, street);
+    if (board) entry.board = board;
 
     if (Object.keys(entry).length > 0) {
       situation.actionHistory[street] = entry;

@@ -153,7 +153,8 @@ export const CommandStrip = ({
     heroSeat: heroSeatForAnchor,
     villainSeat: villainSeatForAnchor,
     villainStyle: null, // v1: matcher treats absent style as wildcard
-    boardTexture,
+    blinds, // pot-fraction sizing (anchor sizingRange units)
+    communityCards, // per-street board conditions (anchor texture vocabulary)
     isReady: anchorLibraryReady,
   });
   // Synthetic handId for live observations — composes session id + hand

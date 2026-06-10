@@ -17,14 +17,11 @@
  *     from every live set is correct red-line-#6 behavior, asserted below)
  *   - deriveLiveSituation bridge output per seed + the firing sets it produces
  *
- * Known seams DOCUMENTED (not fixed) by the liveBridge section — the snapshot
- * freezes current behavior so the eventual fixes surface as intentional diffs:
- *   1. deriveLiveSituation passes raw `amount` through as `sizing`, while
- *      anchor sizingRange constraints are pot-fraction ratios.
- *   2. deriveLiveSituation attaches board texture to the CURRENT street only,
- *      while matcher steps with boardCondition (even texture 'any') require a
- *      board object on their entry — so multi-street anchors with early-street
- *      board conditions cannot fire through the bridge today.
+ * The liveBridge section drives realistic chip-denominated hands (blinds 1/2,
+ * community cards entered) through the full deriveLiveSituation → matcher
+ * chain — freezing the end-to-end behavior the LiveAdviceBar badge depends
+ * on: pot-fraction sizing conversion, per-street anchor-vocabulary boards,
+ * and turn/river scareKind classification.
  *
  * To regenerate baseline after a deliberate engine revision:
  *   UPDATE_ANCHOR_DRIFT_SNAPSHOT=true npm test -- anchorMatchDrift
@@ -111,76 +108,96 @@ const CANONICAL_SITUATIONS = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
-// Live-bridge fixtures — gameReducer-shaped action sequences per seed line.
-// Amounts follow the pot-fraction convention used in deriveLiveSituation's
-// own unit tests; the bridge passes them through as `sizing` verbatim.
+// Live-bridge fixtures — gameReducer-shaped hands in CHIP units (blinds 1/2,
+// preflop starting pot 3). The bridge converts amounts to pot fractions and
+// derives per-street boards from the community cards. Each fixture is a
+// realistic line designed to satisfy its seed anchor's constraints end-to-end.
 // ───────────────────────────────────────────────────────────────────────────
 
 const HERO_SEAT = 1;
 const VILLAIN_SEAT = 4;
+const BLINDS = { sb: 1, bb: 2 };
 
 const LIVE_BRIDGE_FIXTURES = [
   {
+    // Flop monotone J♥T♥8♥ ('any' step), turn 4♦ wet, river 2♥ = 4-flush.
+    // Hero turn bet 23/31 ≈ 0.74 ∈ [0.6,1.0]; river overbet 92/77 ≈ 1.19 ∈ [1.0,1.8].
     seedId: 'SEED-01',
     input: {
       currentStreet: 'river',
       heroSeat: HERO_SEAT,
       villainSeat: VILLAIN_SEAT,
       villainStyle: 'Nit',
-      boardTexture: { texture: 'flush-complete', scareKind: '4-flush' },
+      blinds: BLINDS,
+      communityCards: ['J♥', 'T♥', '8♥', '4♦', '2♥'],
       actionSequence: [
-        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 0.5 },
+        { seat: HERO_SEAT, street: 'preflop', action: 'raise', amount: 6 },
+        { seat: VILLAIN_SEAT, street: 'preflop', action: 'call' },
+        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 8 },
         { seat: VILLAIN_SEAT, street: 'flop', action: 'call' },
-        { seat: HERO_SEAT, street: 'turn', action: 'bet', amount: 0.75 },
+        { seat: HERO_SEAT, street: 'turn', action: 'bet', amount: 23 },
         { seat: VILLAIN_SEAT, street: 'turn', action: 'call' },
-        { seat: HERO_SEAT, street: 'river', action: 'bet', amount: 1.2 },
+        { seat: HERO_SEAT, street: 'river', action: 'bet', amount: 92 },
       ],
     },
   },
   {
+    // All board steps 'any'. Villain flop bet 9/15 = 0.6 ∈ [0.5,0.75];
+    // turn check-check; river probe 24/33 ≈ 0.73 ∈ [0.66,0.80].
     seedId: 'SEED-02',
     input: {
       currentStreet: 'river',
       heroSeat: HERO_SEAT,
       villainSeat: VILLAIN_SEAT,
       villainStyle: 'LAG',
-      boardTexture: { texture: 'dry' },
+      blinds: BLINDS,
+      communityCards: ['K♠', '7♦', '2♣', '3♥', '9♣'],
       actionSequence: [
-        { seat: VILLAIN_SEAT, street: 'flop', action: 'bet', amount: 0.6 },
+        { seat: VILLAIN_SEAT, street: 'preflop', action: 'raise', amount: 6 },
+        { seat: HERO_SEAT, street: 'preflop', action: 'call' },
+        { seat: VILLAIN_SEAT, street: 'flop', action: 'bet', amount: 9 },
         { seat: HERO_SEAT, street: 'flop', action: 'call' },
         { seat: HERO_SEAT, street: 'turn', action: 'check' },
         { seat: VILLAIN_SEAT, street: 'turn', action: 'check' },
-        { seat: VILLAIN_SEAT, street: 'river', action: 'bet', amount: 0.72 },
+        { seat: VILLAIN_SEAT, street: 'river', action: 'bet', amount: 24 },
       ],
     },
   },
   {
+    // Paired flop 8♠8♦3♣, paired turn (K♦ overcard, no scare constraint).
+    // Hero flop cbet 9/15 = 0.6 ∈ [0.5,0.67]; turn barrel 23/33 ≈ 0.70 ∈ [0.66,0.75].
     seedId: 'SEED-03',
     input: {
       currentStreet: 'turn',
       heroSeat: HERO_SEAT,
       villainSeat: VILLAIN_SEAT,
       villainStyle: 'Fish',
-      boardTexture: { texture: 'paired' },
+      blinds: BLINDS,
+      communityCards: ['8♠', '8♦', '3♣', 'K♦', ''],
       actionSequence: [
-        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 0.6 },
+        { seat: HERO_SEAT, street: 'preflop', action: 'raise', amount: 6 },
+        { seat: VILLAIN_SEAT, street: 'preflop', action: 'call' },
+        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 9 },
         { seat: VILLAIN_SEAT, street: 'flop', action: 'call' },
-        { seat: HERO_SEAT, street: 'turn', action: 'bet', amount: 0.7 },
+        { seat: HERO_SEAT, street: 'turn', action: 'bet', amount: 23 },
       ],
     },
   },
   {
+    // Wet connected flop 9♠8♠7♥; hero donk 6/15 = 0.4 ∈ [0.33,0.5] after
+    // flatting villain's preflop raise. Candidate anchor — study-mode only.
     seedId: 'SEED-04',
     input: {
       currentStreet: 'flop',
       heroSeat: HERO_SEAT,
       villainSeat: VILLAIN_SEAT,
       villainStyle: 'TAG',
-      boardTexture: { texture: 'wet' },
+      blinds: BLINDS,
+      communityCards: ['9♠', '8♠', '7♥', '', ''],
       actionSequence: [
-        { seat: VILLAIN_SEAT, street: 'preflop', action: 'raise', amount: 3 },
+        { seat: VILLAIN_SEAT, street: 'preflop', action: 'raise', amount: 6 },
         { seat: HERO_SEAT, street: 'preflop', action: 'call' },
-        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 0.4 },
+        { seat: HERO_SEAT, street: 'flop', action: 'bet', amount: 6 },
       ],
     },
   },
@@ -267,6 +284,15 @@ describe('WS-023 — per-seed-anchor match drift CI', () => {
     for (const set of [...current.firingSets, ...current.liveBridge]) {
       expect(set.live).not.toContain(seed04Id);
     }
+  });
+
+  it('the live bridge fires each ACTIVE seed anchor on its canonical line (end-to-end)', () => {
+    const byId = Object.fromEntries(current.liveBridge.map((b) => [b.situation, b]));
+    expect(byId['SEED-01'].live).toContain(EAL_SEED_01_ANCHOR.id);
+    expect(byId['SEED-02'].live).toContain(EAL_SEED_02_ANCHOR.id);
+    expect(byId['SEED-03'].live).toContain(EAL_SEED_03_ANCHOR.id);
+    // SEED-04 matches structurally but is status 'candidate' → study-mode only.
+    expect(byId['SEED-04'].studyMode).toContain(EAL_SEED_04_ANCHOR.id);
   });
 
   it('matches stored baseline (drift signals matcher/selector/bridge change — review before regenerating)', () => {

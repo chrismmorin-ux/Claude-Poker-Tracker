@@ -305,28 +305,44 @@
       "situation": "SEED-01",
       "derivedSituation": {
         "actionHistory": {
-          "flop": {
+          "preflop": {
             "heroAction": {
-              "kind": "bet",
-              "sizing": 0.5
+              "kind": "raise",
+              "sizing": 2
             },
             "villainAction": {
               "kind": "call"
+            }
+          },
+          "flop": {
+            "heroAction": {
+              "kind": "bet",
+              "sizing": 0.5333
+            },
+            "villainAction": {
+              "kind": "call"
+            },
+            "board": {
+              "texture": "monotone"
             }
           },
           "turn": {
             "heroAction": {
               "kind": "bet",
-              "sizing": 0.75
+              "sizing": 0.7419
             },
             "villainAction": {
               "kind": "call"
+            },
+            "board": {
+              "texture": "wet",
+              "scareKind": "none"
             }
           },
           "river": {
             "heroAction": {
               "kind": "bet",
-              "sizing": 1.2
+              "sizing": 1.1948
             },
             "board": {
               "texture": "flush-complete",
@@ -336,13 +352,26 @@
         },
         "villainStyle": "Nit"
       },
-      "live": [],
-      "studyMode": []
+      "live": [
+        "anchor:nit:river:overfold:4flush"
+      ],
+      "studyMode": [
+        "anchor:nit:river:overfold:4flush"
+      ]
     },
     {
       "situation": "SEED-02",
       "derivedSituation": {
         "actionHistory": {
+          "preflop": {
+            "heroAction": {
+              "kind": "call"
+            },
+            "villainAction": {
+              "kind": "raise",
+              "sizing": 2
+            }
+          },
           "flop": {
             "heroAction": {
               "kind": "call"
@@ -350,6 +379,9 @@
             "villainAction": {
               "kind": "bet",
               "sizing": 0.6
+            },
+            "board": {
+              "texture": "dry"
             }
           },
           "turn": {
@@ -358,27 +390,45 @@
             },
             "villainAction": {
               "kind": "check"
+            },
+            "board": {
+              "texture": "dry",
+              "scareKind": "none"
             }
           },
           "river": {
             "villainAction": {
               "kind": "bet",
-              "sizing": 0.72
+              "sizing": 0.7273
             },
             "board": {
-              "texture": "dry"
+              "texture": "medium",
+              "scareKind": "none"
             }
           }
         },
         "villainStyle": "LAG"
       },
-      "live": [],
-      "studyMode": []
+      "live": [
+        "anchor:lag:river:overbluff:turnxx"
+      ],
+      "studyMode": [
+        "anchor:lag:river:overbluff:turnxx"
+      ]
     },
     {
       "situation": "SEED-03",
       "derivedSituation": {
         "actionHistory": {
+          "preflop": {
+            "heroAction": {
+              "kind": "raise",
+              "sizing": 2
+            },
+            "villainAction": {
+              "kind": "call"
+            }
+          },
           "flop": {
             "heroAction": {
               "kind": "bet",
@@ -386,22 +436,30 @@
             },
             "villainAction": {
               "kind": "call"
+            },
+            "board": {
+              "texture": "paired"
             }
           },
           "turn": {
             "heroAction": {
               "kind": "bet",
-              "sizing": 0.7
+              "sizing": 0.697
             },
             "board": {
-              "texture": "paired"
+              "texture": "paired",
+              "scareKind": "overcard"
             }
           }
         },
         "villainStyle": "Fish"
       },
-      "live": [],
-      "studyMode": []
+      "live": [
+        "anchor:fish:turn:overcall:drypaired"
+      ],
+      "studyMode": [
+        "anchor:fish:turn:overcall:drypaired"
+      ]
     },
     {
       "situation": "SEED-04",
@@ -413,7 +471,7 @@
             },
             "villainAction": {
               "kind": "raise",
-              "sizing": 3
+              "sizing": 2
             }
           },
           "flop": {

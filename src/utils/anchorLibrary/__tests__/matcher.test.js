@@ -178,6 +178,26 @@ describe('matchesAnchor — boardCondition', () => {
     delete sit.actionHistory.river.board;
     expect(matchesAnchor(sit, seedNitOverfold())).toBe(false);
   });
+
+  it("matches a step with texture 'any' even when the entry has no board info", () => {
+    // 'any' means "no constraint", not "board info required" — live situations
+    // may lack board data on streets whose cards weren't entered.
+    const sit = matchingNitSituation();
+    delete sit.actionHistory.flop.board; // flop step constraint is texture 'any'
+    expect(matchesAnchor(sit, seedNitOverfold())).toBe(true);
+  });
+
+  it("returns false when scareKind is demanded but the entry has no board info", () => {
+    const anchor = seedNitOverfold();
+    anchor.lineSequence[0] = {
+      street: 'flop',
+      villainAction: { kind: 'call' },
+      boardCondition: { texture: 'any', scareKind: 'none' },
+    };
+    const sit = matchingNitSituation();
+    delete sit.actionHistory.flop.board;
+    expect(matchesAnchor(sit, anchor)).toBe(false);
+  });
 });
 
 // ───────────────────────────────────────────────────────────────────────────
