@@ -72,7 +72,7 @@ export const EAL_SEED_03_ANCHOR = Object.freeze({
   villainId: null,
   claim: {
     predicate: 'callVsTurnDoubleBarrelPaired',
-    operator: '≥',
+    operator: '>=',
     threshold: 0.60,
   },
   evidence: {

@@ -108,7 +108,7 @@ export const EAL_SEED_01_ANCHOR = Object.freeze({
   villainId: null,
   claim: {
     predicate: 'foldToRiverBet',
-    operator: '≥',
+    operator: '>=',
     threshold: 0.60,
   },
   evidence: {

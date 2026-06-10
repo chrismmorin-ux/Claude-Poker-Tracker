@@ -269,7 +269,7 @@ Families (10): `RIVER_SRP_BET`, `RIVER_SRP_VS_BET`, `RIVER_3BP_BET`, `RIVER_3BP_
 
 **First-principles guard (binding).** Archetype IDs are OUTPUTS of classification, never INPUTS to plan computation. Every numeric in these templates is a `{{slot}}` — sizings, equities, and SPR-zone references interpolate from `plan.*` / `equity.*` / `situation.*` at render time. Pot-type, position, and sizing-fraction axes are derived from game state (preflop action history → `potType`; closing action → `inPosition`; bet amount + pot → sizing-fraction → block-bet routing), never asserted from the label.
 
-**River-specific theory binding (POKER_THEORY companion).** At the river, equity per villain combo is binary (cards are deterministic — see memory `feedback_river_equity_is_showdown_outcome.md`). Templates reference `equity.vsRangeParts.{vsValue, vsBluff, vsBluffCatch, vsAir}` for the 4-class strength decomposition vs the public board, NOT a runout-variance metric. Bluff-catching narratives lean on this decomposition + the bluff-to-value ratio implicit in `equity.vsRangeParts`.
+**River-specific theory binding (POKER_THEORY companion).** At the river, equity per villain combo is binary (cards are deterministic — see memory `feedback_river_equity_is_showdown_outcome.md`). Templates reference `equity.vsRangeParts.{vsValue, vsBluff, vsDraw, vsAir}` for the 4-class role decomposition vs the public board (bluff-catchers fold into `vsValue` when villain defends — see `equityVsRangeParts.js` role mapping), NOT a runout-variance metric. Bluff-catching narratives lean on this decomposition + the bluff-to-value ratio implicit in `equity.vsRangeParts`.
 
 ## 5. Worked examples
 

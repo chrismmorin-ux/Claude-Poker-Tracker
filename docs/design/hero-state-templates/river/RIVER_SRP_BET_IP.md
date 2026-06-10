@@ -15,7 +15,7 @@ slotsUsed:
   - handContext.handStrength
   - equity.overall
   - equity.vsRangeParts.vsValue
-  - equity.vsRangeParts.vsBluffCatch
+  - equity.vsRangeParts.vsAir
   - plan.primary.action
   - plan.primary.sizing
   - plan.primary.sizingRationale
@@ -29,7 +29,7 @@ slotsUsed:
 
 ## Body
 
-The river is a sizing-region decision. Our equity is {{equity.overall}} ({{equity.vsRangeParts.vsValue}} vs villain's value combos, {{equity.vsRangeParts.vsBluffCatch}} vs the bluff-catching mass), and that distribution tells us how thin we can bet and which sizing band villain's range pays at. {{plan.primary.action}} {{plan.primary.sizing}} — {{plan.primary.sizingRationale}}.
+The river is a sizing-region decision. Our equity is {{equity.overall}} ({{equity.vsRangeParts.vsValue}} vs villain's value-and-bluff-catch region, {{equity.vsRangeParts.vsAir}} vs the air that folds), and that distribution tells us how thin we can bet and which sizing band villain's range pays at. {{plan.primary.action}} {{plan.primary.sizing}} — {{plan.primary.sizingRationale}}.
 
 A {{handContext.handStrength}} of our class wants the size that villain's worst calling combos still call — a {{handContext.handClass}} typically chooses the middle sizing band where villain's marginal pairs and weak top-pair will hero-call, while stronger value picks the larger size to charge villain's two-pair and better. Range advantage from preflop is already realized; bluff frequency at this node is governed by which blocker combos we hold — we bluff the hands that unblock villain's folds (no top-pair blockers, blocks villain's straights/flushes) and check back the air that blocks the folds we want.
 

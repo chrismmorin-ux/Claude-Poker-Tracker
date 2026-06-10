@@ -189,6 +189,19 @@ describe('buildActionAdvice', () => {
     expect(advice.extraField).toBeUndefined();
   });
 
+  it('preserves top-level flopBreakdown (renderer reads advice.flopBreakdown first)', () => {
+    // Seam guard: useLiveActionAdvisor emits flopBreakdown at the top level
+    // and render-street-card's primary access path is advice.flopBreakdown.
+    // This field was missing from ADVICE_FIELDS — silently blanking the
+    // "Flop Outcome Probabilities" HUD section for all non-squeeze paths
+    // while fixture-injected tests stayed green.
+    const advice = buildActionAdvice({
+      ...fullAdvice,
+      flopBreakdown: [{ archetype: 'top_pair', probability: 0.16 }],
+    });
+    expect(advice.flopBreakdown).toEqual([{ archetype: 'top_pair', probability: 0.16 }]);
+  });
+
   it('returns null for falsy input', () => {
     expect(buildActionAdvice(null)).toBeNull();
     expect(buildActionAdvice(undefined)).toBeNull();

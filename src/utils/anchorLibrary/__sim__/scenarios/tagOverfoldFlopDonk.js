@@ -82,7 +82,7 @@ export const EAL_SEED_04_ANCHOR = Object.freeze({
   villainId: null,
   claim: {
     predicate: 'foldVsFlopDonkWetConnected',
-    operator: '≥',
+    operator: '>=',
     threshold: 0.55,
   },
   evidence: {

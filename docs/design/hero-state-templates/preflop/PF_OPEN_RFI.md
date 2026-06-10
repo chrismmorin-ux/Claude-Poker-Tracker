@@ -13,8 +13,6 @@ slotsUsed:
   - plan.primary.action
   - plan.primary.sizing
   - plan.primary.sizingRationale
-  - plan.rangeConfig.tight.bias
-  - plan.rangeConfig.wide.bias
   - plan.branches[*].trigger
   - plan.branches[*].rationale
 ---

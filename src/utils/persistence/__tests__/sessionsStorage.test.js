@@ -466,6 +466,22 @@ describe('sessionsStorage', () => {
       const session = await getSessionById(sessionId);
       expect(session.userId).toBe('guest');
     });
+
+    it('persists straddle config so it survives a mid-session restart (seam round-trip)', async () => {
+      // CROSS_STREAM_SEAM_CONTRACT_MISMATCH guard: the reducer held straddle
+      // but the IDB record dropped it — HYDRATE_SESSION restored a session
+      // with no straddle, silently corrupting pot math after an app restart.
+      const straddle = { seat: 3, amount: 4 };
+      const sessionId = await createSessionAtomic({ straddle }, 'guest');
+      const session = await getSessionById(sessionId);
+      expect(session.straddle).toEqual(straddle);
+    });
+
+    it('defaults straddle to null when not provided', async () => {
+      const sessionId = await createSessionAtomic({}, 'guest');
+      const session = await getSessionById(sessionId);
+      expect(session.straddle).toBeNull();
+    });
   });
 
   // -------------------------------------------------------------------------

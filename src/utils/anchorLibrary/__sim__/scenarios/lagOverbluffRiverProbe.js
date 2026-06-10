@@ -88,7 +88,7 @@ export const EAL_SEED_02_ANCHOR = Object.freeze({
   villainId: null,
   claim: {
     predicate: 'riverProbeBluffFrequencyAfterTurnXX',
-    operator: '≥',
+    operator: '>=',
     threshold: 0.50,
   },
   evidence: {

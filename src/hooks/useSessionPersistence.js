@@ -149,6 +149,7 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
           goal: currentSession.goal,
           notes: currentSession.notes,
           handCount: currentSession.handCount,
+          straddle: currentSession.straddle ?? null,
         });
         log('Session auto-saved successfully');
       } catch (error) {

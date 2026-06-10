@@ -123,6 +123,13 @@ const ADVICE_FIELDS = [
   'currentStreet', 'potSize', 'villainBet', 'playerStats',
   'bucketEquities',
   'villainRanges', 'multiwayEquity', 'narrowingLog',
+  // Top-level flop outcome probabilities from useLiveActionAdvisor — the
+  // render-street-card "Flop Outcome Probabilities" section reads
+  // advice.flopBreakdown first. Omitting it from this whitelist silently
+  // blanked that HUD section for every non-squeeze advice path (the
+  // recommendations[0].flopBreakdown fallback only exists on preflop
+  // squeeze/call recommendations).
+  'flopBreakdown',
 ];
 
 /**

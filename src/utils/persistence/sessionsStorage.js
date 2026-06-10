@@ -60,6 +60,10 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
       reUp: sessionData.reUp || 0,
       goal: sessionData.goal || null,
       notes: sessionData.notes || null,
+      // Straddle config must survive an app restart WITHIN the session —
+      // HYDRATE_SESSION restores from this record, and pot math downstream
+      // depends on it. (It still never carries across to a NEW session.)
+      straddle: sessionData.straddle || null,
       handCount: 0,
       userId,
       version: '1.4.0'  // Updated version for v7 schema (userId)
@@ -446,6 +450,8 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
       reUp: sessionData.reUp || 0,
       goal: sessionData.goal || null,
       notes: sessionData.notes || null,
+      // Same within-session restart contract as createSession above.
+      straddle: sessionData.straddle || null,
       handCount: 0,
       userId,
       version: '1.4.0'

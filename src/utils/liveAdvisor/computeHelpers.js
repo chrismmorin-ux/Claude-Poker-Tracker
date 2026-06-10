@@ -159,7 +159,10 @@ export const buildPreflopAdvice = async ({
     limperCount: detectedSituation.limperCount || 0,
     callerCount: detectedSituation.callerCount || 0,
     deadMoney: detectedSituation.deadMoney || 0,
-    trapWarning: villainData.traits?.trapsPreflop || false,
+    // trapsPreflop is a detection object — bare truthiness flagged EVERY
+    // profiled villain as a trapper. Warn on confirmed or likely (>0.5) only.
+    trapWarning: villainData.traits?.trapsPreflop?.confirmed === true
+      || (villainData.traits?.trapsPreflop?.posterior ?? 0) > 0.5,
     playersToAct,
     heroSeat,
     villainSeat: targetSeat,
