@@ -1,7 +1,9 @@
 id: "SPR-117"
 title: "Ship WS-214: Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils "
-status: approved
+status: done
 approved_at: "2026-06-10T23:03:40.596Z"
+completed_at: "2026-06-10T23:28:42.713Z"
+completed_by_commit: "a2fb6a6"
 program_focus: "domain-correctness"
 
 goal: |
@@ -21,6 +23,7 @@ items:
     title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-06-10T23:28:42.713Z"
 
 created_at: "2026-06-10T23:03:40.596Z"

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T23:28:07.067Z",
-  "updated_by_event": "ev-1781134087067-ea2f0afcdc58",
+  "updated_at": "2026-06-10T23:28:43.335Z",
+  "updated_by_event": "ev-1781134123335-ac33990e8a3e",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5412,7 +5412,7 @@
     "WS-214": {
       "id": "WS-214",
       "title": "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 12,
       "category": "seam-integrity",
       "effort": "M",
@@ -5672,5 +5672,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781134087067-ea2f0afcdc58"
+  "last_event_log_head": "ev-1781134123335-ac33990e8a3e"
 }

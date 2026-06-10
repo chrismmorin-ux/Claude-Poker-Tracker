@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-10T23:28:07.067Z",
-  "updated_by_event": "ev-1781134087067-ea2f0afcdc58",
+  "updated_at": "2026-06-10T23:28:43.335Z",
+  "updated_by_event": "ev-1781134123335-ac33990e8a3e",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1901,18 +1901,19 @@
     "SPR-117": {
       "id": "SPR-117",
       "title": "Ship WS-214: Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils ",
-      "status": "approved",
+      "status": "done",
       "program_focus": "domain-correctness",
       "created_at": "2026-06-10T23:03:40.596Z",
       "approved_at": "2026-06-10T23:03:40.596Z",
+      "completed_at": "2026-06-10T23:28:42.713Z",
       "goal": "Ship WS-214: Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
       "item_count": 1,
-      "items_done": 0,
+      "items_done": 1,
       "last_anchor_source_classes": [
         "untagged"
       ],
       "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781134087067-ea2f0afcdc58"
+  "last_event_log_head": "ev-1781134123335-ac33990e8a3e"
 }

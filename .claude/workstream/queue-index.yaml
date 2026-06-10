@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 220
+total_items: 221
 by_status:
-  done: 142
+  done: 143
   decomposed: 1
   in_progress: 3
-  backlog: 48
-  deferred: 17
+  backlog: 45
+  deferred: 20
   dismissed: 1
   completed: 7
   review: 1
@@ -42,7 +42,7 @@ by_category:
   ready-to-start: 10
   review-workflow: 1
   rules-invariant: 1
-  seam-integrity: 4
+  seam-integrity: 5
   seat-selection: 2
   self-coach-foundation: 12
   shape-language: 12
@@ -946,15 +946,6 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-223"
-    title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
-    status: backlog
-    priority_score: 27
-    category: seam-integrity
-    effort: S
     program: domain-correctness
     capability: core
 
@@ -2162,7 +2153,7 @@ items:
 
   - id: "WS-214"
     title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"
-    status: backlog
+    status: done
     priority_score: 12
     category: seam-integrity
     effort: M
@@ -2240,5 +2231,14 @@ items:
     category: ux
     effort: M
     program: design
+    capability: core
+
+  - id: "WS-223"
+    title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
+    status: backlog
+    priority_score: 27
+    category: seam-integrity
+    effort: S
+    program: domain-correctness
     capability: core
 
