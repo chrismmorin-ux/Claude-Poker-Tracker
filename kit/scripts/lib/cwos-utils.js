@@ -91,7 +91,10 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
     if (colonIdx === -1) { i++; continue; } // not a key-value line
 
     const key = trimmed.substring(0, colonIdx).trim();
-    const afterColon = trimmed.substring(colonIdx + 1).trim();
+    // WS-213: strip trailing inline comments before branch dispatch so
+    // `key: [a, b]  # note` reaches parseInlineArray with a clean `]` tail
+    // (parseScalar strips again for its own call sites — idempotent).
+    const afterColon = stripInlineComment(trimmed.substring(colonIdx + 1).trim());
 
     // WS-295: detect duplicate keys within the same mapping. Last-wins
     // semantics preserved (the assignment below proceeds); the warning
@@ -216,7 +219,25 @@ function parseInlineArray(text) {
   return inner.split(',').map(s => parseScalar(s.trim()));
 }
 
+function stripInlineComment(text) {
+  // Cut at the first '#' that is preceded by whitespace and not inside a
+  // quoted span (YAML: '#' starts a comment only after whitespace).
+  // Leading-'#' values (i === 0) are deliberately left alone — minimal scope
+  // (WS-213: changing `key: #fff` from string to null is out of scope).
+  let quote = null;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) { if (ch === quote) quote = null; continue; }
+    if (ch === '"' || ch === "'") { quote = ch; continue; }
+    if (ch === '#' && i > 0 && /\s/.test(text[i - 1])) {
+      return text.slice(0, i).trimEnd();
+    }
+  }
+  return text;
+}
+
 function parseScalar(text) {
+  text = stripInlineComment(text);
   if (text === '' || text === 'null' || text === '~') return null;
   if (text === 'true') return true;
   if (text === 'false') return false;
