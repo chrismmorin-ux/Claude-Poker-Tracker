@@ -4,10 +4,10 @@
 
 total_items: 221
 by_status:
-  done: 143
+  done: 145
   decomposed: 1
   in_progress: 3
-  backlog: 45
+  backlog: 43
   deferred: 20
   dismissed: 1
   completed: 7
@@ -2162,7 +2162,7 @@ items:
 
   - id: "WS-215"
     title: "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw"
-    status: backlog
+    status: done
     priority_score: 13
     category: domain-correctness
     effort: M
@@ -2235,7 +2235,7 @@ items:
 
   - id: "WS-223"
     title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
-    status: backlog
+    status: done
     priority_score: 27
     category: seam-integrity
     effort: S

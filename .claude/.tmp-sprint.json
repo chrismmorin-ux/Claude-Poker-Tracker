@@ -1,14 +1,28 @@
 {
-  "composed_at": "2026-06-10T23:03:40.457Z",
-  "goal": "Ship WS-214: Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
+  "composed_at": "2026-06-11T02:50:03.017Z",
+  "goal": "Ship WS-223: Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-214",
-      "title": "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures",
-      "raw_score": 12,
-      "adjusted_score": 12,
+      "id": "WS-223",
+      "title": "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output",
+      "raw_score": 27,
+      "adjusted_score": 27,
+      "effort": "S",
+      "program": "domain-correctness",
+      "source_class": "untagged",
+      "blocked_by_note": null,
+      "soft_block_factor": 1,
+      "source_damping": 1,
+      "mode": "plan-first",
+      "queue_item_known": true
+    },
+    {
+      "id": "WS-215",
+      "title": "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw",
+      "raw_score": 13,
+      "adjusted_score": 13,
       "effort": "M",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -24,10 +38,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-214 selected (12 × no damping = 12).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-223 selected (27 × no damping = 27).\nCap usage: 2 session(s) / 2 (5 items max).",
   "cap_used": {
-    "items": 1,
-    "effort_sessions": 1.5,
+    "items": 2,
+    "effort_sessions": 2,
     "ceremony": "standard"
   }
 }

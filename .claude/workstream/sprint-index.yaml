@@ -1063,3 +1063,12 @@ sprints:
     created_at: "2026-06-10T23:03:40.596Z"
     completed_at: "2026-06-10T23:28:42.713Z"
 
+  - id: "SPR-118"
+    title: "Ship WS-223: Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on re"
+    status: done
+    item_count: 2
+    items_done: 2
+    program_focus: "domain-correctness"
+    created_at: "2026-06-11T02:51:05.222Z"
+    completed_at: "2026-06-11T03:23:18.364Z"
+

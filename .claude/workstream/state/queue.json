@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-10T23:28:43.335Z",
-  "updated_by_event": "ev-1781134123335-ac33990e8a3e",
+  "updated_at": "2026-06-11T03:23:20.107Z",
+  "updated_by_event": "ev-1781148200107-430881543408",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5441,7 +5441,7 @@
     "WS-215": {
       "id": "WS-215",
       "title": "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 13,
       "category": "domain-correctness",
       "effort": "M",
@@ -5649,7 +5649,7 @@
     "WS-223": {
       "id": "WS-223",
       "title": "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 27,
       "category": "seam-integrity",
       "effort": "S",
@@ -5672,5 +5672,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781134123335-ac33990e8a3e"
+  "last_event_log_head": "ev-1781148200107-430881543408"
 }

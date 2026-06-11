@@ -1,0 +1,35 @@
+id: "SPR-118"
+title: "Ship WS-223: Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on re"
+status: done
+approved_at: "2026-06-11T02:51:05.222Z"
+completed_at: "2026-06-11T03:23:18.364Z"
+completed_by_commit: "35dc234"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-223: Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-11T02:51:05.222Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-223 selected (27 × no damping = 27).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-223"
+    title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-06-11T03:23:18.364Z"
+  - id: "WS-215"
+    title: "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-11T03:23:18.364Z"
+
+created_at: "2026-06-11T02:51:05.222Z"

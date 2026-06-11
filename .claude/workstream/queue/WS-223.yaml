@@ -1,10 +1,11 @@
 id: "WS-223"
 title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "35dc234"
 priority_score: 27.0
 priority_label: "P1"
 category: "seam-integrity"
@@ -51,3 +52,4 @@ source:
   created_by: ai-during-sprint
   origin: "WS-214 seam-test authoring, SPR-117 (2026-06-10)"
 created_at: "2026-06-10"
+closed_by_event: "ev-1781148198403-e4db38e3fa75"
