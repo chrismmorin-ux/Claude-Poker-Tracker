@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1781198657644-30cb6aa2730a"
-generated_content_hash: "eeb169cebfe2e110c3b6f6afdc2f89f3c737cb9fd6de0fd9e928ff37b1baf087"
-generated_at: "2026-06-11T17:24:17.669Z"
+generated_from_event: "ev-1781207119591-c0af740edc0f"
+generated_content_hash: "3aafd843528bf49402359eea0552b4bdaa3be4be5fc982677dc25ff6ecbe7aff"
+generated_at: "2026-06-11T19:45:19.614Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl"]
-event_count: 312
+event_count: 327
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 200
-- Events recorded: 312
+- Commands recorded: 204
+- Events recorded: 327
 - Source chunks: 3
 
 ## Command `auto:42416:1781030643103`
@@ -2129,3 +2129,54 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-06-11T17:24:17.644Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |
+
+## Command `cmd-sprintapprove-mq9ua12je5ab4359ff4f`
+
+- Start: 2026-06-11T18:36:42.862Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T18:36:42.862Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-121", +8 more |
+
+## Command `cmd-itemcreated-mq9wnp8621bc5fc74162`
+
+- Start: 2026-06-11T19:43:19.929Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T19:43:19.929Z | T6:workstream | C:/Program Files/Git/next | item="WS-224", title="Capture raw WS frame dump to "..., +4 more |
+
+## Command `cmd-itemclosed-mq9wok5q8034cdd56220`
+
+- Start: 2026-06-11T19:44:00.017Z
+- Events: 12
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T19:44:00.017Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-217", +3 more |
+| 2 | 2026-06-11T19:44:00.128Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-121", +4 more |
+| 3 | 2026-06-11T19:44:00.589Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-06-11T19:44:00.607Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-06-11T19:44:00.615Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 6 | 2026-06-11T19:44:00.622Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 7 | 2026-06-11T19:44:00.633Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 8 | 2026-06-11T19:44:00.641Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 9 | 2026-06-11T19:44:00.650Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 10 | 2026-06-11T19:44:00.658Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 11 | 2026-06-11T19:44:00.680Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 12 | 2026-06-11T19:44:00.763Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mq9wq9k464b372389249`
+
+- Start: 2026-06-11T19:45:19.591Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T19:45:19.591Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |

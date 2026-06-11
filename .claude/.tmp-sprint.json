@@ -1,12 +1,12 @@
 {
-  "composed_at": "2026-06-11T15:42:23.520Z",
-  "goal": "Ship WS-216: Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)",
+  "composed_at": "2026-06-11T18:36:42.716Z",
+  "goal": "Ship WS-217: Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type",
   "program_focus": "engineering",
   "override_class": null,
   "items": [
     {
-      "id": "WS-216",
-      "title": "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)",
+      "id": "WS-217",
+      "title": "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type",
       "raw_score": 10,
       "adjusted_score": 10,
       "effort": "M",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-216 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-217 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

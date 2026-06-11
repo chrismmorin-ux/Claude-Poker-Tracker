@@ -1,0 +1,29 @@
+id: "SPR-121"
+title: "Ship WS-217: Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fi"
+status: done
+approved_at: "2026-06-11T18:36:42.844Z"
+completed_at: "2026-06-11T19:43:59.995Z"
+completed_by_commit: "000f4a5"
+program_focus: "engineering"
+
+goal: |
+  Ship WS-217: Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-11T18:36:42.844Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-217 selected (10 × no damping = 10).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-217"
+    title: "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-11T19:43:59.995Z"
+
+created_at: "2026-06-11T18:36:42.844Z"

@@ -2,9 +2,9 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 221
+total_items: 222
 by_status:
-  done: 147
+  done: 148
   decomposed: 1
   in_progress: 3
   backlog: 41
@@ -42,7 +42,7 @@ by_category:
   ready-to-start: 10
   review-workflow: 1
   rules-invariant: 1
-  seam-integrity: 5
+  seam-integrity: 6
   seat-selection: 2
   self-coach-foundation: 12
   shape-language: 12
@@ -2181,7 +2181,7 @@ items:
 
   - id: "WS-217"
     title: "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type"
-    status: backlog
+    status: done
     priority_score: 10
     category: seam-integrity
     effort: M
@@ -2240,5 +2240,14 @@ items:
     category: seam-integrity
     effort: S
     program: domain-correctness
+    capability: core
+
+  - id: "WS-224"
+    title: "Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture"
+    status: backlog
+    priority_score: 6
+    category: seam-integrity
+    effort: S
+    program: engineering
     capability: core
 
