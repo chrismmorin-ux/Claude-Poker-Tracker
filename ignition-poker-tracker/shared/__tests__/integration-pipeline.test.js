@@ -83,7 +83,7 @@ const sampleAdvice = {
   villainSampleSize: 35,
   heroAlreadyActed: false,
   confidence: 0.85,
-  dataQuality: 'good',
+  dataQuality: { sampleSize: 35, tier: 'established', confidenceNote: 'Solid read (35 hands)' },
   situation: 'facing_cbet',
   situationLabel: 'Facing C-Bet on Wet Board',
   heroEquity: 0.52,

@@ -167,7 +167,7 @@ describe('buildActionAdvice', () => {
     villainSampleSize: 50,
     heroAlreadyActed: false,
     confidence: 0.8,
-    dataQuality: 'good',
+    dataQuality: { sampleSize: 50, tier: 'established', confidenceNote: 'Solid read (50 hands)' },
     situation: 'facing_cbet',
     situationLabel: 'Facing C-Bet',
     heroEquity: 0.45,

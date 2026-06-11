@@ -646,7 +646,13 @@ export class HandStateMachine {
       dealerSeat: this.dealerSeat,
       pot: this.pot,
       foldedSeats: [...this.foldedSeats],
-      activeSeatNumbers: [...this.activeSeats],
+      // Wire contract (STP-1 R-10.1): activeSeatNumbers means "still
+      // contesting the pot" — disjoint from foldedSeats. Internally
+      // this.activeSeats keeps dealt-in semantics (folded ⊆ active is the
+      // corruption check at _verifyIntegrity); the subtraction happens only
+      // at this boundary. Without it the SW validation gate drops every
+      // live-context push from the first fold onward (WS-217 seam finding).
+      activeSeatNumbers: [...this.activeSeats].filter((s) => !this.foldedSeats.has(s)),
       actionSequence: this.actionSequence.map(a => ({ ...a })),
       blinds: { ...this.blinds },
       ante: this.ante,

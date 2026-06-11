@@ -44,7 +44,14 @@ export const msgAdvice = (adv) => ({
     villainSampleSize: adv.villainSampleSize ?? 45,
     heroAlreadyActed: adv.heroAlreadyActed ?? false,
     confidence: adv.confidence ?? 0.8,
-    dataQuality: adv.dataQuality || 'good',
+    // Producer shape (useLiveActionAdvisor): OBJECT, never a string — a
+    // string default here let dataQuality.tier readers crash in production
+    // while tests passed (WS-217).
+    dataQuality: adv.dataQuality || {
+      sampleSize: 45, // matches villainSampleSize default
+      tier: 'established', // getQualityTier(45)
+      confidenceNote: 'Solid read (45 hands)',
+    },
     situation: adv.situation || 'facing_bet',
     situationLabel: adv.situationLabel || 'Facing Bet',
     heroEquity: adv.heroEquity ?? 0.55,
