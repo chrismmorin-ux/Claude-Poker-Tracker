@@ -25,7 +25,7 @@
  *   - Honesty check passes per underlying scenarioRunner.
  */
 
-import { validateAnchor } from '../validateAnchor';
+import { validateAnchorFull } from '../validateAnchor';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Public API
@@ -58,7 +58,10 @@ export const runAnchorScenario = (scenario) => {
   const tolerance = scenario.tolerance ?? 0.05;
 
   // ─── Assertion 1: Schema integrity ──────────────────────────────────────
-  const schemaResult = validateAnchor(scenario.anchor);
+  // WS-218: Tier-1 scenarios gate on the FULL inherited contract — base
+  // VillainAssumption v1.1 (with the anchor-owned predicate registry) plus
+  // the EAL extension. Previously only the extension was validated.
+  const schemaResult = validateAnchorFull(scenario.anchor);
   if (!schemaResult.ok) {
     return buildResult({
       name,

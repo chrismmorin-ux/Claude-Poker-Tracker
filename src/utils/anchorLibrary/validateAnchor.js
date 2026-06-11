@@ -24,6 +24,9 @@
  * Pure module — no IO.
  */
 
+import { validateAssumption } from '../assumptionEngine/validator';
+import { ANCHOR_PREDICATE_KEYS, DEPRECATED_ANCHOR_PREDICATES } from './anchorPredicates';
+
 // ───────────────────────────────────────────────────────────────────────────
 // Version constants
 // ───────────────────────────────────────────────────────────────────────────
@@ -194,16 +197,14 @@ const validateOrigin = (origin) => {
  * Note: this validator does NOT re-validate inherited v1.1 VillainAssumption fields.
  * Those are validated by the `assumptionEngine/validator.js` inheritance contract.
  * Per `gate4-p3-decisions.md` §1 rule 4, a consumer that wants full-record validation
- * must invoke both validators:
- *
- *   const baseResult = validateAssumption(anchor); // from assumptionEngine
- *   const extResult = validateAnchor(anchor);       // from this module
- *
- * If either returns `{ ok: false }`, the record is not usable.
+ * should call `validateAnchorFull(anchor)` (below), which composes both validators —
+ * base validation runs with the anchor-owned predicate registry
+ * (`anchorPredicates.js`) and the compound-semver accommodation (this module
+ * already checks baseVersion against SUPPORTED_BASE_VERSIONS, so the base
+ * validator's strict-equality version check is skipped).
  *
  * Rationale: separation of concerns. This module owns the EAL extension; it does not
- * own the inherited schema. Combining them here would duplicate exploit-deviation's
- * validator maintenance.
+ * own the inherited schema. `validateAnchorFull` composes, it does not duplicate.
  *
  * @param {unknown} anchor
  * @returns {{ok: boolean, errors: string[]}}
@@ -276,6 +277,41 @@ export const validateAnchor = (anchor) => {
   }
 
   return ok(errors);
+};
+
+// ───────────────────────────────────────────────────────────────────────────
+// validateAnchorFull — the two-validator inheritance composition (WS-218)
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * Full-record ExploitAnchor validation: inherited VillainAssumption v1.1 base
+ * contract PLUS the EAL extension. This is the wiring of gate4-p3-decisions §1
+ * rule 4 — previously documented in the JSDoc above but never invoked anywhere.
+ *
+ * Base validation runs with:
+ *   - `additionalPredicates`: the anchor-owned registry (+ deprecated entries),
+ *     so anchor-authored predicates that the producer does not emit pass
+ *     validateClaim without joining PREDICATE_KEYS (WS-218 decision).
+ *   - `skipSchemaVersion`: the compound `<base>-anchor-v<ext>` version is
+ *     validated HERE (baseVersion ∈ SUPPORTED_BASE_VERSIONS); the base
+ *     validator's strict equality against the plain base version would
+ *     otherwise reject every anchor.
+ *
+ * Base-contract errors are prefixed `base:` for traceability.
+ *
+ * @param {unknown} anchor
+ * @returns {{ok: boolean, errors: string[]}}
+ */
+export const validateAnchorFull = (anchor) => {
+  const extResult = validateAnchor(anchor);
+  const baseResult = validateAssumption(anchor, {
+    additionalPredicates: [...ANCHOR_PREDICATE_KEYS, ...DEPRECATED_ANCHOR_PREDICATES],
+    skipSchemaVersion: true,
+  });
+  return ok([
+    ...baseResult.errors.map((e) => `base: ${e}`),
+    ...extResult.errors,
+  ]);
 };
 
 // ───────────────────────────────────────────────────────────────────────────

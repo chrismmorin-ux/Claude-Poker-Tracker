@@ -22,12 +22,13 @@
 
 import { ANCHOR_SCHEMA_VERSION } from '../../validateAnchor';
 import { TAG_OFFSCRIPT_VALUE_READ } from '../syntheticVillains';
+import { buildSeedQuality } from '../seedQuality';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Anchor under test — EAL-SEED-04 (candidate)
 // ───────────────────────────────────────────────────────────────────────────
 
-export const EAL_SEED_04_ANCHOR = Object.freeze({
+const SEED_04_BASE = {
   schemaVersion: ANCHOR_SCHEMA_VERSION,
   archetypeName: 'TAG Over-Fold to Flop Donk on Wet Connected Board',
   polarity: 'overfold',
@@ -77,37 +78,110 @@ export const EAL_SEED_04_ANCHOR = Object.freeze({
   // is checked at the surface layer — not here in schema validation.
   status: 'candidate',
 
-  // Inherited v1.1 fields
+  // Inherited v1.1 fields (full conformance per WS-218; transcribed from
+  // seed-anchor markdown §1-§8)
   id: 'anchor:tag:flop:overfold:donk-wet',
-  villainId: null,
+  // Template anchor: pooled per-style claim (markdown §2).
+  villainId: 'population:TAG',
   claim: {
     predicate: 'foldVsFlopDonkWetConnected',
     operator: '>=',
     threshold: 0.55,
+    // markdown §1 scope predicates
+    scope: {
+      street: 'flop',
+      position: 'OOP',
+      texture: 'wet',
+      sprRange: [8, 15],
+      betSizeRange: [0.33, 0.50],
+      playersToAct: 0,
+      heroLineType: 'donk',
+      activationFrequency: 0.008,
+    },
   },
   evidence: {
-    sampleSize: null,
-    observationCount: null,
+    sampleSize: 0,
+    observationCount: 0,
     pointEstimate: 0.64,
     credibleInterval: { lower: 0.48, upper: 0.78, level: 0.95 },
     prior: { type: 'style', alpha: 11, beta: 13 },
     // INTENTIONAL: below v1.1 §7.1 ≥0.80 gate — forces sub-threshold status
     posteriorConfidence: 0.78,
+    lastUpdated: '2026-04-24T12:00:00Z',
     decayHalfLife: 30,
+  },
+  // markdown: all subscores pending at authoring.
+  stability: {
+    acrossSessions: null,
+    acrossTextures: null,
+    acrossStackDepths: null,
+    acrossStreetContext: null,
+    compositeScore: null,
+    nonNullSubscoreCount: 0,
+  },
+  // markdown §1 recognizability
+  recognizability: {
+    triggerDescription: 'style=TAG + wet-connected board + hero donked + small sizing + HU',
+    conditionsCount: 5,
+    heroCognitiveLoad: 'medium',
+    score: 0.65,
   },
   consequence: {
     deviationId: 'donkBluffVsTagWetConnected',
-    deviationType: 'line-shift',
+    // markdown §6 says "sizing-shift" — the previous 'line-shift' value was
+    // code drift outside the DEVIATION_TYPES enum, caught by WS-218 wiring.
+    deviationType: 'sizing-shift',
     expectedDividend: { mean: 0.58, sd: 0.22, sharpe: 2.6, unit: 'bb per 100 trigger firings' },
     affectedHands: "hero's donking range: paired low cards, open-enders, gutshots with equity",
   },
+  // markdown §6 counterExploit (asymmetricPayoff ≈ 0.00 — fails gate by design;
+  // this seed exercises the schema at its failing-gate edge)
+  counterExploit: {
+    resistanceScore: 0.55,
+    resistanceConfidence: 0.45,
+    resistanceSources: [
+      { factor: 'style-conditioned', weight: 0.6, contribution: 0.33, observationCount: 0 },
+      { factor: 'adaptationHistory', weight: 0.4, contribution: 0.22, observationCount: 0 },
+    ],
+    adjustmentCost: 0.35,
+    asymmetricPayoff: 0.0,
+  },
   operator: {
     target: 'villain',
+    // markdown §6 operator nodeSelector
+    nodeSelector: {
+      street: 'flop',
+      texture: 'wet',
+      villainStyle: 'TAG',
+      heroLineType: 'donk',
+      heroPosition: 'OOP',
+      betSize: [0.33, 0.50],
+    },
     transform: { actionDistributionDelta: { fold: 0.16, call: -0.14, raise: -0.02 } },
     dialCurve: 'sigmoid(k=8, floor=0.3, ceiling=0.9)',
     currentDial: 0.55,
+    dialFloor: 0.3,
+    dialCeiling: 0.9,
     suppresses: [],
   },
+  // markdown §8 narrative
+  narrative: {
+    humanStatement: 'TAGs fold to wet-connected-flop donks from OOP at ~64% (CI [48%, 78%]), vs ~32% GTO-balanced; Phase 1 anchor is SUB-ACTIONABLE (confidence 0.78 < 0.80 gate)',
+    citationShort: 'TAG donk-fold 64% wet (CANDIDATE, under-confident)',
+    citationLong: 'Observed TAG fold rate to small flop donks on wet connected boards is elevated ~32pp over the GTO-calibrated rate of 32%. The edge is large if real, but rests almost entirely on a perception-primitive claim (PP-04, TAGs read off-script aggression as value-indicating) that has not been empirically validated. The Phase 1 sample is insufficient to pass confidence gate (posterior 0.78 < 0.80); counter-exploit cost is high because TAGs adapt quickly. Net asymmetric payoff after resistance ≈ 0.00 bb. Anchor ships in Phase 1 as CANDIDATE status — non-firing — to exercise the schema at its failing-gate edge. Either data promotes it in Phase 2 or it retires without firing.',
+    teachingPattern: 'Caveat: the claim that TAGs overfold donks is lightly-evidenced. If you’re going to exploit it, track fold rates yourself and promote to active when your personal data supports it.',
+    analogAnchor: 'a theoretical exploit that exists in pattern-recognition but hasn’t been confirmed in the wild',
+    concept: 'POKER_THEORY.md §5.6 (fold equity) — with caveat on sample size',
+  },
+  // v1.1 §1.11 calibration tracking — no Tier 1 or Tier 2 validation at authoring.
+  validation: { tier1: null, tier2: null },
+};
+
+export const EAL_SEED_04_ANCHOR = Object.freeze({
+  ...SEED_04_BASE,
+  // §1.10 quality derived via the engine's own gate evaluator (seedQuality.js);
+  // honestly fails the confidence gate (0.78 < 0.80) — candidate status consistent.
+  quality: buildSeedQuality(SEED_04_BASE),
 });
 
 // ───────────────────────────────────────────────────────────────────────────

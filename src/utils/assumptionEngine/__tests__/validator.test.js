@@ -55,6 +55,53 @@ describe('validateAssumption (canonical fixture)', () => {
   });
 });
 
+describe('inheritance options (WS-218 — anchor-library two-validator wiring)', () => {
+  it('additionalPredicates admits an extension-registry predicate', () => {
+    const a = canonicalAssumption();
+    a.claim.predicate = 'riverProbeBluffFrequencyAfterTurnXX';
+    expect(validateAssumption(a).ok).toBe(false); // default: not in PREDICATE_KEYS
+    expect(validateAssumption(a, {
+      additionalPredicates: ['riverProbeBluffFrequencyAfterTurnXX'],
+    }).ok).toBe(true);
+  });
+
+  it('additionalPredicates does not weaken the membership check for other predicates', () => {
+    const a = canonicalAssumption();
+    a.claim.predicate = 'someMadeUpPredicate';
+    const result = validateAssumption(a, {
+      additionalPredicates: ['riverProbeBluffFrequencyAfterTurnXX'],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes('claim.predicate'))).toBe(true);
+  });
+
+  it('validateClaim threads additionalPredicates directly', () => {
+    const claim = canonicalAssumption().claim;
+    claim.predicate = 'callVsTurnDoubleBarrelPaired';
+    expect(validateClaim(claim).ok).toBe(false);
+    expect(validateClaim(claim, { additionalPredicates: ['callVsTurnDoubleBarrelPaired'] }).ok).toBe(true);
+  });
+
+  it('skipSchemaVersion bypasses ONLY the version equality (compound semver delegation)', () => {
+    const a = canonicalAssumption();
+    a.schemaVersion = '1.1-anchor-v1.0'; // compound — validated by validateAnchor externally
+    expect(validateAssumption(a).ok).toBe(false);
+    expect(validateAssumption(a, { skipSchemaVersion: true }).ok).toBe(true);
+    // Everything else still enforced under the option:
+    const broken = canonicalAssumption();
+    broken.schemaVersion = '1.1-anchor-v1.0';
+    delete broken.quality;
+    expect(validateAssumption(broken, { skipSchemaVersion: true }).ok).toBe(false);
+  });
+
+  it('default behavior is unchanged when options omitted (regression pin)', () => {
+    const a = canonicalAssumption();
+    expect(validateAssumption(a).ok).toBe(true);
+    a.schemaVersion = '1.1-anchor-v1.0';
+    expect(validateAssumption(a).ok).toBe(false); // strict equality still the default
+  });
+});
+
 describe('validateScope', () => {
   const validScope = () => canonicalAssumption().claim.scope;
 

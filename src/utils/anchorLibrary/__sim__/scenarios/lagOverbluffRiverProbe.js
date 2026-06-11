@@ -17,12 +17,13 @@
 
 import { ANCHOR_SCHEMA_VERSION } from '../../validateAnchor';
 import { LAG_TURN_XX_OVERBLUFF } from '../syntheticVillains';
+import { buildSeedQuality } from '../seedQuality';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Anchor under test — EAL-SEED-02
 // ───────────────────────────────────────────────────────────────────────────
 
-export const EAL_SEED_02_ANCHOR = Object.freeze({
+const SEED_02_BASE = {
   // ─── EAL extension fields ───────────────────────────────────────────────
   schemaVersion: ANCHOR_SCHEMA_VERSION,
   archetypeName: 'LAG Over-Bluff to River Probe After Turn Check-Check',
@@ -83,22 +84,52 @@ export const EAL_SEED_02_ANCHOR = Object.freeze({
 
   status: 'active', // drill-only ship; actionableLive gated at surface layer
 
-  // ─── Inherited v1.1 fields (validated by assumptionEngine/validator) ─────
+  // ─── Inherited v1.1 fields (full conformance per WS-218; transcribed from
+  // seed-anchor markdown §1-§8) ─────────────────────────────────────────────
   id: 'anchor:lag:river:overbluff:turnxx',
-  villainId: null,
+  // Template anchor: pooled per-style claim (markdown §2).
+  villainId: 'population:LAG',
   claim: {
     predicate: 'riverProbeBluffFrequencyAfterTurnXX',
     operator: '>=',
     threshold: 0.50,
+    // markdown §1 scope predicates
+    scope: {
+      street: 'river',
+      position: 'any',
+      texture: 'any',
+      sprRange: [3, 8],
+      betSizeRange: [0.66, 0.80],
+      playersToAct: 0,
+      heroLineType: 'any',
+      activationFrequency: 0.035,
+    },
   },
   evidence: {
-    sampleSize: null,
-    observationCount: null,
+    sampleSize: 0,
+    observationCount: 0,
     pointEstimate: 0.62,
     credibleInterval: { lower: 0.48, upper: 0.74, level: 0.95 },
     prior: { type: 'style', alpha: 12, beta: 14 },
     posteriorConfidence: 0.87,
+    lastUpdated: '2026-04-24T12:00:00Z',
     decayHalfLife: 30,
+  },
+  // All subscores pending at authoring (markdown gate checks).
+  stability: {
+    acrossSessions: null,
+    acrossTextures: null,
+    acrossStackDepths: null,
+    acrossStreetContext: null,
+    compositeScore: null,
+    nonNullSubscoreCount: 0,
+  },
+  // markdown §1 recognizability
+  recognizability: {
+    triggerDescription: 'style=LAG + flop hero-call + turn check-check + river villain-bet',
+    conditionsCount: 4,
+    heroCognitiveLoad: 'low',
+    score: 0.88,
   },
   consequence: {
     deviationId: 'bluffCatchLagRiverProbe',
@@ -106,13 +137,56 @@ export const EAL_SEED_02_ANCHOR = Object.freeze({
     expectedDividend: { mean: 0.42, sd: 0.19, sharpe: 2.2, unit: 'bb per 100 trigger firings' },
     affectedHands: 'hero bluff-catcher range: middle pair, weak top pair, pocket pairs below top pair',
   },
+  // markdown §6 counterExploit (asymmetricPayoff 0.18 is honestly sub-gate —
+  // markdown ships this anchor drill/review-only pending narrowed scope)
+  counterExploit: {
+    resistanceScore: 0.68,
+    resistanceConfidence: 0.55,
+    resistanceSources: [
+      { factor: 'style-conditioned', weight: 0.5, contribution: 0.40, observationCount: 0 },
+      { factor: 'adaptationHistory', weight: 0.3, contribution: 0.16, observationCount: 0 },
+      { factor: 'session-length', weight: 0.2, contribution: 0.12, observationCount: 0 },
+    ],
+    adjustmentCost: 0.22,
+    asymmetricPayoff: 0.18,
+  },
   operator: {
     target: 'villain',
-    transform: { actionDistributionDelta: { bet: 0.15, check: -0.15 } },
+    // markdown §6 operator nodeSelector
+    nodeSelector: {
+      street: 'river',
+      villainStyle: 'LAG',
+      villainAction: 'bet',
+      precedingStreetSequence: ['flop:heroCall', 'turn:checkCheck'],
+      betSize: [0.66, 0.80],
+    },
+    transform: {
+      actionDistributionDelta: { bet: 0.15, check: -0.15 },
+      rangeShift: { include: 'bluff combos (missed draws, 3-to-straight no-pair)' },
+    },
     dialCurve: 'sigmoid(k=8, floor=0.3, ceiling=0.9)',
     currentDial: 0.68,
+    dialFloor: 0.3,
+    dialCeiling: 0.9,
     suppresses: [],
   },
+  // markdown §8 narrative
+  narrative: {
+    humanStatement: 'LAGs probe the river after turn check-check 58% of the time, with ~62% of those probes being bluffs vs ~43% GTO-balanced',
+    citationShort: 'LAG turn-xx-probe bluffs 62% (CI [48%, 74%])',
+    citationLong: 'When facing a LAG-classified villain on a river where hero flat-called the flop, turn checked through both ways, and villain now bets 66-80% pot, observed bluff frequency is ~62% — substantially above the 43% GTO-balanced rate. Primary drivers: LAG misreads turn check-check as mutual capping (PP-02) and doesn’t integrate hero’s prior-street range forward (PP-05), together inflating their perceived fold equity. Hero’s bluff-catchers are significantly wider-than-GTO profitable calls. Note: asymmetric payoff currently sub-live-threshold; anchor fires in drill and post-session review only pending narrowed scope or more data.',
+    teachingPattern: 'LAG in the line, turn went check-check, river villain bets 3/4 pot? Call with any pair or decent blocker.',
+    analogAnchor: 'the aggressive reg who thinks every check means weakness',
+    concept: 'POKER_THEORY.md §5.5 (bluff catching math) + §3.5 (range advantage)',
+  },
+  // v1.1 §1.11 calibration tracking — no Tier 1 or Tier 2 validation at authoring.
+  validation: { tier1: null, tier2: null },
+};
+
+export const EAL_SEED_02_ANCHOR = Object.freeze({
+  ...SEED_02_BASE,
+  // §1.10 quality derived via the engine's own gate evaluator (seedQuality.js).
+  quality: buildSeedQuality(SEED_02_BASE),
 });
 
 // ───────────────────────────────────────────────────────────────────────────

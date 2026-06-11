@@ -13,31 +13,29 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import { runAnchorScenario, runAnchorScenarioSuite } from '../__sim__/anchorScenarioRunner';
-import { ANCHOR_SCHEMA_VERSION } from '../validateAnchor';
+import { EAL_SEED_01_ANCHOR } from '../__sim__/scenarios/nitOverfoldRiver4flush';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Fixture helpers
 // ───────────────────────────────────────────────────────────────────────────
 
+// WS-218: the runner now gates on the FULL inherited contract
+// (validateAnchorFull), so the fixture must be a full-contract anchor.
+// Base it on the real SEED-01 record (kept conformant by claimContractSeam)
+// with test-specific overrides — mirrors the real producer contract instead
+// of a hand-typed extension-only shape.
 const validAnchor = () => ({
-  schemaVersion: ANCHOR_SCHEMA_VERSION,
+  ...EAL_SEED_01_ANCHOR,
   archetypeName: 'Test Anchor for Runner',
-  polarity: 'overfold',
-  tier: 2,
   lineSequence: [{ street: 'river' }],
-  perceptionPrimitiveIds: ['PP-01'],
   gtoBaseline: {
     method: 'MDF',
     // For a pot-sized bet (bet/pot = 1.0): fold-rate-at-MDF = bet / (pot + bet) = 0.5
     referenceRate: 0.5,
     referenceEv: 0.0,
   },
-  evDecomposition: { statAttributable: 0.35, perceptionAttributable: 0.65 },
-  retirementCondition: { method: 'credible-interval-overlap', params: { level: 0.95 } },
-  origin: { source: 'ai-authored', authoredAt: '2026-04-24T00:00:00Z' },
-  // Consequence stub — the real predicate scenario would compute dividend;
-  // the runner delegates to injected runPredicateScenario for this layer.
   consequence: {
+    ...EAL_SEED_01_ANCHOR.consequence,
     expectedDividend: { mean: 0.6, sd: 0.14, sharpe: 4.3, unit: 'bb per 100 trigger firings' },
   },
 });

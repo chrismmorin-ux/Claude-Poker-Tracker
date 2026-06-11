@@ -414,11 +414,23 @@ export const validateQuality = (q) => {
 // §1 AssumptionClaim
 // ───────────────────────────────────────────────────────────────────────────
 
-export const validateClaim = (claim) => {
+/**
+ * @param {Object} claim
+ * @param {Object} [options]
+ * @param {string[]} [options.additionalPredicates] - Extra legal predicate keys
+ *   beyond PREDICATE_KEYS. Inheritance hook: extension schemas (e.g. the anchor
+ *   library's ANCHOR_PREDICATE_KEYS) pass their own registry so inherited
+ *   base-contract validation accepts extension-owned predicates without
+ *   polluting the producer-predicate enum. Default: none.
+ */
+export const validateClaim = (claim, options = {}) => {
   const errors = [];
   if (!isPlainObject(claim)) return fail('claim: must be a plain object');
 
-  if (!PREDICATE_KEYS.includes(claim.predicate) && !DEPRECATED_PREDICATES.includes(claim.predicate)) {
+  const additional = Array.isArray(options.additionalPredicates) ? options.additionalPredicates : [];
+  if (!PREDICATE_KEYS.includes(claim.predicate)
+      && !DEPRECATED_PREDICATES.includes(claim.predicate)
+      && !additional.includes(claim.predicate)) {
     errors.push(`claim.predicate: must be one of ${PREDICATE_KEYS.join(', ')} (or a deprecated key for legacy records)`);
   }
   if (!CLAIM_OPERATORS.includes(claim.operator)) {
@@ -442,12 +454,23 @@ export const validateClaim = (claim) => {
 // Full VillainAssumption
 // ───────────────────────────────────────────────────────────────────────────
 
-export const validateAssumption = (a) => {
+/**
+ * @param {Object} a - VillainAssumption (or an extension record inheriting it)
+ * @param {Object} [options]
+ * @param {string[]} [options.additionalPredicates] - Threaded to validateClaim.
+ * @param {boolean} [options.skipSchemaVersion] - Bypass the strict base-version
+ *   equality check. ONLY for inheritance callers whose compound schemaVersion
+ *   was already validated externally (per gate4-p3-decisions §1: anchorLibrary's
+ *   validateAnchor parses `<base>-anchor-v<ext>` and checks baseVersion against
+ *   the supported list before delegating here). Default: false — plain
+ *   assumptions always face the strict check.
+ */
+export const validateAssumption = (a, options = {}) => {
   const errors = [];
   if (!isPlainObject(a)) return fail('assumption: must be a plain object');
 
   if (!isStringOfLen(a.id)) errors.push('assumption.id: non-empty string');
-  if (a.schemaVersion !== SCHEMA_VERSION) {
+  if (options.skipSchemaVersion !== true && a.schemaVersion !== SCHEMA_VERSION) {
     errors.push(`assumption.schemaVersion: must be ${SCHEMA_VERSION} (got ${a.schemaVersion}) — run migrations first`);
   }
   if (!isStringOfLen(a.villainId) && a.villainId !== '_hero') {
@@ -458,7 +481,7 @@ export const validateAssumption = (a) => {
   }
 
   // Compose per-section validations
-  const claim = validateClaim(a.claim);
+  const claim = validateClaim(a.claim, options);
   if (!claim.ok) errors.push(...claim.errors);
   const evidence = validateEvidence(a.evidence);
   if (!evidence.ok) errors.push(...evidence.errors);

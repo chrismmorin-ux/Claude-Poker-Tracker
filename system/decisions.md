@@ -541,3 +541,39 @@ src/
 **Context:** SPR-110 / WS-164 (PIO G5 child E) shipped the recognition-scoring core against PlayersView as first consumer. Decisions ratified via AskUserQuestion. Companion: `docs/projects/player-identification-v2/recognition-confidence-schema.md`.
 
 ---
+
+## DEC-020: Anchor predicates live in an anchor-owned registry; base validator gains additive inheritance options
+
+**Date:** 2026-06-10 | **Status:** Accepted | **Detected:** explicit (SPR-119 / WS-218, founder-ratified via AskUserQuestion)
+
+**Context:** The 2026-06-10 seam audit found the EAL two-validator inheritance contract (gate4-p3-decisions §1 rule 4, documented in validateAnchor's JSDoc) had no caller — and could not be wired naively: 3 of 4 seed predicates (`riverProbeBluffFrequencyAfterTurnXX`, `callVsTurnDoubleBarrelPaired`, `foldVsFlopDonkWetConnected`) were not in assumptionEngine `PREDICATE_KEYS`, and `validateAssumption` strict-equals `schemaVersion` to the base `'1.1'`, rejecting every compound-versioned anchor.
+
+**Options Considered:**
+1. **Anchor-owned registry (CHOSEN)** — `ANCHOR_PREDICATE_KEYS` in `anchorLibrary/anchorPredicates.js`; base validator gains additive `options.additionalPredicates` + `options.skipSchemaVersion`; `validateAnchorFull` composes both validators.
+2. **Join PREDICATE_KEYS, full 4-artifact discipline** — blocked today: producer recipes require `villainTendency.observedRates` tendency keys that don't exist for these predicates; ~500-600 lines + new tendency plumbing per predicate; conflates production paths.
+3. **Join PREDICATE_KEYS enum-only with carve-out** — cheap but hollows the parent CI discipline ("every entry is producible and math-tested") and mixes anchor vocabulary into the producer predicate space.
+
+**Decision:** Anchor-authored predicates live in the anchor-owned registry with a **parallel discipline**: every anchor predicate requires an anchor-level Tier-1 math-integrity scenario in `anchorLibrary/__sim__/scenarios/` (mirrors the parent "no predicate without a synthetic-villain test" rule; all 4 seeds comply). Predicates already in `PREDICATE_KEYS` (SEED-01's `foldToRiverBet`) are never duplicated in the anchor registry — `claimContractSeam.test.js` pins the XOR partition. Base validation runs through `validateAnchorFull` with the registry + compound-semver accommodation; the scenario runner now gates Tier-1 scenarios on the full inherited contract. The base validator options are additive-only with default behavior pinned by regression test.
+
+**Reasoning:** The parent enum's 4-artifact discipline exists so producer-emitted predicates ship math-tested; anchor predicates are authored per-anchor, never producer-emitted, and already carry their own 10k-hand Tier-1 scenarios. A separate registry keeps both engines' contracts honest and lets anchor vocabulary grow with the library without producer plumbing. Wiring the inheritance also forced the 4 seeds to full v1.1 conformance (transcribed from seed-anchor markdowns; quality blocks derived via the engine's own `determineActionability` — no hand-typed actionability) and caught real drift: SEED-04's `deviationType: 'line-shift'` was outside the `DEVIATION_TYPES` enum (markdown says `sizing-shift`).
+
+**Consequences:**
+- Graduation path: if producer plumbing for an anchor tendency lands later, the predicate moves to `PREDICATE_KEYS` under the full 4-artifact discipline and is removed from the anchor registry — no schema change.
+- Template anchors carry `villainId: 'population:<Style>'` (pooled per-style claims until per-villain n ≥ 15) and honest zero evidence counts; instantiation-time binding is future EAL-phase scope.
+- All Phase-1 seeds honestly gate `quality.actionable*: false` (pending stability; SEED-04 sub-gate confidence by design) — surfaces consult anchor `status`, not v1.1 actionability, per the EAL Tier-2 model.
+
+**Load-Bearing Assumptions (AS-N, advisory — impact: medium):**
+```yaml
+assumptions:
+  - id: AS-1
+    type: empirical
+    claim: "Anchor-library predicates do not need producer emission (live assumption production from villainTendency.observedRates) in the current roadmap phase; the anchor-owned registry split therefore costs nothing beyond a one-step graduation path."
+    falsifies_if:
+      threshold: ">=1 anchor predicate requires producer-emitted live assumptions (a PRODUCTION_RECIPES recipe reading observedRates) before the registry graduation path is exercised"
+      window: "next EAL phase boundary or 2026-09-08, whichever first"
+    revisit: "2026-09-08"
+    status: active
+    severity: medium
+```
+
+---

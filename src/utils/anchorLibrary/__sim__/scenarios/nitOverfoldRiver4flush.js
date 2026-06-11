@@ -21,6 +21,7 @@
 
 import { ANCHOR_SCHEMA_VERSION } from '../../validateAnchor';
 import { NIT_SCARE_OVERFOLD } from '../syntheticVillains';
+import { buildSeedQuality } from '../seedQuality';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Anchor under test — EAL-SEED-01
@@ -40,7 +41,7 @@ import { NIT_SCARE_OVERFOLD } from '../syntheticVillains';
  * evDecomposition, retirementCondition, origin) to the authoritative values
  * from the seed-anchor markdown.
  */
-export const EAL_SEED_01_ANCHOR = Object.freeze({
+const SEED_01_BASE = {
   // ─── EAL extension fields (validated by validateAnchor) ─────────────────
   schemaVersion: ANCHOR_SCHEMA_VERSION,
   archetypeName: 'Nit Over-Fold to River Overbet on 4-Flush Scare',
@@ -100,25 +101,55 @@ export const EAL_SEED_01_ANCHOR = Object.freeze({
 
   status: 'active',
 
-  // ─── Inherited VillainAssumption v1.1 fields (stub; validated elsewhere) ──
-  // Included for shape completeness + so the scenario can be runnable end-to-end
-  // in Commit 2 once the producer+simulator chain is wired. Values lifted from
-  // seed-anchor markdown §2-§6.
+  // ─── Inherited VillainAssumption v1.1 fields (validated via the base
+  // contract through validateAnchorFull; WS-218 completed these to full v1.1
+  // conformance by transcription from seed-anchor markdown §1-§8) ──────────
   id: 'anchor:nit:river:overfold:4flush',
-  villainId: null,
+  // Template anchor: the claim is pooled per-style until per-villain n ≥ 15
+  // (markdown §2) — villainId names the population pool, not a player.
+  villainId: 'population:Nit',
   claim: {
     predicate: 'foldToRiverBet',
     operator: '>=',
     threshold: 0.60,
+    // markdown §1 scope predicates
+    scope: {
+      street: 'river',
+      position: 'any',
+      texture: 'flush-complete',
+      sprRange: [2, 7],
+      betSizeRange: [1.0, 1.8],
+      playersToAct: 0,
+      heroLineType: 'triple-barrel',
+      activationFrequency: 0.015,
+    },
   },
   evidence: {
-    sampleSize: null,
-    observationCount: null,
+    // Honest zeros: no per-villain observations at authoring (pooled prior only).
+    sampleSize: 0,
+    observationCount: 0,
     pointEstimate: 0.72,
     credibleInterval: { lower: 0.58, upper: 0.83, level: 0.95 },
     prior: { type: 'style', alpha: 14, beta: 10 },
     posteriorConfidence: 0.91,
+    lastUpdated: '2026-04-24T12:00:00Z',
     decayHalfLife: 30,
+  },
+  // markdown §5 gate checks: all subscores pending/scope-nulled at authoring.
+  stability: {
+    acrossSessions: null,
+    acrossTextures: null,       // scope-conditional null (texture = flush-complete)
+    acrossStackDepths: null,    // pending data
+    acrossStreetContext: null,  // scope-conditional null (heroLineType set)
+    compositeScore: null,
+    nonNullSubscoreCount: 0,
+  },
+  // markdown §1 recognizability
+  recognizability: {
+    triggerDescription: 'style=Nit + scare-card river + overbet sizing + villain checked + triple-barrel line',
+    conditionsCount: 5,
+    heroCognitiveLoad: 'medium',
+    score: 0.65,
   },
   consequence: {
     deviationId: 'overbetScareVsNit',
@@ -126,13 +157,62 @@ export const EAL_SEED_01_ANCHOR = Object.freeze({
     expectedDividend: { mean: 0.66, sd: 0.14, sharpe: 4.7, unit: 'bb per 100 trigger firings' },
     affectedHands: "hero's turn-check-and-river-bet range that missed (busted draws, blockers to flush)",
   },
+  // markdown §6 counterExploit (observationCount 0: pooled, no per-villain count)
+  counterExploit: {
+    resistanceScore: 0.82,
+    resistanceConfidence: 0.60,
+    resistanceSources: [
+      { factor: 'style-conditioned', weight: 0.6, contribution: 0.55, observationCount: 0 },
+      { factor: 'adaptationHistory', weight: 0.4, contribution: 0.27, observationCount: 0 },
+    ],
+    adjustmentCost: 0.15,
+    asymmetricPayoff: 0.47,
+  },
   operator: {
     target: 'villain',
-    transform: { actionDistributionDelta: { fold: 0.20, call: -0.18, raise: -0.02 } },
+    // markdown §6 operator nodeSelector
+    nodeSelector: {
+      street: 'river',
+      texture: 'flush-complete',
+      heroLineType: 'triple-barrel',
+      villainStyle: 'Nit',
+      betSize: [1.0, 1.8],
+    },
+    transform: {
+      actionDistributionDelta: { fold: 0.20, call: -0.18, raise: -0.02 },
+      sizingShift: { from: [0.6, 0.9], to: [1.0, 1.5] },
+    },
     dialCurve: 'sigmoid(k=8, floor=0.3, ceiling=0.9)',
     currentDial: 0.78,
+    dialFloor: 0.3,
+    dialCeiling: 0.9,
     suppresses: [],
   },
+  // markdown §8 narrative
+  narrative: {
+    humanStatement: 'Nits fold to overbets on flush-completing rivers ~72% of the time, vs ~52% GTO (pooled Nit data; CI [58%, 83%])',
+    citationShort: 'Nit scare-overfold 72% @ 1.2p',
+    citationLong: 'Against Nit-classified villains on rivers that complete a flush or straight, observed fold rate to overbet sizings (1.0x pot and above) is ~72%, compared to GTO-balanced defense of ~52%. The 20-point gap is largely attributable to Nit’s cognitive tendency to re-weight their own calling range too aggressively on scare cards (PP-01) — they mentally collapse their range to only nutted combos and fold bluff-catchers that are mathematically correct to call. Resistance to adaptation is high (0.82) because this is a perceptual leak, not a knowledge gap — Nits don’t know they’re making the error.',
+    teachingPattern: 'Nit called two streets. River completes a draw they would have raised with earlier. Overbet big — they fold even the hands that beat your bluffs.',
+    analogAnchor: 'the tight reg who says “this looks a lot like a flush”',
+    concept: 'POKER_THEORY.md §5.6 (fold equity)',
+  },
+  // markdown §6 emotionalTrigger
+  emotionalTrigger: {
+    type: 'fear-exploit',
+    condition: { minFearIndex: 0.55 },
+    activationMultiplier: 1.20,
+    citableReason: '4-flush river caps Nit’s bluff-catcher range — fear spikes; overbet sizing exploits the scare harder than small-bet sizing',
+  },
+  // v1.1 §1.11 calibration tracking — no Tier 1 or Tier 2 validation at authoring.
+  validation: { tier1: null, tier2: null },
+};
+
+export const EAL_SEED_01_ANCHOR = Object.freeze({
+  ...SEED_01_BASE,
+  // §1.10 quality derived via the engine's own gate evaluator (see seedQuality.js);
+  // honestly gates actionable=false on pending stability.
+  quality: buildSeedQuality(SEED_01_BASE),
 });
 
 // ───────────────────────────────────────────────────────────────────────────

@@ -25,6 +25,7 @@
 
 export {
   validateAnchor,
+  validateAnchorFull,
   validateAnchorObservation,
   validatePerceptionPrimitive,
   parseSchemaVersion,
@@ -32,6 +33,12 @@ export {
   ANCHOR_EXTENSION_VERSION,
   SUPPORTED_BASE_VERSIONS,
 } from './validateAnchor';
+
+// WS-218 — anchor-owned predicate registry (two-validator inheritance wiring)
+export {
+  ANCHOR_PREDICATE_KEYS,
+  DEPRECATED_ANCHOR_PREDICATES,
+} from './anchorPredicates';
 
 export {
   runAnchorScenario,
