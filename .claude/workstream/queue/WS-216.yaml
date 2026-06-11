@@ -1,10 +1,11 @@
 id: "WS-216"
 title: "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "e535d27"
 priority_score: 10.0
 priority_label: "P2"
 category: "seam-integrity"
@@ -37,3 +38,4 @@ source:
   created_by: user
   origin: "seam-audit-2026-06-10"
 created_at: "2026-06-10"
+closed_by_event: "ev-1781198560105-a460501e87fe"

@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1781150893531-521cd91a8bb2"
-generated_content_hash: "c33a459a167b1353235f53eb412ef7120cb22c9a8e5551ee0def16bcf8347f0c"
-generated_at: "2026-06-11T04:08:13.579Z"
+generated_from_event: "ev-1781198657644-30cb6aa2730a"
+generated_content_hash: "eeb169cebfe2e110c3b6f6afdc2f89f3c737cb9fd6de0fd9e928ff37b1baf087"
+generated_at: "2026-06-11T17:24:17.669Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl"]
-event_count: 296
+event_count: 312
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 195
-- Events recorded: 296
+- Commands recorded: 200
+- Events recorded: 312
 - Source chunks: 3
 
 ## Command `auto:42416:1781030643103`
@@ -2068,3 +2068,64 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-06-11T04:08:13.531Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |
+
+## Command `cmd-pulserun-mq8zb7f77374e2e4ed23`
+
+- Start: 2026-06-11T04:09:49.653Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T04:09:49.653Z | T11:vital-signs | /pulse | type="protocol_run_intent", program="domain-correctness", +4 more |
+
+## Command `cmd-commandcompleted-mq8zf7fz8fa16f2e0bd2`
+
+- Start: 2026-06-11T04:12:56.307Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T04:12:56.307Z | T6:workstream | C:/Program Files/Git/pulse | command="/pulse", program="domain-correctness", +3 more |
+
+## Command `cmd-sprintapprove-mq9o3vem054079c80c84`
+
+- Start: 2026-06-11T15:43:57.888Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T15:43:57.888Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-120", +8 more |
+
+## Command `cmd-itemclosed-mq9rmt0l53833f6d8b94`
+
+- Start: 2026-06-11T17:22:40.105Z
+- Events: 12
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T17:22:40.105Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-216", +3 more |
+| 2 | 2026-06-11T17:22:40.388Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-120", +4 more |
+| 3 | 2026-06-11T17:22:40.855Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-06-11T17:22:40.873Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-06-11T17:22:40.879Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 6 | 2026-06-11T17:22:40.885Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 7 | 2026-06-11T17:22:40.892Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 8 | 2026-06-11T17:22:40.901Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 9 | 2026-06-11T17:22:40.909Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 10 | 2026-06-11T17:22:40.921Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 11 | 2026-06-11T17:22:40.952Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 12 | 2026-06-11T17:22:41.021Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mq9rowa1c077652f4a4c`
+
+- Start: 2026-06-11T17:24:17.644Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-11T17:24:17.644Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |

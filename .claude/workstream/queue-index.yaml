@@ -4,10 +4,10 @@
 
 total_items: 221
 by_status:
-  done: 146
+  done: 147
   decomposed: 1
   in_progress: 3
-  backlog: 42
+  backlog: 41
   deferred: 20
   dismissed: 1
   completed: 7
@@ -2172,7 +2172,7 @@ items:
 
   - id: "WS-216"
     title: "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)"
-    status: backlog
+    status: done
     priority_score: 10
     category: seam-integrity
     effort: M

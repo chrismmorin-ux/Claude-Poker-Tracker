@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-06-11T03:28:00.158Z",
-  "goal": "Ship WS-218: DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
-  "program_focus": "domain-correctness",
+  "composed_at": "2026-06-11T15:42:23.520Z",
+  "goal": "Ship WS-216: Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)",
+  "program_focus": "engineering",
   "override_class": null,
   "items": [
     {
-      "id": "WS-218",
-      "title": "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
-      "raw_score": 11,
-      "adjusted_score": 11,
+      "id": "WS-216",
+      "title": "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)",
+      "raw_score": 10,
+      "adjusted_score": 10,
       "effort": "M",
-      "program": "domain-correctness",
+      "program": "engineering",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-218 selected (11 × no damping = 11).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-216 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,
