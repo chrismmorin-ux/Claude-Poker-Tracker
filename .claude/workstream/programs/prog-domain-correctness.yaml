@@ -286,7 +286,11 @@ phase_relevance:
 
 last_run_by_protocol:
   baseline: { date: "2026-05-01", engine: "eng-engine", run_id: "run-domain-correctness-baseline-2026-05-01", result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified" }
-  delta: { date: null, engine: null, run_id: null, result: null }
+  delta:
+    date: "2026-06-10"
+    engine: preflight
+    run_id: "run-domain-correctness-delta-2026-06-10"
+    result: "First delta run. Window: post-sweep engine-scope commits 92c9320..a2cf5c4 (WS-023 drift CI, ca7c0ff live-bridge sizing/boards/scareKind, 299a5f8 six seam-contract fixes, SPR-117 seam tests + 0-100 unit contract, SPR-118 rangeRules observed-frequency re-gate, SPR-119 anchor predicate registry + seed v1.1 conformance). ZERO anti-pattern hits in added lines (grep: WEAKNESS_EXPLOIT_MAP additions, position-label conditionals, z-test/pValue — all clean). Doctrine-IMPROVING changes: SPR-118 replaced width-derived pseudo-counts (double-smoothed prior) with observed counts into the Beta posterior; 299a5f8 trait-shape fix RESTORED the §5.8 trap-problem suppression that was silently broken; ca7c0ff texture priority cites POKER_THEORY §3.1; SPR-119 seed quality blocks derived via determineActionability (labels OUTPUT-only). POKER_THEORY.md unmodified; no formula divergence introduced. No new findings."
   sweep:
     date: "2026-06-09"
     engine: eng-engine
@@ -295,18 +299,18 @@ last_run_by_protocol:
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
 
-health_score: 5
-health_updated_at: "2026-06-09T00:00:00Z"
+health_score: 2
+health_updated_at: "2026-06-11T00:00:00Z"
 health_ceiling: 8
 health_ceiling_reason: "Baseline (2026-05-01) + first sweep (2026-05-19) complete; all 5 baseline HIGH findings resolved (SPR-001/016/017). Sweep found NO new HIGH/critical drift — engine work since baseline actively implements doctrine (WS-194 villainStrengthBucket as output, archetype-as-output guard, AP-RL-01, MNAR rail). Score 5/8: full problem-class coverage confirmed + sweep currency fresh, but finding_health dragged by 8 open MEDIUM. Ceiling stays 8 — challenge + blind_spot protocols not yet run (each raises rigor ceiling). block_sprint cleared (sweep fresh)."
 health_breakdown:
   finding_health: 0.20      # 8 MEDIUM open (0 critical, 0 high)
-  protocol_currency: 0.58   # sweep fresh; delta/challenge/blind_spot not yet run
-  problem_class_coverage: 1.0  # all 9 classes checked this sweep
+  protocol_currency: 0.0    # canonical formula hard-zeros while ANY active protocol never ran (challenge; blind_spot stale from 2026-06-30). Delta now run 2026-06-10.
+  problem_class_coverage: 1.0  # all 9 classes checked at last sweep
   maturity_progress: 0.50   # level 2 of 4
-  raw: 0.54
-  earned: 4
-  applied: 5                # rounded up for clean-HIGH + clean-sweep, no hard caps
+  raw: 0.39
+  earned: 3
+  applied: 2                # cap: block_sprint + stale -> max 2 (challenge never-run drives stale). Challenge run is the unlock.
 findings_open: 18
 work_items_open: 1
 
@@ -351,6 +355,14 @@ evidence:
       work_items: 0
       result: "First sweep (4d late vs 14-day cadence; cleared block_sprint). Audited committed + uncommitted engine changes since baseline across all 9 problem classes. NO new HIGH/critical drift — engine work IMPROVED theory alignment: WS-194 villainStrengthBucket (per-combo strength as output), heroState archetype-as-output guard, POKER_THEORY §7.6 AP-RL-01 anti-bucket-label doctrine, rangeEngine MNAR revealMechanism rail. 1 new LOW (FIND-022): WS-131 positional-prior normalization — accepted, monitor."
       health_score: 5
+    - date: "2026-06-10"
+      protocol: delta
+      engine: preflight
+      run_id: "run-domain-correctness-delta-2026-06-10"
+      findings: 0
+      work_items: 0
+      result: "First delta run over post-sweep engine commits (92c9320..a2cf5c4). Zero anti-pattern hits in added lines; changes doctrine-improving (observed-frequency evidence contract, trap-suppression restoration, anchor quality via determineActionability). No new findings. NOTE: score stays 2 — protocol currency hard-zeros while challenge (and blind_spot from 2026-06-30) have never run at critical tier; challenge is the unlock."
+      health_score: 2
     - date: "2026-06-09"
       protocol: sweep
       engine: eng-engine
