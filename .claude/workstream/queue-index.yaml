@@ -4,10 +4,10 @@
 
 total_items: 221
 by_status:
-  done: 145
+  done: 146
   decomposed: 1
   in_progress: 3
-  backlog: 43
+  backlog: 42
   deferred: 20
   dismissed: 1
   completed: 7
@@ -2190,7 +2190,7 @@ items:
 
   - id: "WS-218"
     title: "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance"
-    status: backlog
+    status: done
     priority_score: 11
     category: domain-correctness
     effort: M

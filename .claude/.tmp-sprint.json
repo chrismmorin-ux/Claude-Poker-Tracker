@@ -1,28 +1,14 @@
 {
-  "composed_at": "2026-06-11T02:50:03.017Z",
-  "goal": "Ship WS-223: Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output",
+  "composed_at": "2026-06-11T03:28:00.158Z",
+  "goal": "Ship WS-218: DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-223",
-      "title": "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output",
-      "raw_score": 27,
-      "adjusted_score": 27,
-      "effort": "S",
-      "program": "domain-correctness",
-      "source_class": "untagged",
-      "blocked_by_note": null,
-      "soft_block_factor": 1,
-      "source_damping": 1,
-      "mode": "plan-first",
-      "queue_item_known": true
-    },
-    {
-      "id": "WS-215",
-      "title": "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw",
-      "raw_score": 13,
-      "adjusted_score": 13,
+      "id": "WS-218",
+      "title": "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
+      "raw_score": 11,
+      "adjusted_score": 11,
       "effort": "M",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -38,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-223 selected (27 × no damping = 27).\nCap usage: 2 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-218 selected (11 × no damping = 11).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
-    "items": 2,
-    "effort_sessions": 2,
+    "items": 1,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }

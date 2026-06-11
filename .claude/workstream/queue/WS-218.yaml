@@ -1,10 +1,11 @@
 id: "WS-218"
 title: "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "a2cf5c4"
 priority_score: 11.0
 priority_label: "P2"
 category: "domain-correctness"
@@ -43,3 +44,4 @@ source:
   created_by: user
   origin: "seam-audit-2026-06-10"
 created_at: "2026-06-10"
+closed_by_event: "ev-1781150819892-20642abb9538"

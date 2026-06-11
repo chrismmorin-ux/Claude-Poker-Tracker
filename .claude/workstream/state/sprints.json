@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-11T03:23:20.107Z",
-  "updated_by_event": "ev-1781148200107-430881543408",
+  "updated_at": "2026-06-11T04:07:01.129Z",
+  "updated_by_event": "ev-1781150821129-f3856aa143ec",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1930,7 +1930,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-119": {
+      "id": "SPR-119",
+      "title": "Ship WS-218: DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-11T03:30:17.008Z",
+      "approved_at": "2026-06-11T03:30:17.008Z",
+      "completed_at": "2026-06-11T04:06:59.840Z",
+      "goal": "Ship WS-218: DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781148200107-430881543408"
+  "last_event_log_head": "ev-1781150821129-f3856aa143ec"
 }
