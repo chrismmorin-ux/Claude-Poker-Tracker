@@ -12,7 +12,7 @@
  */
 
 import {
-  getDB,
+  atomicTx,
   PLAYER_PHOTOS_STORE_NAME,
   PLAYERS_STORE_NAME,
   log,
@@ -39,58 +39,43 @@ export const savePhotoAtomically = async (playerId, blob) => {
     throw new Error('savePhotoAtomically requires a Blob');
   }
 
+  let playerMissing = false;
   try {
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(
-        [PLAYER_PHOTOS_STORE_NAME, PLAYERS_STORE_NAME],
-        'readwrite',
-      );
-      let blobId = null;
-      let aborted = false;
-
-      tx.oncomplete = () => {
-        if (aborted) return;
-        log(`savePhotoAtomically: blobId=${blobId} attached to playerId=${playerId}`);
-        resolve({ blobId, photoBlobId: blobId });
-      };
-      tx.onerror = () => reject(tx.error || new Error('Photo save tx error'));
-      tx.onabort = () => {
-        aborted = true;
-        reject(new Error('Photo save aborted (player not found or write failed)'));
-      };
-
-      const photosStore = tx.objectStore(PLAYER_PHOTOS_STORE_NAME);
-      const playersStore = tx.objectStore(PLAYERS_STORE_NAME);
-
-      const photoReq = photosStore.add({
-        playerId,
-        blob,
-        capturedAt: Date.now(),
-      });
-      photoReq.onerror = () => {
-        // Tx onerror will fire; nothing more to do here.
-      };
-      photoReq.onsuccess = () => {
-        blobId = photoReq.result;
-        // Read the player + put with photoBlobId in same txn.
-        const numericId = Number(playerId);
-        const lookupKey = Number.isFinite(numericId) ? numericId : playerId;
-        const getReq = playersStore.get(lookupKey);
-        getReq.onerror = () => { /* tx aborts on error */ };
-        getReq.onsuccess = () => {
-          const player = getReq.result;
-          if (!player) {
-            // Abort the whole txn — blob add is rolled back automatically.
-            tx.abort();
-            return;
-          }
-          playersStore.put({ ...player, photoBlobId: blobId });
+    const result = await atomicTx(
+      [PLAYER_PHOTOS_STORE_NAME, PLAYERS_STORE_NAME],
+      (stores, tx, setResult) => {
+        const photoReq = stores[PLAYER_PHOTOS_STORE_NAME].add({
+          playerId,
+          blob,
+          capturedAt: Date.now(),
+        });
+        photoReq.onsuccess = () => {
+          const blobId = photoReq.result;
+          // Read the player + put with photoBlobId in same txn.
+          const numericId = Number(playerId);
+          const lookupKey = Number.isFinite(numericId) ? numericId : playerId;
+          const getReq = stores[PLAYERS_STORE_NAME].get(lookupKey);
+          getReq.onsuccess = () => {
+            const player = getReq.result;
+            if (!player) {
+              // Abort the whole txn — blob add is rolled back automatically.
+              playerMissing = true;
+              tx.abort();
+              return;
+            }
+            stores[PLAYERS_STORE_NAME].put({ ...player, photoBlobId: blobId });
+            setResult({ blobId, photoBlobId: blobId });
+          };
         };
-      };
-    });
+      }
+    );
+    log(`savePhotoAtomically: blobId=${result.blobId} attached to playerId=${playerId}`);
+    return result;
   } catch (e) {
-    logError('savePhotoAtomically failed', e);
-    throw e;
+    const err = playerMissing
+      ? new Error('Photo save aborted (player not found or write failed)')
+      : e;
+    logError('savePhotoAtomically failed', err);
+    throw err;
   }
 };

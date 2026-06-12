@@ -6,7 +6,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  updateTx,
   TOURNAMENTS_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -26,7 +28,6 @@ import {
  */
 export const createTournament = async (config, sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const record = {
       sessionId,
       userId,
@@ -43,22 +44,9 @@ export const createTournament = async (config, sessionId, userId = GUEST_USER_ID
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
-      const request = store.add(record);
-
-      request.onsuccess = (e) => {
-        const tournamentId = e.target.result;
-        log(`Tournament created (ID: ${tournamentId}, session: ${sessionId})`);
-        resolve(tournamentId);
-      };
-      request.onerror = (e) => {
-        logError('Failed to create tournament:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    const tournamentId = await writeTx(TOURNAMENTS_STORE_NAME, (store) => store.add(record));
+    log(`Tournament created (ID: ${tournamentId}, session: ${sessionId})`);
+    return tournamentId;
   } catch (error) {
     logError(error);
     throw error;
@@ -72,19 +60,8 @@ export const createTournament = async (config, sessionId, userId = GUEST_USER_ID
  */
 export const getTournamentBySessionId = async (sessionId) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readonly');
-      const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
-      const index = store.index('sessionId');
-      const request = index.get(sessionId);
-
-      request.onsuccess = (e) => resolve(e.target.result || null);
-      request.onerror = (e) => {
-        logError('Failed to get tournament:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    const record = await readTx(TOURNAMENTS_STORE_NAME, (store) => store.index('sessionId').get(sessionId));
+    return record ?? null;
   } catch (error) {
     logError(error);
     return null;
@@ -99,24 +76,9 @@ export const getTournamentBySessionId = async (sessionId) => {
  */
 export const updateTournament = async (tournamentId, updates) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
-      const request = store.get(tournamentId);
-
-      request.onsuccess = (e) => {
-        const record = e.target.result;
-        if (!record) {
-          reject(new Error(`Tournament ${tournamentId} not found`));
-          return;
-        }
-        const updated = { ...record, ...updates, updatedAt: Date.now() };
-        const putRequest = store.put(updated);
-        putRequest.onsuccess = () => resolve();
-        putRequest.onerror = (err) => reject(err.target.error);
-      };
-      request.onerror = (e) => reject(e.target.error);
+    await updateTx(TOURNAMENTS_STORE_NAME, tournamentId, (record) => {
+      if (!record) throw new Error(`Tournament ${tournamentId} not found`);
+      return { ...record, ...updates, updatedAt: Date.now() };
     });
   } catch (error) {
     logError(error);
@@ -133,18 +95,8 @@ export const updateTournament = async (tournamentId, updates) => {
  */
 export const deleteTournament = async (tournamentId) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
-      const request = store.delete(tournamentId);
-
-      request.onsuccess = () => {
-        log(`Tournament ${tournamentId} deleted`);
-        resolve();
-      };
-      request.onerror = (e) => reject(e.target.error);
-    });
+    await writeTx(TOURNAMENTS_STORE_NAME, (store) => store.delete(tournamentId));
+    log(`Tournament ${tournamentId} deleted`);
   } catch (error) {
     logError(error);
     throw error;
@@ -160,19 +112,8 @@ export const deleteTournament = async (tournamentId) => {
  */
 export const getAllTournaments = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([TOURNAMENTS_STORE_NAME], 'readonly');
-      const store = tx.objectStore(TOURNAMENTS_STORE_NAME);
-      const index = store.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (e) => resolve(e.target.result || []);
-      request.onerror = (e) => {
-        logError('Failed to get tournaments:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    const records = await readTx(TOURNAMENTS_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    return records || [];
   } catch (error) {
     logError(error);
     return [];

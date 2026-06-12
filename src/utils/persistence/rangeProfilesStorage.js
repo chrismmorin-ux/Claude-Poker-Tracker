@@ -6,7 +6,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   RANGE_PROFILES_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -23,25 +24,9 @@ import { serializeProfile, deserializeProfile } from '../rangeEngine/rangeProfil
  */
 export const saveRangeProfile = async (profile, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const serialized = serializeProfile(profile);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([RANGE_PROFILES_STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(RANGE_PROFILES_STORE_NAME);
-      const request = store.put(serialized);
-
-      request.onsuccess = () => {
-        log(`Range profile saved for player ${profile.playerId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save range profile:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(RANGE_PROFILES_STORE_NAME, (store) => store.put(serialized));
+    log(`Range profile saved for player ${profile.playerId}`);
   } catch (error) {
     logError('Error in saveRangeProfile:', error);
     throw error;
@@ -56,29 +41,9 @@ export const saveRangeProfile = async (profile, userId = GUEST_USER_ID) => {
  */
 export const getRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const profileKey = `${userId}_${playerId}`;
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([RANGE_PROFILES_STORE_NAME], 'readonly');
-      const store = transaction.objectStore(RANGE_PROFILES_STORE_NAME);
-      const request = store.get(profileKey);
-
-      request.onsuccess = (event) => {
-        const record = event.target.result;
-        if (record) {
-          resolve(deserializeProfile(record));
-        } else {
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get range profile:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const record = await readTx(RANGE_PROFILES_STORE_NAME, (store) => store.get(profileKey));
+    return record ? deserializeProfile(record) : null;
   } catch (error) {
     logError('Error in getRangeProfile:', error);
     return null;
@@ -93,25 +58,9 @@ export const getRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
  */
 export const deleteRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const profileKey = `${userId}_${playerId}`;
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([RANGE_PROFILES_STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(RANGE_PROFILES_STORE_NAME);
-      const request = store.delete(profileKey);
-
-      request.onsuccess = () => {
-        log(`Range profile deleted for player ${playerId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to delete range profile:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(RANGE_PROFILES_STORE_NAME, (store) => store.delete(profileKey));
+    log(`Range profile deleted for player ${playerId}`);
   } catch (error) {
     logError('Error in deleteRangeProfile:', error);
     throw error;
@@ -125,25 +74,8 @@ export const deleteRangeProfile = async (playerId, userId = GUEST_USER_ID) => {
  */
 export const getAllRangeProfiles = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([RANGE_PROFILES_STORE_NAME], 'readonly');
-      const store = transaction.objectStore(RANGE_PROFILES_STORE_NAME);
-      const index = store.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (event) => {
-        const records = event.target.result;
-        resolve(records.map(deserializeProfile));
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load range profiles:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const records = await readTx(RANGE_PROFILES_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    return records.map(deserializeProfile);
   } catch (error) {
     logError('Error in getAllRangeProfiles:', error);
     return [];

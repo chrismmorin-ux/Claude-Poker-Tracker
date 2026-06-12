@@ -7,6 +7,11 @@
 
 import {
   getDB,
+  readTx,
+  writeTx,
+  updateTx,
+  cursorTx,
+  atomicTx,
   STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -36,9 +41,8 @@ import {
  * @returns {Promise<number>} The auto-generated handId
  */
 export const saveHand = async (handData, userId = GUEST_USER_ID) => {
+  let validationFailure = null;
   try {
-    const db = await getDB();
-
     // Get active session to auto-link hand (for this user)
     const activeSession = await getActiveSession(userId);
     const sessionId = activeSession?.sessionId || null;
@@ -46,9 +50,8 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
     const timestamp = Date.now();
 
     // RT-39: Atomic count + add in single readwrite transaction to prevent TOCTOU race
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
+    return await atomicTx([STORE_NAME], (stores, tx, setResult) => {
+      const objectStore = stores[STORE_NAME];
 
       // Step 1: Count existing hands in this session (within same transaction)
       const resolveCount = (count) => {
@@ -70,41 +73,33 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
         const validation = validateHandRecord(handRecord);
         if (!validation.valid) {
           logValidationErrors('saveHand', validation.errors);
-          reject(new Error(`Invalid hand data: ${validation.errors.join(', ')}`));
+          validationFailure = new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
+          tx.abort();
           return;
         }
 
         // Step 2: Add hand in same transaction
         const addRequest = objectStore.add(handRecord);
         addRequest.onsuccess = (event) => {
-          const handId = event.target.result;
-          log(`Hand saved successfully (ID: ${handId}, displayId: ${handDisplayId})`);
-          resolve(handId);
-        };
-        addRequest.onerror = (event) => {
-          logError('Failed to save hand:', event.target.error);
-          if (event.target.error?.name === 'QuotaExceededError') {
-            logError('Storage quota exceeded. Please clear old hands.');
-          }
-          reject(event.target.error);
+          setResult(event.target.result);
+          log(`Hand saved successfully (ID: ${event.target.result}, displayId: ${handDisplayId})`);
         };
       };
 
       if (sessionId) {
-        const index = objectStore.index('sessionId');
-        const countRequest = index.count(sessionId);
+        const countRequest = objectStore.index('sessionId').count(sessionId);
         countRequest.onsuccess = (event) => resolveCount(event.target.result);
-        countRequest.onerror = (event) => {
-          logError('Failed to count session hands:', event.target.error);
-          reject(event.target.error);
-        };
       } else {
         resolveCount(0);
       }
     });
   } catch (error) {
-    logError('Error in saveHand:', error);
-    throw error;
+    const err = validationFailure || error;
+    if (err?.name === 'QuotaExceededError') {
+      logError('Storage quota exceeded. Please clear old hands.');
+    }
+    logError('Error in saveHand:', err);
+    throw err;
   }
 };
 
@@ -115,38 +110,21 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
  */
 export const loadLatestHand = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-
-      // Use userId_timestamp compound index for efficient user-filtered query
-      const index = objectStore.index('userId_timestamp');
-
-      // Create key range for this user's records, open cursor in descending order
-      const keyRange = IDBKeyRange.bound([userId, 0], [userId, Date.now()]);
-      const request = index.openCursor(keyRange, 'prev');
-
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-
-        if (cursor) {
-          const hand = cursor.value;
-          log(`Loaded latest hand for user ${userId} (ID: ${hand.handId})`);
-          resolve(hand);
-        } else {
-          log(`No hands found for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load latest hand:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    // Use userId_timestamp compound index for efficient user-filtered query;
+    // walk descending and stop at the first (most recent) record.
+    const found = await cursorTx(
+      STORE_NAME,
+      { index: 'userId_timestamp', range: IDBKeyRange.bound([userId, 0], [userId, Date.now()]), direction: 'prev' },
+      (cursor, acc) => {
+        acc.push(cursor.value);
+        return false;
+      }
+    );
+    const hand = found[0] ?? null;
+    log(hand
+      ? `Loaded latest hand for user ${userId} (ID: ${hand.handId})`
+      : `No hands found for user ${userId}`);
+    return hand;
   } catch (error) {
     logError('Error in loadLatestHand:', error);
     return null; // Fail gracefully
@@ -160,31 +138,9 @@ export const loadLatestHand = async (userId = GUEST_USER_ID) => {
  */
 export const loadHandById = async (handId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.get(handId);
-
-      request.onsuccess = (event) => {
-        const hand = event.target.result;
-
-        if (hand) {
-          log(`Loaded hand ID ${handId}`);
-          resolve(hand);
-        } else {
-          log(`Hand ID ${handId} not found`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to load hand ${handId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const hand = await readTx(STORE_NAME, (store) => store.get(handId));
+    log(hand ? `Loaded hand ID ${handId}` : `Hand ID ${handId} not found`);
+    return hand ?? null;
   } catch (error) {
     logError('Error in loadHandById:', error);
     return null;
@@ -198,28 +154,10 @@ export const loadHandById = async (handId) => {
  */
 export const getAllHands = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-
-      // Use userId index to filter hands
-      const index = objectStore.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (event) => {
-        const hands = event.target.result;
-        log(`Loaded ${hands.length} hands for user ${userId}`);
-        resolve(hands);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load hands:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    // Use userId index to filter hands
+    const hands = await readTx(STORE_NAME, (store) => store.index('userId').getAll(userId));
+    log(`Loaded ${hands.length} hands for user ${userId}`);
+    return hands;
   } catch (error) {
     logError('Error in getAllHands:', error);
     return [];
@@ -233,26 +171,9 @@ export const getAllHands = async (userId = GUEST_USER_ID) => {
  */
 export const getHandsBySessionId = async (sessionId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const index = objectStore.index('sessionId');
-      const request = index.getAll(sessionId);
-
-      request.onsuccess = (event) => {
-        const hands = event.target.result;
-        log(`Loaded ${hands.length} hands for session ${sessionId}`);
-        resolve(hands);
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to load hands for session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const hands = await readTx(STORE_NAME, (store) => store.index('sessionId').getAll(sessionId));
+    log(`Loaded ${hands.length} hands for session ${sessionId}`);
+    return hands;
   } catch (error) {
     logError('Error in getHandsBySessionId:', error);
     return [];
@@ -266,24 +187,8 @@ export const getHandsBySessionId = async (sessionId) => {
  */
 export const deleteHand = async (handId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.delete(handId);
-
-      request.onsuccess = () => {
-        log(`Hand ${handId} deleted successfully`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to delete hand ${handId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(STORE_NAME, (store) => store.delete(handId));
+    log(`Hand ${handId} deleted successfully`);
   } catch (error) {
     logError('Error in deleteHand:', error);
     throw error;
@@ -307,31 +212,16 @@ export const deleteHand = async (handId) => {
  * @returns {Promise<void>}
  */
 export const updateSeatPlayerForHand = async (handId, seat, playerId) => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const getReq = store.get(handId);
-
-    getReq.onsuccess = (event) => {
-      const hand = event.target.result;
-      if (!hand) {
-        reject(new Error(`Hand ${handId} not found`));
-        return;
-      }
-      const nextSeatPlayers = { ...(hand.seatPlayers || {}) };
-      if (playerId === null || playerId === undefined) {
-        delete nextSeatPlayers[seat];
-      } else {
-        nextSeatPlayers[seat] = playerId;
-      }
-      hand.seatPlayers = nextSeatPlayers;
-      const putReq = store.put(hand);
-      putReq.onsuccess = () => resolve();
-      putReq.onerror = () => reject(putReq.error);
-    };
-    getReq.onerror = () => reject(getReq.error);
-    tx.onabort = () => reject(tx.error || new Error('updateSeatPlayerForHand aborted'));
+  await updateTx(STORE_NAME, handId, (hand) => {
+    if (!hand) throw new Error(`Hand ${handId} not found`);
+    const nextSeatPlayers = { ...(hand.seatPlayers || {}) };
+    if (playerId === null || playerId === undefined) {
+      delete nextSeatPlayers[seat];
+    } else {
+      nextSeatPlayers[seat] = playerId;
+    }
+    hand.seatPlayers = nextSeatPlayers;
+    return hand;
   });
 };
 
@@ -343,6 +233,9 @@ export const updateSeatPlayerForHand = async (handId, seat, playerId) => {
  * @param {Array<{handId: number, seat: number, playerId: number | null}>} updates
  * @returns {Promise<void>}
  */
+// WS-226 exception: N-read+N-write batch with bespoke abort-tracking (failTx
+// short-circuits remaining callbacks on first failure). The helper shapes
+// don't model mid-flight cancellation; hand-rolled tx retained deliberately.
 export const batchUpdateSeatPlayers = async (updates) => {
   if (!Array.isArray(updates)) {
     throw new Error('batchUpdateSeatPlayers: updates must be an array');
@@ -419,29 +312,12 @@ export const batchUpdateSeatPlayers = async (updates) => {
  * @returns {Promise<void>}
  */
 export const updateHandReviewTag = async (handId, reviewTag) => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const getReq = store.get(handId);
-
-    getReq.onsuccess = (event) => {
-      const hand = event.target.result;
-      if (!hand) {
-        reject(new Error(`Hand ${handId} not found`));
-        return;
-      }
-      hand.reviewTag = reviewTag ?? null;
-      const putReq = store.put(hand);
-      putReq.onsuccess = () => {
-        log(`Hand ${handId} reviewTag updated (tagged: ${!!reviewTag?.tagged})`);
-        resolve();
-      };
-      putReq.onerror = () => reject(putReq.error);
-    };
-    getReq.onerror = () => reject(getReq.error);
-    tx.onabort = () => reject(tx.error || new Error('updateHandReviewTag aborted'));
+  await updateTx(STORE_NAME, handId, (hand) => {
+    if (!hand) throw new Error(`Hand ${handId} not found`);
+    hand.reviewTag = reviewTag ?? null;
+    return hand;
   });
+  log(`Hand ${handId} reviewTag updated (tagged: ${!!reviewTag?.tagged})`);
 };
 
 /**
@@ -476,47 +352,19 @@ export const getTaggedHands = async (userId = GUEST_USER_ID) => {
  */
 export const clearAllHands = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const index = objectStore.index('userId');
-
-      // Get all hands for this user and delete them
-      const getRequest = index.getAllKeys(userId);
-
+    let keyCount = 0;
+    // Key lookup + deletes happen in ONE readwrite transaction.
+    await writeTx(STORE_NAME, (store) => {
+      const getRequest = store.index('userId').getAllKeys(userId);
       getRequest.onsuccess = (event) => {
         const keys = event.target.result;
-        let deleted = 0;
-
-        if (keys.length === 0) {
-          log(`No hands to clear for user ${userId}`);
-          resolve();
-          return;
-        }
-
-        keys.forEach((key) => {
-          const deleteRequest = objectStore.delete(key);
-          deleteRequest.onsuccess = () => {
-            deleted++;
-            if (deleted === keys.length) {
-              log(`Cleared ${deleted} hands for user ${userId}`);
-              resolve();
-            }
-          };
-          deleteRequest.onerror = (e) => {
-            logError('Failed to delete hand:', e.target.error);
-          };
-        });
+        keyCount = keys.length;
+        keys.forEach((key) => store.delete(key));
       };
-
-      getRequest.onerror = (event) => {
-        logError('Failed to get hands for clearing:', event.target.error);
-        reject(event.target.error);
-      };
-
     });
+    log(keyCount === 0
+      ? `No hands to clear for user ${userId}`
+      : `Cleared ${keyCount} hands for user ${userId}`);
   } catch (error) {
     logError('Error in clearAllHands:', error);
     throw error;
@@ -534,26 +382,9 @@ export const clearAllHands = async (userId = GUEST_USER_ID) => {
  */
 export const getHandCount = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const index = objectStore.index('userId');
-      const request = index.count(userId);
-
-      request.onsuccess = (event) => {
-        const count = event.target.result;
-        log(`Hand count for user ${userId}: ${count}`);
-        resolve(count);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get hand count:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const count = await readTx(STORE_NAME, (store) => store.index('userId').count(userId));
+    log(`Hand count for user ${userId}: ${count}`);
+    return count;
   } catch (error) {
     logError('Error in getHandCount:', error);
     return 0;
@@ -591,8 +422,6 @@ export const handExists = async (handId) => {
  */
 export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
     // Calculate sessionHandNumber
     let sessionHandNumber = null;
     if (sessionId) {
@@ -627,36 +456,14 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
 
     // Dedup check: skip if hand with this captureId already exists
     if (handRecord.captureId) {
-      const existingHands = await new Promise((resolve, reject) => {
-        const tx = db.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const idx = store.index('sessionId');
-        const req = idx.getAll(sessionId);
-        req.onsuccess = (e) => resolve(e.target.result);
-        req.onerror = (e) => reject(e.target.error);
-        tx.oncomplete = () => {};
-      });
+      const existingHands = await readTx(STORE_NAME, (store) => store.index('sessionId').getAll(sessionId));
       if (existingHands.some(h => h.captureId === handRecord.captureId)) {
         log(`Skipping duplicate online hand: ${handRecord.captureId}`);
         return -1; // Already exists
       }
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const request = objectStore.add(handRecord);
-
-      request.onsuccess = (event) => {
-        resolve(event.target.result);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save online hand:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    return await writeTx(STORE_NAME, (store) => store.add(handRecord));
   } catch (error) {
     logError('Error in saveOnlineHand:', error);
     throw error;
@@ -673,29 +480,12 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
  */
 export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-
-      // Use userId index and filter by source in memory
-      // (compound index userId_source would be ideal but source index is new)
-      const index = objectStore.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (event) => {
-        const hands = event.target.result.filter(h => h.source === source);
-        log(`Loaded ${hands.length} ${source} hands for user ${userId}`);
-        resolve(hands);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load hands by source:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    // Use userId index and filter by source in memory
+    // (compound index userId_source would be ideal but source index is new)
+    const all = await readTx(STORE_NAME, (store) => store.index('userId').getAll(userId));
+    const hands = all.filter(h => h.source === source);
+    log(`Loaded ${hands.length} ${source} hands for user ${userId}`);
+    return hands;
   } catch (error) {
     logError('Error in getHandsBySource:', error);
     return [];

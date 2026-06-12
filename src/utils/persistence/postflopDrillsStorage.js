@@ -34,7 +34,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   GUEST_USER_ID,
   POSTFLOP_DRILLS_STORE_NAME,
   logError,
@@ -48,19 +49,12 @@ import {
  */
 export const savePostflopDrill = async (attempt, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const record = {
       ...attempt,
       userId,
       timestamp: Date.now(),
     };
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTFLOP_DRILLS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(POSTFLOP_DRILLS_STORE_NAME);
-      const req = store.add(record);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
+    return await writeTx(POSTFLOP_DRILLS_STORE_NAME, (store) => store.add(record));
   } catch (err) {
     logError('savePostflopDrill failed:', err);
     throw err;
@@ -70,22 +64,12 @@ export const savePostflopDrill = async (attempt, userId = GUEST_USER_ID) => {
 /** Load all postflop drill attempts for a user, newest first. */
 export const loadPostflopDrills = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTFLOP_DRILLS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(POSTFLOP_DRILLS_STORE_NAME);
-      const idx = store.index('userId');
-      const req = idx.getAll(userId);
-      req.onsuccess = () => {
-        // drillId tiebreak: same-ms saves would otherwise return in insertion
-        // (oldest-first) order, breaking the "newest first" contract.
-        const sorted = (req.result || []).sort(
-          (a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId,
-        );
-        resolve(sorted);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const records = await readTx(POSTFLOP_DRILLS_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    // drillId tiebreak: same-ms saves would otherwise return in insertion
+    // (oldest-first) order, breaking the "newest first" contract.
+    return (records || []).sort(
+      (a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId,
+    );
   } catch (err) {
     logError('loadPostflopDrills failed:', err);
     return [];
@@ -96,14 +80,10 @@ export const loadPostflopDrills = async (userId = GUEST_USER_ID) => {
 export const clearPostflopDrills = async (userId = GUEST_USER_ID) => {
   try {
     const drills = await loadPostflopDrills(userId);
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(POSTFLOP_DRILLS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(POSTFLOP_DRILLS_STORE_NAME);
+    await writeTx(POSTFLOP_DRILLS_STORE_NAME, (store) => {
       for (const d of drills) store.delete(d.drillId);
-      tx.oncomplete = () => resolve(drills.length);
-      tx.onerror = () => reject(tx.error);
     });
+    return drills.length;
   } catch (err) {
     logError('clearPostflopDrills failed:', err);
     throw err;

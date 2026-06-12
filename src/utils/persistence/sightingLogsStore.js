@@ -20,7 +20,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  cursorTx,
   SIGHTING_LOGS_STORE_NAME,
   log,
   logError,
@@ -49,20 +51,13 @@ export const appendSighting = async (sighting) => {
     throw new Error('appendSighting requires sighting.playerId (number or non-empty string)');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SIGHTING_LOGS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
-      const req = store.add({
-        ...sighting,
-        // Default optional fields so indexes don't choke on undefined.
-        capturedAt: sighting.capturedAt ?? Date.now(),
-        venueId: sighting.venueId ?? null,
-        featuresSeen: Array.isArray(sighting.featuresSeen) ? sighting.featuresSeen : [],
-      });
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
+    return await writeTx(SIGHTING_LOGS_STORE_NAME, (store) => store.add({
+      ...sighting,
+      // Default optional fields so indexes don't choke on undefined.
+      capturedAt: sighting.capturedAt ?? Date.now(),
+      venueId: sighting.venueId ?? null,
+      featuresSeen: Array.isArray(sighting.featuresSeen) ? sighting.featuresSeen : [],
+    }));
   } catch (e) {
     logError('appendSighting failed', e);
     throw e;
@@ -81,19 +76,9 @@ export const getSightingsForPlayer = async (playerId) => {
     throw new Error('getSightingsForPlayer requires a non-empty playerId (number or string)');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SIGHTING_LOGS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
-      const idx = store.index('by_playerId');
-      const req = idx.getAll(playerId);
-      req.onsuccess = () => {
-        const records = req.result || [];
-        records.sort((a, b) => (b.capturedAt || 0) - (a.capturedAt || 0));
-        resolve(records);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const records = (await readTx(SIGHTING_LOGS_STORE_NAME, (store) => store.index('by_playerId').getAll(playerId))) || [];
+    records.sort((a, b) => (b.capturedAt || 0) - (a.capturedAt || 0));
+    return records;
   } catch (e) {
     logError('getSightingsForPlayer failed', e);
     return [];
@@ -112,15 +97,8 @@ export const getSightingsBySession = async (playerId, sessionId) => {
     throw new Error('getSightingsBySession requires playerId + sessionId');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SIGHTING_LOGS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
-      const idx = store.index('by_playerId_sessionId');
-      const req = idx.getAll([playerId, sessionId]);
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    });
+    const records = await readTx(SIGHTING_LOGS_STORE_NAME, (store) => store.index('by_playerId_sessionId').getAll([playerId, sessionId]));
+    return records || [];
   } catch (e) {
     logError('getSightingsBySession failed', e);
     return [];
@@ -139,15 +117,8 @@ export const getSightingsByFeature = async (feature) => {
     throw new Error('getSightingsByFeature requires a non-empty feature');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SIGHTING_LOGS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
-      const idx = store.index('by_featuresSeen');
-      const req = idx.getAll(feature);
-      req.onsuccess = () => resolve(req.result || []);
-      req.onerror = () => reject(req.error);
-    });
+    const records = await readTx(SIGHTING_LOGS_STORE_NAME, (store) => store.index('by_featuresSeen').getAll(feature));
+    return records || [];
   } catch (e) {
     logError('getSightingsByFeature failed', e);
     return [];
@@ -165,26 +136,16 @@ export const deleteSightingsForPlayer = async (playerId) => {
     throw new Error('deleteSightingsForPlayer requires a non-empty playerId (number or string)');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(SIGHTING_LOGS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(SIGHTING_LOGS_STORE_NAME);
-      const idx = store.index('by_playerId');
-      const req = idx.openCursor(IDBKeyRange.only(playerId));
-      let count = 0;
-      req.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          cursor.delete();
-          count += 1;
-          cursor.continue();
-        } else {
-          log(`deleteSightingsForPlayer(${playerId}): ${count} records deleted`);
-          resolve(count);
-        }
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const deleted = await cursorTx(
+      SIGHTING_LOGS_STORE_NAME,
+      { index: 'by_playerId', range: IDBKeyRange.only(playerId), mode: 'readwrite' },
+      (cursor, acc) => {
+        cursor.delete();
+        acc.push(cursor.primaryKey);
+      }
+    );
+    log(`deleteSightingsForPlayer(${playerId}): ${deleted.length} records deleted`);
+    return deleted.length;
   } catch (e) {
     logError('deleteSightingsForPlayer failed', e);
     return 0;

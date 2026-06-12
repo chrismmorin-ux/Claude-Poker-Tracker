@@ -16,7 +16,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   USER_REFRESHER_CONFIG_STORE_NAME,
   PRINT_BATCHES_STORE_NAME,
   logError,
@@ -39,17 +40,8 @@ import {
  */
 export const getRefresherConfig = async () => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([USER_REFRESHER_CONFIG_STORE_NAME], 'readonly');
-      const store = tx.objectStore(USER_REFRESHER_CONFIG_STORE_NAME);
-      const req = store.get(REFRESHER_CONFIG_SINGLETON_ID);
-      req.onsuccess = () => resolve(req.result || buildDefaultRefresherConfig());
-      req.onerror = (e) => {
-        logError('Failed to get refresher config:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    const record = await readTx(USER_REFRESHER_CONFIG_STORE_NAME, (store) => store.get(REFRESHER_CONFIG_SINGLETON_ID));
+    return record || buildDefaultRefresherConfig();
   } catch (error) {
     logError('Error in getRefresherConfig:', error);
     throw error;
@@ -70,17 +62,7 @@ export const putRefresherConfig = async (record) => {
     throw new Error(`putRefresherConfig requires record.id === '${REFRESHER_CONFIG_SINGLETON_ID}' (got '${record.id}')`);
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([USER_REFRESHER_CONFIG_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(USER_REFRESHER_CONFIG_STORE_NAME);
-      const req = store.put(record);
-      req.onsuccess = () => resolve();
-      req.onerror = (e) => {
-        logError('Failed to put refresher config:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    await writeTx(USER_REFRESHER_CONFIG_STORE_NAME, (store) => store.put(record));
   } catch (error) {
     logError('Error in putRefresherConfig:', error);
     throw error;
@@ -110,17 +92,7 @@ export const putPrintBatch = async (record) => {
     throw new Error('putPrintBatch requires a non-empty string printedAt');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([PRINT_BATCHES_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(PRINT_BATCHES_STORE_NAME);
-      const req = store.put(record);
-      req.onsuccess = () => resolve();
-      req.onerror = (e) => {
-        logError('Failed to put print batch:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    await writeTx(PRINT_BATCHES_STORE_NAME, (store) => store.put(record));
   } catch (error) {
     logError('Error in putPrintBatch:', error);
     throw error;
@@ -135,17 +107,8 @@ export const getPrintBatch = async (batchId) => {
     throw new Error('getPrintBatch requires a non-empty string batchId');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([PRINT_BATCHES_STORE_NAME], 'readonly');
-      const store = tx.objectStore(PRINT_BATCHES_STORE_NAME);
-      const req = store.get(batchId);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = (e) => {
-        logError('Failed to get print batch:', e.target.error);
-        reject(e.target.error);
-      };
-    });
+    const record = await readTx(PRINT_BATCHES_STORE_NAME, (store) => store.get(batchId));
+    return record ?? null;
   } catch (error) {
     logError('Error in getPrintBatch:', error);
     throw error;
@@ -163,25 +126,14 @@ export const getPrintBatch = async (batchId) => {
  */
 export const getAllPrintBatches = async () => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction([PRINT_BATCHES_STORE_NAME], 'readonly');
-      const store = tx.objectStore(PRINT_BATCHES_STORE_NAME);
-      const req = store.getAll();
-      req.onsuccess = () => {
-        const records = Array.isArray(req.result) ? req.result : [];
-        records.sort((a, b) => {
-          const aTime = Date.parse(a.printedAt || '');
-          const bTime = Date.parse(b.printedAt || '');
-          return bTime - aTime; // DESC
-        });
-        resolve(records);
-      };
-      req.onerror = (e) => {
-        logError('Failed to get all print batches:', e.target.error);
-        reject(e.target.error);
-      };
+    const result = await readTx(PRINT_BATCHES_STORE_NAME, (store) => store.getAll());
+    const records = Array.isArray(result) ? result : [];
+    records.sort((a, b) => {
+      const aTime = Date.parse(a.printedAt || '');
+      const bTime = Date.parse(b.printedAt || '');
+      return bTime - aTime; // DESC
     });
+    return records;
   } catch (error) {
     logError('Error in getAllPrintBatches:', error);
     throw error;

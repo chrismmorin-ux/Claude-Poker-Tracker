@@ -7,7 +7,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  updateTx,
   SETTINGS_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -33,33 +35,15 @@ const getSettingsKey = (userId) => `settings_${userId || GUEST_USER_ID}`;
  */
 export const getSettings = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    const settingsKey = getSettingsKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SETTINGS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const request = objectStore.get(settingsKey);
-
-      request.onsuccess = () => {
-        const settings = request.result;
-        if (settings) {
-          log(`Settings loaded for user ${userId}`);
-          // Return settings without the id and userId fields
-          const { id, userId: _, ...settingsData } = settings;
-          resolve(settingsData);
-        } else {
-          log(`No settings found for user ${userId}, will use defaults`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get settings:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const settings = await readTx(SETTINGS_STORE_NAME, (store) => store.get(getSettingsKey(userId)));
+    if (!settings) {
+      log(`No settings found for user ${userId}, will use defaults`);
+      return null;
+    }
+    log(`Settings loaded for user ${userId}`);
+    // Return settings without the id and userId fields
+    const { id, userId: _, ...settingsData } = settings;
+    return settingsData;
   } catch (error) {
     logError('Error in getSettings:', error);
     throw error;
@@ -74,33 +58,15 @@ export const getSettings = async (userId = GUEST_USER_ID) => {
  */
 export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    const settingsKey = getSettingsKey(userId);
-
     // Create record with userId-based key
     const settingsRecord = {
-      id: settingsKey,
+      id: getSettingsKey(userId),
       userId,
       ...settings,
       updatedAt: Date.now(),
     };
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SETTINGS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const request = objectStore.put(settingsRecord); // put creates or updates
-
-      request.onsuccess = () => {
-        log(`Settings saved for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save settings:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(SETTINGS_STORE_NAME, (store) => store.put(settingsRecord)); // put creates or updates
+    log(`Settings saved for user ${userId}`);
   } catch (error) {
     logError('Error in saveSettings:', error);
     throw error;
@@ -115,45 +81,16 @@ export const saveSettings = async (settings, userId = GUEST_USER_ID) => {
  */
 export const updateSettings = async (updates, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const settingsKey = getSettingsKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SETTINGS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const getRequest = objectStore.get(settingsKey);
-
-      getRequest.onsuccess = () => {
-        // Get existing settings or use defaults with userId-based key
-        const existing = getRequest.result || { id: settingsKey, userId, ...DEFAULT_SETTINGS };
-
-        // Merge updates
-        const updated = {
-          ...existing,
-          ...updates,
-          updatedAt: Date.now(),
-        };
-
-        const putRequest = objectStore.put(updated);
-
-        putRequest.onsuccess = () => {
-          log(`Settings updated for user ${userId}`);
-          const { id, userId: _, ...settingsData } = updated;
-          resolve(settingsData);
-        };
-
-        putRequest.onerror = (event) => {
-          logError('Failed to update settings:', event.target.error);
-          reject(event.target.error);
-        };
-      };
-
-      getRequest.onerror = (event) => {
-        logError('Failed to get settings for update:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const updated = await updateTx(SETTINGS_STORE_NAME, settingsKey, (existing) => ({
+      // Get existing settings or use defaults with userId-based key
+      ...(existing || { id: settingsKey, userId, ...DEFAULT_SETTINGS }),
+      ...updates,
+      updatedAt: Date.now(),
+    }));
+    log(`Settings updated for user ${userId}`);
+    const { id, userId: _, ...settingsData } = updated;
+    return settingsData;
   } catch (error) {
     logError('Error in updateSettings:', error);
     throw error;
@@ -182,25 +119,8 @@ export const resetSettings = async (userId = GUEST_USER_ID) => {
  */
 export const clearSettings = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    const settingsKey = getSettingsKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SETTINGS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SETTINGS_STORE_NAME);
-      const request = objectStore.delete(settingsKey);
-
-      request.onsuccess = () => {
-        log(`Settings cleared for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to clear settings:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(SETTINGS_STORE_NAME, (store) => store.delete(getSettingsKey(userId)));
+    log(`Settings cleared for user ${userId}`);
   } catch (error) {
     logError('Error in clearSettings:', error);
     throw error;

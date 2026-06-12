@@ -7,7 +7,10 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  updateTx,
+  atomicTx,
   STORE_NAME,
   SESSIONS_STORE_NAME,
   ACTIVE_SESSION_STORE_NAME,
@@ -40,8 +43,6 @@ const getActiveSessionKey = (userId) => `active_${userId || GUEST_USER_ID}`;
  */
 export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
     const sessionRecord = {
       startTime: Date.now(),
       endTime: null,
@@ -76,23 +77,9 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
       throw new Error(`Invalid session data: ${validation.errors.join(', ')}`);
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const request = objectStore.add(sessionRecord);
-
-      request.onsuccess = (event) => {
-        const sessionId = event.target.result;
-        log(`Session created successfully (ID: ${sessionId})`);
-        resolve(sessionId);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to create session:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const sessionId = await writeTx(SESSIONS_STORE_NAME, (store) => store.add(sessionRecord));
+    log(`Session created successfully (ID: ${sessionId})`);
+    return sessionId;
   } catch (error) {
     logError('Error in createSession:', error);
     throw error;
@@ -107,46 +94,14 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
  */
 export const endSession = async (sessionId, cashOut = null) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const getRequest = objectStore.get(sessionId);
-
-      getRequest.onsuccess = (event) => {
-        const session = event.target.result;
-
-        if (!session) {
-          logError(`Session ${sessionId} not found`);
-          reject(new Error(`Session ${sessionId} not found`));
-          return;
-        }
-
-        // Update session
-        session.endTime = Date.now();
-        session.isActive = false;
-        session.cashOut = cashOut;
-
-        const updateRequest = objectStore.put(session);
-
-        updateRequest.onsuccess = () => {
-          log(`Session ${sessionId} ended successfully`);
-          resolve();
-        };
-
-        updateRequest.onerror = (event) => {
-          logError(`Failed to end session ${sessionId}:`, event.target.error);
-          reject(event.target.error);
-        };
-      };
-
-      getRequest.onerror = (event) => {
-        logError(`Failed to get session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
+    await updateTx(SESSIONS_STORE_NAME, sessionId, (session) => {
+      if (!session) throw new Error(`Session ${sessionId} not found`);
+      session.endTime = Date.now();
+      session.isActive = false;
+      session.cashOut = cashOut;
+      return session;
     });
+    log(`Session ${sessionId} ended successfully`);
   } catch (error) {
     logError('Error in endSession:', error);
     throw error;
@@ -160,32 +115,14 @@ export const endSession = async (sessionId, cashOut = null) => {
  */
 export const getActiveSession = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-      const request = objectStore.get(activeKey);
-
-      request.onsuccess = (event) => {
-        const activeSessionRecord = event.target.result;
-
-        if (activeSessionRecord && activeSessionRecord.sessionId) {
-          log(`Active session for user ${userId}: ${activeSessionRecord.sessionId}`);
-          resolve({ sessionId: activeSessionRecord.sessionId });
-        } else {
-          log(`No active session for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get active session:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const activeSessionRecord = await readTx(ACTIVE_SESSION_STORE_NAME, (store) => store.get(activeKey));
+    if (activeSessionRecord && activeSessionRecord.sessionId) {
+      log(`Active session for user ${userId}: ${activeSessionRecord.sessionId}`);
+      return { sessionId: activeSessionRecord.sessionId };
+    }
+    log(`No active session for user ${userId}`);
+    return null;
   } catch (error) {
     logError('Error in getActiveSession:', error);
     return null; // Fail gracefully
@@ -200,33 +137,15 @@ export const getActiveSession = async (userId = GUEST_USER_ID) => {
  */
 export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-
-      const activeSessionRecord = {
-        id: activeKey,
-        sessionId: sessionId,
-        userId,
-        lastUpdated: Date.now()
-      };
-
-      const request = objectStore.put(activeSessionRecord);
-
-      request.onsuccess = () => {
-        log(`Active session set to ${sessionId} for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to set active session:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const activeSessionRecord = {
+      id: activeKey,
+      sessionId: sessionId,
+      userId,
+      lastUpdated: Date.now()
+    };
+    await writeTx(ACTIVE_SESSION_STORE_NAME, (store) => store.put(activeSessionRecord));
+    log(`Active session set to ${sessionId} for user ${userId}`);
   } catch (error) {
     logError('Error in setActiveSession:', error);
     throw error;
@@ -240,25 +159,9 @@ export const setActiveSession = async (sessionId, userId = GUEST_USER_ID) => {
  */
 export const clearActiveSession = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const activeKey = getActiveSessionKey(userId);
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([ACTIVE_SESSION_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-      const request = objectStore.delete(activeKey);
-
-      request.onsuccess = () => {
-        log(`Active session cleared for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to clear active session:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(ACTIVE_SESSION_STORE_NAME, (store) => store.delete(activeKey));
+    log(`Active session cleared for user ${userId}`);
   } catch (error) {
     logError('Error in clearActiveSession:', error);
     throw error;
@@ -272,28 +175,10 @@ export const clearActiveSession = async (userId = GUEST_USER_ID) => {
  */
 export const getAllSessions = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-
-      // Use userId index to filter sessions
-      const index = objectStore.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (event) => {
-        const sessions = event.target.result;
-        log(`Loaded ${sessions.length} sessions for user ${userId}`);
-        resolve(sessions);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load sessions:', event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    // Use userId index to filter sessions
+    const sessions = await readTx(SESSIONS_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    log(`Loaded ${sessions.length} sessions for user ${userId}`);
+    return sessions;
   } catch (error) {
     logError('Error in getAllSessions:', error);
     return [];
@@ -307,31 +192,9 @@ export const getAllSessions = async (userId = GUEST_USER_ID) => {
  */
 export const getSessionById = async (sessionId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const request = objectStore.get(sessionId);
-
-      request.onsuccess = (event) => {
-        const session = event.target.result;
-
-        if (session) {
-          log(`Loaded session ID ${sessionId}`);
-          resolve(session);
-        } else {
-          log(`Session ID ${sessionId} not found`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to load session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const session = await readTx(SESSIONS_STORE_NAME, (store) => store.get(sessionId));
+    log(session ? `Loaded session ID ${sessionId}` : `Session ID ${sessionId} not found`);
+    return session ?? null;
   } catch (error) {
     logError('Error in getSessionById:', error);
     return null;
@@ -345,24 +208,8 @@ export const getSessionById = async (sessionId) => {
  */
 export const deleteSession = async (sessionId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const request = objectStore.delete(sessionId);
-
-      request.onsuccess = () => {
-        log(`Session ${sessionId} deleted successfully`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to delete session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    await writeTx(SESSIONS_STORE_NAME, (store) => store.delete(sessionId));
+    log(`Session ${sessionId} deleted successfully`);
   } catch (error) {
     logError('Error in deleteSession:', error);
     throw error;
@@ -377,46 +224,15 @@ export const deleteSession = async (sessionId) => {
  */
 export const updateSession = async (sessionId, updates) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const getRequest = objectStore.get(sessionId);
-
-      getRequest.onsuccess = (event) => {
-        const session = event.target.result;
-
-        if (!session) {
-          logError(`Session ${sessionId} not found`);
-          reject(new Error(`Session ${sessionId} not found`));
-          return;
-        }
-
-        // Update fields
-        Object.keys(updates).forEach(key => {
-          session[key] = updates[key];
-        });
-
-        const updateRequest = objectStore.put(session);
-
-        updateRequest.onsuccess = () => {
-          log(`Session ${sessionId} updated successfully`);
-          resolve();
-        };
-
-        updateRequest.onerror = (event) => {
-          logError(`Failed to update session ${sessionId}:`, event.target.error);
-          reject(event.target.error);
-        };
-      };
-
-      getRequest.onerror = (event) => {
-        logError(`Failed to get session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
+    await updateTx(SESSIONS_STORE_NAME, sessionId, (session) => {
+      if (!session) throw new Error(`Session ${sessionId} not found`);
+      // Update fields
+      Object.keys(updates).forEach(key => {
+        session[key] = updates[key];
+      });
+      return session;
     });
+    log(`Session ${sessionId} updated successfully`);
   } catch (error) {
     logError('Error in updateSession:', error);
     throw error;
@@ -436,8 +252,6 @@ export const updateSession = async (sessionId, updates) => {
  */
 export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
     const sessionRecord = {
       startTime: Date.now(),
       endTime: null,
@@ -465,48 +279,24 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
 
     const activeKey = `active_${userId || GUEST_USER_ID}`;
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
-        'readwrite'
-      );
-
-      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
-
-      const addRequest = sessionsStore.add(sessionRecord);
-
-      addRequest.onsuccess = (event) => {
-        const sessionId = event.target.result;
-
-        activeStore.put({
-          id: activeKey,
-          sessionId,
-          userId,
-          lastUpdated: Date.now()
-        });
-
-        // Resolve with sessionId after full transaction commits
-        transaction.oncomplete = () => {
-          log(`Session ${sessionId} created and set active atomically`);
-          resolve(sessionId);
+    // Resolves with sessionId after the full transaction commits.
+    const sessionId = await atomicTx(
+      [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
+      (stores, tx, setResult) => {
+        const addRequest = stores[SESSIONS_STORE_NAME].add(sessionRecord);
+        addRequest.onsuccess = (event) => {
+          setResult(event.target.result);
+          stores[ACTIVE_SESSION_STORE_NAME].put({
+            id: activeKey,
+            sessionId: event.target.result,
+            userId,
+            lastUpdated: Date.now()
+          });
         };
-      };
-
-      addRequest.onerror = (event) => {
-        reject(event.target.error);
-      };
-
-      transaction.onerror = (event) => {
-        logError('Atomic createSession failed:', event.target.error);
-        reject(event.target.error);
-      };
-
-      transaction.onabort = (event) => {
-        logError('Atomic createSession aborted:', event.target.error);
-        reject(event.target.error || new Error('Transaction aborted'));
-      };
-    });
+      }
+    );
+    log(`Session ${sessionId} created and set active atomically`);
+    return sessionId;
   } catch (error) {
     logError('Error in createSessionAtomic:', error);
     throw error;
@@ -524,64 +314,41 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
 // AUDIT-2026-04-21-SV F2: `tipAmount` is additive-optional. Legacy sessions without
 // the field remain valid; readers treat undefined as 0. No IDB version bump needed.
 export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID, tipAmount = null) => {
+  let sessionMissing = false;
   try {
-    const db = await getDB();
     const activeKey = `active_${userId || GUEST_USER_ID}`;
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
-        'readwrite'
-      );
+    await atomicTx(
+      [SESSIONS_STORE_NAME, ACTIVE_SESSION_STORE_NAME],
+      (stores, tx) => {
+        const getRequest = stores[SESSIONS_STORE_NAME].get(sessionId);
+        getRequest.onsuccess = (event) => {
+          const session = event.target.result;
+          if (!session) {
+            sessionMissing = true;
+            tx.abort();
+            return;
+          }
 
-      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
-      const activeStore = transaction.objectStore(ACTIVE_SESSION_STORE_NAME);
+          session.endTime = Date.now();
+          session.isActive = false;
+          session.cashOut = cashOut;
+          // AUDIT-2026-04-21-SV F2: persist tip when provided; skip field when null
+          // to keep legacy-session parity on round-trip.
+          if (tipAmount !== null && tipAmount !== undefined) {
+            session.tipAmount = tipAmount;
+          }
 
-      const getRequest = sessionsStore.get(sessionId);
-
-      getRequest.onsuccess = (event) => {
-        const session = event.target.result;
-
-        if (!session) {
-          reject(new Error(`Session ${sessionId} not found`));
-          return;
-        }
-
-        session.endTime = Date.now();
-        session.isActive = false;
-        session.cashOut = cashOut;
-        // AUDIT-2026-04-21-SV F2: persist tip when provided; skip field when null
-        // to keep legacy-session parity on round-trip.
-        if (tipAmount !== null && tipAmount !== undefined) {
-          session.tipAmount = tipAmount;
-        }
-
-        sessionsStore.put(session);
-        activeStore.delete(activeKey);
-
-        transaction.oncomplete = () => {
-          log(`Session ${sessionId} ended and active marker cleared atomically`);
-          resolve();
+          stores[SESSIONS_STORE_NAME].put(session);
+          stores[ACTIVE_SESSION_STORE_NAME].delete(activeKey);
         };
-      };
-
-      getRequest.onerror = (event) => {
-        reject(event.target.error);
-      };
-
-      transaction.onerror = (event) => {
-        logError('Atomic endSession failed:', event.target.error);
-        reject(event.target.error);
-      };
-
-      transaction.onabort = (event) => {
-        logError('Atomic endSession aborted:', event.target.error);
-        reject(event.target.error || new Error('Transaction aborted'));
-      };
-    });
+      }
+    );
+    log(`Session ${sessionId} ended and active marker cleared atomically`);
   } catch (error) {
-    logError('Error in endSessionAtomic:', error);
-    throw error;
+    const err = sessionMissing ? new Error(`Session ${sessionId} not found`) : error;
+    logError('Error in endSessionAtomic:', err);
+    throw err;
   }
 };
 
@@ -592,26 +359,9 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
  */
 export const getSessionHandCount = async (sessionId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(STORE_NAME);
-      const index = objectStore.index('sessionId');
-      const request = index.count(sessionId);
-
-      request.onsuccess = (event) => {
-        const count = event.target.result;
-        log(`Session ${sessionId} hand count: ${count}`);
-        resolve(count);
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to get hand count for session ${sessionId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-    });
+    const count = await readTx(STORE_NAME, (store) => store.index('sessionId').count(sessionId));
+    log(`Session ${sessionId} hand count: ${count}`);
+    return count;
   } catch (error) {
     logError('Error in getSessionHandCount:', error);
     return 0;
@@ -633,41 +383,31 @@ export const getSessionHandCount = async (sessionId) => {
  */
 export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    // Look for existing session with this tableId
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SESSIONS_STORE_NAME], 'readwrite');
-      const sessionsStore = transaction.objectStore(SESSIONS_STORE_NAME);
+    // Reuse-check + create happen in ONE readwrite transaction so two
+    // concurrent callers can't both create a session for the same table.
+    return await atomicTx([SESSIONS_STORE_NAME], (stores, tx, setResult) => {
+      const sessionsStore = stores[SESSIONS_STORE_NAME];
 
       // Check if tableId index exists (v12+)
-      let existingSession = null;
       if (sessionsStore.indexNames.contains('tableId')) {
-        const tableIdIndex = sessionsStore.index('tableId');
-        const getRequest = tableIdIndex.get(tableId);
+        const getRequest = sessionsStore.index('tableId').get(tableId);
 
         getRequest.onsuccess = (event) => {
-          existingSession = event.target.result;
+          const existingSession = event.target.result;
 
           if (existingSession && existingSession.userId === userId) {
             // Reuse existing session
             log(`Reusing online session ${existingSession.sessionId} for table ${tableId}`);
-            resolve(existingSession.sessionId);
+            setResult(existingSession.sessionId);
           } else {
             // Create new session
-            createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
+            createOnlineSession(sessionsStore, tableId, userId, setResult);
           }
-        };
-
-        getRequest.onerror = () => {
-          // Index query failed — create new
-          createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
         };
       } else {
         // No tableId index (pre-v12) — just create
-        createOnlineSession(sessionsStore, tableId, userId, resolve, reject);
+        createOnlineSession(sessionsStore, tableId, userId, setResult);
       }
-
     });
   } catch (error) {
     logError('Error in getOrCreateOnlineSession:', error);
@@ -675,7 +415,7 @@ export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) 
   }
 };
 
-function createOnlineSession(store, tableId, userId, resolve, reject) {
+function createOnlineSession(store, tableId, userId, setResult) {
   const sessionRecord = {
     startTime: Date.now(),
     endTime: null,
@@ -700,11 +440,6 @@ function createOnlineSession(store, tableId, userId, resolve, reject) {
   addRequest.onsuccess = (event) => {
     const sessionId = event.target.result;
     log(`Created online session ${sessionId} for table ${tableId}`);
-    resolve(sessionId);
-  };
-
-  addRequest.onerror = (event) => {
-    logError('Failed to create online session:', event.target.error);
-    reject(event.target.error);
+    setResult(sessionId);
   };
 }

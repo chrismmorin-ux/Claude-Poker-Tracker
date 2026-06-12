@@ -245,3 +245,154 @@ export const resetDBPool = () => {
   cachedDb = null;
   dbPromise = null;
 };
+
+// =============================================================================
+// SHARED TRANSACTION HELPERS (WS-226)
+//
+// Contract:
+//   - Helpers reject with the RAW DOMException, never wrapped, so caller
+//     checks like `error?.name === 'QuotaExceededError'` keep working. Only
+//     when tx.error is null do they synthesize an Error carrying store +
+//     helper context.
+//   - Helpers do NOT log. Each module's createPersistenceLogger try/catch
+//     owns logging and the swallow-vs-propagate decision.
+//   - Write helpers (writeTx/updateTx/atomicTx, and cursorTx in 'readwrite'
+//     mode) resolve on tx.oncomplete — i.e. AFTER the transaction durably
+//     commits — not on request.onsuccess (DEC: WS-226 durable-writes).
+//   - Layer-internal: exported from database.js only, not the index.js barrel.
+// =============================================================================
+
+/**
+ * Single-store readonly transaction. fn(store) must return one IDBRequest
+ * (get / getAll / count / index().get / ...). Resolves request.result.
+ * @param {string} storeName
+ * @param {(store: IDBObjectStore) => IDBRequest} fn
+ * @returns {Promise<any>}
+ */
+export const readTx = async (storeName, fn) => {
+  const db = await getDB();
+  const request = fn(db.transaction([storeName], 'readonly').objectStore(storeName));
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+/**
+ * Single-store readwrite transaction. fn(store) returns the one IDBRequest
+ * whose result the caller wants (put / add / delete / clear) — it may issue
+ * additional requests first. Resolves that result AFTER the tx commits.
+ * @param {string} storeName
+ * @param {(store: IDBObjectStore) => IDBRequest|void} fn
+ * @returns {Promise<any>}
+ */
+export const writeTx = async (storeName, fn) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([storeName], 'readwrite');
+    let result;
+    const request = fn(tx.objectStore(storeName));
+    if (request) request.onsuccess = () => { result = request.result; };
+    tx.oncomplete = () => resolve(result);
+    tx.onabort = () => reject(tx.error || new Error(`writeTx(${storeName}) aborted`));
+  });
+};
+
+/**
+ * Read-modify-write in ONE transaction. mutate(record) returns the record to
+ * put, or undefined to skip the write (resolves undefined). Throw inside
+ * mutate to abort the tx and reject with your error (e.g. not-found).
+ * Resolves the written record after commit.
+ * @param {string} storeName
+ * @param {IDBValidKey} key
+ * @param {(record: any) => any|undefined} mutate
+ * @returns {Promise<any|undefined>}
+ */
+export const updateTx = async (storeName, key, mutate) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([storeName], 'readwrite');
+    const store = tx.objectStore(storeName);
+    let result;
+    const getReq = store.get(key);
+    getReq.onsuccess = () => {
+      let updated;
+      try {
+        updated = mutate(getReq.result);
+      } catch (err) {
+        reject(err);
+        try { tx.abort(); } catch (_) { /* tx may already be settled */ }
+        return;
+      }
+      if (updated === undefined) return;
+      store.put(updated);
+      result = updated;
+    };
+    tx.oncomplete = () => resolve(result);
+    tx.onabort = () => reject(tx.error || new Error(`updateTx(${storeName}, ${key}) aborted`));
+  });
+};
+
+/**
+ * Cursor walk. visit(cursor, acc) — push results into acc; return false to
+ * stop early. mode:'readwrite' permits cursor.update()/delete() during the
+ * walk. Resolves acc on tx.oncomplete.
+ * @param {string} storeName
+ * @param {{index?: string, range?: IDBKeyRange, direction?: IDBCursorDirection, mode?: IDBTransactionMode}} options
+ * @param {(cursor: IDBCursorWithValue, acc: any[]) => boolean|void} visit
+ * @returns {Promise<any[]>}
+ */
+export const cursorTx = async (storeName, options, visit) => {
+  const { index = null, range = null, direction = 'next', mode = 'readonly' } = options || {};
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([storeName], mode);
+    const store = tx.objectStore(storeName);
+    const source = index ? store.index(index) : store;
+    const acc = [];
+    const req = source.openCursor(range, direction);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return; // exhausted — tx completes
+      let verdict;
+      try {
+        verdict = visit(cursor, acc);
+      } catch (err) {
+        reject(err);
+        try { tx.abort(); } catch (_) { /* tx may already be settled */ }
+        return;
+      }
+      if (verdict !== false) cursor.continue();
+    };
+    tx.oncomplete = () => resolve(acc);
+    tx.onabort = () => reject(tx.error || new Error(`cursorTx(${storeName}) aborted`));
+  });
+};
+
+/**
+ * Multi-store atomic readwrite transaction. fn(stores, tx, setResult) gets a
+ * {storeName: IDBObjectStore} map; chain requests with your own callbacks and
+ * call setResult(v) for the resolved value. All-or-nothing: resolves on
+ * tx.oncomplete, rejects with raw tx.error on abort. Throw synchronously
+ * inside fn to abort.
+ * @param {string[]} storeNames
+ * @param {(stores: Record<string, IDBObjectStore>, tx: IDBTransaction, setResult: (v: any) => void) => void} fn
+ * @returns {Promise<any>}
+ */
+export const atomicTx = async (storeNames, fn) => {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeNames, 'readwrite');
+    const stores = Object.fromEntries(storeNames.map((n) => [n, tx.objectStore(n)]));
+    let result;
+    try {
+      fn(stores, tx, (v) => { result = v; });
+    } catch (err) {
+      reject(err);
+      try { tx.abort(); } catch (_) { /* tx may already be settled */ }
+      return;
+    }
+    tx.oncomplete = () => resolve(result);
+    tx.onabort = () => reject(tx.error || new Error(`atomicTx(${storeNames.join('+')}) aborted`));
+  });
+};

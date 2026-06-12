@@ -21,7 +21,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   SHAPE_MASTERY_STORE_NAME,
   SHAPE_LESSONS_STORE_NAME,
   GUEST_USER_ID,
@@ -41,28 +42,11 @@ import {
  */
 export const getShapeMastery = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_MASTERY_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SHAPE_MASTERY_STORE_NAME);
-      const request = objectStore.get(userId);
-
-      request.onsuccess = () => {
-        const record = request.result;
-        if (record) {
-          log(`Shape mastery loaded for user ${userId}`);
-          resolve(record);
-        } else {
-          log(`No shape mastery record found for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get shape mastery:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    const record = await readTx(SHAPE_MASTERY_STORE_NAME, (store) => store.get(userId));
+    log(record
+      ? `Shape mastery loaded for user ${userId}`
+      : `No shape mastery record found for user ${userId}`);
+    return record ?? null;
   } catch (error) {
     logError('Error in getShapeMastery:', error);
     throw error;
@@ -81,22 +65,8 @@ export const putShapeMastery = async (record) => {
     throw new Error('putShapeMastery requires a record with a string userId field');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_MASTERY_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SHAPE_MASTERY_STORE_NAME);
-      const request = objectStore.put(record);
-
-      request.onsuccess = () => {
-        log(`Shape mastery saved for user ${record.userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save shape mastery:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(SHAPE_MASTERY_STORE_NAME, (store) => store.put(record));
+    log(`Shape mastery saved for user ${record.userId}`);
   } catch (error) {
     logError('Error in putShapeMastery:', error);
     throw error;
@@ -114,22 +84,8 @@ export const putShapeMastery = async (record) => {
  */
 export const deleteShapeMastery = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_MASTERY_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SHAPE_MASTERY_STORE_NAME);
-      const request = objectStore.delete(userId);
-
-      request.onsuccess = () => {
-        log(`Shape mastery deleted for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to delete shape mastery:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(SHAPE_MASTERY_STORE_NAME, (store) => store.delete(userId));
+    log(`Shape mastery deleted for user ${userId}`);
   } catch (error) {
     logError('Error in deleteShapeMastery:', error);
     throw error;
@@ -166,22 +122,8 @@ export const appendLessonCompletion = async (record) => {
   const id = record.id || `${record.userId}:${record.lessonId}:${record.completedAt}`;
   const full = { ...record, id };
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_LESSONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SHAPE_LESSONS_STORE_NAME);
-      const request = objectStore.put(full);
-
-      request.onsuccess = () => {
-        log(`Shape lesson completion appended: ${id}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to append lesson completion:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(SHAPE_LESSONS_STORE_NAME, (store) => store.put(full));
+    log(`Shape lesson completion appended: ${id}`);
   } catch (error) {
     logError('Error in appendLessonCompletion:', error);
     throw error;
@@ -201,31 +143,17 @@ export const appendLessonCompletion = async (record) => {
 export const listLessonCompletions = async (userId = GUEST_USER_ID, options = {}) => {
   const { descriptorId, since } = options;
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_LESSONS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SHAPE_LESSONS_STORE_NAME);
-      // Use the by_userId index so we never scan completions for other users.
-      const index = objectStore.index('by_userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = () => {
-        let records = Array.isArray(request.result) ? request.result : [];
-        if (typeof descriptorId === 'string') {
-          records = records.filter((r) => r.descriptorId === descriptorId);
-        }
-        if (typeof since === 'number') {
-          records = records.filter((r) => r.completedAt >= since);
-        }
-        records.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
-        resolve(records);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to list lesson completions:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    // Use the by_userId index so we never scan completions for other users.
+    const result = await readTx(SHAPE_LESSONS_STORE_NAME, (store) => store.index('by_userId').getAll(userId));
+    let records = Array.isArray(result) ? result : [];
+    if (typeof descriptorId === 'string') {
+      records = records.filter((r) => r.descriptorId === descriptorId);
+    }
+    if (typeof since === 'number') {
+      records = records.filter((r) => r.completedAt >= since);
+    }
+    records.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+    return records;
   } catch (error) {
     logError('Error in listLessonCompletions:', error);
     throw error;
@@ -241,28 +169,12 @@ export const listLessonCompletions = async (userId = GUEST_USER_ID, options = {}
  */
 export const clearLessonCompletions = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const records = await listLessonCompletions(userId);
     if (records.length === 0) return;
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SHAPE_LESSONS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SHAPE_LESSONS_STORE_NAME);
-      let errored = false;
-      for (const r of records) {
-        const req = objectStore.delete(r.id);
-        req.onerror = () => {
-          if (!errored) {
-            errored = true;
-            reject(req.error);
-          }
-        };
-      }
-      transaction.oncomplete = () => {
-        log(`Cleared ${records.length} lesson completions for user ${userId}`);
-        resolve();
-      };
-      transaction.onerror = () => reject(transaction.error);
+    await writeTx(SHAPE_LESSONS_STORE_NAME, (store) => {
+      for (const r of records) store.delete(r.id);
     });
+    log(`Cleared ${records.length} lesson completions for user ${userId}`);
   } catch (error) {
     logError('Error in clearLessonCompletions:', error);
     throw error;

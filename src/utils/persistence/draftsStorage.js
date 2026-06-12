@@ -17,7 +17,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  atomicTx,
   PLAYER_DRAFTS_STORE_NAME,
   PLAYERS_STORE_NAME,
   GUEST_USER_ID,
@@ -37,14 +39,8 @@ import { validateDraftRecord, validatePlayerRecord, logValidationErrors } from '
  */
 export const getDraft = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction([PLAYER_DRAFTS_STORE_NAME], 'readonly');
-      const store = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
-      const req = store.get(userId);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error);
-    });
+    const record = await readTx(PLAYER_DRAFTS_STORE_NAME, (store) => store.get(userId));
+    return record ?? null;
   } catch (err) {
     logError('Error in getDraft:', err);
     return null;
@@ -80,20 +76,13 @@ export const putDraft = async (userId, draft, seatContext = null) => {
     throw new Error(`Invalid draft record: ${validation.errors.join(', ')}`);
   }
 
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([PLAYER_DRAFTS_STORE_NAME], 'readwrite');
-    const store = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
-    const req = store.put(record);
-    req.onsuccess = () => {
-      log(`Draft saved for user ${record.userId}`);
-      resolve();
-    };
-    req.onerror = () => {
-      logError('Failed to save draft:', req.error);
-      reject(req.error);
-    };
-  });
+  try {
+    await writeTx(PLAYER_DRAFTS_STORE_NAME, (store) => store.put(record));
+    log(`Draft saved for user ${record.userId}`);
+  } catch (err) {
+    logError('Failed to save draft:', err);
+    throw err;
+  }
 };
 
 // =============================================================================
@@ -107,17 +96,8 @@ export const putDraft = async (userId, draft, seatContext = null) => {
  */
 export const deleteDraft = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction([PLAYER_DRAFTS_STORE_NAME], 'readwrite');
-      const store = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
-      const req = store.delete(userId);
-      req.onsuccess = () => {
-        log(`Draft deleted for user ${userId}`);
-        resolve();
-      };
-      req.onerror = () => reject(req.error);
-    });
+    await writeTx(PLAYER_DRAFTS_STORE_NAME, (store) => store.delete(userId));
+    log(`Draft deleted for user ${userId}`);
   } catch (err) {
     logError('Error in deleteDraft:', err);
     throw err;
@@ -160,39 +140,25 @@ export const commitDraft = async (userId, playerRecord) => {
     throw new Error(`Invalid player record: ${validation.errors.join(', ')}`);
   }
 
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([PLAYERS_STORE_NAME, PLAYER_DRAFTS_STORE_NAME], 'readwrite');
-    const playersStore = tx.objectStore(PLAYERS_STORE_NAME);
-    const draftsStore = tx.objectStore(PLAYER_DRAFTS_STORE_NAME);
-
-    let addedId = null;
-
-    const addReq = playersStore.add(finalRecord);
-    addReq.onsuccess = (event) => {
-      addedId = event.target.result;
-      // Delete draft in the SAME transaction so failure here aborts the add.
-      const delReq = draftsStore.delete(userId);
-      delReq.onerror = () => {
-        // Abort triggers tx.onabort below; let that path reject.
-        logError('commitDraft: draft delete failed', delReq.error);
-      };
-    };
-    addReq.onerror = () => {
-      // Caller may see this before tx.onabort fires; we still need the onabort
-      // to run and reject (handles the "name unique constraint" case too).
-      logError('commitDraft: player add failed', addReq.error);
-    };
-
-    tx.oncomplete = () => {
-      if (addedId !== null) {
-        log(`commitDraft: player ${addedId} created + draft cleared for user ${userId}`);
-        resolve(addedId);
-      } else {
-        reject(new Error('commitDraft: transaction completed without a player id'));
+  try {
+    const addedId = await atomicTx(
+      [PLAYERS_STORE_NAME, PLAYER_DRAFTS_STORE_NAME],
+      (stores, tx, setResult) => {
+        const addReq = stores[PLAYERS_STORE_NAME].add(finalRecord);
+        addReq.onsuccess = (event) => {
+          setResult(event.target.result);
+          // Delete draft in the SAME transaction so failure here aborts the add.
+          stores[PLAYER_DRAFTS_STORE_NAME].delete(userId);
+        };
       }
-    };
-    tx.onabort = () => reject(tx.error || new Error('commitDraft transaction aborted'));
-    tx.onerror = () => reject(tx.error || new Error('commitDraft transaction errored'));
-  });
+    );
+    if (addedId === null || addedId === undefined) {
+      throw new Error('commitDraft: transaction completed without a player id');
+    }
+    log(`commitDraft: player ${addedId} created + draft cleared for user ${userId}`);
+    return addedId;
+  } catch (err) {
+    logError('commitDraft failed:', err);
+    throw err;
+  }
 };

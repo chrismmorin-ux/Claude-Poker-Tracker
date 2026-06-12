@@ -18,7 +18,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   GUEST_USER_ID,
   PREFLOP_DRILLS_STORE_NAME,
   logError,
@@ -32,19 +33,12 @@ import {
  */
 export const savePreflopDrill = async (attempt, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
     const record = {
       ...attempt,
       userId,
       timestamp: Date.now(),
     };
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(PREFLOP_DRILLS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(PREFLOP_DRILLS_STORE_NAME);
-      const req = store.add(record);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
+    return await writeTx(PREFLOP_DRILLS_STORE_NAME, (store) => store.add(record));
   } catch (err) {
     logError('savePreflopDrill failed:', err);
     throw err;
@@ -56,22 +50,12 @@ export const savePreflopDrill = async (attempt, userId = GUEST_USER_ID) => {
  */
 export const loadPreflopDrills = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(PREFLOP_DRILLS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(PREFLOP_DRILLS_STORE_NAME);
-      const idx = store.index('userId');
-      const req = idx.getAll(userId);
-      req.onsuccess = () => {
-        // drillId tiebreak: same-ms saves would otherwise return in insertion
-        // (oldest-first) order, breaking the "newest first" contract.
-        const sorted = (req.result || []).sort(
-          (a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId,
-        );
-        resolve(sorted);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const records = await readTx(PREFLOP_DRILLS_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    // drillId tiebreak: same-ms saves would otherwise return in insertion
+    // (oldest-first) order, breaking the "newest first" contract.
+    return (records || []).sort(
+      (a, b) => b.timestamp - a.timestamp || b.drillId - a.drillId,
+    );
   } catch (err) {
     logError('loadPreflopDrills failed:', err);
     return [];
@@ -84,14 +68,10 @@ export const loadPreflopDrills = async (userId = GUEST_USER_ID) => {
 export const clearPreflopDrills = async (userId = GUEST_USER_ID) => {
   try {
     const drills = await loadPreflopDrills(userId);
-    const db = await getDB();
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(PREFLOP_DRILLS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(PREFLOP_DRILLS_STORE_NAME);
+    await writeTx(PREFLOP_DRILLS_STORE_NAME, (store) => {
       for (const d of drills) store.delete(d.drillId);
-      tx.oncomplete = () => resolve(drills.length);
-      tx.onerror = () => reject(tx.error);
     });
+    return drills.length;
   } catch (err) {
     logError('clearPreflopDrills failed:', err);
     throw err;

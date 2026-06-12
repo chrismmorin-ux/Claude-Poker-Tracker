@@ -13,7 +13,7 @@
  *   - docs/projects/exploit-deviation/schema.md §8 (additive-only evolution)
  */
 
-import { getDB, VILLAIN_ASSUMPTIONS_STORE_NAME } from './database';
+import { readTx, writeTx, VILLAIN_ASSUMPTIONS_STORE_NAME } from './database';
 import { createPersistenceLogger } from './index';
 import { migratePersistedAssumption, needsMigration, SCHEMA_VERSION } from '../assumptionEngine';
 
@@ -33,14 +33,7 @@ export const saveAssumption = async (assumption) => {
     throw new Error('saveAssumption: assumption must have string villainId and id');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-      const request = store.put(assumption);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await writeTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.put(assumption));
   } catch (err) {
     logError(err);
     throw err;
@@ -53,23 +46,11 @@ export const saveAssumption = async (assumption) => {
  */
 export const saveAssumptionBatch = async (assumptions) => {
   if (!Array.isArray(assumptions) || assumptions.length === 0) return;
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readwrite');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    let errored = false;
+  await writeTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => {
     for (const a of assumptions) {
       if (!a || typeof a.villainId !== 'string' || typeof a.id !== 'string') continue;
-      const request = store.put(a);
-      request.onerror = () => {
-        if (!errored) {
-          errored = true;
-          reject(request.error);
-        }
-      };
+      store.put(a);
     }
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
   });
 };
 
@@ -79,28 +60,14 @@ export const saveAssumptionBatch = async (assumptions) => {
  * @param {string} assumptionId
  */
 export const deleteAssumption = async (villainId, assumptionId) => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readwrite');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    const request = store.delete([villainId, assumptionId]);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  await writeTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.delete([villainId, assumptionId]));
 };
 
 /**
  * Clear all assumptions. Used by test harness + admin reset.
  */
 export const clearAllAssumptions = async () => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readwrite');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    const request = store.clear();
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  await writeTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.clear());
 };
 
 // =============================================================================
@@ -116,24 +83,13 @@ export const clearAllAssumptions = async () => {
  */
 export const loadAssumptionsByVillain = async (villainId) => {
   if (typeof villainId !== 'string') return [];
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readonly');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    const index = store.index('villainId');
-    const request = index.getAll(villainId);
-    request.onsuccess = () => {
-      const records = request.result || [];
-      try {
-        const migrated = records.map(migrateIfNeeded);
-        resolve(migrated);
-      } catch (err) {
-        logError(err);
-        reject(err);
-      }
-    };
-    request.onerror = () => reject(request.error);
-  });
+  const records = (await readTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.index('villainId').getAll(villainId))) || [];
+  try {
+    return records.map(migrateIfNeeded);
+  } catch (err) {
+    logError(err);
+    throw err;
+  }
 };
 
 /**
@@ -141,22 +97,13 @@ export const loadAssumptionsByVillain = async (villainId) => {
  * Applies migration as needed.
  */
 export const loadAllAssumptions = async () => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readonly');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    const request = store.getAll();
-    request.onsuccess = () => {
-      const records = request.result || [];
-      try {
-        resolve(records.map(migrateIfNeeded));
-      } catch (err) {
-        logError(err);
-        reject(err);
-      }
-    };
-    request.onerror = () => reject(request.error);
-  });
+  const records = (await readTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.getAll())) || [];
+  try {
+    return records.map(migrateIfNeeded);
+  } catch (err) {
+    logError(err);
+    throw err;
+  }
 };
 
 /**
@@ -164,23 +111,13 @@ export const loadAllAssumptions = async () => {
  * for live sidebar + drill-entry surfaces.
  */
 export const loadActiveAssumptions = async () => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(VILLAIN_ASSUMPTIONS_STORE_NAME, 'readonly');
-    const store = tx.objectStore(VILLAIN_ASSUMPTIONS_STORE_NAME);
-    const index = store.index('status');
-    const request = index.getAll('active');
-    request.onsuccess = () => {
-      const records = request.result || [];
-      try {
-        resolve(records.map(migrateIfNeeded));
-      } catch (err) {
-        logError(err);
-        reject(err);
-      }
-    };
-    request.onerror = () => reject(request.error);
-  });
+  const records = (await readTx(VILLAIN_ASSUMPTIONS_STORE_NAME, (store) => store.index('status').getAll('active'))) || [];
+  try {
+    return records.map(migrateIfNeeded);
+  } catch (err) {
+    logError(err);
+    throw err;
+  }
 };
 
 // =============================================================================

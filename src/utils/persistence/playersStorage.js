@@ -7,6 +7,9 @@
 
 import {
   getDB,
+  readTx,
+  writeTx,
+  updateTx,
   PLAYERS_STORE_NAME,
   SIGHTING_LOGS_STORE_NAME,
   PLAYER_PHOTOS_STORE_NAME,
@@ -34,11 +37,9 @@ import {
  */
 export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
     // Check for duplicate name at DB level for this user
     if (playerData.name) {
-      const existingPlayer = await getPlayerByNameInternal(db, playerData.name, userId);
+      const existingPlayer = await getPlayerByNameInternal(playerData.name, userId);
       if (existingPlayer) {
         throw new Error(`Player with name "${playerData.name}" already exists`);
       }
@@ -61,24 +62,9 @@ export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
       throw new Error(`Invalid player data: ${validation.errors.join(', ')}`);
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const request = objectStore.add(playerRecord);
-
-      request.onsuccess = (event) => {
-        const playerId = event.target.result;
-        log(`Player created successfully (ID: ${playerId})`);
-        resolve(playerId);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to create player:', event.target.error);
-        reject(event.target.error);
-      };
-
-
-    });
+    const playerId = await writeTx(PLAYERS_STORE_NAME, (store) => store.add(playerRecord));
+    log(`Player created successfully (ID: ${playerId})`);
+    return playerId;
   } catch (error) {
     logError('Error in createPlayer:', error);
     throw error;
@@ -86,29 +72,14 @@ export const createPlayer = async (playerData, userId = GUEST_USER_ID) => {
 };
 
 /**
- * Internal helper to check player by name using existing db connection
- * @param {IDBDatabase} db - Open database connection
+ * Internal helper to check player by name via the userId_name compound index
  * @param {string} name - Player name to search
  * @param {string} userId - User ID to filter by
  * @returns {Promise<Object|null>} Player or null
  */
-const getPlayerByNameInternal = (db, name, userId) => {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
-    const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-
-    // Use the userId_name compound index
-    const index = objectStore.index('userId_name');
-    const request = index.get([userId, name]);
-
-    request.onsuccess = (event) => {
-      resolve(event.target.result || null);
-    };
-
-    request.onerror = (event) => {
-      reject(event.target.error);
-    };
-  });
+const getPlayerByNameInternal = async (name, userId) => {
+  const player = await readTx(PLAYERS_STORE_NAME, (store) => store.index('userId_name').get([userId, name]));
+  return player ?? null;
 };
 
 /**
@@ -118,29 +89,10 @@ const getPlayerByNameInternal = (db, name, userId) => {
  */
 export const getAllPlayers = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-
-      // Use userId index to filter players
-      const index = objectStore.index('userId');
-      const request = index.getAll(userId);
-
-      request.onsuccess = (event) => {
-        const players = event.target.result;
-        log(`Loaded ${players.length} players for user ${userId}`);
-        resolve(players);
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to load players:', event.target.error);
-        reject(event.target.error);
-      };
-
-
-    });
+    // Use userId index to filter players
+    const players = await readTx(PLAYERS_STORE_NAME, (store) => store.index('userId').getAll(userId));
+    log(`Loaded ${players.length} players for user ${userId}`);
+    return players;
   } catch (error) {
     logError('Error in getAllPlayers:', error);
     return [];
@@ -154,32 +106,9 @@ export const getAllPlayers = async (userId = GUEST_USER_ID) => {
  */
 export const getPlayerById = async (playerId) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const request = objectStore.get(playerId);
-
-      request.onsuccess = (event) => {
-        const player = event.target.result;
-
-        if (player) {
-          log(`Loaded player ID ${playerId}`);
-          resolve(player);
-        } else {
-          log(`Player ID ${playerId} not found`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to load player ${playerId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-
-    });
+    const player = await readTx(PLAYERS_STORE_NAME, (store) => store.get(playerId));
+    log(player ? `Loaded player ID ${playerId}` : `Player ID ${playerId} not found`);
+    return player ?? null;
   } catch (error) {
     logError('Error in getPlayerById:', error);
     return null;
@@ -196,69 +125,32 @@ export const getPlayerById = async (playerId) => {
  */
 export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
     // Check for duplicate name at DB level only when name is actually changing.
     // Without the change-check, pre-existing duplicates in the DB would block
     // edits to other fields — and `index.get([userId, name])` returns a single
     // record (lowest key first), so editing the higher-id duplicate would
     // mis-detect the lower-id record as "another player with this name."
     if (updates.name) {
-      const currentRecord = await new Promise((resolve, reject) => {
-        const tx = db.transaction([PLAYERS_STORE_NAME], 'readonly');
-        const req = tx.objectStore(PLAYERS_STORE_NAME).get(playerId);
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => reject(req.error);
-      });
+      const currentRecord = await readTx(PLAYERS_STORE_NAME, (store) => store.get(playerId));
       const currentName = (currentRecord?.name ?? '').toString().trim().toLowerCase();
       const newName = updates.name.toString().trim().toLowerCase();
       if (currentName !== newName) {
-        const existingPlayer = await getPlayerByNameInternal(db, updates.name, userId);
+        const existingPlayer = await getPlayerByNameInternal(updates.name, userId);
         if (existingPlayer && existingPlayer.playerId !== playerId) {
           throw new Error(`Player with name "${updates.name}" already exists`);
         }
       }
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-      const getRequest = objectStore.get(playerId);
-
-      getRequest.onsuccess = (event) => {
-        const player = event.target.result;
-
-        if (!player) {
-          logError(`Player ${playerId} not found`);
-          reject(new Error(`Player ${playerId} not found`));
-          return;
-        }
-
-        // Update fields
-        Object.keys(updates).forEach(key => {
-          player[key] = updates[key];
-        });
-
-        const updateRequest = objectStore.put(player);
-
-        updateRequest.onsuccess = () => {
-          log(`Player ${playerId} updated successfully`);
-          resolve();
-        };
-
-        updateRequest.onerror = (event) => {
-          logError(`Failed to update player ${playerId}:`, event.target.error);
-          reject(event.target.error);
-        };
-      };
-
-      getRequest.onerror = (event) => {
-        logError(`Failed to get player ${playerId}:`, event.target.error);
-        reject(event.target.error);
-      };
-
-
+    await updateTx(PLAYERS_STORE_NAME, playerId, (player) => {
+      if (!player) throw new Error(`Player ${playerId} not found`);
+      // Update fields
+      Object.keys(updates).forEach(key => {
+        player[key] = updates[key];
+      });
+      return player;
     });
+    log(`Player ${playerId} updated successfully`);
   } catch (error) {
     logError('Error in updatePlayer:', error);
     throw error;
@@ -279,6 +171,9 @@ export const updatePlayer = async (playerId, updates, userId = GUEST_USER_ID) =>
  * @param {string} [userId] - The user ID (for draft cleanup; defaults to GUEST_USER_ID)
  * @returns {Promise<{playerDeleted: boolean, sightingsDeleted: number, photosDeleted: number, draftDeleted: boolean}>}
  */
+// WS-226 exception: multi-store parallel cursor cascade (2 simultaneous index
+// walks + 2 direct deletes in one tx). The helper shapes don't model parallel
+// cursors cleanly; heavily-tested cascade logic retained hand-rolled.
 export const deletePlayer = async (playerId, userId = GUEST_USER_ID) => {
   try {
     const db = await getDB();
@@ -369,35 +264,12 @@ export const deletePlayer = async (playerId, userId = GUEST_USER_ID) => {
  */
 export const getPlayerByName = async (name, userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([PLAYERS_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(PLAYERS_STORE_NAME);
-
-      // Use the userId_name compound index
-      const index = objectStore.index('userId_name');
-      const request = index.get([userId, name]);
-
-      request.onsuccess = (event) => {
-        const player = event.target.result;
-
-        if (player) {
-          log(`Found player "${name}" for user ${userId}`);
-          resolve(player);
-        } else {
-          log(`Player "${name}" not found for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError(`Failed to search for player "${name}":`, event.target.error);
-        reject(event.target.error);
-      };
-
-
-    });
+    // Use the userId_name compound index
+    const player = await readTx(PLAYERS_STORE_NAME, (store) => store.index('userId_name').get([userId, name]));
+    log(player
+      ? `Found player "${name}" for user ${userId}`
+      : `Player "${name}" not found for user ${userId}`);
+    return player ?? null;
   } catch (error) {
     logError('Error in getPlayerByName:', error);
     return null;

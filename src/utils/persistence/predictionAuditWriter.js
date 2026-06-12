@@ -25,7 +25,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  updateTx,
   STORE_NAME,
   log,
   logError,
@@ -107,34 +108,17 @@ export const sanitizePredictionAudit = (payload) => {
  */
 export const writePredictionAudit = async (handId, payload) => {
   const sanitized = sanitizePredictionAudit(payload);
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const getReq = store.get(handId);
-    getReq.onsuccess = (event) => {
-      const hand = event.target.result;
-      if (!hand) {
-        reject(new Error(`Hand ${handId} not found`));
-        return;
-      }
+  try {
+    await updateTx(STORE_NAME, handId, (hand) => {
+      if (!hand) throw new Error(`Hand ${handId} not found`);
       hand.predictionAudit = sanitized;
-      const putReq = store.put(hand);
-      putReq.onsuccess = () => {
-        log(`predictionAudit written for hand ${handId}`);
-        resolve();
-      };
-      putReq.onerror = () => {
-        logError('writePredictionAudit put failed:', putReq.error);
-        reject(putReq.error);
-      };
-    };
-    getReq.onerror = () => {
-      logError('writePredictionAudit get failed:', getReq.error);
-      reject(getReq.error);
-    };
-    tx.onabort = () => reject(tx.error || new Error('writePredictionAudit aborted'));
-  });
+      return hand;
+    });
+    log(`predictionAudit written for hand ${handId}`);
+  } catch (error) {
+    logError('writePredictionAudit failed:', error);
+    throw error;
+  }
 };
 
 /**
@@ -145,22 +129,11 @@ export const writePredictionAudit = async (handId, payload) => {
  * @returns {Promise<Object|null>}
  */
 export const readPredictionAudit = async (handId) => {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_NAME], 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.get(handId);
-    req.onsuccess = (event) => {
-      const hand = event.target.result;
-      if (!hand) {
-        resolve(null);
-        return;
-      }
-      resolve(hand.predictionAudit ?? null);
-    };
-    req.onerror = () => {
-      logError('readPredictionAudit get failed:', req.error);
-      reject(req.error);
-    };
-  });
+  try {
+    const hand = await readTx(STORE_NAME, (store) => store.get(handId));
+    return hand?.predictionAudit ?? null;
+  } catch (error) {
+    logError('readPredictionAudit get failed:', error);
+    throw error;
+  }
 };

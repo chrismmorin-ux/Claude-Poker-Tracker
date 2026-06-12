@@ -14,7 +14,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  atomicTx,
   HERO_LEAKS_STORE_NAME,
   log,
   logError,
@@ -32,19 +34,9 @@ export const getLeaksForPlayer = async (playerId) => {
     throw new Error('getLeaksForPlayer requires a non-empty string playerId');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(HERO_LEAKS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(HERO_LEAKS_STORE_NAME);
-      const idx = store.index('by_playerId');
-      const req = idx.getAll(playerId);
-      req.onsuccess = () => {
-        const records = req.result || [];
-        records.sort((a, b) => (b.severity || 0) - (a.severity || 0));
-        resolve(records);
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const records = (await readTx(HERO_LEAKS_STORE_NAME, (store) => store.index('by_playerId').getAll(playerId))) || [];
+    records.sort((a, b) => (b.severity || 0) - (a.severity || 0));
+    return records;
   } catch (e) {
     logError('getLeaksForPlayer failed', e);
     return [];
@@ -63,14 +55,8 @@ export const getLeak = async (playerId, situationKey) => {
     throw new Error('getLeak requires playerId + situationKey');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(HERO_LEAKS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(HERO_LEAKS_STORE_NAME);
-      const req = store.get([playerId, situationKey]);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error);
-    });
+    const record = await readTx(HERO_LEAKS_STORE_NAME, (store) => store.get([playerId, situationKey]));
+    return record ?? null;
   } catch (e) {
     logError('getLeak failed', e);
     return null;
@@ -90,21 +76,12 @@ export const putLeak = async (record) => {
     throw new Error('putLeak requires record.playerId + record.situationKey');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(HERO_LEAKS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(HERO_LEAKS_STORE_NAME);
-      const toWrite = {
-        ...record,
-        lastUpdatedAt: record.lastUpdatedAt ?? Date.now(),
-      };
-      const req = store.put(toWrite);
-      req.onsuccess = () => {
-        log(`heroLeaks put ${record.playerId}/${record.situationKey}`);
-        resolve();
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const toWrite = {
+      ...record,
+      lastUpdatedAt: record.lastUpdatedAt ?? Date.now(),
+    };
+    await writeTx(HERO_LEAKS_STORE_NAME, (store) => store.put(toWrite));
+    log(`heroLeaks put ${record.playerId}/${record.situationKey}`);
   } catch (e) {
     logError('putLeak failed', e);
     throw e;
@@ -145,14 +122,12 @@ export const replacePlayerLeaks = async (playerId, firedLeaks) => {
   );
 
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(HERO_LEAKS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(HERO_LEAKS_STORE_NAME);
+    // Clear-then-insert must stay atomic — single tx via atomicTx.
+    await atomicTx([HERO_LEAKS_STORE_NAME], (stores) => {
+      const store = stores[HERO_LEAKS_STORE_NAME];
 
       // Clear existing player records.
-      const idx = store.index('by_playerId');
-      const cursorReq = idx.openCursor(playerId);
+      const cursorReq = store.index('by_playerId').openCursor(playerId);
       cursorReq.onsuccess = (e) => {
         const cursor = e.target.result;
         if (cursor) {
@@ -172,9 +147,6 @@ export const replacePlayerLeaks = async (playerId, firedLeaks) => {
           });
         }
       };
-      cursorReq.onerror = () => reject(cursorReq.error);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
     });
   } catch (e) {
     logError('replacePlayerLeaks failed', e);

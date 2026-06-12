@@ -21,7 +21,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   SUBSCRIPTION_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -36,28 +37,11 @@ import {
  */
 export const getSubscription = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SUBSCRIPTION_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(SUBSCRIPTION_STORE_NAME);
-      const request = objectStore.get(userId);
-
-      request.onsuccess = () => {
-        const record = request.result;
-        if (record) {
-          log(`Subscription loaded for user ${userId}`);
-          resolve(record);
-        } else {
-          log(`No subscription found for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get subscription:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    const record = await readTx(SUBSCRIPTION_STORE_NAME, (store) => store.get(userId));
+    log(record
+      ? `Subscription loaded for user ${userId}`
+      : `No subscription found for user ${userId}`);
+    return record ?? null;
   } catch (error) {
     logError('Error in getSubscription:', error);
     throw error;
@@ -79,22 +63,8 @@ export const putSubscription = async (record) => {
     throw new Error('putSubscription requires a record with a userId field');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SUBSCRIPTION_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SUBSCRIPTION_STORE_NAME);
-      const request = objectStore.put(record);
-
-      request.onsuccess = () => {
-        log(`Subscription saved for user ${record.userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save subscription:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(SUBSCRIPTION_STORE_NAME, (store) => store.put(record));
+    log(`Subscription saved for user ${record.userId}`);
   } catch (error) {
     logError('Error in putSubscription:', error);
     throw error;
@@ -113,22 +83,8 @@ export const putSubscription = async (record) => {
  */
 export const deleteSubscription = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([SUBSCRIPTION_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(SUBSCRIPTION_STORE_NAME);
-      const request = objectStore.delete(userId);
-
-      request.onsuccess = () => {
-        log(`Subscription deleted for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to delete subscription:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(SUBSCRIPTION_STORE_NAME, (store) => store.delete(userId));
+    log(`Subscription deleted for user ${userId}`);
   } catch (error) {
     logError('Error in deleteSubscription:', error);
     throw error;

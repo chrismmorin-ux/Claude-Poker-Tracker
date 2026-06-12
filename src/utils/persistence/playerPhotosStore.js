@@ -18,7 +18,9 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
+  cursorTx,
   PLAYER_PHOTOS_STORE_NAME,
   log,
   logError,
@@ -42,18 +44,11 @@ export const savePhoto = async (playerId, blob) => {
     throw new Error('savePhoto requires a Blob');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(PLAYER_PHOTOS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(PLAYER_PHOTOS_STORE_NAME);
-      const req = store.add({
-        playerId,
-        blob,
-        capturedAt: Date.now(),
-      });
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
+    return await writeTx(PLAYER_PHOTOS_STORE_NAME, (store) => store.add({
+      playerId,
+      blob,
+      capturedAt: Date.now(),
+    }));
   } catch (e) {
     logError('savePhoto failed', e);
     throw e;
@@ -71,14 +66,8 @@ export const getPhotoBlob = async (blobId) => {
     throw new Error('getPhotoBlob requires a numeric blobId');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(PLAYER_PHOTOS_STORE_NAME, 'readonly');
-      const store = tx.objectStore(PLAYER_PHOTOS_STORE_NAME);
-      const req = store.get(blobId);
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error);
-    });
+    const record = await readTx(PLAYER_PHOTOS_STORE_NAME, (store) => store.get(blobId));
+    return record ?? null;
   } catch (e) {
     logError('getPhotoBlob failed', e);
     return null;
@@ -96,26 +85,16 @@ export const deletePhotosForPlayer = async (playerId) => {
     throw new Error('deletePhotosForPlayer requires a non-empty string playerId');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(PLAYER_PHOTOS_STORE_NAME, 'readwrite');
-      const store = tx.objectStore(PLAYER_PHOTOS_STORE_NAME);
-      const idx = store.index('by_playerId');
-      const req = idx.openCursor(IDBKeyRange.only(playerId));
-      let count = 0;
-      req.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-          cursor.delete();
-          count += 1;
-          cursor.continue();
-        } else {
-          log(`deletePhotosForPlayer(${playerId}): ${count} blobs deleted`);
-          resolve(count);
-        }
-      };
-      req.onerror = () => reject(req.error);
-    });
+    const deleted = await cursorTx(
+      PLAYER_PHOTOS_STORE_NAME,
+      { index: 'by_playerId', range: IDBKeyRange.only(playerId), mode: 'readwrite' },
+      (cursor, acc) => {
+        cursor.delete();
+        acc.push(cursor.primaryKey);
+      }
+    );
+    log(`deletePhotosForPlayer(${playerId}): ${deleted.length} blobs deleted`);
+    return deleted.length;
   } catch (e) {
     logError('deletePhotosForPlayer failed', e);
     return 0;

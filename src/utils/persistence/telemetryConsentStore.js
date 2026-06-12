@@ -14,7 +14,8 @@
  */
 
 import {
-  getDB,
+  readTx,
+  writeTx,
   TELEMETRY_CONSENT_STORE_NAME,
   GUEST_USER_ID,
   log,
@@ -29,28 +30,11 @@ import {
  */
 export const getTelemetryConsent = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TELEMETRY_CONSENT_STORE_NAME], 'readonly');
-      const objectStore = transaction.objectStore(TELEMETRY_CONSENT_STORE_NAME);
-      const request = objectStore.get(userId);
-
-      request.onsuccess = () => {
-        const record = request.result;
-        if (record) {
-          log(`Telemetry consent loaded for user ${userId}`);
-          resolve(record);
-        } else {
-          log(`No telemetry consent record found for user ${userId}`);
-          resolve(null);
-        }
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to get telemetry consent:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    const record = await readTx(TELEMETRY_CONSENT_STORE_NAME, (store) => store.get(userId));
+    log(record
+      ? `Telemetry consent loaded for user ${userId}`
+      : `No telemetry consent record found for user ${userId}`);
+    return record ?? null;
   } catch (error) {
     logError('Error in getTelemetryConsent:', error);
     throw error;
@@ -68,22 +52,8 @@ export const putTelemetryConsent = async (record) => {
     throw new Error('putTelemetryConsent requires a record with a userId field');
   }
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TELEMETRY_CONSENT_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(TELEMETRY_CONSENT_STORE_NAME);
-      const request = objectStore.put(record);
-
-      request.onsuccess = () => {
-        log(`Telemetry consent saved for user ${record.userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to save telemetry consent:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(TELEMETRY_CONSENT_STORE_NAME, (store) => store.put(record));
+    log(`Telemetry consent saved for user ${record.userId}`);
   } catch (error) {
     logError('Error in putTelemetryConsent:', error);
     throw error;
@@ -101,22 +71,8 @@ export const putTelemetryConsent = async (record) => {
  */
 export const deleteTelemetryConsent = async (userId = GUEST_USER_ID) => {
   try {
-    const db = await getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction([TELEMETRY_CONSENT_STORE_NAME], 'readwrite');
-      const objectStore = transaction.objectStore(TELEMETRY_CONSENT_STORE_NAME);
-      const request = objectStore.delete(userId);
-
-      request.onsuccess = () => {
-        log(`Telemetry consent deleted for user ${userId}`);
-        resolve();
-      };
-
-      request.onerror = (event) => {
-        logError('Failed to delete telemetry consent:', event.target.error);
-        reject(event.target.error);
-      };
-    });
+    await writeTx(TELEMETRY_CONSENT_STORE_NAME, (store) => store.delete(userId));
+    log(`Telemetry consent deleted for user ${userId}`);
   } catch (error) {
     logError('Error in deleteTelemetryConsent:', error);
     throw error;
