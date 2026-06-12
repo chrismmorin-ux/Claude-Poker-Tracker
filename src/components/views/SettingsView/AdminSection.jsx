@@ -27,16 +27,7 @@ const OWNER_EMAIL = 'chrismmorin@gmail.com';
 // Sandbox tool registry. Each entry renders as one tappable card.
 // `screen` is a SCREEN constant; `hash` is a fallback URL hash for
 // tools without a registered screen (none yet, but the pattern's here).
-const SANDBOX_TOOLS = [
-  {
-    id: 'prototype-finder',
-    title: 'Prototype: Unified PlayerFinder',
-    summary:
-      'Interactive design preview of the unified picker+editor. Mock data only — no IDB writes. Tap to test the IA, chip filters, accessory boost, and result-tap behavior.',
-    screen: 'prototypeFinder', // SCREEN.PROTOTYPE_FINDER
-    badge: 'design preview',
-  },
-];
+const SANDBOX_TOOLS = [];
 
 const ToolCard = ({ tool, onOpen }) => (
   <button
@@ -74,6 +65,10 @@ export const AdminSection = () => {
   if (!isAuthenticated || !user) return null;
   const email = (user.email || '').toLowerCase().trim();
   if (email !== OWNER_EMAIL) return null;
+
+  // No registered sandbox tools — hide the section entirely rather than
+  // render an empty shell. It reappears when the next tool is added.
+  if (SANDBOX_TOOLS.length === 0) return null;
 
   const handleOpen = (tool) => {
     if (tool.screen) {

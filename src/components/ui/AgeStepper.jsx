@@ -1,7 +1,7 @@
 /**
  * @file AgeStepper — discrete-snap slider for age decade with drag-or-tap.
  *
- * Extracted from `PrototypeFinderView.jsx` (Phase A foundation). Replaces
+ * Unified-PlayerFinder Phase A foundation primitive. Replaces
  * the chip row for age. Click any position to snap, OR drag the thumb
  * across the track — both gestures snap to the nearest decade. Owner
  * 2026-05-06: "an intuitive thing someone might do is drag on the age

@@ -1,10 +1,9 @@
 /**
  * @file Chip — single chip primitive with size + shape + swatch variants.
  *
- * Extracted from `PrototypeFinderView.jsx` as part of the unified
- * PlayerFinder migration (Phase A foundation). Used by PlayerFinderView,
- * QuickFilterChips analog, and any other surface that needs a chip-style
- * selection control.
+ * Unified-PlayerFinder Phase A foundation primitive. Used by
+ * PlayerFinderView, QuickFilterChips analog, and any other surface that
+ * needs a chip-style selection control.
  *
  * Active state — single brand action color amber-500 with dark text +
  * semibold + small shadow. Inactive — slate-800 with gray-200 text + slate-600

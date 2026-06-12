@@ -1,7 +1,7 @@
 /**
  * @file SwatchPalette — color-only chip selector with prominent active highlight.
  *
- * Extracted from `PrototypeFinderView.jsx` (Phase A foundation). Each
+ * Unified-PlayerFinder Phase A foundation primitive. Each
  * option renders as a 32px circle of pure color. The selected swatch gets
  * THREE coordinated visual cues so the active state reads from any angle:
  *   1. White checkmark icon centered inside the swatch (works on light

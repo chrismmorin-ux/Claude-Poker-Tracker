@@ -1,9 +1,9 @@
 /**
  * @file Card — section card surface + CardHeader + SubLabel + ChipRow.
  *
- * Extracted from `PrototypeFinderView.jsx` (Phase A foundation). The 4
- * exports cover the layout primitives used to compose grouped chip
- * sections in the PlayerFinder.
+ * Unified-PlayerFinder Phase A foundation primitive. The 4 exports cover
+ * the layout primitives used to compose grouped chip sections in the
+ * PlayerFinder.
  *
  *   <Card>             — slate-800/60 surface with slate-700 border.
  *                        12px padding, 16px bottom margin.

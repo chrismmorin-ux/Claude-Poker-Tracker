@@ -55,9 +55,4 @@ export const SCREEN = {
   LOGIN: 'login',
   SIGNUP: 'signup',
   PASSWORD_RESET: 'passwordReset',
-  // Prototype surface (2026-05-05) — interactive design preview for the
-  // unified PlayerFinder. Reachable via URL hash #prototype-finder. Uses
-  // mock data only; never reads/writes IDB. Will be removed once the real
-  // PlayerFinderView ships and the design is locked.
-  PROTOTYPE_FINDER: 'prototypeFinder',
 };

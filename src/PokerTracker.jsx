@@ -46,8 +46,6 @@ const LessonDetailView = lazy(() => import('./components/views/LessonDetailView'
 const SelfCoachView = lazy(() => import('./components/views/SelfCoachView/SelfCoachView').then(m => ({ default: m.SelfCoachView })));
 // PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface (sighting history + stability).
 const PlayerProfileView = lazy(() => import('./components/views/PlayerProfileView/PlayerProfileView').then(m => ({ default: m.PlayerProfileView })));
-// Prototype: unified PlayerFinder (#prototype-finder) — design preview.
-const PrototypeFinderView = lazy(() => import('./components/views/PrototypeFinderView/PrototypeFinderView').then(m => ({ default: m.PrototypeFinderView })));
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state
@@ -69,7 +67,6 @@ const HASH_TO_SCREEN = {
   '#printableRefresher': 'printableRefresher',
   '#anchorLibrary': 'anchorLibrary',
   '#selfCoach': 'selfCoach',
-  '#prototype-finder': 'prototypeFinder',
   // Phase B (2026-05-06): direct entry to the unified PlayerFinder for
   // owner manual validation against the prototype. Removed in Phase C.
   '#player-finder': 'playerFinder',
@@ -84,7 +81,6 @@ const HASH_TO_SCREEN = {
 const VIEW_TO_ORIENTATION = {
   [SCREEN.PLAYER_FINDER]: 'portrait',
   [SCREEN.PLAYER_PROFILE]: 'portrait',
-  [SCREEN.PROTOTYPE_FINDER]: 'portrait',
   // Sessions View Improvement (2026-06-06): Sessions + Settings are data-entry
   // surfaces (venue / buy-in / tip / notes fields). They render portrait-native
   // fluid (no 1600×720 ScaledContainer) so fields stay legible and tappable on a
@@ -162,7 +158,6 @@ const ViewRouter = () => {
           case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
           case SCREEN.SELF_COACH: return <VEB viewName="Self Coach" onReturnToTable={onReturnToTable}><SelfCoachView scale={scale} /></VEB>;
           case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
-          case SCREEN.PROTOTYPE_FINDER: return <VEB viewName="Prototype Finder" onReturnToTable={onReturnToTable}><PrototypeFinderView /></VEB>;
           default: {
             // Unknown SCREEN value — surface via console and fall back to Stats.
             // A stale/deleted SCREEN constant (e.g., after removing a view)
