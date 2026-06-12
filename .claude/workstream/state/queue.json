@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-11T19:44:00.680Z",
-  "updated_by_event": "ev-1781207040680-1844ad636e40",
+  "updated_at": "2026-06-12T17:55:10.500Z",
+  "updated_by_event": "ev-1781286910500-8eaf9e440dd7",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5696,7 +5696,88 @@
         "ignition-poker-tracker/spike-data/"
       ],
       "source_class": "untagged"
+    },
+    "WS-225": {
+      "id": "WS-225",
+      "title": "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "refactor",
+      "effort": "S",
+      "program": "engineering",
+      "capability": "workstream",
+      "sprint_id": "",
+      "claimed_at": "",
+      "completed_at": "",
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "note": "refactor-candidate scan 2026-06-11 (founder-requested)"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/views/PrototypeFinderView/PrototypeFinderView.jsx",
+        "src/components/views/PrototypeFinderView/mockPlayers.js",
+        "src/constants/uiConstants.js",
+        "src/PokerTracker.jsx",
+        "src/components/views/SettingsView/AdminSection.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-226": {
+      "id": "WS-226",
+      "title": "Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx",
+      "status": "done",
+      "priority_score": 14,
+      "category": "refactor",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "workstream",
+      "sprint_id": "",
+      "claimed_at": "",
+      "completed_at": "",
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "note": "refactor-candidate scan 2026-06-11 (founder-requested)"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/persistence/database.js",
+        "src/utils/persistence/handsStorage.js",
+        "src/utils/persistence/sessionsStorage.js",
+        "src/utils/persistence/ (remaining ~26 modules, incremental)"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-227": {
+      "id": "WS-227",
+      "title": "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt",
+      "status": "backlog",
+      "priority_score": 13,
+      "category": "refactor",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "workstream",
+      "sprint_id": "",
+      "claimed_at": "",
+      "completed_at": "",
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "note": "refactor-candidate scan 2026-06-11 (founder-requested)"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "ignition-poker-tracker/side-panel/side-panel.js",
+        "ignition-poker-tracker/side-panel/render-orchestrator.js",
+        "ignition-poker-tracker/side-panel/__tests__/fixtures.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781207040680-1844ad636e40"
+  "last_event_log_head": "ev-1781286910500-8eaf9e440dd7"
 }

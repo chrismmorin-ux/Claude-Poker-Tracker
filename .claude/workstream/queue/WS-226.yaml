@@ -1,0 +1,71 @@
+id: "WS-226"
+title: "Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx"
+type: improvement
+status: done
+priority_score: 14
+category: refactor
+program: "engineering"
+capability: workstream
+description: |
+  All ~29 modules under src/utils/persistence/ hand-copy the same 15-25 line
+  IndexedDB ceremony: getDB() → new Promise → db.transaction([STORE], mode) →
+  objectStore → request → onsuccess/onerror, wrapped in try/catch that logs and
+  returns null. Measured: 97 raw db.transaction(...) call sites; 21 files
+  hand-rolling the Promise wrapper. database.js (lines 49-241) exports only
+  store-name constants + getDB/initDB/closeDB — no read/write helper exists.
+  Examples of near-identical duplication: handsStorage.js:116-154
+  (loadLatestHand) vs :161-199 (loadHandById); sessionsStorage.js repeats the
+  shape across 14 exports.
+
+  Why it matters: this is the most-repeated pattern in the app and it sits on
+  the data-integrity layer. Each hand-rolled transaction is a place to get
+  error handling subtly wrong (forgotten onerror, swallowed exception —
+  forbidden by .claude/rules/error-handling.md). Changing the error/logging
+  contract today means editing dozens of sites.
+
+  Scope: add small helpers to database.js (e.g. readTx(store, fn),
+  writeTx(store, fn), promisifyRequest(req)) that enforce the error-handling
+  contract in one place, then migrate persistence modules incrementally
+  module-by-module BEHIND existing public function signatures (callers and the
+  ~823-line handsStorage.test.js suite unaffected). May be split into multiple
+  sprint items at composition if the sweep is too large for one session.
+
+  Constraints: IDB schema v27 additive-only invariant untouched (no schema
+  change); migrationRegistry.js + migrations.js are NOT in scope (append-only
+  ledger, correct as-is per closed Refactor Sprint). INV-PERSIST invariants
+  must hold; run persistence test suite per migrated module.
+
+  Source: refactor-candidate scan 2026-06-11 (cto-agent, main app), finding #1.
+accept_criteria: |
+  1. database.js exports shared transaction helpers with a single enforced
+     error-handling contract (context-rich logging, no silent swallow).
+  2. Majority of the 97 raw db.transaction sites migrated (target: all
+     persistence modules except migrations.js); remaining exceptions documented
+     inline with reason.
+  3. Zero public-API signature changes in persistence modules; full persistence
+     test suite green; full smart-test-runner green.
+  4. SYSTEM_MODEL.md persistence section updated to document the helper pattern.
+effort: M
+files_involved:
+  - src/utils/persistence/database.js
+  - src/utils/persistence/handsStorage.js
+  - src/utils/persistence/sessionsStorage.js
+  - src/utils/persistence/ (remaining ~26 modules, incremental)
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Helper API shape: readTx/writeTx callbacks vs promisifyRequest-only (recommend both, callbacks as primary)"
+source:
+  type: manual
+  created_by: user
+  note: "refactor-candidate scan 2026-06-11 (founder-requested)"
+claimed_by: ""
+claimed_at: ""
+started_at: ""
+completed_at: ""
+completion_commit: "77d065e"
+completion_notes: ""
+blocked_reason: ""
+created_at: "2026-06-11T19:30:00Z"
+closed_by_event: "ev-1781286909954-43a471bb8174"

@@ -1,0 +1,29 @@
+id: "SPR-122"
+title: "Ship WS-226: Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into sh"
+status: done
+approved_at: "2026-06-12T00:52:28.033Z"
+completed_at: "2026-06-12T17:55:09.922Z"
+completed_by_commit: "77d065e"
+program_focus: "engineering"
+
+goal: |
+  Ship WS-226: Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-12T00:52:28.033Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-226 selected (14 × no damping = 14).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-226"
+    title: "Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-12T17:55:09.922Z"
+
+created_at: "2026-06-12T00:52:28.033Z"

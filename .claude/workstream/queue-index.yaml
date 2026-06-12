@@ -2,12 +2,12 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 222
+total_items: 225
 by_status:
-  done: 148
+  done: 149
   decomposed: 1
   in_progress: 3
-  backlog: 41
+  backlog: 43
   deferred: 20
   dismissed: 1
   completed: 7
@@ -40,6 +40,7 @@ by_category:
   range-engine: 1
   range-lab: 16
   ready-to-start: 10
+  refactor: 3
   review-workflow: 1
   rules-invariant: 1
   seam-integrity: 6
@@ -2250,4 +2251,31 @@ items:
     effort: S
     program: engineering
     capability: core
+
+  - id: "WS-225"
+    title: "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)"
+    status: backlog
+    priority_score: 12
+    category: refactor
+    effort: S
+    program: engineering
+    capability: workstream
+
+  - id: "WS-226"
+    title: "Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx"
+    status: done
+    priority_score: 14
+    category: refactor
+    effort: M
+    program: engineering
+    capability: workstream
+
+  - id: "WS-227"
+    title: "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt"
+    status: backlog
+    priority_score: 13
+    category: refactor
+    effort: M
+    program: engineering
+    capability: workstream
 

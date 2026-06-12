@@ -1,0 +1,55 @@
+id: "WS-225"
+title: "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)"
+type: improvement
+status: backlog
+priority_score: 12
+category: refactor
+program: "engineering"
+capability: workstream
+description: |
+  PrototypeFinderView was a design sandbox for the PlayerFinder; the production
+  PlayerFinderView shipped (commit 938839c) and superseded it. The prototype
+  remains routed at SCREEN.PROTOTYPE_FINDER (#prototype-finder), reachable via
+  SettingsView/AdminSection.jsx. It is mock-data only (MOCK_PLAYERS, never
+  touches PlayerContext/persistence), has ZERO tests, and carries a DIVERGED
+  local copy of the matching logic (matchesInRangeLocal/matchesScalar at
+  PrototypeFinderView.jsx:460-468 wrapping the shared matchesInRange) — a trap
+  for anyone grepping filter behavior. It imports 6 production modules
+  (HairSection, FacialHairSection, BuildSection, CameraCaptureModal, etc.),
+  so every refactor of those must keep this dead consumer compiling.
+
+  Scope: delete src/components/views/PrototypeFinderView/ (PrototypeFinderView.jsx
+  1,361 lines + mockPlayers.js), remove the route wiring (uiConstants.js:62,
+  PokerTracker.jsx lines 50/72/165) and the AdminSection entry
+  (SettingsView/AdminSection.jsx:32-36). Visual-reference value is preserved
+  in git history.
+
+  Source: refactor-candidate scan 2026-06-11 (cto-agent, main app), finding #2.
+accept_criteria: |
+  1. src/components/views/PrototypeFinderView/ removed.
+  2. SCREEN.PROTOTYPE_FINDER route + hash + AdminSection entry removed; no
+     dangling references (grep PROTOTYPE_FINDER / PrototypeFinderView = 0 hits).
+  3. npm run build clean; full test suite green (no test references the view).
+  4. Admin section in Settings renders without the entry.
+effort: S
+files_involved:
+  - src/components/views/PrototypeFinderView/PrototypeFinderView.jsx
+  - src/components/views/PrototypeFinderView/mockPlayers.js
+  - src/constants/uiConstants.js
+  - src/PokerTracker.jsx
+  - src/components/views/SettingsView/AdminSection.jsx
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  note: "refactor-candidate scan 2026-06-11 (founder-requested)"
+claimed_by: ""
+claimed_at: ""
+started_at: ""
+completed_at: ""
+completion_notes: ""
+blocked_reason: ""
+created_at: "2026-06-11T19:30:00Z"

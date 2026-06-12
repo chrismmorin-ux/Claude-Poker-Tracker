@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-06-11T18:36:42.716Z",
-  "goal": "Ship WS-217: Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type",
+  "composed_at": "2026-06-12T00:50:39.900Z",
+  "goal": "Ship WS-226: Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx",
   "program_focus": "engineering",
   "override_class": null,
   "items": [
     {
-      "id": "WS-217",
-      "title": "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type",
-      "raw_score": 10,
-      "adjusted_score": 10,
+      "id": "WS-226",
+      "title": "Persistence transaction helpers — collapse 97 hand-rolled IDB transaction sites into shared readTx/writeTx",
+      "raw_score": 14,
+      "adjusted_score": 14,
       "effort": "M",
       "program": "engineering",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-217 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-226 selected (14 × no damping = 14).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

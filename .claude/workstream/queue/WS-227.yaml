@@ -1,0 +1,74 @@
+id: "WS-227"
+title: "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt"
+type: improvement
+status: backlog
+priority_score: 13
+category: refactor
+program: "engineering"
+capability: workstream
+description: |
+  Tournament rendering is the ONLY sidebar HUD zone never extracted to pure
+  build*HTML() functions: side-panel/side-panel.js ~647-871 —
+  renderRawTournamentInfo() (~30 lines) + renderTournamentPanel() (~190 lines)
+  + handleTournamentPush() build the tournament bar + detail panel as inline
+  HTML strings inside the impure IIFE. Every other zone (action bar, context
+  strip, cards strip, plan panel, between-hands, seat arc, status bar,
+  more-analysis, model-audit) lives as a pure builder in render-orchestrator.js
+  with DOM-output tests. Consequences: tournament HTML is the only HUD output
+  that cannot be unit-tested for the no-undefined/null-text guarantees, and it
+  renders data straight off untrusted WebSocket parse. The ZONE_COLORS /
+  icmLabels / icmClass literal maps are duplicated twice within the block
+  (~695, ~714-715 bar; ~835 detail) — a drift hazard.
+
+  Part 2 (same pass, same file): comment-debt cleanup. 680 of 2,888 lines are
+  comments; 127 reference closed tickets (RT-60, SR-6.5, WS-104, PR-11, ...).
+  Delete tombstones for deleted functions (~1988-2023) and "pre-fix this used
+  to..." historical narration (~2240-2249, ~1271-1285); KEEP comments stating
+  active invariants and current contracts (e.g. "SOLE writer of staleContext").
+  Git history preserves the why.
+
+  Scope: extract buildTournamentBarHTML(t) + buildTournamentDetailHTML(t) into
+  render-orchestrator.js mirroring the renderActionBar → buildActionBarHTML
+  pattern; timer wiring + showEl/innerHTML writes stay in renderTournamentPanel.
+  Single source for ICM/zone-color maps. New pure tests anchored on the
+  existing betweenHandsTournament fixture.
+
+  Coordination: does NOT touch WS-217 seam-test files (integration-pipeline,
+  wire-schemas, message-sequences, ws-replay-seam) — sequence after SPR-121
+  closes to avoid working-tree collision in side-panel/.
+
+  Source: refactor-candidate scan 2026-06-11 (cto-agent, extension),
+  findings #1 + #2.
+accept_criteria: |
+  1. buildTournamentBarHTML + buildTournamentDetailHTML exist as pure functions
+     in render-orchestrator.js; renderTournamentPanel reduced to wiring
+     (timers, showEl, innerHTML writes).
+  2. ICM label/class + zone-color maps defined once, imported by both builders.
+  3. New DOM-output unit tests for both builders (incl. no-undefined/null-text
+     guarantee on malformed tournament payloads), anchored on
+     betweenHandsTournament fixture.
+  4. Historical-narration / tombstone comments removed from side-panel.js;
+     active-invariant comments preserved. Zero behavior change.
+  5. Full extension suite green (npm test in ignition-poker-tracker/); visual
+     harness tournament scenarios verified via Playwright screenshots
+     (mandatory for sidebar changes per CLAUDE.md).
+effort: M
+files_involved:
+  - ignition-poker-tracker/side-panel/side-panel.js
+  - ignition-poker-tracker/side-panel/render-orchestrator.js
+  - ignition-poker-tracker/side-panel/__tests__/fixtures.js
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  note: "refactor-candidate scan 2026-06-11 (founder-requested)"
+claimed_by: ""
+claimed_at: ""
+started_at: ""
+completed_at: ""
+completion_notes: ""
+blocked_reason: ""
+created_at: "2026-06-11T19:30:00Z"
