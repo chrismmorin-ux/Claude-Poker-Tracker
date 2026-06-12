@@ -23,6 +23,7 @@ import {
   mapModelSourceToTier,
 } from '../shared/render-confidence.js';
 import { STATUS_TIERS } from '../shared/render-status.js';
+import { renderChevron } from '../shared/render-affordance.js';
 
 // =========================================================================
 // COMPUTE FOCUSED VILLAIN
@@ -1366,4 +1367,195 @@ export const buildStatusBar = (pipeline, handCount, connectedWaitingExpired = fa
   } else {
     return { tier: STATUS_TIERS.DEGRADED, text: '' }; // Caller fills via diagnostic status
   }
+};
+
+// =========================================================================
+// TOURNAMENT ZONE \u2014 slim bar + detail panel
+// =========================================================================
+
+// Single source for tournament zone colors and ICM zone labels/classes.
+// Both builders (bar + detail) read from these maps; nothing else may
+// redefine them.
+const TOURNEY_ZONE_COLORS = {
+  comfortable: '#22c55e', caution: '#eab308',
+  pushFold: '#f97316', shoveOnly: '#ef4444',
+};
+
+const ICM_ZONES = {
+  bubble:      { badge: 'BUBBLE',      detail: 'On the bubble',      cls: 'icm-bubble' },
+  approaching: { badge: 'NEAR BUBBLE', detail: 'Approaching bubble', cls: 'icm-approaching' },
+  itm:         { badge: 'ITM',         detail: 'In the money',       cls: 'icm-itm' },
+};
+
+// Tournament data arrives straight off untrusted WebSocket parse with no
+// type enforcement \u2014 coerce numerics so malformed payloads render '?' or
+// nothing rather than 'undefined'/'NaN' text or a throw.
+const _tourneyNum = (v) => {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+const _tourneyZoneColor = (t) => {
+  const zone = t.mRatioGuidance?.zone || 'comfortable';
+  return TOURNEY_ZONE_COLORS[zone] || TOURNEY_ZONE_COLORS.comfortable;
+};
+
+/**
+ * Build the slim tournament bar HTML (M-ratio, ICM badge, level, players,
+ * timer placeholder, chevron).
+ *
+ * The timer span is an empty placeholder \u2014 the countdown text is written by
+ * the interval timer in side-panel.js, which re-queries `#tourney-bar-timer`
+ * on each tick because innerHTML rewrites replace the element.
+ *
+ * @param {Object|null} t - lastGoodTournament payload
+ * @param {Object} opts
+ * @param {boolean} [opts.collapsed=false] - detail panel collapsed state;
+ *   drives the chevron's open modifier
+ * @returns {{ html: string }}
+ */
+export const buildTournamentBarHTML = (t, opts = {}) => {
+  if (!t) return { html: '' };
+  const { collapsed = false } = opts;
+  const mColor = _tourneyZoneColor(t);
+
+  const mRatio = _tourneyNum(t.heroMRatio);
+  const playersRemaining = _tourneyNum(t.playersRemaining);
+  const totalEntrants = _tourneyNum(t.totalEntrants);
+  const playersText = totalEntrants
+    ? `${playersRemaining ?? '?'}/${totalEntrants}`
+    : playersRemaining ? `${playersRemaining} left` : '';
+
+  let html = '';
+  if (mRatio != null) {
+    html += `<span class="tourney-m-label">M</span>`;
+    html += `<span class="tourney-m-value" style="color:${mColor}">${mRatio.toFixed(1)}</span>`;
+  }
+  const icm = ICM_ZONES[t.icmPressure?.zone];
+  if (icm) {
+    html += `<span class="tourney-icm-badge ${icm.cls}">${icm.badge}</span>`;
+  }
+  html += `<span class="tourney-bar-sep"></span>`;
+  html += `<span class="tourney-bar-info">Lvl ${(_tourneyNum(t.currentLevelIndex) || 0) + 1}</span>`;
+  if (playersText) html += `<span class="tourney-bar-info">${escapeHtml(playersText)}</span>`;
+  html += `<span class="tourney-bar-timer" id="tourney-bar-timer"></span>`;
+  html += renderChevron({ id: 'tourney-bar-chevron', open: !collapsed });
+  return { html };
+};
+
+/**
+ * Build the tournament detail panel HTML (M-ratio bar, blinds, stack,
+ * blind-out, ICM, milestones, progress). Sections render only when their
+ * data is present.
+ *
+ * @param {Object|null} t - lastGoodTournament payload
+ * @returns {{ html: string }}
+ */
+export const buildTournamentDetailHTML = (t) => {
+  if (!t) return { html: '' };
+  const mColor = _tourneyZoneColor(t);
+  let html = '';
+
+  // M-Ratio bar
+  const mRatio = _tourneyNum(t.heroMRatio);
+  if (mRatio != null) {
+    const barPct = Math.min(100, (mRatio / 30) * 100);
+    html += `<div class="tourney-section">
+      <div class="flex-between" style="margin-bottom:3px">
+        <span class="tourney-section-label">M-Ratio</span>
+        <span class="tourney-mratio-value" style="color:${mColor}">${mRatio.toFixed(1)}</span>
+      </div>
+      <div class="tourney-bar-track"><div class="tourney-bar-fill" style="width:${barPct}%;background:${mColor}"></div></div>
+      <div class="tourney-guidance" style="color:${mColor}">${escapeHtml(t.mRatioGuidance?.label || '')}</div>
+    </div>`;
+  }
+
+  // Blinds
+  if (t.currentBlinds) {
+    const cb = t.currentBlinds;
+    const cbAnte = _tourneyNum(cb.ante);
+    let label = `${_tourneyNum(cb.sb) ?? '?'}/${_tourneyNum(cb.bb) ?? '?'}`;
+    if (cbAnte > 0) label += ` ante ${cbAnte}`;
+    html += `<div class="tourney-section">
+      <div class="tourney-section-label">Blinds</div>
+      <div class="tourney-section-value">${label}</div>`;
+    if (t.nextBlinds) {
+      const nb = t.nextBlinds;
+      const nbAnte = _tourneyNum(nb.ante);
+      let next = `${_tourneyNum(nb.sb) ?? '?'}/${_tourneyNum(nb.bb) ?? '?'}`;
+      if (nbAnte > 0) next += ` ante ${nbAnte}`;
+      html += `<div class="tourney-blinds-next">Next: ${next}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Stack
+  const heroStack = _tourneyNum(t.heroStack);
+  if (heroStack > 0) {
+    const bb = _tourneyNum(t.currentBlinds?.bb) || 1;
+    const bbRem = Math.round(heroStack / bb);
+    let stackInfo = `${heroStack.toLocaleString()} (${bbRem} BB)`;
+    const avgStack = _tourneyNum(t.avgStack);
+    if (avgStack > 0) {
+      stackInfo += ` \u00b7 Avg: ${avgStack.toLocaleString()} (${(heroStack / avgStack * 100).toFixed(0)}%)`;
+    }
+    html += `<div class="tourney-section">
+      <div class="tourney-section-label">Stack</div>
+      <div class="tourney-section-value">${stackInfo}</div>
+    </div>`;
+  }
+
+  // Blind-out
+  if (t.blindOutInfo) {
+    const mins = _tourneyNum(t.blindOutInfo.wallClockMinutes) || 0;
+    const levels = _tourneyNum(t.blindOutInfo.levelsRemaining) || 0;
+    html += `<div class="tourney-section">
+      <div class="tourney-section-label">Blind-Out</div>
+      <div class="tourney-section-value">${levels} level${levels !== 1 ? 's' : ''} / ~${mins} min</div>
+    </div>`;
+  }
+
+  // ICM
+  const icm = ICM_ZONES[t.icmPressure?.zone];
+  if (icm) {
+    let icmDetail = icm.detail;
+    const fromBubble = _tourneyNum(t.icmPressure.playersFromBubble);
+    if (fromBubble > 0) {
+      icmDetail += ` (${fromBubble} away)`;
+    }
+    html += `<div class="tourney-section">
+      <div class="tourney-section-label">ICM</div>
+      <div class="tourney-section-value">${escapeHtml(icmDetail)}</div>
+    </div>`;
+  }
+
+  // Milestones
+  const milestones = Array.isArray(t.predictions?.milestones) ? t.predictions.milestones : [];
+  if (milestones.length > 0) {
+    html += `<div class="tourney-section"><div class="tourney-section-label">Milestones</div>`;
+    for (const m of milestones) {
+      const mins = Math.round(_tourneyNum(m?.estimatedMinutes) || 0);
+      const label = m?.milestone === 'bubble' ? 'Bubble'
+        : m?.milestone === 'finalTable' ? 'Final Table'
+        : String(m?.milestone ?? '');
+      const timeStr = mins < 60 ? `~${mins}m` : `~${(mins / 60).toFixed(1)}h`;
+      html += `<div class="milestone-row"><span class="milestone-label">${escapeHtml(label)}</span><span class="milestone-time">${timeStr}</span></div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Progress
+  const progress = _tourneyNum(t.progress);
+  if (progress != null) {
+    html += `<div class="tourney-section">
+      <div class="flex-between" style="margin-bottom:2px">
+        <span class="tourney-section-label">Progress</span>
+        <span class="tourney-progress-pct">${progress}% eliminated</span>
+      </div>
+      <div class="tourney-progress-track"><div class="tourney-progress-fill" style="width:${progress}%"></div></div>
+    </div>`;
+  }
+
+  return { html };
 };

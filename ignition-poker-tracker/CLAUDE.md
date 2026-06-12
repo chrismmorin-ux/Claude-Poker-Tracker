@@ -66,6 +66,7 @@ side-panel/
   __tests__/
     fixtures.js                 — 16 scenario state snapshots
     render-orchestrator.test.js — 133 DOM integration tests
+    zone-tournament.test.js     — 27 tournament bar/detail builder tests
     render-street-card.test.js  — 30 street card tests
     render-tiers.test.js        — 42 deep section tests
     render-utils.test.js        — 22 utility tests

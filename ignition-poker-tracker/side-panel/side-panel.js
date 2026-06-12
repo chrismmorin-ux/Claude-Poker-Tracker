@@ -36,10 +36,11 @@ import {
   buildModelAuditHTML,
   buildStreetProgressHTML,
   buildStatusBar,
+  buildTournamentBarHTML,
+  buildTournamentDetailHTML,
 } from './render-orchestrator.js';
 import { RenderCoordinator, PRIORITY } from './render-coordinator.js';
 import {
-  renderChevron,
   installAffordanceListener,
 } from '../shared/render-affordance.js';
 import {
@@ -692,52 +693,17 @@ injectTokens();
       return;
     }
 
-    const ZONE_COLORS = {
-      comfortable: '#22c55e', caution: '#eab308',
-      pushFold: '#f97316', shoveOnly: '#ef4444',
-    };
+    const collapsed = coordinator.get('tournamentCollapsed');
 
-    // ── Slim bar ──
-    const zone = t.mRatioGuidance?.zone || 'comfortable';
-    const mColor = ZONE_COLORS[zone] || '#22c55e';
-    const playersText = t.totalEntrants
-      ? `${t.playersRemaining || '?'}/${t.totalEntrants}`
-      : t.playersRemaining ? `${t.playersRemaining} left` : '';
-
-    let barHtml = '';
-    if (t.heroMRatio != null) {
-      barHtml += `<span class="tourney-m-label">M</span>`;
-      barHtml += `<span class="tourney-m-value" style="color:${mColor}">${t.heroMRatio.toFixed(1)}</span>`;
-    }
-    // ICM badge
-    if (t.icmPressure && t.icmPressure.zone !== 'standard') {
-      const icmLabels = { bubble: 'BUBBLE', approaching: 'NEAR BUBBLE', itm: 'ITM' };
-      const icmClass = { bubble: 'icm-bubble', approaching: 'icm-approaching', itm: 'icm-itm' };
-      const label = icmLabels[t.icmPressure.zone];
-      const cls = icmClass[t.icmPressure.zone];
-      if (label && cls) barHtml += `<span class="tourney-icm-badge ${cls}">${label}</span>`;
-    }
-    barHtml += `<span class="tourney-bar-sep"></span>`;
-    barHtml += `<span class="tourney-bar-info">Lvl ${(t.currentLevelIndex || 0) + 1}</span>`;
-    if (playersText) barHtml += `<span class="tourney-bar-info">${playersText}</span>`;
-
-    // Timer
-    barHtml += `<span class="tourney-bar-timer" id="tourney-bar-timer"></span>`;
-    // V-affordance \u00A7IV migration \u2014 canonical chevron via renderChevron.
+    showEl(bar);
+    bar.innerHTML = buildTournamentBarHTML(t, { collapsed }).html;
     // Click is intercepted by the delegated affordance listener installed
     // once at module init (see installAffordanceListener call below); the
     // bar's data-affordance attrs declare the binding.
-    barHtml += renderChevron({
-      id: 'tourney-bar-chevron',
-      open: !coordinator.get('tournamentCollapsed'),
-    });
-
-    showEl(bar);
-    bar.innerHTML = barHtml;
     bar.setAttribute('data-affordance', 'chevron');
     bar.setAttribute('data-affordance-target', 'tourney-bar');
     bar.setAttribute('role', 'button');
-    bar.setAttribute('aria-expanded', String(!coordinator.get('tournamentCollapsed')));
+    bar.setAttribute('aria-expanded', String(!collapsed));
 
     // Timer countdown — RT-52: re-query DOM element on each tick (innerHTML replaces it)
     // RT-60: registered via coordinator so table switch / unload cancels it.
@@ -761,113 +727,13 @@ injectTokens();
       coordinator.scheduleTimer('tourneyTimer', updateTimer, 1000, 'interval');
     }
 
-    // Click handling migrated to delegated affordance listener (V-affordance
-    // §IV.8 single-delegated-listener pattern). The bar's data-affordance
-    // attrs above declare the binding; the listener registered at module init
-    // (search for "tourney-bar-affordance") flips state + schedules render.
-    // SR-6.5 invariant preserved: handler only flips state, never mutates DOM.
-    // The chevron re-emits with the correct `open` modifier each render via
-    // renderChevron({ open: ... }) above, so no separate classList sync is
-    // needed.
-    const collapsed = coordinator.get('tournamentCollapsed');
+    // SR-6.5 invariant preserved: the delegated affordance handler only flips
+    // state, never mutates DOM; the chevron re-emits with the correct `open`
+    // modifier each render via buildTournamentBarHTML.
     detail.classList.toggle('open', !collapsed);
 
-    // ── Detail content ──
     if (!detailContent) return;
-    let dHtml = '';
-
-    // M-Ratio bar
-    if (t.heroMRatio != null) {
-      const barPct = Math.min(100, (t.heroMRatio / 30) * 100);
-      dHtml += `<div class="tourney-section">
-        <div class="flex-between" style="margin-bottom:3px">
-          <span class="tourney-section-label">M-Ratio</span>
-          <span class="tourney-mratio-value" style="color:${mColor}">${t.heroMRatio.toFixed(1)}</span>
-        </div>
-        <div class="tourney-bar-track"><div class="tourney-bar-fill" style="width:${barPct}%;background:${mColor}"></div></div>
-        <div class="tourney-guidance" style="color:${mColor}">${escapeHtml(t.mRatioGuidance?.label || '')}</div>
-      </div>`;
-    }
-
-    // Blinds
-    if (t.currentBlinds) {
-      const cb = t.currentBlinds;
-      let label = `${cb.sb}/${cb.bb}`;
-      if (cb.ante > 0) label += ` ante ${cb.ante}`;
-      dHtml += `<div class="tourney-section">
-        <div class="tourney-section-label">Blinds</div>
-        <div class="tourney-section-value">${label}</div>`;
-      if (t.nextBlinds) {
-        const nb = t.nextBlinds;
-        let next = `${nb.sb}/${nb.bb}`;
-        if (nb.ante > 0) next += ` ante ${nb.ante}`;
-        dHtml += `<div class="tourney-blinds-next">Next: ${next}</div>`;
-      }
-      dHtml += `</div>`;
-    }
-
-    // Stack
-    if (t.heroStack > 0) {
-      const bb = t.currentBlinds?.bb || 1;
-      const bbRem = Math.round(t.heroStack / bb);
-      let stackInfo = `${t.heroStack.toLocaleString()} (${bbRem} BB)`;
-      if (t.avgStack > 0) {
-        stackInfo += ` \u00B7 Avg: ${t.avgStack.toLocaleString()} (${(t.heroStack / t.avgStack * 100).toFixed(0)}%)`;
-      }
-      dHtml += `<div class="tourney-section">
-        <div class="tourney-section-label">Stack</div>
-        <div class="tourney-section-value">${stackInfo}</div>
-      </div>`;
-    }
-
-    // Blind-out
-    if (t.blindOutInfo) {
-      const mins = t.blindOutInfo.wallClockMinutes || 0;
-      const levels = t.blindOutInfo.levelsRemaining || 0;
-      dHtml += `<div class="tourney-section">
-        <div class="tourney-section-label">Blind-Out</div>
-        <div class="tourney-section-value">${levels} level${levels !== 1 ? 's' : ''} / ~${mins} min</div>
-      </div>`;
-    }
-
-    // ICM
-    if (t.icmPressure && t.icmPressure.zone !== 'standard') {
-      const icmLabels = { bubble: 'On the bubble', approaching: 'Approaching bubble', itm: 'In the money' };
-      let icmDetail = icmLabels[t.icmPressure.zone] || '';
-      if (t.icmPressure.playersFromBubble > 0) {
-        icmDetail += ` (${t.icmPressure.playersFromBubble} away)`;
-      }
-      dHtml += `<div class="tourney-section">
-        <div class="tourney-section-label">ICM</div>
-        <div class="tourney-section-value">${escapeHtml(icmDetail)}</div>
-      </div>`;
-    }
-
-    // Milestones
-    const milestones = t.predictions?.milestones || [];
-    if (milestones.length > 0) {
-      dHtml += `<div class="tourney-section"><div class="tourney-section-label">Milestones</div>`;
-      for (const m of milestones) {
-        const mins = Math.round(m.estimatedMinutes || 0);
-        const label = m.milestone === 'bubble' ? 'Bubble' : m.milestone === 'finalTable' ? 'Final Table' : m.milestone;
-        const timeStr = mins < 60 ? `~${mins}m` : `~${(mins / 60).toFixed(1)}h`;
-        dHtml += `<div class="milestone-row"><span class="milestone-label">${escapeHtml(label)}</span><span class="milestone-time">${timeStr}</span></div>`;
-      }
-      dHtml += `</div>`;
-    }
-
-    // Progress
-    if (t.progress != null) {
-      dHtml += `<div class="tourney-section">
-        <div class="flex-between" style="margin-bottom:2px">
-          <span class="tourney-section-label">Progress</span>
-          <span class="tourney-progress-pct">${t.progress}% eliminated</span>
-        </div>
-        <div class="tourney-progress-track"><div class="tourney-progress-fill" style="width:${t.progress}%"></div></div>
-      </div>`;
-    }
-
-    detailContent.innerHTML = dHtml;
+    detailContent.innerHTML = buildTournamentDetailHTML(t).html;
   };
 
   // =========================================================================
@@ -1268,14 +1134,10 @@ injectTokens();
   // standard render path. Registered under the coordinator so the table-
   // switch lifecycle cancels it (RT-60 contract).
   //
-  // V-3 §II.9 co-shipping #2 (Gate 5 PR-14): closes the R-2.3 violation
-  // flagged by §II.10 forbidden #8. Pre-PR-14 the timer body called
-  // updateStaleAdviceBadge() directly, mutating DOM outside any render
-  // function. Post-PR-14 the timer bumps a renderKey-gating counter
-  // (`adviceAgeTickCount`) and schedules a render — renderAll's existing
-  // updateStaleAdviceBadge call (line ~2092) handles the badge inside
-  // the render frame. INV-FRESH-4 single-writer-per-slot stays intact;
-  // INV-FRESH-3 same-frame-commit is now actually enforced.
+  // R-2.3 / INV-FRESH-3: the timer never mutates DOM directly — it bumps a
+  // renderKey-gating counter (`adviceAgeTickCount`) and schedules a render;
+  // renderAll's updateStaleAdviceBadge call handles the badge inside the
+  // render frame (INV-FRESH-4 single-writer-per-slot).
   //
   // WS-104: tick body declared here; synchronous scheduleTimer call sits
   // next to FSM registration so the registry contains 'adviceAgeBadge'
@@ -1340,7 +1202,7 @@ injectTokens();
   // ZONE 3: PLAN PANEL
   // =========================================================================
 
-  // RT-60: planPanelAutoExpand registered with coordinator (was module-let).
+  // RT-60: planPanelAutoExpand registered with coordinator.
 
   const renderPlanPanel = (advice, liveCtx, snap) => {
     const el = $('plan-panel');
@@ -1372,14 +1234,12 @@ injectTokens();
     const toggle = $('pp-toggle');
     if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
 
-    // SR-6.14: RT-61 predicate tightening. Pre-SR-6.14 this block cleared +
-    // re-armed the 8 s timer on every render where the panel was closed,
-    // which meant the timer was perpetually reset and never fired (renders
-    // happen far more often than every 8 s). Per Z4 batch invariant 2 the
-    // correct predicate is "fresh advice arrival with non-empty handPlan" —
-    // so we re-arm only when the advice `_receivedAt` discriminator changes.
-    // User explicit toggle still clears via the click handler; hand:new
-    // clears via the coordinator boundary.
+    // Z4 batch invariant 2: re-arm the 8 s auto-expand timer only on fresh
+    // advice arrival with a non-empty handPlan (the `_receivedAt`
+    // discriminator changing) — re-arming on every closed-panel render would
+    // perpetually reset the timer so it never fires. User explicit toggle
+    // still clears via the click handler; hand:new clears via the
+    // coordinator boundary.
     const adviceAt = advice?._receivedAt ?? null;
     const hasHandPlan = !!(advice?.handPlan);
     const lastArmedAt = coordinator.get('lastAutoExpandAdviceAt');
@@ -1409,7 +1269,7 @@ injectTokens();
     const hudContent = $('hud-content');
     if (!betweenEl) return;
 
-    // RT-72 — FSM drives the modeAExpired bit (was raw snap.modeAExpired),
+    // RT-72 — FSM drives the modeAExpired bit,
     // and the IDLE/COMPLETE banner path (FSM 'active'). Observing-mode
     // mid-hand (hero folded into an active street) is a second entry path
     // that the FSM does not model — the content classifier still decides
@@ -1516,8 +1376,7 @@ injectTokens();
 
     showEl(btn);
 
-    // SR-6.14 batch invariant 2: 4.2 has no auto-expand. The legacy
-    // "auto-open on postflop" behavior was removed — rely on user toggle.
+    // SR-6.14 batch invariant 2: row 4.2 has no auto-expand — user toggle only.
     const isExpanded = !!coordinator.get('moreAnalysisOpen');
     content.classList.toggle('open', isExpanded);
     if (moreAnalysisChevron) moreAnalysisChevron.classList.toggle('open', isExpanded);
@@ -1541,12 +1400,10 @@ injectTokens();
   // reinserted here.
   // =========================================================================
 
-  // V-affordance §IV PR-11 (2026-04-30): chevron migrated to canonical
-  // .affordance-chevron + delegated-listener wiring via data-affordance
-  // attrs on the parent <div>. Click handler lives in the affordanceRegistry
-  // (search "model-audit-affordance"); per-element addEventListener is gone
-  // (eliminating the dataset.maWired marker too — delegated listener at
-  // document level survives DOM re-insertion).
+  // Chevron uses canonical .affordance-chevron + delegated-listener wiring
+  // via data-affordance attrs on the parent <div>. Click handler lives in
+  // the affordanceRegistry (search "model-audit-affordance"); the document-
+  // level delegated listener survives Z4 row 4.3 DOM re-insertion.
   const MODEL_AUDIT_BTN_HTML =
     '<div class="collapsible-btn hidden" id="model-audit-btn"' +
     ' data-affordance="chevron" data-affordance-target="model-audit"' +
@@ -1985,23 +1842,6 @@ injectTokens();
     return allExploits.slice(0, 8);
   };
 
-  // renderExploitPanel + renderWeaknessPanel (plus helpers starsFromConfidence,
-  // filterWeaknesses): deleted as follow-up to RT-58. Both orphaned from an
-  // earlier UI generation; no callers in renderAll. Superseded by
-  // renderDeepExpander + renderStreetCard.
-
-  // =========================================================================
-  // BRIEFING PANEL — deleted (RT-58). Superseded by renderDeepExpander +
-  // renderStreetCard. The old implementation closed over module-level vars
-  // that were eliminated in RT-43, creating a ReferenceError trap.
-  // =========================================================================
-
-  // renderBriefingPanel and its click handler: deleted RT-58. The function
-  // closed over bare `currentLiveContext`/`currentTableState` which were
-  // removed in RT-43's state-store migration; any invocation path would
-  // throw ReferenceError in strict mode. Superseded by renderDeepExpander
-  // + renderStreetCard. No live callers remained.
-
   // Event delegation for collapsible analysis panel headers
   document.addEventListener('click', (e) => {
     const header = e.target.closest('.collapsible-header');
@@ -2017,10 +1857,6 @@ injectTokens();
     if (icon) icon.classList.toggle('expanded');
   });
 
-  // renderObservationPanel: deleted RT-58 (same ReferenceError trap as
-  // renderBriefingPanel above). Superseded by renderDeepExpander +
-  // renderStreetCard.
-
   // =========================================================================
   // ACTION ADVISOR — RENDERING (tier renderers imported from render-tiers.js)
   // =========================================================================
@@ -2031,8 +1867,7 @@ injectTokens();
   // RenderCoordinator._state is the SOLE authoritative state store.
   // All push handlers write to coordinator via coordinator.set()/merge().
   // All DOM writes happen in one renderAll() call per animation frame.
-  // No handler touches the DOM directly. syncStateToCoordinator() has been
-  // deleted — there is no dual state to synchronize.
+  // No handler touches the DOM directly.
 
   /** The single render function. All DOM writes happen here. */
   const renderAll = (snap, reason) => {

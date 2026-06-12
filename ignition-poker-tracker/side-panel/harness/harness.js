@@ -28,6 +28,8 @@ import {
   buildMoreAnalysisHTML,
   buildModelAuditHTML,
   buildStatusBar,
+  buildTournamentBarHTML,
+  buildTournamentDetailHTML,
 } from '../render-orchestrator.js';
 import { renderStreetCard, resetStreetCardState } from '../render-street-card.js';
 import { ALL_FIXTURES } from '../__tests__/fixtures.js';
@@ -297,23 +299,22 @@ function applyState(state) {
     }
   }
 
-  // Tournament bar
+  // Tournament bar + detail \u2014 same builders production uses, expanded so the
+  // betweenHandsTournament scenario screenshots the full detail panel.
   const tournamentBar = $('tournament-bar');
+  const tournamentDetail = $('tournament-detail');
+  const tournamentDetailContent = $('tournament-detail-content');
   if (tournamentBar && state.lastGoodTournament) {
-    showEl(tournamentBar);
     const t = state.lastGoodTournament;
-    let barHtml = '';
-    if (t.heroMRatio != null) {
-      barHtml += `<span style="font-weight:bold;color:#eab308">M ${t.heroMRatio.toFixed(1)}</span>`;
+    showEl(tournamentBar);
+    tournamentBar.innerHTML = buildTournamentBarHTML(t, { collapsed: false }).html;
+    if (tournamentDetail) tournamentDetail.classList.add('open');
+    if (tournamentDetailContent) {
+      tournamentDetailContent.innerHTML = buildTournamentDetailHTML(t).html;
     }
-    barHtml += `<span style="margin:0 4px;color:var(--text-muted)">\u00B7</span>`;
-    barHtml += `<span>Lvl ${(t.currentLevelIndex || 0) + 1}</span>`;
-    if (t.playersRemaining) {
-      barHtml += `<span style="margin-left:4px">${t.playersRemaining}/${t.totalEntrants || '?'}</span>`;
-    }
-    tournamentBar.innerHTML = barHtml;
   } else if (tournamentBar) {
     hideEl(tournamentBar);
+    if (tournamentDetail) tournamentDetail.classList.remove('open');
   }
 
   // Scroll to top
