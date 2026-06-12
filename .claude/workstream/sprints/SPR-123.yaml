@@ -1,0 +1,35 @@
+id: "SPR-123"
+title: "Ship WS-227: Extension: extract tournament-zone rendering to pure builders + clean side-panel.js com"
+status: done
+approved_at: "2026-06-12T21:04:35.936Z"
+completed_at: "2026-06-12T23:21:13.225Z"
+completed_by_commit: "e8e6c86"
+program_focus: "engineering"
+
+goal: |
+  Ship WS-227: Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-12T21:04:35.936Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-227 selected (13 × no damping = 13).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-227"
+    title: "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-12T23:19:29.859Z"
+  - id: "WS-225"
+    title: "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-06-12T23:19:29.859Z"
+
+created_at: "2026-06-12T21:04:35.936Z"

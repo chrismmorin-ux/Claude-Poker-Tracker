@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1781286910562-785c395edf23"
-generated_content_hash: "955a01e64eb1fed7717a71b486b3148a5f86bf2e6f03a2f9f506bdbddb5613ae"
-generated_at: "2026-06-12T17:55:10.581Z"
+generated_from_event: "ev-1781306475053-6cee4be6efd6"
+generated_content_hash: "bb5324c8a5d58cb252d7f443493cfb3d73be71ca17eaa41646d6de6a1ca82f8b"
+generated_at: "2026-06-12T23:21:15.077Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl"]
-event_count: 341
+event_count: 369
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 207
-- Events recorded: 341
+- Commands recorded: 213
+- Events recorded: 369
 - Source chunks: 4
 
 ## Command `auto:42416:1781030643103`
@@ -2221,3 +2221,85 @@ path, not direct markdown edits.
 | 10 | 2026-06-12T17:55:10.479Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
 | 11 | 2026-06-12T17:55:10.500Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 12 | 2026-06-12T17:55:10.562Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mqb8awgzec1c9bcac018`
+
+- Start: 2026-06-12T17:57:04.357Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T17:57:04.357Z | T10:compose-sprint | /next | command="/next", sprint="SPR-122", +3 more |
+
+## Command `cmd-sprintapprove-mqbf029a6954b5aa2392`
+
+- Start: 2026-06-12T21:04:35.954Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T21:04:35.954Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-123", +8 more |
+
+## Command `cmd-itemclosed-mqbjtjkoe6b24af25eef`
+
+- Start: 2026-06-12T23:19:29.883Z
+- Events: 13
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T23:19:29.883Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-227", +3 more |
+| 2 | 2026-06-12T23:19:30.075Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-225", +3 more |
+| 3 | 2026-06-12T23:19:30.144Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-123", +4 more |
+| 4 | 2026-06-12T23:19:30.547Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-06-12T23:19:30.566Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 6 | 2026-06-12T23:19:30.573Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 7 | 2026-06-12T23:19:30.580Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 8 | 2026-06-12T23:19:30.589Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 9 | 2026-06-12T23:19:30.597Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 10 | 2026-06-12T23:19:30.604Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 11 | 2026-06-12T23:19:30.613Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 12 | 2026-06-12T23:19:30.638Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 13 | 2026-06-12T23:19:30.706Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintdone-mqbjvrc05e056c7e7d04`
+
+- Start: 2026-06-12T23:21:13.250Z
+- Events: 11
+- Tracks: T6:workstream-rebalance, T6:reconcile-findings, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T23:21:13.250Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-123", +4 more |
+| 2 | 2026-06-12T23:21:13.681Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 3 | 2026-06-12T23:21:13.704Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-06-12T23:21:13.713Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-06-12T23:21:13.720Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 6 | 2026-06-12T23:21:13.729Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 7 | 2026-06-12T23:21:13.736Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 8 | 2026-06-12T23:21:13.743Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 9 | 2026-06-12T23:21:13.755Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 10 | 2026-06-12T23:21:13.777Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 11 | 2026-06-12T23:21:13.849Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mqbjvrw942e4475d8f69`
+
+- Start: 2026-06-12T23:21:13.980Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T23:21:13.980Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |
+
+## Command `cmd-commandcompleted-mqbjvsq30ebe2d16da6c`
+
+- Start: 2026-06-12T23:21:15.053Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-12T23:21:15.053Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", type="command_completed", +1 more |

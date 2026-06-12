@@ -1108,3 +1108,12 @@ sprints:
     created_at: "2026-06-12T00:52:28.033Z"
     completed_at: "2026-06-12T17:55:09.922Z"
 
+  - id: "SPR-123"
+    title: "Ship WS-227: Extension: extract tournament-zone rendering to pure builders + clean side-panel.js com"
+    status: done
+    item_count: 2
+    items_done: 2
+    program_focus: "engineering"
+    created_at: "2026-06-12T21:04:35.936Z"
+    completed_at: "2026-06-12T23:21:13.225Z"
+

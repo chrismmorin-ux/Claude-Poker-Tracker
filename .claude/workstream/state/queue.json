@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-12T17:55:10.500Z",
-  "updated_by_event": "ev-1781286910500-8eaf9e440dd7",
+  "updated_at": "2026-06-12T23:21:13.777Z",
+  "updated_by_event": "ev-1781306473777-4f45ebb5f62b",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5700,7 +5700,7 @@
     "WS-225": {
       "id": "WS-225",
       "title": "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 12,
       "category": "refactor",
       "effort": "S",
@@ -5755,7 +5755,7 @@
     "WS-227": {
       "id": "WS-227",
       "title": "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 13,
       "category": "refactor",
       "effort": "M",
@@ -5779,5 +5779,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781286910500-8eaf9e440dd7"
+  "last_event_log_head": "ev-1781306473777-4f45ebb5f62b"
 }

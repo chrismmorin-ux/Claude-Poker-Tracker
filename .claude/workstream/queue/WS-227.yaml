@@ -1,7 +1,7 @@
 id: "WS-227"
 title: "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt"
 type: improvement
-status: backlog
+status: done
 priority_score: 13
 category: refactor
 program: "engineering"
@@ -69,6 +69,8 @@ claimed_by: ""
 claimed_at: ""
 started_at: ""
 completed_at: ""
+completion_commit: "e8e6c86"
 completion_notes: ""
 blocked_reason: ""
 created_at: "2026-06-11T19:30:00Z"
+closed_by_event: "ev-1781306369883-9651039b5b5b"
