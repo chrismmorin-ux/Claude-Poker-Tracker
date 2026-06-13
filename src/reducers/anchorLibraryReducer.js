@@ -17,15 +17,16 @@
  *     `docs/projects/exploit-anchor-library/WRITERS.md` I-WR-1 enumerable registry
  *   - Reducer is pure; persistence side effects live in the persistence hook
  *
- * Eight actions covering the full lifecycle:
+ * Nine actions covering the full lifecycle:
  *   1. ANCHOR_LIBRARY_HYDRATED          (boot from IDB; bulk load)
  *   2. OBSERVATION_CAPTURED             (W-AO-1 owner capture; adds to dict)
  *   3. OBSERVATION_DELETED              (Anchor Library surface delete; rare; dev reset)
  *   4. DRAFT_UPDATED                    (capture-modal debounced edit)
  *   5. DRAFT_CLEARED                    (Save success or Discard)
  *   6. ANCHOR_OVERRIDDEN                (W-EA-3 status/operator update — retire/suppress/operator-dial)
- *   7. PRIMITIVE_VALIDITY_UPDATED       (W-PP-2 Tier-2 update; cross-anchor invalidation handled at caller via computeRipple)
- *   8. ENROLLMENT_TOGGLED               (Q1-A global enrollment state toggle)
+ *   7. LIBRARY_CALIBRATION_RESET        (W-EA-5 global reset — red line #4b; stamps all anchors / undo restore)
+ *   8. PRIMITIVE_VALIDITY_UPDATED       (W-PP-2 Tier-2 update; cross-anchor invalidation handled at caller via computeRipple)
+ *   9. ENROLLMENT_TOGGLED               (Q1-A global enrollment state toggle)
  */
 
 import {
@@ -191,6 +192,56 @@ const rawAnchorLibraryReducer = (state, action) => {
           [anchor.id]: { ...existing, ...anchor },
         },
       };
+    }
+
+    // -------------------------------------------------------------------------
+    // LIBRARY_CALIBRATION_RESET
+    // W-EA-5 global reset — red line #4b (three-way reversibility, arm b). One
+    // owner action resets calibration across EVERY anchor at once: stamps
+    // operator.calibrationResetAt + override provenance on each. Mirrors the
+    // per-anchor reset (ANCHOR_OVERRIDDEN + buildOverridePayload, action='reset')
+    // applied library-wide in a single atomic dispatch.
+    //
+    // Scope (WS-221 founder decision): anchors only. Status is UNCHANGED and
+    // observation records are PRESERVED — the matcher post-firing hook reads
+    // calibrationResetAt to ignore observations before that timestamp, exactly
+    // as for per-anchor reset. Evidence durability (red line #3) is respected.
+    //
+    // Two paths:
+    //   - reset:   payload.timestamp (ISO string) → stamp every anchor.
+    //   - restore: payload.restoreAnchors (dict)  → atomic snapshot restore for
+    //              the 12s Undo toast (useLibraryReset captures the prior dict).
+    // -------------------------------------------------------------------------
+    case ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET: {
+      // Undo path — restore the exact prior anchors snapshot.
+      const restoreAnchors = action.payload?.restoreAnchors;
+      if (restoreAnchors && typeof restoreAnchors === 'object') {
+        return { ...state, anchors: restoreAnchors };
+      }
+
+      // Reset path — stamp every anchor with a calibration-reset marker.
+      const ts = action.payload?.timestamp;
+      if (typeof ts !== 'string') return state;
+
+      const ids = Object.keys(state.anchors);
+      if (ids.length === 0) return state;
+
+      const nextAnchors = {};
+      for (const id of ids) {
+        const anchor = state.anchors[id];
+        const priorOperator = anchor.operator || {};
+        nextAnchors[id] = {
+          ...anchor,
+          operator: {
+            ...priorOperator,
+            lastOverrideAt: ts,
+            lastOverrideBy: 'owner',
+            overrideReason: 'manual-library-reset',
+            calibrationResetAt: ts,
+          },
+        };
+      }
+      return { ...state, anchors: nextAnchors };
     }
 
     // -------------------------------------------------------------------------

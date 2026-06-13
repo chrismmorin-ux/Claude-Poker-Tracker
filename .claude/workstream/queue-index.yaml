@@ -4,10 +4,10 @@
 
 total_items: 225
 by_status:
-  done: 152
+  done: 155
   decomposed: 1
   in_progress: 3
-  backlog: 40
+  backlog: 37
   deferred: 20
   dismissed: 1
   completed: 7
@@ -1112,7 +1112,7 @@ items:
 
   - id: "WS-108"
     title: "Content + SW throttle coordination on reconnect"
-    status: backlog
+    status: done
     priority_score: 8
     category: sidebar-recurrence
     effort: M
@@ -2209,7 +2209,7 @@ items:
 
   - id: "WS-220"
     title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
-    status: backlog
+    status: done
     priority_score: 9
     category: test-reliability
     effort: S
@@ -2218,7 +2218,7 @@ items:
 
   - id: "WS-221"
     title: "Global anchor-library reset — red line #4b (design-gated destructive action)"
-    status: backlog
+    status: done
     priority_score: 9
     category: ux
     effort: M

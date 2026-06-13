@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-06-13T01:53:58.768Z",
-  "updated_by_event": "ev-1781315638768-a44b8f3897f9",
+  "updated_at": "2026-06-13T04:37:39.679Z",
+  "updated_by_event": "ev-1781325459679-dd20ad5ce997",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -736,7 +736,7 @@
       "founder_priority": 3,
       "health_ceiling": 0,
       "findings_open": 0,
-      "work_items_open": 6,
+      "work_items_open": 4,
       "problem_classes": [
         {
           "name": "Test Coverage & Quality",
@@ -1287,5 +1287,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1781315638768-a44b8f3897f9"
+  "last_event_log_head": "ev-1781325459679-dd20ad5ce997"
 }

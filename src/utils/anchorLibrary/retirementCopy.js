@@ -171,6 +171,46 @@ export const buildRetirementCopy = (action, anchor) => {
 };
 
 /**
+ * Build the copy bundle for the global library-calibration reset (red line #4b).
+ *
+ * Same bundle shape as buildRetirementCopy so the shared `RetirementConfirmModal`
+ * + 12s-undo toast machinery render it unchanged — but library-wide, not
+ * anchor-scoped (`anchorId: ''`). Destructive 2-tap confirm, AP-06 discipline.
+ *
+ * Scope (WS-221): anchors only — calibration posteriors restart from seed
+ * priors; raw observation evidence is preserved. Copy mirrors the per-anchor
+ * `reset` subText, generalized across the whole library.
+ *
+ * @param {number} anchorCount — number of anchors that will be reset (for
+ *   count-aware copy). Falls back to a count-free phrasing when not a number.
+ * @returns {Object} copy bundle ({ action: 'library-reset', destructive: true, ... })
+ */
+export const buildLibraryResetCopy = (anchorCount) => {
+  const n = Number.isInteger(anchorCount) && anchorCount > 0 ? anchorCount : null;
+  const scope = n === null ? 'all anchors' : (n === 1 ? '1 anchor' : `all ${n} anchors`);
+
+  return {
+    action: 'library-reset',
+    anchorId: '',
+    title: 'Reset all anchor calibration?',
+    subText:
+      `Resetting drops accumulated calibration for ${scope} and restarts Tier 2 ` +
+      'from seed priors. Evidence history is preserved but no longer contributes ' +
+      'to the posteriors. This action cannot be auto-undone after the 12s toast window.',
+    confirmLabel: 'Reset all',
+    cancelLabel: 'Cancel',
+    destructiveCheckboxLabel: 'I understand all anchor calibration will be reset',
+    destructive: true,
+    successToast: 'All anchor calibration reset.',
+    undoLabel: 'Undo',
+    undoneToast: 'Anchor calibration restored.',
+    errorToast: 'Couldn\'t reset calibration. Please try again.',
+    overrideReason: 'manual-library-reset',
+    targetStatus: null, // status unchanged library-wide; only operator stamps change
+  };
+};
+
+/**
  * Convenience — runs validateRetirementCopy across every text field in a bundle.
  * Used in tests; can be wired into CI lint as a per-bundle gate.
  */

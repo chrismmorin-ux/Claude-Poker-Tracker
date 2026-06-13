@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-13T01:53:58.693Z",
-  "updated_by_event": "ev-1781315638693-4ce4a996b726",
+  "updated_at": "2026-06-13T04:37:39.573Z",
+  "updated_by_event": "ev-1781325459573-6b50f793c458",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -2456,7 +2456,7 @@
     "WS-108": {
       "id": "WS-108",
       "title": "Content + SW throttle coordination on reconnect",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -5573,7 +5573,7 @@
     "WS-220": {
       "id": "WS-220",
       "title": "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 9,
       "category": "test-reliability",
       "effort": "S",
@@ -5597,13 +5597,14 @@
     "WS-221": {
       "id": "WS-221",
       "title": "Global anchor-library reset — red line #4b (design-gated destructive action)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 9,
       "category": "ux",
       "effort": "M",
       "program": "design",
       "capability": "core",
       "sprint_id": "",
+      "completed_at": "2026-06-13T04:37:29.521Z",
       "source": {
         "type": "manual",
         "created_by": "ai-during-sprint",
@@ -5780,5 +5781,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781315638693-4ce4a996b726"
+  "last_event_log_head": "ev-1781325459573-6b50f793c458"
 }

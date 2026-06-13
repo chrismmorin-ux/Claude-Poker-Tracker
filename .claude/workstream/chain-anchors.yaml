@@ -19,3 +19,7 @@ anchors:
     event_count: 301
     timestamp: "2026-06-11T17:22:40.390Z"
     schema_version: 1
+  - chain_head: "45fa7d05cd7b91ef19d714e1d67162897455808283e7e6eab6eee36b13225cf5"
+    event_count: 401
+    timestamp: "2026-06-13T04:37:30.192Z"
+    schema_version: 1

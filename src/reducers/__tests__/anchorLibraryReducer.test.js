@@ -410,6 +410,82 @@ describe('ENROLLMENT_TOGGLED', () => {
 });
 
 // ───────────────────────────────────────────────────────────────────────────
+// LIBRARY_CALIBRATION_RESET (W-EA-5 — red line #4b global reset)
+// ───────────────────────────────────────────────────────────────────────────
+
+describe('LIBRARY_CALIBRATION_RESET', () => {
+  const seedTwo = () => anchorLibraryReducer(initialAnchorLibraryState, {
+    type: ANCHOR_LIBRARY_ACTIONS.ANCHOR_LIBRARY_HYDRATED,
+    payload: {
+      anchors: [
+        { id: 'a:1', archetypeName: 'A1', status: 'active', operator: { currentDial: 0.5 } },
+        { id: 'a:2', archetypeName: 'A2', status: 'retired', operator: {} },
+      ],
+      observations: [{ id: 'obs:1', handId: 'h1' }],
+    },
+  });
+  const TS = '2026-06-13T12:00:00Z';
+
+  it('stamps calibrationResetAt + owner provenance on every anchor', () => {
+    const after = anchorLibraryReducer(seedTwo(), {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: { timestamp: TS },
+    });
+    for (const id of ['a:1', 'a:2']) {
+      expect(after.anchors[id].operator.calibrationResetAt).toBe(TS);
+      expect(after.anchors[id].operator.lastOverrideAt).toBe(TS);
+      expect(after.anchors[id].operator.lastOverrideBy).toBe('owner');
+      expect(after.anchors[id].operator.overrideReason).toBe('manual-library-reset');
+    }
+  });
+
+  it('leaves status unchanged and preserves prior operator fields', () => {
+    const after = anchorLibraryReducer(seedTwo(), {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: { timestamp: TS },
+    });
+    expect(after.anchors['a:1'].status).toBe('active');
+    expect(after.anchors['a:2'].status).toBe('retired');
+    expect(after.anchors['a:1'].operator.currentDial).toBe(0.5);
+  });
+
+  it('preserves observation records (scope: anchors only)', () => {
+    const prior = seedTwo();
+    const after = anchorLibraryReducer(prior, {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: { timestamp: TS },
+    });
+    expect(after.observations).toEqual(prior.observations);
+  });
+
+  it('restore path replaces anchors with the provided snapshot (undo)', () => {
+    const snapshot = { 'a:1': { id: 'a:1', status: 'active', operator: {} } };
+    const after = anchorLibraryReducer(seedTwo(), {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: { restoreAnchors: snapshot },
+    });
+    expect(after.anchors).toEqual(snapshot);
+  });
+
+  it('is a no-op without a timestamp (and without restoreAnchors)', () => {
+    const prior = seedTwo();
+    const after = anchorLibraryReducer(prior, {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: {},
+    });
+    expect(after.anchors).toEqual(prior.anchors);
+  });
+
+  it('is a no-op on an empty library', () => {
+    const after = anchorLibraryReducer(initialAnchorLibraryState, {
+      type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+      payload: { timestamp: TS },
+    });
+    expect(after.anchors).toEqual({});
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
 // Unknown actions
 // ───────────────────────────────────────────────────────────────────────────
 

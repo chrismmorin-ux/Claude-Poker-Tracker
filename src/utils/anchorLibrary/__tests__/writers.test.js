@@ -75,8 +75,8 @@ describe('anchorLibraryWriters — registry surface', () => {
     expect(anchorLibraryWriters.deregister).toBeUndefined();
   });
 
-  it('has the expected per-store counts (4 / 3 / 3 / 3)', () => {
-    expect(getWritersForStore('exploitAnchors')).toHaveLength(4);
+  it('has the expected per-store counts (5 / 3 / 3 / 3)', () => {
+    expect(getWritersForStore('exploitAnchors')).toHaveLength(5);
     expect(getWritersForStore('anchorObservations')).toHaveLength(3);
     expect(getWritersForStore('anchorCandidates')).toHaveLength(3);
     expect(getWritersForStore('perceptionPrimitives')).toHaveLength(3);

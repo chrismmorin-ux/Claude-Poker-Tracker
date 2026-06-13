@@ -1,0 +1,29 @@
+id: "SPR-126"
+title: "Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)"
+status: done
+approved_at: "2026-06-13T04:03:24.439Z"
+completed_at: "2026-06-13T04:37:38.789Z"
+completed_by_commit: "a8b5fe4"
+program_focus: "design"
+
+goal: |
+  Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T04:03:24.439Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-221 selected (9 × no damping = 9).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-221"
+    title: "Global anchor-library reset — red line #4b (design-gated destructive action)"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-13T04:37:29.521Z"
+
+created_at: "2026-06-13T04:03:24.439Z"

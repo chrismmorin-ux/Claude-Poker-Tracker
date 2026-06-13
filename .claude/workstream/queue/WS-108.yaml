@@ -2,10 +2,11 @@ id: "WS-108"
 title: "Content + SW throttle coordination on reconnect"
 legacy_id: "RT-84"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "a8b5fe4"
 priority_score: 8.0
 priority_label: "P3"
 category: "sidebar-recurrence"
@@ -29,3 +30,4 @@ source:
   source_line: 667
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781323136775-a4f9593194f4"

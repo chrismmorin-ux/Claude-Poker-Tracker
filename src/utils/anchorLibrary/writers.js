@@ -27,7 +27,7 @@ const writers = createRegistry({
 });
 
 // ───────────────────────────────────────────────────────────────────────────
-// exploitAnchors (4 writers)
+// exploitAnchors (5 writers)
 // ───────────────────────────────────────────────────────────────────────────
 
 writers.register({
@@ -78,6 +78,23 @@ writers.register({
   invariants: ['I-WR-1', 'I-WR-2'],
   name: 'phase8-library-expansion-writer',
   phase: 'phase-8',
+});
+
+writers.register({
+  id: 'W-EA-5',
+  store: 'exploitAnchors',
+  // Library-wide calibration reset (red line #4b). Same operator-stamp fields
+  // as W-EA-3, applied to EVERY anchor in one atomic LIBRARY_CALIBRATION_RESET
+  // dispatch. Status is never changed (I-WR-7 holds trivially).
+  fields: [
+    'operator.lastOverrideAt',
+    'operator.lastOverrideBy',
+    'operator.overrideReason',
+    'operator.calibrationResetAt',
+  ],
+  invariants: ['I-WR-1', 'I-WR-2', 'I-WR-7'],
+  name: 'library-calibration-reset-writer',
+  phase: 'phase-6',
 });
 
 // ───────────────────────────────────────────────────────────────────────────

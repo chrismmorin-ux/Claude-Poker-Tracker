@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-06-13T00:50:26.260Z",
-  "goal": "Ship WS-222: Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
+  "composed_at": "2026-06-13T04:02:41.819Z",
+  "goal": "Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)",
   "program_focus": "design",
   "override_class": null,
   "items": [
     {
-      "id": "WS-222",
-      "title": "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
-      "raw_score": 10,
-      "adjusted_score": 10,
+      "id": "WS-221",
+      "title": "Global anchor-library reset — red line #4b (design-gated destructive action)",
+      "raw_score": 9,
+      "adjusted_score": 9,
       "effort": "M",
       "program": "design",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-222 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-221 selected (9 × no damping = 9).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

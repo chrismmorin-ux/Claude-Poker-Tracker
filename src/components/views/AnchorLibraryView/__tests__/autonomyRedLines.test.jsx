@@ -53,6 +53,7 @@ import {
   RETIREMENT_ACTIONS,
   FORBIDDEN_PATTERNS as RETIREMENT_FORBIDDEN_PATTERNS,
   buildRetirementCopy,
+  buildLibraryResetCopy,
   validateRetirementCopyBundle,
 } from '../../../../utils/anchorLibrary/retirementCopy';
 import {
@@ -156,6 +157,15 @@ const allGeneratedCopyStrings = () => {
       bundle.title, bundle.subText, bundle.confirmLabel, bundle.cancelLabel,
       bundle.destructiveCheckboxLabel, bundle.successToast, bundle.undoLabel,
       bundle.undoneToast, bundle.errorToast,
+    );
+  }
+  // Red line #4b — global library-reset copy bundle (count-aware variants).
+  for (const count of [0, 1, 3]) {
+    const lr = buildLibraryResetCopy(count);
+    strings.push(
+      lr.title, lr.subText, lr.confirmLabel, lr.cancelLabel,
+      lr.destructiveCheckboxLabel, lr.successToast, lr.undoLabel,
+      lr.undoneToast, lr.errorToast,
     );
   }
   const anchor = buildAnchor();
@@ -350,10 +360,75 @@ describe('red line #4 — three-way reversibility', () => {
     expect(updated.operator.calibrationResetAt).toBe('2026-06-10T12:00:00Z');
   });
 
-  // Red line #4b — promised in the Gate 2 audit, not yet implemented.
-  // Build is tracked as WS-221 (design-gated destructive action). When it
-  // ships, replace this todo with assertions on the global-reset path.
-  it.todo('(b) global library reset — not yet implemented; see WS-221');
+  // Red line #4b — global library reset (WS-221). One owner action resets
+  // calibration across every anchor; copy is a destructive 2-tap confirm; the
+  // operation is fully undoable via snapshot restore; observations preserved.
+  describe('(b) global library reset', () => {
+    const buildLibraryState = () => {
+      const a1 = buildAnchor({ id: 'anchor:lib:1', status: 'active' });
+      const a2 = buildAnchor({ id: 'anchor:lib:2', status: 'retired' });
+      const obs = captureObservation(VALID_CAPTURE_INPUT, {
+        observation_enrollment_state: ENROLLMENT_STATES.NOT_ENROLLED,
+      }).record;
+      return {
+        ...initialAnchorLibraryState,
+        anchors: { [a1.id]: a1, [a2.id]: a2 },
+        observations: { [obs.id]: obs },
+      };
+    };
+
+    it('the library-reset copy is a destructive 2-tap action with AP-06-clean copy', () => {
+      const copy = buildLibraryResetCopy(3);
+      expect(copy.destructive).toBe(true);
+      expect(typeof copy.destructiveCheckboxLabel).toBe('string');
+      expect(copy.destructiveCheckboxLabel.length).toBeGreaterThan(0);
+      expect(copy.overrideReason).toBe('manual-library-reset');
+      const { valid, violations } = validateRetirementCopyBundle(copy);
+      expect(valid, `library-reset copy violations: ${JSON.stringify(violations)}`).toBe(true);
+    });
+
+    it('stamps calibrationResetAt on EVERY anchor with status unchanged + observations preserved', () => {
+      const prior = buildLibraryState();
+      const ts = '2026-06-13T12:00:00Z';
+      const after = anchorLibraryReducer(prior, {
+        type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+        payload: { timestamp: ts },
+      });
+      for (const id of Object.keys(prior.anchors)) {
+        expect(after.anchors[id].operator.calibrationResetAt).toBe(ts);
+        expect(after.anchors[id].operator.lastOverrideBy).toBe('owner');
+        expect(after.anchors[id].operator.overrideReason).toBe('manual-library-reset');
+        // Status is never changed by a calibration reset.
+        expect(after.anchors[id].status).toBe(prior.anchors[id].status);
+      }
+      // Evidence durability (red line #3): observation records are preserved.
+      expect(after.observations).toEqual(prior.observations);
+    });
+
+    it('is fully reversible — the undo path restores the exact prior anchors snapshot', () => {
+      const prior = buildLibraryState();
+      const priorSnapshot = { ...prior.anchors };
+      const reset = anchorLibraryReducer(prior, {
+        type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+        payload: { timestamp: '2026-06-13T12:00:00Z' },
+      });
+      // Sanity: reset actually changed the anchors.
+      expect(reset.anchors).not.toEqual(priorSnapshot);
+      const undone = anchorLibraryReducer(reset, {
+        type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+        payload: { restoreAnchors: priorSnapshot },
+      });
+      expect(undone.anchors).toEqual(priorSnapshot);
+    });
+
+    it('an empty library is a no-op (button is disabled, but the reducer is safe)', () => {
+      const after = anchorLibraryReducer(initialAnchorLibraryState, {
+        type: ANCHOR_LIBRARY_ACTIONS.LIBRARY_CALIBRATION_RESET,
+        payload: { timestamp: '2026-06-13T12:00:00Z' },
+      });
+      expect(after.anchors).toEqual({});
+    });
+  });
 
   it('(c) per-observation incognito mode exists as the third reversibility arm (full contract in red line #9)', () => {
     const result = captureObservation(

@@ -1,10 +1,11 @@
 id: "WS-220"
 title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "a8b5fe4"
 priority_score: 9.0
 priority_label: "P3"
 category: "test-reliability"
@@ -33,3 +34,4 @@ source:
   created_by: user
   origin: "seam-audit-2026-06-10"
 created_at: "2026-06-10"
+closed_by_event: "ev-1781323136559-dbf20070dae1"

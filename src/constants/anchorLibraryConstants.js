@@ -103,11 +103,12 @@ export const ANCHOR_OBSERVATION_SCHEMA_VERSION = 'anchor-obs-v1.0';
  * Reducer action types for `anchorLibraryReducer`. Frozen to prevent runtime
  * mutation. Mirrors `ENTITLEMENT_ACTIONS` shape from MPMF S9 G5-B1.
  *
- * Eight actions covering the full anchor library lifecycle:
+ * Nine actions covering the full anchor library lifecycle:
  *   - Hydration:        ANCHOR_LIBRARY_HYDRATED (boot from IDB; bulk load)
  *   - Observation:      OBSERVATION_CAPTURED, OBSERVATION_DELETED
  *   - Draft sidecar:    DRAFT_UPDATED, DRAFT_CLEARED
  *   - Anchor lifecycle: ANCHOR_OVERRIDDEN (W-EA-3 status/operator update)
+ *   - Library reset:    LIBRARY_CALIBRATION_RESET (W-EA-5 global reset; red line #4b)
  *   - Primitives:       PRIMITIVE_VALIDITY_UPDATED (W-PP-2 Tier-2 update)
  *   - Settings:         ENROLLMENT_TOGGLED (Q1-A global toggle)
  */
@@ -125,6 +126,9 @@ export const ANCHOR_LIBRARY_ACTIONS = Object.freeze({
 
   // Anchor lifecycle (W-EA-3 study override + retirement)
   ANCHOR_OVERRIDDEN: 'ANCHOR_OVERRIDDEN',
+
+  // Library-wide calibration reset (W-EA-5 — red line #4b global reversibility)
+  LIBRARY_CALIBRATION_RESET: 'LIBRARY_CALIBRATION_RESET',
 
   // Primitive validity (W-PP-2 Tier-2 update + cross-anchor invalidation)
   PRIMITIVE_VALIDITY_UPDATED: 'PRIMITIVE_VALIDITY_UPDATED',

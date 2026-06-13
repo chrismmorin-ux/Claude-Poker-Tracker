@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-13T01:53:58.693Z",
-  "updated_by_event": "ev-1781315638693-4ce4a996b726",
+  "updated_at": "2026-06-13T04:37:39.573Z",
+  "updated_by_event": "ev-1781325459573-6b50f793c458",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2027,7 +2027,40 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-125": {
+      "id": "SPR-125",
+      "title": "Ship WS-220: Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-13T03:37:11.926Z",
+      "approved_at": "2026-06-13T03:37:11.926Z",
+      "completed_at": "2026-06-13T03:58:56.524Z",
+      "goal": "Ship WS-220: Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load",
+      "item_count": 2,
+      "items_done": 2,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-126": {
+      "id": "SPR-126",
+      "title": "Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-13T04:03:24.439Z",
+      "approved_at": "2026-06-13T04:03:24.439Z",
+      "completed_at": "2026-06-13T04:37:38.789Z",
+      "goal": "Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781315638693-4ce4a996b726"
+  "last_event_log_head": "ev-1781325459573-6b50f793c458"
 }

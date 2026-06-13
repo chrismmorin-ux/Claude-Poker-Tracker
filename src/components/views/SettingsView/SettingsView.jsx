@@ -13,6 +13,8 @@ import { RefresherSettings } from './RefresherSettings';
 import { PrivacySection } from './PrivacySection';
 // EAL WS-222 (2026-06-12) — anchor-calibration enrollment opt-in (red line #1).
 import { AnchorCalibrationSection } from './AnchorCalibrationSection';
+// EAL WS-221 (2026-06-13) — global anchor-library calibration reset (red line #4b).
+import { AnchorCalibrationResetSection } from './AnchorCalibrationResetSection';
 // VCE (WS-181, 2026-05-11) — voice card entry spike behind a feature flag.
 import { VoiceCardEntrySection } from './VoiceCardEntrySection';
 // Owner-only sandbox tab (2026-05-05) — gated by email; renders nothing
@@ -142,6 +144,8 @@ export const SettingsView = ({ scale }) => {
             settings={settings}
             dispatchSettings={dispatchSettings}
           />
+
+          <AnchorCalibrationResetSection />
 
           <VoiceCardEntrySection
             settings={settings}

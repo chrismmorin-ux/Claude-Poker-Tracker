@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildRetirementCopy,
+  buildLibraryResetCopy,
   validateRetirementCopy,
   validateRetirementCopyBundle,
   isKnownRetirementAction,
@@ -250,5 +251,39 @@ describe('validateRetirementCopyBundle — full-bundle enforcement', () => {
     const r = validateRetirementCopyBundle(bundle);
     expect(r.valid).toBe(false);
     expect(r.violations.length).toBeGreaterThan(0);
+  });
+});
+
+describe('buildLibraryResetCopy — global library reset (red line #4b)', () => {
+  it('produces a destructive 2-tap bundle with library-wide framing', () => {
+    const copy = buildLibraryResetCopy(3);
+    expect(copy.action).toBe('library-reset');
+    expect(copy.anchorId).toBe(''); // not anchor-scoped
+    expect(copy.destructive).toBe(true);
+    expect(typeof copy.destructiveCheckboxLabel).toBe('string');
+    expect(copy.destructiveCheckboxLabel.length).toBeGreaterThan(0);
+    expect(copy.confirmLabel).toBe('Reset all');
+    expect(copy.cancelLabel).toBe('Cancel');
+    expect(copy.overrideReason).toBe('manual-library-reset');
+    expect(copy.targetStatus).toBeNull(); // status unchanged library-wide
+  });
+
+  it('is count-aware (plural / singular / count-free)', () => {
+    expect(buildLibraryResetCopy(3).subText).toContain('all 3 anchors');
+    expect(buildLibraryResetCopy(1).subText).toContain('1 anchor');
+    expect(buildLibraryResetCopy(0).subText).toContain('all anchors');
+    expect(buildLibraryResetCopy(undefined).subText).toContain('all anchors');
+  });
+
+  it('passes the AP-06 forbidden-pattern bundle validator for every count variant', () => {
+    for (const count of [0, 1, 2, 9]) {
+      const { valid, violations } = validateRetirementCopyBundle(buildLibraryResetCopy(count));
+      expect(valid, `violations at count=${count}: ${JSON.stringify(violations)}`).toBe(true);
+    }
+  });
+
+  it('preserves the evidence-durability framing (observations kept)', () => {
+    const copy = buildLibraryResetCopy(2);
+    expect(copy.subText).toMatch(/evidence history is preserved/i);
   });
 });
