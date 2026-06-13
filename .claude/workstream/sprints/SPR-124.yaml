@@ -1,7 +1,9 @@
 id: "SPR-124"
 title: "Ship WS-222: Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exis"
-status: approved
+status: done
 approved_at: "2026-06-13T00:50:26.383Z"
+completed_at: "2026-06-13T01:53:57.362Z"
+completed_by_commit: "1c0eecd"
 program_focus: "design"
 
 goal: |
@@ -21,6 +23,7 @@ items:
     title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-06-13T01:53:57.362Z"
 
 created_at: "2026-06-13T00:50:26.383Z"

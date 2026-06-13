@@ -1,7 +1,9 @@
 id: "WS-222"
 title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
 type: manual
-status: backlog
+status: done
+completed_at: "2026-06-13T01:53:57.362Z"
+completion_commit: "1c0eecd"
 priority_score: 10.0
 category: ux
 program: design
@@ -39,3 +41,4 @@ source:
   sprint_id: "SPR-115"
   origin_item: "WS-025"
 created_at: "2026-06-10"
+closed_by_event: "ev-1781315637398-ef9bd50eee14"

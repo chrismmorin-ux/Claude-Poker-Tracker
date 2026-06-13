@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-12T23:21:13.777Z",
-  "updated_by_event": "ev-1781306473777-4f45ebb5f62b",
+  "updated_at": "2026-06-13T01:53:58.693Z",
+  "updated_by_event": "ev-1781315638693-4ce4a996b726",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -5623,13 +5623,14 @@
     "WS-222": {
       "id": "WS-222",
       "title": "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 10,
       "category": "ux",
       "effort": "M",
       "program": "design",
       "capability": "core",
       "sprint_id": "",
+      "completed_at": "2026-06-13T01:53:57.362Z",
       "source": {
         "type": "manual",
         "created_by": "ai-during-sprint",
@@ -5779,5 +5780,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781306473777-4f45ebb5f62b"
+  "last_event_log_head": "ev-1781315638693-4ce4a996b726"
 }

@@ -4,10 +4,10 @@
 
 total_items: 225
 by_status:
-  done: 151
+  done: 152
   decomposed: 1
   in_progress: 3
-  backlog: 41
+  backlog: 40
   deferred: 20
   dismissed: 1
   completed: 7
@@ -2227,7 +2227,7 @@ items:
 
   - id: "WS-222"
     title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
-    status: backlog
+    status: done
     priority_score: 10
     category: ux
     effort: M
