@@ -6,6 +6,7 @@
  */
 
 import { SETTINGS_ACTIONS, DEFAULT_SETTINGS } from '../constants/settingsConstants';
+import { VALID_ENROLLMENT_STATES } from '../constants/anchorLibraryConstants';
 import { createValidatedReducer } from '../utils/reducerUtils';
 
 // =============================================================================
@@ -354,6 +355,25 @@ const rawSettingsReducer = (state, action) => {
           voiceCardEntry: {
             ...current,
             position,
+          },
+        },
+      };
+    }
+
+    // EAL WS-222: anchor-calibration observation enrollment (red line #1
+    // opt-in). The only legal UI write path for enrollment — the runtime
+    // anchorLibraryReducer mirror is kept in sync by useAnchorEnrollmentBridge.
+    case SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT: {
+      const { enrollmentState } = action.payload;
+      if (!VALID_ENROLLMENT_STATES.includes(enrollmentState)) return state;
+      const current = state.settings.anchorCalibration || DEFAULT_SETTINGS.anchorCalibration;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          anchorCalibration: {
+            ...current,
+            observationEnrollment: enrollmentState,
           },
         },
       };

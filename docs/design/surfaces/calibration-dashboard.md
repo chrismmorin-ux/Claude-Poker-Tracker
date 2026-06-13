@@ -157,7 +157,7 @@ Rendered only when `observation_enrollment_state === 'not-enrolled'`:
 
 - **Informational only.** Not a nag; no repeated prompts. Single-render per view visit; no dismiss button (banner is state-driven, not interaction-driven).
 - **Copy:** `"Enrollment off — dashboard shows the model's seed priors + Tier 1 simulator results. Observation-driven calibration data accrues when enrolled."` — factual, no urgency.
-- **Action:** `[ Open Settings ]` button linking to enrollment toggle.
+- **Action:** `[ Open Settings ]` button linking to enrollment toggle. **Wired 2026-06-12 (WS-222):** `CalibrationDashboardView` passes `onOpenSettings` → `setCurrentScreen(SCREEN.SETTINGS)`; the toggle lives in SettingsView's "Anchor Calibration" section (see `settings-view.md` §EAL-G4-SET). No return-to-dashboard affordance in v1 (manual back-navigation).
 - **No negative copy:** never `"Enable calibration to see your data!"` or `"Dashboard is empty — enroll now."` Both violate red line #5 + red line #7.
 
 ### Anchors panel — `AnchorCalibrationPanel`
@@ -369,7 +369,7 @@ Placeholder for future audit findings:
 - **`anchor-retirement` journey** — target for all override actions.
 - **`hand-replay-observation-capture`** — source of owner-captured observations visible in evidence list (origin=owner-captured rows).
 - **(exploit-deviation side)** `PresessionDrillView`, briefings-queue — may deep-link here from predicate-level details.
-- **Settings (future)** — enrollment toggle; dashboard reads state.
+- **`settings-view`** — enrollment toggle lives in the "Anchor Calibration" section (§EAL-G4-SET); dashboard reads runtime state via `isEnrolled()`; banner CTA navigates there. Wired 2026-06-12 (WS-222).
 
 ---
 
@@ -386,3 +386,4 @@ Placeholder for future audit findings:
   - **Tier-placement gating clarification.** Header `**Tier placement:**` corrected — gating is via `FEATURE_TIER.CALIBRATION_DASHBOARD = TIERS.PRO` entitlement at `src/utils/entitlement/featureMap.js`, NOT via a per-screen `ENABLE_CALIBRATION_DASHBOARD` flag (which never existed). Earlier text reflected an aspirational flag pattern; codebase reality is tier-based. WS-169 acceptance criterion "ENABLE_CALIBRATION_DASHBOARD flag added to feature-flag system" therefore voided as redundant — entitlement is already in place.
 
   Companion artifacts: Gate 1 entry audit at [`audits/2026-05-09-entry-calibration-dashboard.md`](../audits/2026-05-09-entry-calibration-dashboard.md) (verdict YELLOW + 3 conditions: this amendment is C1). PMC Gate 2 sprint 2/2 close-out at [`audits/2026-05-09-blindspot-pmc-failure-modes.md`](../audits/2026-05-09-blindspot-pmc-failure-modes.md).
+- 2026-06-12 — v1.2 — Enrollment banner CTA wired (WS-222 / SPR-124). `EnrollmentStateBanner` now receives `onOpenSettings` from the view (navigates to `SCREEN.SETTINGS`); the enrollment toggle ships in SettingsView's new "Anchor Calibration" section (`settings-view.md` §EAL-G4-SET). Enrollment persists via the settings store (`settings.anchorCalibration.observationEnrollment`), bridged one-directionally into `anchorLibraryReducer` by `useAnchorEnrollmentBridge` — closes the red-line-#1 reachability gap (opt-in promised but no dispatch site existed). Gate 1 audit: [`audits/2026-06-12-entry-anchor-enrollment-settings.md`](../audits/2026-06-12-entry-anchor-enrollment-settings.md) (GREEN).

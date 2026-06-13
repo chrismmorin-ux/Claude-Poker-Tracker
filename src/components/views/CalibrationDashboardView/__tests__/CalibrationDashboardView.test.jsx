@@ -134,6 +134,7 @@ beforeEach(() => {
     dashboardReturnScreen: null,
     closeCalibrationDashboard: vi.fn(),
     setCurrentScreen: vi.fn(),
+    SCREEN: { SETTINGS: 'settings' },
   };
 
   mockOpenSettings = vi.fn();
@@ -220,6 +221,23 @@ describe('CalibrationDashboardView — enrollment banner', () => {
   it('omits banner when enrolled', () => {
     render(<CalibrationDashboardView />);
     expect(screen.queryByTestId('enrollment-state-banner')).toBeNull();
+  });
+
+  // WS-222 — CTA wiring: the banner's "Open Settings" button navigates to
+  // SettingsView, where the Anchor Calibration enrollment toggle lives.
+  it('renders the Open Settings CTA when not-enrolled', () => {
+    mockAnchorLibraryState.enrollment = { observation_enrollment_state: 'not-enrolled' };
+    mockAnchorLibraryState.isEnrolled = () => false;
+    render(<CalibrationDashboardView />);
+    expect(screen.getByRole('button', { name: /Open Settings/i })).toBeTruthy();
+  });
+
+  it('clicking Open Settings navigates to SCREEN.SETTINGS', () => {
+    mockAnchorLibraryState.enrollment = { observation_enrollment_state: 'not-enrolled' };
+    mockAnchorLibraryState.isEnrolled = () => false;
+    render(<CalibrationDashboardView />);
+    fireEvent.click(screen.getByRole('button', { name: /Open Settings/i }));
+    expect(mockUiState.setCurrentScreen).toHaveBeenCalledWith('settings');
   });
 });
 

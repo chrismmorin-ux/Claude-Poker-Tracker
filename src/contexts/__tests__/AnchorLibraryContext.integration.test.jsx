@@ -346,10 +346,12 @@ describe('AnchorLibraryContext + persistence hook — full round-trip (no mocks)
       expect(screen.getByTestId('enrolled').textContent).toBe('yes');
       unmount1();
 
-      // NOTE: Enrollment is not yet IDB-persisted (Phase 6+ wires settings
-      // store integration per Q1-A). On a fresh mount it should default to
-      // not-enrolled. This test pins that current behavior so a future
-      // settings-store wiring change is intentional.
+      // NOTE: Enrollment persists via the SETTINGS store (Q1-A — wired by
+      // WS-222: settings.anchorCalibration.observationEnrollment is the
+      // source of truth; useAnchorEnrollmentBridge in useAppState mirrors it
+      // into this reducer). The bridge lives ABOVE this provider, so at this
+      // level a fresh mount still defaults to not-enrolled by design —
+      // anchor-library persistence itself never writes enrollment.
       const probeRef2 = React.createRef();
       render(<Harness ref={probeRef2} />);
       await waitFor(() => expect(screen.getByTestId('ready').textContent).toBe('ready'));

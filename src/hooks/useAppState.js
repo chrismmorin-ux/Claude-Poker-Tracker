@@ -27,6 +27,8 @@ import { shapeMasteryReducer, initialShapeMasteryState } from '../reducers/shape
 import { usePersistence } from './usePersistence';
 import { useSettingsPersistence } from './useSettingsPersistence';
 import { useAuthPersistence } from './useAuthPersistence';
+// EAL WS-222 (2026-06-12) — settings → anchor-library enrollment sync.
+import { useAnchorEnrollmentBridge } from './useAnchorEnrollmentBridge';
 
 
 /**
@@ -93,6 +95,11 @@ export const useAppState = () => {
 
   // Settings persistence
   useSettingsPersistence(settingsState, dispatchSettings);
+
+  // EAL WS-222 — mirror persisted enrollment (settings store, source of
+  // truth) into anchorLibraryReducer (runtime read model). Reconciling:
+  // self-heals after ANCHOR_LIBRARY_HYDRATED resets enrollment to default.
+  useAnchorEnrollmentBridge(settingsState, anchorLibraryState, dispatchAnchorLibrary);
 
   // =========================================================================
   // RETURN

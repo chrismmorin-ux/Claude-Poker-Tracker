@@ -11,6 +11,8 @@ import { ErrorLogPanel } from './ErrorLogPanel';
 import { RefresherSettings } from './RefresherSettings';
 // PIO G5 child F (WS-165 / SPR-036, 2026-05-04) — privacy controls.
 import { PrivacySection } from './PrivacySection';
+// EAL WS-222 (2026-06-12) — anchor-calibration enrollment opt-in (red line #1).
+import { AnchorCalibrationSection } from './AnchorCalibrationSection';
 // VCE (WS-181, 2026-05-11) — voice card entry spike behind a feature flag.
 import { VoiceCardEntrySection } from './VoiceCardEntrySection';
 // Owner-only sandbox tab (2026-05-05) — gated by email; renders nothing
@@ -132,6 +134,11 @@ export const SettingsView = ({ scale }) => {
           <RefresherSettings />
 
           <PrivacySection
+            settings={settings}
+            dispatchSettings={dispatchSettings}
+          />
+
+          <AnchorCalibrationSection
             settings={settings}
             dispatchSettings={dispatchSettings}
           />

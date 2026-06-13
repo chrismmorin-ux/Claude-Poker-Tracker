@@ -1,0 +1,26 @@
+id: "SPR-124"
+title: "Ship WS-222: Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exis"
+status: approved
+approved_at: "2026-06-13T00:50:26.383Z"
+program_focus: "design"
+
+goal: |
+  Ship WS-222: Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T00:50:26.383Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-222 selected (10 × no damping = 10).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-222"
+    title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-06-13T00:50:26.383Z"

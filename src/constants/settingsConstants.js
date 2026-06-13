@@ -39,6 +39,10 @@ export const SETTINGS_ACTIONS = {
   // 2026-05-12 — added per first-live-use iteration.
   SET_VOICE_CARD_ENTRY_ACTIVATION_MODE: 'SET_VOICE_CARD_ENTRY_ACTIVATION_MODE',
   SET_VOICE_CARD_ENTRY_POSITION: 'SET_VOICE_CARD_ENTRY_POSITION',
+  // EAL WS-222 (2026-06-12) — anchor-calibration observation enrollment.
+  // The ONLY legal UI write path for enrollment; useAnchorEnrollmentBridge
+  // mirrors the persisted value into anchorLibraryReducer at runtime.
+  SET_ANCHOR_CALIBRATION_ENROLLMENT: 'SET_ANCHOR_CALIBRATION_ENROLLMENT',
 };
 
 // =============================================================================
@@ -128,6 +132,15 @@ export const DEFAULT_SETTINGS = {
     confidenceThreshold: 0.65,
     activationMode: 'hold',
     position: 'bottom-left',
+  },
+
+  // EAL WS-222 (2026-06-12, Q1-A: enrollment is a Settings field). Persisted
+  // source of truth for anchor-calibration observation enrollment. Default
+  // not-enrolled per autonomy red line #1 — the owner must explicitly opt in
+  // before the Tier 2 calibration loop collects anything. Bridged into
+  // anchorLibraryReducer (runtime read model) by useAnchorEnrollmentBridge.
+  anchorCalibration: {
+    observationEnrollment: 'not-enrolled', // 'enrolled' | 'not-enrolled'
   },
 };
 

@@ -197,6 +197,27 @@ export const buildEnrollmentBannerCopy = () => ({
 });
 
 /**
+ * Build the Settings "Anchor Calibration" section copy (WS-222 / SPR-124).
+ * The enrollment toggle's explainer — red line #1's opt-in mechanism. Lives
+ * here (not inline in the component) so it stays under FORBIDDEN_PATTERNS
+ * enforcement: enrollment is framed as contributing observations that
+ * calibrate the MODEL, never as enabling evaluation of the owner. Factual,
+ * no urgency — not-enrolled is a legitimate resting state (red line #5).
+ *
+ * Per `docs/design/surfaces/settings-view.md` §EAL-G4-SET (founder-approved
+ * copy, SPR-124 plan-mode).
+ *
+ * @returns {{ heading: string, label: string, explainer: string, enrolledLabel: string, notEnrolledLabel: string }}
+ */
+export const buildEnrollmentSettingsCopy = () => ({
+  heading: 'Anchor Calibration',
+  label: 'Observation enrollment',
+  explainer: 'When enrolled, hands you record contribute observations that calibrate the exploit model\'s anchors against real table data. When off, the model runs on seed priors and simulator results only. Off by default — nothing is collected until you enroll.',
+  enrolledLabel: 'Enrolled',
+  notEnrolledLabel: 'Not enrolled',
+});
+
+/**
  * Build the insufficient-sparkline-data copy used inside an anchor row when
  * matcher firings < MIN_SPARKLINE_SAMPLE_SIZE (per spec line 317).
  *

@@ -1,30 +1,16 @@
 {
-  "composed_at": "2026-06-12T23:03:42.206Z",
-  "goal": "Ship WS-227: Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt",
-  "program_focus": "engineering",
+  "composed_at": "2026-06-13T00:50:26.260Z",
+  "goal": "Ship WS-222: Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
+  "program_focus": "design",
   "override_class": null,
   "items": [
     {
-      "id": "WS-227",
-      "title": "Extension: extract tournament-zone rendering to pure builders + clean side-panel.js comment debt",
-      "raw_score": 13,
-      "adjusted_score": 13,
+      "id": "WS-222",
+      "title": "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
+      "raw_score": 10,
+      "adjusted_score": 10,
       "effort": "M",
-      "program": "engineering",
-      "source_class": "untagged",
-      "blocked_by_note": null,
-      "soft_block_factor": 1,
-      "source_damping": 1,
-      "mode": "plan-first",
-      "queue_item_known": true
-    },
-    {
-      "id": "WS-225",
-      "title": "Delete superseded PrototypeFinderView (1,665 untested lines, diverged matching logic)",
-      "raw_score": 12,
-      "adjusted_score": 12,
-      "effort": "S",
-      "program": "engineering",
+      "program": "design",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -38,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-227 selected (13 × no damping = 13).\nCap usage: 2 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-222 selected (10 × no damping = 10).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
-    "items": 2,
-    "effort_sessions": 2,
+    "items": 1,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }

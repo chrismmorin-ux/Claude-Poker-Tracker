@@ -36,6 +36,7 @@ describe('settingsReducer', () => {
       expect(settings.backupFrequency).toBe('manual');
       expect(settings.customVenues).toEqual([]);
       expect(settings.customGameTypes).toEqual([]);
+      expect(settings.anchorCalibration).toEqual({ observationEnrollment: 'not-enrolled' });
     });
   });
 
@@ -464,6 +465,68 @@ describe('settingsReducer', () => {
         payload: { enabled: 1 },
       });
       expect(s.settings.privacy.photoCaptureEnabled).toBe(true);
+    });
+  });
+
+  describe('EAL anchor-calibration enrollment (WS-222)', () => {
+    it('default observationEnrollment is not-enrolled (red line #1 opt-in)', () => {
+      expect(DEFAULT_SETTINGS.anchorCalibration).toBeDefined();
+      expect(DEFAULT_SETTINGS.anchorCalibration.observationEnrollment).toBe('not-enrolled');
+    });
+
+    it('SET_ANCHOR_CALIBRATION_ENROLLMENT round-trips enrolled ↔ not-enrolled', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT,
+        payload: { enrollmentState: 'enrolled' },
+      });
+      expect(s1.settings.anchorCalibration.observationEnrollment).toBe('enrolled');
+      const s2 = settingsReducer(s1, {
+        type: SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT,
+        payload: { enrollmentState: 'not-enrolled' },
+      });
+      expect(s2.settings.anchorCalibration.observationEnrollment).toBe('not-enrolled');
+    });
+
+    it('rejects invalid enrollment values (state unchanged)', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT,
+        payload: { enrollmentState: 'yes-please' },
+      });
+      expect(s).toBe(state);
+    });
+
+    it('works when state.settings.anchorCalibration is missing (legacy blob)', () => {
+      delete state.settings.anchorCalibration;
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT,
+        payload: { enrollmentState: 'enrolled' },
+      });
+      expect(s.settings.anchorCalibration.observationEnrollment).toBe('enrolled');
+    });
+
+    it('HYDRATE_SETTINGS fills the default for stored blobs without anchorCalibration', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.HYDRATE_SETTINGS,
+        payload: { settings: { theme: 'light' } },
+      });
+      expect(s.settings.anchorCalibration.observationEnrollment).toBe('not-enrolled');
+    });
+
+    it('HYDRATE_SETTINGS preserves a persisted enrolled value', () => {
+      const s = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.HYDRATE_SETTINGS,
+        payload: { settings: { anchorCalibration: { observationEnrollment: 'enrolled' } } },
+      });
+      expect(s.settings.anchorCalibration.observationEnrollment).toBe('enrolled');
+    });
+
+    it('RESET_SETTINGS returns enrollment to not-enrolled (fails safe)', () => {
+      const s1 = settingsReducer(state, {
+        type: SETTINGS_ACTIONS.SET_ANCHOR_CALIBRATION_ENROLLMENT,
+        payload: { enrollmentState: 'enrolled' },
+      });
+      const s2 = settingsReducer(s1, { type: SETTINGS_ACTIONS.RESET_SETTINGS });
+      expect(s2.settings.anchorCalibration.observationEnrollment).toBe('not-enrolled');
     });
   });
 

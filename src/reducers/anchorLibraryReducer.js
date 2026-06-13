@@ -224,6 +224,13 @@ const rawAnchorLibraryReducer = (state, action) => {
     // Settings → enrollment toggle (Q1-A global one-toggle pattern).
     // captureObservation W-AO-1 reads this state via useAnchorLibrary +
     // forces contributesToCalibration=false when not-enrolled (I-WR-5).
+    //
+    // WS-222: the ONLY legitimate dispatcher is useAnchorEnrollmentBridge,
+    // which mirrors the persisted settings value
+    // (settings.anchorCalibration.observationEnrollment — source of truth).
+    // Surfaces must dispatch SET_ANCHOR_CALIBRATION_ENROLLMENT to the
+    // settings reducer instead; a direct ENROLLMENT_TOGGLED from a surface
+    // would be silently reverted by the bridge on the next reconcile.
     // -------------------------------------------------------------------------
     case ANCHOR_LIBRARY_ACTIONS.ENROLLMENT_TOGGLED: {
       const newState = action.payload?.observation_enrollment_state;

@@ -72,6 +72,13 @@ export const CalibrationDashboardView = () => {
     beginRetirement(action, anchor);
   }, [allAnchors, beginRetirement]);
 
+  // WS-222 — enrollment banner CTA: the toggle lives in SettingsView's
+  // "Anchor Calibration" section (settings-view.md §EAL-G4-SET). Manual
+  // back-navigation in v1; no return-to-dashboard plumbing.
+  const handleOpenSettings = useCallback(() => {
+    ui.setCurrentScreen(ui.SCREEN.SETTINGS);
+  }, [ui]);
+
   const enrolled = typeof isEnrolled === 'function' ? isEnrolled() : false;
 
   return (
@@ -132,7 +139,7 @@ export const CalibrationDashboardView = () => {
         )}
       </header>
 
-      {!enrolled && <EnrollmentStateBanner />}
+      {!enrolled && <EnrollmentStateBanner onOpenSettings={handleOpenSettings} />}
 
       <CalibrationTabs activeTab={activeTab} onChange={setActiveTab} />
 
