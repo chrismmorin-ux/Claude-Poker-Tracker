@@ -184,6 +184,11 @@ export class TableManager {
     return this.tables.get(String(connId));
   }
 
+  /** Connection ids of all live tables (for reconnect re-push). */
+  getConnIds() {
+    return [...this.tables.keys()];
+  }
+
   getDiagnosticData() {
     const eventLogs = {};
     const tableConfigs = {};

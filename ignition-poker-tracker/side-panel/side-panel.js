@@ -1285,11 +1285,17 @@ injectTokens();
     const panelState = snap.panels?.betweenHands ?? 'inactive';
     const heroSeat = snap.currentLiveContext?.heroSeat
       || snap.currentTableState?.heroSeat;
+    // modeAExpired comes from two paths: the FSM 'modeAExpired' state (true
+    // between-hands banner) AND the coordinator's raw Mode-A timer field (the
+    // mid-hand hero-folded "observing" path, which the FSM does not model —
+    // it stays 'inactive' there, so the FSM bit alone never fires and the
+    // REFLECTION banner would never collapse to OBSERVING after 10s).
+    const modeAExpired = panelState === 'modeAExpired' || !!snap.modeAExpired;
     const mode = classifyBetweenHandsMode(
       snap.currentLiveContext,
       heroSeat,
       snap.lastGoodAdvice,
-      panelState === 'modeAExpired'
+      modeAExpired
     );
 
     const fsmClaimsSlot = panelState === 'active' || panelState === 'modeAExpired';

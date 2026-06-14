@@ -36,6 +36,16 @@ const pid = (data) => {
   return m ? m[1] : null;
 };
 
+// Model the producer's change-gate both ways to quantify cross-hand drops.
+// OLD: single global key, no handNumber. NEW: per-conn key incl. handNumber.
+const oldKey = (c) => `${c.state}|${c.currentStreet}|${(c.activeSeatNumbers||[]).length}|${(c.foldedSeats||[]).length}|${(c.actionSequence||[]).length}|${c.pot||0}`;
+const newKey = (c) => `${c.handNumber}|${oldKey(c)}`;
+let prevOld = null;
+const prevNewByConn = new Map();
+let oldSends = 0, newSends = 0;
+let oldHandStartDrops = 0; // first frame of a new hand the OLD gate would skip
+const handsSeen = new Set();
+
 for (const r of msgs) {
   frameNo++;
   let threw = null;
@@ -53,6 +63,18 @@ for (const r of msgs) {
     lastStreet = ctx.currentStreet;
     streetSeen[ctx.currentStreet] = (streetSeen[ctx.currentStreet] || 0) + 1;
   }
+
+  // --- producer change-gate modeling (old vs new) ---
+  const ok = oldKey(ctx);
+  const nk = newKey(ctx);
+  const conn = String(r.connId);
+  const isNewHand = ctx.handNumber != null && !handsSeen.has(`${conn}:${ctx.handNumber}`);
+  if (ctx.handNumber != null) handsSeen.add(`${conn}:${ctx.handNumber}`);
+  if (ok !== prevOld) { oldSends++; } else if (isNewHand) { oldHandStartDrops++; }
+  prevOld = ok;
+  const pn = prevNewByConn.get(conn);
+  if (nk !== pn) newSends++;
+  prevNewByConn.set(conn, nk);
 
   const err = validateMessage('live_context', { type: 'live_context', context: ctx });
   if (err) {
@@ -94,3 +116,9 @@ for (const [k, v] of Object.entries(failReasons)) console.log(`  ${v}x  ${k}`);
 console.log('');
 console.log('--- first failure samples ---');
 for (const s of failSamples) console.log(' ', JSON.stringify(s));
+console.log('');
+console.log('--- producer change-gate (cross-hand drop test) ---');
+console.log('distinct hands:        ', handsSeen.size);
+console.log('OLD gate sends:        ', oldSends, '(single global key, no handNumber)');
+console.log('OLD hand-start drops:  ', oldHandStartDrops, '  <-- new-hand updates a collision would skip');
+console.log('NEW gate sends:        ', newSends, '(per-conn key incl. handNumber)');

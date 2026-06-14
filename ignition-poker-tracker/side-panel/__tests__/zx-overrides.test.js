@@ -142,8 +142,21 @@ describe('RT-72 — renderBetweenHands FSM authority (source-level)', () => {
     expect(renderBetweenHandsSrc).not.toMatch(/hideEl\s*\(\s*streetCard/);
   });
 
-  it('does not read raw snap.modeAExpired (FSM is the authority)', () => {
-    expect(renderBetweenHandsSrc).not.toMatch(/snap\.modeAExpired/);
+  // RT-72 kept: the FSM — not the raw field — is the slot-ownership authority.
+  // Refined (real-capture HUD fix): the renderer MAY read snap.modeAExpired, but
+  // ONLY to feed classifyBetweenHandsMode's reflection→observing decision on the
+  // mid-hand hero-folded path. The FSM does not model that path (betweenHandsOrIdle
+  // is false during a live hand, so the FSM stays 'inactive' and its 'modeAExpired'
+  // state never fires there) — so the timer's raw field is the only authority for
+  // that transition. Slot visibility must still derive from the FSM.
+  it('derives slot ownership from the FSM, not the raw modeAExpired field', () => {
+    expect(renderBetweenHandsSrc).toMatch(/fsmClaimsSlot\s*=\s*panelState\b/);
+    expect(renderBetweenHandsSrc).not.toMatch(/claimSlot\s*=[^\n]*modeAExpired/);
+  });
+
+  it('feeds the Mode-A timer field into the between-hands classifier', () => {
+    expect(renderBetweenHandsSrc).toMatch(/classifyBetweenHandsMode/);
+    expect(renderBetweenHandsSrc).toMatch(/modeAExpired/);
   });
 
   it('toggles data-between-hands on #hud-content wrapper instead of mutating sibling zone', () => {

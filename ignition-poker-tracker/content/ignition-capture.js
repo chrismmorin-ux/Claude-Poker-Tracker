@@ -164,63 +164,63 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
   // LIVE CONTEXT — state-change-gated, throttled push to SW
   // =========================================================================
 
-  let _prevLiveStateKey = null;
-  let _liveContextThrottle = null;
-  let _pendingLiveContext = null;
+  // Per-connection push state. A single global was multi-table-unsafe (one
+  // table's fingerprint clobbered another's, dropping legit pushes for both)
+  // and never reset between hands, so a new hand whose early state matched a
+  // prior hand's was silently skipped. Keyed by connId; the fingerprint now
+  // includes handNumber so a new hand can never collide with an old one.
+  const _liveCtxByConn = new Map(); // connId -> { prevKey, throttle, pending }
 
-  // Open the 200ms trailing-edge window; when it expires, flush whatever was
-  // coalesced during the window. Extracted so the reconnect-flush below can
-  // re-arm the same window without duplicating the timer body.
-  const armLiveContextWindow = () => {
-    _liveContextThrottle = setTimeout(() => {
-      _liveContextThrottle = null;
-      // Flush any pending context that arrived during throttle window
-      if (_pendingLiveContext) {
-        conn.send({ type: 'live_context', context: _pendingLiveContext });
-        _pendingLiveContext = null;
-      }
-    }, 200);
+  const _liveCtxState = (connId) => {
+    let s = _liveCtxByConn.get(connId);
+    if (!s) { s = { prevKey: null, throttle: null, pending: null }; _liveCtxByConn.set(connId, s); }
+    return s;
   };
 
-  const pushLiveContext = (hsm) => {
+  const pushLiveContext = (hsm, connId) => {
     if (!hsm?.getLiveHandContext) return;
     const ctx = hsm.getLiveHandContext();
+    const s = _liveCtxState(connId);
 
-    // Only push when state actually changed (key fields fingerprint)
-    const stateKey = `${ctx.state}|${ctx.currentStreet}|${(ctx.activeSeatNumbers || []).length}|${(ctx.foldedSeats || []).length}|${(ctx.actionSequence || []).length}|${ctx.pot || 0}`;
-    if (stateKey === _prevLiveStateKey) return; // No change — skip
-    _prevLiveStateKey = stateKey;
+    // Only push when state actually changed (key fields fingerprint).
+    // handNumber leads the key so a fresh hand always pushes even if its early
+    // state (blinds posted, 2 active, empty pot) matches the previous hand's.
+    const stateKey = `${ctx.handNumber}|${ctx.state}|${ctx.currentStreet}|${(ctx.activeSeatNumbers || []).length}|${(ctx.foldedSeats || []).length}|${(ctx.actionSequence || []).length}|${ctx.pot || 0}`;
+    if (stateKey === s.prevKey) return; // No change — skip
+    s.prevKey = stateKey;
     lastLiveContextAt = Date.now();
     liveContextPushCount++;
 
-    // Trailing-edge throttle: send immediately on first change, then
-    // coalesce rapid subsequent changes into one push every 200ms
-    _pendingLiveContext = ctx;
-    if (!_liveContextThrottle) {
-      // Immediate first push
+    // Trailing-edge throttle: send immediately on first change, then coalesce
+    // rapid subsequent changes into one push every 200ms (per connection).
+    s.pending = ctx;
+    if (!s.throttle) {
       conn.send({ type: 'live_context', context: ctx });
-      _pendingLiveContext = null;
-      armLiveContextWindow();
+      s.pending = null;
+      s.throttle = setTimeout(() => {
+        s.throttle = null;
+        if (s.pending) {
+          conn.send({ type: 'live_context', context: s.pending });
+          s.pending = null;
+        }
+      }, 200);
     }
   };
 
-  // WS-108: flush a coalesced live-context push immediately on (re)connect and
-  // reset the throttle window. Without this, a change that was coalesced into
-  // _pendingLiveContext (its leading-edge push already spent before the port
-  // dropped) waits out the full 200ms timer before reaching the SW — which
-  // then applies its own forward window, stacking into the ~400ms worst case
-  // RT-84 flagged. Flushing here mirrors RT-68's SW-side fresh-context replay
-  // (pushFullStateToSidePanel), so the post-reconnect content→SW hop collapses
-  // toward immediate while the re-armed window still rate-limits rapid bursts.
-  const flushPendingLiveContextOnReconnect = () => {
-    if (!_pendingLiveContext) return;
-    if (_liveContextThrottle) {
-      clearTimeout(_liveContextThrottle);
-      _liveContextThrottle = null;
+  // On (re)connect to the SW, the SW may have just been reanimated with no live
+  // context (its session storage write is throttled and may lag, or be empty
+  // mid-hand between actions). Re-push the CURRENT state of every live table so
+  // the HUD reflects truth immediately instead of staying blank until the next
+  // game action. Resetting prevKey forces the push past the change-gate.
+  const repushAllLiveContextOnReconnect = () => {
+    for (const connId of tableManager.getConnIds()) {
+      const s = _liveCtxState(connId);
+      s.prevKey = null;
+      if (s.throttle) { clearTimeout(s.throttle); s.throttle = null; }
+      s.pending = null;
+      const hsm = tableManager.getHSM(connId);
+      if (hsm) pushLiveContext(hsm, connId);
     }
-    conn.send({ type: 'live_context', context: _pendingLiveContext });
-    _pendingLiveContext = null;
-    armLiveContextWindow();
   };
 
   // =========================================================================
@@ -340,7 +340,7 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
       // Push live context on state changes
       const hsm = tableManager.getHSM?.(data.connId);
       if (hsm) {
-        pushLiveContext(hsm);
+        pushLiveContext(hsm, String(data.connId));
       }
     }
 
@@ -363,9 +363,10 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
       console.log('%c[Poker Capture] Port connected', 'color: #00ff00; font-weight: bold;');
       capturePortConnected = true;
       capturePortConnectCount++;
-      // WS-108: drain any coalesced live context first so a reconnect doesn't
-      // strand it behind the 200ms trailing timer (then pipeline status).
-      flushPendingLiveContextOnReconnect();
+      // Re-push current live context for every table so a reanimated SW (and
+      // the side panel behind it) reflects the live hand immediately instead
+      // of staying blank until the next game action.
+      repushAllLiveContextOnReconnect();
       pushPipelineStatus();
       writeDiagnosticsNow();
     },

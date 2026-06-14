@@ -429,6 +429,10 @@ export class RenderCoordinator {
       snap.modelAuditOpen ? 1 : 0,
       snap.planPanelOpen ? 1 : 0,
       snap.tournamentCollapsed ? 1 : 0,
+      // Mode A reflection→observing timer: without this the 10s expiry flips
+      // modeAExpired but the renderKey stays identical and the render is
+      // suppressed, so the between-hands banner never collapses to OBSERVING.
+      snap.modeAExpired ? 1 : 0,
       // SR-6.4: lastGoodExploits presence + appConnected bit. exploitPushCount
       // covers push-increment re-renders; this covers clears (table switch)
       // and appConnected transitions carried on the exploits object.

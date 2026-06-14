@@ -1132,3 +1132,39 @@ describe('SR-6.7 — exact-street match for advice acceptance', () => {
     expect(coord.buildSnapshot().lastGoodAdvice).toBeNull();
   });
 });
+
+// =========================================================================
+// Mode A reflection→observing timer (real-capture HUD fix)
+// The 10s timer flips modeAExpired; without it in buildRenderKey the render
+// is suppressed and the between-hands banner never collapses to OBSERVING.
+// =========================================================================
+describe('Mode A timer drives modeAExpired + renderKey', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('startModeATimer flips modeAExpired after 10s and changes the renderKey', () => {
+    const { coord } = createCoordinator();
+    coord.set('currentLiveContext', liveCtx({ heroSeat: 1, foldedSeats: [1] }));
+
+    const before = coord.buildSnapshot();
+    expect(before.modeAExpired).toBe(false);
+    const keyBefore = coord.buildRenderKey(before);
+
+    coord.startModeATimer();
+    vi.advanceTimersByTime(10_000);
+
+    const after = coord.buildSnapshot();
+    expect(after.modeAExpired).toBe(true);
+    // renderKey MUST differ or the reflection→observing render is suppressed.
+    expect(coord.buildRenderKey(after)).not.toBe(keyBefore);
+  });
+
+  it('clearModeATimer resets modeAExpired (new hand)', () => {
+    const { coord } = createCoordinator();
+    coord.startModeATimer();
+    vi.advanceTimersByTime(10_000);
+    expect(coord.buildSnapshot().modeAExpired).toBe(true);
+    coord.clearModeATimer();
+    expect(coord.buildSnapshot().modeAExpired).toBe(false);
+  });
+});
