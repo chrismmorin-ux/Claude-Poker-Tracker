@@ -366,12 +366,14 @@ export const validateLiveContext = (context) => {
   if (context.heroSeat != null) {
     if (!isValidSeat(context.heroSeat)) {
       errors.push(`heroSeat=${context.heroSeat} is outside valid range [1,9] or not integer`);
-    } else if (active && folded) {
-      const all = new Set([...active, ...folded]);
-      if (!all.has(context.heroSeat)) {
-        errors.push(`heroSeat=${context.heroSeat} not in activeSeatNumbers or foldedSeats`);
-      }
     }
+    // NOTE: hero membership in activeSeatNumbers ∪ foldedSeats is NOT enforced.
+    // "Hero is seated" ≠ "hero is in the current hand." During DEALING / between
+    // hands, and for any hand hero sits out (observer), heroSeat is legitimately
+    // set while hero is absent from both seat sets. A real capture replay showed
+    // this rule dropping ~20% of live updates (every hand start), silently
+    // blanking the HUD. The genuine corruption guard is active ∩ folded = ∅
+    // (above); hero membership is not an invariant of live game state.
   }
 
   return { valid: errors.length === 0, errors };

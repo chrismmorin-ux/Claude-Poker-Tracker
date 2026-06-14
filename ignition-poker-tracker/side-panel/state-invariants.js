@@ -49,7 +49,9 @@ export class StateInvariantChecker {
     this._rule9_adviceNotSelf(snap, violations);
     this._rule10_pipelineEventsCapped(snap, violations);
     this._rule11_seatSetsDisjoint(snap, violations);
-    this._rule12_heroInSeatSet(snap, violations);
+    // R12 (heroSeat ∈ active ∪ folded) retired — see note below. Hero being
+    // seated is not the same as hero being in the current hand; the rule fired
+    // on every hand start / observed hand and produced false violations.
 
     return { violations, warnings };
   }
@@ -231,25 +233,16 @@ export class StateInvariantChecker {
   }
 
   // =========================================================================
-  // RULE 12 (STP-1 R-10.1): heroSeat must be in activeSeatNumbers ∪ foldedSeats
-  // Hero is at the table by definition. If the seat sets don't account for
-  // the hero, something is wrong with the payload or the seat assignment
-  // pipeline.
+  // RULE 12 — RETIRED (do not reinstate).
+  // Previously: "heroSeat must be in activeSeatNumbers ∪ foldedSeats."
+  // A real-capture replay (11 hands, seat-2 hero) showed this firing on every
+  // hand start and every observed hand: hero is SEATED (heroSeat known) but not
+  // yet / not at all a participant in the current hand, so it's legitimately
+  // absent from both seat sets. At the wire gate the equivalent rule HARD-DROPPED
+  // ~20% of live updates, blanking the HUD between and at the start of hands.
+  // "Hero seated" is not "hero in hand"; membership is not an invariant.
+  // The genuine corruption guard is R11 (active ∩ folded = ∅).
   // =========================================================================
-  _rule12_heroInSeatSet(snap, violations) {
-    const ctx = snap.currentLiveContext;
-    if (!ctx) return;
-    const hero = ctx.heroSeat;
-    if (hero == null) return;
-    const active = Array.isArray(ctx.activeSeatNumbers) ? ctx.activeSeatNumbers : null;
-    const folded = Array.isArray(ctx.foldedSeats) ? ctx.foldedSeats : null;
-    if (!active || !folded) return; // cannot evaluate without both sets
-    if (!active.includes(hero) && !folded.includes(hero)) {
-      violations.push(
-        `R12: heroSeat=${hero} not in activeSeatNumbers=[${active}] or foldedSeats=[${folded}]`
-      );
-    }
-  }
 
   /** Reset stateful tracking (for test isolation). */
   reset() {

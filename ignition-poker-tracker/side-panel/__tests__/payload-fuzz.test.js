@@ -33,9 +33,12 @@ const CORPUS = [
     expect: { wireValid: false, rule: 'R11' },
   },
   {
-    name: 'heroSeat not in activeSeatNumbers or foldedSeats',
+    // R12 retired: hero seated but not in the current hand (observer / between
+    // hands / during deal) is a LEGITIMATE state, not corruption. Real-capture
+    // replay proved the old reject dropped ~20% of live updates.
+    name: 'heroSeat seated but not in activeSeatNumbers or foldedSeats (observer — accepted)',
     ctx: { currentStreet: 'flop', heroSeat: 9, activeSeatNumbers: [3, 5, 7], foldedSeats: [1, 2] },
-    expect: { wireValid: false, rule: 'R12' },
+    expect: { wireValid: true, rule: null },
   },
   {
     name: 'heroSeat=0 (out of range low)',

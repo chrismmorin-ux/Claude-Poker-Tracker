@@ -714,15 +714,32 @@ describe('validateLiveContext — STP-1 R-10.1 seat-set topology', () => {
     expect(r.errors.some(e => /overlap.*5/.test(e))).toBe(true);
   });
 
-  it('rejects heroSeat not in active ∪ folded', () => {
-    const r = validateLiveContext({
+  // Hero being SEATED is not hero being IN THE HAND. Between hands, during the
+  // deal, and for any hand hero sits out (observer), heroSeat is set while hero
+  // is absent from both seat sets. Real-capture replay proved the old "reject"
+  // dropped ~20% of live updates (every hand start), blanking the HUD.
+  it('accepts heroSeat seated but not yet in active ∪ folded (DEALING / observer)', () => {
+    // Mirrors the real capture: seat-2 hero, blinds posting (seats 8,9), hand
+    // not yet dealt to hero.
+    const dealing = validateLiveContext({
+      ...base(),
+      currentStreet: null,
+      heroSeat: 2,
+      activeSeatNumbers: [8, 9],
+      foldedSeats: [],
+    });
+    expect(dealing.valid).toBe(true);
+    expect(dealing.errors).toEqual([]);
+
+    // Observer: hero seated but sitting the hand out entirely on a real street.
+    const observer = validateLiveContext({
       ...base(),
       heroSeat: 9,
       activeSeatNumbers: [3, 4, 5],
       foldedSeats: [1, 2],
     });
-    expect(r.valid).toBe(false);
-    expect(r.errors.some(e => /heroSeat=9.*not in/.test(e))).toBe(true);
+    expect(observer.valid).toBe(true);
+    expect(observer.errors).toEqual([]);
   });
 
   it('rejects heroSeat out of range', () => {

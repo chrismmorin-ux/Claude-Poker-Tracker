@@ -304,30 +304,15 @@ describe('STP-1 R-10.1 — payload topology (R11, R12)', () => {
   });
 
   // =========================================================================
-  // R12 — hero in active ∪ folded (STP-1 R-10.1)
+  // R12 — RETIRED. "heroSeat ∈ active ∪ folded" is not an invariant: hero can be
+  // seated but not in the current hand (between hands / during deal / observer).
+  // Real-capture replay proved the equivalent wire rule dropped ~20% of live
+  // updates. R12 must never fire again.
   // =========================================================================
-  it('R12: detects heroSeat not in active or folded', () => {
+  it('R12 retired: heroSeat absent from active ∪ folded produces NO R12 violation', () => {
     const snap = validSnapshot({
       currentLiveContext: {
         state: 'FLOP', currentStreet: 'flop', heroSeat: 4,
-        activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
-      },
-    });
-    const result = checker.check(snap);
-    const r12 = result.violations.find(v => v.startsWith('R12:'));
-    expect(r12).toBeDefined();
-    expect(r12).toMatch(/heroSeat=4/);
-  });
-
-  it('R12: does not fire when hero is in activeSeatNumbers', () => {
-    const result = checker.check(validSnapshot());
-    expect(result.violations.find(v => v.startsWith('R12:'))).toBeUndefined();
-  });
-
-  it('R12: does not fire when hero is in foldedSeats (hero folded)', () => {
-    const snap = validSnapshot({
-      currentLiveContext: {
-        state: 'FLOP', currentStreet: 'flop', heroSeat: 9,
         activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
       },
       focusedVillainSeat: null,
@@ -336,11 +321,11 @@ describe('STP-1 R-10.1 — payload topology (R11, R12)', () => {
     expect(result.violations.find(v => v.startsWith('R12:'))).toBeUndefined();
   });
 
-  it('R12: does not fire when heroSeat is null', () => {
+  it('R12 retired: seat-2 hero during DEALING (real-capture state) is clean', () => {
     const snap = validSnapshot({
       currentLiveContext: {
-        state: 'FLOP', currentStreet: 'flop', heroSeat: null,
-        activeSeatNumbers: [3, 5], foldedSeats: [1, 7, 9],
+        state: 'DEALING', currentStreet: null, heroSeat: 2,
+        activeSeatNumbers: [8, 9], foldedSeats: [],
       },
       focusedVillainSeat: null,
     });
