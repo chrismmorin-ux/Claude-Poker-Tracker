@@ -34,6 +34,20 @@
       margin-top: 12px;
       min-height: 18px;
     }
+    .actions { display: flex; gap: 10px; margin-top: 10px; }
+    .actions button {
+      font: inherit;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #3a4150;
+      background: #2d3340;
+      color: #e6e6e6;
+      cursor: pointer;
+    }
+    .actions button:hover { background: #353b4a; }
+    .actions button.secondary { color: #c98b8b; }
+    h2 { color: #d4a847; font-size: 14px; margin: 28px 0 6px; }
   </style>
 </head>
 <body>
@@ -46,6 +60,19 @@
       <div class="title">Show developer diagnostics</div>
       <div class="desc">Unlocks the diagnostics link (0.7 footer) and the model audit panel (4.3) inside the sidebar.</div>
     </label>
+  </div>
+
+  <h2>Raw frame capture (ground truth)</h2>
+  <div class="row">
+    <input type="checkbox" id="captureRawFrames">
+    <label for="captureRawFrames">
+      <div class="title">Capture raw WebSocket frames</div>
+      <div class="desc">Records real Ignition frames to a file you can export. Turn on, play 5–10 hands (include a fold and a showdown), then Export and send the file. Off by default; no effect during normal play.</div>
+    </label>
+  </div>
+  <div class="actions">
+    <button id="exportFrames">Export captured frames</button>
+    <button id="clearFrames" class="secondary">Clear</button>
   </div>
 
   <div class="status" id="status"></div>

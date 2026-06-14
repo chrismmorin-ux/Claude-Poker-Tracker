@@ -18,6 +18,7 @@ import { validateMessage } from '../shared/message-schemas.js';
 import { clearLiveContextTimer } from '../shared/storage-writer.js';
 import { validateHandForRelay } from '../shared/wire-schemas.js';
 import { isGameWsUrl } from '../shared/protocol.js';
+import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../shared/frame-capture.js';
 
 (() => {
   'use strict';
@@ -44,6 +45,25 @@ import { isGameWsUrl } from '../shared/protocol.js';
   const T_BFC = __T_BFC__;
   let wsMessageCount = 0;
   let probeReady = false;
+
+  // =========================================================================
+  // RAW FRAME RECORDER — debug ground-truth capture (off by default).
+  // Records every incoming probe frame (incl. binary, which never reaches the
+  // pipeline) into a per-context chrome.storage.local buffer the options page
+  // can export. See shared/frame-capture.js.
+  // =========================================================================
+  const _captureContextId =
+    Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8) +
+    (window.location.pathname.includes('poker-game') ? '_game' : '_frame');
+  const frameRecorder = createFrameRecorder({ contextId: _captureContextId });
+  isCaptureEnabled()
+    .then((on) => frameRecorder.setEnabled(on))
+    .catch(() => {});
+  const _unobserveCapture = observeCaptureFlag((on) => {
+    frameRecorder.setEnabled(on);
+    if (!on) frameRecorder.flushNow();
+  });
+  window.addEventListener('pagehide', () => frameRecorder.flushNow());
 
   // =========================================================================
   // PIPELINE DIAGNOSTICS — written to session storage for side panel health strip
@@ -148,6 +168,20 @@ import { isGameWsUrl } from '../shared/protocol.js';
   let _liveContextThrottle = null;
   let _pendingLiveContext = null;
 
+  // Open the 200ms trailing-edge window; when it expires, flush whatever was
+  // coalesced during the window. Extracted so the reconnect-flush below can
+  // re-arm the same window without duplicating the timer body.
+  const armLiveContextWindow = () => {
+    _liveContextThrottle = setTimeout(() => {
+      _liveContextThrottle = null;
+      // Flush any pending context that arrived during throttle window
+      if (_pendingLiveContext) {
+        conn.send({ type: 'live_context', context: _pendingLiveContext });
+        _pendingLiveContext = null;
+      }
+    }, 200);
+  };
+
   const pushLiveContext = (hsm) => {
     if (!hsm?.getLiveHandContext) return;
     const ctx = hsm.getLiveHandContext();
@@ -166,15 +200,27 @@ import { isGameWsUrl } from '../shared/protocol.js';
       // Immediate first push
       conn.send({ type: 'live_context', context: ctx });
       _pendingLiveContext = null;
-      _liveContextThrottle = setTimeout(() => {
-        _liveContextThrottle = null;
-        // Flush any pending context that arrived during throttle window
-        if (_pendingLiveContext) {
-          conn.send({ type: 'live_context', context: _pendingLiveContext });
-          _pendingLiveContext = null;
-        }
-      }, 200);
+      armLiveContextWindow();
     }
+  };
+
+  // WS-108: flush a coalesced live-context push immediately on (re)connect and
+  // reset the throttle window. Without this, a change that was coalesced into
+  // _pendingLiveContext (its leading-edge push already spent before the port
+  // dropped) waits out the full 200ms timer before reaching the SW — which
+  // then applies its own forward window, stacking into the ~400ms worst case
+  // RT-84 flagged. Flushing here mirrors RT-68's SW-side fresh-context replay
+  // (pushFullStateToSidePanel), so the post-reconnect content→SW hop collapses
+  // toward immediate while the re-armed window still rate-limits rapid bursts.
+  const flushPendingLiveContextOnReconnect = () => {
+    if (!_pendingLiveContext) return;
+    if (_liveContextThrottle) {
+      clearTimeout(_liveContextThrottle);
+      _liveContextThrottle = null;
+    }
+    conn.send({ type: 'live_context', context: _pendingLiveContext });
+    _pendingLiveContext = null;
+    armLiveContextWindow();
   };
 
   // =========================================================================
@@ -212,6 +258,32 @@ import { isGameWsUrl } from '../shared/protocol.js';
   // =========================================================================
 
   const handleProbeMessage = (data) => {
+    // Ground-truth capture (no-op unless enabled). Record raw frames + connection
+    // lifecycle BEFORE any classification/parse so a binary-frame or URL-filter
+    // defect is visible in the export rather than silently dropped downstream.
+    if (frameRecorder.enabled) {
+      if (data.type === T_MSG && data.direction === 'incoming') {
+        frameRecorder.record({
+          kind: 'msg',
+          connId: data.connId,
+          url: data.url,
+          dataType: data.dataType,
+          size: data.size,
+          game: isGameWsUrl(data.url || ''),
+          data: typeof data.preview === 'string' ? data.preview : undefined,
+        });
+      } else if (data.type === T_LC) {
+        frameRecorder.record({
+          kind: 'conn',
+          event: data.event,
+          connId: data.connId,
+          url: data.url,
+          code: data.code,
+          reason: data.reason,
+        });
+      }
+    }
+
     if (data.type === 'ws_probe_health_warning') {
       onPipelineError('WebSocket probe not detected — interception may have failed', {
         probeReady: data.probeReady,
@@ -291,6 +363,9 @@ import { isGameWsUrl } from '../shared/protocol.js';
       console.log('%c[Poker Capture] Port connected', 'color: #00ff00; font-weight: bold;');
       capturePortConnected = true;
       capturePortConnectCount++;
+      // WS-108: drain any coalesced live context first so a reconnect doesn't
+      // strand it behind the 200ms trailing timer (then pipeline status).
+      flushPendingLiveContextOnReconnect();
       pushPipelineStatus();
       writeDiagnosticsNow();
     },
@@ -320,6 +395,7 @@ import { isGameWsUrl } from '../shared/protocol.js';
       if (typeof silenceCheckInterval !== 'undefined') clearInterval(silenceCheckInterval);
       if (diagTimer) { clearTimeout(diagTimer); diagTimer = null; }
       clearLiveContextTimer();
+      frameRecorder.flushNow();
     },
 
     onVersionMismatch: (swVersion) => {
@@ -467,6 +543,8 @@ import { isGameWsUrl } from '../shared/protocol.js';
     clearInterval(pruneInterval);
     if (silenceCheckInterval) clearInterval(silenceCheckInterval);
     clearLiveContextTimer();
+    if (typeof _unobserveCapture === 'function') _unobserveCapture();
+    frameRecorder.flushNow();
     conn.destroy();
   };
 })();
