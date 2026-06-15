@@ -57,9 +57,14 @@ export const createPortConnection = (opts) => {
   let reconnectTimer = null;
   let destroyed = false;
   let contextDead = false;
-  let connectCount = 0;
+  let connectCount = 0;          // lifetime attempts — diagnostics only
+  let reconnectAttempts = 0;     // CONSECUTIVE failures; resets when a connection proves stable
+  let stableTimer = null;
   let lastDisconnectTime = null;
   let swVersion = null;
+  // A connection that stays up this long is "healthy" → reset the backoff so a
+  // later transient drop retries fast instead of inheriting a grown delay.
+  const STABLE_MS = 3000;
   const pendingOutbound = [];
 
   /** Send a message, or queue it if disconnected. */
@@ -112,6 +117,20 @@ export const createPortConnection = (opts) => {
     }
   };
 
+  const clearStableTimer = () => {
+    if (stableTimer) {
+      clearTimeout(stableTimer);
+      stableTimer = null;
+    }
+  };
+
+  /** Backoff delay for the current consecutive-failure count, then advance it. */
+  const nextBackoffDelay = () => {
+    const delay = Math.min(initialDelay * Math.pow(1.5, reconnectAttempts), maxDelay);
+    reconnectAttempts++;
+    return delay;
+  };
+
   const scheduleReconnect = (delay) => {
     if (destroyed || contextDead || reconnectTimer) return;
     reconnectTimer = setTimeout(() => {
@@ -126,6 +145,11 @@ export const createPortConnection = (opts) => {
     try {
       port = chrome.runtime.connect({ name });
       connectCount++;
+
+      // If this connection stays up for STABLE_MS, treat it as healthy and reset
+      // the consecutive-failure backoff so a future transient drop retries fast.
+      clearStableTimer();
+      stableTimer = setTimeout(() => { reconnectAttempts = 0; stableTimer = null; }, STABLE_MS);
 
       // Drain queued messages
       drainPending();
@@ -148,6 +172,7 @@ export const createPortConnection = (opts) => {
         const error = chrome.runtime.lastError;
         port = null;
         lastDisconnectTime = Date.now();
+        clearStableTimer(); // dropped before proving stable — keep counting failures
 
         if (error && isContextDead(error)) {
           handleContextDead();
@@ -156,10 +181,8 @@ export const createPortConnection = (opts) => {
 
         onDisconnect?.();
 
-        // Exponential backoff
-        const attempt = Math.min(connectCount, 10);
-        const delay = Math.min(initialDelay * Math.pow(1.5, attempt - 1), maxDelay);
-        scheduleReconnect(delay);
+        // Exponential backoff on CONSECUTIVE failures (reset once stable).
+        scheduleReconnect(nextBackoffDelay());
       });
 
       onConnect?.(port);
@@ -168,9 +191,8 @@ export const createPortConnection = (opts) => {
         handleContextDead();
         return;
       }
-      // Transient failure — schedule retry
-      const delay = Math.min(initialDelay * Math.pow(1.5, connectCount), maxDelay);
-      scheduleReconnect(delay);
+      // Transient failure — schedule retry on the consecutive-failure backoff.
+      scheduleReconnect(nextBackoffDelay());
     }
   };
 
@@ -178,6 +200,7 @@ export const createPortConnection = (opts) => {
   const destroy = () => {
     destroyed = true;
     clearReconnectTimer();
+    clearStableTimer();
     if (port) {
       try { port.disconnect(); } catch (_) {}
       port = null;
