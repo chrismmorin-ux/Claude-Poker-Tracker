@@ -12,6 +12,7 @@ import * as cardUtils from '../shared/card-utils.js';
 import { createPortConnection, EXTENSION_VERSION } from '../shared/port-connect.js';
 import { MSG, SESSION_KEYS } from '../shared/constants.js';
 import { loadSettings, observeSettings } from '../shared/settings.js';
+import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../shared/frame-capture.js';
 import * as errors from '../shared/error-reporter.js';
 import { $, showEl, hideEl, isHidden, escapeHtml, renderCard, renderStatRow, buildSeatArcPositions, renderMiniCard } from './render-utils.js';
 import {
@@ -92,6 +93,22 @@ injectTokens();
   let _refreshPendingAfter = false;
 
   // =========================================================================
+  // RUNTIME RECORDER — records the side panel's inbound message + connection
+  // timeline into the same capture buffer the options page exports. Off by
+  // default (shares the "Capture raw WebSocket frames" toggle). This is the
+  // ground-truth instrument for diagnosing real-time instability: it shows
+  // exactly when live context vs advice vs exploits arrive, the appConnected
+  // flag, and every port connect/disconnect (so port flapping is visible).
+  // =========================================================================
+  const _panelRecorder = createFrameRecorder({ contextId: 'panel' });
+  try {
+    isCaptureEnabled().then((on) => _panelRecorder.setEnabled(on)).catch(() => {});
+    observeCaptureFlag((on) => { _panelRecorder.setEnabled(on); if (!on) _panelRecorder.flushNow(); });
+    window.addEventListener('pagehide', () => _panelRecorder.flushNow());
+  } catch (_) { /* capture is a debug aid — never block panel boot */ }
+  const recPanel = (kind, extra) => { try { _panelRecorder.record({ kind, ...extra }); } catch (_) { /* never break the panel */ } };
+
+  // =========================================================================
   // PORT-BASED CONNECTION TO SERVICE WORKER (via shared module)
   // =========================================================================
 
@@ -101,6 +118,21 @@ injectTokens();
     maxDelay: 30000,
 
     onMessage: (message) => {
+      if (_panelRecorder.enabled) {
+        const ctx = message.context;
+        recPanel('panel-msg', {
+          msg: message.type,
+          appConnected: message.appConnected,
+          // compact completeness summary so the export shows WHAT arrived
+          state: ctx?.state,
+          street: ctx?.currentStreet,
+          hole: ctx ? (ctx.holeCards || []).filter(Boolean).length : undefined,
+          board: ctx ? (ctx.communityCards || []).filter(Boolean).length : undefined,
+          active: ctx ? (ctx.activeSeatNumbers || []).length : undefined,
+          seats: message.seats ? Object.keys(message.seats).length : undefined,
+          hasAdvice: message.type === 'push_action_advice' ? !!message.advice : undefined,
+        });
+      }
       switch (message.type) {
         case 'push_pipeline_status':
           handlePipelineStatus(message);
@@ -152,6 +184,7 @@ injectTokens();
 
     onConnect: () => {
       console.log('[Side Panel] Port connected');
+      recPanel('panel-conn', { event: 'connect' });
       coordinator.set('connState', { connected: true });
       // V-status §I INV-STATUS-4: re-evaluate on reconnect — if we already
       // have pipeline + handCount cached, the timer should arm immediately.
@@ -162,6 +195,7 @@ injectTokens();
     // render path (renderConnectionStatus) owns all status-dot / status-text
     // DOM writes. R-2.3 violation remediation for audit sites #1–3.
     onDisconnect: () => {
+      recPanel('panel-conn', { event: 'disconnect' });
       coordinator.set('connState', { connected: false, cause: 'disconnect', text: 'Reconnecting...' });
       // V-status §I INV-STATUS-4: not-connected exits the waiting state.
       evaluateConnectedWaiting();
@@ -169,6 +203,7 @@ injectTokens();
     },
 
     onContextDead: () => {
+      recPanel('panel-conn', { event: 'contextDead' });
       coordinator.set('connState', { connected: false, cause: 'contextDead', text: 'Extension disconnected — reload page' });
       evaluateConnectedWaiting();
       scheduleRender('conn_contextDead', PRIORITY.IMMEDIATE);
