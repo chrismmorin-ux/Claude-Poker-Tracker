@@ -180,6 +180,21 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
   const pushLiveContext = (hsm, connId) => {
     if (!hsm?.getLiveHandContext) return;
     const ctx = hsm.getLiveHandContext();
+
+    // Phantom-table guard. Ignition opens several WebSockets on the same
+    // /poker-games/rgs endpoint (game socket + always-on transport/control
+    // sockets), and stale sockets from a previously-open table can linger.
+    // Each becomes an HSM, and a control/stale socket's HSM sits at IDLE with
+    // no hero and no hand — yet still emits empty live contexts that compete
+    // with the real table and flip the HUD to "no active table" / blank.
+    // Only the table where hero is actually seated (or that has a real hand /
+    // live seats) is worth showing. A real cash table always has heroSeat set;
+    // a phantom never does. Verified against a real capture: this suppresses
+    // the conn that sat at {state:IDLE, heroSeat:null, hand:null}.
+    const isRealTable = ctx.heroSeat != null || ctx.handNumber != null
+      || (ctx.activeSeatNumbers || []).length > 0;
+    if (!isRealTable) return;
+
     const s = _liveCtxState(connId);
 
     // Only push when state actually changed (key fields fingerprint).
