@@ -24,6 +24,11 @@ const validators = {
     return null;
   },
 
+  // MV3 keepalive ping — content script pings <30s so receiving it on the port
+  // resets the service worker's idle timer and prevents eviction mid-session.
+  // No payload; always valid (a no-op at the handler, the arrival is the point).
+  keepalive: () => null,
+
   live_context: (msg) => {
     if (!isObj(msg.context)) return 'missing context object';
     const v = validateLiveContext(msg.context);

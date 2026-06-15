@@ -2,6 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { validateMessage } from '../message-schemas.js';
 
 describe('message-schemas — capture-port validators (RT-65)', () => {
+  describe('keepalive (MV3 idle-timer ping)', () => {
+    it('is always valid — the arrival on the port is the point, not the payload', () => {
+      expect(validateMessage('keepalive', { type: 'keepalive' })).toBeNull();
+      expect(validateMessage('keepalive', { type: 'keepalive', t: 123 })).toBeNull();
+    });
+  });
+
   describe('hand_complete', () => {
     it('accepts a valid hand object', () => {
       expect(validateMessage('hand_complete', { type: 'hand_complete', hand: { id: 'h1' } })).toBeNull();

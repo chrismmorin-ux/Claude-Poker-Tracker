@@ -244,6 +244,17 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
     writeDiagnostics();
   }, 30000);
 
+  // MV3 keepalive: a port message every 20s resets the service worker's 30s
+  // idle timer so it is NOT evicted between game actions. Without this the SW
+  // dies during think-time, the side-panel port drops ("Reconnecting…"), and
+  // every revive triggers a full-state replay + re-push storm — the root of the
+  // "loses connection mid-hand / constant visual churn" symptoms. A bare
+  // setInterval inside the SW cannot keep itself alive; the ping must come from
+  // the long-lived content script. 20s leaves margin under the 30s boundary.
+  const keepaliveInterval = setInterval(() => {
+    try { conn.send({ type: 'keepalive', t: Date.now() }); } catch (_) { /* port down — reconnect handles it */ }
+  }, 20000);
+
   // Prune stale HSMs every 60s (5min idle threshold)
   const pruneInterval = setInterval(() => {
     const pruned = tableManager.pruneStale(300_000);
@@ -392,6 +403,7 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
       // Logged at debug level so it doesn't surface as an error.
       console.debug('[Poker Capture] Extension context invalidated — stopping all activity');
       clearInterval(statusInterval);
+      clearInterval(keepaliveInterval);
       clearInterval(pruneInterval);
       if (typeof silenceCheckInterval !== 'undefined') clearInterval(silenceCheckInterval);
       if (diagTimer) { clearTimeout(diagTimer); diagTimer = null; }
@@ -541,6 +553,7 @@ import { createFrameRecorder, isCaptureEnabled, observeCaptureFlag } from '../sh
   window.__POKER_CAPTURE_CLEANUP = () => {
     window.removeEventListener('message', probeMessageListener);
     clearInterval(statusInterval);
+    clearInterval(keepaliveInterval);
     clearInterval(pruneInterval);
     if (silenceCheckInterval) clearInterval(silenceCheckInterval);
     clearLiveContextTimer();
