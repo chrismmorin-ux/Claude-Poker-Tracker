@@ -1,0 +1,63 @@
+id: "WS-231"
+title: "Drills corrective — surface-artifact fixes + tab-switch state protection + label divergence"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: ""
+claimed_at: null
+completed_at: null
+completion_commit: "4b6f0a0"
+priority_score: 8.0
+priority_label: "P2"
+category: "design-comprehension"
+capability: "core"
+program: "design"
+description: |
+  **Corrective (just-do-it) follow-ups from the WS-229 drills roundtable**
+  (docs/design/audits/2026-06-15-blindspot-drills.md, Required Follow-ups Track 1).
+  No founder decision needed — these resolve drift, a UX safety gap, and a
+  consistency violation.
+
+  - **F-DRILL-01 (sev 1):** Correct docs/design/surfaces/postflop-drills.md — the
+    Pre-Session section presents a feature-flagged-off mode (ENABLE_PRESESSION_DRILL
+    = false; no PreSessionMode.jsx exists) as if shipped, with full anatomy/state
+    machine. Flag it as gate-pending. Also add `returning-after-break` to the
+    Personas-Served list (currently omitted despite claimed applicability) and add
+    a "Product line: main-app only — sidebar N/A" scope line to both drill artifacts.
+  - **F-DRILL-02 (sev 1):** Tab-switch protection. Both orchestrators conditionally
+    render and unmount on tab change ("tabs are not cross-pinned"), so a fat-finger
+    mid-drill silently destroys in-progress state (H-N03 + H-PLT08). Add a warn-on-
+    unsaved-progress guard, or preserve/restore per-tab state across switches.
+  - **F-DRILL-03 (sev 2):** Diverge false-friend tab labels so the same name stops
+    meaning two different interactions across views (H-N04). Minimum: preflop
+    Explorer → "Equity Lookup"; postflop Explorer → "Range Lab" (matching its own
+    artifact section). Low code cost.
+accept_criteria:
+  - "postflop-drills.md Pre-Session section clearly marked feature-flagged-off / gate-pending, not shipped; returning-after-break added to Personas Served; sidebar-N/A scope line added to both drill artifacts."
+  - "Tab switch no longer silently destroys in-progress drill state — either a warn-on-unsaved-progress guard or per-tab state preservation, with a test."
+  - "False-friend Explorer labels diverged (preflop Equity Lookup / postflop Range Lab); change log + any nav references updated."
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/postflop-drills.md"
+  - "docs/design/surfaces/preflop-drills.md"
+  - "src/components/views/PostflopDrillsView/PostflopDrillsView.jsx"
+  - "src/components/views/PreflopDrillsView/PreflopDrillsView.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: |
+  Corrective track from WS-229 roundtable — all 3 findings shipped (SPR-135):
+  - F-DRILL-01 (DONE): postflop-drills.md Pre-Session over-claim → gate-pending/feature-flagged-off banner + tab count corrected to 6 shipped; returning-after-break added to Personas Served (flagged currently-unserved); main-app-only / sidebar-N/A scope line added to both drill artifacts.
+  - F-DRILL-02 (DONE): tab-switch state-loss protection. New src/components/views/drillCommon/DrillTabGuard.jsx (context + confirmTabSwitch + useDrillProgress). Both orchestrators confirm before discarding in-progress drills. Wired: FrameworkMode (both), EstimateMode (both, via touched flag), LineMode (postflop, the headline lost-work case). 4 guard unit tests added.
+  - F-DRILL-03 (DONE): false-friend Explorer labels diverged per founder decision — preflop → "Equity Lookup", postflop → "Range Explorer" (internal tab id unchanged). Artifact Anatomy + change logs updated.
+  Verified: 134 drill-view + guard tests pass; production build clean. Visual verification (rename + confirm dialog) left as manual smoke-check steps in handoff. Commits reference docs/design/audits/2026-06-15-blindspot-drills.md."
+finding_id: ""
+source:
+  origin: "ws-229-roundtable-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-15"
+updated_at: "2026-06-15"
+closed_by_event: "ev-1781581728815-e13916e7bf09"

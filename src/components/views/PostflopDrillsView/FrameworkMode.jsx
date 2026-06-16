@@ -14,6 +14,28 @@ import { pickNextMatchup, scoreFrameworkSelection } from '../../../utils/drillCo
 import { parseBoard } from '../../../utils/pokerCore/cardParser';
 import { usePostflopDrillsPersistence } from '../../../hooks/usePostflopDrillsPersistence';
 import { RangeFlopBreakdown } from './RangeFlopBreakdown';
+import { useDrillProgress } from '../drillCommon/DrillTabGuard';
+
+// Frameworks excluded from the gradable set — mirrors PreflopDrillsView/FrameworkMode's
+// NON_GRADABLE treatment of its identically-named `decomposition`.
+//
+// RANGE_DECOMPOSITION applies to every flop and its only subcase is 'always', so it
+// carries zero structural-recognition signal in a selection drill — checking it teaches
+// nothing, and grading its omission contradicted how preflop treats the same concept
+// (cross-view inconsistency, WS-229 F-DRILL-05). Excluded from both the picker and the
+// graded truth set.
+//
+// NOTE: range_morphology / whiff_rate / board_tilt also apply to every flop, but they are
+// deliberately RETAINED. They are the only gradable frameworks on the 21 single-range
+// scenarios (which carry no opposing range, so range/nut-advantage never apply), and they
+// have no preflop analog, so they create no cross-view confusion. Their "always-select"
+// degeneracy on single-range scenarios is tracked as a design-track pedagogy question
+// (WS-230), not a mechanical fix — removing them here would leave those scenarios with
+// nothing to grade.
+const NON_GRADABLE_FRAMEWORKS = new Set(['range_decomposition']);
+const SELECTABLE_FRAMEWORKS = FRAMEWORK_ORDER.filter(
+  (fw) => !NON_GRADABLE_FRAMEWORKS.has(fw.id),
+);
 
 export const FrameworkMode = () => {
   const { drills, recordAttempt, frameworkAccuracy } = usePostflopDrillsPersistence();
@@ -25,6 +47,14 @@ export const FrameworkMode = () => {
   const [matches, setMatches] = useState(null);
   const [loading, setLoading] = useState(false);
   const recentIds = useRef([]);
+
+  // Report unsaved progress to the tab-switch guard (WS-229 F-DRILL-02): the user
+  // has checked frameworks but not yet revealed the answer.
+  const reportProgress = useDrillProgress();
+  useEffect(() => {
+    reportProgress(picked.size > 0 && !submitted);
+    return () => reportProgress(false);
+  }, [picked, submitted, reportProgress]);
 
   const frameworkDrills = drills.filter((d) => d.drillType === 'framework');
   const streak = {
@@ -70,7 +100,12 @@ export const FrameworkMode = () => {
           context: scenario.context,
           opposingContext: scenario.opposingContext,
         });
-        const trueIds = fwMatches.map((m) => m.framework.id);
+        // Grade only against the frameworks the user can actually pick. Always-on,
+        // zero-discrimination frameworks (range_decomposition) are stripped from the
+        // truth set so omitting them is never marked as a miss — parity with preflop.
+        const trueIds = fwMatches
+          .map((m) => m.framework.id)
+          .filter((id) => !NON_GRADABLE_FRAMEWORKS.has(id));
         const s = scoreFrameworkSelection([...picked], trueIds);
 
         setMatches(fwMatches);
@@ -113,7 +148,7 @@ export const FrameworkMode = () => {
 
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
           <div className="space-y-2">
-            {FRAMEWORK_ORDER.map((fw) => {
+            {SELECTABLE_FRAMEWORKS.map((fw) => {
               const isPicked = picked.has(fw.id);
               const verdict = submitted ? getVerdict(fw.id, score) : null;
               return (

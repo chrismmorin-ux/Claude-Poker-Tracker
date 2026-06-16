@@ -24,7 +24,9 @@ Jobs around learning and concept mastery, typically off-table.
 
 > When I want to study a specific spot I actually faced, I want a drill built from my own history, so practice is relevant.
 
-- State: **Proposed** (DISC-13).
+- State: **Committed — staged** (founder ratified 2026-06-15, WS-230 Gate 3; was DISC-13 / Proposed). The WS-229 roundtable flagged the analysis→drill gap ("the app knows my leaks; the drills can't reach them") as the single most valuable missing element (D-1). Founder chose to serve it, staged.
+- **Sequencing:** depends on **WS-198** (hands ↔ upper-surface-node-ID cross-reference — the data plumbing). The leak→drill **bridge** (analysis-view / hand-replay → targeted drill) is **WS-233**, blocked on WS-198. Not built yet; on the roadmap as the priority drill investment.
+- **Cross-tab continuity** (audit B-4 — "a Math drill finding a leak doesn't seed a Range Explorer hand") is **folded into this bridge + leak-targeted nav**, not a separate JTBD. The "improve navigation" half of the WS-230 tab-structure decision (keep the by-street split, invest in nav) is served by DS-43 + DS-45 — a "what should I drill today?" entry that routes from the user's actual leaks.
 
 ## DS-46 — Spaced repetition for key charts
 
@@ -281,6 +283,20 @@ Jobs around learning and concept mastery, typically off-table.
 - **Distinct from DS-58** (validate-confidence-matches-experience): DS-58 audits a *shipped exploit's* predicted rate vs observed play over many firings; DS-67 validates *authored content's* equity/range claims against the engine at authoring time.
 - Doctrine basis: Gate 2 audit Stage B-G4 + Stage D (LSW-RL cross-link) + A-R1/A-R2; `system/invariants.md` INV-LSW-RL-EQUITY-PARITY; `range-lab.project.md` AC ("LSW line-audit uses Range Lab for ≥80% of decision-node checks"). ID-collision note: RL Gate 1 (2026-04-22) proposed "DS-55"; the slot was taken by Shape Language Gate 3 (2026-04-23, resumption after break). DS-67 is the canonical ID.
 
+## DS-68 — See my competence trend on a concept, evidence-based, without a rank/score identity label
+
+> When I study, I want to see whether I'm actually improving on a concept — on evidence, over time — without the app reducing me to a score, streak, tier, or mastery percentage, so I get the honest signal "am I getting better here?" that I came for, minus the gamification I don't want.
+
+- **State:** Proposed (founder ratified the gap 2026-06-15, WS-230 Gate 3 — authoring the JTBD; surface deferred).
+- **Origin:** WS-229 roundtable B-1 / BS-2. All three modeled drill personas explicitly request objective improvement-visibility — Scholar ("know they're improving objectively"), Apprentice ("track personal skill improvement objectively over time"), Newcomer ("simple progress markers"). The autonomy doctrine refuses the **gamified** form of this outcome; the **non-gamified** form was never separately authored, so the anti-gamification red line accidentally orphaned the underlying outcome.
+- **Primary personas:** [Scholar](../../personas/core/scholar-drills-only.md), [Apprentice](../../personas/core/apprentice-student.md). Secondary: [Newcomer](../../personas/core/newcomer.md).
+- **Autonomy constraint (load-bearing):** this is the autonomy-SAFE expression of the outcome DS-47 refuses. The skill-state attribute shape already modeled on the personas (`level` / `confidence` / `trendDirection` / `lastValidatedAt`) is the data source; the surface renders a **trend on evidence**, never a rank/score-as-identity. Forbidden (inherits the neutral-chrome gate): mastery % ("range-shape mastery: 78%"), tier badges, streaks, leaderboards, shame copy, congratulatory inflation. Allowed: "you've been more accurate on capped-board defense over your last N attempts" framed as observation, not verdict. Bound by [[feedback_scf_learning_state_not_tier_rank]] + [[feedback_owner_volunteered_grading]].
+- **Distinct from:**
+  - **DS-47** (skill map / mastery grid) — DS-47 is the *gamified* grid the doctrine refuses; DS-68 is the non-gamified trend that serves the same underlying "am I improving?" outcome.
+  - **DS-52** (retention maintenance) — DS-52 surfaces *decay* of declared/demonstrated mastery; DS-68 surfaces *direction of change* (improving/plateaued) on evidence, for concepts under active study.
+  - **DS-58** (model-accuracy dashboard) — DS-58 audits the *system's* predictions; DS-68 reflects the *user's own* competence trend.
+- Doctrine basis: WS-229 audit (`../../audits/2026-06-15-blindspot-drills.md`) B-1 / BS-2; skill-state attribute on `scholar-drills-only.md` + `chris-live-player.md`.
+
 ---
 
 ## Domain-wide constraints
@@ -292,6 +308,7 @@ Jobs around learning and concept mastery, typically off-table.
 
 ## Change log
 
+- 2026-06-15 — WS-230 Gate 3 (WS-229 roundtable follow-up). Added **DS-68** (evidence-based, non-gamified competence-trend visibility — the autonomy-safe form of DS-47's underlying outcome, B-1 / BS-2). **DS-45** promoted Proposed → **Committed-staged** (founder ratified; leak→drill bridge = WS-233 behind WS-198); cross-tab continuity folded into that bridge rather than a separate JTBD. See `../../audits/2026-06-15-blindspot-drills.md`.
 - 2026-04-21 — Created Session 1b.
 - 2026-04-22 — Added DS-48 / DS-49 / DS-50 / DS-51 (LSW-J1). DS-48 + DS-49 open new first-principles-teaching outcomes served by `bucket-ev-panel-v2`. DS-50 + DS-51 promote outcomes previously marked "implicit" in `surfaces/postflop-drills.md` to explicit atlas entries.
 - 2026-05-20 — Added DS-64 (paint custom range) + DS-65 (compare two ranges, delta) + DS-66 (per-street range evolution, AP-RL-01 binding) + DS-67 (validate authored content, INV-LSW-RL-EQUITY-PARITY binding) as Gate 3 output of the Range Lab project (SPR-097 / WS-054). All 4 **Proposed**. DS-64/65 are Phase 1-2 (Flopzilla parity); DS-66/67 are Phase 3+ (AI-native, surface-contracted, implementation-deferred). No new JTBD domain (extends Drills-and-Study); no new personas. **ID-collision correction:** RL Gate 1 (2026-04-22) proposed these as DS-52/53/54/55, but those slots were squatted one day later by the Poker Shape Language project (DS-52..56, committed 2026-04-23). Re-numbered to the next free block DS-64..67 (same failure class as PSD's DS-62/63 re-number). Owner Flopzilla-workflow interview (G3.2) waived — Gate 2 resolved all 4 open owner questions inline. See `../../audits/2026-05-20-blindspot-range-lab.md` (Gate 2) + `../../../projects/range-lab.project.md`.

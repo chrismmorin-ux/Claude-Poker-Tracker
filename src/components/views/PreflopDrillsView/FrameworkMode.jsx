@@ -18,6 +18,7 @@ const SELECTABLE_FRAMEWORKS = FRAMEWORK_ORDER.filter(
 import { MATCHUP_LIBRARY } from '../../../utils/drillContent/matchupLibrary';
 import { pickNextMatchup, scoreFrameworkSelection } from '../../../utils/drillContent/scheduler';
 import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPersistence';
+import { useDrillProgress } from '../drillCommon/DrillTabGuard';
 
 /**
  * FrameworkMode — multiple-select drill. User picks which frameworks apply;
@@ -35,6 +36,14 @@ export const FrameworkMode = () => {
   const [frameworkMatches, setFrameworkMatches] = useState(null);
   const [loading, setLoading] = useState(false);
   const recentIds = useRef([]);
+
+  // Report unsaved progress to the tab-switch guard (WS-229 F-DRILL-02): the user
+  // has checked frameworks but not yet revealed the answer.
+  const reportProgress = useDrillProgress();
+  useEffect(() => {
+    reportProgress(picked.size > 0 && !submitted);
+    return () => reportProgress(false);
+  }, [picked, submitted, reportProgress]);
 
   const frameworkDrills = drills.filter((d) => d.drillType === 'framework');
   const streak = {

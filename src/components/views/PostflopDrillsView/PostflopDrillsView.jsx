@@ -11,9 +11,10 @@
  * Phase 3 ships Explorer only; other tabs are placeholders wired for Phase 4/5.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { ScaledContainer } from '../../ui/ScaledContainer';
 import { useUI } from '../../../contexts';
+import { DrillTabGuardProvider, confirmTabSwitch } from '../drillCommon/DrillTabGuard';
 import { ExplorerMode } from './ExplorerMode';
 import { EstimateMode } from './EstimateMode';
 import { FrameworkMode } from './FrameworkMode';
@@ -23,7 +24,7 @@ import { LineMode } from './LineMode';
 
 const TABS = [
   { id: 'line',      label: 'Line' },
-  { id: 'explorer',  label: 'Explorer' },
+  { id: 'explorer',  label: 'Range Explorer' },
   { id: 'estimate',  label: 'Estimate Drill' },
   { id: 'framework', label: 'Framework Drill' },
   { id: 'library',   label: 'Library' },
@@ -34,8 +35,19 @@ export const PostflopDrillsView = ({ scale }) => {
   const { setCurrentScreen, SCREEN } = useUI();
   const [activeTab, setActiveTab] = useState('explorer');
 
+  // Tab-switch guard (WS-229 F-DRILL-02): active-drill modes report unsaved progress
+  // into progressRef; confirm before a switch that would discard it.
+  const progressRef = useRef(false);
+  const requestTab = useCallback((id) => {
+    if (id === activeTab) return;
+    if (!confirmTabSwitch(progressRef.current)) return;
+    progressRef.current = false;
+    setActiveTab(id);
+  }, [activeTab]);
+
   return (
     <ScaledContainer scale={scale}>
+      <DrillTabGuardProvider progressRef={progressRef}>
       <div className="w-full h-full bg-gray-900 flex flex-col" style={{ width: 1600, height: 720 }}>
         {/* Header */}
         <div className="flex items-center justify-between px-8 pt-6 pb-4">
@@ -59,7 +71,7 @@ export const PostflopDrillsView = ({ scale }) => {
             {TABS.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setActiveTab(t.id)}
+                onClick={() => requestTab(t.id)}
                 className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors ${
                   activeTab === t.id
                     ? 'bg-gray-800 text-white border-t border-l border-r border-gray-700'
@@ -82,6 +94,7 @@ export const PostflopDrillsView = ({ scale }) => {
           {activeTab === 'lessons'   && <LessonsMode />}
         </div>
       </div>
+      </DrillTabGuardProvider>
     </ScaledContainer>
   );
 };

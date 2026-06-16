@@ -1,0 +1,48 @@
+id: "WS-229"
+title: "Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: ""
+claimed_at: null
+completed_at: null
+completion_commit: "4b6f0a0"
+priority_score: 6.0
+priority_label: "P3"
+category: "design-comprehension"
+capability: "core"
+program: "design"
+description: |
+  **Gate 2 blind-spot roundtable for the drills surface**
+
+  Surfaced by WS-083 (DCOMP Wave 3 drills audit, 2026-06-13). That audit found the
+  drill tabs have all matured to functional, navigable surfaces with real content — so
+  the original "WIP tab fate decision" is moot. The one clause of WS-083 left genuinely
+  open was "Gate 2 for drills", which was never run. WS-083 closed as substantially
+  complete; this ticket carries the remaining Gate 2 work.
+
+  Run a Gate 2 Blind-Spot Roundtable (per docs/design/ROUNDTABLES.md) on the drills
+  surface as a whole: PostflopDrillsView (6 tabs) + PreflopDrillsView (8 tabs). Focus on
+  blind spots the existing framework can't self-see — persona coverage for the drilling
+  workflow, pedagogical coherence across the two views' parallel tab structures, and
+  whether the tab proliferation (Line/Explorer/Estimate/Framework/Library/Lessons/...)
+  serves the JTBD or fragments it.
+accept_criteria:
+  - "Gate 2 Blind-Spot Roundtable executed per docs/design/ROUNDTABLES.md, output written to docs/design/audits/ as a blindspot-* artifact."
+  - "Roundtable explicitly addresses the parallel preflop/postflop tab structure and whether the tab set is coherent or fragmented for the drilling persona."
+  - "Any findings promoted to the design program queue as scoped follow-up items."
+effort: "M"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "Carved out of WS-083 (DCOMP-W3 drills audit, SPR-130, 2026-06-13). Founder elected to close WS-083 and track Gate 2 separately. Reference: docs/design/audits/2026-06-13-dcomp-w3-drills-audit.md"
+source:
+  origin: "ws-083-audit-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-13"
+updated_at: "2026-06-13"
+closed_by_event: "ev-1781570482360-1bb2a0f7f107"

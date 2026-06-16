@@ -1,0 +1,49 @@
+id: "WS-233"
+title: "Leak→drill bridge — route from analysis-view/hand-replay to a targeted drill (DS-45)"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 7.0
+priority_label: "P2"
+category: "design-comprehension"
+capability: "core"
+program: "design"
+description: |
+  **The leak→drill connection** — founder-ratified priority drill investment (WS-230
+  Gate 3, 2026-06-15). The WS-229 roundtable flagged the analysis→drill gap as the
+  single most valuable missing element (D-1): the app is a hand tracker that knows the
+  user's real leaks, but the drills can't be reached from them. Serves **DS-45** (drill
+  my own hand history), promoted Proposed → Committed-staged.
+
+  Scope: a "drill the spots I'm actually losing on" path — from analysis-view and/or
+  hand-replay-view to a drill scenario built from (or matched to) the user's own hands,
+  plus a "what should I drill today?" leak-targeted entry (the navigation investment
+  chosen over tab consolidation in the WS-230 tab-structure decision). Cross-tab
+  continuity (audit B-4) is folded in here, not a separate JTBD.
+
+  **Blocked on WS-198** (hands ↔ upper-surface-node-ID cross-reference — the data
+  plumbing). Do not start the bridge before the matcher exists; an interim
+  frequency-only fallback is acceptable per DS-62 precedent if partial value is wanted
+  sooner. Plan-first when unblocked (surface spec for the entry + routing).
+accept_criteria:
+  - "With WS-198 landed, a user can go from a flagged leak (analysis-view / hand-replay) to a drill targeted at that spot."
+  - "A leak-targeted 'what should I drill today?' entry exists (the WS-230 nav investment), routing from the user's actual leaks rather than a default tab."
+  - "Gate 4 surface spec authored before code; references DS-45 + the WS-229 audit."
+effort: "L"
+files_involved: []
+blocked_by: ["WS-198"]
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "Founder-ratified staged commitment (WS-230 Gate 3). DS-45 is the JTBD; WS-198 is the prerequisite data plumbing. Highest-value drill investment per WS-229 D-1."
+finding_id: ""
+source:
+  origin: "ws-230-gate3-decision"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-15"
+updated_at: "2026-06-15"

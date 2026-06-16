@@ -14,7 +14,7 @@
 - Opens from: floating button in `sessions-view`; direct nav.
 - Closes to: `SCREEN.SESSIONS` via "Back to Sessions" button.
 
-**Product line:** Main app
+**Product line:** Main app **only** — drilling is an off-table activity; the Ignition sidebar has no drill counterpart by design (do not reopen sidebar-parity on drill tickets). [WS-229 F-DRILL-01 / D-3]
 **Tier placement:** Free+ (Explorer). Advanced tabs: Plus → Pro (per INVENTORY F-W2; not shipped).
 **Last reviewed:** 2026-04-21
 
@@ -53,7 +53,7 @@ Secondary:
 │ Preflop Drills — exact equity trainer   [Back to Sessions] │
 ├────────────────────────────────────────────────────────────┤
 │ Tab bar:                                                   │
-│   [Shape] [Recipe Drill] [Explorer] [Estimate Drill]       │
+│   [Shape] [Recipe Drill] [Equity Lookup] [Estimate Drill]  │
 │   [Framework Drill] [Library] [Lessons] [Math]             │
 ├────────────────────────────────────────────────────────────┤
 │ Mode content (one of the 8 modes renders)                  │
@@ -152,3 +152,4 @@ Coverage in v1: 2 of 5 SCF v1 reference lessons map to preflop drill substrate (
 
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-05-02 — SCF Gate 4 extension: opt-in-test mode subsection added. 3-delta description; entry from lesson card `Test myself` button; result-display surface with cd5_exempt manifest. Implementation deferred to SCF Gate 5 multi-PR.
+- 2026-06-15 — WS-231 (WS-229 roundtable corrective): **Explorer** tab renamed **Equity Lookup** (F-DRILL-03 — resolves the cross-view false-friend with postflop, where the same label hosted a different tool). Product-line clarified main-app-only / sidebar-N/A (F-DRILL-01 / D-3). Tab-switch state-loss protection added across drill views (F-DRILL-02). Internal tab `id` unchanged (`explorer`).

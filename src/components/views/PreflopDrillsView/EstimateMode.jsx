@@ -10,6 +10,7 @@ import {
   extractTrend,
 } from '../../../utils/drillContent/estimateInsights';
 import { usePreflopDrillsPersistence } from '../../../hooks/usePreflopDrillsPersistence';
+import { useDrillProgress } from '../drillCommon/DrillTabGuard';
 
 /**
  * EstimateMode — user guesses equity ±5%, system reveals truth + frameworks.
@@ -25,7 +26,16 @@ export const EstimateMode = () => {
   const [loading, setLoading] = useState(false);
   const [score, setScore] = useState(null);
   const [frameworkMatches, setFrameworkMatches] = useState(null);
+  const [touched, setTouched] = useState(false);
   const recentIds = useRef([]);
+
+  // Report unsaved progress to the tab-switch guard (WS-229 F-DRILL-02): slider moved
+  // but not yet submitted. Untouched freshly-loaded drills don't nag on switch.
+  const reportProgress = useDrillProgress();
+  useEffect(() => {
+    reportProgress(touched && !submitted);
+    return () => reportProgress(false);
+  }, [touched, submitted, reportProgress]);
 
   const estimateDrills = drills.filter((d) => d.drillType === 'estimate');
   const recent = estimateDrills.slice(0, 10);
@@ -51,6 +61,7 @@ export const EstimateMode = () => {
     setResult(null);
     setScore(null);
     setFrameworkMatches(null);
+    setTouched(false);
   };
 
   useEffect(() => { nextMatchup(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
@@ -116,7 +127,7 @@ export const EstimateMode = () => {
             max="100"
             step="1"
             value={estimate}
-            onChange={(e) => setEstimate(Number(e.target.value))}
+            onChange={(e) => { setEstimate(Number(e.target.value)); setTouched(true); }}
             disabled={submitted}
             className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />

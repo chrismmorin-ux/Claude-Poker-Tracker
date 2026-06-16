@@ -15,7 +15,7 @@
 - Opens from: floating button in `sessions-view`; direct nav.
 - Closes to: `SCREEN.SESSIONS` via "Back to Sessions" button.
 
-**Product line:** Main app
+**Product line:** Main app **only** — drilling is an off-table activity; the Ignition sidebar has no drill counterpart by design (do not reopen sidebar-parity on drill tickets). [WS-229 F-DRILL-01 / D-3]
 **Tier placement:** Plus+ (shipped). Advanced / full Line curriculum: Pro (per INVENTORY F-09).
 **Last reviewed:** 2026-05-20 (Range Lab Gate 4 — Explorer Custom paint mode added)
 
@@ -23,7 +23,11 @@
 
 ## Purpose
 
-Postflop range-vs-board + line-study trainer + pre-session drill. Seven tabs. Shipped today: **Line** (branching street-by-street walkthroughs with Study Priority Index + multiway coverage, 8 lines / 85+ nodes / 14 frameworks — closed 2026-04-20) and **Explorer** (pick preflop context + flop → full range breakdown + framework tags). New (PSD Gate 4, 2026-05-19): **Pre-Session** — compressed active-recall drill cards in a 5/15/30-min window before a live cash session, sourced from the upper-surface reasoning-artifact corpus. WIP / stubs (F-W1): **Estimate**, **Framework**, **Library**, **Lessons**. The range-shape recognition surface: what does villain's range look like on this flop, and how does it evolve across streets — and what predictions about tonight's session can be primed before the user sits down?
+Postflop range-vs-board + line-study trainer. **Six shipped tabs** (verified functional 2026-06-13, `audits/2026-06-13-dcomp-w3-drills-audit.md`): **Line** (branching street-by-street walkthroughs with Study Priority Index + multiway coverage, 8 lines / 85+ nodes / 14 frameworks — closed 2026-04-20), **Explorer** (pick preflop context + flop → full range breakdown + framework tags; hosts Range Lab custom paint), **Estimate**, **Framework**, **Library**, **Lessons**. (The 2026-04 "F-W1 WIP/stub" labels on Estimate/Framework/Library/Lessons are STALE — all four have since matured.)
+
+> **⚠️ Pre-Session is NOT a shipped tab in `PostflopDrillsView` (status 2026-06-15, WS-229 F-DRILL-01 / C-1).** The "Pre-Session mode" section below, the `[Pre-Session]`-first tab bar in Anatomy, and the Pre-Session code-paths describe the **PSD Gate-4 TARGET design, not current shipped behavior**. `PostflopDrillsView.jsx` ships the six tabs above with **no Pre-Session entry**. Pre-Session is implemented as a separate `PresessionDrillView`, **feature-flagged OFF** (`ENABLE_PRESESSION_DRILL = false`), mid-lifecycle in the PSD project (live tickets WS-199/200/201). Read this section as a spec, not as documentation of running code.
+
+The range-shape recognition surface: what does villain's range look like on this flop, and how does it evolve across streets?
 
 ## JTBD served
 
@@ -59,6 +63,12 @@ Secondary:
 - [Apprentice](../personas/core/apprentice-student.md) — primary learner
 - [Rounder](../personas/core/rounder.md), [Hybrid Semi-Pro](../personas/core/hybrid-semi-pro.md) — session warm-up + targeted leak work
 - [Coach](../personas/core/coach.md) — could assign Line Study lines as homework (proposed CO-51)
+- [Returning after break](../personas/situational/returning-after-break.md) — situational; applies via Scholar + Apprentice (DS-55). **Currently UNSERVED** by this surface: no gap-detection, welcome-back affordance, or staleness cue exists yet (WS-229 A-3 / C-5). Listed for coverage honesty; the welcome-back surface is future work.
+- [Between-hands driller](../personas/situational/between-hands-driller.md) — situational; the live-table user stealing a quick rep in dead time. **Currently UNSERVED** (no ≤30s cold-entry path; WS-229 A-2 / C-4). Authored for coverage honesty; a "quick rep" entry is future nav work.
+
+### Explicit non-goal persona — the scored solver-trainer grinder (WS-229 A-1 / BS-1)
+
+**This surface deliberately does NOT serve the high-volume, solver-scored, EV-loss-quantified "GTO trainer grinder"** — the dominant archetype of GTO Wizard Trainer / DTO / scored PokerCoaching, who wants to grind hundreds of hands against a visible accuracy curve and an EV-loss number. That loop requires exactly the scored-accuracy curves, streaks, and mastery scores the project's autonomy doctrine refuses by design ([[feedback_scf_learning_state_not_tier_rank]], [[feedback_owner_volunteered_grading]]). This is a **positioning decision, not an oversight**: the drills teach *reasoning* (why the answer is right, range-first) rather than *score* it. Recording it here so the decision is explicit and a future "add scored mode for retention" ticket confronts the strategic line rather than sliding past Gate 1. The autonomy-safe slice of the underlying "am I improving?" outcome is served instead by **DS-68** (non-gamified competence trend).
 
 ---
 
@@ -69,7 +79,7 @@ Secondary:
 │ Postflop Drills — range-vs-board trainer   [Back to Sessions]│
 ├──────────────────────────────────────────────────────────────┤
 │ Tab bar:                                                     │
-│   [Pre-Session] [Line] [Explorer] [Estimate Drill]           │
+│   [Pre-Session] [Line] [Range Explorer] [Estimate Drill]     │
 │   [Framework Drill] [Library] [Lessons]                      │
 ├──────────────────────────────────────────────────────────────┤
 │ Mode content:                                                │
@@ -139,7 +149,7 @@ Tab placement rationale (Pre-Session first, founder ratification 2026-05-19): Pr
 ## Known issues
 
 - **F-W1** — Estimate / Framework / Library / Lessons tabs are scaffolds or stubs.
-- **Drills Consolidation Proposal — HELD** (6 layout/refactor items deferred 2026-04-21 pending owner decision on `StudyView` consolidation). Do NOT scaffold `StudyView` without explicit go-ahead.
+- **Drills Consolidation Proposal — RESOLVED 2026-06-15 (WS-230 Gate 3): keep the by-street split; defer consolidation.** The WS-229 roundtable re-opened the tab-taxonomy question (all 3 voices found the 14-tab structure fragmenting; market voice favored "few modes + a configurator" along a learning-mode axis). Founder decision (2026-06-15): **do NOT re-architect now.** Rationale: the surfaces all work, the worst cross-view confusion (the Explorer false-friend) is already fixed (WS-231 F-DRILL-03), and a learning-mode-axis rewrite is a large, risky refactor. Invest instead in **leak-targeted navigation** (the DS-45 leak→drill bridge + a "what should I drill today?" entry — see DS-45). Revisit consolidation later **with real usage evidence**, not speculatively. The original 6 deferred layout/refactor items stay deferred; **do NOT scaffold `StudyView`** (hold stands).
 - Wave 3 audit (drills) will Gate-2 roundtable: Scholar persona is unserved today, WIP tab fate must be decided, and potential consolidation trade-offs are real.
 
 ## Potentially missing
@@ -559,4 +569,5 @@ DS-67 (validate authored content) rests on the parity contract: equity computed 
 - 2026-04-22 — JTBD list updated post-LSW-J1: DS-48/49 added as Active (served by `bucket-ev-panel-v2`); DS-50/51 promoted from "implicit" to explicit atlas references.
 - 2026-05-02 — SCF Gate 4 extension: opt-in-test mode subsection added. 3-delta description; entry from lesson card `Test myself` button; result-display surface with cd5_exempt manifest. Implementation deferred to SCF Gate 5 multi-PR.
 - 2026-05-20 — **Range Lab Gate 4 extension** (WS-055 / SPR-098): Range Lab capability section added (Explorer expansion — Custom range-source toggle, NOT a new tab/view per Gate 1 + Drills Consolidation hold). Covers paint UX (ADR-007 tap-toggle + long-press-weight; **partial-fill-height** weight rendering per founder ratification SPR-098), per-stroke undo + Clear-all confirmation (ADR-008), state-aware primary action (E-A4), surface elements E-A5/E-A6/E-A7/E-A10, sub-capabilities table (DS-64 paint + DS-65 compare = Phase 1-2; DS-66 evolution + DS-67 validate = Phase 3+ surface-contracted), **AP-RL-01 binding** (E-A11 — per-combo narrowing, no bucket-label heuristics; CI-lint forbidden surfaces) + **INV-LSW-RL-EQUITY-PARITY binding**, Phase-5 cross-link contract (LSW + HandReplay `Inspect in Range Lab` + E-A8 unsaved-paint guard), mobile decision (landscape v1; portrait → WS-208), Gate-5 test-coverage expectations, adjacent-surface dependency table. JTBD list extended (DS-64..67). Explorer Anatomy updated with range-source toggle. Inherits Gate 2 verdict YELLOW (6 conditions all cleared) + Gate 3 JTBDs (SPR-097) + ADR-007/008 (SPR-094) + WS-205 cache + WS-206 parity (SPR-095). Cross-link affordances on LSW/HandReplay surfaces deferred to Phase 5 (not authored this gate). Mobile-portrait variant tracked as WS-208.
+- 2026-06-15 — WS-231 (WS-229 roundtable corrective): **Explorer** tab renamed **Range Explorer** (F-DRILL-03 — range-vs-board breakdown + Range Lab; resolves the cross-view false-friend with preflop's hand-vs-hand "Equity Lookup"). Pre-Session over-claim corrected to a gate-pending/feature-flagged-off banner + tab count fixed to 6 shipped (F-DRILL-01 / C-1). `returning-after-break` added to Personas Served as currently-unserved (A-3). Product-line clarified main-app-only / sidebar-N/A (D-3). Tab-switch state-loss protection added (F-DRILL-02). Internal tab `id` unchanged (`explorer`).
 - 2026-05-19 — **PSD Gate 4 extension** (WS-199 / SPR-092): Pre-Session mode section added (this section). Mode-bar updated to 7 tabs with `[Pre-Session]` in leftmost slot per founder ratification 2026-05-19. JTBD list extended (SE-01/02/03 + DS-62/DS-63). Personas extended with `presession-preparer` (sibling of `post-session-chris` per Gate 3 A-R1). State block extended with `drillType='presession'` writes — explicitly no streak/mastery/tier-label persistence (E-A5 + A-AP1 binding). Inherits ADR-005 (flip-card pattern) + ADR-006 (in-app anchor-trace bundle) + Gate 2 verdict YELLOW + Gate 3 research. Companion edits: `sessions-view.md` (inline `Pre-Session Drill` button in action row) + `hand-replay-view.md` (`Queue for tomorrow's PSD` overflow-menu item per decision). Mobile-portrait variant tracked separately as WS-200.

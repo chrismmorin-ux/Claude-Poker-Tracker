@@ -1,0 +1,77 @@
+id: "WS-232"
+title: "Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute drop"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: ""
+claimed_at: null
+completed_at: null
+completion_commit: "4b6f0a0"
+priority_score: 8.0
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "engineering"
+description: |
+  **Code-correctness bugs in the drill modes**, found by the WS-229 roundtable's
+  architecture voice via code trace
+  (docs/design/audits/2026-06-15-blindspot-drills.md, Stage E / Track 1).
+  These are real defects, not design taste.
+
+  - **F-DRILL-05 (sev 2, mis-grading):** Postflop FrameworkMode exposes ALL of
+    `FRAMEWORK_ORDER` (PostflopDrillsView/FrameworkMode.jsx ~line 116), while
+    preflop correctly defines `NON_GRADABLE_FRAMEWORKS` and filters the
+    always-true frameworks (decomposition / straight_coverage / flush_contention)
+    out of the selectable set (PreflopDrillsView/FrameworkMode.jsx ~lines 10-16).
+    A user who learned not to select "decomposition" on preflop is graded WRONG on
+    postflop. Bring postflop to parity (filter non-gradable frameworks).
+  - **F-DRILL-07 (sev 2, silent content trap):** Postflop LessonsMode has no
+    `section.kind === 'compute'` branch (PostflopDrillsView/LessonsMode.jsx
+    ~lines 81-86) and silently returns null; preflop supports it
+    (PreflopDrillsView/LessonsMode.jsx ~line 105). A postflop lesson authored with
+    an interactive calculator renders nothing, no error. Add the compute branch (or
+    assert at authoring time).
+  - **F-DRILL-06 (sev 2, deferred — note only):** Postflop EstimateMode delivers
+    less feedback (stars + delta) than preflop (TrendSparkline + per-framework
+    CalibrationRow + FrameworkInsightHint) despite a harder question. Blocked on the
+    aggregate-shape schema mismatch (postflop lacks avgDelta/deltaSamples —
+    DRILL_VIEWS.md §4). Scope the schema change before attempting; may split out.
+accept_criteria:
+  - "Postflop FrameworkMode filters non-gradable always-true frameworks to parity with preflop; grading no longer penalizes correct omission. Test added."
+  - "Postflop LessonsMode renders `compute` sections (or a CI/authoring assertion prevents authoring an unrenderable compute section). Test added."
+  - "EstimateMode feedback-parity (F-DRILL-06) either implemented behind the aggregate-shape fix, or explicitly carved into its own ticket with the schema dependency documented."
+effort: "M"
+files_involved:
+  - "src/components/views/PostflopDrillsView/FrameworkMode.jsx"
+  - "src/components/views/PreflopDrillsView/FrameworkMode.jsx"
+  - "src/components/views/PostflopDrillsView/LessonsMode.jsx"
+  - "src/components/views/PostflopDrillsView/EstimateMode.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: |
+  Code-correctness track from WS-229 roundtable. EXECUTION REFRAMED after code verification (SPR-134):
+  - F-DRILL-05 (DONE, narrowed): the audit's "exclude all always-true frameworks to parity" would
+    break 21/33 scenarios (only 12 carry an opposing range; on the other 21 the always-on frameworks
+    are the ONLY gradable content). Correct non-breaking fix shipped: exclude ONLY `range_decomposition`
+    (sole subcase 'always', zero discrimination, exact analog of preflop's excluded `decomposition`).
+    range_morphology/whiff_rate/board_tilt retained (load-bearing for single-range scenarios; no
+    cross-view analog). Their always-select degeneracy → design-track question (noted in WS-230 scope).
+    Filtered picker + truth set; 3 regression tests added.
+  - F-DRILL-07 (DONE, downgraded): the silent compute-drop is ALREADY guarded at authoring time by
+    the existing lessons content test (valid-kind set = prose/formula/example). Added a visible
+    defense-in-depth fallback so an unsupported section never renders empty. Not the live sev-2 trap
+    the audit implied.
+  - F-DRILL-06 (DEFERRED): EstimateMode feedback parity stays blocked on the aggregate-shape schema
+    mismatch (DRILL_VIEWS.md §4); tracked in the WS-229 audit Track 3. Promote when schema work is scheduled.
+  Verified: 638 postflop drill tests pass; production build clean. Commits reference docs/design/audits/2026-06-15-blindspot-drills.md."
+finding_id: ""
+source:
+  origin: "ws-229-roundtable-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-15"
+updated_at: "2026-06-15"
+closed_by_event: "ev-1781571725875-27d21630843f"

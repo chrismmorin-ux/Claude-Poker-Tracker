@@ -17,6 +17,7 @@ import { pickNextMatchup, scoreEstimate } from '../../../utils/drillContent/sche
 import { classifyScenario } from '../../../utils/postflopDrillContent/frameworks';
 import { usePostflopDrillsPersistence } from '../../../hooks/usePostflopDrillsPersistence';
 import { RangeFlopBreakdown } from './RangeFlopBreakdown';
+import { useDrillProgress } from '../drillCommon/DrillTabGuard';
 
 // Scheduler expects `library[i].primary`; our SCENARIOS already have this.
 // Wrap pickNextMatchup with minimal adaptation.
@@ -39,7 +40,17 @@ export const EstimateMode = () => {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
   const recentIds = useRef([]);
+
+  // Report unsaved progress to the tab-switch guard (WS-229 F-DRILL-02): the user
+  // has moved the slider but not yet submitted. An untouched, freshly-loaded drill
+  // does not count, so switching away from it never nags.
+  const reportProgress = useDrillProgress();
+  useEffect(() => {
+    reportProgress(touched && !submitted);
+    return () => reportProgress(false);
+  }, [touched, submitted, reportProgress]);
 
   const estimateDrills = drills.filter((d) => d.drillType === 'estimate');
   const streak = computeStreak(estimateDrills.slice(0, 10));
@@ -54,6 +65,7 @@ export const EstimateMode = () => {
     setEstimate(20);
     setSubmitted(false);
     setScore(null);
+    setTouched(false);
   };
 
   useEffect(() => { nextQuestion(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
@@ -136,7 +148,7 @@ export const EstimateMode = () => {
             max="100"
             step="1"
             value={estimate}
-            onChange={(e) => setEstimate(Number(e.target.value))}
+            onChange={(e) => { setEstimate(Number(e.target.value)); setTouched(true); }}
             disabled={submitted}
             className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-teal-500"
           />

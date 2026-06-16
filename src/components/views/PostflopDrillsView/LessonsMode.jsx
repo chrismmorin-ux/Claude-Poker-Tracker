@@ -82,8 +82,20 @@ const LessonSection = ({ section }) => {
   if (section.kind === 'prose')   return <ProseSection section={section} />;
   if (section.kind === 'formula') return <FormulaSection section={section} />;
   if (section.kind === 'example') return <ExampleSection section={section} />;
-  return null;
+  return <UnsupportedSection section={section} />;
 };
+
+// Defense-in-depth: an unrecognized section kind used to render as nothing (silent
+// drop). Postflop lessons have no calculator registry, so `compute` sections aren't
+// supported here — but a silently-empty section is an authoring trap. Render a visible
+// notice instead. (The primary guard is the lessons content test asserting only
+// prose/formula/example kinds; this catches anything that slips past it. WS-229 F-DRILL-07.)
+const UnsupportedSection = ({ section }) => (
+  <div className="bg-amber-900/30 border border-amber-800 text-amber-200 rounded px-3 py-2 text-xs">
+    Unsupported lesson section type: <span className="font-mono">{String(section?.kind)}</span>.
+    {section?.kind === 'compute' && ' Interactive calculators are not available in postflop lessons.'}
+  </div>
+);
 
 const ProseSection = ({ section }) => (
   <div>

@@ -1,0 +1,79 @@
+id: "WS-230"
+title: "Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: ""
+claimed_at: null
+completed_at: null
+completion_commit: "4b6f0a0"
+priority_score: 7.0
+priority_label: "P2"
+category: "design-comprehension"
+capability: "core"
+program: "design"
+description: |
+  **Gate 3 (Research/Authoring) for the drills surface — strategic + coverage work**
+
+  Surfaced by the WS-229 Gate 2 blind-spot roundtable
+  (docs/design/audits/2026-06-15-blindspot-drills.md), verdict YELLOW(high) with
+  two ❌ stages. This ticket carries the founder-decision and authoring follow-ups
+  (the just-do-it corrective work is WS-231; the code bugs are WS-232).
+
+  Plan-first. Bundles the roundtable's strategic findings:
+
+  - **F-DRILL-08 (sev 1, central question):** Re-open the drills tab-taxonomy /
+    HELD "Drills Consolidation Proposal" decision — should the 14 tabs reorganize
+    along a learning-mode axis (one Explorer/Estimate/Framework/Library/Lessons +
+    street-specific specializations) rather than the current by-street split? All
+    three roundtable voices converged that the parallel structure fragments the
+    job. MUST protect the two genuine differentiators (Line Study DS-50 +
+    per-street range evolution DS-66; range-first decomposition DS-48/49). This is
+    a tab-taxonomy decision, NOT a directive to scaffold StudyView (that hold
+    stands). Founder decision required before further Gate-4 work on individual tabs.
+  - **F-DRILL-04 (sev 1):** Author the analysis-view → drill leak bridge decision
+    ("the most important missing element" — analysis knows the leaks, drills can't
+    be reached from them). Includes DS-45 serve-or-decline + a cross-tab-continuity
+    JTBD (B-4). Sequenced with WS-198 (hands ↔ node-ID cross-reference).
+  - **F-DRILL-09 (sev 2):** Author JTBD DS-68 — evidence-based, non-gamified
+    competence-trend visibility (all three modeled personas request objective
+    improvement-visibility; the anti-gamification red line orphaned the
+    non-gamified form of the outcome). Bound by autonomy doctrine.
+  - **F-DRILL-10 (sev 2):** Persona work — author the "between-hands
+    table-adjacent driller" situational persona; document the "scored
+    trainer-grinder" as an explicit surface-level NON-GOAL with competitive
+    rationale (the category's dominant archetype, deliberately declined but
+    currently invisible).
+accept_criteria:
+  - "Founder decision recorded on drills tab-taxonomy/consolidation (consolidate along learning-mode axis vs keep by-street), with differentiators (Line Study, range-decomposition) explicitly protected. Rationale appended to the Drills Consolidation hold record."
+  - "leak→drill bridge: DS-45 served-or-formally-declined; cross-tab-continuity JTBD authored or explicitly out-of-scope."
+  - "DS-68 authored in jtbd/domains/drills-and-study.md (non-gamified framing, autonomy-bound)."
+  - "between-hands-driller situational persona authored; scored-trainer-grinder documented as a surface-level non-goal."
+effort: "L"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Consolidate drills along learning-mode axis, or keep the by-street 14-tab split?"
+  - "DS-45 (drill-my-own-history): serve now (gated on WS-198) or formally decline?"
+status_note: |
+  Gate 3 strategic+coverage follow-ups from WS-229 roundtable — RESOLVED (SPR-136, 2026-06-15).
+  Founder decisions:
+  - F-DRILL-08 (tab taxonomy): KEEP the by-street split, DEFER consolidation, invest in leak-targeted nav; revisit with usage evidence. Recorded in surfaces/postflop-drills.md (Consolidation hold → RESOLVED).
+  - F-DRILL-04 (leak→drill): DS-45 COMMITTED-STAGED. Bridge = new WS-233 (blocked on WS-198). Cross-tab continuity folded into the bridge.
+  Authored:
+  - DS-68 (non-gamified competence-trend JTBD) in jtbd/domains/drills-and-study.md.
+  - personas/situational/between-hands-driller.md (new situational persona).
+  - scored-trainer-grinder documented as an explicit non-goal in surfaces/postflop-drills.md.
+  Audit Track-2 all checked off (docs/design/audits/2026-06-15-blindspot-drills.md). F-DRILL-03 shipped earlier in WS-231.
+  No code changes (Gate-3 authoring + decisions only). The L effort estimate priced an implementation that the founder chose to STAGE (WS-233) rather than build now.
+finding_id: ""
+source:
+  origin: "ws-229-roundtable-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-15"
+updated_at: "2026-06-15"
+closed_by_event: "ev-1781582180356-7ac96ca613fe"

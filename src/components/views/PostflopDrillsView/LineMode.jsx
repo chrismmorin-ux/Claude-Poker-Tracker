@@ -11,12 +11,13 @@
  * retry-from-node — those ship in Phase 3/4.
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { LINES, findLine, listLines } from '../../../utils/postflopDrillContent/lines';
 import { lineStats } from '../../../utils/postflopDrillContent/lineSchema';
 import { usePostflopDrillsPersistence } from '../../../hooks/usePostflopDrillsPersistence';
 import { LinePicker } from './LinePicker';
 import { LineWalkthrough } from './LineWalkthrough';
+import { useDrillProgress } from '../drillCommon/DrillTabGuard';
 
 export const LineMode = () => {
   const [activeLineId, setActiveLineId] = useState(null);
@@ -32,6 +33,15 @@ export const LineMode = () => {
     () => (activeLineId ? findLine(activeLineId) : null),
     [activeLineId],
   );
+
+  // Report unsaved progress to the tab-switch guard (WS-229 F-DRILL-02): a line is
+  // selected and being walked, so switching tabs would discard the walkthrough
+  // position. The picker (no active line) carries no progress.
+  const reportProgress = useDrillProgress();
+  useEffect(() => {
+    reportProgress(!!activeLine);
+    return () => reportProgress(false);
+  }, [activeLine, reportProgress]);
 
   const handleAttempt = useCallback(
     (payload) => {
