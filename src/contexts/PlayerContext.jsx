@@ -6,6 +6,7 @@
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
+import { GUEST_USER_ID } from '../constants/authConstants';
 import { usePlayerPersistence } from '../hooks/usePlayerPersistence';
 import { useRetroactiveLinking } from '../hooks/useRetroactiveLinking';
 
@@ -16,10 +17,11 @@ const PlayerContext = createContext(null);
  * Player context provider component
  * Wraps children with player state and operations
  */
-export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
+export const PlayerProvider = ({ playerState, dispatchPlayer, userId = GUEST_USER_ID, children }) => {
   const { allPlayers, seatPlayers, isLoading } = playerState;
 
-  // Player persistence (CRUD, seat operations, ready flag)
+  // Player persistence (CRUD, seat operations, ready flag). userId threads the signed-in
+  // account so players load under the user, not the 'guest' default (data-isolation fix).
   const {
     isReady: playerPersistenceReady,
     createNewPlayer,
@@ -30,7 +32,7 @@ export const PlayerProvider = ({ playerState, dispatchPlayer, children }) => {
     getRecentPlayers,
     isPlayerAssigned,
     getPlayerSeat,
-  } = usePlayerPersistence(playerState, dispatchPlayer);
+  } = usePlayerPersistence(playerState, dispatchPlayer, userId);
 
   // PEO-1: retroactive seat↔player linking. Exposed at this layer so the
   // linking flow can read allPlayers (for handCount delta) and dispatch into

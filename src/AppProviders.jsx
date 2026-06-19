@@ -33,6 +33,8 @@ import {
 import { AssumptionProvider } from './contexts/AssumptionContext';
 import { manifests as refresherCardRegistry } from './utils/printableRefresher/cardRegistry';
 import { EngineCtxBridge } from './components/EngineCtxBridge';
+import { GUEST_USER_ID } from './constants/authConstants';
+import { GuestDataMerge } from './components/GuestDataMerge';
 
 /**
  * AppProviders - Wraps children in all context providers
@@ -108,11 +110,12 @@ export const AppProviders = ({
         >
           <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
             <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
-              <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession}>
+              <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession} userId={authState?.user?.uid || GUEST_USER_ID}>
                 <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
-                  <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer}>
-                    <TendencyProvider>
+                  <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer} userId={authState?.user?.uid || GUEST_USER_ID}>
+                    <TendencyProvider userId={authState?.user?.uid || GUEST_USER_ID}>
                       <EngineCtxBridge engineCtxGetterRef={engineCtxGetterRef} />
+                      <GuestDataMerge userId={authState?.user?.uid || GUEST_USER_ID} />
                       <AssumptionProvider>
                       <SyncBridgeProvider>
                         <CardProvider cardState={cardState} dispatchCard={dispatchCard}>

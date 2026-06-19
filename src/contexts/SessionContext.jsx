@@ -6,6 +6,7 @@
 
 import { createContext, useContext, useMemo, useCallback } from 'react';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
+import { GUEST_USER_ID } from '../constants/authConstants';
 import { useSessionPersistence } from '../hooks/useSessionPersistence';
 
 // Create context
@@ -15,10 +16,11 @@ const SessionContext = createContext(null);
  * Session context provider component
  * Wraps children with session state and operations
  */
-export const SessionProvider = ({ sessionState, dispatchSession, children }) => {
+export const SessionProvider = ({ sessionState, dispatchSession, userId = GUEST_USER_ID, children }) => {
   const { currentSession, allSessions, isLoading } = sessionState;
 
-  // Session persistence (CRUD, ready flag)
+  // Session persistence (CRUD, ready flag). userId threads the signed-in account
+  // so the Sessions view reads the user's data, not the 'guest' default (data-isolation fix).
   const {
     isReady: sessionPersistenceReady,
     startNewSession,
@@ -26,7 +28,7 @@ export const SessionProvider = ({ sessionState, dispatchSession, children }) => 
     updateSessionField: persistenceUpdateSessionField,
     loadAllSessions,
     deleteSessionById,
-  } = useSessionPersistence(sessionState, dispatchSession);
+  } = useSessionPersistence(sessionState, dispatchSession, userId);
 
   // Derived: Is there an active session?
   const hasActiveSession = useMemo(() => {

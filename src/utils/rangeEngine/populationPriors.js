@@ -5,6 +5,12 @@
  * These serve as Bayesian priors that are updated with observed data.
  * NOT GTO — models typical live 1/2 tendencies (looser, more passive).
  *
+ * PROVENANCE (2026-06-19 · WS-235 / FIND-023 / docs/provenance registry SRC-009):
+ *   FACED_RAISE_RATE / NO_RAISE_FREQUENCIES / FACED_RAISE_FREQUENCIES below are a FOUNDER
+ *   ESTIMATE of the live 1/2 pool — informed judgment, NOT a measured dataset. Author-estimate
+ *   trust (Field-frame prior). WS-235 Step 2 grounds them empirically from observed pool hands as
+ *   data accumulates (hierarchical, self-weighted by sample). Do NOT cite as measured until then.
+ *
  * KEY DESIGN: Preflop actions split into two independent decision trees:
  *   No raise faced:  fold | limp | open        (sums to 1.0)
  *   Facing a raise:  fold | coldCall | threeBet (sums to 1.0)

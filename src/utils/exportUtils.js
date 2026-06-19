@@ -23,13 +23,16 @@ const EXPORT_VERSION = '1.2.0'; // Aligns with IndexedDB v12 schema
 /**
  * Export all application data to a JSON object
  *
+ * @param {string} [userId] - Account to export. Defaults to the persistence-layer
+ *   default ('guest') when omitted — pass the signed-in userId to export the
+ *   user's real data (data-isolation fix; matches the read-path threading).
  * @returns {Promise<Object>} Complete data export with version and timestamp
  */
-export const exportAllData = async () => {
+export const exportAllData = async (userId) => {
   const [hands, sessions, players] = await Promise.all([
-    getAllHands(),
-    getAllSessions(),
-    getAllPlayers(),
+    getAllHands(userId),
+    getAllSessions(userId),
+    getAllPlayers(userId),
   ]);
 
   return {
@@ -76,8 +79,8 @@ export const downloadAsJson = (data, filename) => {
  *
  * @returns {Promise<void>}
  */
-export const downloadBackup = async () => {
-  const data = await exportAllData();
+export const downloadBackup = async (userId) => {
+  const data = await exportAllData(userId);
   const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const filename = `poker-tracker-backup-${date}.json`;
   downloadAsJson(data, filename);

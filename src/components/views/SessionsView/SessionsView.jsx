@@ -25,7 +25,7 @@ import { InsightsBand } from './InsightsBand';
 import { SessionDetailModal } from './SessionDetailModal';
 import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
-import { useSession, useUI, useTournament, useSyncBridge, useSettings } from '../../../contexts';
+import { useSession, useUI, useTournament, useSyncBridge, useSettings, useAuth } from '../../../contexts';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { ENABLE_PRESESSION_DRILL } from '../PresessionDrillView';
 
@@ -34,6 +34,7 @@ import { ENABLE_PRESESSION_DRILL } from '../PresessionDrillView';
  */
 export const SessionsView = ({ scale }) => {
   const { showSuccess, showError, addToast } = useToast();
+  const { userId } = useAuth(); // export under the signed-in account, not 'guest' (data-isolation fix)
 
   // AUDIT-2026-04-21-SV F1: unified destructive-action undo duration (matches TableView F5)
   const UNDO_TOAST_DURATION_MS = 12000;
@@ -249,7 +250,7 @@ export const SessionsView = ({ scale }) => {
   // Handle export
   const handleExport = async () => {
     try {
-      await downloadBackup();
+      await downloadBackup(userId);
       showSuccess('Backup exported');
       setImportStatus({ success: true, message: 'Backup downloaded successfully!' });
       setTimeout(() => setImportStatus(null), 3000);
@@ -353,7 +354,7 @@ export const SessionsView = ({ scale }) => {
   };
 
   return (
-    <div className="min-h-dvh bg-gray-900 overflow-y-auto">
+    <div className="h-dvh bg-gray-900 overflow-y-auto">
       {/* Portrait-native fluid layout (2026-06-06): no 1600×720 ScaledContainer
           so every field stays legible/tappable on a phone. Capped width keeps
           lines readable on wide screens. */}

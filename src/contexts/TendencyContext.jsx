@@ -8,13 +8,16 @@
 
 import { createContext, useContext, useCallback, useMemo, useRef } from 'react';
 import { usePlayer } from './PlayerContext';
+import { GUEST_USER_ID } from '../constants/authConstants';
 import { usePlayerTendencies } from '../hooks/usePlayerTendencies';
 
 const TendencyContext = createContext(null);
 
-export const TendencyProvider = ({ children }) => {
+export const TendencyProvider = ({ userId = GUEST_USER_ID, children }) => {
   const { allPlayers } = usePlayer();
-  const { tendencyMap, setTendencyMap, isLoading, refresh } = usePlayerTendencies(allPlayers);
+  // userId threads the signed-in account so tendencies read the user's hands,
+  // not the 'guest' default (data-isolation fix).
+  const { tendencyMap, setTendencyMap, isLoading, refresh } = usePlayerTendencies(allPlayers, userId);
 
   /**
    * Optimistic patch: shallow-merge into a single player's tendency entry.
