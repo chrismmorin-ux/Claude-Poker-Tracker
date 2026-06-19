@@ -354,7 +354,7 @@ export const SessionsView = ({ scale }) => {
   };
 
   return (
-    <div className="h-dvh bg-gray-900 overflow-y-auto">
+    <div className="h-[100dvh] bg-gray-900 overflow-y-auto">
       {/* Portrait-native fluid layout (2026-06-06): no 1600×720 ScaledContainer
           so every field stays legible/tappable on a phone. Capped width keeps
           lines readable on wide screens. */}

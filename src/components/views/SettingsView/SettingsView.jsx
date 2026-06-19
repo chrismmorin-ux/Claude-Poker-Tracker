@@ -66,11 +66,12 @@ export const SettingsView = ({ scale }) => {
   }
 
   return (
-    <div className="h-dvh bg-gray-900 overflow-y-auto">
+    <div className="h-[100dvh] bg-gray-900 overflow-y-auto">
       {/* Portrait-native fluid layout (2026-06-06) — no 1600×720 ScaledContainer
           so settings fields (venue notes, game defaults) stay legible on a phone.
-          h-dvh (not min-h-dvh) so overflow-y-auto scrolls within the body-locked
-          viewport (html/body/#root are height:100dvh; overflow:hidden). */}
+          h-[100dvh] (arbitrary value — Tailwind 3.3.6 has NO h-dvh/min-h-dvh utility,
+          those are inert) so overflow-y-auto scrolls within the body-locked viewport
+          (html/body/#root are height:100dvh; overflow:hidden). */}
       <div className="max-w-5xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

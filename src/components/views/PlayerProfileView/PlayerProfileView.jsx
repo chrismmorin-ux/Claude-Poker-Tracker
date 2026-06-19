@@ -95,7 +95,7 @@ export const PlayerProfileView = ({ scale: _scale }) => {
 
   return (
     <div
-      className="h-dvh w-full overflow-y-auto"
+      className="h-[100dvh] w-full overflow-y-auto"
       data-testid="player-profile-view"
     >
     <div className="p-4 max-w-3xl mx-auto text-gray-200">
