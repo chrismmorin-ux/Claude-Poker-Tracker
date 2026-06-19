@@ -2,6 +2,30 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolve } from 'path'
+import { execSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+
+// Build identity — baked into the bundle (the running version's truth) AND written to
+// dist/version.json on every build, so local `npm run deploy` carries a fresh stamp the
+// app can check against (previously only CI stamped version.json — local deploys had none).
+// CI's deploy step overwrites version.json with github.sha after build; same shape, consistent.
+// Full SHA so it matches CI's version.json (github.sha is the full 40-char SHA).
+const BUILD_SHA = (() => {
+  try { return execSync('git rev-parse HEAD').toString().trim(); }
+  catch { return 'local'; }
+})();
+const BUILD_TIME = new Date().toISOString();
+
+const stampVersionJson = () => ({
+  name: 'stamp-version-json',
+  apply: 'build',
+  writeBundle() {
+    writeFileSync(
+      resolve(__dirname, 'dist/version.json'),
+      JSON.stringify({ version: BUILD_SHA, built: BUILD_TIME }),
+    );
+  },
+});
 
 export default defineConfig({
   resolve: {
@@ -52,7 +76,12 @@ export default defineConfig({
         ],
       },
     }),
+    stampVersionJson(),
   ],
+  define: {
+    __BUILD_SHA__: JSON.stringify(BUILD_SHA),
+    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  },
   build: {
     rollupOptions: {
       output: {

@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CheckCircle2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
 import { SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
 import { useBuildVersion } from '../../../hooks/useBuildVersion';
+import { BUILD_SHA, BUILD_TIME } from '../../../utils/buildInfo';
 
 const formatBuildTime = (iso) => {
   if (!iso) return null;
@@ -32,9 +33,20 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
   const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
   // W4-A4-F12: collapse state for the dev-tools sub-panel. Session-scoped.
   const [devToolsOpen, setDevToolsOpen] = useState(false);
+  // Force-update: clears the PWA app cache + service worker, then reloads the
+  // latest version. Manual override for when an installed PWA stays stuck on an
+  // old build (autoUpdate isn't always reliable on installed apps). Two-tap
+  // confirm because it reloads the app. Does NOT touch IndexedDB (user data).
+  const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
+  const [updating, setUpdating] = useState(false);
   // W4-A4-F2: Pending sim-clear timer ID for deferred-commit + undo.
   const pendingSimClearRef = useRef(null);
-  const { currentVersion, currentBuiltAt, updateAvailable, error: versionError } = useBuildVersion();
+  const { latestVersion, latestBuiltAt, error: versionError } = useBuildVersion();
+  // Stale = the bundle running now (BUILD_SHA, baked into this build) differs from the
+  // latest the server is advertising (version.json). This is the definitive cache-stale
+  // signal — a /version.json fetch alone only reports the server, not what's loaded.
+  const runningKnown = BUILD_SHA && BUILD_SHA !== 'dev' && BUILD_SHA !== 'local';
+  const isStale = Boolean(runningKnown && latestVersion && BUILD_SHA !== latestVersion);
 
   // Refresh sim total when localStorage changes (e.g. console usage)
   useEffect(() => {
@@ -142,6 +154,28 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
     }
   };
 
+  // Force-update: clear the PWA app cache + service worker, then reload. This refreshes
+  // the app to the latest deployed version. It does NOT touch IndexedDB (your sessions /
+  // hands / players live there and are untouched).
+  const handleForceUpdate = useCallback(async () => {
+    setUpdating(true);
+    try {
+      if (typeof caches !== 'undefined') {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch (err) {
+      logger.error('DataAndAbout:forceUpdate', err);
+    } finally {
+      // Reload to fetch fresh assets. Data in IndexedDB is preserved.
+      window.location.reload();
+    }
+  }, []);
+
   return (
     <div className="bg-gray-800 rounded-lg p-5">
       <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Data & About</h3>
@@ -163,34 +197,79 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
           the device). Re-introduce only when an actual error-reporting service
           is integrated. */}
 
-      {/* Version Info */}
-      <div className="mb-4 pt-3 border-t border-gray-700 space-y-1">
+      {/* App Version & Updates — the single "am I current?" spot.
+          "Running" is baked into THIS bundle (truth of what's loaded); "Latest" is the
+          server's deployed version. If they differ, you're on a stale cached copy. */}
+      <div className="mb-4 pt-3 border-t border-gray-700">
+        <h4 className="text-sm font-bold mb-2" style={{ color: GOLD.base }}>App version</h4>
+
         <p className="text-gray-400 text-sm">
-          Build:{' '}
-          {currentVersion ? (
-            <>
-              <span className="text-white font-mono">{currentVersion.slice(0, 7)}</span>
-              {currentBuiltAt && (
-                <span className="text-gray-500"> · {formatBuildTime(currentBuiltAt)}</span>
-              )}
-            </>
-          ) : (
-            <span className="text-gray-500">{versionError ? 'unavailable (offline?)' : 'checking…'}</span>
-          )}
+          Running: <span className="text-white font-mono">{runningKnown ? BUILD_SHA.slice(0, 7) : BUILD_SHA}</span>
+          {BUILD_TIME && <span className="text-gray-500"> · built {formatBuildTime(BUILD_TIME)}</span>}
         </p>
-        {currentVersion && (
-          updateAvailable ? (
-            <p className="text-blue-300 text-xs flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Update available — tap the banner at the top of the app to apply
+        {latestVersion && (
+          <p className="text-gray-400 text-sm">
+            Latest: <span className="text-white font-mono">{latestVersion.slice(0, 7)}</span>
+            {latestBuiltAt && <span className="text-gray-500"> · built {formatBuildTime(latestBuiltAt)}</span>}
+          </p>
+        )}
+
+        <div className="mt-1.5">
+          {isStale ? (
+            <p className="text-yellow-300 text-xs flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              You&apos;re on an older cached version — tap &ldquo;Force Update&rdquo; to get the latest.
             </p>
-          ) : (
+          ) : latestVersion ? (
             <p className="text-green-400 text-xs flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
               Up to date
             </p>
-          )
-        )}
+          ) : (
+            <p className="text-gray-500 text-xs">
+              {versionError ? 'Can’t reach the server to check (offline?)' : 'Checking for updates…'}
+            </p>
+          )}
+        </div>
+
+        {/* Force Update — clears the PWA cache + reloads the latest version */}
+        <div className="mt-3">
+          {showUpdateConfirm ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-yellow-400 text-sm">Reload the app to update?</span>
+              <button
+                onClick={handleForceUpdate}
+                disabled={updating}
+                className="px-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
+                {updating ? 'Updating…' : 'Update now'}
+              </button>
+              <button
+                onClick={() => setShowUpdateConfirm(false)}
+                disabled={updating}
+                className="px-4 min-h-[44px] bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowUpdateConfirm(true)}
+              className={`px-4 min-h-[44px] rounded-lg text-sm font-medium flex items-center gap-1.5 ${
+                isStale ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
+            >
+              <RefreshCw className="w-4 h-4" />
+              Force Update
+            </button>
+          )}
+          <p className="text-gray-500 text-xs mt-2 leading-relaxed">
+            Clears cached app files and reloads the newest version. Use this if the app looks
+            out of date or behaves oddly after an update. Your data (sessions, hands, players)
+            is <span className="text-gray-400">not</span> affected.
+          </p>
+        </div>
       </div>
 
       {/* Reset to Defaults */}
