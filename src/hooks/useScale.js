@@ -21,8 +21,10 @@ export const useScale = () => {
       const designWidth = LAYOUT.TABLE_WIDTH;
       const designHeight = LAYOUT.TABLE_HEIGHT;
 
-      const scaleX = viewportWidth / designWidth;
-      const scaleY = viewportHeight / designHeight;
+      // 0.95 leaves a 5% margin so scaled views don't touch the viewport edges
+      // / collapsing browser chrome (matches the documented formula in CLAUDE.md).
+      const scaleX = (viewportWidth * 0.95) / designWidth;
+      const scaleY = (viewportHeight * 0.95) / designHeight;
       const newScale = Math.min(scaleX, scaleY, 1);
 
       setScale(newScale);

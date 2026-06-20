@@ -35,13 +35,13 @@ export const ImportConfirmModal = ({
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            className="flex-1 px-4 min-h-[44px] bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors font-medium"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+            className="flex-1 px-4 min-h-[44px] bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
             Import & Replace
           </button>

@@ -22,6 +22,7 @@ import { NavShell } from './components/ui/NavShell';
 // settings.voiceCardEntry.enabled (default OFF). Renders only on TableView
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
+import { RotateDeviceHint } from './components/ui/RotateDeviceHint';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state, driven by VIEW_REGISTRY
@@ -136,6 +137,7 @@ const AppRoot = () => {
     >
       <UpdateBanner />
       <ViewRouter />
+      <RotateDeviceHint />
       <VoiceCardEntryOverlay />
       <NavShell />
       <HealthIndicator />
