@@ -109,6 +109,9 @@ export const CommandStrip = ({
     totalChips: (tournamentState?.config?.startingStack && tournamentState?.config?.totalEntrants)
       ? tournamentState.config.startingStack * tournamentState.config.totalEntrants
       : null,
+    smallBlindSeat,
+    bigBlindSeat,
+    liveEquity, // postflop facing-all-in reuses equity vs the focused villain
   });
   const pushFoldActive = !!pushFold || pushFoldComputing;
 

@@ -116,9 +116,20 @@ describe('assessPushFoldSetup (integration logic)', () => {
     expect(s.effBB).toBe(10); // min(1000, 8000)/100
   });
 
-  it('returns null when hero is deep (not push/fold depth)', () => {
-    const s = assessPushFoldSetup({ ...base, chipStacks: { 1: 5000, 7: 12000 } }); // 50bb
+  it('returns null when hero is deep and FIRST-IN (jams are a short-stack play)', () => {
+    const s = assessPushFoldSetup({ ...base, chipStacks: { 1: 5000, 7: 12000 } }); // 50bb, no aggression
     expect(s).toBeNull();
+  });
+
+  it('allows a DEEP stack to face an all-in — the call is not depth-gated (#2)', () => {
+    const s = assessPushFoldSetup({
+      chipStacks: { 1: 5000, 4: 8000, 7: 12000 }, // hero 50bb
+      mySeat: 1, bb: 100, dealerSeat: 7,
+      actionSequence: [{ seat: 4, action: 'raise', street: 'preflop', order: 1, amount: 4500, allIn: true }],
+    });
+    expect(s).not.toBeNull();
+    expect(s.facingShove).toBe(true);
+    expect(s.effBB).toBe(45); // min(5000, 4500)/100 — well above 15bb
   });
 
   it('assembles an ICM context at a final table when payouts exist', () => {

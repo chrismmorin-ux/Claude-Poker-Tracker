@@ -44,10 +44,20 @@ export const assessPushFoldSetup = ({
     : opponents.reduce((best, s) => (chipStacks[s] > (chipStacks[best] ?? -1) ? s : best), opponents[0]);
   if (villainSeat == null) return null;
 
+  // Amount the shover put at risk (their all-in entry's level) — the real
+  // effective-stack cap, not their pre-shove chip count.
+  const shoveEntry = facingShove
+    ? (actionSequence || []).find(e => e && e.seat === shoverSeat && e.allIn === true)
+    : null;
+  const shoveAmount = shoveEntry && shoveEntry.amount != null ? shoveEntry.amount : (facingShove ? chipStacks[villainSeat] : null);
+
   const effBB = facingShove
-    ? effectiveStackBB(heroChips, chipStacks[villainSeat], bb)
+    ? effectiveStackBB(heroChips, shoveAmount, bb)
     : heroChips / bb; // jam the whole stack first-in
-  if (!isPushFoldDepth(effBB)) return null;
+  // First-in jams are a SHORT-stack play (≤15bb). Facing an all-in is a binary
+  // call/fold at ANY depth (a deep bubble call is exactly where ICM mistakes
+  // happen), so it is not depth-gated (Consumer #2).
+  if (!facingShove && !isPushFoldDepth(effBB)) return null;
 
   let icm = null;
   if (Array.isArray(payouts) && payouts.length > 0) {
@@ -66,6 +76,7 @@ export const assessPushFoldSetup = ({
   return {
     facingShove,
     villainSeat,
+    shoveAmount,
     effBB,
     heroChips,
     opponents,

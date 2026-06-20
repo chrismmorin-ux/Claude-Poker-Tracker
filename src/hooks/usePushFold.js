@@ -1,11 +1,15 @@
 /**
- * usePushFold.js — short-stack push/fold verdict for the live table (tournament).
+ * usePushFold.js — short-stack push/fold + facing-all-in verdict (tournament).
  *
- * Active only when: tournament + preflop + hero to act + effective stack ≤15bb.
- * Assembles inputs from state (never asks the user — persona rule), runs ONE
- * equity MC, and returns a binary SHOVE / FOLD / CALL verdict computed from
- * $EV via pushFoldEngine (ICM-corrected through icmEngine when payouts exist).
- * Mirrors useLiveEquity (debounce + abort + injected equityFn).
+ * Two situations, both binary, computed from $EV via pushFoldEngine (ICM-corrected):
+ *  - SHOVE first-in: preflop, hero short (≤15bb). Equity vs a population calling
+ *    range (own MC, empty board).
+ *  - CALL vs an all-in: ANY depth, ANY street (Consumer #2). Preflop equity is
+ *    computed vs a shover range; POSTFLOP reuses the live equity already computed
+ *    vs the focused villain (the shover) — no extra MC.
+ *
+ * Reads inputs from state (never asks the user). Mirrors useLiveEquity for the
+ * MC path (debounce + abort + injected equityFn).
  */
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -13,9 +17,8 @@ import { handVsRange as handVsRangeDirect } from '../utils/pokerCore/monteCarloE
 import { parseAndEncode } from '../utils/pokerCore/cardParser';
 import { computeShoveVerdict, computeCallVerdict } from '../utils/pushFoldEngine';
 import { assessPushFoldSetup } from '../utils/pushFoldEngine/setup';
-import {
-  getCallingRange, getShoverRange, estimateJamFoldEquity,
-} from '../utils/pushFoldEngine/ranges';
+import { getCallingRange, getShoverRange, estimateJamFoldEquity } from '../utils/pushFoldEngine/ranges';
+import { getCurrentBet, getSeatContributions, calculatePot } from '../utils/potCalculator';
 import { useAbortControl } from './useAbortControl';
 
 export const usePushFold = ({
@@ -32,7 +35,12 @@ export const usePushFold = ({
   payouts,
   playersRemaining,
   totalChips,
+  smallBlindSeat,
+  bigBlindSeat,
   computeEquity,
+  // Consumer #2 — postflop facing-all-in reuses the already-computed live equity
+  // vs the focused villain (the shover) instead of a new MC.
+  liveEquity,   // { equity, villainSeat } from useLiveEquity
 }) => {
   const [result, setResult] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
@@ -47,24 +55,55 @@ export const usePushFold = ({
     return (e0 >= 0 && e1 >= 0) ? [e0, e1] : null;
   }, [holeCards]);
 
-  // Static (non-equity) situation assessment — cheap, synchronous. The chip/ICM
-  // logic lives in the pure, tested assessPushFoldSetup; the hook adds the
-  // tournament/preflop/hero-to-act gates.
+  const isPreflop = currentStreet === 'preflop';
+
+  // Pure spot assessment (street-agnostic chip/ICM logic, tested separately).
   const setup = useMemo(() => {
-    if (!isTournament || currentStreet !== 'preflop' || !heroToAct || !heroEncoded) return null;
-    return assessPushFoldSetup({ chipStacks, mySeat, actionSequence, bb, payouts, playersRemaining, totalChips, dealerSeat });
-  }, [isTournament, currentStreet, heroToAct, heroEncoded, chipStacks, bb, mySeat, actionSequence, payouts, playersRemaining, totalChips, dealerSeat]);
+    if (!isTournament || !heroToAct || !heroEncoded) return null;
+    const s = assessPushFoldSetup({ chipStacks, mySeat, actionSequence, bb, payouts, playersRemaining, totalChips, dealerSeat });
+    if (!s) return null;
+    // First-in jams are a preflop short-stack play only.
+    if (!s.facingShove && !isPreflop) return null;
+    return s;
+  }, [isTournament, heroToAct, heroEncoded, isPreflop, chipStacks, mySeat, actionSequence, bb, payouts, playersRemaining, totalChips, dealerSeat]);
+
+  const buildResult = (verdict, setupObj) => ({
+    ...verdict,
+    situation: setupObj.facingShove ? 'call' : 'shove',
+    effBB: setupObj.effBB,
+    position: setupObj.position,
+    isApproximate: !!setupObj.icm?.isApproximate,
+    icmAdjusted: !!verdict.icmAdjusted,
+  });
 
   useEffect(() => {
     if (!setup) { setResult(null); return; }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const { facingShove, icm } = setup;
 
+    // ── Postflop facing an all-in: reuse live equity vs the shover (no MC) ──
+    if (facingShove && !isPreflop) {
+      const villainMatches = liveEquity && liveEquity.villainSeat === setup.villainSeat;
+      const heroEq = villainMatches ? liveEquity.equity : null;
+      if (heroEq == null) { setResult(null); setIsComputing(false); return; }
+      // Call cost = current bet owed (capped by hero stack); pot = full pot.
+      const contribs = getSeatContributions(actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat);
+      const owed = Math.max(0, getCurrentBet(actionSequence, currentStreet) - (contribs[mySeat] || 0));
+      const callCost = Math.min(owed, setup.heroChips);
+      if (!(callCost > 0)) { setResult(null); setIsComputing(false); return; }
+      const potTotal = calculatePot(actionSequence, blinds, { smallBlindSeat, bigBlindSeat }).total;
+      const verdict = computeCallVerdict({ heroEq, callCost, pot: potTotal, icm });
+      setResult(buildResult(verdict, setup));
+      setIsComputing(false);
+      return;
+    }
+
+    // ── Preflop: compute equity via MC (debounced) ──
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const callId = register();
       setIsComputing(true);
       const equityFn = computeEquity || handVsRangeDirect;
-      const { facingShove, effBB, heroChips, opponents, icm, villainSeat, position } = setup;
-
+      const { effBB, heroChips, opponents, villainSeat } = setup;
       const { range: villainRange, width } = facingShove ? getShoverRange(effBB) : getCallingRange(effBB);
 
       equityFn(heroEncoded, villainRange, [], { trials: 1500 })
@@ -72,38 +111,25 @@ export const usePushFold = ({
           if (!isCurrent(callId)) return;
           const heroEq = eq.equity;
           const sb = blinds?.sb ?? 0;
-          const potBB = (sb + bb) / bb; // dead blinds (antes omitted in MVP)
+          const potBB = (sb + bb) / bb;
           let verdict;
-
           if (facingShove) {
-            const villainChips = chipStacks?.[villainSeat] ?? heroChips;
-            const callCost = Math.min(heroChips, villainChips); // chips hero risks to call
-            const pot = (sb + bb) + callCost; // dead blinds + the shover's matched amount
-            verdict = computeCallVerdict({ heroEq, callCost, pot, icm });
+            const cost = Math.min(heroChips, setup.shoveAmount ?? heroChips);
+            verdict = computeCallVerdict({ heroEq, callCost: cost, pot: (sb + bb) + cost, icm });
           } else {
             const foldEq = estimateJamFoldEquity(width, opponents.length);
             const winChips = icm ? Math.min(heroChips, chipStacks?.[villainSeat] ?? heroChips) : undefined;
             const icmShove = icm ? { ...icm, riskChips: heroChips, winChips, potChips: sb + bb } : null;
             verdict = computeShoveVerdict({ heroEq, foldEq, effStackBB: effBB, potBB, icm: icmShove });
           }
-
-          setResult({
-            ...verdict,
-            situation: facingShove ? 'call' : 'shove',
-            effBB,
-            position,
-            isApproximate: !!icm?.isApproximate,
-            icmAdjusted: !!verdict.icmAdjusted,
-          });
+          setResult(buildResult(verdict, setup));
           setIsComputing(false);
         })
-        .catch(() => {
-          if (isCurrent(callId)) { setResult(null); setIsComputing(false); }
-        });
+        .catch(() => { if (isCurrent(callId)) { setResult(null); setIsComputing(false); } });
     }, 400);
 
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [setup, heroEncoded, blinds, bb, chipStacks, computeEquity]);
+  }, [setup, isPreflop, heroEncoded, blinds, bb, chipStacks, computeEquity, liveEquity, actionSequence, currentStreet, mySeat, smallBlindSeat, bigBlindSeat]);
 
   return { pushFold: result, isComputing };
 };
