@@ -13,6 +13,7 @@
  *   betaPosterior(k, n, α, β)  — posterior parameters {alpha, beta, mean, variance}
  *   betaCDF(x, a, b)           — regularized incomplete Beta I_x(a, b) = P(X ≤ x)
  *   betaQuantile(p, α, β)      — inverse Beta CDF via bisection
+ *   bayesianSampleConfidence(n) — continuous confidence from effective sample size
  */
 
 /**
@@ -151,4 +152,29 @@ export const betaQuantile = (p, alpha, beta) => {
     if (hi - lo < 1e-8) break;
   }
   return (lo + hi) / 2;
+};
+
+/**
+ * Continuous confidence based on effective sample size (prior + observed).
+ * Calibrated to approximate existing breakpoints:
+ *   n=2 → ~0.23, n=5 → ~0.38, n=10 → ~0.57, n=20 → ~0.77, n=50 → ~0.92
+ *
+ * Exponential saturation: confidence = floor + ceiling * (1 - exp(-n / tau)),
+ * capped at 0.95. The slight reduction at low n is DESIRED — the old step
+ * function was too generous at n ≤ 5.
+ *
+ * Shared in pokerCore so BOTH engines may use it (rangeEngine must never import
+ * from exploitEngine). exploitEngine/bayesianConfidence.js re-exports this.
+ *
+ * @param {number} n - Observed (effective) sample size
+ * @param {number} [priorAlpha=1] - Prior α (unused in current calibration, reserved)
+ * @param {number} [priorBeta=1]  - Prior β (unused in current calibration, reserved)
+ * @returns {number} Confidence in [0, 1]
+ */
+export const bayesianSampleConfidence = (n, priorAlpha = 1, priorBeta = 1) => {
+  if (n <= 0) return 0;
+  const tau = 12;
+  const floor = 0.10;
+  const ceiling = 0.83;
+  return Math.min(0.95, floor + ceiling * (1 - Math.exp(-n / tau)));
 };

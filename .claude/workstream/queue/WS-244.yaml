@@ -2,11 +2,12 @@ id: "WS-244"
 title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
 legacy_id: ""
 type: fix
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
 completed_at: null
+completion_commit: "7912322"
 priority_score: 15.0
 priority_label: "P2"
 category: "domain-correctness"
@@ -55,3 +56,4 @@ status_note: |
   Promoted from FIND-006 + FIND-007 (shared root cause) during the 2026-06-20
   domain-correctness delta run. Backlog — fallback paths, deferred behind the
   sprint's higher-impact fixes.
+closed_by_event: "ev-1781994189770-78884606f394"

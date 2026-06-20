@@ -1,7 +1,7 @@
 id: "FIND-029"
 title: "bestResponseToAggression gates raiseEV on heroEquity>=0.65, suppressing all bluff-raises"
 severity: MEDIUM
-status: open
+status: resolved
 category: "first-principles"
 program: "domain-correctness"
 problem_class: "First-principles decision modeling"
@@ -30,3 +30,4 @@ dedup_key: "challenge-domain-correctness-bestresponse-065-gate-suppresses-bluff-
 created_at: "2026-06-20"
 updated_at: "2026-06-20"
 promoted_to: "WS-247"
+resolved_at: "2026-06-20T21:57:06.423Z"

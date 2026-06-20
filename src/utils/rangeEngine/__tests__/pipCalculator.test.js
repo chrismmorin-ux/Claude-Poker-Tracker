@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyHand, computePips, computeAllPips, formatPips } from '../pipCalculator';
+import { classifyHand, computePips, computeAllPips, computePipConfidence, formatPips, pipConfidenceLabel } from '../pipCalculator';
 import { createEmptyProfile, RANGE_POSITIONS } from '../rangeProfile';
 import { rangeIndex, createRange, PREFLOP_CHARTS } from '../../pokerCore/rangeMatrix';
 
@@ -126,5 +126,49 @@ describe('formatPips', () => {
     expect(result[0].deviations).toContain('+1 Suited Connectors');
     // Zero deviations should not appear
     expect(result[0].deviations).not.toContain(expect.stringContaining('Suited Aces'));
+  });
+
+  it('omits confidence fields when no confidence map is supplied (back-compat)', () => {
+    const pips = { LATE: { pocketPairs: 5 } };
+    const [row] = formatPips(pips);
+    expect(row.confidence).toBeNull();
+    expect(row.confidenceLabel).toBeNull();
+  });
+
+  it('attaches a confidence badge per position when a confidence map is supplied (FIND-010)', () => {
+    const pips = { LATE: { pocketPairs: 5 } };
+    const [row] = formatPips(pips, { LATE: 0.8 });
+    expect(row.confidence).toBe(0.8);
+    expect(row.confidenceLabel).toBe('high');
+  });
+});
+
+describe('computePipConfidence (FIND-010)', () => {
+  it('returns null when the profile has no opportunities', () => {
+    expect(computePipConfidence(null)).toBeNull();
+    expect(computePipConfidence({})).toBeNull();
+  });
+
+  it('derives per-position confidence from the no-raise-faced sample size', () => {
+    const profile = createEmptyProfile('test', 'user');
+    profile.opportunities.LATE.noRaiseFaced = 40; // large sample
+    profile.opportunities.EARLY.noRaiseFaced = 1; // tiny sample
+    const conf = computePipConfidence(profile);
+    expect(conf.LATE).toBeGreaterThan(conf.EARLY);
+    expect(conf.LATE).toBeGreaterThan(0.6); // high
+    expect(conf.EARLY).toBeLessThan(0.35);  // low
+  });
+
+  it('returns 0 confidence for a position with no observations', () => {
+    const profile = createEmptyProfile('test', 'user');
+    expect(computePipConfidence(profile).LATE).toBe(0);
+  });
+});
+
+describe('pipConfidenceLabel', () => {
+  it('buckets confidence into high/moderate/low', () => {
+    expect(pipConfidenceLabel(0.8)).toBe('high');
+    expect(pipConfidenceLabel(0.45)).toBe('moderate');
+    expect(pipConfidenceLabel(0.2)).toBe('low');
   });
 });

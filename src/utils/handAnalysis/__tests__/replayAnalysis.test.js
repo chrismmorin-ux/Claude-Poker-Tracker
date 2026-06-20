@@ -152,6 +152,31 @@ describe('assessEV', () => {
     const seg = { buckets: { nuts: { pct: 30 }, strong: { pct: 20 }, marginal: { pct: 20 }, draw: { pct: 15 }, air: { pct: 15 } } };
     expect(assessEV(PRIMITIVE_ACTIONS.FOLD, seg, null, 50)).toBeNull();
   });
+
+  // FIND-009: gate categorical verdicts on sample size.
+  it('returns an "unknown" verdict below the minimum sample size', () => {
+    const seg = { buckets: { nuts: { pct: 30 }, strong: { pct: 25 }, marginal: { pct: 20 }, draw: { pct: 10 }, air: { pct: 15 } } };
+    const bt = { texture: 'dry' };
+    const result = assessEV(PRIMITIVE_ACTIONS.BET, seg, bt, 55, { sampleSize: 3 });
+    expect(result.verdict).toBe('unknown');
+    expect(result.reason).toMatch(/insufficient data/i);
+    expect(result.confidence).toBeGreaterThan(0);
+    expect(result.confidence).toBeLessThan(0.5);
+  });
+
+  it('emits the normal verdict once the sample size clears the threshold', () => {
+    const seg = { buckets: { nuts: { pct: 30 }, strong: { pct: 25 }, marginal: { pct: 20 }, draw: { pct: 10 }, air: { pct: 15 } } };
+    const bt = { texture: 'dry' };
+    const result = assessEV(PRIMITIVE_ACTIONS.BET, seg, bt, 55, { sampleSize: 25 });
+    expect(result.verdict).toBe('+EV');
+  });
+
+  it('does not gate when no sampleSize is supplied (legacy/population callers)', () => {
+    const seg = { buckets: { nuts: { pct: 30 }, strong: { pct: 25 }, marginal: { pct: 20 }, draw: { pct: 10 }, air: { pct: 15 } } };
+    const bt = { texture: 'dry' };
+    const result = assessEV(PRIMITIVE_ACTIONS.BET, seg, bt, 55);
+    expect(result.verdict).toBe('+EV');
+  });
 });
 
 // ─── estimateRangeEquityPct ─────────────────────────────────────────────────

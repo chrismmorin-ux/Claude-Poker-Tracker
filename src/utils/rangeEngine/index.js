@@ -12,7 +12,7 @@ import { normalizeAllPositions } from './crossRangeConstraints';
 import { rangeWidth } from '../pokerCore/rangeMatrix';
 import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
 import { detectTraits } from './traitDetector';
-import { computeAllPips } from './pipCalculator';
+import { computeAllPips, computePipConfidence } from './pipCalculator';
 
 /**
  * Build a complete range profile for a player from hand history.
@@ -32,6 +32,7 @@ export const buildRangeProfile = (playerId, hands, userId) => {
 
   profile.traits = detectTraits(profile);
   profile.pips = computeAllPips(profile);
+  profile.pipConfidence = computePipConfidence(profile);
   profile.handsProcessed = hands.length;
   profile.lastUpdatedAt = Date.now();
 
@@ -152,7 +153,7 @@ export { extractPreflopAction, extractAllActions } from './actionExtractor';
 export { updateProfileFromActions, applyShowdownAnchor, updateSubActionCounts } from './bayesianUpdater';
 export { extractSubAction, extractAllSubActions } from './subActionExtractor';
 export { detectTraits } from './traitDetector';
-export { computePips, computeAllPips, formatPips, classifyHand, HAND_CATEGORIES } from './pipCalculator';
+export { computePips, computeAllPips, computePipConfidence, formatPips, pipConfidenceLabel, classifyHand, HAND_CATEGORIES } from './pipCalculator';
 export { normalizeAcrossActions, normalizeAllPositions } from './crossRangeConstraints';
 export { getPopulationPrior, NO_RAISE_FREQUENCIES, FACED_RAISE_FREQUENCIES, PRIOR_WEIGHT } from './populationPriors';
 export { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';

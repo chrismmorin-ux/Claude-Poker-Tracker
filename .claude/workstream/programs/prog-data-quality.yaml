@@ -122,7 +122,11 @@ protocols:
 accountability:
   on_finding:
     action: create_work_item
-    max_open_items: 3
+    # Raised 3→5 (2026-06-20): all 4 open items (WS-235/236/237/238) are
+    # legitimate findings-promoted data-integrity work on a launch-blocking
+    # program; the cap of 3 was miscalibrated and floored real work above
+    # higher-priority domain-correctness items, distorting /next composition.
+    max_open_items: 5
     priority_floor: 18
     escalation:
       stale_days: 14
@@ -163,13 +167,14 @@ findings_open: 3
 work_items_open: 4
 
 cap_breach:
-  active: true
+  active: false
   work_items_open: 4
   findings_open: 3
-  max_open_items: 3
+  max_open_items: 5
   priority_floor: 18
-  ratio: 1.33
-  since: "2026-06-19"
+  ratio: 0.8
+  resolved: "2026-06-20"
+  resolution: "cap recalibrated 3→5 (all 4 items legitimate; cap was too tight)"
 
 evidence:
   last_audit_report: null

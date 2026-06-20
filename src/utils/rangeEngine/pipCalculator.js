@@ -7,6 +7,7 @@
 
 import { RANGE_POSITIONS } from './rangeProfile';
 import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../pokerCore/rangeMatrix';
+import { bayesianSampleConfidence } from '../pokerCore/betaMath';
 
 const GRID_SIZE = 169;
 
@@ -146,11 +147,46 @@ export const computeAllPips = (rangeProfile) => {
 };
 
 /**
- * Format PIPs into human-readable strings.
- * @param {{ [position]: { [category]: number } }} pips
- * @returns {Array<{ position: string, deviations: string[] }>}
+ * Per-position confidence in the PIP estimate, derived from the no-raise-faced
+ * sample size that backs each position's open range (POKER_THEORY §6.5 — do not
+ * present small-sample deviations as confident). Confidence is a SEPARATE map
+ * (not nested into the pip deltas) so existing per-category consumers such as
+ * subActionRules.runPipRules keep iterating clean numeric tier deltas.
+ *
+ * @param {Object} rangeProfile - Full range profile
+ * @returns {{ [position]: number }} Confidence in [0,1] per position, or null
  */
-export const formatPips = (pips) => {
+export const computePipConfidence = (rangeProfile) => {
+  if (!rangeProfile?.opportunities) return null;
+  const result = {};
+  for (const pos of RANGE_POSITIONS) {
+    // The open/limp ranges PIPs compare are estimated from no-raise-faced spots,
+    // so that opportunity count is the effective sample size for this position.
+    const n = rangeProfile.opportunities[pos]?.noRaiseFaced || 0;
+    result[pos] = bayesianSampleConfidence(n);
+  }
+  return result;
+};
+
+/**
+ * Map a confidence value to a coarse badge label.
+ * @param {number} confidence - Confidence in [0,1]
+ * @returns {'high'|'moderate'|'low'} badge tier
+ */
+export const pipConfidenceLabel = (confidence) => {
+  if (confidence >= 0.6) return 'high';
+  if (confidence >= 0.35) return 'moderate';
+  return 'low';
+};
+
+/**
+ * Format PIPs into human-readable strings, with a confidence badge per position
+ * when a confidence map is supplied (FIND-010).
+ * @param {{ [position]: { [category]: number } }} pips
+ * @param {{ [position]: number }} [confidenceByPos] - from computePipConfidence
+ * @returns {Array<{ position: string, deviations: string[], confidence: number|null, confidenceLabel: string|null }>}
+ */
+export const formatPips = (pips, confidenceByPos = null) => {
   if (!pips) return [];
 
   const results = [];
@@ -164,7 +200,13 @@ export const formatPips = (pips) => {
       deviations.push(`${sign}${delta} ${label}`);
     }
     if (deviations.length > 0) {
-      results.push({ position: pos, deviations });
+      const confidence = confidenceByPos?.[pos] ?? null;
+      results.push({
+        position: pos,
+        deviations,
+        confidence,
+        confidenceLabel: confidence == null ? null : pipConfidenceLabel(confidence),
+      });
     }
   }
   return results;

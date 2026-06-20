@@ -1,0 +1,28 @@
+id: "SPR-138"
+title: "Ship WS-244: route STYLE_FOLD_DEFAULTS raw lookups through the existing logistic fold-rate machinery"
+status: done
+approved_at: "2026-06-20T22:14:41.895Z"
+completed_at: "2026-06-20T22:23:24.052Z"
+completed_by_commit: "7912322"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-244: route STYLE_FOLD_DEFAULTS raw lookups through the existing logistic fold-rate machinery (FIND-006, FIND-007)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-20T22:14:41.895Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-244 (founder-directed focus=domain-correctness, continuing the first-principles cluster after WS-247; CLI auto-anchor WS-235 overridden — data-quality cap-breach floor).
+
+items:
+  - id: "WS-244"
+    title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-06-20T22:23:09.732Z"
+
+created_at: "2026-06-20T22:14:41.895Z"

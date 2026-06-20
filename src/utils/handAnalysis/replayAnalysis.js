@@ -13,6 +13,7 @@ import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
 // to avoid handAnalysis → exploitEngine import (INV-08 violation).
 // Defaults provide graceful degradation when deps are not supplied.
 import { handVsRange } from '../pokerCore/monteCarloEquity';
+import { bayesianSampleConfidence } from '../pokerCore/betaMath';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
 import { getPopulationPrior } from '../rangeEngine/populationPriors';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
@@ -60,11 +61,33 @@ export const classifyAction = (handEquity, action, opts = {}) => {
 };
 
 /**
+ * Minimum hands on a player before assessEV emits a categorical verdict.
+ * Matches rangeEngine PRIOR_WEIGHT (10): below this the narrowed range is
+ * dominated by the population prior, so a confident +EV/-EV label over its
+ * segmentation overstates precision (POKER_THEORY §6.5).
+ */
+const MIN_EV_ASSESS_SAMPLE = 10;
+
+/**
  * Assess whether an action is +EV based on range equity and board context.
  * This is a board-context-aware heuristic, not exact EV calculation.
+ *
+ * @param {object} [opts] - { sampleSize } hands observed on the acting player.
+ *   When supplied and below MIN_EV_ASSESS_SAMPLE, returns an 'unknown' verdict
+ *   instead of a confident-looking category (FIND-009). Omitting sampleSize
+ *   preserves the ungated population-level behavior for legacy callers.
  */
-export const assessEV = (action, segmentation, boardTexture, rangeEquityPct) => {
+export const assessEV = (action, segmentation, boardTexture, rangeEquityPct, opts = {}) => {
   if (!segmentation || !segmentation.buckets) return null;
+
+  const { sampleSize = null } = opts;
+  if (sampleSize != null && sampleSize < MIN_EV_ASSESS_SAMPLE) {
+    return {
+      verdict: 'unknown',
+      reason: `Insufficient data — ${sampleSize} hand${sampleSize === 1 ? '' : 's'} on this player; need ≥${MIN_EV_ASSESS_SAMPLE} to assess range EV`,
+      confidence: bayesianSampleConfidence(sampleSize),
+    };
+  }
 
   const { nuts, strong, marginal, draw, air } = segmentation.buckets;
   const valuePct = (nuts?.pct || 0) + (strong?.pct || 0);
@@ -536,8 +559,10 @@ export const analyzeTimelineAction = async ({
       }
     }
 
-    // EV assessment
-    evAssessment = assessEV(action, segmentation, boardTexture, rangeEquity);
+    // EV assessment — gated on how many hands we have on this player (FIND-009)
+    evAssessment = assessEV(action, segmentation, boardTexture, rangeEquity, {
+      sampleSize: tendency?.sampleSize ?? 0,
+    });
 
     // Showdown labeling
     const seatShowdown = showdownCards[seat] || showdownCards[Number(seat)];

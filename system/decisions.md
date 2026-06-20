@@ -616,3 +616,67 @@ assumptions:
 **Market Dynamics:** Not applicable — this decision deliberately avoids any external-actor dependency (R1 keeps recognition on-device via the browser Web Speech API; no cloud STT vendor, no Anthropic/competitor roadmap bet). The only external surface is browser Web Speech availability/quality, watched via the sandbox capture tool; trigger to revisit R1 would be sustained evidence (from real captures) that on-device accuracy cannot clear AS-1.
 
 ---
+
+## DEC-022: Live advisor — fold-equity-driven raises require a reliable read; no-model fold-to-raise prior is the canonical population prior (WS-247 / FIND-029)
+
+**Date:** 2026-06-20 | **Status:** Accepted | **Detected:** explicit (owner 2026-06-20 session, ratified via AskUserQuestion)
+
+**Context:** `bestResponseToAggression` (`gameTreeEquity.js`) only computed a raise EV when `heroEquityVsAggroRange >= 0.65`, structurally suppressing every +EV bluff/semi-bluff raise — a raise can be profitable purely through fold equity (POKER_THEORY §5.6), independent of equity-when-called (FIND-029). The fix is to remove the gate and let `Math.max` pick on EV. But a naive removal is unsafe: the no-model default `vFoldToRaise = 0.50` (a magic literal divorced from the codebase's canonical priors) clears the EV comparison for almost any 50%-equity hand, making the live advisor raise-happy against villains we have no read on. The 2026-06-20 gate-removal attempt was reverted for exactly this over-aggression.
+
+**Options Considered:**
+1. **Keep the 0.65 equity gate** — rejected: structurally wrong; can never recommend a fold-equity raise vs an over-folder, no matter how favorable the math.
+2. **Remove gate + keep the naive 0.50 no-model default** — rejected: over-recommends speculative raises against unread villains (the reverted regression); the live advisor must stay safe.
+3. **Remove gate; source the no-model prior from canonical `POPULATION_PRIORS.raise.fold`; gate fold-equity-driven raises on a reliable villain read (CHOSEN, founder-ratified Option 1).**
+
+**Decision:** Three-part fix in `bestResponseToAggression`: (a) compute `raiseEV` **unconditionally** (remove the 0.65 pre-gate); (b) the no-model fallback for `vFoldToRaise` is the canonical `POPULATION_PRIORS.raise.fold` (§7.4 tier-4 single source of truth), not a magic literal — a reliable per-villain model (confidence ≥ `MODEL_CONFIDENCE_THRESHOLD`) overrides it; (c) **safety valve** — decompose the raise: if the called branch is +EV it is a *value raise* and is always recommendable; if the raise profits **only** when villain folds (called branch −EV) it is a *fold-equity exploit*, which per §5.6 **requires evidence the villain over-folds**, so it is suppressed to call/fold unless a reliable model confirms the fold rate. The bluff-vs-value distinction is derived from called-branch EV, not a bucket label (§7.3-clean). Founder ratified the conservative branch ("require a read") via AskUserQuestion.
+
+**Reasoning:** Removes a first-principles violation (a label/threshold suppressing a +EV action) while preventing the over-aggression that got the first attempt reverted. The fold-equity exploit gate is theoretically grounded: §5.6 says over-fold exploits require evidence of over-folding — we have none for an unread villain. Sourcing the no-model prior canonically kills the magic `0.50` and respects §7.4's fidelity hierarchy. The live advisor stays safe for unknown players (value-raises only) yet now correctly fires bluff/semi-bluff raises once a model confirms an over-folder.
+
+**Consequences:**
+- Value raises (called branch +EV) now fire whenever EV-best — previously blocked below 0.65 equity. Unread villains get **no** speculative bluff-raises.
+- Model-source confidence threshold aligned to `MODEL_CONFIDENCE_THRESHOLD` (0.3); the prior path used 0.25 — minor tightening, now consistent with `hasReliableModel`.
+- No-model fold-to-raise is now 0.55 (`POPULATION_PRIORS.raise.fold`, a FOUNDER ESTIMATE per WS-235/FIND-023 provenance, not measured); **WS-235** will ground it empirically. Because fold-equity raises are gated on a model, this prior only affects value-raise sizing/EV for unread villains, limiting its blast radius.
+- Updated 4 tests that encoded the old gate (2 in `gameTreeEquity.test.js`, 2 in `gameTreeEvaluator.test.js`); added 3 model-gate scenario tests (over-folder → raise; sticky → no raise; unread thin hand → no raise). Full exploitEngine suite green (2425 tests), build + import preflight clean.
+- Reversible: pure engine decision logic, no schema/migration, no UI change.
+
+**Load-Bearing Assumptions (AS-N, advisory — impact: medium):**
+```yaml
+assumptions:
+  - id: AS-1
+    type: empirical
+    claim: "Gating fold-equity-driven raises on a reliable villain model (conf >= 0.3) plus sourcing the no-model fold-to-raise from POPULATION_PRIORS.raise.fold keeps the live advisor's raise frequency safe — it does not over-recommend raises against unread villains, nor under-recommend profitable bluff/semi-bluff raises against confirmed over-folders."
+    falsifies_if:
+      threshold: "live validation (or the WS-247 advisor-accuracy suite once grounded) shows the advisor recommends a raise in a fold-equity-driven spot against an unread villain, OR fails to recommend a +EV raise against a modelled over-folder with confidence >= 0.3"
+      window: "first live validation of the live action advisor, or 2026-09-20, whichever first"
+    revisit: "2026-09-20"
+    status: active
+    severity: medium
+```
+
+**Market Dynamics:** Not applicable — purely internal engine decision-logic calibration; no external-actor dependency.
+
+---
+
+## DEC-023: data-quality program cap recalibrated 3→5 (cap was too tight, not the work excessive)
+
+**Date:** 2026-06-20 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** Raised `accountability.on_finding.max_open_items` for the data-quality program from 3 to 5 and cleared the active cap-breach stamp.
+
+**Reasoning:** The program sat at 4/3 open items (1.33× breach since 2026-06-19), which floored all its backlog items to priority_floor=18 and floated them above genuinely higher-priority domain-correctness work, distorting `/next` composition. All 4 open items (WS-235/236/237/238) are legitimate, findings-promoted data-integrity tasks on a launch-blocking program — so pruning one to satisfy the cap would have been gaming the metric. The cap of 3 was miscalibrated; 5 gives one slot of headroom and aligns with the sprint `max_items`. Verified: `breached_programs: []`, items returned to natural scores (6–8), domain-correctness work re-anchors `/next`. Reversible.
+
+**Context:** Founder-directed cleanup after the WS-247/244/245 domain-correctness cluster; the cap-breach had been distorting sprint composition all session (the CLI kept auto-anchoring data-quality items).
+
+---
+
+## DEC-024: PIP confidence is a parallel field (not nested into pip deltas); EV/PIP confidence gates (WS-245 / FIND-009, FIND-010)
+
+**Date:** 2026-06-20 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** (1) Surfaced per-position PIP confidence as a SEPARATE `profile.pipConfidence` map rather than the ticket's specified nested `{ pips, confidence }` per-position shape. (2) `assessEV` returns an `'unknown' / insufficient data` verdict below `MIN_EV_ASSESS_SAMPLE = 10` hands (opt-in via a `sampleSize` arg). (3) Confidence badge tiers at 0.60 (high) / 0.35 (moderate). (4) Relocated `bayesianSampleConfidence` to `pokerCore/betaMath.js`, re-exported from exploitEngine.
+
+**Reasoning:** The nested `{ pips, confidence }` shape would have broken `subActionRules.runPipRules`, which iterates each position's value as plain numeric tier deltas (`Object.values(posPips).reduce(...)`, `posPips.pocketPairs`) — verified before implementing. A parallel map achieves the same display-honesty outcome with zero collateral breakage. The 10-hand gate matches rangeEngine `PRIOR_WEIGHT` (the documented point where observations dominate the population prior). `bayesianSampleConfidence` moved to pokerCore because rangeEngine may not import from exploitEngine (mirrors the existing betaPosterior/betaCDF/betaQuantile re-export pattern).
+
+**Context:** WS-245 (FIND-009 + FIND-010) — confidence-gating display-layer categorical verdicts. Extends the "verify the ticket's data-shape assumption before implementing" discipline.
+
+---

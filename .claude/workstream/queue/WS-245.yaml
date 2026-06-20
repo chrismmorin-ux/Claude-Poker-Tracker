@@ -2,11 +2,12 @@ id: "WS-245"
 title: "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)"
 legacy_id: ""
 type: fix
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
 completed_at: null
+completion_commit: "7912322"
 priority_score: 13.0
 priority_label: "P3"
 category: "domain-correctness"
@@ -50,3 +51,4 @@ created_at: "2026-06-20T00:00:00Z"
 status_note: |
   Promoted from FIND-009 + FIND-010 during the 2026-06-20 domain-correctness delta
   run. Backlog — display-layer honesty, deferred behind higher-impact fixes.
+closed_by_event: "ev-1781995365566-fd4c2350eba4"

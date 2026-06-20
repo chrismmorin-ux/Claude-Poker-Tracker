@@ -117,7 +117,20 @@ const GtoComparisonBar = ({ playerWidth, gtoWidth, action }) => {
 
 const DEVIATION_SYMBOL = { pos: '+', neg: '-', zero: '=' };
 
-const PipDeviations = ({ pips }) => {
+const PIP_CONFIDENCE_BADGE = {
+  high: { label: 'high confidence', color: '#22c55e' },
+  moderate: { label: 'moderate confidence', color: '#eab308' },
+  low: { label: 'low confidence', color: '#ef4444' },
+};
+
+const pipConfidenceTier = (confidence) => {
+  if (confidence == null) return null;
+  if (confidence >= 0.6) return 'high';
+  if (confidence >= 0.35) return 'moderate';
+  return 'low';
+};
+
+const PipDeviations = ({ pips, confidence = null }) => {
   const [open, setOpen] = useState(false);
 
   if (!pips) return null;
@@ -127,6 +140,9 @@ const PipDeviations = ({ pips }) => {
     return { key, label, delta };
   });
 
+  const confTier = pipConfidenceTier(confidence);
+  const confBadge = confTier ? PIP_CONFIDENCE_BADGE[confTier] : null;
+
   return (
     <div className="mt-2">
       <button
@@ -135,6 +151,15 @@ const PipDeviations = ({ pips }) => {
       >
         Category Deviations {open ? '▾' : '▸'}
       </button>
+      {confBadge && (
+        <span
+          className="ml-2 text-[9px] font-semibold uppercase tracking-wide"
+          style={{ color: confBadge.color }}
+          title={`Estimate confidence from sample size: ${(confidence * 100).toFixed(0)}%`}
+        >
+          {confBadge.label}
+        </span>
+      )}
       {open && (
         <div className="mt-1 space-y-0.5">
           {entries.map(({ key, label, delta }) => {
@@ -311,6 +336,7 @@ export const RangeProvenance = ({ rangeProfile, rangeSummary, position, action }
 
     // PIPs for this position
     const pips = rangeProfile.pips?.[position] || null;
+    const pipConfidence = rangeProfile.pipConfidence?.[position] ?? null;
 
     return {
       hands,
@@ -320,6 +346,7 @@ export const RangeProvenance = ({ rangeProfile, rangeSummary, position, action }
       playerWidth,
       gtoWidth,
       pips,
+      pipConfidence,
       traits: rangeProfile.traits,
     };
   }, [rangeProfile, rangeSummary, position, action]);
@@ -341,7 +368,7 @@ export const RangeProvenance = ({ rangeProfile, rangeSummary, position, action }
           action={action}
         />
       )}
-      <PipDeviations pips={data.pips} />
+      <PipDeviations pips={data.pips} confidence={data.pipConfidence} />
       <ShowdownEvidence anchors={data.showdownAnchors} />
       <TraitBadges traits={data.traits} />
     </div>

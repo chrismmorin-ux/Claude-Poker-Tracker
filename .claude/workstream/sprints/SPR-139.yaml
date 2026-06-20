@@ -1,0 +1,28 @@
+id: "SPR-139"
+title: "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)"
+status: done
+approved_at: "2026-06-20T22:25:09.886Z"
+completed_at: "2026-06-20T22:42:45.512Z"
+completed_by_commit: "7912322"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-20T22:25:09.886Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-245 (founder-directed focus=domain-correctness, final item in the first-principles labels-as-inputs cluster after WS-247 + WS-244; CLI auto-anchor overridden past the data-quality cap-breach floor).
+
+items:
+  - id: "WS-245"
+    title: "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-06-20T22:42:45.512Z"
+
+created_at: "2026-06-20T22:25:09.886Z"
