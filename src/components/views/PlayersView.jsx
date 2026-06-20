@@ -10,8 +10,8 @@ import { ChevronLeft, Users } from 'lucide-react';
 import { PlayerFilters } from '../ui/PlayerFilters';
 import { PlayerRow } from '../ui/PlayerRow';
 import { SeatAssignmentGrid } from '../ui/SeatAssignmentGrid';
-import { ScaledContainer } from '../ui/ScaledContainer';
-import { LIMITS, LAYOUT } from '../../constants/gameConstants';
+import { FluidView } from '../ui/FluidView';
+import { LIMITS } from '../../constants/gameConstants';
 import { usePlayerFiltering, scorePlayerMatch } from '../../hooks/usePlayerFiltering';
 import { LEGACY_ETHNICITY_TO_TAG } from '../../utils/identityAvatar/migratePlayerLegacyFields';
 import { useToast } from '../../contexts/ToastContext';
@@ -23,7 +23,7 @@ const UNDO_TOAST_DURATION_MS = 12000;
 const norm = (s) => (s || '').toString().trim().toLowerCase();
 
 /** PlayersView - Player management view. All state via context hooks. */
-export const PlayersView = ({ scale = 1 }) => {
+export const PlayersView = ({ scale: _scale = 1 }) => {
   const { showError, showSuccess, addToast } = useToast();
   const {
     setCurrentScreen,
@@ -454,8 +454,11 @@ export const PlayersView = ({ scale = 1 }) => {
   };
 
   return (
-    <ScaledContainer scale={scale}>
-    <div className="bg-gray-900 overflow-auto" style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}>
+    <FluidView>
+      {/* Portrait-native fluid (2026-06-19, responsive Phase 1b): was ScaledContainer
+          (1600×720 scaled to ~22% on a phone). Capped width for readability; the
+          6-col table scrolls horizontally on narrow screens so no column is cut off. */}
+      <div className="max-w-5xl mx-auto">
       {/* Title bar — slim header with back/title/new-player. */}
       <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
@@ -547,8 +550,8 @@ export const PlayersView = ({ scale = 1 }) => {
             </div>
           </div>
         ) : (
-          <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-            <table className="w-full">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-x-auto">
+            <table className="w-full min-w-[640px]">
               <thead className="bg-gray-800 border-b border-gray-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Player</th>
@@ -632,7 +635,7 @@ export const PlayersView = ({ scale = 1 }) => {
           </div>
         </div>
       )}
-    </div>
-    </ScaledContainer>
+      </div>
+    </FluidView>
   );
 };

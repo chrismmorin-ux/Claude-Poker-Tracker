@@ -74,7 +74,7 @@ export const VIEW_REGISTRY = {
   [SCREEN.STATS]: { name: 'Stats', component: StatsView },
   [SCREEN.HISTORY]: { name: 'History', render: (scale) => <AnalysisView scale={scale} initialTab="review" /> },
   [SCREEN.SESSIONS]: { name: 'Sessions', component: SessionsView, orientation: 'portrait', hash: '#sessions' },
-  [SCREEN.PLAYERS]: { name: 'Players', component: PlayersView, hash: '#players' },
+  [SCREEN.PLAYERS]: { name: 'Players', component: PlayersView, orientation: 'portrait', hash: '#players' },
   [SCREEN.SETTINGS]: { name: 'Settings', component: SettingsView, orientation: 'portrait', hash: '#settings' },
   [SCREEN.ANALYSIS]: { name: 'Analysis', component: AnalysisView },
   [SCREEN.HAND_REPLAY]: { name: 'Hand Replay', component: HandReplayView },
@@ -85,10 +85,10 @@ export const VIEW_REGISTRY = {
   [SCREEN.PREFLOP_DRILLS]: { name: 'Preflop Drills', component: PreflopDrillsView },
   [SCREEN.POSTFLOP_DRILLS]: { name: 'Postflop Drills', component: PostflopDrillsView },
   [SCREEN.PRESESSION_DRILL]: { name: 'Presession Drill', component: PresessionDrillView },
-  [SCREEN.PRINTABLE_REFRESHER]: { name: 'Printable Refresher', component: PrintableRefresherView, hash: '#printableRefresher' },
-  [SCREEN.ANCHOR_LIBRARY]: { name: 'Anchor Library', component: AnchorLibraryView, hash: '#anchorLibrary' },
-  [SCREEN.LESSON_DETAIL]: { name: 'Lesson Detail', component: LessonDetailView },
-  [SCREEN.SELF_COACH]: { name: 'Self Coach', component: SelfCoachView, hash: '#selfCoach' },
+  [SCREEN.PRINTABLE_REFRESHER]: { name: 'Printable Refresher', component: PrintableRefresherView, orientation: 'portrait', hash: '#printableRefresher' },
+  [SCREEN.ANCHOR_LIBRARY]: { name: 'Anchor Library', component: AnchorLibraryView, orientation: 'portrait', hash: '#anchorLibrary' },
+  [SCREEN.LESSON_DETAIL]: { name: 'Lesson Detail', component: LessonDetailView, orientation: 'portrait' },
+  [SCREEN.SELF_COACH]: { name: 'Self Coach', component: SelfCoachView, orientation: 'portrait', hash: '#selfCoach' },
   [SCREEN.PLAYER_PROFILE]: { name: 'Player Profile', component: PlayerProfileView, orientation: 'portrait' },
 
   // Auth screens
