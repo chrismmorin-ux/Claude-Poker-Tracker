@@ -29,6 +29,7 @@ Read this before any multi-file change. Update after any architectural shift.
 | `pokerCore/` (5 modules) | Shared poker primitives (cards, ranges, hand eval, board texture, exact preflop equity) | Imported by both engines; imports from neither |
 | `rangeEngine/` (9 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB |
 | `exploitEngine/` (41 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
+| `icmEngine/` (3 modules) | Tournament ICM: Malmuth-Harville $EV per stack + risk premium / bubble factor (chips→dollars). Governed by POKER_THEORY §10 / its own CLAUDE.md under prog-domain-correctness | Pure; stacks + payout ladder → $EV. Consumed by TournamentContext (2026-06-19) |
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
 | `tournamentEngine/` (4 modules) | Blind levels, blind-out calc, dropout prediction | Reads tournament config; produces scheduling/projection data |
 | `drillContent/` (4 modules) | Preflop-drill frameworks, matchup library, scheduler, combo counting | Pure data + predicates powering the Preflop Drills view |

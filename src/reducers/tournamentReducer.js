@@ -19,6 +19,10 @@ export const initialTournamentState = {
     entryFee: 0,
     totalEntrants: null,
     payoutSlots: null,
+    // ICM input (POKER_THEORY.md §10): the real $ payout ladder (index 0 = 1st)
+    // and the prize pool. Optional — ICM degrades gracefully when absent.
+    prizePool: null,
+    payouts: [],
     blindSchedule: [],
     handPaceSeconds: 30,
     lockoutLevel: null,

@@ -191,6 +191,7 @@ export const TableView = ({ scale }) => {
     heroMRatio,
     lockoutInfo,
     icmPressure,
+    icm,
     mRatioGuidance,
   } = useTournament();
 
@@ -565,6 +566,7 @@ export const TableView = ({ scale }) => {
             currentLevelIndex={isTournament ? tournamentState.currentLevelIndex : null}
             levelDurationMs={isTournament ? tournamentBlinds.durationMinutes * 60 * 1000 : 0}
             icmPressure={icmPressure}
+            icm={icm}
             mRatioGuidance={mRatioGuidance}
             straddleInfo={headerStraddleInfo}
           />

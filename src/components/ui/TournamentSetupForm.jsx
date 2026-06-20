@@ -13,6 +13,9 @@ import {
   BLIND_SCHEDULES,
   BLIND_SCHEDULE_KEYS,
   BLIND_SCHEDULE_LABELS,
+  PAYOUT_PRESETS,
+  derivePayouts,
+  deriveSatellitePayouts,
 } from '../../constants/tournamentConstants';
 import { GOLD } from '../../constants/designTokens';
 
@@ -24,9 +27,31 @@ import { GOLD } from '../../constants/designTokens';
 export const TournamentSetupForm = ({ config, onChange }) => {
   const [scheduleKey, setScheduleKey] = useState('STANDARD_20MIN');
   const [showCustomEditor, setShowCustomEditor] = useState(false);
+  const [payoutPresetKey, setPayoutPresetKey] = useState('topHeavy');
 
   const updateField = (field, value) => {
     onChange({ ...config, [field]: value });
+  };
+
+  // Prize pool + preset → $ payout ladder (ICM input, POKER_THEORY §10).
+  // Optional: leaving the prize pool empty keeps ICM off (graceful degradation).
+  const applyPayouts = (prizePool, presetKey) => {
+    let payouts = [];
+    if (prizePool > 0) {
+      if (presetKey === 'satellite') {
+        payouts = deriveSatellitePayouts(prizePool, config.payoutSlots || 1);
+      } else {
+        const pct = PAYOUT_PRESETS[presetKey]?.percentages || PAYOUT_PRESETS.topHeavy.percentages;
+        payouts = derivePayouts(prizePool, pct);
+      }
+    }
+    onChange({
+      ...config,
+      prizePool: prizePool || null,
+      payouts,
+      // keep the bubble indicator (payoutSlots) in sync with the real ladder
+      payoutSlots: payouts.length || config.payoutSlots,
+    });
   };
 
   const handleScheduleChange = (key) => {
@@ -141,6 +166,44 @@ export const TournamentSetupForm = ({ config, onChange }) => {
             className="w-full px-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+      </div>
+
+      {/* Prize Pool & Payouts (ICM input — optional) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          Prize Pool <span className="text-gray-500 font-normal">(enables ICM $EV)</span>
+        </label>
+        <div className="relative mb-2">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+          <input
+            type="number"
+            value={config.prizePool || ''}
+            onChange={(e) => applyPayouts(Number(e.target.value) || 0, payoutPresetKey)}
+            placeholder="Total prize pool"
+            className="w-full pl-7 pr-3 py-2 bg-gray-700 text-gray-200 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {Object.keys(PAYOUT_PRESETS).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => { setPayoutPresetKey(key); applyPayouts(config.prizePool || 0, key); }}
+              className={`px-2 py-1.5 rounded font-medium transition-colors text-xs ${
+                payoutPresetKey === key ? 'text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              style={payoutPresetKey === key ? { backgroundColor: GOLD.base } : undefined}
+            >
+              {PAYOUT_PRESETS[key].label}
+            </button>
+          ))}
+        </div>
+        {Array.isArray(config.payouts) && config.payouts.length > 0 && (
+          <div className="text-[11px] text-gray-400 mt-1.5">
+            Ladder: {config.payouts.slice(0, 4).map((p) => `$${p}`).join(' / ')}
+            {config.payouts.length > 4 ? ` … (${config.payouts.length} paid)` : ''}
+          </div>
+        )}
       </div>
 
       {/* Rebuy Freeze Level (only for rebuy format) */}

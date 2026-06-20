@@ -1,5 +1,5 @@
 ---
-version: 1.0
+version: 1.1
 last_verified: 2026-05-01
 verified_by: cwos-domain-correctness-baseline-2026-05-01
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -11,6 +11,9 @@ changelog:
   - date: 2026-05-01
     version: 1.0
     change: "Frontmatter header added (FIND-003 / WS-118). Doc content unchanged. Subsequent edits MUST bump `version` and add a changelog entry recording what changed and why."
+  - date: 2026-06-19
+    version: 1.1
+    change: "Added §10 Tournament Theory & ICM (chips≠dollars, Malmuth-Harville, risk premium as a derived quantity, push/fold as $EV, M-ratio as descriptor not driver, multi-table approximation honesty, satellite inversion, anti-patterns). Governs the new src/utils/icmEngine/. Tournament-strategy program kickoff; prior doc was cash-only."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -627,3 +630,78 @@ This section catalogs places where our authored content or engine defaults inten
 **Follow-up trigger:** When a **second** preflop-decision Line is authored, revisit the schema-extension path (add `'preflop'` to `STREETS`; `validateNode` expects `board.length === 0` for it; migrate the encoded nodes; audit the ~14 consumers; add tests). Until then, the workaround is self-documenting via the `SCHEMA-WORKAROUND(WS-090)` markers in `lineSchema.js` and `lines.js` (greppable).
 
 **Originating audit:** WS-090 (`LSW-G-PreflopEnc`), domain-correctness program; surfaced in the LSW surface audit as H3-F2.
+
+---
+
+## 10. Tournament Theory & ICM
+
+**Mandatory before editing `src/utils/icmEngine/` or any tournament decision logic.** Everything above §10 is cash-game doctrine where a chip is worth a fixed amount of money. Tournaments break that assumption. This section governs tournament strategy the way §1–§9 govern cash.
+
+### 10.1 Chips Are Not Dollars
+
+In a cash game, a chip is worth its face value — winning a 100-chip pot is worth exactly 100 chips of expected money, always. **In a tournament, chips have non-linear monetary value.** You cannot re-buy your tournament life (in a freezeout), and the prize pool is fixed and paid by finishing position, not by chip count. Consequences:
+
+- **Chips won are worth less than chips lost.** Doubling your stack does NOT double your equity in the prize pool; busting takes you to $0 (or the next pay tier). This asymmetry is the entire basis of tournament strategy.
+- The correct unit for every tournament decision is **$EV (dollar expected value)**, not **chip-EV**. A play can be chip-EV-positive (gains chips on average) but $EV-negative (loses real money on average) — and you must fold it. Calling an all-in on the bubble with a chip-EV +0.5bb edge is frequently a large $-losing mistake.
+
+### 10.2 The Independent Chip Model (ICM)
+
+ICM maps `{ chip stacks } + { payout ladder } → { $EV per player }`. The standard model is **Malmuth-Harville**:
+
+- **P(player i finishes 1st) = stack_i / total_chips.** (Probability of winning ∝ share of chips in play.)
+- For each possible 1st-place finisher, recurse over the remaining field to assign 2nd place (renormalizing by the remaining chips), then 3rd, and so on down to the number of paid places.
+- **$EV_i = Σ_place P(i finishes in place) × payout[place].**
+
+Properties the engine MUST reproduce (these are the correctness tests):
+- **Σ $EV_i === total prize pool** (conservation — no money created or destroyed).
+- **The chip leader's $EV is LESS than their proportional chip share** of the prize pool; **a short stack's $EV is MORE than its proportional chip share.** This is the mathematical signature of ICM — if your model doesn't show it, it's wrong.
+- Equal stacks → equal $EV.
+
+**Cost:** exact Malmuth-Harville is factorial in field size. It is exact and cheap at a **final table** (≤9 players) — which is where ICM pressure is largest. For larger modeled fields, cap the recursion / modeled stack count and flag the result approximate (see §10.7). Do NOT silently run an unbounded recursion.
+
+### 10.3 Risk Premium / Bubble Factor — A Derived Quantity, Never a Label
+
+The **risk premium** (a.k.a. bubble factor) is how much MORE raw equity you need than the chip-EV pot odds suggest, before a call/shove is +$EV. It is **computed from ICM**, never looked up from a label:
+
+- Compute hero's $EV at the current stack.
+- Compute hero's $EV in each outcome of the gamble: **win** → $EV at the larger (post-double-up) stack; **lose** → $EV at 0 (or the locked next pay tier).
+- The break-even equity that makes calling +$EV is higher than the chip-EV break-even by the risk premium. Near the bubble / a big pay jump, the premium is large (you risk your tournament life for chips worth little); deep-stacked early or once the money is locked behind you, it approaches 1 (chip-EV ≈ $EV).
+
+**Forbidden:** deriving tournament aggression from the M-ratio *zone label* ("we're in the Shove/Fold zone, so shove"). M-ratio and bubble-distance zones are **descriptive outputs**, not decision inputs — exactly parallel to §7.2 (position labels). The decision derives from $EV (ICM) + equity + stacks + payouts + players-remaining. M-ratio is a proxy for stack depth; use the actual effective stack and ICM.
+
+### 10.4 Push/Fold Is a $EV Decision
+
+At short stacks (≈ ≤ 15–20bb effective), play collapses to shove-or-fold preflop (no room to play postflop). The correct shove/call ranges come from **$EV**, not a chart label:
+- **Chip-EV push/fold** (Nash equilibrium / SAGE) is the baseline — correct when chips ≈ dollars (early MTT, or once on a steep enough payout it's locked).
+- **ICM-adjusted push/fold** tightens the calling range (and sometimes the shoving range) by the risk premium near pay jumps. The calling range tightens more than the shoving range because the caller risks busting to win chips, while the shover often has fold equity.
+
+The current app uses the cash equity-threshold label (`eq ≥ 0.55 = VALUE`) at all depths — that is the wrong model below ~15bb and must be replaced by push/fold $EV when that work lands.
+
+### 10.5 M-Ratio Is a Descriptor, Not a Decision Driver
+
+M-ratio (Harrington) = `stack / (sb + bb + antes per orbit)` — a stack-depth descriptor. It usefully *describes* urgency, but like every label in §7 it must NOT be a direct decision input. Two players with the same M can face very different correct decisions depending on ICM (bubble vs. deep field), position, and the payout ladder. Compute from $EV and effective stack; let M *describe* the situation to the user, not drive the math.
+
+### 10.6 Multi-Table Approximation Honesty
+
+Exact ICM requires **every remaining player's stack.** The app only directly observes the stacks at hero's table (`chipStacks`) plus a `playersRemaining` count.
+
+- **Final table** (`playersRemaining === seated players`): the observed stacks ARE the full field → ICM is **exact**. This is where ICM matters most.
+- **Pre-final / multi-table**: the unseen field must be **approximated** (e.g. bucket the unknown players at the average remaining stack). The result is a genuine estimate and MUST be flagged `isApproximate` to the user and in any persisted value. Do NOT present an approximated ICM number as if it were exact.
+
+This mirrors §5's evidence-honesty stance: surface the confidence/approximation, never a falsely-precise figure.
+
+### 10.7 Satellite Payout Inversion
+
+In a **satellite** (flat payout — the top N all win an identical seat/ticket, everyone else gets nothing), ICM strategy *inverts*: once you have enough chips to lock a seat, **additional chips are worth nothing** and survival dominates — you fold hands that are massively chip-EV-positive because they cannot improve your $EV but can bust you. The engine's payout ladder representation must support flat/identical payouts so this falls out of the ICM math automatically rather than needing a special case.
+
+### 10.8 Anti-Patterns (tournament-specific)
+
+- **DO NOT use chip-EV for tournament decisions near the money.** Chip-EV ≈ $EV only deep-stacked early or when the pay structure behind you is locked. Otherwise compute $EV via ICM.
+- **DO NOT drive aggression from M-ratio / bubble-distance zone labels.** They are descriptors (§10.3, §10.5). Compute from $EV.
+- **DO NOT present approximated multi-table ICM as exact** (§10.6). Flag it.
+- **DO NOT assume a chip is a chip for the DECISION.** (It still is for splitting a *pot* — side-pot math is chip-level and unchanged; ICM changes the call/fold/shove *decision*, not pot resolution.)
+- **DO NOT special-case satellites with ad-hoc rules** — represent flat payouts in the ladder and let ICM produce the survival strategy (§10.7).
+
+### 10.9 Governance
+
+The `src/utils/icmEngine/` engine is governed by this section under `prog-domain-correctness`, the same as `exploitEngine/`/`rangeEngine/`. Its sub-directory `CLAUDE.md` lists the anti-patterns above; the domain-correctness baseline/sweep cross-checks ICM code against §10.

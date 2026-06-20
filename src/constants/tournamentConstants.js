@@ -135,3 +135,43 @@ export const getGuidanceColor = (zone) => {
   if (zone === 'shoveOnly') return TOURNAMENT_M_RATIO.red;
   return null;
 };
+
+// =============================================================================
+// PAYOUT STRUCTURES (ICM input — POKER_THEORY.md §10)
+// =============================================================================
+
+/**
+ * Payout-percentage presets (fraction of prize pool per place, index 0 = 1st).
+ * Used to derive a $ payout ladder from a prize pool. Flat/satellite payouts are
+ * representable so ICM produces survival strategy without a special case (§10.7).
+ */
+export const PAYOUT_PRESETS = {
+  winnerTakeAll: { label: 'Winner-take-all', percentages: [1] },
+  topHeavy: { label: 'Top-heavy (50/30/20)', percentages: [0.5, 0.3, 0.2] },
+  standard9: { label: 'Standard (9 paid)', percentages: [0.30, 0.20, 0.135, 0.095, 0.075, 0.06, 0.05, 0.045, 0.04] },
+  satellite: { label: 'Satellite (flat seats)', percentages: null }, // flat: see deriveSatellitePayouts
+};
+
+/**
+ * Derive a $ payout ladder from a prize pool + percentage schedule.
+ * @param {number} prizePool
+ * @param {number[]} percentages - fractions per place (should sum to ~1)
+ * @returns {number[]} $ per place (index 0 = 1st)
+ */
+export const derivePayouts = (prizePool, percentages) => {
+  if (!prizePool || prizePool <= 0 || !Array.isArray(percentages)) return [];
+  return percentages.map(p => Math.round(prizePool * p));
+};
+
+/**
+ * Flat (satellite) ladder: `seats` identical payouts of prizePool/seats each.
+ * Flat payouts drive the ICM survival inversion automatically (§10.7).
+ * @param {number} prizePool
+ * @param {number} seats - number of equal tickets/seats awarded
+ * @returns {number[]}
+ */
+export const deriveSatellitePayouts = (prizePool, seats) => {
+  if (!prizePool || prizePool <= 0 || !seats || seats <= 0) return [];
+  const each = Math.round(prizePool / seats);
+  return Array(seats).fill(each);
+};

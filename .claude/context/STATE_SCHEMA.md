@@ -108,10 +108,15 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
     entryFee: 0,
     totalEntrants: null,
     payoutSlots: null,
+    prizePool: null,           // ICM input (POKER_THEORY §10) — total $ prize pool
+    payouts: [],               // ICM input — $ ladder, index 0 = 1st place (derivePayouts)
     blindSchedule: [],         // [{sb, bb, ante, durationMinutes}]
     handPaceSeconds: 30,
     lockoutLevel: null,
   },
+  // Derived (TournamentContext): icm = { equityBySeat, heroEquity, bubbleFactor,
+  // requiredEquity, isApproximate, tooLarge } via src/utils/icmEngine/ (Malmuth-Harville).
+  // Null when no payout ladder; falls back to the bubble-distance icmPressure zone.
   currentLevelIndex: 0,
   levelStartTime: null,
   isPaused: false,

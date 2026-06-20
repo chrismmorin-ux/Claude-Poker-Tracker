@@ -27,6 +27,7 @@ export const TableHeader = ({
   currentLevelIndex,
   levelDurationMs,
   icmPressure,
+  icm,
   mRatioGuidance,
   // WS-002 Sprint A2: straddle indicator (optional)
   straddleInfo, // { position: 'UTG'|'BTN', amount: number } | null
@@ -171,7 +172,7 @@ export const TableHeader = ({
               )}
 
               {/* ICM badge */}
-              <IcmBadge icmPressure={icmPressure} />
+              <IcmBadge icmPressure={icmPressure} icm={icm} />
             </div>
           </div>
 

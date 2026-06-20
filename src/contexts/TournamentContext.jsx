@@ -18,6 +18,7 @@ import {
   computeDropoutRate,
   projectMilestones,
 } from '../utils/tournamentEngine';
+import { buildIcmStacks, computeIcmEquity, computeHeroPressure } from '../utils/icmEngine';
 import { LIMITS } from '../constants/gameConstants';
 
 const TournamentContext = createContext(null);
@@ -124,6 +125,52 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     if (playersFromBubble <= threshold) return { zone: 'approaching', playersFromBubble };
     return { zone: 'standard', playersFromBubble };
   }, [isTournament, tournamentState.playersRemaining, tournamentState.config.payoutSlots]);
+
+  // Derived: real ICM ($EV per seat + hero risk premium). POKER_THEORY.md §10.
+  // Requires a payout ladder; null when absent (consumers fall back to the
+  // bubble-distance icmPressure zone). `isApproximate`/`tooLarge` are surfaced
+  // honestly per §10.6 — never present an approximated figure as exact.
+  const icm = useMemo(() => {
+    if (!isTournament) return null;
+    const { payouts, startingStack, totalEntrants } = tournamentState.config;
+    if (!Array.isArray(payouts) || payouts.length === 0) return null;
+
+    const totalChips = (startingStack && totalEntrants)
+      ? startingStack * totalEntrants
+      : null;
+    const built = buildIcmStacks({
+      chipStacks: tournamentState.chipStacks,
+      mySeat,
+      playersRemaining: tournamentState.playersRemaining,
+      totalChips,
+    });
+    if (!built || built.heroIndex < 0) return null;
+    if (built.tooLarge) {
+      return { tooLarge: true, isApproximate: true, equityBySeat: null, heroEquity: null, bubbleFactor: null, requiredEquity: null };
+    }
+
+    const equity = computeIcmEquity(built.stacks, payouts);
+    const equityBySeat = {};
+    built.seats.forEach((seat, i) => { equityBySeat[seat] = equity[i]; });
+    const pressure = computeHeroPressure(built.stacks, built.heroIndex, payouts);
+
+    return {
+      equityBySeat,
+      heroEquity: equity[built.heroIndex] ?? null,
+      bubbleFactor: pressure.bubbleFactor,
+      requiredEquity: pressure.requiredEquity,
+      isApproximate: built.isApproximate,
+      tooLarge: false,
+    };
+  }, [
+    isTournament,
+    tournamentState.config.payouts,
+    tournamentState.config.startingStack,
+    tournamentState.config.totalEntrants,
+    tournamentState.chipStacks,
+    tournamentState.playersRemaining,
+    mySeat,
+  ]);
 
   // Derived: M-ratio action guidance
   const mRatioGuidance = useMemo(() => {
@@ -275,6 +322,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     lockoutInfo,
     blindOutInfo,
     icmPressure,
+    icm,
     mRatioGuidance,
     // Handlers
     initTournament,
@@ -300,6 +348,7 @@ export const TournamentProvider = ({ tournamentState, dispatchTournament, childr
     lockoutInfo,
     blindOutInfo,
     icmPressure,
+    icm,
     mRatioGuidance,
     initTournament,
     advanceLevel,
