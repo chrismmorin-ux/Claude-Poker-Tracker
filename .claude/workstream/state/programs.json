@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-06-20T21:15:17.086Z",
-  "updated_by_event": "ev-1781990117086-7f31873a61e8",
+  "updated_at": "2026-06-20T22:56:29.492Z",
+  "updated_by_event": "ev-1781996189492-b75d0f2a4063",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -443,7 +443,7 @@
       "accountability": {
         "on_finding": {
           "action": "create_work_item",
-          "max_open_items": 3,
+          "max_open_items": 5,
           "priority_floor": 18,
           "escalation": {
             "stale_days": 14,
@@ -463,13 +463,14 @@
         }
       },
       "cap_breach": {
-        "active": true,
+        "active": false,
         "work_items_open": 4,
         "findings_open": 3,
-        "max_open_items": 3,
+        "max_open_items": 5,
         "priority_floor": 18,
-        "ratio": 1.33,
-        "since": "2026-06-19"
+        "ratio": 0.8,
+        "resolved": "2026-06-20",
+        "resolution": "cap recalibrated 3→5 (all 4 items legitimate; cap was too tight)"
       },
       "health_breakdown": {
         "finding_health": 0.6,
@@ -601,7 +602,7 @@
       "name": "Poker Theory Integrity",
       "status": "ACTIVE",
       "tier": "critical",
-      "health_score": 6,
+      "health_score": 8,
       "last_run_date": "2026-05-19",
       "founder_priority": 1,
       "health_ceiling": 9,
@@ -725,7 +726,7 @@
         }
       },
       "health_breakdown": {
-        "finding_health": 0.4,
+        "finding_health": 0.9,
         "protocol_currency": 0.92,
         "problem_class_coverage": 1,
         "maturity_progress": 0.5,
@@ -1294,5 +1295,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1781990117086-7f31873a61e8"
+  "last_event_log_head": "ev-1781996189492-b75d0f2a4063"
 }

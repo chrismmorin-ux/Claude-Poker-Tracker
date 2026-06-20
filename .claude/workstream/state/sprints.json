@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-16T03:56:20.952Z",
-  "updated_by_event": "ev-1781582180952-2f0c3eb0384e",
+  "updated_at": "2026-06-20T22:56:41.901Z",
+  "updated_by_event": "ev-1781996201901-f2f6ec28c036",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -16,11 +16,11 @@
       "item_count": 3,
       "items_done": 3,
       "last_anchor_source_classes": [
-        "engine-finding",
-        "engine-finding",
-        "engine-finding"
+        "untagged",
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "engine-finding"
+      "anchor_source_class": "untagged"
     },
     "SPR-002": {
       "id": "SPR-002",
@@ -67,9 +67,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "conversation"
+        "untagged"
       ],
-      "anchor_source_class": "conversation"
+      "anchor_source_class": "untagged"
     },
     "SPR-005": {
       "id": "SPR-005",
@@ -83,9 +83,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "conversation"
+        "untagged"
       ],
-      "anchor_source_class": "conversation"
+      "anchor_source_class": "untagged"
     },
     "SPR-006": {
       "id": "SPR-006",
@@ -132,7 +132,7 @@
       "items_done": 2,
       "last_anchor_source_classes": [
         "untagged",
-        "conversation"
+        "untagged"
       ],
       "anchor_source_class": "untagged"
     },
@@ -183,7 +183,7 @@
       "items_done": 2,
       "last_anchor_source_classes": [
         "untagged",
-        "spr-followup"
+        "untagged"
       ],
       "anchor_source_class": "untagged"
     },
@@ -263,9 +263,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "engine-finding"
+        "untagged"
       ],
-      "anchor_source_class": "engine-finding"
+      "anchor_source_class": "untagged"
     },
     "SPR-017": {
       "id": "SPR-017",
@@ -279,9 +279,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "engine-finding"
+        "untagged"
       ],
-      "anchor_source_class": "engine-finding"
+      "anchor_source_class": "untagged"
     },
     "SPR-018": {
       "id": "SPR-018",
@@ -391,10 +391,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-025": {
       "id": "SPR-025",
@@ -408,10 +408,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-026": {
       "id": "SPR-026",
@@ -425,10 +425,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-027": {
       "id": "SPR-027",
@@ -442,9 +442,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-028": {
       "id": "SPR-028",
@@ -474,9 +474,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-030": {
       "id": "SPR-030",
@@ -506,10 +506,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
+        "untagged",
         "spr-followup"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-032": {
       "id": "SPR-032",
@@ -604,9 +604,9 @@
       "item_count": 1,
       "items_done": 0,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-038": {
       "id": "SPR-038",
@@ -620,9 +620,9 @@
       "item_count": 1,
       "items_done": 0,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-039": {
       "id": "SPR-039",
@@ -668,9 +668,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-042": {
       "id": "SPR-042",
@@ -684,9 +684,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-043": {
       "id": "SPR-043",
@@ -862,9 +862,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-054": {
       "id": "SPR-054",
@@ -974,7 +974,7 @@
       "items_done": 2,
       "last_anchor_source_classes": [
         "untagged",
-        "spr-followup"
+        "untagged"
       ],
       "anchor_source_class": "untagged"
     },
@@ -990,9 +990,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-062": {
       "id": "SPR-062",
@@ -1022,9 +1022,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-064": {
       "id": "SPR-064",
@@ -1038,9 +1038,9 @@
       "item_count": 1,
       "items_done": 0,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-065": {
       "id": "SPR-065",
@@ -1054,9 +1054,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-066": {
       "id": "SPR-066",
@@ -1070,9 +1070,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-067": {
       "id": "SPR-067",
@@ -1086,9 +1086,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-068": {
       "id": "SPR-068",
@@ -1103,9 +1103,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-069": {
       "id": "SPR-069",
@@ -1137,9 +1137,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-071": {
       "id": "SPR-071",
@@ -1206,9 +1206,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-075": {
       "id": "SPR-075",
@@ -1222,10 +1222,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-076": {
       "id": "SPR-076",
@@ -1239,9 +1239,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-077": {
       "id": "SPR-077",
@@ -1255,9 +1255,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-078": {
       "id": "SPR-078",
@@ -1304,7 +1304,7 @@
       "items_done": 2,
       "last_anchor_source_classes": [
         "untagged",
-        "spr-followup"
+        "untagged"
       ],
       "anchor_source_class": "untagged"
     },
@@ -1352,9 +1352,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-084": {
       "id": "SPR-084",
@@ -1401,10 +1401,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
+        "untagged",
         "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-087": {
       "id": "SPR-087",
@@ -1418,10 +1418,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
+        "untagged",
         "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-088": {
       "id": "SPR-088",
@@ -1436,7 +1436,7 @@
       "items_done": 2,
       "last_anchor_source_classes": [
         "untagged",
-        "spr-followup"
+        "untagged"
       ],
       "anchor_source_class": "untagged"
     },
@@ -1452,9 +1452,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-090": {
       "id": "SPR-090",
@@ -1484,11 +1484,11 @@
       "item_count": 3,
       "items_done": 3,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-092": {
       "id": "SPR-092",
@@ -1502,9 +1502,9 @@
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
-        "spr-followup"
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-093": {
       "id": "SPR-093",
@@ -1534,12 +1534,12 @@
       "item_count": 4,
       "items_done": 4,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup",
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged",
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-095": {
       "id": "SPR-095",
@@ -1553,10 +1553,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
-        "spr-followup"
+        "untagged",
+        "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-096": {
       "id": "SPR-096",
@@ -1570,10 +1570,10 @@
       "item_count": 2,
       "items_done": 2,
       "last_anchor_source_classes": [
-        "spr-followup",
+        "untagged",
         "untagged"
       ],
-      "anchor_source_class": "spr-followup"
+      "anchor_source_class": "untagged"
     },
     "SPR-097": {
       "id": "SPR-097",
@@ -2221,7 +2221,55 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-137": {
+      "id": "SPR-137",
+      "title": "Ship WS-247: bestResponseToAggression raise-gate — replace 0.65 equity gate with EV + realistic fold",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-20T21:43:21.328Z",
+      "approved_at": "2026-06-20T21:43:21.328Z",
+      "completed_at": "2026-06-20T21:57:18.352Z",
+      "goal": "Ship WS-247: bestResponseToAggression raise-gate — replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-138": {
+      "id": "SPR-138",
+      "title": "Ship WS-244: route STYLE_FOLD_DEFAULTS raw lookups through the existing logistic fold-rate machinery",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-20T22:14:41.895Z",
+      "approved_at": "2026-06-20T22:14:41.895Z",
+      "completed_at": "2026-06-20T22:23:24.052Z",
+      "goal": "Ship WS-244: route STYLE_FOLD_DEFAULTS raw lookups through the existing logistic fold-rate machinery (FIND-006, FIND-007)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-139": {
+      "id": "SPR-139",
+      "title": "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-20T22:25:09.886Z",
+      "approved_at": "2026-06-20T22:25:09.886Z",
+      "completed_at": "2026-06-20T22:42:45.512Z",
+      "goal": "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781582180952-2f0c3eb0384e"
+  "last_event_log_head": "ev-1781996201901-f2f6ec28c036"
 }

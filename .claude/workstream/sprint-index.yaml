@@ -1234,3 +1234,30 @@ sprints:
     created_at: "2026-06-16T03:52:34.495Z"
     completed_at: "2026-06-16T03:56:20.335Z"
 
+  - id: "SPR-137"
+    title: "Ship WS-247: bestResponseToAggression raise-gate — replace 0.65 equity gate with EV + realistic fold"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-06-20T21:43:21.328Z"
+    completed_at: "2026-06-20T21:57:18.352Z"
+
+  - id: "SPR-138"
+    title: "Ship WS-244: route STYLE_FOLD_DEFAULTS raw lookups through the existing logistic fold-rate machinery"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-06-20T22:14:41.895Z"
+    completed_at: "2026-06-20T22:23:24.052Z"
+
+  - id: "SPR-139"
+    title: "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-06-20T22:25:09.886Z"
+    completed_at: "2026-06-20T22:42:45.512Z"
+

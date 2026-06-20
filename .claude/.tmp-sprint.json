@@ -1,26 +1,21 @@
 {
-  "composed_at": "2026-06-20T19:51:27.238Z",
-  "goal": "Ship WS-235: Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023",
-  "program_focus": "data-quality",
+  "composed_at": "2026-06-20T22:25:09.800Z",
+  "goal": "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)",
+  "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-235",
-      "title": "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023",
-      "raw_score": 18,
-      "adjusted_score": 18,
+      "id": "WS-245",
+      "title": "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)",
+      "raw_score": 13,
+      "adjusted_score": 13,
       "effort": "M",
-      "program": "data-quality",
+      "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
       "source_damping": 1,
-      "priority_floor_applied": {
-        "from": 8,
-        "to": 18,
-        "reason": "program-data-quality cap-breach: priority_floor=18 applied"
-      },
-      "mode": "plan-first",
+      "mode": "execute",
       "queue_item_known": true
     }
   ],
@@ -29,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-235 selected (18 × no damping = 18).\nProgram cap-breach: data-quality (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-235 8→18, WS-236 7→18, WS-237 6→18 (+1 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-245 (founder-directed focus=domain-correctness, final item in the first-principles labels-as-inputs cluster after WS-247 + WS-244; CLI auto-anchor overridden past the data-quality cap-breach floor).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

@@ -1,7 +1,7 @@
 id: "FIND-009"
 title: "assessEV produces categorical +EV/-EV verdict without confidence gating"
 severity: MEDIUM
-status: open
+status: resolved
 category: "bayesian-confidence"
 program: "domain-correctness"
 problem_class: "Bayesian confidence representation"
@@ -23,3 +23,4 @@ dedup_key: "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-ve
 created_at: "2026-05-01"
 updated_at: "2026-06-20"
 promoted_to: "WS-245"
+resolved_at: "2026-06-20T22:42:45.512Z"

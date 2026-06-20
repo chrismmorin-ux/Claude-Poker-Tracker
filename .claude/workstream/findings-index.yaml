@@ -3,123 +3,6 @@
 # Updated by /engine (via cwos-reconcile)
 
 findings:
-  - id: "FIND-001"
-    title: "Credible intervals computed but never consumed in any UI surface"
-    engine: eng-engine
-    severity: high
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-credible-intervals-computed-but-never-consumed-in-any-ui-sur"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-002"
-    title: "Hard 0.5 value/bluff cutoff over noisy 500-trial Monte Carlo"
-    engine: eng-engine
-    severity: high
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-hard-0-5-value-bluff-cutoff-over-noisy-500-trial-monte-carlo"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-003"
-    title: "POKER_THEORY.md missing freshness header — drift cannot be tracked"
-    engine: eng-engine
-    severity: high
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-poker-theory-md-missing-freshness-header-drift-cannot-be-tra"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-004"
-    title: "preflopAdvisor.js: PFR/VPIP-ratio scaling stacks on style-conditioned prior"
-    engine: eng-engine
-    severity: high
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-preflopadvisor-js-pfr-vpip-ratio-scaling-stacks-on-style-con"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-005"
-    title: "postflopNarrower.adaptMultipliers: style stacks with AF/VPIP/cbet/foldToCbet stat adjustments"
-    engine: eng-engine
-    severity: high
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-postflopnarrower-adaptmultipliers-style-stacks-with-af-vpip-"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-006"
-    title: "STYLE_FOLD_DEFAULTS raw lookup in multiway opponent fold rate"
-    engine: eng-engine
-    severity: medium
-    status: open
-    dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-multiway-opponent-fold-rat"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-007"
-    title: "STYLE_FOLD_DEFAULTS raw lookup in preflop decisionTreeBuilder"
-    engine: eng-engine
-    severity: medium
-    status: open
-    dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-preflop-decisiontreebuilde"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-008"
-    title: "No exact-enumerate fast path in handVsRange analysis-layer callers"
-    engine: eng-engine
-    severity: medium
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-no-exact-enumerate-fast-path-in-handvsrange-analysis-layer-c"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-009"
-    title: "assessEV produces categorical +EV/-EV verdict without confidence gating"
-    engine: eng-engine
-    severity: medium
-    status: open
-    dedup_key: "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-verdict-without-confiden"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-010"
-    title: "PIP 'active tier' count uses hard 0.3 cutoff without uncertainty propagation"
-    engine: eng-engine
-    severity: medium
-    status: open
-    dedup_key: "eng-engine-domain-correctness-pip-active-tier-count-uses-hard-0-3-cutoff-without-uncertain"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-011"
-    title: "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate"
-    engine: eng-engine
-    severity: medium
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-012"
-    title: "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md"
-    engine: eng-engine
-    severity: medium
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
-  - id: "FIND-013"
-    title: "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5"
-    engine: eng-engine
-    severity: medium
-    status: resolved
-    dedup_key: "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s"
-    program: domain-correctness
-    created_at: "2026-05-01"
-
   - id: "FIND-014"
     title: "gameTreeContext.styleFallback shifts equity ANCHORS by villain style"
     engine: eng-engine
@@ -259,7 +142,7 @@ findings:
     title: "bestResponseToAggression gates raiseEV on heroEquity>=0.65, suppressing all bluff-raises"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "challenge-domain-correctness-bestresponse-065-gate-suppresses-bluff-raise"
     program: domain-correctness
     created_at: "2026-06-20"

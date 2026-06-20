@@ -1,7 +1,7 @@
 id: "FIND-006"
 title: "STYLE_FOLD_DEFAULTS raw lookup in multiway opponent fold rate"
 severity: MEDIUM
-status: open
+status: resolved
 category: "first-principles"
 program: "domain-correctness"
 problem_class: "First-principles decision modeling"
@@ -23,3 +23,4 @@ dedup_key: "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-mult
 created_at: "2026-05-01"
 updated_at: "2026-06-20"
 promoted_to: "WS-244"
+resolved_at: "2026-06-20T22:23:09.732Z"
