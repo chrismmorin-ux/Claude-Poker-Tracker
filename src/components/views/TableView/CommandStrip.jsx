@@ -7,7 +7,7 @@ import { getValidActions } from '../../../utils/actionUtils';
 import { hasBetOrRaiseOnStreet, getActionsForSeatOnStreet, hasSeatFolded, getStraddler } from '../../../utils/sequenceUtils';
 import { getSizingOptions, getCurrentBet, getMinRaise, getSeatContributions } from '../../../utils/potCalculator';
 import { getPositionName, getPreflopOrder } from '../../../utils/positionUtils';
-import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession } from '../../../contexts';
+import { useGame, useSettings, useUI, useCard, usePlayer, useAnalysisContext, useToast, useSession, useTournament } from '../../../contexts';
 import { useAnchorLibrary } from '../../../contexts/AnchorLibraryContext';
 import { useGameHandlers } from '../../../hooks/useGameHandlers';
 import { useSeatUtils } from '../../../hooks/useSeatUtils';
@@ -20,6 +20,8 @@ import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { ANCHOR_LIBRARY_ACTIONS } from '../../../constants/anchorLibraryConstants';
 import { CardSelectorPanel } from './CardSelectorPanel';
 import { LiveAdviceBar } from './LiveAdviceBar';
+import { PushFoldPanel } from './PushFoldPanel';
+import { usePushFold } from '../../../hooks/usePushFold';
 import { SizingPresetsPanel } from './SizingPresetsPanel';
 import { ControlZone } from './ControlZone';
 
@@ -86,6 +88,30 @@ export const CommandStrip = ({
   const { advice: gameTreeAdvice } = useAnalysisContext();
   const { addToast, showInfo, showWarning } = useToast();
   const { currentSession, setHandCount } = useSession();
+  const { isTournament, currentBlinds, tournamentState } = useTournament();
+
+  // Short-stack push/fold verdict (≤15bb, tournament) — POKER_THEORY §10.4.
+  // Replaces the equity tag below threshold; computes from $EV (ICM-corrected).
+  const heroToActPF = selectedPlayers?.length === 1 && selectedPlayers[0] === settings.mySeat;
+  const { pushFold, isComputing: pushFoldComputing } = usePushFold({
+    isTournament,
+    currentStreet,
+    holeCards,
+    mySeat: settings.mySeat,
+    dealerSeat: dealerButtonSeat,
+    heroToAct: heroToActPF,
+    actionSequence,
+    chipStacks: tournamentState?.chipStacks,
+    bb: currentBlinds?.bb,
+    blinds: currentBlinds,
+    payouts: tournamentState?.config?.payouts,
+    playersRemaining: tournamentState?.playersRemaining,
+    totalChips: (tournamentState?.config?.startingStack && tournamentState?.config?.totalEntrants)
+      ? tournamentState.config.startingStack * tournamentState.config.totalEntrants
+      : null,
+  });
+  const pushFoldActive = !!pushFold || pushFoldComputing;
+
   const {
     selectActiveAnchors,
     isReady: anchorLibraryReady,
@@ -712,11 +738,19 @@ export const CommandStrip = ({
         />
       )}
 
+      {/* Push/fold verdict (≤15bb) supersedes the equity tag — the equity model
+          is wrong at push/fold depth (DISC-2026-04-21-push-fold-widget). */}
+      {pushFoldActive && (
+        <div className="px-2 pt-2">
+          <PushFoldPanel pushFold={pushFold} isComputing={pushFoldComputing} />
+        </div>
+      )}
+
       <LiveAdviceBar
-        actionAdvice={actionAdvice}
+        actionAdvice={pushFoldActive ? null : actionAdvice}
         liveEquity={liveEquity}
         boardTexture={boardTexture}
-        gameTreeAdvice={gameTreeAdvice}
+        gameTreeAdvice={pushFoldActive ? null : gameTreeAdvice}
         currentStreet={currentStreet}
         liveAnchor={liveAnchor}
         currentHandId={currentHandId}

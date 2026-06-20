@@ -1,7 +1,7 @@
 # Discovery — Push/Fold Verdict Widget (≤15bb)
 
 **ID:** `DISC-2026-04-21-push-fold-widget`
-**State:** CAPTURED
+**State:** BUILT (2026-06-20 — tournament MVP; online/sidebar + full chart deferred)
 **Surfaced during:** [blind-spot audit 2026-04-21 table-view §C3](../audits/2026-04-21-blindspot-table-view.md)
 **Date surfaced:** 2026-04-21
 **Last updated:** 2026-04-21
@@ -96,6 +96,7 @@ Cross-product: mirror in sidebar Z2 when extension reports short-stack state.
 
 - 2026-04-21 — SURFACED during blind-spot-audit 2026-04-21 table-view.
 - 2026-04-21 — CAPTURED in this file.
+- 2026-06-20 — **BUILT (tournament MVP).** First-principles verdict engine `src/utils/pushFoldEngine/` (CALL-vs-shove exact = equity vs ICM pot odds; SHOVE first-in = $EV jam, chip-EV when no payouts; population calling-range model documented as the one approximation), ICM-corrected via the icmEngine (commit 7507af0). `usePushFold` hook + `PushFoldPanel` in CommandStrip (renders ≤15bb preflop hero-to-act, suppresses the equity tag). Gate 1: `audits/2026-06-20-entry-pushfold-verdict.md` (GREEN). 18 engine tests. **Open questions resolved:** chart-based vs game-tree → first-principles computed + cached (not a static chart); ICM Plus/Pro → ICM-corrected when payouts exist, chip-EV otherwise; replace vs coexist → coexists (LiveAdviceBar yields via actionAdvice=null). **Deferred:** online/sidebar render path, manual-cash hero-stack input, full Nash chart on long-press, bounty-adjusted EV. Serves MH-07 + TS-43 genuinely now.
 
 ## Change log
 
