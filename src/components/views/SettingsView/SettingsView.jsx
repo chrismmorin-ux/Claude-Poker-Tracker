@@ -59,7 +59,7 @@ export const SettingsView = ({ scale }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-dvh bg-gray-900 flex items-center justify-center">
+      <div className="h-[100dvh] bg-gray-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading settings...</div>
       </div>
     );
@@ -69,9 +69,10 @@ export const SettingsView = ({ scale }) => {
     <div className="h-[100dvh] bg-gray-900 overflow-y-auto">
       {/* Portrait-native fluid layout (2026-06-06) — no 1600×720 ScaledContainer
           so settings fields (venue notes, game defaults) stay legible on a phone.
-          h-[100dvh] (arbitrary value — Tailwind 3.3.6 has NO h-dvh/min-h-dvh utility,
-          those are inert) so overflow-y-auto scrolls within the body-locked viewport
-          (html/body/#root are height:100dvh; overflow:hidden). */}
+          Root must be a BOUNDED height (h-[100dvh] ≡ h-dvh) + overflow-y-auto so it
+          scrolls within the body lock (html/body/#root are height:100dvh; overflow:hidden).
+          min-h-dvh would let the element grow PAST the viewport so overflow-y-auto never
+          engages and the (locked) page can't scroll — the clip bug fixed 2026-06-19. */}
       <div className="max-w-5xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">

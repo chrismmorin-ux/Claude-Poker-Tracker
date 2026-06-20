@@ -36,7 +36,10 @@ export const SelfCoachView = ({ scale: _scale }) => {
       role="main"
       data-testid="self-coach-view"
       style={{
-        minHeight: '100dvh',
+        // Bounded height + scroll so content past the fold scrolls instead of
+        // clipping under the body lock (was minHeight:100dvh → clipped). 2026-06-19.
+        height: '100dvh',
+        overflowY: 'auto',
         background: '#0f172a',
         color: '#e5e7eb',
         padding: '1rem',

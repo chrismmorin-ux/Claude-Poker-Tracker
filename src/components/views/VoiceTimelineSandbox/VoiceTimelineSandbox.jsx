@@ -175,7 +175,7 @@ export const VoiceTimelineSandbox = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-gray-900 text-gray-100 overflow-y-auto">
+    <div className="h-[100dvh] bg-gray-900 text-gray-100 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-4 pb-24">
         {/* header */}
         <div className="flex items-center gap-3 mb-1">
