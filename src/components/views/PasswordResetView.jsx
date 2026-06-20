@@ -6,14 +6,13 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { ScaledContainer } from '../ui/ScaledContainer';
+import { FluidView } from '../ui/FluidView';
 import { useAuth, useUI } from '../../contexts';
-import { LAYOUT } from '../../constants/gameConstants';
 
 /**
  * PasswordResetView - Password reset request screen
  */
-export const PasswordResetView = ({ scale }) => {
+export const PasswordResetView = ({ scale: _scale }) => {
   const { setCurrentScreen, SCREEN } = useUI();
   const { resetPassword, isLoading, error, clearError } = useAuth();
 
@@ -60,11 +59,8 @@ export const PasswordResetView = ({ scale }) => {
   const displayError = error || localError;
 
   return (
-    <ScaledContainer scale={scale}>
-      <div
-        className="bg-gray-900 flex items-center justify-center"
-        style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
-      >
+    <FluidView>
+      <div className="min-h-full flex items-center justify-center px-4">
         <div className="w-full max-w-md p-8">
           {/* Header */}
           <div className="text-center mb-8">
@@ -176,7 +172,7 @@ export const PasswordResetView = ({ scale }) => {
           </div>
         </div>
       </div>
-    </ScaledContainer>
+    </FluidView>
   );
 };
 

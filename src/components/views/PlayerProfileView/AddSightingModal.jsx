@@ -361,7 +361,7 @@ export const AddSightingModal = ({ player, onClose, onSaved }) => {
       className="fixed inset-0 bg-black/70 flex items-stretch sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto"
       data-testid="add-sighting-modal"
     >
-      <div className="bg-gray-100 sm:rounded-lg max-w-md w-full max-h-screen sm:max-h-[90vh] flex flex-col text-gray-800 shadow-xl">
+      <div className="bg-gray-100 sm:rounded-lg max-w-md w-full max-h-[100dvh] sm:max-h-[90dvh] flex flex-col text-gray-800 shadow-xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-300 bg-white sm:rounded-t-lg sticky top-0 z-10">
           <h3 className="text-gray-900 text-base font-semibold">Add sighting</h3>
           <button
@@ -496,7 +496,7 @@ export const AddSightingModal = ({ player, onClose, onSaved }) => {
           <button
             type="button"
             onClick={onClose}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-1.5 rounded"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-4 min-h-[44px] rounded"
             data-testid="add-sighting-cancel"
           >
             Cancel
@@ -505,7 +505,7 @@ export const AddSightingModal = ({ player, onClose, onSaved }) => {
             type="button"
             onClick={onSave}
             disabled={isSaving || !hasAnyContent}
-            className="bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white text-sm px-3 py-1.5 rounded"
+            className="bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white text-sm px-4 min-h-[44px] rounded"
             data-testid="add-sighting-save"
           >
             {isSaving ? 'Saving…' : 'Save sighting'}

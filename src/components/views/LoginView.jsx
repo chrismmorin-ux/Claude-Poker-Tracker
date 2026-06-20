@@ -6,17 +6,16 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { ScaledContainer } from '../ui/ScaledContainer';
+import { FluidView } from '../ui/FluidView';
 import { GoogleSignInButton } from '../ui/GoogleSignInButton';
 import { PasswordInput } from '../ui/PasswordInput';
 import { useAuth, useUI } from '../../contexts';
-import { LAYOUT } from '../../constants/gameConstants';
 import { MIN_PASSWORD_LENGTH } from '../../constants/authConstants';
 
 /**
  * LoginView - User login screen with email/password and Google OAuth
  */
-export const LoginView = ({ scale }) => {
+export const LoginView = ({ scale: _scale }) => {
   const { setCurrentScreen, SCREEN } = useUI();
   const {
     signInWithEmail,
@@ -96,11 +95,8 @@ export const LoginView = ({ scale }) => {
   const displayError = error || localError;
 
   return (
-    <ScaledContainer scale={scale}>
-      <div
-        className="bg-gray-900 flex items-center justify-center"
-        style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
-      >
+    <FluidView>
+      <div className="min-h-full flex items-center justify-center px-4">
         <div className="w-full max-w-md p-8">
           {/* Header */}
           <div className="text-center mb-8">
@@ -209,7 +205,7 @@ export const LoginView = ({ scale }) => {
           </div>
         </div>
       </div>
-    </ScaledContainer>
+    </FluidView>
   );
 };
 
