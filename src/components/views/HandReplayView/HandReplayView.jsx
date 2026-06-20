@@ -20,6 +20,8 @@ import { useHeroLeakDetection } from '../../../hooks/useHeroLeakDetection';
 import { loadHandById, updateHandReviewTag, GUEST_USER_ID } from '../../../utils/persistence/index';
 import { buildTimeline, buildSeatNameMap, getPlayerName } from '../../../utils/handAnalysis';
 import { getPositionName } from '../../../utils/positionUtils';
+import { calculateSidePots } from '../../../utils/potCalculator';
+import { getSmallBlindSeat, getBigBlindSeat } from '../../../utils/seatUtils';
 import { LAYOUT, SEAT_ARRAY, SEAT_POSITIONS } from '../../../constants/gameConstants';
 import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { SCREEN } from '../../../constants/uiConstants';
@@ -54,6 +56,20 @@ export const HandReplayView = ({ scale }) => {
   const seatPlayers = hand?.seatPlayers || {};
   const allPlayerCards = hand?.cardState?.allPlayerCards || {};
   const heroCards = hand?.cardState?.holeCards || [];
+
+  // Final side-pot structure for the hand (only shown when an all-in split the
+  // pot into 2+ pots). Derived from the full actionSequence — same math as live.
+  const finalSidePots = useMemo(() => {
+    const seq = hand?.gameState?.actionSequence;
+    if (!seq || seq.length === 0) return [];
+    const blinds = hand?.gameState?.blindsPosted || { sb: 1, bb: 2 };
+    const absent = hand?.gameState?.absentSeats || [];
+    const n = SEAT_ARRAY.length;
+    return calculateSidePots(seq, blinds, {
+      smallBlindSeat: getSmallBlindSeat(buttonSeat, absent, n),
+      bigBlindSeat: getBigBlindSeat(buttonSeat, absent, n),
+    }).pots;
+  }, [hand, buttonSeat]);
 
   // Precomputed analysis
   const { actionAnalysis, isComputing } = useHandReplayAnalysis(hand, timeline, tendencyMap);
@@ -175,6 +191,16 @@ export const HandReplayView = ({ scale }) => {
         <span className="text-gray-500 text-xs ml-3">
           Pot ${replay.potAtPoint}
         </span>
+        {finalSidePots.length > 1 && (
+          <span className="text-amber-400/90 text-[11px] ml-3 font-semibold" data-testid="replay-side-pots">
+            {finalSidePots.map((p, i) => (
+              <span key={i} className="ml-2">
+                {i === 0 ? 'Main' : `Side ${i}`} ${p.amount}
+                <span className="text-gray-500"> ({p.eligibleSeats.map((s) => `S${s}`).join(',')})</span>
+              </span>
+            ))}
+          </span>
+        )}
         {isComputing && <span className="text-gray-600 text-[10px] ml-3">(analyzing...)</span>}
         {isReviewTagged && (
           <span className="ml-3 flex items-center gap-2" data-testid="replay-review-tag">
