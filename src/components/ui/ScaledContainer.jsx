@@ -13,6 +13,9 @@ export const ScaledContainer = ({ scale, children }) => (
         height: `${LAYOUT.TABLE_HEIGHT}px`,
         transform: `scale(${scale})`,
         transformOrigin: 'center center',
+        // Prevent the fixed-size canvas from collapsing if a flex parent constrains
+        // it (HandReplayView added this locally; fold it into the shared component).
+        flexShrink: 0,
       }}
     >
       {children}
