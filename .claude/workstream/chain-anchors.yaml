@@ -31,3 +31,7 @@ anchors:
     event_count: 601
     timestamp: "2026-06-16T03:32:41.500Z"
     schema_version: 1
+  - chain_head: "ac6991f1cb01aed33c1fd6bf2b988a151f813a5649da5cd03c7a0a0b6d5f06ee"
+    event_count: 701
+    timestamp: "2026-06-20T20:40:32.554Z"
+    schema_version: 1

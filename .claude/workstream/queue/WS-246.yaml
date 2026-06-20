@@ -1,0 +1,41 @@
+id: "WS-246"
+title: "calcBluffEV: net rake out of the semi-bluff called branch (FIND-028)"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-06-20T00:00:00Z"
+priority_score: 14.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  foldEquityCalculator.js calcBluffEV semi-bluff branch (heroEquity>0) computed the
+  won-pot term without subtracting rake, while calcFoldEquity + the value path net it
+  out. A called semi-bluff goes to showdown and pays rake. Source: challenge run 2026-06-20.
+accept_criteria: |
+  - Semi-bluff branch subtracts rakeAmount from the won pot. Pure-bluff branch unchanged.
+  - Tests pass.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-028"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+completion_note: |
+  Fixed: semi-bluff branch now nets rake — heroEquity*(totalPotIfCalled - rakeAmount)
+  - betSize. Note the fix is currently LATENT (no caller passes rakeAmount to
+  calcBluffEV yet — decisionTreeBuilder omits it), but the math is now correct for when
+  rake is threaded. exploitEngine suite green (2648 tests).

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-06-19T05:44:34.150Z",
-  "updated_by_event": "ev-1781847874150-6d42adb7c60f",
+  "updated_at": "2026-06-20T21:14:48.849Z",
+  "updated_by_event": "ev-1781990088849-6d5330830f6b",
   "items": {
     "FIND-001": {
       "id": "FIND-001",
@@ -77,7 +77,7 @@
       "status": "open",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-multiway-opponent-fold-rat",
-      "promoted_to": "",
+      "promoted_to": "WS-244",
       "created_at": "2026-05-01"
     },
     "FIND-007": {
@@ -88,7 +88,7 @@
       "status": "open",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-style-fold-defaults-raw-lookup-in-preflop-decisiontreebuilde",
-      "promoted_to": "",
+      "promoted_to": "WS-244",
       "created_at": "2026-05-01"
     },
     "FIND-008": {
@@ -96,11 +96,13 @@
       "title": "No exact-enumerate fast path in handVsRange analysis-layer callers",
       "severity": "MEDIUM",
       "category": "equity-calculation",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-no-exact-enumerate-fast-path-in-handvsrange-analysis-layer-c",
       "promoted_to": "",
-      "created_at": "2026-05-01"
+      "created_at": "2026-05-01",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "obsolete (SPR-095)"
     },
     "FIND-009": {
       "id": "FIND-009",
@@ -110,7 +112,7 @@
       "status": "open",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-verdict-without-confiden",
-      "promoted_to": "",
+      "promoted_to": "WS-245",
       "created_at": "2026-05-01"
     },
     "FIND-010": {
@@ -121,7 +123,7 @@
       "status": "open",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-pip-active-tier-count-uses-hard-0-3-cutoff-without-uncertain",
-      "promoted_to": "",
+      "promoted_to": "WS-245",
       "created_at": "2026-05-01"
     },
     "FIND-011": {
@@ -129,33 +131,39 @@
       "title": "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate",
       "severity": "MEDIUM",
       "category": "bayesian-confidence",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min",
-      "promoted_to": "",
-      "created_at": "2026-05-01"
+      "promoted_to": "WS-241",
+      "created_at": "2026-05-01",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-241"
     },
     "FIND-012": {
       "id": "FIND-012",
       "title": "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md",
       "severity": "MEDIUM",
       "category": "theory-drift",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme",
-      "promoted_to": "",
-      "created_at": "2026-05-01"
+      "promoted_to": "WS-243",
+      "created_at": "2026-05-01",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-243"
     },
     "FIND-013": {
       "id": "FIND-013",
       "title": "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5",
       "severity": "MEDIUM",
       "category": "theory-drift",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s",
-      "promoted_to": "",
-      "created_at": "2026-05-01"
+      "promoted_to": "WS-243",
+      "created_at": "2026-05-01",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-243"
     },
     "FIND-014": {
       "id": "FIND-014",
@@ -288,7 +296,101 @@
       "dedup_key": "provenance-audit-data-quality-gto-approximate-charts-mislabeled-as-equilibrium",
       "promoted_to": "WS-237",
       "created_at": "2026-06-19"
+    },
+    "FIND-026": {
+      "id": "FIND-026",
+      "title": "Showdown anchors may double-boost on stateless range rebuilds (idempotency unverified)",
+      "severity": "MEDIUM",
+      "category": "range-estimation",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-showdown-anchor-non-idempotent-rebuild",
+      "promoted_to": "WS-249",
+      "created_at": "2026-06-20",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-249"
+    },
+    "FIND-027": {
+      "id": "FIND-027",
+      "title": "comboBetFilter and computeVillainBetProb disagree ~2x on early-street bluff frequency",
+      "severity": "MEDIUM",
+      "category": "game-tree",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-bluff-freq-estimator-divergence",
+      "promoted_to": "WS-248",
+      "created_at": "2026-06-20",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-248"
+    },
+    "FIND-028": {
+      "id": "FIND-028",
+      "title": "calcBluffEV semi-bluff branch omits rake while value/optimal paths include it",
+      "severity": "MEDIUM",
+      "category": "game-tree",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-semibluff-ev-omits-rake",
+      "promoted_to": "WS-246",
+      "created_at": "2026-06-20",
+      "resolved_at": "2026-06-20T00:00:00Z",
+      "resolved_by": "WS-246"
+    },
+    "FIND-029": {
+      "id": "FIND-029",
+      "title": "bestResponseToAggression gates raiseEV on heroEquity>=0.65, suppressing all bluff-raises",
+      "severity": "MEDIUM",
+      "category": "first-principles",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-bestresponse-065-gate-suppresses-bluff-raise",
+      "promoted_to": "WS-247",
+      "created_at": "2026-06-20"
+    },
+    "FIND-030": {
+      "id": "FIND-030",
+      "title": "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors",
+      "severity": "LOW",
+      "category": "game-tree",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-multiway-independence-and-sampleconf-priors",
+      "promoted_to": "WS-250",
+      "created_at": "2026-06-20"
+    },
+    "FIND-031": {
+      "id": "FIND-031",
+      "title": "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)",
+      "severity": "MEDIUM",
+      "category": "theory-gap",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets",
+      "promoted_to": "WS-251",
+      "created_at": "2026-06-20"
+    },
+    "FIND-032": {
+      "id": "FIND-032",
+      "title": "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)",
+      "severity": "LOW",
+      "category": "theory-gap",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "blindspot-domain-correctness-sizing-and-timing-tells-missing",
+      "promoted_to": "WS-250",
+      "created_at": "2026-06-20"
+    },
+    "FIND-033": {
+      "id": "FIND-033",
+      "title": "Verify sample-size confidence reaches live-advice UI; range-advantage-driven sizing in live path",
+      "severity": "LOW",
+      "category": "theory-gap",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing",
+      "promoted_to": "WS-250",
+      "created_at": "2026-06-20"
     }
   },
-  "last_event_log_head": "ev-1781847874150-6d42adb7c60f"
+  "last_event_log_head": "ev-1781990088849-6d5330830f6b"
 }

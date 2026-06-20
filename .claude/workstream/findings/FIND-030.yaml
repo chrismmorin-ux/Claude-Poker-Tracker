@@ -1,0 +1,36 @@
+id: "FIND-030"
+title: "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors"
+severity: LOW
+status: open
+category: "game-tree"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+  date: "2026-06-20"
+description: |
+  Two low-severity coherence nits from the challenge run (acceptable as-is, monitor):
+  (a) multiwayFoldPct (gameTreeEquity.js:569-595) multiplies per-opponent fold rates,
+      assuming independence; folds are positively correlated (scary boards fold
+      everyone). A correlationAdj keys off betFraction only, not board texture/range
+      overlap, so the product rule under-estimates all-fold probability and makes
+      multiway bluffs look worse than they are. Defensible first approximation; should
+      be surfaced as low-confidence in multiway spots.
+  (b) bayesianSampleConfidence (bayesianConfidence.js) accepts priorAlpha/priorBeta but
+      discards them (fixed tau=12 curve), so weakness verdicts are gated by raw N, not
+      effective sample size including prior strength — minor inconsistency with the
+      §6.5 effective-sample framing. Curve is well-calibrated; not a correctness defect.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+recommended_fix: |
+  (a) Scale the multiway correlation adjustment by board wetness, or flag multiway
+  fold-equity as low-confidence. (b) Either use the prior args in the saturation curve
+  or drop them from the signature. Both optional.
+theory_citation: "POKER_THEORY.md §6.5; multiway fold correlation"
+dedup_key: "challenge-domain-correctness-multiway-independence-and-sampleconf-priors"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-250"

@@ -1,7 +1,17 @@
 id: "FIND-011"
 title: "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate"
 severity: MEDIUM
-status: open
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-241"
+resolution: |
+  detectPositionallyAware now computes posterior = P(LP open rate > 1.5x EP open
+  rate) via a two-rate Beta-posterior comparison (exact quadrature, no z/normal
+  approx), with a firm Beta(6,24) RFI prior replacing the hard n<5 gate. Small
+  samples shrink toward 0.5 and stay below the >0.5 detection gate; the cited
+  one-extra-open-at-n=5 swing no longer flips the verdict. Beta primitives moved to
+  pokerCore/betaMath.js (rangeEngine cannot import exploitEngine). Tests + 3,430
+  exploitEngine tests green.
 category: "bayesian-confidence"
 program: "domain-correctness"
 problem_class: "Range estimation correctness"
@@ -21,5 +31,5 @@ agent_corroboration:
   - "range-equity-audit (F7)"
 dedup_key: "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
-promoted_to: ""
+updated_at: "2026-06-20"
+promoted_to: "WS-241"

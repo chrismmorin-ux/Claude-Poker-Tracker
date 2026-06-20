@@ -1,0 +1,62 @@
+id: "WS-241"
+title: "detectPositionallyAware: replace raw frequentist ratio with Beta-posterior comparison (FIND-011)"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-06-20T00:00:00Z"
+completion_note: |
+  Replaced detectPositionallyAware's raw frequentist ratio with a two-rate Beta-
+  posterior comparison: posterior = P(LP open rate > 1.5x EP open rate), computed by
+  exact quadrature over the lower posterior's quantile bins (no normal/z approx).
+  A firm Beta(6,24) RFI prior (pseudocount 30) replaces the hard n<5 gate — small
+  samples shrink toward 0.5 and stay below the >0.5 detection gate; verified the
+  FIND-011 one-extra-open-at-n=5 swing no longer flips the verdict (0.37→0.47, both
+  <0.5) while a real n=20 10%-vs-50% spread fires at 0.79. Beta primitives extracted
+  to new src/utils/pokerCore/betaMath.js (single source; rangeEngine cannot import
+  exploitEngine), re-exported from bayesianConfidence.js (API unchanged for all 13
+  importers). Tests: traitDetector +2 cases (small-noise no-fire + sustained-spread
+  fire); 3,430 exploitEngine tests + 59 range/confidence tests green; build clean.
+priority_score: 18.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  traitDetector.js detectPositionallyAware gates on earlyOpp < 5 || lateOpp < 5,
+  then compares raw frequentist open rates Math.round((earlyOpens/earlyOpp)*100)
+  and triggers the "positionally aware" trait on lateOpenPct > earlyOpenPct * 1.5.
+  With n as low as 5, one extra open swings the percentage 20%+, producing
+  false-positive trait flags that are fed downstream into the exploit engine.
+
+  This directly violates the rangeEngine/CLAUDE.md rule "DO NOT apply generic
+  z-tests / use frequentist ratios" and POKER_THEORY §6.5 (Bayesian confidence).
+  Source: domain-correctness delta run 2026-06-20; finding FIND-011 (baseline 2026-05-01).
+accept_criteria: |
+  - detectPositionallyAware uses a pairwise Beta-posterior difference (P(LP rate >
+    1.5x EP rate) > 0.85 threshold) instead of a raw ratio comparison.
+  - The 5-hand floor is folded into the prior (STAT_PRIORS) rather than a hard gate.
+  - Existing traitDetector tests pass; add a test asserting a 5-vs-5 sample does NOT
+    fire the trait (regression against the false-positive class).
+  - No new POKER_THEORY divergence; build clean.
+effort: "S"
+files_involved:
+  - "src/utils/rangeEngine/traitDetector.js"
+  - "src/utils/rangeEngine/__tests__/ (traitDetector tests)"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-011"
+  run_id: "run-domain-correctness-delta-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Promoted from FIND-011 during the 2026-06-20 domain-correctness delta run.
+  Sharpest of the 8 untriaged baseline findings — feeds false reads to the exploit engine.

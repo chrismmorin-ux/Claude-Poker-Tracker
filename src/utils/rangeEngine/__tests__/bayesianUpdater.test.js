@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { extractPreflopAction, extractAllActions } from '../actionExtractor';
 import { applyShowdownAnchor, updateProfileFromActions } from '../bayesianUpdater';
-import { createEmptyProfile } from '../rangeProfile';
+import { createEmptyProfile, RANGE_POSITIONS, RANGE_ACTIONS } from '../rangeProfile';
+import { normalizeAllPositions } from '../crossRangeConstraints';
 import { rangeIndex, decodeIndex } from '../../pokerCore/rangeMatrix';
 
 // Helper: build a hand record with optional showdown cards and WON action
@@ -147,6 +148,47 @@ describe('showdownsSeen counting', () => {
     expect(profile.opportunities.LATE.showdownsSeen).toBe(1);
     expect(profile.opportunities.EARLY.showdownsSeen).toBe(1);
     expect(profile.opportunities.MIDDLE.showdownsSeen).toBe(0);
+  });
+});
+
+describe('rebuild idempotency (FIND-026)', () => {
+  // The stateless full-rebuild applies showdown anchors additively, but each rebuild
+  // starts from a FRESH empty profile and runs updateProfileFromActions exactly once,
+  // then normalizes. Two rebuilds from identical data MUST yield identical grids —
+  // anchors do NOT accumulate across rebuilds (the FIND-026 concern). This guards it.
+  const rebuild = (extractions) => {
+    const profile = createEmptyProfile(1, 'user1');
+    updateProfileFromActions(profile, extractions);
+    normalizeAllPositions(profile.ranges);
+    return profile;
+  };
+
+  it('two rebuilds from the same showdown-bearing data produce byte-identical grids', () => {
+    const extractions = [
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: rangeIndex(12, 12, false), showdownOutcome: 'won' }, // AA open, won
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: rangeIndex(12, 11, true), showdownOutcome: 'won' },  // AKs open, won
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: null, showdownOutcome: null },
+      { position: 'EARLY', rangeAction: 'coldCall', facedRaise: true, showdownIndex: rangeIndex(10, 10, false), showdownOutcome: 'lost' }, // QQ coldCall, lost
+    ];
+    const a = rebuild(extractions);
+    const b = rebuild(extractions);
+    for (const pos of RANGE_POSITIONS) {
+      for (const action of RANGE_ACTIONS) {
+        expect(Array.from(b.ranges[pos][action])).toEqual(Array.from(a.ranges[pos][action]));
+      }
+    }
+  });
+
+  it('the anchored hand is pinned to 1.0 and not pushed above it on rebuild', () => {
+    const AA = rangeIndex(12, 12, false);
+    const extractions = [
+      { position: 'LATE', rangeAction: 'open', facedRaise: false, showdownIndex: AA, showdownOutcome: 'won' },
+    ];
+    const a = rebuild(extractions);
+    const b = rebuild(extractions);
+    // Pre-normalization the anchor is 1.0; post-normalization it stays bounded and equal across rebuilds.
+    expect(b.ranges.LATE.open[AA]).toBe(a.ranges.LATE.open[AA]);
+    expect(a.ranges.LATE.open[AA]).toBeLessThanOrEqual(1.0);
   });
 });
 

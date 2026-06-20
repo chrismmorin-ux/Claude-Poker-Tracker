@@ -1,0 +1,38 @@
+id: "FIND-027"
+title: "comboBetFilter and computeVillainBetProb disagree ~2x on early-street bluff frequency"
+severity: MEDIUM
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-248"
+resolution: |
+  Unified on a single exported villainBluffFreq(equity, street) in gameTreeEquity.js used
+  by both comboBetFilter and computeVillainBetProb (no more duplicate inline formula).
+  Threaded street into comboBetFilter/comboCheckBackFilter + the 3 gameTreeEvaluator call
+  sites. Tests added; full exploitEngine + rangeEngine suites green (2648 tests).
+category: "game-tree"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+  date: "2026-06-20"
+description: |
+  Two functions model "villain bets when checked to" and disagree. comboBetFilter
+  (gameTreeEquity.js:360-365) gives air a flat bluffFreq = villainEquity < 0.20 ? 0.08
+  with NO street guard. The parallel, more-used computeVillainBetProb
+  (gameTreeDepth2.js:354-385) gives flop/turn air up to ~0.15 and river air 0.08.
+  So early-street bluff content differs ~2x depending on which path an evaluation
+  takes — changing the hero check-EV and the bluff-catch recommendation for the same
+  spot (§3.5 / value-vs-bluff content drives the decision).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  Unify on a single estimator: have comboBetFilter delegate to computeVillainBetProb
+  (passing street), or document why the approximation deliberately diverges.
+theory_citation: "POKER_THEORY.md §3.5; §4.2 (bluff-catch)"
+dedup_key: "challenge-domain-correctness-bluff-freq-estimator-divergence"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-248"

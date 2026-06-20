@@ -2,29 +2,30 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 237
+total_items: 249
 by_status:
-  done: 165
+  done: 171
   decomposed: 1
   in_progress: 3
   deferred: 42
-  backlog: 17
+  backlog: 22
   dismissed: 1
   completed: 7
   review: 1
+  blocked: 1
 
 by_category:
   correctness: 1
   cwos-infrastructure: 1
   data-isolation: 1
   design-comprehension: 10
-  domain-correctness: 8
+  domain-correctness: 19
   domain-correctness-validation: 1
   exploit-anchor-library: 16
   fix-wave: 4
   hero-state-primitive: 18
   infrastructure: 1
-  input-ux: 2
+  input-ux: 3
   invariant-coverage-program: 4
   line-study-content: 1
   line-study-slice-widening: 15
@@ -57,7 +58,7 @@ by_category:
   tableview-invariant-audit: 3
   test-health: 5
   test-reliability: 1
-  ux: 2
+  ux: 3
 
 items:
   - id: "WS-001"
@@ -2388,9 +2389,117 @@ items:
   - id: "WS-239"
     title: "Brand-image deep-dive → audit every design element against it"
     status: deferred
-    priority_score: 12.0
+    priority_score: 12
     category: ux
     effort: L
     program: prog-launch
     capability: governance
+
+  - id: "WS-240"
+    title: "Voice Hand-Tree Entry — build the speech→timeline action parser from real captured voice data (DEC-021)"
+    status: blocked
+    priority_score: 12
+    category: input-ux
+    effort: L
+    program: design
+    capability: core
+
+  - id: "WS-241"
+    title: "detectPositionallyAware: replace raw frequentist ratio with Beta-posterior comparison (FIND-011)"
+    status: done
+    priority_score: 18
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-242"
+    title: "ICM risk-premium: covered-shove stack-transfer asymmetry (riskChips uses full stack)"
+    status: done
+    priority_score: 16
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-243"
+    title: "POKER_THEORY doc reconcile: PRIOR_WEIGHT ~5->~10 + document rake/SPR-zones/fold-curves (FIND-012, FIND-013)"
+    status: done
+    priority_score: 14
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-244"
+    title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
+    status: backlog
+    priority_score: 15
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-245"
+    title: "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)"
+    status: backlog
+    priority_score: 13
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-246"
+    title: "calcBluffEV: net rake out of the semi-bluff called branch (FIND-028)"
+    status: done
+    priority_score: 14
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-247"
+    title: "bestResponseToAggression raise-gate: replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)"
+    status: backlog
+    priority_score: 16
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-248"
+    title: "Unify villain bluff-frequency: comboBetFilter + computeVillainBetProb share one source (FIND-027)"
+    status: done
+    priority_score: 15
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-249"
+    title: "Verify range-rebuild idempotency vs showdown-anchor accumulation (FIND-026)"
+    status: done
+    priority_score: 14
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-250"
+    title: "Engine low-severity nits + missing live tells (FIND-030, FIND-032, FIND-033)"
+    status: backlog
+    priority_score: 9
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-251"
+    title: "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)"
+    status: backlog
+    priority_score: 17
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
 

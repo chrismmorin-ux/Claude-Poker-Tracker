@@ -1,0 +1,50 @@
+id: "WS-251"
+title: "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 17.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Blind-spot run found the BIGGEST gap: ICM is wired only into the all-in node
+  (pushFoldEngine) + IcmBadge. gameTreeEvaluator.js and preflopAdvisor.js have zero
+  icm/payout/riskPremium references, so every non-all-in tournament decision (preflop
+  opens/3-bets, postflop bets/calls — the majority of decisions) runs pure chip-EV through
+  the shared cash game tree. On a bubble / near a pay jump, a chip-EV-correct line can be
+  $EV-negative; the engine recommends it anyway (§10.4 anti-pattern). This is the natural
+  next consumer of the just-shipped ICM foundation — riskPremium.js math already exists.
+  Belongs to the ICM / tournament project. Source: blind-spot run 2026-06-20 (FIND-031).
+accept_criteria: |
+  - Thread a riskPremium scalar (from icmEngine/riskPremium.js) into gameTreeEvaluator as
+    an EV discount on hero's at-risk chips; tighten value/bluff thresholds by the premium.
+  - Start preflop (push/fold proves the pattern), then postflop.
+  - Degrade gracefully when no payout ladder / not a tournament (no behavior change for cash).
+  - Tests: a bubble spot tightens a marginal 3-bet/barrel vs the cash-game baseline.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/icmEngine/riskPremium.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Scope as an ICM-project deliverable; sequence vs other tournament work"
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-031"
+  run_id: "run-domain-correctness-blindspot-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  The headline blind-spot gap. Project-sized (next phase of the ICM/tournament program),
+  not a quick fix — tracked for sequencing alongside the other deferred ICM consumers.

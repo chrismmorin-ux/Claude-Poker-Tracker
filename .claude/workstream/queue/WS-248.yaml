@@ -1,0 +1,48 @@
+id: "WS-248"
+title: "Unify villain bluff-frequency: comboBetFilter + computeVillainBetProb share one source (FIND-027)"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-06-20T00:00:00Z"
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  comboBetFilter (gameTreeEquity.js) and computeVillainBetProb (gameTreeDepth2.js) both
+  model "villain bets when checked to" but disagreed ~2x on early-street bluff frequency
+  (comboBetFilter had a street-less flat 0.08; computeVillainBetProb is street-aware up
+  to 0.15 on flop/turn). Whichever path an evaluation took changed the check-EV / bluff-
+  catch recommendation. Source: challenge run 2026-06-20.
+accept_criteria: |
+  - Single canonical street-aware villainBluffFreq(equity, street) used by both.
+  - street threaded into comboBetFilter / comboCheckBackFilter + their gameTreeEvaluator
+    call sites. Tests cover the street-aware behavior. No live-advisor regressions.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-027"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+completion_note: |
+  Added exported villainBluffFreq(equity, street) in gameTreeEquity.js as the single
+  source; comboBetFilter + comboCheckBackFilter now take street and call it;
+  computeVillainBetProb imports + uses it (no more duplicate inline formula). Threaded
+  street into the 3 gameTreeEvaluator call sites (check-back, bet-facing, river call
+  refinement). Tests added (villainBluffFreq + street-aware comboBetFilter). Full
+  exploitEngine + rangeEngine suites green (2648 tests), build clean.

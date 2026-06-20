@@ -148,4 +148,29 @@ describe('riskPremium / bubbleFactor', () => {
     expect(p.villainIndex).toBe(0); // chip leader
     expect(p.bubbleFactor).toBeGreaterThan(1);
   });
+
+  // Regression for WS-242: a covered shove (hero stack > villain stack) risks and
+  // wins only the EFFECTIVE amount min(hero, villain). Passing hero's FULL stack as
+  // riskChips over-debits the ICM lose branch (busts hero to 0 when they should
+  // retain hero−villain chips), inflating the risk premium.
+  it('covered shove risks only the effective (min) stack, not hero full stack', () => {
+    // hero index 0 = 100 (covers everyone); contested villain index 1 = 40 (shorter).
+    const stacks = [100, 40, 30, 20];
+    const payouts = [50, 30, 20];
+    const effective = 40; // min(hero 100, villain 40)
+
+    const correct = computeRiskPremium(stacks, 0, payouts, {
+      villainIndex: 1, riskChips: effective, winChips: effective,
+    });
+    const buggyFullStack = computeRiskPremium(stacks, 0, payouts, {
+      villainIndex: 1, riskChips: 100, winChips: effective,
+    });
+
+    // The effective-stack lose branch leaves hero with 100−40=60 chips, NOT 0,
+    // so hero keeps strictly more $EV than the full-stack (bust) computation.
+    expect(correct.heroLose).toBeGreaterThan(buggyFullStack.heroLose);
+    // Sanity: the effective lose-stack $EV equals modeling hero at 60 chips directly.
+    const heroAt60 = computeIcmEquity([60, 80, 30, 20], payouts)[0]; // 40 transferred to villain
+    expect(correct.heroLose).toBeCloseTo(heroAt60, 6);
+  });
 });

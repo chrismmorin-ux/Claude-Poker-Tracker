@@ -1,0 +1,51 @@
+id: "WS-250"
+title: "Engine low-severity nits + missing live tells (FIND-030, FIND-032, FIND-033)"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 9.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Bundle of low-severity findings from the 2026-06-20 challenge + blind-spot runs:
+  - FIND-030: multiwayFoldPct assumes opponent fold independence (under-flags multiway
+    fold-equity confidence); bayesianSampleConfidence ignores its prior args.
+  - FIND-032: showdown sizing-tell calibration is STUBBED (villainProfileBuilder.js:446-451
+    returns sizingTells.detected=false) though data is captured; timing tells absent AND
+    time-to-act not recorded in the data model.
+  - FIND-033: verify sample-size confidence reaches the live-advice UI as an explicit low-N
+    signal; verify range-advantage-driven sizing is computed (not heuristic) in the live path.
+accept_criteria: |
+  - Sizing-tell: regress shown-hand strength on bet_size_pct per street; emit
+    sizingTells:{correlation, confidence}; feed bluff-catch thresholds (N-gated).
+  - Multiway fold-equity surfaced as low-confidence (or correlation scaled by board wetness).
+  - Confidence-surfacing + range-advantage-sizing verified in the live advisor.
+  - Timing tells: scope a data-model change for time-to-act (defer behind sizing-tell).
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/exploitValidator.js"
+  - "src/constants/gameConstants.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-032"
+  run_id: "run-domain-correctness-blindspot-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Backlog bundle of LOW-severity nits + tell-calibration gaps from the 2026-06-20
+  challenge/blind-spot runs. Sizing-tell calibration (FIND-032) is the highest-value piece.

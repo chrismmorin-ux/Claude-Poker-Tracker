@@ -1,7 +1,15 @@
 id: "FIND-012"
 title: "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md"
 severity: MEDIUM
-status: open
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-243"
+resolution: |
+  POKER_THEORY.md §11 (Implemented Engine Algorithms) added, documenting all three:
+  11.1 personalized fold-curve hierarchy (personalized > explicit > style > default),
+  11.2 SPR zones (descriptive) + continuous sprMidpointMultiplier (the decision math),
+  11.3 rake-adjusted EV (estimateRake + showdown-pot application). Content verified
+  against live code. Doc no longer lags the implementation.
 category: "theory-drift"
 program: "domain-correctness"
 problem_class: "Theory-spec drift"
@@ -24,5 +32,5 @@ agent_corroboration:
   - "theory-drift-anti-pattern-sweep (D1, D2)"
 dedup_key: "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
-promoted_to: ""
+updated_at: "2026-06-20"
+promoted_to: "WS-243"

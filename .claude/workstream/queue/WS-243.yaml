@@ -1,0 +1,65 @@
+id: "WS-243"
+title: "POKER_THEORY doc reconcile: PRIOR_WEIGHT ~5->~10 + document rake/SPR-zones/fold-curves (FIND-012, FIND-013)"
+legacy_id: ""
+type: docs
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-06-20T00:00:00Z"
+completion_note: |
+  POKER_THEORY.md reconciled with code. §6.5 PRIOR_WEIGHT corrected ~5 → ~10
+  (FIND-013) with the pseudocount-10 rationale + sibling-doc cross-reference. Added
+  §11 Implemented Engine Algorithms (FIND-012): 11.1 personalized fold-curve
+  hierarchy (personalized > explicit > style > default, per foldEquityCalculator
+  findOptimalBetSize), 11.2 SPR zones (descriptive) + continuous sprMidpointMultiplier
+  (the decision math — explicitly noting the §7 labels-describe/computation-is-
+  continuous distinction), 11.3 rake-adjusted EV (estimateRake min(pot*pct,cap),
+  noFlopNoDrop, applied to showdown pot). Content verified against live code, not
+  invented. Frontmatter bumped to v1.2 + changelog + next_review 2026-09-18. No code.
+priority_score: 14.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Two theory-vs-code doc drifts confirmed STILL-REAL by the 2026-06-20 delta run:
+
+  FIND-013 (LOW): POKER_THEORY.md §6.5 says PRIOR_WEIGHT "~5 virtual observations",
+  but code (populationPriors.js PRIOR_WEIGHT = 10) and every sibling doc
+  (RANGE_ENGINE_DESIGN.md, rangeEngine/CLAUDE.md, CHANGELOG, bayesianConfidence.js,
+  assumptionProducer.js) standardize on 10. The doc is the outlier — fix the doc.
+
+  FIND-012 (MEDIUM, doc-drift): rake (estimateRake/rakeConfig), SPR zones
+  (getSPRZone/SPR_ZONES), and personalized fold curves (fitFoldCurveParams/
+  FOLD_CURVE_PARAMS) are implemented in foldEquityCalculator.js +
+  gameTreeSizingHelpers.js but documented nowhere in POKER_THEORY.md. Code is ahead
+  of doctrine (no correctness bug — pure documentation gap the drift policy exists
+  to catch).
+accept_criteria: |
+  - POKER_THEORY.md §6.5 PRIOR_WEIGHT reference updated ~5 -> ~10 to match code +
+    all sibling docs.
+  - POKER_THEORY.md gains sections documenting (a) the personalized fold-curve
+    hierarchy (personalized > explicit > style > defaults), (b) the 5-zone SPR
+    strategy with boundaries, (c) the rake-adjusted EV pipeline. (Or a sibling
+    ENGINE_ALGORITHMS.md catalog if cleaner.)
+  - POKER_THEORY freshness header date bumped.
+  - No code changes; the doc now matches the implemented algorithms.
+effort: "S"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-012"
+  run_id: "run-domain-correctness-delta-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Promoted from FIND-012 + FIND-013 during the 2026-06-20 domain-correctness delta
+  run. Pure doc reconciliation — closes two theory-drift findings cheaply.

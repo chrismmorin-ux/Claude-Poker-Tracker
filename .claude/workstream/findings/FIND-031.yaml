@@ -1,0 +1,37 @@
+id: "FIND-031"
+title: "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)"
+severity: MEDIUM
+status: open
+category: "theory-gap"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-06-20"
+  date: "2026-06-20"
+description: |
+  ICM is wired ONLY into the all-in node (pushFoldEngine/pushFold.js) + IcmBadge.
+  gameTreeEvaluator.js and preflopAdvisor.js have ZERO references to icm / payout /
+  riskPremium / bubble / tournament — the cash game tree is shared with tournaments
+  and computes pure chip-EV regardless of tournament context. So every non-all-in
+  tournament decision (preflop opens/3-bets, postflop bets/calls — the majority of
+  decisions) gets cash-game advice. On a bubble or near a pay jump, a chip-EV-correct
+  3-bet/barrel/thin-value-bet can be $EV-negative; the engine recommends it anyway.
+  Exactly the §10.4 anti-pattern. This is the BIGGEST gap — and it is the natural next
+  consumer of the just-shipped ICM foundation (riskPremium.js math already exists).
+  Belongs to the ICM/tournament project as its next phase, not a code regression.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/icmEngine/riskPremium.js"
+recommended_fix: |
+  Thread a riskPremium scalar (from riskPremium.js) into gameTreeEvaluator as an EV
+  discount on hero's at-risk chips; tighten value/bluff thresholds by the premium.
+  Start preflop (push/fold proves the pattern), then postflop. Scope as an ICM-project
+  deliverable.
+theory_citation: "POKER_THEORY.md §10.4 (push/fold is a $EV decision); §10.1"
+dedup_key: "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-251"

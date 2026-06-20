@@ -1,0 +1,57 @@
+id: "WS-244"
+title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Two sites use a style label as a DIRECT fold-rate input (POKER_THEORY §7.1/§7.4
+  violation — labels are outputs, not inputs):
+
+  FIND-006: gameTreeEquity.js multiwayFoldPct fallback —
+    oppFold = STYLE_FOLD_DEFAULTS[opp.playerStats.style] ?? 0.45 (fires only when
+    no villain model exists; the model branch is the high-fidelity path).
+  FIND-007: decisionTreeBuilder.js computeFoldPct Priority 2 — returns
+    STYLE_FOLD_DEFAULTS[style] with no game-state dependence (fires only when
+    neither villainModel nor percentages present).
+
+  Both are FALLBACK branches with low blast radius, but both read a bucket label as
+  a decision input rather than computing fold rate from equity/pot-odds with style
+  as a Bayesian prior. The logistic/estimatePreflopFoldPct machinery already exists.
+accept_criteria: |
+  - Both fallbacks compute fold rate from a logistic on (range-vs-bet equity ratio)
+    with style as a prior on logistic steepness (mirroring getLogisticSteepness /
+    getStyleBucketFoldRates / estimatePreflopFoldPct which already exist), not a
+    raw STYLE_FOLD_DEFAULTS lookup.
+  - decisionTreeBuilder Priority 2 routes to estimatePreflopFoldPct (already
+    integrates positional matchup + style prior + PFR/VPIP scaling), making the raw
+    lookup redundant.
+  - Engine tests pass; no regression in the model-present (high-fidelity) paths.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/decisionTreeBuilder.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-006"
+  run_id: "run-domain-correctness-delta-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Promoted from FIND-006 + FIND-007 (shared root cause) during the 2026-06-20
+  domain-correctness delta run. Backlog — fallback paths, deferred behind the
+  sprint's higher-impact fixes.

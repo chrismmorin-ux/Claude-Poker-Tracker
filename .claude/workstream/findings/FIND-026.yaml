@@ -1,0 +1,40 @@
+id: "FIND-026"
+title: "Showdown anchors may double-boost on stateless range rebuilds (idempotency unverified)"
+severity: MEDIUM
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-249"
+resolution: |
+  VERIFIED NOT A DEFECT. buildRangeProfile creates a fresh empty profile each call, runs
+  updateProfileFromActions once (counts from 0, grids overwritten, anchors applied once),
+  then normalizeAllPositions runs AFTER anchoring — so rebuilds cannot accumulate and
+  anchored grids are tamed. Added a rebuild-idempotency regression test (two rebuilds from
+  identical showdown data -> byte-identical grids). No production change needed.
+category: "range-estimation"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+  date: "2026-06-20"
+description: |
+  bayesianUpdater.js applyShowdownAnchor (166-217) adds neighbor boosts (0.15-0.30)
+  additively on top of the ratio-scaled prior grid and hard-sets the anchored hand to
+  1.0. The architecture is documented as a stateless full-rebuild. Concern: whether
+  crossRangeConstraints normalization runs AFTER anchoring in the orchestrator — if
+  not, a player with several showdowns in one action line can end up with many cells
+  pinned near 1.0, inflating apparent range width and skewing every downstream
+  equity/segmentation/fold estimate. UNVERIFIED — needs an idempotency test before
+  classifying as a confirmed defect.
+affected_files:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+recommended_fix: |
+  Add a regression test: build a profile twice with identical showdowns, assert grid
+  identity (idempotency). Confirm normalization runs after anchoring in the rebuild
+  pipeline. If non-idempotent, make boosts saturate against a fixed baseline.
+theory_citation: "POKER_THEORY.md §5.9 (showdown ground truth); rangeEngine/CLAUDE.md §6"
+dedup_key: "challenge-domain-correctness-showdown-anchor-non-idempotent-rebuild"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-249"

@@ -21,5 +21,5 @@ agent_corroboration:
   - "range-equity-audit (F4)"
 dedup_key: "eng-engine-domain-correctness-assessev-produces-categorical-ev-ev-verdict-without-confiden"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
-promoted_to: ""
+updated_at: "2026-06-20"
+promoted_to: "WS-245"

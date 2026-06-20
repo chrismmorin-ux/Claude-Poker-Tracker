@@ -1,0 +1,68 @@
+id: "WS-242"
+title: "ICM risk-premium: covered-shove stack-transfer asymmetry (riskChips uses full stack)"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-06-20T00:00:00Z"
+completion_note: |
+  Fixed the covered-shove asymmetry in usePushFold.js: the SHOVE ICM payload now
+  passes riskChips = winChips = effectiveAllIn = min(hero, villain) instead of
+  riskChips: heroChips (full stack). When hero covers a shorter villain, hero can
+  lose only the effective amount, not their whole stack — the old code over-debited
+  the ICM lose branch. riskPremium.js itself was already correct (it uses whatever
+  amounts the caller supplies; computeHeroPressure already passed the effective
+  min). Added an icmEngine regression test: a 100-vs-40 covered shove keeps hero at
+  60 chips in the lose branch (matches modeling hero at 60 directly), strictly more
+  $EV than the full-stack bust computation. icmEngine + pushFold suites green (36).
+priority_score: 16.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  In the SHOVE case, computeRiskPremium is called with riskChips: heroChips
+  (hero's full stack) while winChips = min(heroChips, villainStack). The lose
+  branch then removes heroChips from hero and credits heroChips to villain via
+  cloneWithTransfer. When the contested villain is SHORTER than hero (a covered
+  shove), hero cannot lose their full stack — only min(hero, villain) — and the
+  villain cannot receive more than they had. The transfer over-debits hero and
+  over-credits villain in the lose branch, distorting heroLose and the derived
+  risk premium.
+
+  Masked in normal use: first-in jams are gated to <=15bb effective and target
+  the chip leader (assessPushFoldSetup picks the biggest opponent), so villain >=
+  hero almost always and riskChips == winChips == heroChips. Bites only when the
+  selected villain is shorter than hero. cloneWithTransfer's Math.max(0,...) keeps
+  stacks non-negative but villain's resulting stack is still inflated.
+
+  Source: domain-correctness delta run 2026-06-20 (new LOW finding).
+accept_criteria: |
+  - SHOVE path passes riskChips: min(heroChips, villainStack) (effective amount at
+    risk), matching winChips. CALL path already correct — leave unchanged.
+  - Add a test exercising a covered shove (villain shorter than hero) asserting the
+    risk premium matches the effective-stack computation, not the full-stack one.
+  - icmEngine + pushFoldEngine test suites pass; Malmuth-Harville conservation
+    assertions still hold; build clean.
+effort: "S"
+files_involved:
+  - "src/utils/icmEngine/riskPremium.js"
+  - "src/hooks/usePushFold.js"
+  - "src/utils/icmEngine/__tests__/icmEngine.test.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-delta-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  New LOW finding from the 2026-06-20 domain-correctness delta review of the new
+  ICM/push-fold engine (otherwise SOUND). Narrow edge case; effective-stack fix.

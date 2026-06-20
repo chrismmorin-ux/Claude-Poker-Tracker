@@ -1,0 +1,36 @@
+id: "FIND-028"
+title: "calcBluffEV semi-bluff branch omits rake while value/optimal paths include it"
+severity: MEDIUM
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-246"
+resolution: |
+  calcBluffEV semi-bluff branch now nets rake: heroEquity*(totalPotIfCalled - rakeAmount)
+  - betSize. Math is correct; note it is currently LATENT (no caller passes rakeAmount yet
+  — decisionTreeBuilder omits it), so no behavior change today but correct when rake is
+  threaded. exploitEngine suite green.
+category: "game-tree"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+  date: "2026-06-20"
+description: |
+  foldEquityCalculator.js calcBluffEV (57-73) accepts rakeAmount = 0 but never uses
+  it. The semi-bluff branch computes heroEquity * totalPotIfCalled - betSize with no
+  rake deduction, even though §11.3 and calcFoldEquity (line 33) net rake out of the
+  showdown pot. A called semi-bluff goes to showdown and pays rake, so its EV is
+  overstated in raked games. (Pure-bluff branch is correct — no showdown when villain
+  folds.) Clear, localized, small fix.
+affected_files:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  In the heroEquity > 0 branch, subtract rake from the won-pot term:
+  heroEquity * (totalPotIfCalled - rakeAmount) - betSize.
+theory_citation: "POKER_THEORY.md §6.1 (fold-equity formula); §11.3 (rake-adjusted EV)"
+dedup_key: "challenge-domain-correctness-semibluff-ev-omits-rake"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-246"

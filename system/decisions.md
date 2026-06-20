@@ -577,3 +577,42 @@ assumptions:
 ```
 
 ---
+
+## DEC-021: Voice input scope expansion — WS-181 card spike → Voice Hand-Tree Entry (re-ratifies R2; R1 holds)
+
+**Date:** 2026-06-19 | **Status:** Accepted | **Detected:** explicit (owner 2026-06-19 session, ratified via AskUserQuestion)
+
+**Context:** WS-181 shipped Voice Card Entry as a ship-or-drop spike scoped (ratification R2) to board + villain-showdown CARDS only, on Web Speech (R1), no cloud/Whisper. It "worked the majority of the time" but was never live-validated (no SHIP/KEEP-OFF/DROP ADR was ever written). The owner now wants voice to "do more" — narrate whole hands including ACTION sequences ("UTG b 10, I call"; "MP limp, I open 15, BTN 3b, I c"), usable both live (peek at the recorded hand, dismiss, keep playing) and post-hoc (reconstruct a hand from memory, inserting forgotten actors and re-typing actions). The owner did NOT choose cloud transcription.
+
+**Options Considered:**
+1. **Stay at R2 (cards only) + improve graceful degradation** — rejected: doesn't meet the owner's explicit "do more" (actions); degradation alone is necessary but not sufficient.
+2. **Cloud/Whisper for higher accuracy** — rejected: breaks R1, adds infra/cost, owner did not select it; loses the zero-infra on-device property.
+3. **Expand to full hand-tree on Web Speech; build the action parser from REAL captured voice data (CHOSEN)** — keeps R1, defers the parser until real captures exist, writes into the existing hand record.
+
+**Decision:** Expand voice scope from cards-only to a **Voice Hand-Tree Entry** capability: voice narrates whole hands incl. action sequences; one editable hand-tree object; **confirm-by-exception** ("only fix the doubt") layered over a full touch-editable timeline; dual-context (live peek + post-hoc reconstruct). **R2 is superseded/expanded. R1 (Web Speech only, no cloud) REMAINS binding.** R3 ("ship-or-drop, no incremental") is reinterpreted: since the spike was never live-validated, the accuracy + graceful-degradation work now folds INTO validating the expanded capability rather than being a forbidden "5% better" follow-up. The capability MUST write into the **same hand record the live tracker uses** — no parallel hand format (one source of truth). First implementation is an **owner-only sandbox prototype** (Admin/Sandbox → "Voice hand-timeline", `SCREEN.VOICE_TIMELINE_SANDBOX`) that captures real voice transcripts; the **speech→timeline parser is DEFERRED** until real voice data is collected.
+
+**Reasoning:** Owner-directed scope. Builds on the first-principles "build from real data, not guesses" discipline — capturing real transcripts before writing the action grammar avoids tuning against imagined speech. One-source-of-truth keeps the timeline editor and live tracker from forking the hand model. Confirm-by-exception + fix-in-place-over-retry follows the established in-flow-recovery principle (`feedback_error_recovery_in_flow.md`). The owner-only sandbox is the sanctioned pre-Gate home, so this expands scope without shipping user-facing UX prematurely or tripping the design gates.
+
+**Consequences:**
+- R2 superseded by this decision; R1 still binding; R3 reframed (accuracy/degradation = the validation, not a banned follow-up). The `voice-card-entry.md` surface remains valid for the cards path; a new Gate-4 surface (`docs/design/surfaces/voice-hand-timeline.md`) covers the timeline editor (authored same session).
+- Follow-up: (a) collect real voice data via the sandbox capture tool; (b) build the speech→timeline action parser from those captures; (c) wire the timeline's commit into the real hand record; (d) set numeric kill-criteria for the expanded capability at live validation.
+- New owner-only `SCREEN.VOICE_TIMELINE_SANDBOX`; input-layer only, **zero coupling** to exploitEngine/rangeEngine/pokerCore.
+- Reversible: sandbox-gated, persists only device-local transcripts, no schema/migration change, writes nothing to real hands yet.
+
+**Load-Bearing Assumptions (AS-N, advisory — impact: medium):**
+```yaml
+assumptions:
+  - id: AS-1
+    type: empirical
+    claim: "An on-device Web Speech action-sequence parser, tuned on real captured live-table voice data, can reach accuracy high enough that confirm-by-exception correction cost stays below the tap-entry baseline — i.e. R1 (no cloud) is sufficient for the expanded action scope, not just the 17-word card vocabulary."
+    falsifies_if:
+      threshold: "after building the parser from >=20 real captured hand narrations, per-utterance action accuracy is so low that average correction cost exceeds the current tap-entry baseline (mirrors WS-181 kill-criteria K-a/K-b)"
+      window: "first live validation of the expanded capability, or 2026-09-19, whichever first"
+    revisit: "2026-09-19"
+    status: active
+    severity: medium
+```
+
+**Market Dynamics:** Not applicable — this decision deliberately avoids any external-actor dependency (R1 keeps recognition on-device via the browser Web Speech API; no cloud STT vendor, no Anthropic/competitor roadmap bet). The only external surface is browser Web Speech availability/quality, watched via the sandbox capture tool; trigger to revisit R1 would be sustained evidence (from real captures) that on-device accuracy cannot clear AS-1.
+
+---

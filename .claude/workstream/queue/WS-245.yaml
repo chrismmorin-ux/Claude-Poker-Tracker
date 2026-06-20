@@ -1,0 +1,52 @@
+id: "WS-245"
+title: "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 13.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Two display-layer verdicts emit confident-looking categorical output over noisy
+  small-sample estimates, with no confidence gate (POKER_THEORY §6.5):
+
+  FIND-009: replayAnalysis.js assessEV uses hard bucket-pct thresholds
+    (valuePct > 50, valuePct < 25 && drawPct < 20, ...) to emit +EV/-EV/neutral
+    with no dataQuality/handsProcessed/confidence gate.
+  FIND-010: pipCalculator.js active-tier count uses a hard WEIGHT_THRESHOLD = 0.3
+    cutoff over Float64 weights and emits an integer pip delta (formatPips) with no
+    uncertainty attribution.
+
+  Both are display/heuristic layer (lower consequence than engine math), but both
+  present precision the sample size doesn't support.
+accept_criteria: |
+  - assessEV gates on the range profile's handsProcessed/confidence; below threshold
+    returns verdict 'unknown' with reason 'insufficient data'.
+  - pipCalculator attaches { pips, confidence } per position via
+    bayesianSampleConfidence; formatPips renders a confidence badge.
+  - Tests cover the low-sample -> unknown/low-confidence path; build clean.
+effort: "M"
+files_involved:
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - "src/utils/rangeEngine/pipCalculator.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-009"
+  run_id: "run-domain-correctness-delta-2026-06-20"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Promoted from FIND-009 + FIND-010 during the 2026-06-20 domain-correctness delta
+  run. Backlog — display-layer honesty, deferred behind higher-impact fixes.

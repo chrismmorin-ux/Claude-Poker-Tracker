@@ -70,7 +70,7 @@ findings:
     title: "No exact-enumerate fast path in handVsRange analysis-layer callers"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "eng-engine-domain-correctness-no-exact-enumerate-fast-path-in-handvsrange-analysis-layer-c"
     program: domain-correctness
     created_at: "2026-05-01"
@@ -97,7 +97,7 @@ findings:
     title: "detectPositionallyAware uses raw frequentist ratios with min-N=5 gate"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "eng-engine-domain-correctness-detectpositionallyaware-uses-raw-frequentist-ratios-with-min"
     program: domain-correctness
     created_at: "2026-05-01"
@@ -106,7 +106,7 @@ findings:
     title: "Theory drift: rake/SPR-zones/personalized-fold-curves implemented in code, undocumented in POKER_THEORY.md"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "eng-engine-domain-correctness-theory-drift-rake-spr-zones-personalized-fold-curves-impleme"
     program: domain-correctness
     created_at: "2026-05-01"
@@ -115,7 +115,7 @@ findings:
     title: "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s"
     program: domain-correctness
     created_at: "2026-05-01"
@@ -227,4 +227,76 @@ findings:
     dedup_key: "provenance-audit-data-quality-gto-approximate-charts-mislabeled-as-equilibrium"
     program: data-quality
     created_at: "2026-06-19"
+
+  - id: "FIND-026"
+    title: "Showdown anchors may double-boost on stateless range rebuilds (idempotency unverified)"
+    engine: eng-engine
+    severity: medium
+    status: resolved
+    dedup_key: "challenge-domain-correctness-showdown-anchor-non-idempotent-rebuild"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-027"
+    title: "comboBetFilter and computeVillainBetProb disagree ~2x on early-street bluff frequency"
+    engine: eng-engine
+    severity: medium
+    status: resolved
+    dedup_key: "challenge-domain-correctness-bluff-freq-estimator-divergence"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-028"
+    title: "calcBluffEV semi-bluff branch omits rake while value/optimal paths include it"
+    engine: eng-engine
+    severity: medium
+    status: resolved
+    dedup_key: "challenge-domain-correctness-semibluff-ev-omits-rake"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-029"
+    title: "bestResponseToAggression gates raiseEV on heroEquity>=0.65, suppressing all bluff-raises"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "challenge-domain-correctness-bestresponse-065-gate-suppresses-bluff-raise"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-030"
+    title: "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "challenge-domain-correctness-multiway-independence-and-sampleconf-priors"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-031"
+    title: "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-032"
+    title: "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "blindspot-domain-correctness-sizing-and-timing-tells-missing"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-033"
+    title: "Verify sample-size confidence reaches live-advice UI; range-advantage-driven sizing in live path"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing"
+    program: domain-correctness
+    created_at: "2026-06-20"
 

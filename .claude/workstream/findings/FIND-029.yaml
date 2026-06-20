@@ -1,0 +1,32 @@
+id: "FIND-029"
+title: "bestResponseToAggression gates raiseEV on heroEquity>=0.65, suppressing all bluff-raises"
+severity: MEDIUM
+status: open
+category: "first-principles"
+program: "domain-correctness"
+problem_class: "First-principles decision modeling"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-06-20"
+  date: "2026-06-20"
+description: |
+  gameTreeEquity.js bestResponseToAggression (531-548) only computes raiseEV
+  if (heroEquityVsAggroRange >= 0.65); below that, raiseEV = -Infinity. So hero can
+  NEVER be advised to raise as a bluff/semi-bluff vs aggression — even when the
+  villain's fold-to-raise rate (vFoldToRaise, already queried at 536-543) makes a
+  bluff-raise +EV via fold equity. A hardcoded strength gate substitutes for the EV
+  computation it should perform (adjacent to §7 labels/thresholds-as-inputs). Against
+  a villain who barrels and over-folds to raises, raising light is the textbook
+  exploit and the code structurally cannot surface it. Most poker-consequential of
+  the challenge findings.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+recommended_fix: |
+  Always compute raiseEV (the fold-equity term vFoldToRaise*(pot+bet) carries low-
+  equity hands); let Math.max pick the winner instead of pre-gating on 0.65.
+theory_citation: "POKER_THEORY.md §7.1/§7.5; §5.6 (fold-equity exploits)"
+dedup_key: "challenge-domain-correctness-bestresponse-065-gate-suppresses-bluff-raise"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-247"

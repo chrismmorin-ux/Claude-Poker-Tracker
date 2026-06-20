@@ -1,0 +1,36 @@
+id: "FIND-032"
+title: "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)"
+severity: LOW
+status: open
+category: "theory-gap"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-06-20"
+  date: "2026-06-20"
+description: |
+  Two live-low-stakes exploit tells are missing:
+  (a) Sizing-tell calibration is STUBBED — villainProfileBuilder.js:446-451 hard-codes
+      sizingTells.detected = false ("reserved for future showdown calibration"). No
+      module regresses shown-hand strength on bet_size_pct, despite §3.5/§5.9 calling
+      it the most exploitable tell. The data IS captured (showdowns store
+      {bet_size_pct, hand_shown}) — this is a wiring gap, not a data gap.
+  (b) Timing tells are absent AND the raw data isn't recorded — no time-to-act /
+      tookMs field on action records in gameConstants.js. Requires a data-model change
+      before any engine work (the Ignition extension could capture it precisely).
+  Returns "no tell" rather than wrong output, so low severity (incomplete, not wrong).
+affected_files:
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/constants/gameConstants.js"
+recommended_fix: |
+  (a) Per villain, regress shown-hand strength on bet_size_pct per street; emit
+  sizingTells:{correlation:+/0/-, confidence}; feed into bluff-catch thresholds. N-gated.
+  (b) Add optional tookMs to action records (auto in extension, best-effort manual);
+  build a timing-tell trait. Defer (b) until (a) proves the showdown-calibration pattern.
+theory_citation: "POKER_THEORY.md §3.5 (sizing↔range), §5.9 (showdown ground truth)"
+dedup_key: "blindspot-domain-correctness-sizing-and-timing-tells-missing"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-250"

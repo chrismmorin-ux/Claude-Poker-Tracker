@@ -1,7 +1,15 @@
 id: "FIND-013"
 title: "PRIOR_WEIGHT numeric drift: code has 10, POKER_THEORY.md §6.5 says ~5"
 severity: MEDIUM
-status: open
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "WS-243"
+resolution: |
+  POKER_THEORY.md §6.5 corrected "~5 virtual observations" → "~10" with rationale,
+  aligning the doc to code (populationPriors.js PRIOR_WEIGHT = 10) and all sibling
+  docs (RANGE_ENGINE_DESIGN.md, rangeEngine/CLAUDE.md, bayesianConfidence STAT_PRIORS,
+  assumptionProducer). The 2026-06-20 delta confirmed the doc was the stale side.
+  Doc-only fix.
 category: "theory-drift"
 program: "domain-correctness"
 problem_class: "Theory-spec drift"
@@ -22,5 +30,5 @@ agent_corroboration:
   - "theory-drift-anti-pattern-sweep (D3)"
 dedup_key: "eng-engine-domain-correctness-prior-weight-numeric-drift-code-has-10-poker-theory-md-6-5-s"
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
-promoted_to: ""
+updated_at: "2026-06-20"
+promoted_to: "WS-243"

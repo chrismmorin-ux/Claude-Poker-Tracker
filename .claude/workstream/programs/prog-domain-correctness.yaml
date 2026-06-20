@@ -285,31 +285,43 @@ phase_relevance:
   maturity: critical
 
 last_run_by_protocol:
-  baseline: { date: "2026-05-01", engine: "eng-engine", run_id: "run-domain-correctness-baseline-2026-05-01", result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified" }
+  baseline:
+    date: "2026-05-01"
+    engine: eng-engine
+    run_id: "run-domain-correctness-baseline-2026-05-01"
+    result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified. (Reformatted flow->block 2026-06-20 so the naive YAML reader parses date — was silently undefined, zeroing protocol_currency.)"
   delta:
-    date: "2026-06-10"
+    date: "2026-06-20"
     engine: preflight
-    run_id: "run-domain-correctness-delta-2026-06-10"
-    result: "First delta run. Window: post-sweep engine-scope commits 92c9320..a2cf5c4 (WS-023 drift CI, ca7c0ff live-bridge sizing/boards/scareKind, 299a5f8 six seam-contract fixes, SPR-117 seam tests + 0-100 unit contract, SPR-118 rangeRules observed-frequency re-gate, SPR-119 anchor predicate registry + seed v1.1 conformance). ZERO anti-pattern hits in added lines (grep: WEAKNESS_EXPLOIT_MAP additions, position-label conditionals, z-test/pValue — all clean). Doctrine-IMPROVING changes: SPR-118 replaced width-derived pseudo-counts (double-smoothed prior) with observed counts into the Beta posterior; 299a5f8 trait-shape fix RESTORED the §5.8 trap-problem suppression that was silently broken; ca7c0ff texture priority cites POKER_THEORY §3.1; SPR-119 seed quality blocks derived via determineActionability (labels OUTPUT-only). POKER_THEORY.md unmodified; no formula divergence introduced. No new findings."
+    run_id: "run-domain-correctness-delta-2026-06-20"
+    result: "Window: 2026-06-10..HEAD, engine-scope. Major delta = new src/utils/icmEngine/ (Malmuth-Harville $EV, riskPremium, buildIcmStacks) + src/utils/pushFoldEngine/ (push/fold + call verdicts) from the ICM/tournament commits (7507af0, 69ed46d, 335f7c7). VERDICT: SOUND-WITH-MINOR-ISSUES. Malmuth-Harville recursion independently re-derived in Node — matches textbook {50,30,20} -> [38.39,32.75,28.86] to 4dp and conserves prize pool even when paid<players; ICM-tax signature present + asserted; risk premium is genuinely DERIVED ((heroNow-heroLose)/(heroWin-heroLose)), no bubble-factor/M-zone lookup table (§10.3 compliant); push/fold verdicts derive from equity + ICM pot-odds with NO position/style/bucket label as input (§7/§10.4-5); honesty flags isApproximate/tooLarge functionally wired (setup.js declines ICM build when tooLarge, falls back to chip-EV; MAX_ICM_FIELD=10 guards factorial blowup); hardcoded ranges serve as population REFERENCE feeding MC equity, never bypass the equity math; tests validate real poker correctness (textbook MH value, conservation, ICM CALL->FOLD flip at 0.47eq). 1 NEW LOW finding: covered-shove riskPremium asymmetry — riskPremium.js:49-50 passes riskChips:heroChips (full stack) while winChips=min(hero,villain), over-debiting hero in the lose branch when the contested villain is shorter than hero; masked in normal use (first-in jams target the chip leader so villain>=hero), fix = pass riskChips:min(hero,villain). Also re-triaged the 8 untriaged baseline findings (FIND-006..013): FIND-008 OBSOLETE (exact-enumerate fast path now lives in handVsRange kernel, monteCarloEquity.js:326-330, SPR-095 refactor); FIND-013 downgraded LOW (doc-only: POKER_THEORY §6.5 says ~5, code + all sibling docs standardized on 10 — fix the doc); FIND-006/007/009/010/011 confirmed STILL-REAL MEDIUM (FIND-011 detectPositionallyAware raw frequentist min-N=5 is the sharpest — directly violates rangeEngine no-frequentist-ratios rule, feeds false trait flags downstream); FIND-012 STILL-REAL doc-drift (rake/SPR-zones/fold-curves in code, absent from POKER_THEORY)."
   sweep:
     date: "2026-06-09"
     engine: eng-engine
     run_id: "run-domain-correctness-sweep-2026-06-09"
     result: "Drift sweep vs 2026-05-19 over the ~6,730-insertion engine surface from SPR-101..110 (Range Lab P1/P2b, HSP v2, 5 SCF hero-leak rules + shapeLanguage Bayesian substrate). NO new HIGH/MEDIUM drift; new work doctrine-aligned, in places doctrine-improving. Verified: new leak rules enforce n>=30 floor + CI-gated firing + treat position/decision labels as baseline-lookup keys not decision inputs; solverBaselines RFI/barrel/multiway match standard 100bb solver outputs with confidence discounts on sparse data; shapeLanguage betaPosterior is a sound single-source Beta CI with a>=1/b>=1 floors and no fused score; heroState composeAdjustments derives per-axis composition from minimax-regret + locally-linear-regime theory with archetypeId and composedDelta OUTPUT-only; pokerCore exactComboEquity collapses two enumeration copies into one deterministic single-source routine eliminating a divergence risk. 1 new LOW FIND-023: composeAdjustments multiplicative sizing assumes vulnerability orthogonality not asserted upstream, bounded by the 0.6-2.0 clamp, monitor. Sampled-not-exhausted: villainProfileBuilder, bayesianUpdater, equityCache follow established audited patterns, flagged for delta. 8 MEDIUM plus prior LOWs from baseline still open. Cleared the WS-365 first-run-required block left by the kit 3.8.0 re-materialization."
-  challenge: { date: null, engine: null, run_id: null, result: null }
-  blind_spot: { date: null, engine: null, run_id: null, result: null }
+  challenge:
+    date: "2026-06-20"
+    engine: eng-engine
+    run_id: "run-domain-correctness-challenge-2026-06-20"
+    result: "First challenge run (adversarial — assume the engine is wrong). Core math held up under attack: MC equity (monteCarloEquity.js) is unbiased (Welford variance, correct card-removal, unbiased rejection sampling, exact-enum fast path agrees), crossRangeConstraints conserves probability + respects mixing, the §7 labels-are-outputs rule is genuinely implemented in the per-combo game tree (comboActionProbabilities derives fold/call/raise from equityRatio logistic, not bucket lookups; estimateFoldPct single-source hierarchy suppresses style when a model exists — no double-counting), weakness labels describe villain only (no hero-action leak). 6 localized defects found (NONE foundational, NONE critical/high-confirmed): FIND-026 showdown-anchor non-idempotent re-boost across stateless rebuilds — needs idempotency test (medium, the one to prioritize); FIND-027 comboBetFilter vs computeVillainBetProb disagree ~2x on early-street bluff freq (medium); FIND-028 calcBluffEV semi-bluff branch omits rake while value path includes it (medium, clear one-line fix); FIND-029 bestResponseToAggression gates raiseEV on heroEquity>=0.65, structurally suppressing all +EV bluff-raises vs over-folders (medium, most poker-consequential); FIND-030 multiway fold-equity assumes opponent independence + bayesianSampleConfidence ignores its prior args (low nits). Files: bayesianUpdater.js, gameTreeEquity.js:360-365 & 531-548, foldEquityCalculator.js:57-73."
+  blind_spot:
+    date: "2026-06-20"
+    engine: eng-engine
+    run_id: "run-domain-correctness-blindspot-2026-06-20"
+    result: "First blind-spot run (what published poker theory is the codebase MISSING?). Engine layer is far more complete than a typical tracker — VERIFIED NOT gaps (do not re-open): multiway 3+ (true handVsRangeMulti joint primitive, not pairwise; multiwayFoldPct requires all fold; per-opp realization floor), iso-raise/squeeze, blockers/removal, equity realization (position/SPR/multiway aware), push/fold $EV + ICM all-in, MDF/breakeven/two-term fold-equity/rake/SPR-continuous/personalized-fold-curves, blind-vs-blind + per-position priors. Real gaps: FIND-031 ICM pressure absent on NON-all-in tournament streets (preflop opens/3-bets, postflop bets all run pure chip-EV through the shared cash tree — gameTreeEvaluator/preflopAdvisor have zero icm/payout/riskPremium refs; §10.4 anti-pattern; the BIGGEST gap, = the next deferred consumer of the ICM project, riskPremium.js math already exists) (medium); FIND-032 showdown sizing-tell calibration STUBBED (villainProfileBuilder.js:446-451 hard-codes sizingTells.detected=false; §3.5/§5.9 call it the most exploitable tell; data is captured) + timing-tells absent AND time-to-act not even recorded in the data model (low/needs data-model change); FIND-033 sample-size confidence math is solid but verify it reaches the live-advice UI as an explicit low-N signal + range-advantage-driven sizing in live path (low). Biggest gap = FIND-031 (ICM on non-all-in streets)."
 
-health_score: 2
-health_updated_at: "2026-06-11T00:00:00Z"
-health_ceiling: 8
-health_ceiling_reason: "Baseline (2026-05-01) + first sweep (2026-05-19) complete; all 5 baseline HIGH findings resolved (SPR-001/016/017). Sweep found NO new HIGH/critical drift — engine work since baseline actively implements doctrine (WS-194 villainStrengthBucket as output, archetype-as-output guard, AP-RL-01, MNAR rail). Score 5/8: full problem-class coverage confirmed + sweep currency fresh, but finding_health dragged by 8 open MEDIUM. Ceiling stays 8 — challenge + blind_spot protocols not yet run (each raises rigor ceiling). block_sprint cleared (sweep fresh)."
+health_score: 6
+health_updated_at: "2026-06-20T00:00:00Z"
+health_ceiling: 9
+health_ceiling_reason: "2026-06-20: delta + challenge + blind_spot all run; ceiling 8->9 (rigor). protocol_currency 0.0->0.92 after fixing the baseline stamp (flow-style { date:... } parsed as undefined, zeroing currency). block_sprint+stale clamp cleared. Quick-win sprint then closed 3 of the new MEDIUM findings (FIND-026 verified-not-defect + idempotency test; FIND-027 bluff-freq unified; FIND-028 semi-bluff rake), lifting finding_health 0.10->0.40 and score 5->6. Remaining 6 MEDIUM: FIND-006/007/009/010 (baseline, WS-244/245), FIND-029 (raise-gate deferred — needs aggression-prior calibration, WS-247), FIND-031 (ICM on non-all-in streets, ICM-project phase, WS-251). Closing those is the path to the 10 ceiling."
 health_breakdown:
-  finding_health: 0.20      # 8 MEDIUM open (0 critical, 0 high)
-  protocol_currency: 0.0    # canonical formula hard-zeros while ANY active protocol never ran (challenge; blind_spot stale from 2026-06-30). Delta now run 2026-06-10.
-  problem_class_coverage: 1.0  # all 9 classes checked at last sweep
+  finding_health: 0.40      # 6 MEDIUM open (0 critical, 0 high); 12 LOW (unpenalized)
+  protocol_currency: 0.92   # all 5 protocols current
+  problem_class_coverage: 1.0  # all 9 classes checked
   maturity_progress: 0.50   # level 2 of 4
-  raw: 0.39
-  earned: 3
+  raw: 0.69
+  earned: 6
   applied: 2                # cap: block_sprint + stale -> max 2 (challenge never-run drives stale). Challenge run is the unlock.
 findings_open: 18
 work_items_open: 1

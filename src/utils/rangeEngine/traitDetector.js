@@ -9,8 +9,49 @@
 
 import { RANGE_POSITIONS } from './rangeProfile';
 import { decodeIndex } from '../pokerCore/rangeMatrix';
+import { betaPosterior, betaCDF, betaQuantile } from '../pokerCore/betaMath';
 
 const GRID_SIZE = 169;
+
+// Open-rate (RFI) prior for the positional-awareness comparison: Beta(6, 24),
+// mean 20%, pseudocount 30 — a deliberately firm prior that pulls EARLY and LATE
+// rates toward a common 20% until real evidence accumulates. This is the Bayesian
+// replacement for the old hard "n < 5 → bail" gate (FIND-011): small samples stay
+// near the prior, so noise cannot manufacture a positional spread and a single
+// extra open at n=5 cannot flip the verdict; only a sustained divergence over a
+// real sample (~n≥20 per position) clears the >0.5 detection gate. The weight is
+// heavier than rangeEngine's PRIOR_WEIGHT=10 single-rate convention on purpose —
+// detecting a *difference* between two rates needs more regularization than
+// estimating one rate, and concluding a player "adjusts by position" warrants a
+// meaningful per-position sample.
+const OPEN_RATE_PRIOR = { alpha: 6, beta: 24 };
+// Trait fires when LP open rate exceeds EP open rate by this factor.
+const POS_AWARE_FACTOR = 1.5;
+
+/**
+ * Posterior probability that one rate exceeds `factor`× another, given two
+ * independent Beta posteriors. Computed by exact quadrature over the lower
+ * posterior's equal-probability quantile bins — deterministic, and using exact
+ * Beta tails (NO normal/z approximation, per the rangeEngine no-frequentist rule).
+ *
+ *   P(θ_hi > factor·θ_lo) = E_{e ~ postLo}[ 1 − F_hi(factor·e) ]
+ *
+ * @param {{alpha:number, beta:number}} postHi - higher-rate posterior
+ * @param {{alpha:number, beta:number}} postLo - lower-rate posterior
+ * @param {number} factor - multiple of the lower rate to exceed
+ * @param {number} [bins=48] - quantile bins for the quadrature
+ * @returns {number} posterior probability in [0, 1]
+ */
+const probRateExceedsFactor = (postHi, postLo, factor, bins = 48) => {
+  let acc = 0;
+  for (let i = 0; i < bins; i++) {
+    const p = (i + 0.5) / bins; // bin midpoint in probability space
+    const eLo = betaQuantile(p, postLo.alpha, postLo.beta);
+    const threshold = Math.min(1, factor * eLo);
+    acc += 1 - betaCDF(threshold, postHi.alpha, postHi.beta);
+  }
+  return acc / bins;
+};
 
 // Top 5% of hands by strength tier (pairs TT+, AKs, AKo, AQs)
 const PREMIUM_INDICES = new Set();
@@ -120,25 +161,29 @@ const detectPositionallyAware = (profile) => {
   const earlyOpp = profile.opportunities?.EARLY?.noRaiseFaced || 0;
   const lateOpp = profile.opportunities?.LATE?.noRaiseFaced || 0;
 
-  if (earlyOpp < 5 || lateOpp < 5) {
+  // No-data guard: a rate comparison needs at least one opportunity in BOTH
+  // positions (zero-denominator guard, NOT a min-sample gate). Small samples are
+  // handled by the prior in probRateExceedsFactor, not excluded here.
+  if (earlyOpp < 1 || lateOpp < 1) {
     return { posterior: 0, earlyOpenPct: null, lateOpenPct: null };
   }
 
   const earlyOpens = profile.actionCounts?.EARLY?.open || 0;
   const lateOpens = profile.actionCounts?.LATE?.open || 0;
 
-  const earlyOpenPct = Math.round((earlyOpens / earlyOpp) * 100);
-  const lateOpenPct = Math.round((lateOpens / lateOpp) * 100);
+  // Beta posteriors on each position's open rate, regularized by a common RFI
+  // prior. posterior = P(LP open rate > 1.5× EP open rate) — a genuine Bayesian
+  // probability that shrinks toward 0.5 (then below the >0.5 detection gate) when
+  // the sample is too small to distinguish a real positional spread from noise.
+  const earlyPost = betaPosterior(earlyOpens, earlyOpp, OPEN_RATE_PRIOR.alpha, OPEN_RATE_PRIOR.beta);
+  const latePost = betaPosterior(lateOpens, lateOpp, OPEN_RATE_PRIOR.alpha, OPEN_RATE_PRIOR.beta);
+  const posterior = probRateExceedsFactor(latePost, earlyPost, POS_AWARE_FACTOR);
 
-  // If LP open rate > 1.5x EP open rate, player is positionally aware
-  let posterior = 0;
-  if (earlyOpenPct > 0 && lateOpenPct > earlyOpenPct * 1.5) {
-    posterior = Math.min(1.0, (lateOpenPct / earlyOpenPct - 1) * 0.5);
-  } else if (earlyOpenPct === 0 && lateOpenPct > 0) {
-    posterior = 0.7;
-  }
-
-  return { posterior, earlyOpenPct, lateOpenPct };
+  return {
+    posterior,
+    earlyOpenPct: Math.round((earlyOpens / earlyOpp) * 100),
+    lateOpenPct: Math.round((lateOpens / lateOpp) * 100),
+  };
 };
 
 /**

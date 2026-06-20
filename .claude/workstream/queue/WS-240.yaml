@@ -1,0 +1,89 @@
+id: "WS-240"
+title: "Voice Hand-Tree Entry — build the speech→timeline action parser from real captured voice data (DEC-021)"
+legacy_id: ""
+type: feature
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 12.0
+priority_label: "P3"
+category: "input-ux"
+capability: "core"
+program: "design"
+description: |
+  Build the parser that turns a whole-hand voice narration into the hand-tree
+  model, then populate the Voice hand-timeline from it. Evolves WS-181 (cards) →
+  full Voice Hand-Tree Entry per DEC-021 (re-ratifies R2; R1 Web-Speech-only holds).
+
+  Source decision: DEC-021 (system/decisions.md).
+  Surface: docs/design/surfaces/voice-hand-timeline.md.
+  Project memory: project_voice_hand_tree_entry.md.
+  Sandbox already shipped (capture + editor): Settings → Admin/Sandbox →
+  "Voice hand-timeline" (src/components/views/VoiceTimelineSandbox/).
+
+  Scope:
+  1. Parse a captured whole-hand transcript → hand-tree {streets → ordered
+     (actor, action, size?)} using the pre-trainer trigger vocabulary
+     (start anchor / street advancers "flop|turn|river|next street" /
+     self-ref "I|hero" / positions UTG..BB) + an ACTION grammar
+     (fold/check/call/limp/bet/raise/3-bet/4-bet/donk/check-raise + sizes)
+     **built from the real captures, not guesses** (R-DATA).
+  2. Populate the sandbox timeline from the parse; flag low-confidence links
+     amber for confirm-by-exception. Partial parse is valuable → render the
+     partial chain, never a no-op-on-imperfection (R-FIX).
+  Follow-on (separate slice, after the above proves out):
+  3. Wire the timeline commit into the EXISTING hand record — one source of
+     truth (R-SoT). No parallel hand format.
+  4. Set numeric kill-criteria at first live validation (mirror WS-181
+     K-a/K-b/K-c).
+
+  Constraints: R1 Web Speech only (no cloud/Whisper). Input-layer only; ZERO
+  coupling to exploitEngine/rangeEngine/pokerCore. Reuse src/utils/voiceCardEntry/
+  (grammar + parser) patterns where they fit.
+
+accept_criteria: |
+  - Action grammar + parser authored from >=15-20 real captured hand narrations
+    (collected via the sandbox capture tool). Unit tests enumerate the action
+    vocabulary + the pre-trainer triggers + partial-parse tolerance.
+  - parseHandNarration(transcript) returns the hand-tree model; low-confidence
+    links flagged for confirm-by-exception; never returns nothing on a partial
+    (renders the partial chain).
+  - Sandbox timeline populates from a spoken hand end-to-end on a real device.
+  - Build clean; tests pass; no engine-path changes (input layer only).
+  - Follow-on slices (commit-to-hand-record, kill-criteria) tracked separately
+    once the parser proves out.
+
+effort: "L"
+files_involved:
+  - "src/utils/voiceHandTree/grammar.js (NEW — action + trigger vocabulary)"
+  - "src/utils/voiceHandTree/parser.js (NEW — transcript → hand-tree)"
+  - "src/components/views/VoiceTimelineSandbox/VoiceTimelineSandbox.jsx (wire parse → timeline)"
+  - "docs/design/surfaces/voice-hand-timeline.md (update on build)"
+
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: "Awaiting >=15-20 real hand narrations captured via the owner-only Voice hand-timeline sandbox (R-DATA: build the parser from real data, not guesses). Owner action — unblock once captures exist."
+blocked_at: "2026-06-19T00:00:00Z"
+enables: []
+
+sprint_id: null
+
+decision_flags:
+  - "Action grammar token table — authored from real captures, ratify at build"
+  - "'say it again' single-value re-listen vs full re-narrate"
+  - "Whether the timeline editor graduates from sandbox to a real surface (and where)"
+
+source:
+  type: manual
+  created_by: user
+  decision: "DEC-021"
+  user_request: "2026-06-19 — owner: track the parser build so it isn't lost"
+
+created_at: "2026-06-19T00:00:00Z"
+status_note: |
+  Created 2026-06-19 from DEC-021 follow-up. BLOCKED on real voice-data
+  collection (sandbox capture tool is live; owner narrates hands at the table,
+  then this parser is built from those transcripts). Sandbox prototype +
+  Gate-4 surface + ADR already shipped this session.

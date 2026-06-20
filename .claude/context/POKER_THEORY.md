@@ -1,10 +1,10 @@
 ---
-version: 1.1
-last_verified: 2026-05-01
-verified_by: cwos-domain-correctness-baseline-2026-05-01
+version: 1.2
+last_verified: 2026-06-20
+verified_by: cwos-domain-correctness-delta-2026-06-20
 verification_protocol: "/pulse run domain-correctness baseline"
 review_cadence_days: 90
-next_review: 2026-07-30
+next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
@@ -14,6 +14,9 @@ changelog:
   - date: 2026-06-19
     version: 1.1
     change: "Added §10 Tournament Theory & ICM (chips≠dollars, Malmuth-Harville, risk premium as a derived quantity, push/fold as $EV, M-ratio as descriptor not driver, multi-table approximation honesty, satellite inversion, anti-patterns). Governs the new src/utils/icmEngine/. Tournament-strategy program kickoff; prior doc was cash-only."
+  - date: 2026-06-20
+    version: 1.2
+    change: "domain-correctness delta run reconciled two theory-vs-code drifts: §6.5 PRIOR_WEIGHT corrected ~5 → ~10 (FIND-013; matches populationPriors.js + all sibling docs), and added §11 Implemented Engine Algorithms documenting the personalized fold-curve hierarchy, SPR zones + continuous sizing multiplier, and rake-adjusted EV (FIND-012; code was ahead of the doc). No code changes."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -376,7 +379,7 @@ P(hand | action) = P(action | hand) × P(hand) / P(action)
 - P(action | hand): likelihood of this action with this hand
 - P(action): normalizing constant (overall frequency of this action)
 
-With small samples, the prior dominates. With large samples, the likelihood dominates. This is why our `bayesianUpdater.js` uses ~5 virtual observations as prior weight.
+With small samples, the prior dominates. With large samples, the likelihood dominates. This is why our `bayesianUpdater.js` uses ~10 virtual observations as prior weight (`PRIOR_WEIGHT = 10` in `rangeEngine/populationPriors.js`): a player needs ~10 real observations before their data outweighs the population prior, and at ~10 hands the blend is roughly 50/50. The same pseudocount-10 convention is mirrored across the Beta-Binomial machinery (`STAT_PRIORS` in `bayesianConfidence.js`, the assumption-engine priors). At ~30+ hands the data dominates.
 
 ### 6.6 Combo Counting
 - Pocket pairs: 6 combos each (AA = A♠A♥, A♠A♦, A♠A♣, A♥A♦, A♥A♣, A♦A♣)
@@ -705,3 +708,67 @@ In a **satellite** (flat payout — the top N all win an identical seat/ticket, 
 ### 10.9 Governance
 
 The `src/utils/icmEngine/` engine is governed by this section under `prog-domain-correctness`, the same as `exploitEngine/`/`rangeEngine/`. Its sub-directory `CLAUDE.md` lists the anti-patterns above; the domain-correctness baseline/sweep cross-checks ICM code against §10.
+
+---
+
+## 11. Implemented Engine Algorithms
+
+This section documents algorithm hierarchies and parameter schemes that exist in the
+engine code but were previously undocumented here (FIND-012 / WS-243). These are
+**implementations of the principles above**, recorded so the doc does not lag the code.
+None of them override the first-principles doctrine in §7 — note in particular that the
+SPR *zones* are descriptive labels while the *decision math* uses a continuous function
+(§11.2), exactly as §7 requires.
+
+### 11.1 Personalized Fold-Curve Hierarchy
+
+When estimating how a villain's fold frequency responds to bet size, the engine resolves
+fold-curve parameters (`maxDelta`, `steepness` / `steepnessUp` / `steepnessDown`,
+`midpoint`) from the **highest-fidelity source available**, never stacking lower tiers on
+top (this is the §7.4 no-double-counting rule applied to fold curves):
+
+1. **Personalized** — `fitFoldCurveParams(foldCurveData)` fits the curve from THIS villain's
+   observed bet-facing data when enough exists (`villainModelData.js`).
+2. **Explicit params** — caller-supplied `steepness` / `midpoint` / `maxDelta` overrides.
+3. **Style-conditioned** — `FOLD_CURVE_PARAMS[style]` (Fish/Nit/LAG/… defaults).
+4. **Population default** — `FOLD_CURVE_PARAMS.default`.
+
+Resolved in `foldEquityCalculator.js` `findOptimalBetSize`: `personalizedFoldCurve ||
+FOLD_CURVE_PARAMS[style] || FOLD_CURVE_PARAMS.default`. The fold response itself is a
+logistic in bet fraction (`logisticFoldResponse`), consistent with §3.5 (small bets barely
+move fold%, medium bets steepest, overbets bimodal) — not a linear scaling.
+
+### 11.2 SPR Zones (Descriptive) + Continuous Sizing Multiplier (Decision)
+
+Stack-to-pot ratio is classified into five **descriptive** zones (`getSPRZone`,
+`gameTreeConstants.js`):
+
+| Zone | SPR | Strategic meaning |
+|------|-----|-------------------|
+| MICRO | 0–2 | Pure commit-or-fold; any bet commits the stack |
+| LOW | 2–4 | Commit-or-fold with some sizing choice; one bet ≈ commits |
+| MEDIUM | 4–8 | One-street-to-commit; one more bet → pot-committed |
+| HIGH | 8–13 | Two-street play; standard multi-street patterns |
+| DEEP | 13+ | Full multi-street planning; positional advantage amplified |
+
+**These zone labels are for description/UX only.** The actual fold-sizing decision uses a
+**continuous** function, `sprMidpointMultiplier(spr) = clamp(0.50 + log2(max(spr,1)) ·
+0.15, 0.65, 1.20)`, which scales the fold-curve midpoint (lower SPR → folds at smaller bet
+fractions because the pot is already committed). This continuous form deliberately
+**replaced** an earlier zone-based lookup table — per §7, the boundary labels must not be
+the computation. Only active when effective stack is known (online/extension play).
+
+### 11.3 Rake-Adjusted EV
+
+Live/online pots are raked, which lowers the realized value of contested pots and shifts
+bluff/value thresholds. `estimateRake(potSize, rakeConfig, street)` (`potCalculator.js`):
+
+- `rakeConfig = { pct: 0–1, cap: $, noFlopNoDrop: boolean }`.
+- Returns `min(potSize · pct, cap)`; returns `0` preflop when `noFlopNoDrop` is set (the
+  standard live "no flop, no drop" rule); `0` when `rakeConfig` is absent.
+- Applied to the **showdown pot** (`potSize + betSize · 2`) inside `findOptimalBetSize`, so
+  the fold-equity EV (`calcFoldEquity`) nets out the rake hero pays when called to showdown.
+
+Rake reduces the EV of marginal value bets and thin calls; it never affects fold-equity
+from villain folding (no showdown, no drop). This is a refinement of the §6.1 fold-equity
+formula, not a replacement.

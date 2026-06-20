@@ -1,7 +1,19 @@
 id: "FIND-008"
 title: "No exact-enumerate fast path in handVsRange analysis-layer callers"
 severity: MEDIUM
-status: open
+status: resolved
+resolved_at: "2026-06-20T00:00:00Z"
+resolved_by: "obsolete (SPR-095)"
+resolution: |
+  OBSOLETE — addressed upstream, not at the call sites the finding pointed to. The
+  exact-enumeration fast path now lives INSIDE the equity kernel: monteCarloEquity.js:326-330
+  short-circuits to exactEnumerateEquity when combos.length <= 20 && board.length >= 4,
+  before the MC loop and independent of the trials option. Added in the SPR-095
+  exactComboEquity refactor (post-dates this 2026-05-01 finding). All four analysis-layer
+  callers (replayAnalysis.js, hindsightAnalysis.js) therefore get exact enumeration
+  automatically for the <=20-combo turn/river case the finding cared about — the premise
+  ("callers never short-circuit to it") is no longer true; the kernel does it for them.
+  Confirmed by the 2026-06-20 domain-correctness delta run.
 category: "equity-calculation"
 program: "domain-correctness"
 problem_class: "Equity calculation correctness"

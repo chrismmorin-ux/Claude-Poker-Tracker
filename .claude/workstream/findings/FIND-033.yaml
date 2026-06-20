@@ -1,0 +1,36 @@
+id: "FIND-033"
+title: "Verify sample-size confidence reaches live-advice UI; range-advantage-driven sizing in live path"
+severity: LOW
+status: open
+category: "theory-gap"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-06-20"
+  date: "2026-06-20"
+description: |
+  Two low-priority verification items from the blind-spot run:
+  (a) The Bayesian confidence MATH is solid (bayesianConfidence.js, PRIOR_WEIGHT=10,
+      consequence-weighted tiers in exploitValidator.js), but verify it reaches the
+      live-advice UI as an explicit "N=4, low confidence" signal rather than a bare
+      recommendation — a confident-looking exploit on 3 hands invites table over-
+      adjustment. More a surfacing/design gap than a theory gap.
+  (b) rangeVsRangeEquity exists only in the drill product (postflopDrillContent); the
+      live advisor uses hand-vs-range (correct, hero knows their cards). The missing
+      piece is using board-favors-which-range (range/nut advantage, §3.2) to set bet
+      sizing live. Verify heroActionBuilder's advantage object comes from a real
+      range-vs-range computation, not a heuristic.
+affected_files:
+  - "src/utils/exploitEngine/exploitValidator.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+recommended_fix: |
+  (a) Confirm the live advisor renders the existing confidence tier; if not, surface it.
+  (b) Confirm range-advantage sizing is computed, not heuristic; wire range-vs-range if
+  missing. Both verification-first.
+theory_citation: "POKER_THEORY.md §6.5, §3.2 (range/nut advantage)"
+dedup_key: "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing"
+created_at: "2026-06-20"
+updated_at: "2026-06-20"
+promoted_to: "WS-250"

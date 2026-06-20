@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-19T15:49:20.250Z",
-  "updated_by_event": "ev-1781884160250-50109ffa00e4",
+  "updated_at": "2026-06-20T21:15:16.994Z",
+  "updated_by_event": "ev-1781990116994-fd994c271f70",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -6047,7 +6047,346 @@
         "src/hooks/usePersistence.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-239": {
+      "id": "WS-239",
+      "title": "Brand-image deep-dive → audit every design element against it",
+      "status": "deferred",
+      "priority_score": 12,
+      "category": "ux",
+      "effort": "L",
+      "program": "prog-launch",
+      "capability": "governance",
+      "sprint_id": "",
+      "source": {
+        "type": "manual",
+        "created_by": "user"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/design/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-240": {
+      "id": "WS-240",
+      "title": "Voice Hand-Tree Entry — build the speech→timeline action parser from real captured voice data (DEC-021)",
+      "status": "blocked",
+      "priority_score": 12,
+      "category": "input-ux",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "decision": "DEC-021",
+        "user_request": "2026-06-19 — owner: track the parser build so it isn't lost"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/voiceHandTree/grammar.js (NEW — action + trigger vocabulary)",
+        "src/utils/voiceHandTree/parser.js (NEW — transcript → hand-tree)",
+        "src/components/views/VoiceTimelineSandbox/VoiceTimelineSandbox.jsx (wire parse → timeline)",
+        "docs/design/surfaces/voice-hand-timeline.md (update on build)"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-241": {
+      "id": "WS-241",
+      "title": "detectPositionallyAware: replace raw frequentist ratio with Beta-posterior comparison (FIND-011)",
+      "status": "done",
+      "priority_score": 18,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-011",
+        "run_id": "run-domain-correctness-delta-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/traitDetector.js",
+        "src/utils/rangeEngine/__tests__/ (traitDetector tests)"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-242": {
+      "id": "WS-242",
+      "title": "ICM risk-premium: covered-shove stack-transfer asymmetry (riskChips uses full stack)",
+      "status": "done",
+      "priority_score": 16,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-domain-correctness-delta-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/icmEngine/riskPremium.js",
+        "src/hooks/usePushFold.js",
+        "src/utils/icmEngine/__tests__/icmEngine.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-243": {
+      "id": "WS-243",
+      "title": "POKER_THEORY doc reconcile: PRIOR_WEIGHT ~5->~10 + document rake/SPR-zones/fold-curves (FIND-012, FIND-013)",
+      "status": "done",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-012",
+        "run_id": "run-domain-correctness-delta-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-244": {
+      "id": "WS-244",
+      "title": "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)",
+      "status": "backlog",
+      "priority_score": 15,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-006",
+        "run_id": "run-domain-correctness-delta-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "src/utils/exploitEngine/decisionTreeBuilder.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-245": {
+      "id": "WS-245",
+      "title": "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)",
+      "status": "backlog",
+      "priority_score": 13,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-009",
+        "run_id": "run-domain-correctness-delta-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/handAnalysis/replayAnalysis.js",
+        "src/utils/rangeEngine/pipCalculator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-246": {
+      "id": "WS-246",
+      "title": "calcBluffEV: net rake out of the semi-bluff called branch (FIND-028)",
+      "status": "done",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-028",
+        "run_id": "run-domain-correctness-challenge-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/foldEquityCalculator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-247": {
+      "id": "WS-247",
+      "title": "bestResponseToAggression raise-gate: replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)",
+      "status": "backlog",
+      "priority_score": 16,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-029",
+        "run_id": "run-domain-correctness-challenge-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "src/utils/exploitEngine/villainModelData.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-248": {
+      "id": "WS-248",
+      "title": "Unify villain bluff-frequency: comboBetFilter + computeVillainBetProb share one source (FIND-027)",
+      "status": "done",
+      "priority_score": 15,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-027",
+        "run_id": "run-domain-correctness-challenge-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-249": {
+      "id": "WS-249",
+      "title": "Verify range-rebuild idempotency vs showdown-anchor accumulation (FIND-026)",
+      "status": "done",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-06-20T00:00:00Z",
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-026",
+        "run_id": "run-domain-correctness-challenge-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/bayesianUpdater.js",
+        "src/utils/rangeEngine/__tests__/bayesianUpdater.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-250": {
+      "id": "WS-250",
+      "title": "Engine low-severity nits + missing live tells (FIND-030, FIND-032, FIND-033)",
+      "status": "backlog",
+      "priority_score": 9,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-032",
+        "run_id": "run-domain-correctness-blindspot-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/villainProfileBuilder.js",
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "src/utils/exploitEngine/bayesianConfidence.js",
+        "src/utils/exploitEngine/exploitValidator.js",
+        "src/constants/gameConstants.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-251": {
+      "id": "WS-251",
+      "title": "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
+      "status": "backlog",
+      "priority_score": 17,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "finding",
+        "created_by": "ai",
+        "finding_id": "FIND-031",
+        "run_id": "run-domain-correctness-blindspot-2026-06-20"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/utils/icmEngine/riskPremium.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781884160250-50109ffa00e4"
+  "last_event_log_head": "ev-1781990116994-fd994c271f70"
 }

@@ -118,8 +118,13 @@ export const usePushFold = ({
             verdict = computeCallVerdict({ heroEq, callCost: cost, pot: (sb + bb) + cost, icm });
           } else {
             const foldEq = estimateJamFoldEquity(width, opponents.length);
-            const winChips = icm ? Math.min(heroChips, chipStacks?.[villainSeat] ?? heroChips) : undefined;
-            const icmShove = icm ? { ...icm, riskChips: heroChips, winChips, potChips: sb + bb } : null;
+            // Effective all-in amount: a covered shove risks (and wins) only
+            // min(hero, villain) — hero cannot lose more than the villain covers,
+            // nor win more than the villain has (FIND/WS-242). riskChips and
+            // winChips are the SAME effective amount; passing the full hero stack
+            // as riskChips over-debited hero in the ICM lose branch.
+            const effectiveAllIn = icm ? Math.min(heroChips, chipStacks?.[villainSeat] ?? heroChips) : undefined;
+            const icmShove = icm ? { ...icm, riskChips: effectiveAllIn, winChips: effectiveAllIn, potChips: sb + bb } : null;
             verdict = computeShoveVerdict({ heroEq, foldEq, effStackBB: effBB, potBB, icm: icmShove });
           }
           setResult(buildResult(verdict, setup));
