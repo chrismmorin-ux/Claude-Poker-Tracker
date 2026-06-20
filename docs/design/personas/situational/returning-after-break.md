@@ -60,9 +60,32 @@ The characteristic moment: first `Deliberate` or `Discover` mode entry after the
 
 ---
 
+## Context variant — Lapsed Returner at app entry (Homebase)
+
+**Added 2026-06-20 (founder-articulated, plan `shimmying-moseying-lantern`).** The sections above describe
+the **study-mode** return (first `Deliberate`/`Discover` entry → recalibration of stale descriptors). There
+is a broader, earlier moment this persona also owns: **opening the app at all after a gap.**
+
+Founder framing (2026-06-19): *"A lot of players use it, then don't for a while. They may have made large
+skill changes. Give them the bits of information to recognize what's probably changed."*
+
+- **The moment:** app cold-open onto Homebase after a gap (≥ ~3 days), before any study-mode entry.
+- **Primary need:** *re-orientation*, not recalibration — two strands:
+  1. **How their game changed while away** — a summary of sessions played since the last visit (count, net,
+     win rate, hands). This is results re-orientation, distinct from the descriptor-decay recalibration above.
+  2. **What's new in the app** — features/changes shipped during the gap they haven't seen.
+- **The surface:** the Homebase "since your last visit" band (see `JTBD-AE-04` + `homebase-view.md`). Backed
+  by `src/utils/lastVisit.js` (`lastVisitAt` + `lastSeenWhatsNewId`).
+- **Same red lines apply:** supportive, gap-aware framing only — never shame, never nag, shown only for a
+  genuine gap (frequent users see nothing). Does not treat the returner as a novice.
+- **Relationship to the study-mode return:** complementary, not duplicative. This band is a results/app
+  re-orientation at the hub; the recalibration flow above is a study-fluency re-validation inside study mode.
+  A returner may see the Homebase band first, then later hit the welcome-back recalibration on study entry.
+
 ## Related JTBD
 
-- `JTBD-DS-55` Resumption after break (primary)
+- `JTBD-AE-04` Re-orient after a break ("since your last visit") — primary for the app-entry context variant
+- `JTBD-DS-55` Resumption after break (primary, study-mode context)
 - `JTBD-DS-52` Retention maintenance (surfaces the decay state)
 - `JTBD-DS-54` Exploration override (user can opt out of recalibration without consequence)
 - `JTBD-CC-01` Undo a recent destructive action (applies if recalibration is mis-invoked)

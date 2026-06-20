@@ -2,7 +2,7 @@ id: "WS-085"
 title: "Hygiene H2"
 legacy_id: "DCOMP-H2"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -28,4 +28,6 @@ source:
   legacy_section: "NEXT — Ready to Start"
   source_line: 395
 created_at: "2026-05-01"
-updated_at: "2026-05-14"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "DCOMP Hygiene H2 PROTO-persona validation; SCHEDULED 2026-07-21 (quarterly cadence). Reclaim on that date."

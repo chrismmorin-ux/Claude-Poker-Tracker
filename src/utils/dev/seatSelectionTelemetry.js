@@ -48,7 +48,7 @@ export const logFirstActionSeat = (inputs, output) => {
  *   prevStreet,
  *   candidateSeat,
  *   currentSelection,
- *   action: 'set' | 'noop-empty-candidate'
+ *   action: 'set' | 'noop-empty-candidate' | 'noop-respect-manual-queue'
  * }
  */
 export const logAutoSelectFiring = (payload) => {

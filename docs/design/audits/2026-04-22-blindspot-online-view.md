@@ -228,6 +228,14 @@ Each finding anchored to the Gate-2 output or surfaced independently by heuristi
 - **Recommended fix:** Resolve per Stage A — `multi-tabler-switching.md`, clarify Online MTT Shark scope, Hybrid cross-format handoff; patch MH-01 claim; new JTBDs for MH-20/SR-45 (sidebar-advice-history) and MT-XX (extension capture verification).
 - **Effort:** M (multiple artifacts).
 - **Proposed backlog item:** `DCOMP-W4-A3-F12 — Online persona + JTBD patches` (P3)
+- **✅ RESOLVED 2026-06-13 (WS-081 / SPR-128).** Four open decisions ratified by founder:
+  - **A1** → authored situational persona `personas/situational/multi-tabler-switching.md`.
+  - **A2** → kept Online MTT Shark primary; scope pinned to *post-session villain study + ROI/tendency review* in `surfaces/online-view.md`.
+  - **A3** → authored situational persona `personas/situational/hybrid-context-switch.md` (decision: author, not defer).
+  - **B1** → new JTBD **SR-89** (review the basis/history of live sidebar advice, Proposed) in `jtbd/domains/session-review.md` + ATLAS. Placed in **Session Review** (not MH) per founder decision — the load-bearing job is reviewing past advice with reasoning. (Audit's speculative ids MH-20/SR-45 superseded by next-available SR-89.)
+  - **B2** → new JTBD **MT-64** (verify extension capture matches played hands, Proposed) in `jtbd/domains/multi-device-sync.md` + ATLAS.
+  - **B3** → MH-01 kept on OnlineView's served list, restated as *post-hoc mirror of live sidebar advice*.
+  - **A4** (Rounder single-import lightweight state) is **out of F12 scope** — it is a surface/Stage-B finding, not a persona patch; carry it as a P2 surface finding for OnlineView rather than a persona-model gap.
 
 ### F13 — MT-62 offline-fallback verification
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-13T04:37:39.573Z",
-  "updated_by_event": "ev-1781325459573-6b50f793c458",
+  "updated_at": "2026-06-16T03:56:20.952Z",
+  "updated_by_event": "ev-1781582180952-2f0c3eb0384e",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2060,7 +2060,168 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-127": {
+      "id": "SPR-127",
+      "title": "Ship WS-219: Session storage hygiene — tipAmount field parity + endSessionAtomic round-trip test",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-13T04:47:13.126Z",
+      "approved_at": "2026-06-13T04:47:13.126Z",
+      "completed_at": "2026-06-13T04:49:30.312Z",
+      "goal": "Ship WS-219: Session storage hygiene — tipAmount field parity + endSessionAtomic round-trip test",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-128": {
+      "id": "SPR-128",
+      "title": "Ship WS-081: Online persona + JTBD patches",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-13T20:41:22.534Z",
+      "approved_at": "2026-06-13T20:41:22.534Z",
+      "completed_at": "2026-06-13T20:51:03.306Z",
+      "goal": "Ship WS-081: Online persona + JTBD patches",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-129": {
+      "id": "SPR-129",
+      "title": "Ship WS-082: MT-62 offline-fallback verify",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-13T20:54:49.864Z",
+      "approved_at": "2026-06-13T20:54:49.864Z",
+      "completed_at": "2026-06-13T21:00:07.786Z",
+      "goal": "Ship WS-082: MT-62 offline-fallback verify",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-130": {
+      "id": "SPR-130",
+      "title": "Ship WS-083: Wave 3",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-13T21:09:38.028Z",
+      "approved_at": "2026-06-13T21:09:38.028Z",
+      "completed_at": "2026-06-13T21:24:19.315Z",
+      "goal": "Ship WS-083: Wave 3",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-131": {
+      "id": "SPR-131",
+      "title": "Ship WS-090: Preflop-as-flop schema workaround documentation",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-13T21:39:31.469Z",
+      "approved_at": "2026-06-13T21:39:31.469Z",
+      "completed_at": "2026-06-14T00:21:01.413Z",
+      "goal": "Ship WS-090: Preflop-as-flop schema workaround documentation",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-132": {
+      "id": "SPR-132",
+      "title": "Ship WS-224: Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-14T00:29:31.423Z",
+      "approved_at": "2026-06-14T00:29:31.423Z",
+      "completed_at": "2026-06-14T01:40:32.308Z",
+      "goal": "Ship WS-224: Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture",
+      "item_count": 2,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-133": {
+      "id": "SPR-133",
+      "title": "Ship WS-229: Gate 2 blind-spot roundtable — drills surface (preflop + postflop)",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-16T00:30:09.418Z",
+      "approved_at": "2026-06-16T00:30:09.418Z",
+      "completed_at": "2026-06-16T00:41:22.338Z",
+      "goal": "Ship WS-229: Gate 2 blind-spot roundtable — drills surface (preflop + postflop)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-134": {
+      "id": "SPR-134",
+      "title": "Ship WS-232: Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute ",
+      "status": "done",
+      "program_focus": "engineering",
+      "created_at": "2026-06-16T00:53:16.869Z",
+      "approved_at": "2026-06-16T00:53:16.869Z",
+      "completed_at": "2026-06-16T01:02:05.855Z",
+      "goal": "Ship WS-232: Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute drop",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-135": {
+      "id": "SPR-135",
+      "title": "Ship WS-231: Drills corrective — surface-artifact fixes + tab-switch state protection + label diverg",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-16T03:32:49.531Z",
+      "approved_at": "2026-06-16T03:32:49.531Z",
+      "completed_at": "2026-06-16T03:48:48.794Z",
+      "goal": "Ship WS-231: Drills corrective — surface-artifact fixes + tab-switch state protection + label divergence",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-136": {
+      "id": "SPR-136",
+      "title": "Ship WS-230: Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-06-16T03:52:34.495Z",
+      "approved_at": "2026-06-16T03:52:34.495Z",
+      "completed_at": "2026-06-16T03:56:20.335Z",
+      "goal": "Ship WS-230: Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781325459573-6b50f793c458"
+  "last_event_log_head": "ev-1781582180952-2f0c3eb0384e"
 }

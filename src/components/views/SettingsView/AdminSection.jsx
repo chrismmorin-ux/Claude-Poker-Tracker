@@ -17,6 +17,7 @@
 import React from 'react';
 import { Beaker, ChevronRight } from 'lucide-react';
 import { useAuth, useUI } from '../../../contexts';
+import { SCREEN } from '../../../constants/uiConstants';
 
 // Owner gate. If the app ships to other users later, change this to a
 // roles check or a feature flag — keep AdminSection's render gate as
@@ -27,7 +28,15 @@ const OWNER_EMAIL = 'chrismmorin@gmail.com';
 // Sandbox tool registry. Each entry renders as one tappable card.
 // `screen` is a SCREEN constant; `hash` is a fallback URL hash for
 // tools without a registered screen (none yet, but the pattern's here).
-const SANDBOX_TOOLS = [];
+const SANDBOX_TOOLS = [
+  {
+    id: 'voice-timeline',
+    title: 'Voice hand-timeline',
+    summary: 'Narrate a hand to capture real voice + feel the hand-tree correction UX. Pre-Gate prototype (Voice Hand-Tree Entry).',
+    badge: 'WIP',
+    screen: SCREEN.VOICE_TIMELINE_SANDBOX,
+  },
+];
 
 const ToolCard = ({ tool, onOpen }) => (
   <button

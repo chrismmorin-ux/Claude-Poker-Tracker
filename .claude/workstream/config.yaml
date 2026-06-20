@@ -16,13 +16,13 @@ session_abandon_timeout_hours: 4   # Mark session abandoned after this idle time
 # This prevents collisions in concurrent sessions.
 counter_strategy: scan-max-plus-one
 # next_*_id fields are integers (type: integer). Do not quote.
-next_item_id: 228
-next_finding_id: 23
+next_item_id: 239
+next_finding_id: 26
 next_run_id: 1        # integer — scan runs/RUN-*.yaml for true max (none yet)
 next_rec_id: 1        # integer — scan recommendations/REC-*.yaml for true max
 next_enh_id: 1        # integer — scan enhancements/ENH-*.yaml for true max
 next_ready_id: 1      # integer — scan readiness/READY-*.yaml for true max
-next_sprint_id: 127
+next_sprint_id: 137
 
 # Dedup window for findings with matching dedup_key
 dedup_window_days: 30

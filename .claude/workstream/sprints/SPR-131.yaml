@@ -1,0 +1,29 @@
+id: "SPR-131"
+title: "Ship WS-090: Preflop-as-flop schema workaround documentation"
+status: done
+approved_at: "2026-06-13T21:39:31.469Z"
+completed_at: "2026-06-14T00:21:01.413Z"
+completed_by_commit: "81a0ab2"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-090: Preflop-as-flop schema workaround documentation
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T21:39:31.469Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-090 selected (8 × no damping = 8).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-090"
+    title: "Preflop-as-flop schema workaround documentation"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-14T00:20:53.107Z"
+
+created_at: "2026-06-13T21:39:31.469Z"

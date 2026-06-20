@@ -1,0 +1,29 @@
+id: "SPR-130"
+title: "Ship WS-083: Wave 3"
+status: done
+approved_at: "2026-06-13T21:09:38.028Z"
+completed_at: "2026-06-13T21:24:19.315Z"
+completed_by_commit: "81a0ab2"
+program_focus: "design"
+
+goal: |
+  Ship WS-083: Wave 3
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T21:09:38.028Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-083 selected (8 × no damping = 8).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-083"
+    title: "Wave 3"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-13T21:24:19.315Z"
+
+created_at: "2026-06-13T21:09:38.028Z"

@@ -32,6 +32,17 @@ Jobs involving data crossing devices — phone-to-desktop, backup, restore.
 
 - State: Paused.
 
+## MT-64 — Verify extension capture matches played hands
+
+> When I install the extension and play, I want to confirm it's capturing my hands correctly — that the count I see matches the hands I actually played — so I trust the data before I rely on its reads.
+
+- State: **Proposed** (2026-04-22 OnlineView blind-spot audit, Stage-B finding B2 → WS-081 / DCOMP-W4-A3-F12).
+- Primary personas: [Multi-Tabler](../../personas/core/multi-tabler.md), [Hybrid Context-Switch](../../personas/situational/hybrid-context-switch.md), [Rounder](../../personas/core/rounder.md).
+- Surfaces: extension sidebar + `OnlineView` (`importedCount` indicator).
+- Gap named by B2: the UI shows `importedCount` as a bare number with no way to tell whether it's the *expected* count after a played hand — "we count up therefore it's working" assumes the user knows what count to expect. The job is end-to-end capture verification, not a raw counter.
+- Success criterion: after playing N hands, the user can confirm capture is complete/correct (not just that *a* number incremented).
+- Failure modes: silent under-capture (dropped frames) reads as success; version-mismatch "continue anyway" masks a broken pipeline (see audit C4) with no capture-integrity signal.
+
 ---
 
 ## Domain-wide constraints
@@ -43,3 +54,4 @@ Jobs involving data crossing devices — phone-to-desktop, backup, restore.
 ## Change log
 
 - 2026-04-21 — Created Session 1b.
+- 2026-06-13 — Added MT-64 (verify extension capture matches played hands) — WS-081 / DCOMP-W4-A3-F12 Stage-B finding B2.

@@ -2,7 +2,7 @@ id: "WS-046"
 title: "Stream F"
 legacy_id: "SLS-F"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -29,4 +29,6 @@ source:
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 205
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "SLS Stream F drill authoring; blocked by SLS-B1..B5 (not done). Reclaim when the B-streams land."

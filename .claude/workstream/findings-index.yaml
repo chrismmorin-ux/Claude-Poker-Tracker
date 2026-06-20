@@ -201,3 +201,30 @@ findings:
     program: domain-correctness
     created_at: "2026-05-19"
 
+  - id: "FIND-023"
+    title: "Population priors are uncited hand-authored constants — the whole Bayesian model shrinks toward an unattributed baseline"
+    engine: provenance-audit
+    severity: high
+    status: open
+    dedup_key: "provenance-audit-data-quality-population-priors-uncited-hand-authored-constants"
+    program: data-quality
+    created_at: "2026-06-19"
+
+  - id: "FIND-024"
+    title: "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals"
+    engine: provenance-audit
+    severity: medium
+    status: open
+    dedup_key: "provenance-audit-data-quality-live-hud-raw-percent-no-sample-parallel-stats-engine"
+    program: data-quality
+    created_at: "2026-06-19"
+
+  - id: "FIND-025"
+    title: "'GTO-approximate' preflop charts risk masquerading as the Equilibrium frame, which does not yet exist"
+    engine: provenance-audit
+    severity: medium
+    status: open
+    dedup_key: "provenance-audit-data-quality-gto-approximate-charts-mislabeled-as-equilibrium"
+    program: data-quality
+    created_at: "2026-06-19"
+

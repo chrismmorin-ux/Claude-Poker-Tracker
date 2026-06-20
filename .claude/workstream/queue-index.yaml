@@ -2,27 +2,29 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 225
+total_items: 237
 by_status:
-  done: 155
+  done: 165
   decomposed: 1
   in_progress: 3
-  backlog: 37
-  deferred: 20
+  deferred: 42
+  backlog: 17
   dismissed: 1
   completed: 7
   review: 1
 
 by_category:
+  correctness: 1
   cwos-infrastructure: 1
-  design-comprehension: 5
+  data-isolation: 1
+  design-comprehension: 10
   domain-correctness: 8
   domain-correctness-validation: 1
   exploit-anchor-library: 16
   fix-wave: 4
   hero-state-primitive: 18
   infrastructure: 1
-  input-ux: 1
+  input-ux: 2
   invariant-coverage-program: 4
   line-study-content: 1
   line-study-slice-widening: 15
@@ -36,6 +38,7 @@ by_category:
   pre-session-drill: 10
   predictive-model-calibration: 4
   printable-refresher: 6
+  provenance: 3
   queue-hygiene: 1
   range-engine: 1
   range-lab: 16
@@ -237,7 +240,7 @@ items:
 
   - id: "WS-018"
     title: "Stream B"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: exploit-anchor-library
     effort: M
@@ -246,7 +249,7 @@ items:
 
   - id: "WS-019"
     title: "Stream F"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: exploit-anchor-library
     effort: M
@@ -311,7 +314,7 @@ items:
 
   - id: "WS-026"
     title: "Phase 8"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: exploit-anchor-library
     effort: M
@@ -339,7 +342,7 @@ items:
 
   - id: "WS-029"
     title: "Ignition-mode surface design"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: monetization-and-pmf
     effort: M
@@ -414,7 +417,7 @@ items:
 
   - id: "WS-037"
     title: "Phase 8"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: monetization-and-pmf
     effort: M
@@ -488,7 +491,7 @@ items:
 
   - id: "WS-044"
     title: "Stream B4"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: shape-language
     effort: M
@@ -508,7 +511,7 @@ items:
 
   - id: "WS-046"
     title: "Stream F"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: shape-language
     effort: M
@@ -526,7 +529,7 @@ items:
 
   - id: "WS-048"
     title: "Phase C: Texture-Equity + Exceptions Codex"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: printable-refresher
     effort: M
@@ -555,7 +558,7 @@ items:
 
   - id: "WS-051"
     title: "Personalization opt-in (deferred)"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: printable-refresher
     effort: M
@@ -564,7 +567,7 @@ items:
 
   - id: "WS-052"
     title: "Personal codex export (DS-61 implementation)"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: printable-refresher
     effort: M
@@ -686,7 +689,7 @@ items:
 
   - id: "WS-064"
     title: "Pre-Session Drill Gate 3"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: pre-session-drill
     effort: M
@@ -856,7 +859,7 @@ items:
 
   - id: "WS-081"
     title: "Online persona + JTBD patches"
-    status: backlog
+    status: done
     priority_score: 8
     category: design-comprehension
     effort: M
@@ -865,7 +868,7 @@ items:
 
   - id: "WS-082"
     title: "MT-62 offline-fallback verify"
-    status: backlog
+    status: done
     priority_score: 8
     category: design-comprehension
     effort: M
@@ -874,7 +877,7 @@ items:
 
   - id: "WS-083"
     title: "Wave 3"
-    status: backlog
+    status: done
     priority_score: 8
     category: design-comprehension
     effort: M
@@ -883,7 +886,7 @@ items:
 
   - id: "WS-084"
     title: "Wave 5"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: design-comprehension
     effort: M
@@ -892,7 +895,7 @@ items:
 
   - id: "WS-085"
     title: "Hygiene H2"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: design-comprehension
     effort: M
@@ -923,7 +926,7 @@ items:
 
   - id: "WS-088"
     title: "River decision nodes"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -943,7 +946,7 @@ items:
 
   - id: "WS-090"
     title: "Preflop-as-flop schema workaround documentation"
-    status: backlog
+    status: done
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -970,7 +973,7 @@ items:
 
   - id: "WS-093"
     title: "Candidate: ARCHETYPE_BUCKET_MULTIPLIERS.fish may not shift bucket composition enough to reflect live-pool fish donk r..."
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -1007,7 +1010,7 @@ items:
 
   - id: "WS-097"
     title: "Authored plans on canonical flop roots"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -1016,7 +1019,7 @@ items:
 
   - id: "WS-098"
     title: "Audit dimension 8 — plan accuracy"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -1025,7 +1028,7 @@ items:
 
   - id: "WS-099"
     title: "Authored plans on turn bucket-shift nodes"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -1034,7 +1037,7 @@ items:
 
   - id: "WS-100"
     title: "Chip Glossary as Study Surface."
-    status: backlog
+    status: deferred
     priority_score: 8
     category: line-study-slice-widening
     effort: M
@@ -1167,7 +1170,7 @@ items:
 
   - id: "WS-114"
     title: "Multiway postflop corpus gap (3"
-    status: backlog
+    status: deferred
     priority_score: 8
     category: sidebar-recurrence
     effort: M
@@ -2200,7 +2203,7 @@ items:
 
   - id: "WS-219"
     title: "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test"
-    status: backlog
+    status: done
     priority_score: 8
     category: seam-integrity
     effort: S
@@ -2245,7 +2248,7 @@ items:
 
   - id: "WS-224"
     title: "Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture"
-    status: backlog
+    status: deferred
     priority_score: 6
     category: seam-integrity
     effort: S
@@ -2278,4 +2281,116 @@ items:
     effort: M
     program: engineering
     capability: workstream
+
+  - id: "WS-228"
+    title: "Auto-reconnect after extension heartbeat timeout (offline-fallback UX gap)"
+    status: done
+    priority_score: 5
+    category: input-ux
+    effort: M
+    program: engineering
+    capability: core
+
+  - id: "WS-229"
+    title: "Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
+    status: done
+    priority_score: 6
+    category: design-comprehension
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-230"
+    title: "Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring"
+    status: done
+    priority_score: 7
+    category: design-comprehension
+    effort: L
+    program: design
+    capability: core
+
+  - id: "WS-231"
+    title: "Drills corrective — surface-artifact fixes + tab-switch state protection + label divergence"
+    status: done
+    priority_score: 8
+    category: design-comprehension
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-232"
+    title: "Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute drop"
+    status: done
+    priority_score: 8
+    category: correctness
+    effort: M
+    program: engineering
+    capability: core
+
+  - id: "WS-233"
+    title: "Leak→drill bridge — route from analysis-view/hand-replay to a targeted drill (DS-45)"
+    status: backlog
+    priority_score: 7
+    category: design-comprehension
+    effort: L
+    blocked_by: ["WS-198"]
+    program: design
+    capability: core
+
+  - id: "WS-234"
+    title: "Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)"
+    status: backlog
+    priority_score: 7
+    category: design-comprehension
+    effort: L
+    program: design
+    capability: core
+
+  - id: "WS-235"
+    title: "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
+    status: backlog
+    priority_score: 8
+    category: provenance
+    effort: M
+    finding_id: "FIND-023"
+    program: data-quality
+    capability: core
+
+  - id: "WS-236"
+    title: "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024"
+    status: backlog
+    priority_score: 7
+    category: provenance
+    effort: M
+    finding_id: "FIND-024"
+    program: data-quality
+    capability: core
+
+  - id: "WS-237"
+    title: "Relabel 'GTO-approximate' preflop charts as published-reference (not Equilibrium); stamp provenance — FIND-025"
+    status: backlog
+    priority_score: 6
+    category: provenance
+    effort: S
+    finding_id: "FIND-025"
+    program: data-quality
+    capability: core
+
+  - id: "WS-238"
+    title: "Thread signed-in userId into the manual hand-save path (usePersistence) — write-side data-isolation residual"
+    status: backlog
+    priority_score: 6.5
+    category: data-isolation
+    effort: S
+    program: data-quality
+    capability: core
+
+  - id: "WS-239"
+    title: "Brand-image deep-dive → audit every design element against it"
+    status: deferred
+    priority_score: 12.0
+    category: ux
+    effort: L
+    program: prog-launch
+    capability: governance
 

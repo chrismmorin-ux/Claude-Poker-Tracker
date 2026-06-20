@@ -10,6 +10,7 @@ import { Undo2, SkipForward, RotateCcw, Star } from 'lucide-react';
 
 export const ControlZone = ({
   singleSeat, actionArray, hasSeatSelected, remainingCount, currentStreet,
+  isMultiSeat = false, onUndoLastSeat,
   batchUndoCount = 0, onClearSeat, onUndo, onDeselect, onToggleAbsent,
   onClearStreet, onResetHand, onNextHand,
   reviewTagged = false, onToggleReviewTag,
@@ -65,6 +66,20 @@ export const ControlZone = ({
         now lives in a gap-separated utility slot above Next Hand to reduce motor-proximity miss-tap risk
         against the gold Next Hand CTA. */}
     <div className={`flex gap-1.5 px-2 pb-1 ${singleSeat && actionArray.length > 0 ? 'pt-1' : 'pt-2'}`}>
+      {/* WS-191: step-back Undo for multi-seat entry. Removes only the most
+          recently added seat (insertion-order pop), so a single mis-tap in the
+          rare multi-seat flow is recoverable one step at a time. Deselect (clear
+          all) stays available alongside it. */}
+      {isMultiSeat && onUndoLastSeat && (
+        <button
+          onClick={onUndoLastSeat}
+          aria-label="Undo last added seat"
+          className="btn-press flex-1 rounded-lg font-semibold text-white flex items-center justify-center gap-1"
+          style={{ height: '48px', fontSize: '13px', background: '#854d0e' }}
+        >
+          <Undo2 size={14} /> Undo Seat
+        </button>
+      )}
       {hasSeatSelected && (
         <button onClick={onDeselect} className="btn-press flex-1 rounded-lg font-semibold text-white" style={{ height: '48px', fontSize: '13px', background: '#374151' }}>Deselect</button>
       )}

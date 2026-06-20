@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-13T04:37:39.573Z",
-  "updated_by_event": "ev-1781325459573-6b50f793c458",
+  "updated_at": "2026-06-19T15:49:20.250Z",
+  "updated_by_event": "ev-1781884160250-50109ffa00e4",
   "items": {
     "WS-001": {
       "id": "WS-001",
@@ -404,7 +404,7 @@
     "WS-018": {
       "id": "WS-018",
       "title": "Stream B",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "exploit-anchor-library",
       "effort": "M",
@@ -426,7 +426,7 @@
     "WS-019": {
       "id": "WS-019",
       "title": "Stream F",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "exploit-anchor-library",
       "effort": "M",
@@ -580,7 +580,7 @@
     "WS-026": {
       "id": "WS-026",
       "title": "Phase 8",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "exploit-anchor-library",
       "effort": "M",
@@ -647,7 +647,7 @@
     "WS-029": {
       "id": "WS-029",
       "title": "Ignition-mode surface design",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -830,7 +830,7 @@
     "WS-037": {
       "id": "WS-037",
       "title": "Phase 8",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "monetization-and-pmf",
       "effort": "M",
@@ -994,7 +994,7 @@
     "WS-044": {
       "id": "WS-044",
       "title": "Stream B4",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "shape-language",
       "effort": "M",
@@ -1042,7 +1042,7 @@
     "WS-046": {
       "id": "WS-046",
       "title": "Stream F",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "shape-language",
       "effort": "M",
@@ -1087,7 +1087,7 @@
     "WS-048": {
       "id": "WS-048",
       "title": "Phase C: Texture-Equity + Exceptions Codex",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "printable-refresher",
       "effort": "M",
@@ -1155,7 +1155,7 @@
     "WS-051": {
       "id": "WS-051",
       "title": "Personalization opt-in (deferred)",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "printable-refresher",
       "effort": "M",
@@ -1177,7 +1177,7 @@
     "WS-052": {
       "id": "WS-052",
       "title": "Personal codex export (DS-61 implementation)",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "printable-refresher",
       "effort": "M",
@@ -1456,7 +1456,7 @@
     "WS-064": {
       "id": "WS-064",
       "title": "Pre-Session Drill Gate 3",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "pre-session-drill",
       "effort": "M",
@@ -1850,7 +1850,7 @@
     "WS-081": {
       "id": "WS-081",
       "title": "Online persona + JTBD patches",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "design-comprehension",
       "effort": "M",
@@ -1872,7 +1872,7 @@
     "WS-082": {
       "id": "WS-082",
       "title": "MT-62 offline-fallback verify",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "design-comprehension",
       "effort": "M",
@@ -1894,7 +1894,7 @@
     "WS-083": {
       "id": "WS-083",
       "title": "Wave 3",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "design-comprehension",
       "effort": "M",
@@ -1916,7 +1916,7 @@
     "WS-084": {
       "id": "WS-084",
       "title": "Wave 5",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "design-comprehension",
       "effort": "M",
@@ -1938,7 +1938,7 @@
     "WS-085": {
       "id": "WS-085",
       "title": "Hygiene H2",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "design-comprehension",
       "effort": "M",
@@ -2010,7 +2010,7 @@
     "WS-088": {
       "id": "WS-088",
       "title": "River decision nodes",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2056,7 +2056,7 @@
     "WS-090": {
       "id": "WS-090",
       "title": "Preflop-as-flop schema workaround documentation",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2123,7 +2123,7 @@
     "WS-093": {
       "id": "WS-093",
       "title": "Candidate: ARCHETYPE_BUCKET_MULTIPLIERS.fish may not shift bucket composition enough to reflect live-pool fish donk r...",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2214,7 +2214,7 @@
     "WS-097": {
       "id": "WS-097",
       "title": "Authored plans on canonical flop roots",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2236,7 +2236,7 @@
     "WS-098": {
       "id": "WS-098",
       "title": "Audit dimension 8 — plan accuracy",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2258,7 +2258,7 @@
     "WS-099": {
       "id": "WS-099",
       "title": "Authored plans on turn bucket-shift nodes",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2280,7 +2280,7 @@
     "WS-100": {
       "id": "WS-100",
       "title": "Chip Glossary as Study Surface.",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "line-study-slice-widening",
       "effort": "M",
@@ -2588,7 +2588,7 @@
     "WS-114": {
       "id": "WS-114",
       "title": "Multiway postflop corpus gap (3",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 8,
       "category": "sidebar-recurrence",
       "effort": "M",
@@ -5548,7 +5548,7 @@
     "WS-219": {
       "id": "WS-219",
       "title": "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 8,
       "category": "seam-integrity",
       "effort": "S",
@@ -5676,7 +5676,7 @@
     "WS-224": {
       "id": "WS-224",
       "title": "Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture",
-      "status": "backlog",
+      "status": "deferred",
       "priority_score": 6,
       "category": "seam-integrity",
       "effort": "S",
@@ -5779,7 +5779,275 @@
         "ignition-poker-tracker/side-panel/__tests__/fixtures.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-228": {
+      "id": "WS-228",
+      "title": "Auto-reconnect after extension heartbeat timeout (offline-fallback UX gap)",
+      "status": "done",
+      "priority_score": 5,
+      "category": "input-ux",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-082-verification-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/hooks/useSyncBridge.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-229": {
+      "id": "WS-229",
+      "title": "Gate 2 blind-spot roundtable — drills surface (preflop + postflop)",
+      "status": "done",
+      "priority_score": 6,
+      "category": "design-comprehension",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-083-audit-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [],
+      "source_class": "untagged"
+    },
+    "WS-230": {
+      "id": "WS-230",
+      "title": "Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring",
+      "status": "done",
+      "priority_score": 7,
+      "category": "design-comprehension",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-229-roundtable-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [],
+      "source_class": "untagged"
+    },
+    "WS-231": {
+      "id": "WS-231",
+      "title": "Drills corrective — surface-artifact fixes + tab-switch state protection + label divergence",
+      "status": "done",
+      "priority_score": 8,
+      "category": "design-comprehension",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-229-roundtable-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/design/surfaces/postflop-drills.md",
+        "docs/design/surfaces/preflop-drills.md",
+        "src/components/views/PostflopDrillsView/PostflopDrillsView.jsx",
+        "src/components/views/PreflopDrillsView/PreflopDrillsView.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-232": {
+      "id": "WS-232",
+      "title": "Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute drop",
+      "status": "done",
+      "priority_score": 8,
+      "category": "correctness",
+      "effort": "M",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-229-roundtable-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/views/PostflopDrillsView/FrameworkMode.jsx",
+        "src/components/views/PreflopDrillsView/FrameworkMode.jsx",
+        "src/components/views/PostflopDrillsView/LessonsMode.jsx",
+        "src/components/views/PostflopDrillsView/EstimateMode.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-233": {
+      "id": "WS-233",
+      "title": "Leak→drill bridge — route from analysis-view/hand-replay to a targeted drill (DS-45)",
+      "status": "backlog",
+      "priority_score": 7,
+      "category": "design-comprehension",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "ws-230-gate3-decision",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [
+        "WS-198"
+      ],
+      "enables": [],
+      "files_involved": [],
+      "source_class": "untagged"
+    },
+    "WS-234": {
+      "id": "WS-234",
+      "title": "Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)",
+      "status": "backlog",
+      "priority_score": 7,
+      "category": "design-comprehension",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "pjx-gate2-roundtable",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [],
+      "source_class": "untagged"
+    },
+    "WS-235": {
+      "id": "WS-235",
+      "title": "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023",
+      "status": "backlog",
+      "priority_score": 8,
+      "category": "provenance",
+      "effort": "M",
+      "program": "data-quality",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "provenance-audit-baseline",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/bayesianConfidence.js",
+        "src/utils/rangeEngine/populationPriors.js",
+        "src/utils/exploitEngine/gameTreeConstants.js",
+        "src/utils/exploitEngine/villainModelData.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-236": {
+      "id": "WS-236",
+      "title": "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
+      "status": "backlog",
+      "priority_score": 7,
+      "category": "provenance",
+      "effort": "M",
+      "program": "data-quality",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "provenance-audit-baseline",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "ignition-poker-tracker/shared/stats-engine.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-237": {
+      "id": "WS-237",
+      "title": "Relabel 'GTO-approximate' preflop charts as published-reference (not Equilibrium); stamp provenance — FIND-025",
+      "status": "backlog",
+      "priority_score": 6,
+      "category": "provenance",
+      "effort": "S",
+      "program": "data-quality",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "provenance-audit-baseline",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/pokerCore/rangeMatrix.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-238": {
+      "id": "WS-238",
+      "title": "Thread signed-in userId into the manual hand-save path (usePersistence) — write-side data-isolation residual",
+      "status": "backlog",
+      "priority_score": 6.5,
+      "category": "data-isolation",
+      "effort": "S",
+      "program": "data-quality",
+      "capability": "core",
+      "sprint_id": "",
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "origin": "data-isolation-fix-followup",
+        "legacy_section": "",
+        "source_line": 0
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/hooks/useAppState.js",
+        "src/hooks/usePersistence.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781325459573-6b50f793c458"
+  "last_event_log_head": "ev-1781884160250-50109ffa00e4"
 }

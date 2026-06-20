@@ -1,0 +1,46 @@
+id: "WS-228"
+title: "Auto-reconnect after extension heartbeat timeout (offline-fallback UX gap)"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: ""
+claimed_at: null
+completed_at: null
+completion_commit: "81a0ab2"
+priority_score: 5.0
+priority_label: "P3"
+category: "input-ux"
+capability: "core"
+program: "engineering"
+description: |
+  **Auto-reconnect after extension heartbeat timeout**
+
+  Surfaced by WS-082 (MT-62 offline-fallback verification, 2026-06-13). The analysis
+  pipeline degrades gracefully on mid-session extension disconnect — no data loss, no
+  hard failure (see audit doc below). The one gap: after the 120s heartbeat timeout
+  (`useSyncBridge.js` HEARTBEAT_TIMEOUT) there is no automatic reconnect attempt, so the
+  user must manually reload the page to resume live capture.
+
+  Add an auto-reconnect / exponential-backoff attempt after heartbeat timeout so live
+  capture resumes without a manual page reload. UX-convenience improvement, not a
+  resilience defect — the app stays fully usable while disconnected.
+accept_criteria:
+  - "After HEARTBEAT_TIMEOUT fires, the app attempts to re-establish the app-bridge port / re-request STATUS automatically (e.g. exponential backoff) rather than requiring a manual page reload."
+  - "On successful reconnect, isExtensionConnected flips back to true and queued hands flush without user action."
+  - "Backoff does not thrash (capped interval) and does not interfere with the existing 3-failure circuit breaker."
+effort: "M"
+files_involved:
+  - "src/hooks/useSyncBridge.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "Surfaced by WS-082 offline-fallback verification (SPR-129, 2026-06-13). Founder elected to file follow-up rather than accept-as-is. Reference: docs/design/audits/2026-06-13-dcomp-w4-a3-offline-fallback-verification.md"
+source:
+  origin: "ws-082-verification-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-13"
+updated_at: "2026-06-13"
+closed_by_event: "ev-1781401232336-ab36f578b98b"

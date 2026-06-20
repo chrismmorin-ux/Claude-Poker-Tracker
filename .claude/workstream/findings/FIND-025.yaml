@@ -1,0 +1,32 @@
+id: "FIND-025"
+title: "'GTO-approximate' preflop charts risk masquerading as the Equilibrium frame, which does not yet exist"
+severity: MEDIUM
+status: open
+category: "provenance"
+program: "data-quality"
+problem_class: "Data Consistency"
+source:
+  engine: "provenance-audit"
+  protocol: "baseline"
+  run_id: "run-2026-06-19-provenance-baseline"
+  date: "2026-06-19"
+description: |
+  pokerCore/rangeMatrix.js:200-204 PREFLOP_CHARTS are labelled "GTO-approximate" but are static
+  published-chart strings (PokerCoaching/TightPoker references), carrying no solver version, stack
+  depth, or spot-coverage metadata. The Exploit Model charter (§1, §6) decided the Equilibrium (GTO)
+  frame is an IMPORTED solver data source — which does NOT yet exist (no store, no ingestion, no
+  schema). Risk: the published-chart approximation gets treated as the GTO yardstick, inflating its
+  trust tier and corrupting any Read−Equilibrium edge computed against it. A second Field-style
+  reference is being mislabelled as Equilibrium.
+affected_files:
+  - "src/utils/pokerCore/rangeMatrix.js"
+recommended_fix: |
+  Relabel PREFLOP_CHARTS as a published-reference approximation (Field-adjacent), NOT GTO; add a
+  provenance stamp (source publication + retrieval date). Reserve the "Equilibrium / GTO" label for
+  the imported-solve frame once it lands (charter §6 / GTO ingestion). Until then, edges computed
+  vs these charts must be flagged "no equilibrium anchor" per charter §2 degradation rule.
+theory_citation: "exploit-model-architecture.md §1 (Reference class), §2 (GTO-coverage degradation), §6"
+dedup_key: "provenance-audit-data-quality-gto-approximate-charts-mislabeled-as-equilibrium"
+created_at: "2026-06-19"
+updated_at: "2026-06-19"
+promoted_to: "WS-237"

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Projection Explorer — Gate 3 research instrument</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0b0f14; color: #e5e7eb;
+    font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #app { display: flex; height: 100vh; }
+  #stage { position: relative; flex: 1; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.flat { cursor: default; }
+  canvas.dragging { cursor: grabbing; }
+  #panel { width: 320px; flex: 0 0 320px; background: #11161d; border-left: 1px solid #1f2733; padding: 16px; overflow-y: auto; }
+  h1 { font-size: 14px; margin: 0 0 2px; } .sub { color: #7c8595; font-size: 11px; margin-bottom: 14px; }
+  .group { margin-bottom: 15px; } .group > label { display:block; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#93a0b4; margin-bottom:6px; }
+  select { width:100%; background:#0b0f14; color:#e5e7eb; border:1px solid #2a3340; border-radius:6px; padding:6px 8px; font:inherit; }
+  .rangeRow { display:flex; align-items:center; gap:8px; } .rangeRow input { flex:1; } .rangeRow .val { width:46px; text-align:right; color:#9fb0c4; font-variant-numeric:tabular-nums; }
+  .hint { color:#6b7686; font-size:11px; margin-top:5px; }
+  .toggle { display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; font-weight:400; text-transform:none; letter-spacing:0; color:#cbd5e1; }
+  .seg { display:flex; gap:6px; } .seg button { flex:1; background:#0b0f14; color:#9fb0c4; border:1px solid #2a3340; border-radius:6px; padding:6px; cursor:pointer; font:inherit; }
+  .seg button.on { background:#1d2b45; color:#fff; border-color:#2563eb; }
+  #drop { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  #drop .card { pointer-events:auto; border:2px dashed #2f3b4c; border-radius:14px; padding:34px 42px; background:rgba(17,22,29,.7); max-width:440px; text-align:center; }
+  #drop.hide { display:none; } #drop h2 { margin:0 0 6px; } #drop p { margin:4px 0; color:#98a3b4; }
+  #drop .pick { display:inline-block; margin-top:12px; background:#2563eb; color:#fff; padding:9px 18px; border-radius:8px; cursor:pointer; font-weight:600; }
+  #stage.dragover #drop .card { border-color:#2563eb; background:rgba(37,99,235,.12); }
+  .legend { display:flex; flex-direction:column; gap:3px; } .legend .row { display:flex; align-items:center; gap:8px; font-size:12px; } .legend .row.off { opacity:.35; }
+  .swatch { width:11px; height:11px; border-radius:50%; flex:0 0 11px; } .legend .count { margin-left:auto; color:#7c8595; font-variant-numeric:tabular-nums; }
+  #tip { position:absolute; pointer-events:none; background:rgba(8,11,15,.96); border:1px solid #2a3340; border-radius:8px; padding:8px 10px; font-size:12px; max-width:230px; display:none; z-index:5; }
+  #tip .nm { font-weight:700; margin-bottom:4px; } #tip .style { display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-left:6px; }
+  #tip table { border-collapse:collapse; } #tip td { padding:1px 0; } #tip td.k { color:#8b96a8; padding-right:10px; } #tip td.v { text-align:right; font-variant-numeric:tabular-nums; }
+  #tip .imp { color:#f59e0b; font-size:11px; margin-top:4px; }
+  /* Calibration panel — the Gate 3 instrument */
+  #calib { background:#0d1420; border:1px solid #243049; border-radius:10px; padding:12px; }
+  #calib h2 { font-size:12px; margin:0 0 8px; color:#cbd5e1; text-transform:uppercase; letter-spacing:.04em; }
+  .metric { display:flex; justify-content:space-between; align-items:baseline; padding:4px 0; border-bottom:1px solid #18202e; }
+  .metric:last-of-type { border-bottom:none; } .metric .lbl { color:#9fb0c4; } .metric .num { font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
+  .num.good { color:#34d399; } .num.warn { color:#fbbf24; } .num.bad { color:#f87171; } .num.muted { color:#6b7280; }
+  #verdict { margin-top:10px; padding:9px; border-radius:7px; font-size:12px; line-height:1.4; }
+  #verdict.good { background:rgba(16,185,129,.12); border:1px solid #135e4a; } #verdict.warn { background:rgba(251,191,36,.1); border:1px solid #6b5417; } #verdict.bad { background:rgba(248,113,113,.1); border:1px solid #6b2222; }
+  .stat { display:flex; justify-content:space-between; font-size:12px; color:#aeb9c9; } .err { color:#f87171; font-size:12px; margin-top:6px; }
+  .muted { color:#6b7686; } a.reset { color:#60a5fa; cursor:pointer; font-size:11px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="tip"></div>
+    <div id="drop"><div class="card">
+      <h2>Projection Explorer — Gate 3</h2>
+      <p>Drop your <b>poker-tracker-backup-*.json</b> here.</p>
+      <p class="muted">Real data only — synthetic separates by construction and proves nothing (Gate 2 rigor finding).</p>
+      <label class="pick">Choose file…<input id="file" type="file" accept=".json,application/json" hidden /></label>
+    </div></div>
+  </div>
+  <div id="panel">
+    <h1>Projection Explorer <span class="muted">G3</span></h1>
+    <div class="sub">research instrument · measure, don't eyeball</div>
+
+    <div class="group">
+      <label>Dimensions</label>
+      <div class="seg" id="dimsSeg"><button data-dims="2" class="on">2D</button><button data-dims="3">3D</button></div>
+      <div class="hint">The empirical 2D-vs-3D test (owner verdict). Flip and judge which reads better on YOUR data.</div>
+    </div>
+
+    <div class="group">
+      <label>Projection</label>
+      <select id="method"><option value="pca">PCA — linear, honest</option><option value="umap">UMAP — nonlinear (seed-locked)</option></select>
+    </div>
+
+    <div class="group">
+      <label class="toggle"><input id="ablate" type="checkbox" /> Classifier-blind projection</label>
+      <div class="hint">Drops the 3 features the style label is built from (VPIP/PFR/AF). If colors still separate on the other 4, the labels reflect <b>real</b> structure. If they collapse, the original separation was circular.</div>
+    </div>
+
+    <div class="group">
+      <label>Min hands seen</label>
+      <div class="rangeRow"><input id="minSample" type="range" min="1" max="100" step="1" value="20" /><span class="val" id="minSampleVal">20</span></div>
+    </div>
+
+    <div class="group">
+      <label class="toggle"><input id="spin" type="checkbox" /> Auto-rotate (3D)</label>
+    </div>
+
+    <div class="group" id="calibWrap">
+      <div id="calib">
+        <h2>Calibration instrument</h2>
+        <div class="metric"><span class="lbl">Labeled players (N)</span><span class="num muted" id="mN">—</span></div>
+        <div class="metric"><span class="lbl">Silhouette · all 7 features</span><span class="num muted" id="mSilFull">—</span></div>
+        <div class="metric"><span class="lbl">Silhouette · classifier-blind</span><span class="num muted" id="mSilBlind">—</span></div>
+        <div class="metric"><span class="lbl">k-means(6) disagreement</span><span class="num muted" id="mKm">—</span></div>
+        <div id="verdict" class="warn">Load real data to compute.</div>
+        <div class="hint" style="margin-top:8px">Silhouette: −1…+1 (higher = labels cohere). Disagreement: % of players whose data-cluster majority-label ≠ their assigned label. These are computed in full feature space — independent of the picture.</div>
+      </div>
+    </div>
+
+    <div class="group"><label>Styles</label><div class="legend" id="legend"></div></div>
+    <div class="group">
+      <div class="stat"><span>Players plotted</span><span id="nPlotted">—</span></div>
+      <div class="stat"><span>Hands parsed</span><span id="nHands">—</span></div>
+      <div id="msg" class="err"></div>
+      <div style="margin-top:10px"><a class="reset" id="reset">load a different file</a></div>
+    </div>
+    <div class="group muted" style="font-size:11px">Drag = rotate (3D) · wheel = zoom · hover a dot for stats + imputation count.</div>
+  </div>
+</div>
+
+<script>
+/* ===== PART A — ported stat pipeline (faithful to tendencyCalculations.js + handTimeline.js) ===== */
+const P = { CHECK:'check', BET:'bet', CALL:'call', RAISE:'raise', FOLD:'fold', STRADDLE:'straddle' };
+const PV = Object.values(P);
+const L2P = { fold:P.FOLD, limp:P.CALL, call:P.CALL, open:P.RAISE, '3bet':P.RAISE, '4bet':P.RAISE,
+  cbet_ip_small:P.BET, cbet_ip_large:P.BET, cbet_oop_small:P.BET, cbet_oop_large:P.BET, check:P.CHECK,
+  fold_to_cr:P.FOLD, donk:P.BET, stab:P.BET, check_raise:P.RAISE, fold_to_cbet:P.FOLD, mucked:null, won:null };
+const norm = a => PV.includes(a) ? a : (a in L2P ? L2P[a] : null);
+const NUM_SEATS = 9, STREETS = ['preflop','flop','turn','river'];
+function posOrder(d, st){ const s=[]; for(let i=1;i<=NUM_SEATS;i++) s.push(((d-1+i)%NUM_SEATS)+1); if(st==='preflop'){const sb=s.shift(),bb=s.shift();s.push(sb,bb);} return s; }
+function timeline(hand){
+  const seq = hand.gameState && hand.gameState.actionSequence;
+  if(Array.isArray(seq)&&seq.length){ const t=[]; for(const e of seq){const a=norm(e.action); if(!a)continue; t.push({order:e.order,seat:String(e.seat),action:a,street:e.street});} return t.sort((x,y)=>x.order-y.order); }
+  const sa=(hand.gameState&&hand.gameState.seatActions)||hand.seatActions||{}; const d=(hand.gameState&&hand.gameState.dealerButtonSeat)??1; const t=[]; let o=1;
+  for(const st of STREETS){ const sd=sa[st]; if(!sd)continue; for(const seat of posOrder(d,st)){ const k=String(seat); const arr=sd[k]; if(!Array.isArray(arr))continue; for(const r of arr){const a=norm(r); if(!a)continue; t.push({order:o++,seat:k,action:a,street:st});}}} return t;
+}
+const stTL=(t,s)=>t.filter(e=>e.street===s);
+function faceRaise(t,seat,st){ const acts=stTL(t,st); const f=acts.find(e=>e.seat===seat); if(!f)return false; for(const e of acts){ if(e.order>=f.order)break; if(e.seat!==seat&&e.action===P.RAISE)return true;} return false; }
+function lastRaiser(t,st){ let l=null; for(const e of stTL(t,st)) if(e.action===P.RAISE) l=e.seat; return l; }
+function findSeat(pid,hand){ const sp=hand.seatPlayers; if(!sp)return null; const p=String(pid); for(const[s,id]of Object.entries(sp)) if(String(id)===p)return s; return null; }
+function emptyStats(){ return {handsSeenPreflop:0,vpipCount:0,pfrCount:0,totalBets:0,totalRaises:0,totalCalls:0,facedRaisePreflop:0,threeBetCount:0,pfAggressorFlops:0,cbetCount:0,facedCbet:0,foldedToCbet:0,foldTo3BetCount:0}; }
+function accumulate(s,pid,hand){
+  const seat=findSeat(pid,hand); if(!seat)return; const t=timeline(hand);
+  const pf=stTL(t,'preflop').filter(e=>e.seat===seat);
+  if(pf.length){ s.handsSeenPreflop++; if(pf.some(e=>e.action===P.CALL||e.action===P.BET||e.action===P.RAISE))s.vpipCount++; if(pf.some(e=>e.action===P.RAISE))s.pfrCount++; }
+  for(const st of ['flop','turn','river']) for(const e of stTL(t,st).filter(x=>x.seat===seat)){ if(e.action===P.BET)s.totalBets++; else if(e.action===P.RAISE)s.totalRaises++; else if(e.action===P.CALL)s.totalCalls++; }
+  if(pf.length&&faceRaise(t,seat,'preflop')){ s.facedRaisePreflop++; const tb=pf.some(e=>e.action===P.RAISE); if(tb)s.threeBetCount++; if(!tb&&pf.some(e=>e.action===P.FOLD))s.foldTo3BetCount++; }
+  const pr=lastRaiser(t,'preflop');
+  if(pr===seat){ const flop=stTL(t,'flop').filter(e=>e.seat===seat); if(flop.length){ s.pfAggressorFlops++; if(flop.some(e=>e.action===P.BET))s.cbetCount++; } }
+  else if(pr){ const flop=stTL(t,'flop'); const rb=flop.some(e=>e.seat===pr&&e.action===P.BET); const mine=flop.filter(e=>e.seat===seat); if(rb&&mine.length){ s.facedCbet++; if(mine.some(e=>e.action===P.FOLD))s.foldedToCbet++; } }
+}
+function derive(s){ const n=s.handsSeenPreflop, pct=(a,b)=>b>0?Math.round(a/b*100):null, aggr=s.totalBets+s.totalRaises;
+  const af=s.totalCalls>0?Math.round(aggr/s.totalCalls*10)/10:(aggr>0?Infinity:null);
+  return {vpip:pct(s.vpipCount,n),pfr:pct(s.pfrCount,n),af,threeBet:pct(s.threeBetCount,s.facedRaisePreflop),cbet:pct(s.cbetCount,s.pfAggressorFlops),foldToCbet:pct(s.foldedToCbet,s.facedCbet),foldTo3Bet:pct(s.foldTo3BetCount,s.facedRaisePreflop),sampleSize:n}; }
+const MIN_STYLE=20;
+function classify(p){ if(!p||p.sampleSize<MIN_STYLE)return null; const{vpip,pfr,af}=p; if(vpip===null||pfr===null)return null;
+  if(vpip>40)return'Fish'; if(vpip>30&&pfr>20)return'LAG'; if(vpip>30&&pfr<10)return'LP'; if(vpip<15&&pfr<10)return'Nit';
+  if(vpip>=20&&vpip<=30&&pfr>=15&&pfr<=25&&af!==null&&af>1.5)return'Reg'; if(vpip>=15&&vpip<=30&&pfr>=10&&pfr<=25)return'TAG'; return'Unknown'; }
+
+const STYLE_COLORS={Fish:'#ef4444',LAG:'#f97316',LP:'#a855f7',TAG:'#22c55e',Reg:'#14b8a6',Nit:'#3b82f6',Unknown:'#9ca3af','—':'#475569'};
+const FEATURES=['vpip','pfr','af','threeBet','cbet','foldToCbet','foldTo3Bet'];
+const CLASSIFIER_FEATS=[0,1,2];           // vpip,pfr,af
+const BLIND_FEATS=[3,4,5,6];              // threeBet,cbet,foldToCbet,foldTo3Bet
+
+function parseBackup(json){
+  const root=json.data||json; const hands=root.hands||json.hands||[]; const players=root.players||json.players||[];
+  if(!Array.isArray(hands)||!hands.length) throw new Error('No hands in this file. Is it a poker-tracker backup?');
+  const nameById=new Map(); for(const p of players){ const id=p.id!=null?p.id:(p.playerId!=null?p.playerId:null); if(id==null)continue; nameById.set(String(id),p.name||p.nickname||p.displayName||('Player '+id)); }
+  const statsById=new Map();
+  for(const h of hands){ const sp=h.seatPlayers; if(!sp)continue; for(const id of Object.values(sp)){ if(id==null||id==='')continue; const k=String(id); if(!statsById.has(k))statsById.set(k,emptyStats()); } }
+  for(const h of hands){ const sp=h.seatPlayers; if(!sp)continue; for(const id of new Set(Object.values(sp).map(String))){ if(id===''||id==='null'||id==='undefined')continue; accumulate(statsById.get(id),id,h); } }
+  const rows=[]; for(const[id,s]of statsById){ const pct=derive(s); rows.push({id,name:nameById.get(id)||('Player '+id),pct,style:classify(pct)}); }
+  return {rows,nHands:hands.length};
+}
+
+// Build standardized matrix over a feature-index subset; track imputed count per row.
+function buildMatrix(rows, featIdx){
+  const cols=featIdx.map(()=>[]);
+  rows.forEach(r=>featIdx.forEach((fi,j)=>{ let v=r.pct[FEATURES[fi]]; if(v===Infinity)v=null; if(v!=null&&isFinite(v))cols[j].push(v); }));
+  const mean=cols.map(c=>c.length?c.reduce((a,b)=>a+b,0)/c.length:0);
+  const afCol=featIdx.indexOf(2); const maxAf=afCol>=0&&cols[afCol].length?Math.max(...cols[afCol]):5;
+  const std=cols.map((c,j)=>{ if(c.length<2)return 1; const m=mean[j]; const v=c.reduce((a,b)=>a+(b-m)*(b-m),0)/c.length; return Math.sqrt(v)||1; });
+  const imputed=rows.map(()=>0);
+  const X=rows.map((r,ri)=>featIdx.map((fi,j)=>{ let v=r.pct[FEATURES[fi]]; if(fi===2&&v===Infinity)v=Math.max(maxAf,5); if(v==null||!isFinite(v)){v=mean[j];imputed[ri]++;} return (v-mean[j])/std[j]; }));
+  return {X, imputed};
+}
+
+/* ===== PART B — calibration math (the measurement; runs in full feature space) ===== */
+function euclid(a,b){ let s=0; for(let i=0;i<a.length;i++){const d=a[i]-b[i];s+=d*d;} return Math.sqrt(s); }
+function silhouette(X, labels){
+  const idx=labels.map((l,i)=>l?i:-1).filter(i=>i>=0); if(idx.length<3)return null;
+  const uniq=[...new Set(idx.map(i=>labels[i]))]; if(uniq.length<2)return null;
+  const byLabel={}; uniq.forEach(l=>byLabel[l]=[]); idx.forEach(i=>byLabel[labels[i]].push(i));
+  let total=0,count=0;
+  for(const i of idx){ const li=labels[i]; if(byLabel[li].length<2)continue;
+    let a=0; for(const j of byLabel[li]) if(j!==i)a+=euclid(X[i],X[j]); a/=(byLabel[li].length-1);
+    let b=Infinity; for(const l of uniq){ if(l===li)continue; let m=0; for(const j of byLabel[l])m+=euclid(X[i],X[j]); m/=byLabel[l].length; if(m<b)b=m; }
+    const mx=Math.max(a,b); if(mx>0){ total+=(b-a)/mx; count++; } }
+  return count?total/count:null;
+}
+function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function kmeans(X,k,rand){
+  const N=X.length,D=X[0].length; const centers=[],used=new Set();
+  while(centers.length<k&&used.size<N){ const r=Math.floor(rand()*N); if(!used.has(r)){used.add(r);centers.push(X[r].slice());} }
+  const assign=new Array(N).fill(0);
+  for(let it=0;it<60;it++){ let ch=false;
+    for(let i=0;i<N;i++){ let best=0,bd=Infinity; for(let c=0;c<centers.length;c++){const d=euclid(X[i],centers[c]); if(d<bd){bd=d;best=c;}} if(assign[i]!==best){assign[i]=best;ch=true;} }
+    const sums=centers.map(()=>new Array(D).fill(0)),cnt=new Array(centers.length).fill(0);
+    for(let i=0;i<N;i++){cnt[assign[i]]++; for(let d=0;d<D;d++)sums[assign[i]][d]+=X[i][d];}
+    for(let c=0;c<centers.length;c++) if(cnt[c]>0) for(let d=0;d<D;d++)centers[c][d]=sums[c][d]/cnt[c];
+    if(!ch)break; }
+  return assign;
+}
+function kmeansDisagreement(X, labels, k){
+  const idx=labels.map((l,i)=>l?i:-1).filter(i=>i>=0); if(idx.length<k)return null;
+  const sub=idx.map(i=>X[i]), subLab=idx.map(i=>labels[i]); const assign=kmeans(sub,k,mulberry32(1337));
+  const clusters={}; assign.forEach((c,ii)=>{(clusters[c]=clusters[c]||[]).push(subLab[ii]);});
+  const major={}; for(const c in clusters){ const ct={}; clusters[c].forEach(l=>ct[l]=(ct[l]||0)+1); major[c]=Object.entries(ct).sort((a,b)=>b[1]-a[1])[0][0]; }
+  let dis=0; assign.forEach((c,ii)=>{ if(major[c]!==subLab[ii])dis++; });
+  return {pct:Math.round(100*dis/idx.length), n:idx.length};
+}
+
+/* ===== PART C — projections ===== */
+function jacobi(A0){ const n=A0.length, A=A0.map(r=>r.slice()), V=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  for(let sw=0;sw<100;sw++){ let off=0; for(let p=0;p<n;p++)for(let q=p+1;q<n;q++)off+=A[p][q]*A[p][q]; if(off<1e-12)break;
+    for(let p=0;p<n;p++)for(let q=p+1;q<n;q++){ if(Math.abs(A[p][q])<1e-14)continue;
+      const th=(A[q][q]-A[p][p])/(2*A[p][q]); const t=Math.sign(th||1)/(Math.abs(th)+Math.sqrt(th*th+1)); const c=1/Math.sqrt(t*t+1), s=t*c;
+      for(let i=0;i<n;i++){const a=A[i][p],b=A[i][q];A[i][p]=c*a-s*b;A[i][q]=s*a+c*b;}
+      for(let i=0;i<n;i++){const a=A[p][i],b=A[q][i];A[p][i]=c*a-s*b;A[q][i]=s*a+c*b;}
+      for(let i=0;i<n;i++){const a=V[i][p],b=V[i][q];V[i][p]=c*a-s*b;V[i][q]=s*a+c*b;} } }
+  return A.map((r,i)=>({val:r[i],vec:V.map(rr=>rr[i])})).sort((a,b)=>b.val-a.val); }
+function pca(X,nComp){ const N=X.length,D=X[0].length,mean=new Array(D).fill(0);
+  X.forEach(r=>r.forEach((v,j)=>mean[j]+=v/N));
+  const C=Array.from({length:D},()=>new Array(D).fill(0));
+  X.forEach(r=>{for(let i=0;i<D;i++)for(let j=0;j<D;j++)C[i][j]+=(r[i]-mean[i])*(r[j]-mean[j])/(N-1||1);});
+  const eig=jacobi(C); const W=[]; for(let k=0;k<nComp;k++)W.push(eig[k]?eig[k].vec:new Array(D).fill(0));
+  return X.map(r=>W.map(w=>r.reduce((s,v,j)=>s+(v-mean[j])*w[j],0))); }
+let umapLib=null,umapTried=false;
+async function loadUmap(){ if(umapTried)return umapLib; umapTried=true;
+  for(const u of ['https://esm.sh/umap-js@1.4.0','https://cdn.jsdelivr.net/npm/umap-js@1.4.0/+esm']){ try{const m=await import(u);umapLib=m.UMAP||(m.default&&m.default.UMAP)||m.default; if(umapLib)return umapLib;}catch(e){} } return null; }
+async function umap(X,nComp){ const U=await loadUmap(); if(!U)throw new Error('offline');
+  const nN=Math.max(2,Math.min(15,X.length-1)); const u=new U({nComponents:nComp,nNeighbors:nN,minDist:0.1,random:mulberry32(42)}); return u.fit(X); }
+
+/* ===== PART D — renderer (2D + 3D) ===== */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),tip=document.getElementById('tip');
+let DATA=null, POINTS=[], projected=[], rotX=-0.5,rotY=0.7,zoom=1,focal=620, dragging=false,lastX=0,lastY=0,spin=false,hoverIdx=-1, DIMS=2;
+function resize(){ const r=cv.getBoundingClientRect(); cv.width=r.width*devicePixelRatio; cv.height=r.height*devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+window.addEventListener('resize',resize);
+function normCoords(coords){ const D=3,mean=[0,0,0]; coords.forEach(c=>{for(let k=0;k<D;k++)mean[k]+=(c[k]||0)/coords.length;});
+  let mr=1e-6; coords.forEach(c=>{let d=0;for(let k=0;k<D;k++){const e=(c[k]||0)-mean[k];d+=e*e;}mr=Math.max(mr,Math.sqrt(d));}); const sc=230/mr;
+  return coords.map(c=>({x:((c[0]||0)-mean[0])*sc,y:((c[1]||0)-mean[1])*sc,z:((c[2]||0)-mean[2])*sc})); }
+const dotR=s=>3+Math.min(6,Math.sqrt(Math.max(1,s))*0.75);
+function render(){ const w=cv.clientWidth,h=cv.clientHeight; ctx.clearRect(0,0,w,h);
+  if(!POINTS.length){requestAnimationFrame(render);return;}
+  if(DIMS===3&&spin&&!dragging)rotY+=0.004;
+  const cx=w/2,cy=h/2;
+  if(DIMS===2){ projected=POINTS.map((p,i)=>({i,sx:cx+p.x*zoom,sy:cy+p.y*zoom,depth:0,persp:1})); }
+  else { const cY=Math.cos(rotY),sY=Math.sin(rotY),cX=Math.cos(rotX),sX=Math.sin(rotX);
+    projected=POINTS.map((p,i)=>{ const x1=p.x*cY+p.z*sY,z1=-p.x*sY+p.z*cY,y1=p.y*cX-z1*sX,z2=p.y*sX+z1*cX; const pe=focal/(focal+z2); return {i,sx:cx+x1*pe*zoom,sy:cy+y1*pe*zoom,depth:z2,persp:pe}; }).sort((a,b)=>a.depth-b.depth); }
+  for(const pr of projected){ const row=POINTS[pr.i].row, col=STYLE_COLORS[row.style||'—'], r=dotR(row.pct.sampleSize)*pr.persp*zoom, labeled=row.style!=null;
+    ctx.beginPath(); ctx.arc(pr.sx,pr.sy,r,0,Math.PI*2); ctx.globalAlpha=labeled?0.92:0.4; ctx.fillStyle=col; ctx.fill();
+    if(pr.i===hoverIdx){ctx.globalAlpha=1;ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();} else if(labeled){ctx.globalAlpha=0.5;ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.5)';ctx.stroke();} }
+  ctx.globalAlpha=1; requestAnimationFrame(render); }
+cv.addEventListener('mousemove',e=>{ const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(dragging&&DIMS===3){ rotY+=(mx-lastX)*0.01; rotX+=(my-lastY)*0.01; rotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,rotX)); lastX=mx;lastY=my; return; }
+  let best=-1,bd=14*14; for(let k=projected.length-1;k>=0;k--){const pr=projected[k],dx=pr.sx-mx,dy=pr.sy-my,d=dx*dx+dy*dy; if(d<bd){bd=d;best=pr.i;break;}}
+  hoverIdx=best; if(best>=0)showTip(POINTS[best].row,mx,my); else tip.style.display='none'; });
+cv.addEventListener('mousedown',e=>{ if(DIMS!==3)return; dragging=true; cv.classList.add('dragging'); const r=cv.getBoundingClientRect(); lastX=e.clientX-r.left; lastY=e.clientY-r.top; tip.style.display='none'; });
+window.addEventListener('mouseup',()=>{dragging=false;cv.classList.remove('dragging');});
+cv.addEventListener('wheel',e=>{e.preventDefault();zoom*=e.deltaY<0?1.08:0.93;zoom=Math.max(0.2,Math.min(6,zoom));},{passive:false});
+cv.addEventListener('mouseleave',()=>{tip.style.display='none';hoverIdx=-1;});
+const fmt=(v,s)=>v==null?'—':(v===Infinity?'∞':v+(s||''));
+function showTip(row,x,y){ const col=STYLE_COLORS[row.style||'—'],p=row.pct;
+  tip.innerHTML='<div class="nm">'+esc(row.name)+'<span class="style" style="background:'+col+';color:#0b0f14">'+(row.style||'n/a')+'</span></div>'+
+    '<table>'+rh('VPIP',fmt(p.vpip,'%'))+rh('PFR',fmt(p.pfr,'%'))+rh('AF',fmt(p.af))+rh('3-bet',fmt(p.threeBet,'%'))+rh('C-bet',fmt(p.cbet,'%'))+rh('Fold→cbet',fmt(p.foldToCbet,'%'))+rh('Fold→3bet',fmt(p.foldTo3Bet,'%'))+rh('Hands',p.sampleSize)+'</table>'+
+    (row.imputed>0?'<div class="imp">⚠ '+row.imputed+'/7 features imputed (thin data)</div>':'');
+  tip.style.display='block'; tip.style.left=Math.min(x+14,cv.clientWidth-240)+'px'; tip.style.top=Math.min(y+14,cv.clientHeight-200)+'px'; }
+const rh=(k,v)=>'<tr><td class="k">'+k+'</td><td class="v">'+v+'</td></tr>';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===== PART E — wiring ===== */
+const els={method:document.getElementById('method'),ablate:document.getElementById('ablate'),minSample:document.getElementById('minSample'),minSampleVal:document.getElementById('minSampleVal'),
+  spin:document.getElementById('spin'),legend:document.getElementById('legend'),nPlotted:document.getElementById('nPlotted'),nHands:document.getElementById('nHands'),msg:document.getElementById('msg'),
+  drop:document.getElementById('drop'),stage:document.getElementById('stage'),
+  mN:document.getElementById('mN'),mSilFull:document.getElementById('mSilFull'),mSilBlind:document.getElementById('mSilBlind'),mKm:document.getElementById('mKm'),verdict:document.getElementById('verdict')};
+let token=0;
+function silClass(v){ return v==null?'muted':(v>=0.5?'good':v>=0.25?'warn':'bad'); }
+async function recompute(){
+  if(!DATA)return; const tk=++token; els.msg.textContent='';
+  const minSample=+els.minSample.value; const rows=DATA.rows.filter(r=>r.pct.sampleSize>=minSample);
+  els.nPlotted.textContent=rows.length; els.nHands.textContent=DATA.nHands; updateLegend(rows);
+  if(rows.length<3){POINTS=[];els.msg.textContent='Need ≥3 players above the threshold. Lower the slider.';clearCalib();return;}
+  const labels=rows.map(r=>r.style);
+
+  // ---- Calibration instrument (full feature space; independent of the picture) ----
+  const full=buildMatrix(rows,[0,1,2,3,4,5,6]); const blind=buildMatrix(rows,BLIND_FEATS);
+  const silFull=silhouette(full.X,labels), silBlind=silhouette(blind.X,labels), km=kmeansDisagreement(full.X,labels,6);
+  const nLab=labels.filter(Boolean).length;
+  els.mN.textContent=nLab; els.mN.className='num '+(nLab>=30?'good':nLab>=15?'warn':'bad');
+  els.mSilFull.textContent=silFull==null?'—':silFull.toFixed(2); els.mSilFull.className='num '+silClass(silFull);
+  els.mSilBlind.textContent=silBlind==null?'—':silBlind.toFixed(2); els.mSilBlind.className='num '+silClass(silBlind);
+  els.mKm.textContent=km==null?'—':km.pct+'%'; els.mKm.className='num '+(km==null?'muted':km.pct<=20?'good':km.pct<=40?'warn':'bad');
+  renderVerdict(nLab,silFull,silBlind,km);
+
+  // ---- Projection (the visual; uses ablated feature set when toggled) ----
+  const projMatrix = els.ablate.checked ? blind : full;
+  POINTS=rows.map((r,i)=>({row:r, imputed:projMatrix.imputed[i]})); // attach imputed for tooltip
+  rows.forEach((r,i)=>{r.imputed=projMatrix.imputed[i];});
+  let coords;
+  try{ coords = els.method.value==='umap' ? await umap(projMatrix.X,DIMS) : pca(projMatrix.X,DIMS); }
+  catch(e){ if(e.message==='offline'){ els.msg.textContent='UMAP needs internet; using PCA.'; els.method.value='pca'; coords=pca(projMatrix.X,DIMS); } else { els.msg.textContent='Projection error: '+e.message; return; } }
+  if(tk!==token)return;
+  const norm3=normCoords(coords.map(c=>DIMS===2?[c[0],c[1],0]:c));
+  POINTS=rows.map((r,i)=>({row:r,x:norm3[i].x,y:norm3[i].y,z:norm3[i].z})); hoverIdx=-1;
+}
+function renderVerdict(n,sf,sb,km){
+  const v=els.verdict;
+  if(n<15){ v.className='bad'; v.innerHTML='<b>Too few labeled players (N='+n+').</b> Below ~15 the covariance estimate is unreliable; treat any structure as noise. Log more hands or lower the threshold.'; return; }
+  if(sf==null||sb==null){ v.className='warn'; v.textContent='Not enough distinct labels to score. Need ≥2 style classes present.'; return; }
+  const circular = sf>0.25 && sb<0.1;
+  const genuine = sb>=0.15;
+  if(genuine){ v.className='good'; v.innerHTML='<b>Labels reflect REAL structure.</b> Classifier-blind silhouette is '+sb.toFixed(2)+' (>0.15) — the styles separate even on the 4 features the label is NOT built from. The classifier is tracking genuine behavioral grouping, not just its own inputs.'+(km&&km.pct>40?' But k-means disagrees on '+km.pct+'% — some labels may be miscalibrated.':''); }
+  else if(circular){ v.className='bad'; v.innerHTML='<b>Separation is largely CIRCULAR.</b> Full-feature silhouette '+sf.toFixed(2)+' but classifier-blind '+sb.toFixed(2)+' (<0.1). The colors separate mainly because the projection is built from the same VPIP/PFR/AF the label is. The cloud is NOT validating the classifier here.'; }
+  else { v.className='warn'; v.innerHTML='Mixed signal. Full '+sf.toFixed(2)+' / classifier-blind '+sb.toFixed(2)+(km?' / k-means disagreement '+km.pct+'%':'')+'. Weak independent structure; the labels are partly but not strongly grounded in the broader behavior.'; }
+}
+function clearCalib(){ ['mN','mSilFull','mSilBlind','mKm'].forEach(k=>{els[k].textContent='—';els[k].className='num muted';}); els.verdict.className='warn'; els.verdict.textContent='Load real data to compute.'; }
+function updateLegend(rows){ const c={}; rows.forEach(r=>{const k=r.style||'—';c[k]=(c[k]||0)+1;}); const order=['Fish','LAG','LP','TAG','Reg','Nit','Unknown','—'];
+  els.legend.innerHTML=order.map(k=>{const n=c[k]||0;return '<div class="row '+(n?'':'off')+'"><span class="swatch" style="background:'+STYLE_COLORS[k]+'"></span><span>'+(k==='—'?'below threshold':k)+'</span><span class="count">'+n+'</span></div>';}).join(''); }
+
+document.querySelectorAll('#dimsSeg button').forEach(b=>b.addEventListener('click',()=>{ document.querySelectorAll('#dimsSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); DIMS=+b.dataset.dims; cv.classList.toggle('flat',DIMS===2); recompute(); }));
+els.method.addEventListener('change',recompute);
+els.ablate.addEventListener('change',recompute);
+els.minSample.addEventListener('input',()=>els.minSampleVal.textContent=els.minSample.value);
+els.minSample.addEventListener('change',recompute);
+els.spin.addEventListener('change',()=>spin=els.spin.checked);
+function handleFile(f){ const r=new FileReader(); r.onload=()=>{ try{ DATA=parseBackup(JSON.parse(r.result)); els.drop.classList.add('hide'); resize(); recompute(); }catch(e){ els.drop.classList.remove('hide'); els.msg.textContent=e.message; alert('Could not read file: '+e.message); } }; r.readAsText(f); }
+document.getElementById('file').addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+document.getElementById('reset').addEventListener('click',()=>els.drop.classList.remove('hide'));
+['dragenter','dragover'].forEach(ev=>els.stage.addEventListener(ev,e=>{e.preventDefault();els.stage.classList.add('dragover');}));
+['dragleave','drop'].forEach(ev=>els.stage.addEventListener(ev,e=>{e.preventDefault();els.stage.classList.remove('dragover');}));
+els.stage.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+cv.classList.add('flat'); resize(); requestAnimationFrame(render);
+</script>
+</body>
+</html>

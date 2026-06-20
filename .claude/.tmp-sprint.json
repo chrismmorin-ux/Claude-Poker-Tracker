@@ -1,19 +1,19 @@
 {
-  "composed_at": "2026-06-13T04:02:41.819Z",
-  "goal": "Ship WS-221: Global anchor-library reset — red line #4b (design-gated destructive action)",
-  "program_focus": "design",
+  "composed_at": "2026-06-16T05:05:27.226Z",
+  "goal": "Ship WS-191: Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry",
+  "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-221",
-      "title": "Global anchor-library reset — red line #4b (design-gated destructive action)",
-      "raw_score": 9,
-      "adjusted_score": 9,
+      "id": "WS-191",
+      "title": "Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry",
+      "raw_score": 20,
+      "adjusted_score": 5,
       "effort": "M",
-      "program": "design",
-      "source_class": "untagged",
-      "blocked_by_note": null,
-      "soft_block_factor": 1,
+      "program": "domain-correctness",
+      "source_class": "spr-followup",
+      "blocked_by_note": "Awaiting ≥3 owner-captured Phase 1 telemetry observations from live sessions. Per WS-189 fallback clause, may pivot to hypothesis-first matrix audit if <2 captures after 2 live sessions. Phase 1 dev-mode telemetry shipped SPR-077 (2026-05-14).",
+      "soft_block_factor": 0.25,
       "source_damping": 1,
       "mode": "plan-first",
       "queue_item_known": true
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-221 selected (9 × no damping = 9).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-191 selected (20 × 0.25 soft-block × no damping = 5).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

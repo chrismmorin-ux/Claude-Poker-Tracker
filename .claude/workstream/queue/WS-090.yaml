@@ -2,10 +2,11 @@ id: "WS-090"
 title: "Preflop-as-flop schema workaround documentation"
 legacy_id: "LSW-G-PreflopEnc"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "81a0ab2"
 priority_score: 8.0
 priority_label: "P3"
 category: "line-study-slice-widening"
@@ -28,3 +29,4 @@ source:
   source_line: 568
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+closed_by_event: "ev-1781396453140-7b336ea5b8c3"

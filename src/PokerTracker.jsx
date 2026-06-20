@@ -1,54 +1,30 @@
-import React, { useMemo, useEffect, lazy, Suspense } from 'react';
+import React, { useMemo, useEffect, Suspense } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
 import { useScreenOrientationLock } from './hooks/useScreenOrientationLock';
 import { useAppState } from './hooks/useAppState';
 import { AppProviders } from './AppProviders';
 import { parseBlinds } from './utils/potCalculator';
-import { useUI, useAuth, useTournament } from './contexts';
+import { useUI, useAuth, useSession } from './contexts';
 import { SCREEN } from './constants/uiConstants';
 import { useBackButton } from './hooks/useBackButton';
-// Hot-path views — always in main bundle
-import { TableView } from './components/views/TableView';
+// Single source of truth for routable views (router/orientation/hash all derive from it).
+import { VIEW_REGISTRY, renderView, VIEW_TO_ORIENTATION, HASH_TO_SCREEN } from './constants/viewRegistry';
+// Showdown is an overlay toggled by isShowdownViewOpen (not currentView), so it
+// stays out of the registry and is eager-imported here.
 import { ShowdownView } from './components/views/ShowdownView';
 import { AuthLoadingScreen } from './components/ui/AuthLoadingScreen';
 import { ViewErrorBoundary } from './components/ui/ViewErrorBoundary';
 import { UpdateBanner } from './components/ui/UpdateBanner';
+import { HealthIndicator } from './components/ui/HealthIndicator';
+import { NavShell } from './components/ui/NavShell';
 // VCE (WS-181, 2026-05-11) — viewport-anchored PTT overlay; gated by
 // settings.voiceCardEntry.enabled (default OFF). Renders only on TableView
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
-// Lazy-loaded views (RT-23: route-level code splitting)
-const StatsView = lazy(() => import('./components/views/StatsView').then(m => ({ default: m.StatsView })));
-const SessionsView = lazy(() => import('./components/views/SessionsView').then(m => ({ default: m.SessionsView })));
-const PlayersView = lazy(() => import('./components/views/PlayersView').then(m => ({ default: m.PlayersView })));
-const SettingsView = lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
-const AnalysisView = lazy(() => import('./components/views/AnalysisView').then(m => ({ default: m.AnalysisView })));
-const HandReplayView = lazy(() => import('./components/views/HandReplayView').then(m => ({ default: m.HandReplayView })));
-const LoginView = lazy(() => import('./components/views/LoginView').then(m => ({ default: m.LoginView })));
-const SignupView = lazy(() => import('./components/views/SignupView').then(m => ({ default: m.SignupView })));
-const PasswordResetView = lazy(() => import('./components/views/PasswordResetView').then(m => ({ default: m.PasswordResetView })));
-const TournamentView = lazy(() => import('./components/views/TournamentView').then(m => ({ default: m.TournamentView })));
-const OnlineView = lazy(() => import('./components/views/OnlineView').then(m => ({ default: m.OnlineView })));
-const ExtensionPanel = lazy(() => import('./components/views/OnlineView/ExtensionPanel').then(m => ({ default: m.ExtensionPanel })));
-// Unified PlayerFinder — single fullscreen surface for player find / edit /
-// create. Replaced the legacy PlayerEditorView + PlayerPickerView pair via
-// plan floating-questing-conway (Phases A → D, 2026-05-06).
-const PlayerFinderView = lazy(() => import('./components/views/PlayerFinderView/PlayerFinderView').then(m => ({ default: m.PlayerFinderView })));
-const PreflopDrillsView = lazy(() => import('./components/views/PreflopDrillsView/PreflopDrillsView').then(m => ({ default: m.PreflopDrillsView })));
-const PostflopDrillsView = lazy(() => import('./components/views/PostflopDrillsView/PostflopDrillsView').then(m => ({ default: m.PostflopDrillsView })));
-const PresessionDrillView = lazy(() => import('./components/views/PresessionDrillView').then(m => ({ default: m.PresessionDrillView })));
-const PrintableRefresherView = lazy(() => import('./components/views/PrintableRefresherView').then(m => ({ default: m.PrintableRefresherView })));
-const AnchorLibraryView = lazy(() => import('./components/views/AnchorLibraryView').then(m => ({ default: m.AnchorLibraryView })));
-// SCF G5 child 3 (WS-147 / SPR-032, 2026-05-03) — lesson detail surface for Drill-this affordance.
-const LessonDetailView = lazy(() => import('./components/views/LessonDetailView').then(m => ({ default: m.LessonDetailView })));
-// SCF G5 Phase-5a (WS-159 / SPR-042, 2026-05-06) — Self-Coach curriculum surface (2-tab IA: Curriculum / Settings).
-const SelfCoachView = lazy(() => import('./components/views/SelfCoachView/SelfCoachView').then(m => ({ default: m.SelfCoachView })));
-// PIO G5 child C (WS-162 / SPR-035, 2026-05-04) — player profile surface (sighting history + stability).
-const PlayerProfileView = lazy(() => import('./components/views/PlayerProfileView/PlayerProfileView').then(m => ({ default: m.PlayerProfileView })));
 
 // =============================================================================
-// ROUTER — Pure view selection based on UI state
+// ROUTER — Pure view selection based on UI state, driven by VIEW_REGISTRY
 // =============================================================================
 
 const VEB = ({ viewName, onReturnToTable, children }) => (
@@ -57,38 +33,10 @@ const VEB = ({ viewName, onReturnToTable, children }) => (
   </ViewErrorBoundary>
 );
 
-// Map URL hash to SCREEN constant for deep-linking (e.g., #online)
-const HASH_TO_SCREEN = {
-  '#online': 'online',
-  '#extension': 'extension',
-  '#sessions': 'sessions',
-  '#players': 'players',
-  '#settings': 'settings',
-  '#printableRefresher': 'printableRefresher',
-  '#anchorLibrary': 'anchorLibrary',
-  '#selfCoach': 'selfCoach',
-  // Phase B (2026-05-06): direct entry to the unified PlayerFinder for
-  // owner manual validation against the prototype. Removed in Phase C.
-  '#player-finder': 'playerFinder',
-};
-
-// Per-view orientation policy (owner: 2026-05-05).
-// Player-identification surfaces lock portrait so forms/lists are legible
-// on a phone. Everything else inherits the default 'landscape' since the
-// app's other views are 1600×720 ScaledContainer designs. The PWA manifest
-// is `orientation: 'any'` so this hook is the single place orientation
-// is asserted at runtime.
-const VIEW_TO_ORIENTATION = {
-  [SCREEN.PLAYER_FINDER]: 'portrait',
-  [SCREEN.PLAYER_PROFILE]: 'portrait',
-  // Sessions View Improvement (2026-06-06): Sessions + Settings are data-entry
-  // surfaces (venue / buy-in / tip / notes fields). They render portrait-native
-  // fluid (no 1600×720 ScaledContainer) so fields stay legible and tappable on a
-  // phone instead of being scaled to ~24% in portrait. Best-effort lock; the
-  // fluid layout is the load-bearing part. See feedback_portrait_mode_player_screens.
-  [SCREEN.SESSIONS]: 'portrait',
-  [SCREEN.SETTINGS]: 'portrait',
-};
+// Orientation policy derives from the registry (per-view 'portrait'/'landscape').
+// Showdown forces landscape; anything not flagged defaults to 'landscape' (the
+// app's 1600×720 ScaledContainer design). The PWA manifest is `orientation: 'any'`
+// so this hook is the single place orientation is asserted at runtime.
 const orientationFor = (currentView, isShowdownOpen) => {
   if (isShowdownOpen) return 'landscape';
   return VIEW_TO_ORIENTATION[currentView] ?? 'landscape';
@@ -98,6 +46,7 @@ const ViewRouter = () => {
   const scale = useScale();
   const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
+  const { hasActiveSession } = useSession();
   useBackButton();
   useScreenOrientationLock(orientationFor(currentView, isShowdownViewOpen));
 
@@ -116,61 +65,40 @@ const ViewRouter = () => {
     return <AuthLoadingScreen />;
   }
 
-  const onReturnToTable = () => setCurrentScreen(SCREEN.TABLE);
+  // Error-boundary "return" target: the live table if a session is in progress,
+  // otherwise Homebase (the default entry). Was hardwired to TABLE before Homebase.
+  const onReturnToTable = () => setCurrentScreen(hasActiveSession ? SCREEN.TABLE : SCREEN.HOMEBASE);
 
-  // Showdown overlay — eagerly loaded, no Suspense needed
-  if (isShowdownViewOpen) return <VEB viewName="Showdown" onReturnToTable={onReturnToTable}><ShowdownView scale={scale} /></VEB>;
+  // Showdown overlay — eager, not registry-routed (toggled by isShowdownViewOpen).
+  if (isShowdownViewOpen) {
+    return <VEB viewName="Showdown" onReturnToTable={onReturnToTable}><ShowdownView scale={scale} /></VEB>;
+  }
 
-  // Table view — eagerly loaded hot path
-  if (currentView === SCREEN.TABLE) return <VEB viewName="Table" onReturnToTable={onReturnToTable}><TableView scale={scale} /></VEB>;
+  const entry = VIEW_REGISTRY[currentView];
 
-  // All other views are lazy-loaded (RT-23)
+  // Eager hot-path views (Homebase, Table) render without a Suspense spinner.
+  if (entry?.eager) {
+    return <VEB viewName={entry.name} onReturnToTable={onReturnToTable}>{renderView(currentView, scale)}</VEB>;
+  }
+
+  // Unknown SCREEN value — observable fallback to Stats (INV-15 / RT-102). A
+  // registry-driven router makes "renders nothing" impossible: a SCREEN with no
+  // entry lands here instead of silently blanking.
+  const resolved = entry ? currentView : SCREEN.STATS;
+  if (!entry && import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn(`[ViewRouter] unknown currentView='${currentView}', falling back to Stats`);
+  }
+  const viewName = VIEW_REGISTRY[resolved]?.name || 'Stats';
+
+  // All other views are lazy-loaded (RT-23: route-level code splitting).
   return (
     <Suspense fallback={
       <div className="h-dvh bg-gray-900 flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin" />
       </div>
     }>
-      {(() => {
-        // Auth screens
-        if (currentView === SCREEN.LOGIN) return <VEB viewName="Login" onReturnToTable={onReturnToTable}><LoginView scale={scale} /></VEB>;
-        if (currentView === SCREEN.SIGNUP) return <VEB viewName="Signup" onReturnToTable={onReturnToTable}><SignupView scale={scale} /></VEB>;
-        if (currentView === SCREEN.PASSWORD_RESET) return <VEB viewName="Password Reset" onReturnToTable={onReturnToTable}><PasswordResetView scale={scale} /></VEB>;
-
-        // Main views
-        switch (currentView) {
-          case SCREEN.HISTORY: return <VEB viewName="History" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} initialTab="review" /></VEB>;
-          case SCREEN.SESSIONS: return <VEB viewName="Sessions" onReturnToTable={onReturnToTable}><SessionsView scale={scale} /></VEB>;
-          case SCREEN.PLAYERS: return <VEB viewName="Players" onReturnToTable={onReturnToTable}><PlayersView scale={scale} /></VEB>;
-          case SCREEN.SETTINGS: return <VEB viewName="Settings" onReturnToTable={onReturnToTable}><SettingsView scale={scale} /></VEB>;
-          case SCREEN.ANALYSIS: return <VEB viewName="Analysis" onReturnToTable={onReturnToTable}><AnalysisView scale={scale} /></VEB>;
-          case SCREEN.HAND_REPLAY: return <VEB viewName="Hand Replay" onReturnToTable={onReturnToTable}><HandReplayView scale={scale} /></VEB>;
-          case SCREEN.TOURNAMENT: return <VEB viewName="Tournament" onReturnToTable={onReturnToTable}><TournamentView scale={scale} /></VEB>;
-          case SCREEN.ONLINE: return <VEB viewName="Online" onReturnToTable={onReturnToTable}><OnlineView scale={scale} /></VEB>;
-          case SCREEN.EXTENSION: return <VEB viewName="Extension" onReturnToTable={onReturnToTable}><ExtensionPanel /></VEB>;
-          case SCREEN.STATS: return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-          case SCREEN.PLAYER_FINDER: return <VEB viewName="Player Finder" onReturnToTable={onReturnToTable}><PlayerFinderView scale={scale} /></VEB>;
-          case SCREEN.PREFLOP_DRILLS: return <VEB viewName="Preflop Drills" onReturnToTable={onReturnToTable}><PreflopDrillsView scale={scale} /></VEB>;
-          case SCREEN.POSTFLOP_DRILLS: return <VEB viewName="Postflop Drills" onReturnToTable={onReturnToTable}><PostflopDrillsView scale={scale} /></VEB>;
-          case SCREEN.PRESESSION_DRILL: return <VEB viewName="Presession Drill" onReturnToTable={onReturnToTable}><PresessionDrillView scale={scale} /></VEB>;
-          case SCREEN.PRINTABLE_REFRESHER: return <VEB viewName="Printable Refresher" onReturnToTable={onReturnToTable}><PrintableRefresherView scale={scale} /></VEB>;
-          case SCREEN.ANCHOR_LIBRARY: return <VEB viewName="Anchor Library" onReturnToTable={onReturnToTable}><AnchorLibraryView scale={scale} /></VEB>;
-          case SCREEN.LESSON_DETAIL: return <VEB viewName="Lesson Detail" onReturnToTable={onReturnToTable}><LessonDetailView scale={scale} /></VEB>;
-          case SCREEN.SELF_COACH: return <VEB viewName="Self Coach" onReturnToTable={onReturnToTable}><SelfCoachView scale={scale} /></VEB>;
-          case SCREEN.PLAYER_PROFILE: return <VEB viewName="Player Profile" onReturnToTable={onReturnToTable}><PlayerProfileView scale={scale} /></VEB>;
-          default: {
-            // Unknown SCREEN value — surface via console and fall back to Stats.
-            // A stale/deleted SCREEN constant (e.g., after removing a view)
-            // could land here via `uiState.finderContext.prevScreen` or a
-            // history ref. INV-15 requires this observable fallback. RT-102.
-            if (import.meta.env.DEV) {
-              // eslint-disable-next-line no-console
-              console.warn(`[ViewRouter] unknown currentView='${currentView}', falling back to Stats`);
-            }
-            return <VEB viewName="Stats" onReturnToTable={onReturnToTable}><StatsView scale={scale} /></VEB>;
-          }
-        }
-      })()}
+      <VEB viewName={viewName} onReturnToTable={onReturnToTable}>{renderView(resolved, scale)}</VEB>
     </Suspense>
   );
 };
@@ -209,6 +137,8 @@ const AppRoot = () => {
       <UpdateBanner />
       <ViewRouter />
       <VoiceCardEntryOverlay />
+      <NavShell />
+      <HealthIndicator />
     </AppProviders>
   );
 };

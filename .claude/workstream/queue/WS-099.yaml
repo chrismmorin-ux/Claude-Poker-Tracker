@@ -2,7 +2,7 @@ id: "WS-099"
 title: "Authored plans on turn bucket-shift nodes"
 legacy_id: "LSW-P7"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -29,4 +29,6 @@ source:
   legacy_section: "IN_PROGRESS — Line Study Slice Widening (LSW)"
   source_line: 618
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "LSW authored turn bucket-shift plans; deferred to LSW-v2 (depends on P3 + Stream B2 coverage). Reclaim with WS-097."

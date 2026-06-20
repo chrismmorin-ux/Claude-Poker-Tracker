@@ -2,7 +2,7 @@ id: "WS-019"
 title: "Stream F"
 legacy_id: "EAL-Stream-F"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -31,4 +31,6 @@ source:
   legacy_section: "NEXT — Exploit Anchor Library (project: `docs/projects/exploit-anchor-library.project.md`)"
   source_line: 115
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "EAL Stream F drills depend on WS-018 (Stream B expansion) + EAL-Stream-D, both not satisfied. Reclaim when those land."

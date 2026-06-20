@@ -51,6 +51,21 @@ const StraddleButton = ({ onClick }) => (
   </button>
 );
 
+// WS-191 scope #3 (owner-decided 2026-06-19): multi-seat selection is now an
+// explicit, rare action behind the touch-hold / right-click menu. Plain tap on a
+// seat is single-select-replace; this row is the ONLY way to build a multi-seat
+// batch. Label adapts to whether the seat is already in the current selection.
+// Step-back Undo for mis-entries lives in ControlZone.
+const MultiSelectButton = ({ onClick, isInSelection }) => (
+  <button
+    onClick={onClick}
+    className={`${MENU_ROW_CLASS} text-amber-700`}
+    data-testid="menu-multi-select"
+  >
+    {isInSelection ? '➖ Remove from multi-select' : '➕ Add to multi-select'}
+  </button>
+);
+
 const FindPlayerButton = ({ onClick }) => (
   <button
     onClick={onClick}
@@ -141,11 +156,17 @@ const AssignSection = ({ seat, onFindPlayer, onAssignPlayer, recentPlayers }) =>
   </>
 );
 
-const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer, onStraddle }) => (
+const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer, onStraddle, onAddToMultiSelect, isSeatInSelection }) => (
   <>
     <MakeMySeatButton onClick={() => onMakeMySeat(seat)} />
     <MakeDealerButton onClick={() => onMakeDealer(seat)} />
     {onStraddle ? <StraddleButton onClick={() => onStraddle(seat)} /> : null}
+    {onAddToMultiSelect ? (
+      <MultiSelectButton
+        onClick={() => onAddToMultiSelect(seat)}
+        isInSelection={isSeatInSelection}
+      />
+    ) : null}
   </>
 );
 
@@ -154,6 +175,8 @@ export const SeatContextMenu = ({
   onMakeMySeat,
   onMakeDealer,
   onStraddle,
+  onAddToMultiSelect,
+  isSeatInSelection,
   onFindPlayer,
   onSwapPlayer,
   onAssignPlayer,
@@ -180,6 +203,8 @@ export const SeatContextMenu = ({
         onMakeMySeat={onMakeMySeat}
         onMakeDealer={onMakeDealer}
         onStraddle={onStraddle}
+        onAddToMultiSelect={onAddToMultiSelect}
+        isSeatInSelection={isSeatInSelection}
       />
       <Divider />
       {/* Player ops — grouped together: clear/swap (if occupied), then

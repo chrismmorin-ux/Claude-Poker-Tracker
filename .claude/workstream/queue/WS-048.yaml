@@ -2,7 +2,7 @@ id: "WS-048"
 title: "Phase C: Texture-Equity + Exceptions Codex"
 legacy_id: "PRF-G5-C"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -29,4 +29,6 @@ source:
   legacy_section: "NEXT — Printable Refresher (project: `docs/projects/printable-refresher.project.md`)"
   source_line: 247
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "PRF Phase-C codex cards; blocked by PRF-G5-B + per-card fidelity review (not done). Reclaim when prereqs land."

@@ -1,7 +1,8 @@
 id: "WS-224"
 title: "Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture"
 type: improvement
-status: backlog
+status: deferred
+deferred_reason: "Real raw WS frame capture requires a live Ignition session at wss://...poker-games/rgs — cannot be produced autonomously (synthesizing a dump just recreates the existing reconstructed fixture, defeating the ticket's intent). The reconstructed FULL_HAND_SEQUENCE fixture is honest and documents its own provenance in ws-replay-seam.test.js. Founder elected to defer (SPR-132, 2026-06-13) until a natural live-capture session. Re-open with a captured dump in hand, or build the dev-gated capture-to-clipboard affordance in capture-websocket-probe.js as a separate prep step."
 claimed_by: ""
 claimed_at: null
 completed_at: null

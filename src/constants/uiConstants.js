@@ -4,6 +4,10 @@
 
 // Screen constants
 export const SCREEN = {
+  // Homebase — default app-entry launchpad (2026-06-19). Routes to the primary
+  // jobs (start/resume session, review, study, navigate). Per
+  // docs/design/surfaces/homebase-view.md. Replaced TABLE as initialUiState default.
+  HOMEBASE: 'homebase',
   TABLE: 'table',
   STATS: 'stats',
   HISTORY: 'history',
@@ -51,6 +55,10 @@ export const SCREEN = {
   // Row-tap from PlayersView opens this (was PlayerEditor pre-WS-163).
   // Per docs/design/audits/2026-05-02-gate4-design-player-identification-v2.md §PIO-G4-S1.
   PLAYER_PROFILE: 'playerProfile',
+  // Owner-only sandbox prototype (2026-06-19) — voice-fed hand-tree editor +
+  // raw Web Speech transcript collector. Mounted via AdminSection SANDBOX_TOOLS.
+  // Pre-Gate experiment for the Voice Hand-Tree Entry project (evolves WS-181).
+  VOICE_TIMELINE_SANDBOX: 'voiceTimelineSandbox',
   // Auth screens
   LOGIN: 'login',
   SIGNUP: 'signup',

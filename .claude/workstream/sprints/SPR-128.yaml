@@ -1,0 +1,29 @@
+id: "SPR-128"
+title: "Ship WS-081: Online persona + JTBD patches"
+status: done
+approved_at: "2026-06-13T20:41:22.534Z"
+completed_at: "2026-06-13T20:51:03.306Z"
+completed_by_commit: "81a0ab2"
+program_focus: "design"
+
+goal: |
+  Ship WS-081: Online persona + JTBD patches
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T20:41:22.534Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-081 selected (8 × no damping = 8).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-081"
+    title: "Online persona + JTBD patches"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-13T20:51:03.306Z"
+
+created_at: "2026-06-13T20:41:22.534Z"

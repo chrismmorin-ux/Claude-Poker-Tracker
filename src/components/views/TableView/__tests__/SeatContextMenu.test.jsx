@@ -270,6 +270,70 @@ describe('SeatContextMenu', () => {
     });
   });
 
+  // WS-191 scope #3: multi-seat selection moved behind the touch-hold / right-click
+  // menu. Plain tap is single-select-replace; this row is the only way to batch.
+  describe('Add to multi-select row', () => {
+    it('does not render when onAddToMultiSelect is undefined', () => {
+      render(<SeatContextMenu {...defaultProps} />);
+      expect(screen.queryByTestId('menu-multi-select')).toBeNull();
+    });
+
+    it('renders "Add to multi-select" when seat is not in the selection', () => {
+      render(
+        <SeatContextMenu
+          {...defaultProps}
+          onAddToMultiSelect={vi.fn()}
+          isSeatInSelection={false}
+        />,
+      );
+      expect(screen.getByTestId('menu-multi-select')).toHaveTextContent(
+        '➕ Add to multi-select',
+      );
+    });
+
+    it('renders "Remove from multi-select" when seat is already in the selection', () => {
+      render(
+        <SeatContextMenu
+          {...defaultProps}
+          onAddToMultiSelect={vi.fn()}
+          isSeatInSelection
+        />,
+      );
+      expect(screen.getByTestId('menu-multi-select')).toHaveTextContent(
+        '➖ Remove from multi-select',
+      );
+    });
+
+    it('calls onAddToMultiSelect with the active seat number when clicked', () => {
+      const onAddToMultiSelect = vi.fn();
+      const props = {
+        ...defaultProps,
+        contextMenu: { x: 10, y: 20, seat: 7 },
+        onAddToMultiSelect,
+      };
+      render(<SeatContextMenu {...props} />);
+      fireEvent.click(screen.getByTestId('menu-multi-select'));
+      expect(onAddToMultiSelect).toHaveBeenCalledWith(7);
+      expect(onAddToMultiSelect).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders inside the seat-config section (above the first divider)', () => {
+      const { container } = render(
+        <SeatContextMenu {...defaultProps} onAddToMultiSelect={vi.fn()} />,
+      );
+      const menu = container.firstChild;
+      const rows = Array.from(menu.children);
+      const firstDividerIdx = rows.findIndex((el) =>
+        el.classList.contains('border-t'),
+      );
+      const multiIdx = rows.findIndex(
+        (el) => el.dataset?.testid === 'menu-multi-select',
+      );
+      expect(multiIdx).toBeGreaterThanOrEqual(0);
+      expect(multiIdx).toBeLessThan(firstDividerIdx);
+    });
+  });
+
   // WS-002 Sprint A2 amendment: straddle entry as a context-menu row
   describe('Straddle row', () => {
     it('does not render when onStraddle is undefined (seat ineligible)', () => {

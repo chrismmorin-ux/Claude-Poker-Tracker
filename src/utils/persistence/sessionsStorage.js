@@ -261,6 +261,10 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
       buyIn: sessionData.buyIn || null,
       rebuyTransactions: sessionData.rebuyTransactions || [],
       cashOut: null,
+      // AUDIT-2026-04-21-SV F2: schema parity with createSession — initialize
+      // tipAmount: null on create so both creators produce identical record
+      // shapes (WS-219). endSessionAtomic later sets it at cash-out.
+      tipAmount: null,
       reUp: sessionData.reUp || 0,
       goal: sessionData.goal || null,
       notes: sessionData.notes || null,

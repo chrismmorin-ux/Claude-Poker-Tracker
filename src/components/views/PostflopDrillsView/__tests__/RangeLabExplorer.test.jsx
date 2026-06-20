@@ -12,7 +12,17 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ExplorerMode } from '../ExplorerMode';
 
-describe('ExplorerMode — Range Lab Custom source', () => {
+// Per-file timeout (30s, up from the 10s default). The "painting the second
+// grid" case renders Compare mode — two 13×13 paint grids (338 cell buttons)
+// plus the synchronous hand-type breakdown — then repaints and runs three
+// accessible-name queries that each traverse all 338+ buttons. That is ~3s of
+// genuine work in isolation; under the component pool's `forks: maxForks: 2`
+// contention (and other concurrent project workers) the 3–4× slowdown pushed
+// it past 10s, failing the full suite while passing solo (WS-220). 30s gives
+// ~10× isolated-runtime headroom while still catching a true hang. Same
+// "slow-but-correct test, justify the headroom" precedent as the slow-unit
+// project in vite.config.js (SPR-089).
+describe('ExplorerMode — Range Lab Custom source', { timeout: 30000 }, () => {
   beforeEach(() => window.sessionStorage.clear());
 
   it('defaults to Archetype (no paint grid)', () => {

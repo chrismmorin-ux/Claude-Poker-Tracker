@@ -1,0 +1,47 @@
+id: "WS-239"
+title: "Brand-image deep-dive → audit every design element against it"
+type: improvement
+status: deferred
+priority_score: 12.0
+category: ux
+program: "prog-launch"
+capability: governance
+description: |
+  Future project (flagged by owner 2026-06-19 as "at some point" — NOT started;
+  several other priorities active first). Two phases:
+
+  1. Deep-dive the BRAND IMAGE and capture it as an explicit artifact (Design
+     Program Gate 1 / new surface doc under docs/design/). Who the product is
+     for, what it feels like, its personality and visual language.
+  2. Drive that brand spine DOWN into every design element choice already made —
+     color palettes, typography, layout density, copy tone, portrait-native
+     field screens, 1600x720 game surfaces — auditing each surface against the
+     brand and remediating drift.
+
+  Big enough to be its own project, not a quick pass. Reconcile existing
+  visual-identity invariants as INPUTS (don't overwrite blindly):
+  color gradient light->dark, color-independent-of-ethnicity, portrait-native
+  field screens, accessory/identification model.
+
+  Open question at capture: does a brand reference already exist (name/vibe/
+  colors decided) or does brand definition start from scratch? Owner did not
+  answer — ask when work begins.
+
+  See memory: project-brand-image-design-deepdive.
+accept_criteria: |
+  Brand-image artifact authored in docs/design/ and ratified by owner; every
+  primary surface audited against it with a remediation backlog produced.
+  Gate 1 (Entry) and Gate 4 (Design) passed per docs/design/LIFECYCLE.md.
+effort: L
+files_involved:
+  - docs/design/
+deferred_reason: "Owner flagged as future work (2026-06-19) — not started; other priorities active first."
+blocked_by: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Brand: does a reference already exist, or define from scratch?"
+source:
+  type: manual
+  created_by: user
+created_at: "2026-06-19"

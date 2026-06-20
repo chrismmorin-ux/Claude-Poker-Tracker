@@ -71,6 +71,7 @@ export const OVERLAY_COLORS = {
 // =============================================================================
 
 export const NAV_COLORS = {
+  home:     { base: '#15803d', hover: '#166534' },  // green-700/800 (homebase / live table)
   stats:    { base: '#2563eb', hover: '#1d4ed8' },  // blue-600/700
   history:  { base: '#9333ea', hover: '#7e22ce' },  // purple-600/700
   sessions: { base: '#ea580c', hover: '#c2410c' },  // orange-600/700

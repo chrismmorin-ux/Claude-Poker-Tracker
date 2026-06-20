@@ -1,0 +1,39 @@
+id: "FIND-023"
+title: "Population priors are uncited hand-authored constants — the whole Bayesian model shrinks toward an unattributed baseline"
+severity: HIGH
+status: open
+category: "provenance"
+program: "data-quality"
+problem_class: "Data Consistency"
+source:
+  engine: "provenance-audit"
+  protocol: "baseline"
+  run_id: "run-2026-06-19-provenance-baseline"
+  date: "2026-06-19"
+description: |
+  The Field-frame population priors that the entire Bayesian shrinkage leans on are hand-authored
+  constants with NO external citation — no dataset, no sample, no provenance stamp:
+    - exploitEngine/bayesianConfidence.js:25-35 — STAT_PRIORS Beta(α,β) per 9 stats (pseudocount 10)
+    - rangeEngine/populationPriors.js:25-57 — FACED_RAISE_RATE / frequencies per position (PRIOR_WEIGHT=10)
+    - exploitEngine/gameTreeConstants.js:124-132 — POP_CALLING_RATES / POP_BETTING_RATES per bucket
+    - exploitEngine/villainModelData.js:94-132 — POPULATION_PRIORS / STYLE_PRIORS per style label
+  Every Read (per-villain posterior) = these priors updated by observed evidence. The most
+  load-bearing input in the model has no attribution. Registered as SRC-009 in the provenance
+  baseline (docs/provenance/data-source-registry.draft.md). This is the headline finding of the
+  2026-06-19 provenance audit and the root of the Exploit Model's "attribution / weighted input"
+  requirement (charter §1.5).
+affected_files:
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+recommended_fix: |
+  Attribute each prior to its origin (founder estimate / published stat / dataset) in a single
+  cited PRIORS provenance block, OR replace with a defensible derived baseline. Founder input
+  required: where did these numbers come from? Tag each with source + confidence so the Tightness
+  Audit (charter §4) can reconcile every Read to a cited Field prior. Do NOT silently keep them.
+theory_citation: "exploit-model-architecture.md §1.5 (provenance stamp), §4 (Tightness reconcile-to-Field); POKER_THEORY.md §7 (population priors)"
+dedup_key: "provenance-audit-data-quality-population-priors-uncited-hand-authored-constants"
+created_at: "2026-06-19"
+updated_at: "2026-06-19"
+promoted_to: "WS-235"

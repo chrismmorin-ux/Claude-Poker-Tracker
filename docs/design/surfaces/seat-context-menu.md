@@ -70,6 +70,10 @@ Current menu order (`SeatContextMenu.jsx:29-99`):
 ┌──────────────────────────────────┐
 │  Make My Seat            [bold]  │  ← seat config #1
 │  Make Dealer             [bold]  │  ← seat config #2
+│  🎲 Straddle…    [purple, cond.] │  ← seat config #3 (eligible seats only)
+│  ➕ Add to multi-select  [amber] │  ← seat config #4 (WS-191; label flips to
+│                                  │     "➖ Remove from multi-select" when the
+│                                  │     seat is already in the selection)
 ├──────────────────────────────────┤
 │  ASSIGN PLAYER           [label] │  ← section header
 │  🔍 Find Player…         [blue]  │  ← opens picker
@@ -144,3 +148,4 @@ All four seat-context-menu findings addressed Session 3 (2026-04-21). Awaiting v
 
 - 2026-04-21 — Created Session 2.
 - 2026-04-26 — Entry-point change marked: "Find Player…" + "Create New Player" collapse into single "Open Table-Build" entry per Table-Build Gate 4. Other menu items unaffected.
+- 2026-06-19 — **Multi-seat selection moved behind this menu (WS-191 scope #3, owner-decided).** Plain tap on a seat is now single-select-replace (see [table-view](./table-view.md)); the only way to build a multi-seat batch is the new **"➕ Add to multi-select"** seat-config row (`SeatContextMenu.jsx` `MultiSelectButton`, `data-testid="menu-multi-select"`, wired via `onAddToMultiSelect` + `isSeatInSelection`). Rationale: tap-to-accumulate made routine seat entry error-prone; multi-seat is rare, so it becomes deliberate. Recovery: an always-visible step-back **"Undo Seat"** button (ControlZone) pops the most recently added seat during multi-seat. Gate 1 GREEN (Ringmaster multi-player seat management already served); Gate 2 skipped (no new persona/JTBD, pre-existing menu pattern). Audit: [2026-06-19-multiseat-behind-context-menu](../audits/2026-06-19-multiseat-behind-context-menu.md).

@@ -1144,3 +1144,93 @@ sprints:
     created_at: "2026-06-13T04:03:24.439Z"
     completed_at: "2026-06-13T04:37:38.789Z"
 
+  - id: "SPR-127"
+    title: "Ship WS-219: Session storage hygiene — tipAmount field parity + endSessionAtomic round-trip test"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "engineering"
+    created_at: "2026-06-13T04:47:13.126Z"
+    completed_at: "2026-06-13T04:49:30.312Z"
+
+  - id: "SPR-128"
+    title: "Ship WS-081: Online persona + JTBD patches"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-13T20:41:22.534Z"
+    completed_at: "2026-06-13T20:51:03.306Z"
+
+  - id: "SPR-129"
+    title: "Ship WS-082: MT-62 offline-fallback verify"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-13T20:54:49.864Z"
+    completed_at: "2026-06-13T21:00:07.786Z"
+
+  - id: "SPR-130"
+    title: "Ship WS-083: Wave 3"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-13T21:09:38.028Z"
+    completed_at: "2026-06-13T21:24:19.315Z"
+
+  - id: "SPR-131"
+    title: "Ship WS-090: Preflop-as-flop schema workaround documentation"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-06-13T21:39:31.469Z"
+    completed_at: "2026-06-14T00:21:01.413Z"
+
+  - id: "SPR-132"
+    title: "Ship WS-224: Capture raw WS frame dump to spike-data/ + swap ws-replay-seam fixture to real capture"
+    status: done
+    item_count: 2
+    items_done: 1
+    program_focus: "engineering"
+    created_at: "2026-06-14T00:29:31.423Z"
+    completed_at: "2026-06-14T01:40:32.308Z"
+
+  - id: "SPR-133"
+    title: "Ship WS-229: Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-16T00:30:09.418Z"
+    completed_at: "2026-06-16T00:41:22.338Z"
+
+  - id: "SPR-134"
+    title: "Ship WS-232: Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute "
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "engineering"
+    created_at: "2026-06-16T00:53:16.869Z"
+    completed_at: "2026-06-16T01:02:05.855Z"
+
+  - id: "SPR-135"
+    title: "Ship WS-231: Drills corrective — surface-artifact fixes + tab-switch state protection + label diverg"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-16T03:32:49.531Z"
+    completed_at: "2026-06-16T03:48:48.794Z"
+
+  - id: "SPR-136"
+    title: "Ship WS-230: Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "design"
+    created_at: "2026-06-16T03:52:34.495Z"
+    completed_at: "2026-06-16T03:56:20.335Z"
+

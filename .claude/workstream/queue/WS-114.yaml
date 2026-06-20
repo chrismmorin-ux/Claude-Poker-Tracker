@@ -2,7 +2,7 @@ id: "WS-114"
 title: "Multiway postflop corpus gap (3"
 legacy_id: "RT-91"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -28,4 +28,6 @@ source:
   legacy_section: "NEXT — Sidebar Recurrence Program 2026-04-15 (owner-approved)"
   source_line: 674
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "Multiway postflop corpus gap; deferred until RT-74 sequence-mode harness lands (will author as sequences). Reclaim with RT-74."

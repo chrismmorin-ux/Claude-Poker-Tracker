@@ -1,0 +1,33 @@
+id: "FIND-024"
+title: "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals"
+severity: MEDIUM
+status: open
+category: "provenance"
+program: "data-quality"
+problem_class: "Data Consistency"
+source:
+  engine: "provenance-audit"
+  protocol: "baseline"
+  run_id: "run-2026-06-19-provenance-baseline"
+  date: "2026-06-19"
+description: |
+  The highest-stakes surface (live in-hand HUD) has the weakest attribution. The Ignition side
+  panel computes villain VPIP/PFR via a PARALLEL implementation
+  (ignition-poker-tracker/shared/stats-engine.js:computePlayerStats) that does NOT use the main
+  app's Bayesian credible intervals — it emits raw percentages with NO sample size shown. So the
+  "same data viewed from different paths" (Data-Consistency class) shows differently: main app
+  surfaces (TendencyStats.jsx / SeatGrid.jsx, per FIND-001/WS-116) show ±band; the HUD shows a bare
+  number. Registered as DP-008 in the provenance chain map. A live decision is made on the
+  least-attributed value in the system.
+affected_files:
+  - "ignition-poker-tracker/shared/stats-engine.js"
+recommended_fix: |
+  Surface sample size (and ideally the same ±band / DATA-PARTIAL-EST badge pattern from
+  LiveAdviceBar fold% DP-004) on HUD villain stats. Longer term: reconcile the parallel
+  stats-engine with the main-app tendency pipeline so the two paths cannot diverge (single source
+  of computation), or document why a separate path is required and assert parity in tests.
+theory_citation: "exploit-model-architecture.md §1.5; provenance-chain-map DP-008; FIND-001 (interval surfacing precedent)"
+dedup_key: "provenance-audit-data-quality-live-hud-raw-percent-no-sample-parallel-stats-engine"
+created_at: "2026-06-19"
+updated_at: "2026-06-19"
+promoted_to: "WS-236"

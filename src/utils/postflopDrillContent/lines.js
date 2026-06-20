@@ -2415,8 +2415,13 @@ const LINE_UTG_FACING_SQUEEZE = {
   nodes: {
     pre_root: {
       id: 'pre_root',
-      street: 'flop', // approximate — preflop decisions encoded as "flop" for schema; board empty-ish
-      board: ['Q♣', '8♥', '2♦'], // illustrative flop if hero called
+      // SCHEMA-WORKAROUND(WS-090): this is a PREFLOP decision. The schema has no
+      // 'preflop' street kind, so it encodes as 'flop'; the board below is a
+      // fabricated illustrative flop that exists only to pass validateNode's
+      // board-length check. It is inert (no equity engine reads it) and not
+      // rendered as a board. See POKER_THEORY.md §9.6.
+      street: 'flop',
+      board: ['Q♣', '8♥', '2♦'], // illustrative-only; see SCHEMA-WORKAROUND above
       pot: 20.0,
       villainAction: null,
       frameworks: ['squeeze_geometry', 'position_with_callers'],
@@ -2433,6 +2438,9 @@ const LINE_UTG_FACING_SQUEEZE = {
         ],
       },
     },
+    // SCHEMA-WORKAROUND(WS-090): the three terminals below resolve the PREFLOP
+    // decision above. They carry `street: 'flop'` + the same fabricated
+    // illustrative board for the same reason as `pre_root` — see POKER_THEORY.md §9.6.
     terminal_4bet_qq_squeeze: { id: 'terminal_4bet_qq_squeeze', street: 'flop', board: ['Q♣', '8♥', '2♦'], pot: 65.0, sections: [{ kind: 'prose', heading: '4bet forces decisions', body: 'MP1 folds; BTN continues with only KK+/AK. Pot 65 reflects the BTN-called scenario (hero 30 + BTN 30 + MP1 3 + blinds 1.5 ≈ 65) — this is a decision-complete terminal but the hand continues postflop at low SPR. See 4BP lines for AK2ss-class postflop treatment with QQ.' }] },
     terminal_call_squeeze_caller_behind: { id: 'terminal_call_squeeze_caller_behind', street: 'flop', board: ['Q♣', '8♥', '2♦'], pot: 30.0, sections: [{ kind: 'prose', heading: 'Trapped between callers', body: 'MP1 can overcall with PP + suited hands (pot grows 3-way to ~40) or 5bet-light (rare but worst-case); either way hero\'s flat is lower EV than 4bet. The authored pot 30 assumes MP1 folds — the 3-way ~40 path is the more-common live-pool variant.' }] },
     terminal_overfold_qq: { id: 'terminal_overfold_qq', street: 'flop', board: ['Q♣', '8♥', '2♦'], pot: 20.0, sections: [{ kind: 'prose', heading: 'QQ has equity', body: 'Folding top-5 holdings UTG to a squeeze is too tight vs any non-nit.' }] },

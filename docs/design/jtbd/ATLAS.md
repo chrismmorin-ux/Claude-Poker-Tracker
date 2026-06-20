@@ -24,18 +24,19 @@ Expanded Session 1b (2026-04-21) from engine run — ~90 JTBDs across 14 domains
 | MH | Mid-hand decision | [domains/mid-hand-decision.md](./domains/mid-hand-decision.md) | MH-01..13 |
 | HE | Hand entry | [domains/hand-entry.md](./domains/hand-entry.md) | HE-11..17 |
 | SM | Session management | [domains/session-management.md](./domains/session-management.md) | SM-17..22 |
-| SR | Session review | [domains/session-review.md](./domains/session-review.md) | SR-23..34, SR-88 |
+| SR | Session review | [domains/session-review.md](./domains/session-review.md) | SR-23..34, SR-88..89 |
 | SE | Session entry | [domains/session-entry.md](./domains/session-entry.md) | SE-01..04 |
 | TS | Tournament-specific | [domains/tournament-specific.md](./domains/tournament-specific.md) | TS-35..44 |
 | DS | Drills and study | [domains/drills-and-study.md](./domains/drills-and-study.md) | DS-43..61 |
 | CO | Coaching (formal-coach + self-coach modes) | [domains/coaching.md](./domains/coaching.md) | CO-48..57 |
 | SG | Social / group | [domains/social-group.md](./domains/social-group.md) | SG-54..59 |
-| MT | Multi-device / sync | [domains/multi-device-sync.md](./domains/multi-device-sync.md) | MT-60..63 |
+| MT | Multi-device / sync | [domains/multi-device-sync.md](./domains/multi-device-sync.md) | MT-60..64 |
 | SA | Subscription / account / access | [domains/subscription-account.md](./domains/subscription-account.md) | SA-64..75 |
 | BM | Billing management | [domains/billing-management.md](./domains/billing-management.md) | SA-76..78 (legacy IDs); BM-01+ new |
 | DE | Data export / integration | [domains/data-export-integration.md](./domains/data-export-integration.md) | DE-71..75 |
 | CC | Cross-cutting | [domains/cross-cutting.md](./domains/cross-cutting.md) | CC-76..83, 87, 88, 89 |
 | ON | Onboarding | [domains/onboarding.md](./domains/onboarding.md) | ON-82..88 |
+| AE | App entry / orientation | [domains/app-entry.md](./domains/app-entry.md) | AE-01..04 |
 
 Missing-feature JTBDs (87–90) are distributed across their domains, prefixed in the domain file.
 
@@ -106,7 +107,7 @@ PM-01..09 are core capability (PEO-shipped). PM-10..12 are table-build sub-surfa
 | SM-21 | Clean cash-out with tip logging | ◐ | Active |
 | SM-22 | Backfill a forgotten session | ◐ | Active |
 
-### Session review (SR-23..34, SR-88)
+### Session review (SR-23..34, SR-88..89)
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -123,6 +124,7 @@ PM-01..09 are core capability (PEO-shipped). PM-10..12 are table-build sub-surfa
 | SR-33 | Dispute a cited claim against a played hand's evidence (claim-level; SR-26 is decision-level) | ◐ | Proposed |
 | SR-34 | Re-review a previously reviewed hand on a spaced-retrieval schedule | ◐ | Proposed |
 | SR-88 | Similar-spot search across history | ◐ | Proposed |
+| SR-89 | Review the basis/history of live sidebar advice | ◐ | Proposed (online-view F12) |
 
 ### Session entry (SE-01..03)
 
@@ -212,7 +214,7 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | SG-59 | Privacy controls (horse side) | ◐ | Proposed |
 | SG-90 | Cryptographically signed sessions | ◐ | Proposed |
 
-### Multi-device / sync (MT-60..63)
+### Multi-device / sync (MT-60..64)
 
 | ID | Title | State | Status |
 |----|-------|-------|--------|
@@ -220,6 +222,7 @@ Session Entry — pre-session preparation and post-session drill review. Distinc
 | MT-61 | Cloud backup on phone death | ◐ | Paused |
 | MT-62 | Offline-first at signal-less casino | ◐ | Active (local-first) |
 | MT-63 | New-device full restore <60s | ◐ | Paused |
+| MT-64 | Verify extension capture matches played hands | ◐ | Proposed (online-view F12) |
 
 ### Subscription / account / access (SA-64..75)
 

@@ -1,0 +1,29 @@
+id: "SPR-133"
+title: "Ship WS-229: Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
+status: done
+approved_at: "2026-06-16T00:30:09.418Z"
+completed_at: "2026-06-16T00:41:22.338Z"
+completed_by_commit: "4b6f0a0"
+program_focus: "design"
+
+goal: |
+  Ship WS-229: Gate 2 blind-spot roundtable — drills surface (preflop + postflop)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-16T00:30:09.418Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-229 selected (6 × no damping = 6).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-229"
+    title: "Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-16T00:41:22.338Z"
+
+created_at: "2026-06-16T00:30:09.418Z"

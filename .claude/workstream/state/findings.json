@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-06-09T18:44:41.867Z",
-  "updated_by_event": "ev-1781030681867-8693f3425ab4",
+  "updated_at": "2026-06-19T05:44:34.150Z",
+  "updated_by_event": "ev-1781847874150-6d42adb7c60f",
   "items": {
     "FIND-001": {
       "id": "FIND-001",
@@ -255,7 +255,40 @@
       "dedup_key": "eng-engine-domain-correctness-ws131-positional-prior-normalization-widens-label-keyed-fold",
       "promoted_to": "",
       "created_at": "2026-05-19"
+    },
+    "FIND-023": {
+      "id": "FIND-023",
+      "title": "Population priors are uncited hand-authored constants — the whole Bayesian model shrinks toward an unattributed baseline",
+      "severity": "HIGH",
+      "category": "provenance",
+      "status": "open",
+      "program": "data-quality",
+      "dedup_key": "provenance-audit-data-quality-population-priors-uncited-hand-authored-constants",
+      "promoted_to": "WS-235",
+      "created_at": "2026-06-19"
+    },
+    "FIND-024": {
+      "id": "FIND-024",
+      "title": "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals",
+      "severity": "MEDIUM",
+      "category": "provenance",
+      "status": "open",
+      "program": "data-quality",
+      "dedup_key": "provenance-audit-data-quality-live-hud-raw-percent-no-sample-parallel-stats-engine",
+      "promoted_to": "WS-236",
+      "created_at": "2026-06-19"
+    },
+    "FIND-025": {
+      "id": "FIND-025",
+      "title": "'GTO-approximate' preflop charts risk masquerading as the Equilibrium frame, which does not yet exist",
+      "severity": "MEDIUM",
+      "category": "provenance",
+      "status": "open",
+      "program": "data-quality",
+      "dedup_key": "provenance-audit-data-quality-gto-approximate-charts-mislabeled-as-equilibrium",
+      "promoted_to": "WS-237",
+      "created_at": "2026-06-19"
     }
   },
-  "last_event_log_head": "ev-1781030681867-8693f3425ab4"
+  "last_event_log_head": "ev-1781847874150-6d42adb7c60f"
 }

@@ -1,0 +1,28 @@
+id: "SPR-127"
+title: "Ship WS-219: Session storage hygiene — tipAmount field parity + endSessionAtomic round-trip test"
+status: done
+approved_at: "2026-06-13T04:47:13.126Z"
+completed_at: "2026-06-13T04:49:30.312Z"
+completed_by_commit: "81a0ab2"
+program_focus: "engineering"
+
+goal: |
+  Ship WS-219: Session storage hygiene — tipAmount field parity + endSessionAtomic round-trip test
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T04:47:13.126Z"
+  matches: []
+
+composition_notes: |
+  Manual-adjust path (/next Step 4 option 3): founder approved WS-219 over the deterministic anchor WS-018, which premise-check flagged as a stale legacy data-goal. WS-219 is a concrete engineering seam fix (2026-06-10 seam audit).
+
+items:
+  - id: "WS-219"
+    title: "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-06-13T04:49:30.312Z"
+
+created_at: "2026-06-13T04:47:13.126Z"

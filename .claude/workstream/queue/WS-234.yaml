@@ -1,0 +1,57 @@
+id: "WS-234"
+title: "Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 7.0
+priority_label: "P2"
+category: "design-comprehension"
+capability: "core"
+program: "design"
+description: |
+  **Gate 3 (Research) for Projection Explorer (PJX)** — the forced-loop continuation of
+  the 5-gate design lifecycle. Greenlit 2026-06-18 (owner: "seriously invest in this kind
+  of architecture… make sure we have an iterative loop forced to be in place"). Gate 1 RED
+  + Gate 2 RED→redirect already done; this is the next non-bypassable gate before any Gate 4
+  surface spec or production code.
+
+  PJX = project app data (v1: logged opponents as tendency feature vectors) into a
+  manipulable, visualizable space + a numeric calibration instrument. Build shape =
+  "both, sequenced" (product engine module `src/utils/projectionEngine/` → recurring CWOS
+  analysis engine = the forced loop). Primary job = model-validation/calibration.
+
+  Gate 2's central finding: the manipulable cloud serves EXPLORATION (DX-01/04/05); the
+  CALIBRATION job (DX-03) is circular as designed and needs a NUMERIC instrument. The
+  forced loop must compare FEATURE VECTORS + classifier labels across runs, NOT coordinates
+  (PCA sign-flip + UMAP non-determinism). AP-PJX-01 binds: spatial position is a descriptive
+  output, never a decision input — enforce structurally via split export API + CI import-lint.
+
+  Owner verdicts to honor: (4) Gate 3 prototypes BOTH 2D and 3D on real data, decide
+  empirically; (5) "players for the loop, hands as the goal" — build engine+loop on players,
+  design API so hands plug in as consumer #2 without rework.
+accept_criteria:
+  - "De-circularization specified: silhouette-7D + k-means(k=6) confusion vs classifier labels + classifier-blind ablation toggle (project on the 4 non-classifier features); N-floor + UMAP seed-lock + imputation disclosure. This gates whether DX-03 is a real measurement."
+  - "Forced-loop re-framed around feature-space comparison (not coordinates); projectionEngine/ split-export API contract authored (getPlayerProjection decision-safe vs getVisualizationCoords viz-only) + CI import-lint design; API designed hands-ready (consumer #2 without rework)."
+  - "2D-vs-3D empirical prototype run on REAL backup data; modality decided from what reads better."
+  - "DX-04 (re-label in place, highest priority) / DX-05 (outlier hunting) / DX-06 (single-villain drift) authored in jtbd atlas (provisional IDs per DS-registry note); DX-02 reframed search-first."
+  - "Persona resolved: operator/model-owner authored WITH a concrete trigger OR scoped as operator-tooling outside the persona system; Coach evaluated; Analyst export path confirmed."
+  - "PMC interface declared (does PJX read predictionAudit aggregates?); no Ignition sidebar counterpart locked; opportunity-cost check answered (does projection beat a raw 2-axis VPIP×AF scatter at N≈dozens?)."
+  - "Outputs: updated framework artifacts + Gate 2 re-run to GREEN before Gate 4 (per LIFECYCLE Gate 3 contract)."
+effort: "L"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: ["modality-2d-vs-3d-empirical", "pmc-predictionaudit-read-interface", "operator-persona-vs-tooling"]
+status_note: "Forced-loop next gate for PJX. Gate 1 + Gate 2 complete (2026-06-18). Charter: .claude/projects/projection-explorer.md. Audit-only until Gate 4."
+finding_id: ""
+source:
+  origin: "pjx-gate2-roundtable"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-18"
+updated_at: "2026-06-18"

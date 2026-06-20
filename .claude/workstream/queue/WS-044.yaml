@@ -2,7 +2,7 @@ id: "WS-044"
 title: "Stream B4"
 legacy_id: "SLS-B4"
 type: improvement
-status: backlog
+status: deferred
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -30,4 +30,6 @@ source:
   legacy_section: "NEXT — Shape Language (project: `docs/projects/poker-shape-language.project.md`)"
   source_line: 203
 created_at: "2026-05-01"
-updated_at: "2026-05-01"
+updated_at: "2026-06-13"
+deferred_at: "2026-06-13"
+deferred_reason: "SLS Stream B4 surface; blocked by SLS-B3 (not done). Reclaim when B3 lands."

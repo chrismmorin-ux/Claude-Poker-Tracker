@@ -134,6 +134,20 @@ status_note: |
 
   Bug-fix exempt from Refactor Sprint charter (same precedent as WS-189).
 
+  PARTIAL DELIVERY 2026-06-19 (owner-directed, out of band):
+    Scope item #3's open design question — "wire the explicit gesture
+    (long-press or dedicated control — design TBD with owner)" — is now
+    RESOLVED and shipped. Owner directed that multi-seat selection move
+    behind the touch-hold / right-click seat context menu (plain tap became
+    single-select-replace), with an always-visible step-back "Undo Seat"
+    button for mis-entries. Scope #5 (re-tap removes only that seat) remains
+    satisfied — the menu's append path uses togglePlayerSelection. This does
+    NOT close WS-191: the H1 (getFirstActionSeat rule) and H2 (timing/race)
+    telemetry-driven fixes remain open and still soft-blocked on owner
+    captures. INV-SEAT-SELECTION-4's load-bearing assumption (only the user
+    can produce length>1) is preserved — verified in the audit.
+    See docs/design/audits/2026-06-19-multiseat-behind-context-menu.md.
+
   Cross-references:
     - WS-189 (parent, Phase 1) — see status for full hypothesis taxonomy.
     - WS-182 / INV-RULES-CONTRIBUTION — establishes recordSeatAction per-

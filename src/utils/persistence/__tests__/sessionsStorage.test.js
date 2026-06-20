@@ -482,6 +482,23 @@ describe('sessionsStorage', () => {
       const session = await getSessionById(sessionId);
       expect(session.straddle).toBeNull();
     });
+
+    it('initializes tipAmount to null on create (schema parity with createSession)', async () => {
+      const sessionId = await createSessionAtomic({}, 'guest');
+      const session = await getSessionById(sessionId);
+      expect(session.tipAmount).toBeNull();
+    });
+
+    it('produces the same record schema as createSession (WS-219 creator parity)', async () => {
+      // The two creators must emit identical record shapes — divergence (the
+      // missing tipAmount field) could confuse future migrations and downstream
+      // readers that don't apply the `|| 0` tolerance.
+      const plainId = await createSession({}, 'guest');
+      const atomicId = await createSessionAtomic({}, 'guest');
+      const plain = await getSessionById(plainId);
+      const atomic = await getSessionById(atomicId);
+      expect(Object.keys(atomic).sort()).toEqual(Object.keys(plain).sort());
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -537,6 +554,27 @@ describe('sessionsStorage', () => {
 
       const activeB = await getActiveSession('user_b');
       expect(activeB).toEqual({ sessionId: idB });
+    });
+
+    it('persists tipAmount through an end → restart round-trip (P&L depends on it)', async () => {
+      // The re-fetch simulates the post-restart HYDRATE_SESSION read from IDB:
+      // a tip logged at cash-out must survive so net P&L is not overcounted.
+      const sessionId = await createSessionAtomic({}, 'guest');
+      await endSessionAtomic(sessionId, 600, 'guest', 25);
+
+      const session = await getSessionById(sessionId);
+      expect(session.tipAmount).toBe(25);
+      expect(session.cashOut).toBe(600);
+    });
+
+    it('leaves tipAmount null when no tip is provided at end (legacy parity)', async () => {
+      // createSessionAtomic now seeds tipAmount: null; ending without a tip must
+      // not mutate it (the conditional write skips null/undefined).
+      const sessionId = await createSessionAtomic({}, 'guest');
+      await endSessionAtomic(sessionId, 600, 'guest');
+
+      const session = await getSessionById(sessionId);
+      expect(session.tipAmount).toBeNull();
     });
   });
 

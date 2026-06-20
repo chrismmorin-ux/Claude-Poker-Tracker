@@ -138,6 +138,13 @@ export const SECTION_KINDS = Object.freeze([
  */
 const COMBO_REGEX = /^([2-9TJQKA])([♠♥♦♣])([2-9TJQKA])([♠♥♦♣])$/;
 
+// SCHEMA-WORKAROUND(WS-090): there is no 'preflop' street kind. Preflop
+// decision nodes (currently only the `utg-vs-btn-squeeze-mp-caller` Line)
+// encode as `street: 'flop'` with a fabricated illustrative board to satisfy
+// validateNode's board-length check. The fake board is computationally inert
+// (no heroView/equity engine runs on those nodes) and is not rendered. Extend
+// this enum to add first-class preflop support only when a 2nd preflop Line is
+// authored — see POKER_THEORY.md §9.6 for the full rationale + follow-up trigger.
 export const STREETS = Object.freeze(['flop', 'turn', 'river']);
 
 export const POT_TYPES = Object.freeze([

@@ -61,7 +61,9 @@ Surfaces lint-test this. The framework provides factual fields; surfaces compose
 
 Per `chris-live-player.md` autonomy red line #8 + SCF Gate 4 §SCF-G4-SUP:
 
-**Read-allowed surfaces:** `HandReplayView` (review-mode only), `SelfCoachView` (all tabs).
+**Read-allowed surfaces:** `HandReplayView` (review-mode only), `SelfCoachView` (all tabs), `HomebaseView` (study-queue **count only** — see scope note).
+
+`HomebaseView` scope (added 2026-06-20, plan shimmying-moseying-lantern, founder-approved): the Homebase dashboard's "Study queue" card reads `useSelfCoachMastery` solely to display a COUNT of concepts needing work (`composites.filter(c => c.compositeScore > 0).length`) and deep-link into `SelfCoachView`. It MUST NOT render per-concept mastery, leak detail, grades, or tier labels — that is `SelfCoachView`'s job. Homebase is the app-entry/review hub, not a live-play surface, so a study-orientation count is consistent with red line #8 (no LIVE-surface contamination); the count-only ceiling keeps it from becoming a second mastery surface.
 
 **BLACKLISTED surfaces:** `OnlineView`, sidebar HUD, `TableView`, `TournamentView`, `ShowdownView`. These MUST NOT import from `skillAssessment/` or read from `heroLeaks` IDB store.
 

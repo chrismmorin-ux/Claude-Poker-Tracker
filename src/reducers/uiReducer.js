@@ -47,7 +47,9 @@ import { SCREEN } from '../constants/uiConstants';
 
 // Initial state
 export const initialUiState = {
-  currentView: SCREEN.TABLE,
+  // Homebase is the default app-entry screen (2026-06-19). Was SCREEN.TABLE.
+  // See docs/design/surfaces/homebase-view.md.
+  currentView: SCREEN.HOMEBASE,
   selectedPlayers: [],
   contextMenu: null, // { x, y, seat }
   isDraggingDealer: false,

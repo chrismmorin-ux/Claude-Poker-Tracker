@@ -33,22 +33,26 @@ Main-app companion surface for online play. Displays the currently-imported hand
 
 Primary:
 - `JTBD-HE-13` auto-capture via sidebar (online)
-- `JTBD-MH-01` see the recommended action for the current street (cross-surface; live surface is sidebar)
+- `JTBD-MH-01` see the recommended action for the current street — **OnlineView is the post-hoc mirror of the advice shown live on the sidebar** (live delivery is the sidebar; this view reflects it after the fact)
 - `JTBD-MH-03` check bluff-catch frequency on current villain
 - `JTBD-MH-04` sizing suggestion tied to villain's calling range
 - `JTBD-MH-08` incorporate blockers in fold-equity math
 - `JTBD-SR-24` filter by street / position / opponent-style (session selector + seat drill-in)
+- `JTBD-SR-89` review the basis/history of live sidebar advice (post-hoc; Proposed — the explainability/history bridge this view does not yet provide, per F12-B1)
 - (villain recognition) per-seat villain profile modal for post-hand study
 
 Secondary:
 - `JTBD-DE-72` raw JSON import (file input for offline imports)
 - `JTBD-MT-62` offline-first — online view must gracefully render without extension connection
+- `JTBD-MT-64` verify extension capture matches played hands (Proposed — `importedCount` is the seed, but capture-integrity verification is unserved, per F12-B2)
 
 ## Personas served
 
 - [Multi-Tabler](../personas/core/multi-tabler.md) — primary (the sidebar is where they live; this view is secondary)
-- [Online MTT Shark](../personas/core/online-mtt-shark.md) — primary
+  - situational: [Multi-Tabler Switching](../personas/situational/multi-tabler-switching.md) — the active focus-switching moment across 4–8 tables
+- [Online MTT Shark](../personas/core/online-mtt-shark.md) — primary; concrete use-case: **post-session villain study + ROI/tendency review** (session selector + per-seat tendency map)
 - [Hybrid Semi-Pro](../personas/core/hybrid-semi-pro.md) — cross-format
+  - situational: [Hybrid Context-Switch](../personas/situational/hybrid-context-switch.md) — the live↔online handoff moment (close one venue, open the other, import old JSON)
 - [Rounder](../personas/core/rounder.md) — occasional online
 - Sidebar-specific personas (Multi-Tabler, Online MTT Shark) are canonically served on the sidebar surfaces (Z0–Z4); this view is the main-app counterpart.
 

@@ -23,11 +23,12 @@ describe('useAutoSeatSelection', () => {
       currentStreet: 'preflop',
       getFirstActionSeat,
       setSelectedPlayers,
+      selectedPlayers: undefined,
     };
     const merged = { ...defaults, ...props };
     return renderHook(
-      ({ showCardSelector, currentStreet, getFirstActionSeat: gfas, setSelectedPlayers: ssp }) =>
-        useAutoSeatSelection(showCardSelector, currentStreet, gfas, ssp),
+      ({ showCardSelector, currentStreet, getFirstActionSeat: gfas, setSelectedPlayers: ssp, selectedPlayers: sp }) =>
+        useAutoSeatSelection(showCardSelector, currentStreet, gfas, ssp, sp),
       { initialProps: merged }
     );
   };
@@ -82,6 +83,57 @@ describe('useAutoSeatSelection', () => {
     setSelectedPlayers.mockClear();
     renderAutoSelect();
     expect(setSelectedPlayers).not.toHaveBeenCalled();
+  });
+
+  // INV-SEAT-SELECTION-4 — autoselect override contract.
+  describe('manual multi-seat queue (INV-SEAT-SELECTION-4)', () => {
+    it('mount does NOT overwrite a manual queue (length > 1)', () => {
+      setSelectedPlayers.mockClear();
+      renderAutoSelect({ selectedPlayers: [4, 5] });
+      expect(setSelectedPlayers).not.toHaveBeenCalled();
+    });
+
+    it('mount STILL overwrites a single-seat selection (length 1)', () => {
+      setSelectedPlayers.mockClear();
+      renderAutoSelect({ selectedPlayers: [7] });
+      expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
+    });
+
+    it('mount selects when selection is empty', () => {
+      setSelectedPlayers.mockClear();
+      renderAutoSelect({ selectedPlayers: [] });
+      expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
+    });
+
+    it('card-selector-close does NOT overwrite a manual queue (length > 1)', () => {
+      const { rerender } = renderAutoSelect({ showCardSelector: true, selectedPlayers: [4, 5] });
+      setSelectedPlayers.mockClear();
+
+      rerender({
+        showCardSelector: false,
+        currentStreet: 'preflop',
+        getFirstActionSeat,
+        setSelectedPlayers,
+        selectedPlayers: [4, 5],
+      });
+
+      expect(setSelectedPlayers).not.toHaveBeenCalled();
+    });
+
+    it('street change DOES reset even with a manual queue (length > 1)', () => {
+      const { rerender } = renderAutoSelect({ selectedPlayers: [4, 5] });
+      setSelectedPlayers.mockClear();
+
+      rerender({
+        showCardSelector: false,
+        currentStreet: 'flop',
+        getFirstActionSeat,
+        setSelectedPlayers,
+        selectedPlayers: [4, 5],
+      });
+
+      expect(setSelectedPlayers).toHaveBeenCalledWith([3]);
+    });
   });
 
   it('scheduleAutoSelect dispatches after setTimeout', () => {

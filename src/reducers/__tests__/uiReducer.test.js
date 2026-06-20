@@ -20,7 +20,7 @@ describe('uiReducer', () => {
 
   describe('initialUiState', () => {
     it('has correct default values', () => {
-      expect(initialUiState.currentView).toBe(SCREEN.TABLE);
+      expect(initialUiState.currentView).toBe(SCREEN.HOMEBASE);
       expect(initialUiState.selectedPlayers).toEqual([]);
       expect(initialUiState.contextMenu).toBe(null);
       expect(initialUiState.isDraggingDealer).toBe(false);
@@ -36,6 +36,7 @@ describe('uiReducer', () => {
 
   describe('SCREEN constants', () => {
     it('has correct screen values', () => {
+      expect(SCREEN.HOMEBASE).toBe('homebase');
       expect(SCREEN.TABLE).toBe('table');
       expect(SCREEN.STATS).toBe('stats');
     });

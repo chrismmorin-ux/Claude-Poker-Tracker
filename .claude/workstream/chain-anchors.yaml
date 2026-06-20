@@ -23,3 +23,11 @@ anchors:
     event_count: 401
     timestamp: "2026-06-13T04:37:30.192Z"
     schema_version: 1
+  - chain_head: "f6459fc50609afb0d1d01c788a53ca39ced3cc10fa789f0ea0d60cb1e9fa821d"
+    event_count: 501
+    timestamp: "2026-06-13T21:24:19.030Z"
+    schema_version: 1
+  - chain_head: "2d28e63820a339e0adaa8cba8b82a76c7ce4976f6c9bba345cfd0861d909e8ac"
+    event_count: 601
+    timestamp: "2026-06-16T03:32:41.500Z"
+    schema_version: 1

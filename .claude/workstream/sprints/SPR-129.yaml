@@ -1,0 +1,29 @@
+id: "SPR-129"
+title: "Ship WS-082: MT-62 offline-fallback verify"
+status: done
+approved_at: "2026-06-13T20:54:49.864Z"
+completed_at: "2026-06-13T21:00:07.786Z"
+completed_by_commit: "81a0ab2"
+program_focus: "design"
+
+goal: |
+  Ship WS-082: MT-62 offline-fallback verify
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T20:54:49.864Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-082 selected (8 × no damping = 8).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-082"
+    title: "MT-62 offline-fallback verify"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-13T20:59:57.988Z"
+
+created_at: "2026-06-13T20:54:49.864Z"

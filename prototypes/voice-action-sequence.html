@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Voice Action-Sequence — correction scene (prototype)</title>
+<style>
+  :root{
+    --bg:#0b1411; --felt:#13241d; --panel:#16241e; --line:#21372d;
+    --ink:#e8f0ec; --dim:#8aa399; --ok:#2f6b4f; --okln:#43a47a;
+    --amber:#b07a1e; --amberln:#e0a83a; --amberbg:#2a2310;
+    --hero:#2563a8; --heroln:#4d8fd6; --accent:#43a47a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(120% 90% at 50% -10%,#16271f,var(--bg));
+    color:var(--ink); font:15px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;
+    overscroll-behavior:none; touch-action:none; padding:14px; max-width:920px; margin:0 auto;
+  }
+  h1{font-size:16px;margin:0 0 2px;font-weight:650}
+  .sub{color:var(--dim);font-size:12px;margin:0 0 14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+
+  /* transcript */
+  .heard-label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+  .heard{font-size:15px;color:var(--ink);background:var(--felt);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .heard .garble{color:var(--amberln);background:var(--amberbg);border-radius:5px;padding:1px 5px;font-style:italic}
+  .conf{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--dim)}
+  .bar{flex:1;height:6px;border-radius:4px;background:#22332b;overflow:hidden}
+  .bar > i{display:block;height:100%;width:78%;background:linear-gradient(90deg,var(--amberln),var(--okln))}
+
+  /* banner */
+  .banner{display:flex;align-items:center;gap:10px;background:var(--amberbg);border:1px solid #4a3a12;color:#f0d79a;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+  .banner b{color:#ffe7ab}
+
+  /* streets + chips */
+  .street{margin-bottom:12px}
+  .street-hd{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:0 2px 8px}
+  .street-hd .trig{color:var(--accent);background:#0f2018;border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:10px;letter-spacing:.02em;text-transform:none}
+  .seq{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;min-height:78px}
+
+  .chip{position:relative;min-width:84px;background:var(--felt);border:1.5px solid var(--line);border-radius:12px;
+    padding:8px 10px 9px;display:flex;flex-direction:column;gap:3px;cursor:grab;user-select:none;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease}
+  .chip:active{cursor:grabbing}
+  .chip .who{font-size:11px;color:var(--dim);font-weight:600;letter-spacing:.03em}
+  .chip.hero .who{color:var(--heroln)}
+  .chip .act{font-size:16px;font-weight:680;line-height:1.1}
+  .chip .sz{align-self:flex-start;margin-top:2px;font-size:12px;font-weight:650;color:#cfe5d9;background:#0e2017;border:1px solid var(--line);border-radius:7px;padding:2px 8px;touch-action:none}
+  .chip.hero{border-color:#274d77;background:linear-gradient(180deg,#152a3f,#10202f)}
+  .chip.low{border-color:var(--amberln);background:linear-gradient(180deg,var(--amberbg),#1b1708)}
+  .chip.low .act{color:var(--amberln)}
+  .chip .q{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:var(--amberln);color:#241a05;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .chip.dragging{opacity:.92;box-shadow:0 8px 22px rgba(0,0,0,.45);border-color:var(--okln);z-index:5}
+  .chip .hint{position:absolute;left:0;right:0;bottom:-15px;text-align:center;font-size:9px;color:var(--dim);opacity:0;transition:opacity .15s}
+  .chip.focus .hint{opacity:.9}
+  .gap{width:4px;align-self:stretch;border-radius:3px;background:transparent}
+  .gap.on{background:var(--okln)}
+
+  /* legend */
+  .legend{font-size:12px;color:var(--dim)}
+  .legend h3{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  .trigrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .tok{background:#0f2018;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:11px;color:#bcd}
+  .tok.struct{color:var(--accent);border-color:#2c4a3b}
+
+  /* actions */
+  .foot{display:flex;gap:10px;align-items:center}
+  .btn{flex:0 0 auto;border:none;border-radius:11px;padding:12px 18px;font-size:14px;font-weight:680;cursor:pointer}
+  .commit{background:var(--okln);color:#06140d;flex:1}
+  .retry{background:transparent;border:1px solid var(--line);color:var(--dim)}
+  .reset{background:transparent;border:1px solid var(--line);color:var(--dim);font-size:12px;padding:9px 12px}
+  .note{font-size:11px;color:var(--dim);margin-top:10px}
+</style>
+</head>
+<body>
+  <h1>Voice action-sequence — the correction scene</h1>
+  <p class="sub">Prototype for owner validation · partial hearing → fix in one finger, retry is secondary · Web Speech only</p>
+
+  <div class="card">
+    <div class="heard-label">What was heard</div>
+    <div class="heard">MP limp, I open 15, BTN 3-bet, I call. <i>next street.</i> I bet <span class="garble">[mumble]</span>, BTN call.</div>
+    <div class="conf"><span>confidence</span><span class="bar"><i></i></span><span>78% · 1 link unclear</span></div>
+  </div>
+
+  <div class="banner">⚠️ <span><b>Heard most of it.</b> One bet size came through unclear (amber). Fix it below, or retry that street.</span></div>
+
+  <div class="card" id="board"></div>
+
+  <div class="card">
+    <div class="foot">
+      <button class="btn commit" id="commit">Commit hand ✓</button>
+      <button class="btn retry">Retry last street</button>
+      <button class="reset" id="reset">↺ reset demo</button>
+    </div>
+    <div class="note">Swipe a chip <b>up/down</b> to change the action · drag the small size pill <b>left/right</b> to scrub the bet size · drag a chip <b>sideways</b> to reorder. Nothing commits until you tap Commit.</div>
+  </div>
+
+  <div class="card legend">
+    <h3>Pre-trainers — permanent trigger vocabulary</h3>
+    <div class="trigrow">
+      <span class="tok struct">preflop</span><span class="tok struct">next street</span><span class="tok struct">flop</span><span class="tok struct">turn</span><span class="tok struct">river</span>
+    </div>
+    <div class="trigrow">
+      <span class="tok">I / hero → Hero seat</span><span class="tok">UTG</span><span class="tok">MP</span><span class="tok">CO</span><span class="tok">BTN</span><span class="tok">SB</span><span class="tok">BB</span>
+    </div>
+    <div class="trigrow">
+      <span class="tok">limp</span><span class="tok">open / raise</span><span class="tok">3-bet</span><span class="tok">4-bet</span><span class="tok">call</span><span class="tok">bet</span><span class="tok">check</span><span class="tok">fold</span>
+    </div>
+    <div style="color:var(--dim);font-size:11px">Structural triggers (green) segment the utterance so a garbled card/size stays <i>contained</i> to one link instead of breaking the whole hand.</div>
+  </div>
+
+<script>
+const ACTIONS = ['fold','check','call','limp','bet','raise','3-bet','4-bet'];
+const HAS_SIZE = {bet:1,raise:1,'3-bet':1,'4-bet':1};
+const POS = ['UTG','MP','CO','BTN','SB','BB','Hero'];
+
+function seed(){return [
+  {street:'Preflop',trig:'preflop',chips:[
+    {id:1,actor:'MP',action:'limp',size:null,low:false},
+    {id:2,actor:'Hero',action:'raise',size:15,low:false},
+    {id:3,actor:'BTN',action:'3-bet',size:45,low:false},
+    {id:4,actor:'Hero',action:'call',size:null,low:false},
+  ]},
+  {street:'Flop',trig:'next street',chips:[
+    {id:5,actor:'Hero',action:'bet',size:null,low:true},   // <- unclear size
+    {id:6,actor:'BTN',action:'call',size:null,low:false},
+  ]},
+];}
+let model = seed();
+
+const board = document.getElementById('board');
+function fmtSize(c){ return HAS_SIZE[c.action] ? (c.size==null? '?' : c.size) : null; }
+
+function render(){
+  board.innerHTML='';
+  model.forEach((st,si)=>{
+    const wrap=document.createElement('div'); wrap.className='street';
+    wrap.innerHTML=`<div class="street-hd">${st.street}<span class="trig">trigger: “${st.trig}”</span></div>`;
+    const seq=document.createElement('div'); seq.className='seq'; seq.dataset.si=si;
+    st.chips.forEach((c,ci)=>{
+      const el=document.createElement('div');
+      el.className='chip'+(c.actor==='Hero'?' hero':'')+(c.low?' low':'');
+      el.dataset.si=si; el.dataset.ci=ci;
+      const sz=fmtSize(c);
+      el.innerHTML=`${c.low?'<div class="q">?</div>':''}
+        <div class="who">${c.actor}</div>
+        <div class="act">${c.action}</div>
+        ${sz!==null?`<div class="sz" data-size="1">$${sz}</div>`:''}
+        <div class="hint">swipe ↕ · drag ↔</div>`;
+      bindChip(el,si,ci);
+      seq.appendChild(el);
+    });
+    wrap.appendChild(seq); board.appendChild(wrap);
+  });
+}
+
+function cycleAction(c,dir){
+  let i=ACTIONS.indexOf(c.action); i=(i+dir+ACTIONS.length)%ACTIONS.length;
+  c.action=ACTIONS[i];
+  if(HAS_SIZE[c.action] && c.size==null) c.size=10;
+  if(!HAS_SIZE[c.action]) c.size=null;
+  c.low=false;
+}
+
+function bindChip(el,si,ci){
+  const c=()=>model[si].chips[ci];
+  let sx,sy,mode=null,moved=false,lastStep=0,sizeEl=null;
+
+  el.addEventListener('pointerdown',e=>{
+    const t=e.target.closest('.sz');
+    sizeEl = t || null;
+    sx=e.clientX; sy=e.clientY; mode=null; moved=false; lastStep=0;
+    el.classList.add('focus');
+    el.setPointerCapture(e.pointerId);
+  });
+
+  el.addEventListener('pointermove',e=>{
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(!mode){
+      if(Math.abs(dx)>10||Math.abs(dy)>10){
+        if(sizeEl && Math.abs(dx)>Math.abs(dy)) mode='size';
+        else if(Math.abs(dy)>Math.abs(dx)) mode='value';
+        else mode='reorder', el.classList.add('dragging');
+      } else return;
+    }
+    moved=true;
+    if(mode==='value'){
+      const step=Math.round(-dy/34);
+      if(step!==lastStep){ cycleAction(c(),step-lastStep>0?1:-1); lastStep=step; render(); refocus(si,ci); }
+    } else if(mode==='size'){
+      const step=Math.round(dx/14);
+      if(step!==lastStep){ const cc=c(); cc.size=Math.max(1,(cc.size||0)+(step-lastStep)); cc.low=false; lastStep=step; render(); refocus(si,ci); }
+    } else if(mode==='reorder'){
+      el.style.transform=`translateX(${dx}px)`;
+      markGap(si, e.clientX);
+    }
+  });
+
+  const end=e=>{
+    if(mode==='reorder'){ commitReorder(si,ci,e.clientX); }
+    el.style.transform=''; el.classList.remove('dragging');
+    mode=null;
+    setTimeout(()=>{ document.querySelectorAll('.gap.on').forEach(g=>g.classList.remove('on')); },0);
+  };
+  el.addEventListener('pointerup',end);
+  el.addEventListener('pointercancel',end);
+}
+
+function refocus(si,ci){ const el=board.querySelector(`.chip[data-si="${si}"][data-ci="${ci}"]`); if(el)el.classList.add('focus'); }
+
+function targetIndex(si,x){
+  const chips=[...board.querySelectorAll(`.seq[data-si="${si}"] .chip`)];
+  for(let i=0;i<chips.length;i++){ const r=chips[i].getBoundingClientRect(); if(x < r.left+r.width/2) return i; }
+  return chips.length;
+}
+function markGap(si,x){ /* visual only: highlight nearest seam */ }
+function commitReorder(si,ci,x){
+  const to=targetIndex(si,x); const arr=model[si].chips;
+  let from=ci; let idx=to>from?to-1:to;
+  if(idx===from) { render(); return; }
+  const [m]=arr.splice(from,1); arr.splice(idx,0,m); render();
+}
+
+document.getElementById('commit').addEventListener('click',()=>{
+  const lows=model.flatMap(s=>s.chips).filter(c=>c.low||(HAS_SIZE[c.action]&&c.size==null));
+  if(lows.length){ alert('Still '+lows.length+' unclear link(s) — fix the amber chip first, or Retry that street.'); return; }
+  const out=model.map(s=>s.street+': '+s.chips.map(c=>c.actor+' '+c.action+(HAS_SIZE[c.action]?(' $'+c.size):'')).join(' · ')).join('\n');
+  alert('Committed ✓\n\n'+out);
+});
+document.getElementById('reset').addEventListener('click',()=>{model=seed();render();});
+render();
+</script>
+</body>
+</html>

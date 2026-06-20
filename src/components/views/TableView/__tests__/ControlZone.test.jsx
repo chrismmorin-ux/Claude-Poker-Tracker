@@ -55,3 +55,29 @@ describe('ControlZone — Tag for Review (WS-190)', () => {
     expect(screen.queryByText('Tagged for Review')).toBeNull();
   });
 });
+
+describe('ControlZone — multi-seat step-back Undo (WS-191)', () => {
+  it('does not render "Undo Seat" when not in multi-seat mode', () => {
+    render(<ControlZone {...baseProps} hasSeatSelected isMultiSeat={false} onUndoLastSeat={vi.fn()} />);
+    expect(screen.queryByLabelText('Undo last added seat')).toBeNull();
+  });
+
+  it('renders "Undo Seat" during multi-seat selection', () => {
+    render(<ControlZone {...baseProps} hasSeatSelected isMultiSeat onUndoLastSeat={vi.fn()} />);
+    expect(screen.getByLabelText('Undo last added seat')).toBeTruthy();
+    expect(screen.getByText('Undo Seat')).toBeTruthy();
+  });
+
+  it('calls onUndoLastSeat on a single tap', () => {
+    const onUndoLastSeat = vi.fn();
+    render(<ControlZone {...baseProps} hasSeatSelected isMultiSeat onUndoLastSeat={onUndoLastSeat} />);
+    fireEvent.click(screen.getByLabelText('Undo last added seat'));
+    expect(onUndoLastSeat).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the Deselect (clear-all) button available alongside Undo Seat', () => {
+    render(<ControlZone {...baseProps} hasSeatSelected isMultiSeat onUndoLastSeat={vi.fn()} />);
+    expect(screen.getByText('Deselect')).toBeTruthy();
+    expect(screen.getByText('Undo Seat')).toBeTruthy();
+  });
+});

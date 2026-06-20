@@ -155,7 +155,7 @@ health_score: 3
 health_ceiling: 5
 health_ceiling_reason: "Baseline complete (2026-06-09). The program ran and returned a correct verdict (NOT READY, by design — mid-development). Score held to 3 by a real config gap (launch_gate.blocking_programs empty → cannot formally aggregate) + active cap_breach (8 open vs max 5). Ceiling 5 until the blocking set is wired and challenge/blind_spot run. This is a temporary lifecycle program — removed after successful launch."
 findings_open: 0
-work_items_open: 3
+work_items_open: 1
 
 cap_breach:
   active: false

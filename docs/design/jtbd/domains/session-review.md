@@ -38,6 +38,17 @@ Jobs performed *after* a session (or between sessions) to review, filter, replay
 
 - State: **Proposed** (DISC-11).
 
+## SR-89 — Review the basis/history of live sidebar advice
+
+> When the sidebar told me to fold (or bet) during online play, I want to see *why* — the read and reasoning behind that advice — and to look it up again afterward ("why did it say fold 11 hands ago?"), so I can trust the advice in the moment and learn from it after.
+
+- State: **Proposed** (2026-04-22 OnlineView blind-spot audit, Stage-B finding B1 → WS-081 / DCOMP-W4-A3-F12).
+- Primary personas: [Online MTT Shark](../../personas/core/online-mtt-shark.md), [Multi-Tabler Switching](../../personas/situational/multi-tabler-switching.md), [Hybrid Context-Switch](../../personas/situational/hybrid-context-switch.md).
+- Surfaces: extension sidebar (live "why?" affordance, Wave 5 zone-click), `OnlineView` (post-hoc mirror — advice history with reasoning).
+- Domain note: spans live (mid-hand "why fold?") and post-hoc (tabbed-away review). Placed in Session Review per founder decision 2026-06-13 — the load-bearing job is *reviewing past advice with reasoning*, not live decision support. The live affordance is the sidebar's; this JTBD is the explainability/history bridge OnlineView currently does not provide.
+- Success criterion: hero can answer "what was that advice based on, and when did I get it" for any recent online decision without re-deriving it.
+- Failure modes: advice shown with no recoverable reasoning; history not retained past the current hand; OnlineView shows current tendency + advice but not the *history* of past advice (the gap B1 names).
+
 ---
 
 ## Played-Hand Review Protocol (HRP) — SR-28..34
@@ -122,3 +133,4 @@ Added 2026-04-23 per HRP Gate 2 Blind-Spot Roundtable. HRP closes the depth gap 
 
 - 2026-04-21 — Created Session 1b.
 - 2026-04-23 — Added SR-28..34 as Gate 3 output of Played-Hand Review Protocol (HRP) project. 4 Active (SR-28, SR-29, SR-30, SR-31) + 3 Proposed (SR-32, SR-33, SR-34). See `../../audits/2026-04-23-blindspot-played-hand-review-protocol.md`.
+- 2026-06-13 — Added SR-89 (review the basis/history of live sidebar advice, Proposed) — WS-081 / DCOMP-W4-A3-F12 Stage-B finding B1. Domain placement (SR vs MH) per founder decision 2026-06-13.

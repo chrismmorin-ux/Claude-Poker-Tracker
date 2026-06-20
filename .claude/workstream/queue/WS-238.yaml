@@ -1,0 +1,48 @@
+id: "WS-238"
+title: "Thread signed-in userId into the manual hand-save path (usePersistence) — write-side data-isolation residual"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 6.5
+priority_label: "P2"
+category: "data-isolation"
+capability: "core"
+program: "data-quality"
+description: |
+  _Convergence: completes the userId data-isolation fix on the WRITE side (read side fixed 2026-06-19)._
+
+  Residual from the 2026-06-19 data-isolation fix. The READ paths now thread the signed-in
+  account (SessionContext/PlayerContext/TendencyContext + export). But the manual/live hand-save
+  path still defaults to 'guest': `useAppState.js:92` passes `undefined` as the 7th arg (userId)
+  to `usePersistence(...)`, which defaults to GUEST_USER_ID. So hands entered manually (live table
+  play) save under 'guest' even when signed in, then read paths (now userId-scoped) won't show
+  them until the next sign-in triggers the guest→account merge (migrateGuestData).
+
+  Online (Ignition) capture is unaffected — it already writes under the UID via SyncBridge. This
+  only bites manual/live entry while signed in. Fix: thread the resolved auth userId into the
+  usePersistence call (compute from auth in useAppState or pass down), matching the read-path +
+  online-write pattern. Verify useAppState has the resolved userId in scope (auth state).
+accept_criteria:
+  - "usePersistence in useAppState receives the resolved signed-in userId (not undefined/guest) so manual hands save under the account when signed in."
+  - "A test asserts a manually-saved hand while signed in is readable under the account's userId (not guest)."
+  - "Guest behavior preserved when signed out (userId resolves to 'guest')."
+effort: "S"
+files_involved:
+  - "src/hooks/useAppState.js"
+  - "src/hooks/usePersistence.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "Write-side residual of the 2026-06-19 read-path data-isolation fix. Low impact for online play; matters for manual entry while signed in. Migration (migrateGuestData) mitigates via sign-in sweep."
+finding_id: ""
+source:
+  origin: "data-isolation-fix-followup"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-19"
+updated_at: "2026-06-19"

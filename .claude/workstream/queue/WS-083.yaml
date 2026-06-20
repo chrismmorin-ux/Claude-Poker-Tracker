@@ -2,10 +2,11 @@ id: "WS-083"
 title: "Wave 3"
 legacy_id: "DCOMP-W3"
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "81a0ab2"
 priority_score: 8.0
 priority_label: "P3"
 category: "design-comprehension"
@@ -29,3 +30,4 @@ source:
   source_line: 392
 created_at: "2026-05-01"
 updated_at: "2026-05-14"
+closed_by_event: "ev-1781385859347-011a682bec70"

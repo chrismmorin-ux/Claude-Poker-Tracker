@@ -609,3 +609,21 @@ This section catalogs places where our authored content or engine defaults inten
 **How it is surfaced to the student:** Upper-surface artifact `btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback.md` §5 Claim 1 establishes the over-bluff baseline; §6 default recommendation cashes the exploit; §12 Assumption C surfaces the nit-archetype-override as the only fold case. Drill-card surface (`docs/upper-surface/drill-cards/...`) names the headline falsifier (sample showing bluff fraction ≤22%) at the recommendation site.
 
 **Originating audit:** Stage 4 leading-theory comparison for `btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback` (`docs/upper-surface/comparisons/btn-vs-bb-srp-ip-dry-q72r-river_after_turn_checkback-external.md`), proposed §9.X entry.
+
+### 9.6 Schema-encoding: preflop decisions encoded as `street: 'flop'`
+
+> **Note — this is NOT a solver-theory divergence.** Entries 9.1–9.5 catalog places where our authored *poker content* intentionally departs from solver baseline. This entry is a different category: a **data-model encoding workaround**. The poker content of the affected line is correct; only its representation in the Line schema is a workaround. It lives here because WS-090's acceptance criteria named §9.x, and because it is the kind of latent divergence the domain-correctness program exists to keep visible.
+
+**Content:** The `utg-vs-btn-squeeze-mp-caller` Line (`src/utils/postflopDrillContent/lines.js`) — its `pre_root` node and the three terminal nodes it branches to (`terminal_4bet_qq_squeeze`, `terminal_call_squeeze_caller_behind`, `terminal_overfold_qq`). This is currently the **only** preflop-decision Line in the catalog.
+
+**Divergence:** The Line teaches a *preflop* squeeze decision (Hero UTG with QQ facing a BTN squeeze, deciding 4bet / call / fold). The Line schema's `STREETS` enum (`src/utils/postflopDrillContent/lineSchema.js`) only admits `'flop' | 'turn' | 'river'` — there is no `'preflop'` street kind. To pass validation, each preflop node is encoded with `street: 'flop'` and a **fabricated illustrative board** (`['Q♣','8♥','2♦']`) that exists solely to satisfy the validator's rule that a `'flop'` node carry exactly three board cards (`validateNode`, board-length check). The board does not correspond to the preflop decision being taught.
+
+**Why this is low-harm (and therefore documented, not fixed):**
+- The fabricated board is **computationally inert**: `pre_root` declares no `heroView` / `villainRangeContext` / `comboPlans`, so `BucketEVPanelV2` and the equity/bucket engine never run on it. No EV or range math reads the fake board.
+- The board is **not rendered as a board visual** — `LineNodeRenderer` renders `node.street` as a small text label but does not paint `node.board` for these nodes. The only user-visible artifact is the street label reading "FLOP" during the preflop decision; the decision prompt ("BTN squeezes to 13bb. Hero UTG with QQ") keeps the context unambiguous to the student.
+
+**Why not extend the schema:** Adding a first-class `'preflop'` street kind would touch ~14 `.street`/`STREETS` consumer sites across `postflopDrillContent/` and `PostflopDrillsView/` (board-geometry, narrowing, breadcrumbs, renderers), several on the live drill surface — an L–XL change with real regression risk. That cost only amortizes once **multiple** preflop Lines exist; today there is one. Building first-class preflop support for a single Line is premature (WS-090 decision, 2026-06-13, Option A).
+
+**Follow-up trigger:** When a **second** preflop-decision Line is authored, revisit the schema-extension path (add `'preflop'` to `STREETS`; `validateNode` expects `board.length === 0` for it; migrate the encoded nodes; audit the ~14 consumers; add tests). Until then, the workaround is self-documenting via the `SCHEMA-WORKAROUND(WS-090)` markers in `lineSchema.js` and `lines.js` (greppable).
+
+**Originating audit:** WS-090 (`LSW-G-PreflopEnc`), domain-correctness program; surfaced in the LSW surface audit as H3-F2.

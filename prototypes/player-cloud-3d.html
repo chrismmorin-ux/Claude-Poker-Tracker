@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Player Cloud 3D — throwaway prototype</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0b0f14; color: #e5e7eb;
+    font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #app { display: flex; height: 100vh; }
+  #stage { position: relative; flex: 1; min-width: 0; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+
+  #panel { width: 290px; flex: 0 0 290px; background: #11161d; border-left: 1px solid #1f2733;
+    padding: 16px; overflow-y: auto; }
+  #panel h1 { font-size: 14px; margin: 0 0 2px; }
+  #panel .sub { color: #7c8595; font-size: 11px; margin-bottom: 14px; }
+  .group { margin-bottom: 16px; }
+  .group > label { display: block; font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .04em; color: #93a0b4; margin-bottom: 6px; }
+  select, input[type=range] { width: 100%; }
+  select { background: #0b0f14; color: #e5e7eb; border: 1px solid #2a3340; border-radius: 6px;
+    padding: 6px 8px; font: inherit; }
+  .rangeRow { display: flex; align-items: center; gap: 8px; }
+  .rangeRow input { flex: 1; }
+  .rangeRow .val { width: 42px; text-align: right; color: #9fb0c4; font-variant-numeric: tabular-nums; }
+  .hint { color: #6b7686; font-size: 11px; margin-top: 5px; }
+  .toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+
+  #drop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 10px; text-align: center; pointer-events: none; }
+  #drop .card { pointer-events: auto; border: 2px dashed #2f3b4c; border-radius: 14px;
+    padding: 38px 46px; background: rgba(17,22,29,.7); max-width: 460px; }
+  #drop.hide { display: none; }
+  #drop h2 { margin: 0 0 6px; font-size: 18px; }
+  #drop p { margin: 4px 0; color: #98a3b4; }
+  #drop .pick { display: inline-block; margin-top: 12px; background: #2563eb; color: #fff;
+    padding: 9px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  #stage.dragover #drop .card { border-color: #2563eb; background: rgba(37,99,235,.12); }
+
+  .legend { display: flex; flex-direction: column; gap: 4px; }
+  .legend .row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend .row.off { opacity: .35; }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 12px; }
+  .legend .count { margin-left: auto; color: #7c8595; font-variant-numeric: tabular-nums; }
+
+  #tip { position: absolute; pointer-events: none; background: rgba(8,11,15,.95);
+    border: 1px solid #2a3340; border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    max-width: 230px; display: none; z-index: 5; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+  #tip .nm { font-weight: 700; margin-bottom: 4px; }
+  #tip .style { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px;
+    font-weight: 700; margin-left: 6px; vertical-align: middle; }
+  #tip table { border-collapse: collapse; }
+  #tip td { padding: 1px 0; }
+  #tip td.k { color: #8b96a8; padding-right: 10px; }
+  #tip td.v { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .stat { display: flex; justify-content: space-between; font-size: 12px; color: #aeb9c9; }
+  .err { color: #f87171; font-size: 12px; margin-top: 6px; }
+  .muted { color: #6b7686; }
+  a.reset { color: #60a5fa; cursor: pointer; font-size: 11px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="tip"></div>
+    <div id="drop">
+      <div class="card">
+        <h2>Player Cloud — 3D</h2>
+        <p>Drop your <b>poker-tracker-backup-*.json</b> here.</p>
+        <p class="muted">(In the app: Settings → backup/export → download. Nothing leaves your machine — this file reads it locally.)</p>
+        <label class="pick">Choose file…<input id="file" type="file" accept=".json,application/json" hidden /></label>
+      </div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <h1>Player Cloud <span class="muted">3D</span></h1>
+    <div class="sub">throwaway prototype · distance = similarity</div>
+
+    <div class="group">
+      <label>Projection</label>
+      <select id="method">
+        <option value="pca">PCA — honest baseline (no invented clusters)</option>
+        <option value="umap">UMAP — nonlinear (min_dist knob)</option>
+      </select>
+      <div class="hint" id="methodHint">PCA: linear, interpretable. If structure shows here, it's real.</div>
+    </div>
+
+    <div class="group" id="mdGroup" style="display:none">
+      <label>min_dist <span class="muted">(UMAP)</span></label>
+      <div class="rangeRow">
+        <input id="minDist" type="range" min="0" max="0.99" step="0.01" value="0.1" />
+        <span class="val" id="minDistVal">0.10</span>
+      </div>
+      <div class="hint">Low = tight clumps (may be fabricated). High = spread out. Compare against PCA.</div>
+    </div>
+
+    <div class="group">
+      <label>Min hands seen</label>
+      <div class="rangeRow">
+        <input id="minSample" type="range" min="1" max="100" step="1" value="20" />
+        <span class="val" id="minSampleVal">20</span>
+      </div>
+      <div class="hint">Below 20 hands the app shows no style label (too few to trust).</div>
+    </div>
+
+    <div class="group">
+      <label class="toggle"><input id="spin" type="checkbox" /> Auto-rotate</label>
+    </div>
+
+    <div class="group">
+      <label>Styles</label>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="group">
+      <div class="stat"><span>Players plotted</span><span id="nPlotted">—</span></div>
+      <div class="stat"><span>Hands parsed</span><span id="nHands">—</span></div>
+      <div class="stat"><span>Features used</span><span id="nFeat">7</span></div>
+      <div id="msg" class="err"></div>
+      <div style="margin-top:10px"><a class="reset" id="reset">load a different file</a></div>
+    </div>
+
+    <div class="group muted" style="font-size:11px; line-height:1.5">
+      Drag = rotate · wheel = zoom · hover a dot for stats.<br>
+      Dot size = sample confidence. Faint dots = below style threshold.
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   PART A — Ported stat pipeline (faithful to src/utils/tendencyCalculations.js
+   + src/utils/handAnalysis/handTimeline.js + src/constants/primitiveActions.js)
+   ===================================================================== */
+
+const PRIMITIVE = { CHECK:'check', BET:'bet', CALL:'call', RAISE:'raise', FOLD:'fold', STRADDLE:'straddle' };
+const PRIMITIVE_VALUES = Object.values(PRIMITIVE);
+const LEGACY_TO_PRIMITIVE = {
+  fold: PRIMITIVE.FOLD, limp: PRIMITIVE.CALL, call: PRIMITIVE.CALL,
+  open: PRIMITIVE.RAISE, '3bet': PRIMITIVE.RAISE, '4bet': PRIMITIVE.RAISE,
+  cbet_ip_small: PRIMITIVE.BET, cbet_ip_large: PRIMITIVE.BET,
+  cbet_oop_small: PRIMITIVE.BET, cbet_oop_large: PRIMITIVE.BET,
+  check: PRIMITIVE.CHECK, fold_to_cr: PRIMITIVE.FOLD,
+  donk: PRIMITIVE.BET, stab: PRIMITIVE.BET, check_raise: PRIMITIVE.RAISE,
+  fold_to_cbet: PRIMITIVE.FOLD, mucked: null, won: null,
+};
+const isPrimitive = a => PRIMITIVE_VALUES.includes(a);
+const toPrimitive = a => (a in LEGACY_TO_PRIMITIVE ? LEGACY_TO_PRIMITIVE[a] : null);
+const normalize = a => (isPrimitive(a) ? a : toPrimitive(a));
+
+const NUM_SEATS = 9;
+const BETTING_STREETS = ['preflop', 'flop', 'turn', 'river'];
+
+function getPositionalOrder(dealerSeat, street) {
+  const seats = [];
+  for (let i = 1; i <= NUM_SEATS; i++) seats.push(((dealerSeat - 1 + i) % NUM_SEATS) + 1);
+  if (street === 'preflop') { const sb = seats.shift(); const bb = seats.shift(); seats.push(sb, bb); }
+  return seats;
+}
+function buildFromActionSequence(seq) {
+  const tl = [];
+  for (const e of seq) {
+    const action = normalize(e.action);
+    if (!action) continue;
+    tl.push({ order: e.order, seat: String(e.seat), action, street: e.street, amount: e.amount });
+  }
+  return tl.sort((a, b) => a.order - b.order);
+}
+function buildFromSeatActions(seatActions, dealerSeat) {
+  const tl = []; let order = 1;
+  for (const street of BETTING_STREETS) {
+    const sd = seatActions[street]; if (!sd) continue;
+    for (const seat of getPositionalOrder(dealerSeat, street)) {
+      const key = String(seat); const actions = sd[key];
+      if (!Array.isArray(actions)) continue;
+      for (const raw of actions) { const a = normalize(raw); if (!a) continue; tl.push({ order: order++, seat: key, action: a, street }); }
+    }
+  }
+  return tl;
+}
+function buildTimeline(hand) {
+  const seq = hand.gameState && hand.gameState.actionSequence;
+  if (Array.isArray(seq) && seq.length > 0) return buildFromActionSequence(seq);
+  const sa = (hand.gameState && hand.gameState.seatActions) || hand.seatActions || {};
+  const dealer = (hand.gameState && hand.gameState.dealerButtonSeat) != null ? hand.gameState.dealerButtonSeat : 1;
+  return buildFromSeatActions(sa, dealer);
+}
+const streetTL = (tl, s) => tl.filter(e => e.street === s);
+function didFaceRaise(tl, seat, street) {
+  const s = String(seat); const acts = streetTL(tl, street);
+  const first = acts.find(e => e.seat === s); if (!first) return false;
+  for (const e of acts) { if (e.order >= first.order) break; if (e.seat !== s && e.action === PRIMITIVE.RAISE) return true; }
+  return false;
+}
+function findLastRaiser(tl, street) {
+  let last = null; for (const e of streetTL(tl, street)) if (e.action === PRIMITIVE.RAISE) last = e.seat; return last;
+}
+function getCbetInfo(tl, seat) {
+  const s = String(seat); const isPf = findLastRaiser(tl, 'preflop') === s;
+  if (!isPf) return { isPfAggressor: false, sawFlop: false, cbet: false };
+  const flop = streetTL(tl, 'flop').filter(e => e.seat === s);
+  return { isPfAggressor: true, sawFlop: flop.length > 0, cbet: flop.some(e => e.action === PRIMITIVE.BET) };
+}
+
+function findPlayerSeat(playerId, hand) {
+  const sp = hand.seatPlayers; if (!sp) return null;
+  const pid = String(playerId);
+  for (const [seat, id] of Object.entries(sp)) if (String(id) === pid) return seat;
+  return null;
+}
+function emptyStats() {
+  return { handsSeenPreflop:0, vpipCount:0, pfrCount:0, totalBets:0, totalRaises:0, totalCalls:0,
+    facedRaisePreflop:0, threeBetCount:0, pfAggressorFlops:0, cbetCount:0, facedCbet:0, foldedToCbet:0, foldTo3BetCount:0 };
+}
+function accumulate(stats, playerId, hand) {
+  const seat = findPlayerSeat(playerId, hand); if (!seat) return;
+  const tl = buildTimeline(hand);
+  const pf = streetTL(tl, 'preflop').filter(e => e.seat === seat);
+  if (pf.length > 0) {
+    stats.handsSeenPreflop++;
+    if (pf.some(e => e.action === PRIMITIVE.CALL || e.action === PRIMITIVE.BET || e.action === PRIMITIVE.RAISE)) stats.vpipCount++;
+    if (pf.some(e => e.action === PRIMITIVE.RAISE)) stats.pfrCount++;
+  }
+  for (const street of ['flop','turn','river']) {
+    for (const e of streetTL(tl, street).filter(x => x.seat === seat)) {
+      if (e.action === PRIMITIVE.BET) stats.totalBets++;
+      else if (e.action === PRIMITIVE.RAISE) stats.totalRaises++;
+      else if (e.action === PRIMITIVE.CALL) stats.totalCalls++;
+    }
+  }
+  if (pf.length > 0 && didFaceRaise(tl, seat, 'preflop')) {
+    stats.facedRaisePreflop++;
+    const threeBet = pf.some(e => e.action === PRIMITIVE.RAISE);
+    if (threeBet) stats.threeBetCount++;
+    if (!threeBet && pf.some(e => e.action === PRIMITIVE.FOLD)) stats.foldTo3BetCount++;
+  }
+  const cb = getCbetInfo(tl, seat);
+  if (cb.isPfAggressor && cb.sawFlop) { stats.pfAggressorFlops++; if (cb.cbet) stats.cbetCount++; }
+  // fold to cbet
+  const pfRaiser = findLastRaiser(tl, 'preflop');
+  if (pfRaiser && pfRaiser !== seat) {
+    const flop = streetTL(tl, 'flop');
+    const raiserBet = flop.some(e => e.seat === pfRaiser && e.action === PRIMITIVE.BET);
+    const mine = flop.filter(e => e.seat === seat);
+    if (raiserBet && mine.length > 0) { stats.facedCbet++; if (mine.some(e => e.action === PRIMITIVE.FOLD)) stats.foldedToCbet++; }
+  }
+}
+function derive(s) {
+  const n = s.handsSeenPreflop;
+  const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : null);
+  const aggr = s.totalBets + s.totalRaises;
+  const af = s.totalCalls > 0 ? Math.round((aggr / s.totalCalls) * 10) / 10 : (aggr > 0 ? Infinity : null);
+  return {
+    vpip: pct(s.vpipCount, n), pfr: pct(s.pfrCount, n), af,
+    threeBet: pct(s.threeBetCount, s.facedRaisePreflop),
+    cbet: pct(s.cbetCount, s.pfAggressorFlops),
+    foldToCbet: pct(s.foldedToCbet, s.facedCbet),
+    foldTo3Bet: pct(s.foldTo3BetCount, s.facedRaisePreflop),
+    sampleSize: n,
+  };
+}
+const MIN_STYLE_SAMPLE = 20;
+function classifyStyle(p) {
+  if (!p || p.sampleSize < MIN_STYLE_SAMPLE) return null;
+  const { vpip, pfr, af } = p;
+  if (vpip === null || pfr === null) return null;
+  if (vpip > 40) return 'Fish';
+  if (vpip > 30 && pfr > 20) return 'LAG';
+  if (vpip > 30 && pfr < 10) return 'LP';
+  if (vpip < 15 && pfr < 10) return 'Nit';
+  if (vpip >= 20 && vpip <= 30 && pfr >= 15 && pfr <= 25 && af !== null && af > 1.5) return 'Reg';
+  if (vpip >= 15 && vpip <= 30 && pfr >= 10 && pfr <= 25) return 'TAG';
+  return 'Unknown';
+}
+
+/* =====================================================================
+   PART B — Load backup JSON → per-player feature rows
+   ===================================================================== */
+
+const STYLE_COLORS = {
+  Fish:'#ef4444', LAG:'#f97316', LP:'#a855f7', TAG:'#22c55e',
+  Reg:'#14b8a6', Nit:'#3b82f6', Unknown:'#9ca3af', '—':'#475569',
+};
+const FEATURES = ['vpip','pfr','af','threeBet','cbet','foldToCbet','foldTo3Bet'];
+
+function parseBackup(json) {
+  const root = json.data || json;
+  const hands = root.hands || json.hands || [];
+  const players = root.players || json.players || [];
+  if (!Array.isArray(hands) || hands.length === 0) throw new Error('No hands found in this file. Is it a poker-tracker backup?');
+
+  const nameById = new Map();
+  for (const p of players) {
+    const id = p.id != null ? p.id : (p.playerId != null ? p.playerId : null);
+    if (id == null) continue;
+    nameById.set(String(id), p.name || p.nickname || p.displayName || ('Player ' + id));
+  }
+
+  // collect every playerId that appears in any hand
+  const statsById = new Map();
+  for (const hand of hands) {
+    const sp = hand.seatPlayers; if (!sp) continue;
+    for (const id of Object.values(sp)) {
+      if (id == null || id === '') continue;
+      const key = String(id);
+      if (!statsById.has(key)) statsById.set(key, emptyStats());
+    }
+  }
+  // accumulate across all hands
+  for (const hand of hands) {
+    const sp = hand.seatPlayers; if (!sp) continue;
+    for (const id of new Set(Object.values(sp).map(String))) {
+      if (id === '' || id === 'null' || id === 'undefined') continue;
+      accumulate(statsById.get(id), id, hand);
+    }
+  }
+
+  const rows = [];
+  for (const [id, s] of statsById) {
+    const pct = derive(s);
+    rows.push({ id, name: nameById.get(id) || ('Player ' + id), pct, style: classifyStyle(pct) });
+  }
+  return { rows, nHands: hands.length };
+}
+
+// Build standardized feature matrix (mean-impute nulls, cap Infinity AF, z-score per axis)
+function buildMatrix(rows) {
+  const D = FEATURES.length;
+  const cols = FEATURES.map(() => []);
+  // collect finite values per feature
+  rows.forEach(r => FEATURES.forEach((f, j) => {
+    let v = r.pct[f];
+    if (v === Infinity) v = null;            // handle after we know max finite AF
+    if (v != null && isFinite(v)) cols[j].push(v);
+  }));
+  const mean = cols.map(c => c.length ? c.reduce((a, b) => a + b, 0) / c.length : 0);
+  const maxFiniteAf = (() => { const aj = FEATURES.indexOf('af'); return cols[aj].length ? Math.max(...cols[aj]) : 5; })();
+  const std = cols.map((c, j) => {
+    if (c.length < 2) return 1;
+    const m = mean[j]; const v = c.reduce((a, b) => a + (b - m) * (b - m), 0) / c.length;
+    return Math.sqrt(v) || 1;
+  });
+  const afIdx = FEATURES.indexOf('af');
+  const X = rows.map(r => FEATURES.map((f, j) => {
+    let v = r.pct[f];
+    if (f === 'af' && v === Infinity) v = Math.max(maxFiniteAf, 5);   // cap unbeatably-aggressive AF
+    if (v == null || !isFinite(v)) v = mean[j];                        // impute
+    return (v - mean[j]) / std[j];
+  }));
+  return X;
+}
+
+/* =====================================================================
+   PART C — Projections: PCA (self-contained) + UMAP (CDN, optional)
+   ===================================================================== */
+
+// Jacobi eigenvalue decomposition for small symmetric matrices.
+function jacobiEigen(A0) {
+  const n = A0.length;
+  const A = A0.map(r => r.slice());
+  const V = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+  for (let sweep = 0; sweep < 100; sweep++) {
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += A[p][q] * A[p][q];
+    if (off < 1e-12) break;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+      if (Math.abs(A[p][q]) < 1e-14) continue;
+      const theta = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+      const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+      const c = 1 / Math.sqrt(t * t + 1); const s = t * c;
+      for (let i = 0; i < n; i++) {
+        const aip = A[i][p], aiq = A[i][q];
+        A[i][p] = c * aip - s * aiq; A[i][q] = s * aip + c * aiq;
+      }
+      for (let i = 0; i < n; i++) {
+        const api = A[p][i], aqi = A[q][i];
+        A[p][i] = c * api - s * aqi; A[q][i] = s * api + c * aqi;
+      }
+      for (let i = 0; i < n; i++) {
+        const vip = V[i][p], viq = V[i][q];
+        V[i][p] = c * vip - s * viq; V[i][q] = s * vip + c * viq;
+      }
+    }
+  }
+  const vals = A.map((r, i) => r[i]);
+  const vecs = Array.from({ length: n }, (_, j) => V.map(r => r[j])); // column j
+  return vals.map((val, j) => ({ val, vec: vecs[j] }))
+    .sort((a, b) => b.val - a.val);
+}
+
+function pca3(X) {
+  const N = X.length, D = X[0].length;
+  // covariance (X already ~ centered by z-score, but recenter to be safe)
+  const mean = Array(D).fill(0);
+  X.forEach(row => row.forEach((v, j) => mean[j] += v / N));
+  const C = Array.from({ length: D }, () => Array(D).fill(0));
+  X.forEach(row => {
+    for (let i = 0; i < D; i++) for (let j = 0; j < D; j++)
+      C[i][j] += (row[i] - mean[i]) * (row[j] - mean[j]) / (N - 1 || 1);
+  });
+  const eig = jacobiEigen(C);
+  const W = [0, 1, 2].map(k => eig[k] ? eig[k].vec : Array(D).fill(0));
+  return X.map(row => W.map(w => row.reduce((s, v, j) => s + (v - mean[j]) * w[j], 0)));
+}
+
+let umapLib = null, umapTried = false;
+async function loadUmap() {
+  if (umapTried) return umapLib;
+  umapTried = true;
+  for (const url of ['https://esm.sh/umap-js@1.4.0', 'https://cdn.jsdelivr.net/npm/umap-js@1.4.0/+esm']) {
+    try { const m = await import(url); umapLib = m.UMAP || (m.default && m.default.UMAP) || m.default; if (umapLib) return umapLib; }
+    catch (e) { /* try next */ }
+  }
+  return null;
+}
+async function umap3(X, minDist) {
+  const UMAP = await loadUmap();
+  if (!UMAP) throw new Error('offline');
+  const nNeighbors = Math.max(2, Math.min(15, X.length - 1));
+  const u = new UMAP({ nComponents: 3, nNeighbors, minDist, spread: 1.0 });
+  return u.fit(X);
+}
+
+/* =====================================================================
+   PART D — 3D canvas renderer (rotation, zoom, depth-sort, hover)
+   ===================================================================== */
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const tip = document.getElementById('tip');
+let DATA = null;          // { rows, nHands }
+let POINTS = [];          // [{row, x,y,z}] normalized coords
+let projected = [];       // screen-space cache for hover
+let rotX = -0.5, rotY = 0.7, zoom = 1, focal = 620;
+let dragging = false, lastX = 0, lastY = 0, spin = false, hoverIdx = -1;
+
+function resize() {
+  const r = cv.getBoundingClientRect();
+  cv.width = r.width * devicePixelRatio; cv.height = r.height * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', () => { resize(); });
+
+function normalizeCoords(coords) {
+  // center + scale to a fixed radius so any projection fills the view
+  const D = 3; const mean = [0, 0, 0];
+  coords.forEach(c => { for (let k = 0; k < D; k++) mean[k] += c[k] / coords.length; });
+  let maxR = 1e-6;
+  coords.forEach(c => { let d = 0; for (let k = 0; k < D; k++) { const e = c[k] - mean[k]; d += e * e; } maxR = Math.max(maxR, Math.sqrt(d)); });
+  const scale = 230 / maxR;
+  return coords.map(c => ({ x: (c[0] - mean[0]) * scale, y: (c[1] - mean[1]) * scale, z: (c[2] - mean[2]) * scale }));
+}
+
+function dotRadius(sample) {
+  // sqrt scale, gentle: ~3px at 1 hand, ~9px at 100+
+  return 3 + Math.min(6, Math.sqrt(Math.max(1, sample)) * 0.75);
+}
+
+function render() {
+  const w = cv.clientWidth, h = cv.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  if (!POINTS.length) { requestAnimationFrame(render); return; }
+  if (spin && !dragging) rotY += 0.004;
+
+  const cx = w / 2, cy = h / 2;
+  const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+  const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+  projected = POINTS.map((p, i) => {
+    const x1 = p.x * cosY + p.z * sinY;
+    const z1 = -p.x * sinY + p.z * cosY;
+    const y1 = p.y * cosX - z1 * sinX;
+    const z2 = p.y * sinX + z1 * cosX;
+    const persp = focal / (focal + z2);
+    return { i, sx: cx + x1 * persp * zoom, sy: cy + y1 * persp * zoom, depth: z2, persp };
+  }).sort((a, b) => a.depth - b.depth); // far first (painter)
+
+  for (const pr of projected) {
+    const row = POINTS[pr.i].row;
+    const col = STYLE_COLORS[row.style || '—'];
+    const r = dotRadius(row.pct.sampleSize) * pr.persp * zoom;
+    const labeled = row.style != null;
+    ctx.beginPath();
+    ctx.arc(pr.sx, pr.sy, r, 0, Math.PI * 2);
+    ctx.globalAlpha = labeled ? 0.92 : 0.4;
+    ctx.fillStyle = col;
+    ctx.fill();
+    if (pr.i === hoverIdx) { ctx.globalAlpha = 1; ctx.lineWidth = 2; ctx.strokeStyle = '#fff'; ctx.stroke(); }
+    else if (labeled) { ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke(); }
+  }
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(render);
+}
+
+// hover detection
+cv.addEventListener('mousemove', e => {
+  const r = cv.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (dragging) {
+    rotY += (mx - lastX) * 0.01; rotX += (my - lastY) * 0.01;
+    rotX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotX));
+    lastX = mx; lastY = my; return;
+  }
+  // nearest projected point (front-most wins)
+  let best = -1, bestD = 14 * 14;
+  for (let k = projected.length - 1; k >= 0; k--) {
+    const pr = projected[k]; const dx = pr.sx - mx, dy = pr.sy - my; const d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; best = pr.i; break; }
+  }
+  hoverIdx = best;
+  if (best >= 0) showTip(POINTS[best].row, e.clientX - r.left, e.clientY - r.top);
+  else tip.style.display = 'none';
+});
+cv.addEventListener('mousedown', e => { dragging = true; cv.classList.add('dragging'); const r = cv.getBoundingClientRect(); lastX = e.clientX - r.left; lastY = e.clientY - r.top; tip.style.display = 'none'; });
+window.addEventListener('mouseup', () => { dragging = false; cv.classList.remove('dragging'); });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom *= e.deltaY < 0 ? 1.08 : 0.93; zoom = Math.max(0.2, Math.min(6, zoom)); }, { passive: false });
+cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; hoverIdx = -1; });
+
+function fmt(v, suf) { return v == null ? '—' : (v === Infinity ? '∞' : v + (suf || '')); }
+function showTip(row, x, y) {
+  const col = STYLE_COLORS[row.style || '—'];
+  const p = row.pct;
+  tip.innerHTML =
+    '<div class="nm">' + escapeHtml(row.name) +
+      '<span class="style" style="background:' + col + ';color:#0b0f14">' + (row.style || 'n/a') + '</span></div>' +
+    '<table>' +
+    rowHtml('VPIP', fmt(p.vpip, '%')) + rowHtml('PFR', fmt(p.pfr, '%')) + rowHtml('AF', fmt(p.af)) +
+    rowHtml('3-bet', fmt(p.threeBet, '%')) + rowHtml('C-bet', fmt(p.cbet, '%')) +
+    rowHtml('Fold→cbet', fmt(p.foldToCbet, '%')) + rowHtml('Fold→3bet', fmt(p.foldTo3Bet, '%')) +
+    rowHtml('Hands', p.sampleSize) +
+    '</table>';
+  tip.style.display = 'block';
+  const pad = 14;
+  tip.style.left = Math.min(x + pad, cv.clientWidth - 240) + 'px';
+  tip.style.top = Math.min(y + pad, cv.clientHeight - 180) + 'px';
+}
+const rowHtml = (k, v) => '<tr><td class="k">' + k + '</td><td class="v">' + v + '</td></tr>';
+const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* =====================================================================
+   PART E — UI wiring + recompute pipeline
+   ===================================================================== */
+
+const els = {
+  method: document.getElementById('method'), methodHint: document.getElementById('methodHint'),
+  mdGroup: document.getElementById('mdGroup'), minDist: document.getElementById('minDist'), minDistVal: document.getElementById('minDistVal'),
+  minSample: document.getElementById('minSample'), minSampleVal: document.getElementById('minSampleVal'),
+  spin: document.getElementById('spin'), legend: document.getElementById('legend'),
+  nPlotted: document.getElementById('nPlotted'), nHands: document.getElementById('nHands'),
+  msg: document.getElementById('msg'), drop: document.getElementById('drop'), stage: document.getElementById('stage'),
+};
+
+let recomputeToken = 0;
+async function recompute() {
+  if (!DATA) return;
+  const token = ++recomputeToken;
+  els.msg.textContent = '';
+  const minSample = +els.minSample.value;
+  const rows = DATA.rows.filter(r => r.pct.sampleSize >= minSample);
+  els.nPlotted.textContent = rows.length;
+  els.nHands.textContent = DATA.nHands;
+  updateLegend(rows);
+  if (rows.length < 3) { POINTS = []; els.msg.textContent = 'Need at least 3 players above the hand threshold. Lower the slider.'; return; }
+
+  const X = buildMatrix(rows);
+  let coords;
+  try {
+    if (els.method.value === 'umap') coords = await umap3(X, +els.minDist.value);
+    else coords = pca3(X);
+  } catch (e) {
+    if (e.message === 'offline') {
+      els.msg.textContent = 'UMAP needs internet (loads a small library). Falling back to PCA.';
+      els.method.value = 'pca'; syncMethodUI(); coords = pca3(X);
+    } else { els.msg.textContent = 'Projection error: ' + e.message; return; }
+  }
+  if (token !== recomputeToken) return; // a newer recompute superseded us
+  const norm = normalizeCoords(coords);
+  POINTS = rows.map((row, i) => ({ row, x: norm[i].x, y: norm[i].y, z: norm[i].z }));
+  hoverIdx = -1;
+}
+
+function updateLegend(rows) {
+  const counts = {};
+  rows.forEach(r => { const k = r.style || '—'; counts[k] = (counts[k] || 0) + 1; });
+  const order = ['Fish','LAG','LP','TAG','Reg','Nit','Unknown','—'];
+  const labelFor = k => k === '—' ? 'below threshold' : k;
+  els.legend.innerHTML = order.map(k => {
+    const n = counts[k] || 0;
+    return '<div class="row ' + (n ? '' : 'off') + '">' +
+      '<span class="swatch" style="background:' + STYLE_COLORS[k] + '"></span>' +
+      '<span>' + labelFor(k) + '</span><span class="count">' + n + '</span></div>';
+  }).join('');
+}
+
+function syncMethodUI() {
+  const isUmap = els.method.value === 'umap';
+  els.mdGroup.style.display = isUmap ? '' : 'none';
+  els.methodHint.textContent = isUmap
+    ? 'UMAP: finds nonlinear clusters — but invents structure at low point counts. Sanity-check against PCA.'
+    : 'PCA: linear, interpretable. If structure shows here, it is real.';
+}
+
+els.method.addEventListener('change', () => { syncMethodUI(); recompute(); });
+els.minDist.addEventListener('input', () => { els.minDistVal.textContent = (+els.minDist.value).toFixed(2); });
+els.minDist.addEventListener('change', recompute);
+els.minSample.addEventListener('input', () => { els.minSampleVal.textContent = els.minSample.value; });
+els.minSample.addEventListener('change', recompute);
+els.spin.addEventListener('change', () => { spin = els.spin.checked; });
+
+// file loading
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const json = JSON.parse(reader.result);
+      DATA = parseBackup(json);
+      els.drop.classList.add('hide');
+      resize();
+      recompute();
+    } catch (e) {
+      els.drop.classList.remove('hide');
+      els.msg.textContent = e.message;
+      alert('Could not read file: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+}
+document.getElementById('file').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+document.getElementById('reset').addEventListener('click', () => { els.drop.classList.remove('hide'); });
+['dragenter','dragover'].forEach(ev => els.stage.addEventListener(ev, e => { e.preventDefault(); els.stage.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => els.stage.addEventListener(ev, e => { e.preventDefault(); els.stage.classList.remove('dragover'); }));
+els.stage.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+// boot
+syncMethodUI();
+els.minDistVal.textContent = (+els.minDist.value).toFixed(2);
+resize();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+id: "SPR-125"
+title: "Ship WS-220: Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
+status: done
+approved_at: "2026-06-13T03:37:11.926Z"
+completed_at: "2026-06-13T03:58:56.524Z"
+completed_by_commit: "a8b5fe4"
+program_focus: "engineering"
+
+goal: |
+  Ship WS-220: Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-13T03:37:11.926Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-220 selected (9 × no damping = 9).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-220"
+    title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-06-13T03:58:56.524Z"
+  - id: "WS-108"
+    title: "Content + SW throttle coordination on reconnect"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-13T03:58:56.524Z"
+
+created_at: "2026-06-13T03:37:11.926Z"

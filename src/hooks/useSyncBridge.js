@@ -60,6 +60,13 @@ export const useSyncBridgeImpl = (userId) => {
   const consecutiveFailures = useRef(0);
   const circuitBreakerTrippedAt = useRef(null);
   const versionMismatchRef = useRef(false);
+  // WS-228: escalating-backoff reconnect after a disconnect. Independent of
+  // the import circuit breaker above (which governs IDB-save failures, not
+  // connectivity). reconnectAttemptRef drives the backoff exponent;
+  // reconnectTimerRef holds the pending probe timer so the connection-state
+  // effect can cancel it on recovery.
+  const reconnectAttemptRef = useRef(0);
+  const reconnectTimerRef = useRef(null);
   // Pre-reload version snapshot — set on mount if sessionStorage flag exists.
   // Held in a ref so the first STATUS comparison after mount can decide
   // whether the reload actually fixed the mismatch ('recovered') or not
@@ -209,6 +216,18 @@ export const useSyncBridgeImpl = (userId) => {
     }, window.location.origin);
   }, []);
 
+  // Probe the extension for its connection STATUS. The app-bridge content
+  // script answers via window.postMessage (see app-bridge outboundListener).
+  // Stable ref — used by the mount probe, the 60s heartbeat, and the WS-228
+  // reconnect backoff.
+  const requestStatus = useCallback(() => {
+    window.postMessage({
+      type: BRIDGE_MSG.STATUS,
+      request: true,
+      _v: PROTOCOL_VERSION,
+    }, window.location.origin);
+  }, []);
+
   // Listen for messages from extension (relayed via app-bridge content script)
   useEffect(() => {
     const handleMessage = (event) => {
@@ -311,11 +330,7 @@ export const useSyncBridgeImpl = (userId) => {
     window.addEventListener('message', handleMessage);
 
     // Probe for extension on mount — bridge responds if already connected
-    window.postMessage({
-      type: BRIDGE_MSG.STATUS,
-      request: true,
-      _v: PROTOCOL_VERSION,
-    }, window.location.origin);
+    requestStatus();
 
     // Heartbeat: poll extension every 60s, mark disconnected after 120s silence.
     // Connection state is now primarily driven by session storage changes from
@@ -323,11 +338,7 @@ export const useSyncBridgeImpl = (userId) => {
     const HEARTBEAT_INTERVAL = 60_000;
     const HEARTBEAT_TIMEOUT = 120_000;
     const heartbeat = setInterval(() => {
-      window.postMessage({
-        type: BRIDGE_MSG.STATUS,
-        request: true,
-        _v: PROTOCOL_VERSION,
-      }, window.location.origin);
+      requestStatus();
 
       if (Date.now() - lastHeartbeatResponse.current > HEARTBEAT_TIMEOUT) {
         setIsExtensionConnected(false);
@@ -338,7 +349,69 @@ export const useSyncBridgeImpl = (userId) => {
       window.removeEventListener('message', handleMessage);
       clearInterval(heartbeat);
     };
-  }, [importHands]);
+  }, [importHands, requestStatus]);
+
+  // WS-228: auto-reconnect after a disconnect. The 60s heartbeat above only
+  // re-probes lazily; this controller escalates probing while disconnected so
+  // a transient drop (MV3 service-worker idle-spin-down, brief port loss)
+  // recovers in seconds instead of up to a minute, with no manual page reload.
+  //
+  // Triggered whenever isExtensionConnected is false — not only after the 120s
+  // heartbeat timeout — because the recoverable transient drop surfaces via a
+  // `connected:false` STATUS / push_connection_state long before any timeout.
+  // On a valid `connected:true` STATUS response the message handler flips
+  // isExtensionConnected → true, this effect re-runs, and the backoff stops;
+  // the service worker then re-pushes its session-queued hands and the
+  // pushExploits/pushAdvice guards re-open (connectedRef), so queued work
+  // flushes without user action.
+  //
+  // Limitation (Chrome MV3): if the app-bridge content script's context was
+  // invalidated (extension updated/disabled) or it was never injected
+  // (extension enabled after this tab loaded), no probe can revive it — only a
+  // page reload re-injects a content script. This controller recovers the
+  // transient case; the context-dead case still needs a reload.
+  useEffect(() => {
+    // Mirror the port layer's backoff bounds (shared/port-connect.js).
+    const RECONNECT_INITIAL_DELAY = 2_000;
+    const RECONNECT_MAX_DELAY = 30_000;
+
+    if (isExtensionConnected) {
+      // Recovered (or never lost) — stand down and reset backoff.
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      reconnectAttemptRef.current = 0;
+      return undefined;
+    }
+
+    // Disconnected — escalating-backoff probe loop. Self-reschedules until the
+    // effect re-runs on reconnect (cleanup clears the pending timer).
+    let cancelled = false;
+    const scheduleProbe = () => {
+      if (cancelled) return;
+      const attempt = reconnectAttemptRef.current;
+      const delay = Math.min(
+        RECONNECT_INITIAL_DELAY * Math.pow(1.5, attempt),
+        RECONNECT_MAX_DELAY,
+      );
+      reconnectTimerRef.current = setTimeout(() => {
+        if (cancelled) return;
+        requestStatus();
+        reconnectAttemptRef.current += 1;
+        scheduleProbe();
+      }, delay);
+    };
+    scheduleProbe();
+
+    return () => {
+      cancelled = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+  }, [isExtensionConnected, requestStatus]);
 
   // Allow user to force-continue despite version mismatch (WS-077). The
   // user's override is decoupled from the objective `versionMismatch`

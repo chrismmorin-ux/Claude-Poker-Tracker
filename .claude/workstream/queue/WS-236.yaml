@@ -1,0 +1,43 @@
+id: "WS-236"
+title: "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 7.0
+priority_label: "P2"
+category: "provenance"
+capability: "core"
+program: "data-quality"
+description: |
+  _Convergence: anchors DP-008 (live HUD villain stats) to visible attribution — closes FIND-024._
+
+  The highest-stakes surface (live in-hand HUD) has the weakest attribution: raw VPIP/PFR % with no
+  sample size, computed by a parallel engine (ignition-poker-tracker/shared/stats-engine.js) that
+  bypasses the main-app Bayesian intervals (FIND-001/WS-116). UX-touching → runs the design gates.
+
+  Two parts: (1) show sample size + the DATA/PARTIAL/EST badge pattern (from LiveAdviceBar fold%
+  DP-004) on HUD villain stats; (2) reconcile the parallel stats path with the main pipeline, or
+  assert numeric parity in tests so the two paths cannot silently diverge.
+accept_criteria:
+  - "HUD villain VPIP/PFR shows sample size and a confidence indicator (band or DATA/PARTIAL/EST badge)."
+  - "Parallel stats-engine either reuses the main tendency pipeline OR a test asserts parity between the two computation paths."
+  - "Gate 1 (and Gate 2 if a new HUD interaction) cleared; sidebar visual verification per ignition harness before merge."
+effort: "M"
+files_involved:
+  - "ignition-poker-tracker/shared/stats-engine.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+status_note: "FIND-024 (MEDIUM). UX-touching (sidebar) — design gates + visual verification apply."
+finding_id: "FIND-024"
+source:
+  origin: "provenance-audit-baseline"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-19"
+updated_at: "2026-06-19"

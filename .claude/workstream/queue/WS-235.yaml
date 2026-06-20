@@ -1,0 +1,53 @@
+id: "WS-235"
+title: "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: null
+completed_at: null
+priority_score: 8.0
+priority_label: "P1"
+category: "provenance"
+capability: "core"
+program: "data-quality"
+description: |
+  _Convergence: anchors SRC-009 (population priors) to a cited provenance — closes FIND-023, the headline of the 2026-06-19 provenance baseline._
+
+  **The model's most load-bearing input has no attribution.** STAT_PRIORS, FACED_RAISE_RATE,
+  POP_CALLING_RATES, STYLE_PRIORS, POPULATION_PRIORS are hand-authored constants modeling a "live
+  1/2 population" with no dataset/sample/citation, and every per-villain Read shrinks toward them.
+
+  ORIGIN ANSWERED (2026-06-19): the priors are the FOUNDER'S INFORMED ESTIMATE of the live 1/2 pool
+  (not a dataset). Two-step remediation:
+    (1) IMMEDIATE — re-stamp the constants truthfully as 'founder estimate' (origin + estimate date +
+        author-estimate trust tier). Closes the F1 attribution gap with no data needed.
+    (2) UPGRADE — build an empirical pool-baseline deriver from observed hands, HIERARCHICAL: founder
+        estimate = fallback prior; pool aggregate = data-grounded layer that tightens as more hands
+        accumulate (Ignition capture = high-provenance source); per-villain = deviation from the pool.
+        Self-weights by sample size (thin pool → wide band → leans on estimate). GUARD: prior = pool
+        AGGREGATE; never shrink a villain toward a baseline built from that same villain (circularity).
+  Ties PMC hierarchical Bayes. Grounds the Tightness Audit "reconcile-to-Field" check (charter §4).
+accept_criteria:
+  - "STEP 1: all prior groups (bayesianConfidence STAT_PRIORS, populationPriors, gameTreeConstants, villainModelData) carry an honest 'founder estimate' provenance stamp (origin + date + author-estimate tier); SRC-009 updated in the registry."
+  - "STEP 2: a pool-baseline deriver computes the empirical Field aggregate from observed hands, blended with the estimate by sample weight (hierarchical), with the no-self-shrinkage guard enforced."
+  - "Step-1 is pure attribution (no numeric change). Step-2 changes baselines only as real pool data accumulates, always weighted by how much data backs each number."
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: ["origin-answered-founder-estimate", "step2-needs-pool-hands"]
+status_note: "FIND-023 (HIGH). Origin answered 2026-06-19 (founder estimate). STEP 1 DONE 2026-06-19 — all 4 prior groups stamped 'founder estimate' (bayesianConfidence/populationPriors/gameTreeConstants/villainModelData), comment-only, 56/56 prior-module tests pass, zero numeric change. STEP 2 (empirical pool-baseline deriver) remains — needs accumulated pool hands via Ignition capture + export. WS stays OPEN until Step 2."
+finding_id: "FIND-023"
+source:
+  origin: "provenance-audit-baseline"
+  legacy_section: ""
+  source_line: 0
+created_at: "2026-06-19"
+updated_at: "2026-06-19"

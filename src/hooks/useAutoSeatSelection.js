@@ -30,7 +30,15 @@ export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstAc
 
     if (showCardSelector || currentStreet === 'showdown') return;
 
-    // Card selector just closed — always auto-select
+    // INV-SEAT-SELECTION-4 (override contract): a manual multi-seat queue
+    // (selectedPlayers.length > 1) is explicit user intent — only the user can
+    // produce a length>1 selection, since autoselect only ever sets a single
+    // seat. Mount and card-selector-close are PASSIVE transitions and must NOT
+    // overwrite it. Street change is a new-round signal and DOES reset.
+    const currentSelection = selectedPlayersRef.current;
+    const hasManualQueue = Array.isArray(currentSelection) && currentSelection.length > 1;
+
+    // Card selector just closed — passive transition, respect a manual queue.
     if (wasOpen) {
       const firstSeat = getFirstActionSeatRef.current();
       logAutoSelectFiring({
@@ -38,10 +46,12 @@ export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstAc
         currentStreet,
         prevStreet: wasStreet,
         candidateSeat: firstSeat,
-        currentSelection: selectedPlayersRef.current,
-        action: firstSeat ? 'set' : 'noop-empty-candidate',
+        currentSelection,
+        action: hasManualQueue
+          ? 'noop-respect-manual-queue'
+          : firstSeat ? 'set' : 'noop-empty-candidate',
       });
-      if (firstSeat) {
+      if (!hasManualQueue && firstSeat) {
         setSelectedPlayers([firstSeat]);
       }
       return;
@@ -49,18 +59,23 @@ export const useAutoSeatSelection = (showCardSelector, currentStreet, getFirstAc
 
     // First mount or street changed — auto-select first seat
     if (!hasMountedRef.current || wasStreet !== currentStreet) {
+      const isStreetChange = hasMountedRef.current && wasStreet !== currentStreet;
       const trigger = !hasMountedRef.current ? 'mount' : 'street-change';
       hasMountedRef.current = true;
+      // Street change unconditionally resets; mount is passive (respects queue).
+      const willOverride = isStreetChange || !hasManualQueue;
       const firstSeat = getFirstActionSeatRef.current();
       logAutoSelectFiring({
         trigger,
         currentStreet,
         prevStreet: wasStreet,
         candidateSeat: firstSeat,
-        currentSelection: selectedPlayersRef.current,
-        action: firstSeat ? 'set' : 'noop-empty-candidate',
+        currentSelection,
+        action: !willOverride
+          ? 'noop-respect-manual-queue'
+          : firstSeat ? 'set' : 'noop-empty-candidate',
       });
-      if (firstSeat) {
+      if (willOverride && firstSeat) {
         setSelectedPlayers([firstSeat]);
       }
     }
