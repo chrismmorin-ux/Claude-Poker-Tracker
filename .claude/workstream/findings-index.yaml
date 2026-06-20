@@ -160,7 +160,7 @@ findings:
     title: "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)"
     engine: eng-engine
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets"
     program: domain-correctness
     created_at: "2026-06-20"

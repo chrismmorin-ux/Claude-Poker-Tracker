@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-06-20T22:56:43.092Z",
-  "updated_by_event": "ev-1781996203092-dc73034dffa6",
+  "updated_at": "2026-06-20T23:35:27.970Z",
+  "updated_by_event": "ev-1781998527970-6e38b1c0eeac",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3297,7 +3297,7 @@
     "WS-251": {
       "id": "WS-251",
       "title": "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 17,
       "category": "domain-correctness",
       "effort": "L",
@@ -3322,5 +3322,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781996203092-dc73034dffa6"
+  "last_event_log_head": "ev-1781998527970-6e38b1c0eeac"
 }

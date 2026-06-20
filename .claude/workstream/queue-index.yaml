@@ -5,10 +5,10 @@
 total_items: 132
 by_status:
   decomposed: 1
-  done: 57
+  done: 58
   in_progress: 3
   deferred: 42
-  backlog: 19
+  backlog: 18
   dismissed: 1
   completed: 7
   review: 1
@@ -1292,7 +1292,7 @@ items:
 
   - id: "WS-251"
     title: "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)"
-    status: backlog
+    status: done
     priority_score: 17
     category: domain-correctness
     effort: L

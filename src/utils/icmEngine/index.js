@@ -10,4 +10,4 @@
 
 export { computeIcmEquity, proportionalEquity, MAX_ICM_FIELD } from './malmuthHarville';
 export { buildIcmStacks } from './buildIcmStacks';
-export { computeRiskPremium, computeHeroPressure } from './riskPremium';
+export { computeRiskPremium, computeHeroPressure, computeCommittedIcmTax } from './riskPremium';

@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1781996203462-340882f37316"
-generated_content_hash: "95360912b8543110acdf38733b5c5dfd26059e06bdfa38708503f8b37a72ec77"
-generated_at: "2026-06-20T22:56:43.514Z"
+generated_from_event: "ev-1781998528168-f44dcdedb2f0"
+generated_content_hash: "09239f24c4de85046a8aeb5df5bca7a52702ce3076d320e1d5c86ae13e9df980"
+generated_at: "2026-06-20T23:35:28.230Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl"]
-event_count: 886
+event_count: 895
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 533
-- Events recorded: 886
+- Commands recorded: 537
+- Events recorded: 895
 - Source chunks: 9
 
 ## Command `auto:42416:1781030643103`
@@ -5700,3 +5700,48 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-06-20T22:56:43.462Z | T15:session-end | C:/Program Files/Git/session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `cmd-sprintapprove-mqmyz84lb4ef427e4cf8`
+
+- Start: 2026-06-20T23:09:17.166Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-20T23:09:17.166Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-140", +8 more |
+
+## Command `cmd-commandcompleted-mqmzwa3689871bf22f0c`
+
+- Start: 2026-06-20T23:34:59.356Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-20T23:34:59.356Z | T11:vital-signs | C:/Program Files/Git/verify | command="/verify", type="command_completed", +1 more |
+
+## Command `cmd-itemclosed-mqmzwo4hbfc258d412b1`
+
+- Start: 2026-06-20T23:35:17.543Z
+- Events: 4
+- Tracks: T6:workstream, T6:workstream-rebalance, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-20T23:35:17.543Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-251", +3 more |
+| 2 | 2026-06-20T23:35:17.677Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-140", +4 more |
+| 3 | 2026-06-20T23:35:18.342Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 4 | 2026-06-20T23:35:18.463Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintdone-mqmzwvota52a0e41ae55`
+
+- Start: 2026-06-20T23:35:27.345Z
+- Events: 3
+- Tracks: T6:workstream-rebalance, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-20T23:35:27.345Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-140", +4 more |
+| 2 | 2026-06-20T23:35:27.970Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 3 | 2026-06-20T23:35:28.168Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

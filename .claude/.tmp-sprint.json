@@ -1,21 +1,21 @@
 {
-  "composed_at": "2026-06-20T22:25:09.800Z",
-  "goal": "Ship WS-245: confidence-gate the assessEV and PIP categorical verdicts (FIND-009, FIND-010)",
+  "composed_at": "2026-06-20T23:07:48.958Z",
+  "goal": "Ship WS-251: ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-245",
-      "title": "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)",
-      "raw_score": 13,
-      "adjusted_score": 13,
-      "effort": "M",
+      "id": "WS-251",
+      "title": "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
+      "raw_score": 17,
+      "adjusted_score": 17,
+      "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
       "source_damping": 1,
-      "mode": "execute",
+      "mode": "plan-first",
       "queue_item_known": true
     }
   ],
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-245 (founder-directed focus=domain-correctness, final item in the first-principles labels-as-inputs cluster after WS-247 + WS-244; CLI auto-anchor overridden past the data-quality cap-breach floor).",
+  "composition_notes": "Anchor: WS-251 selected (17 × no damping = 17).\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 1.5,
+    "effort_sessions": 3,
     "ceremony": "standard"
   }
 }

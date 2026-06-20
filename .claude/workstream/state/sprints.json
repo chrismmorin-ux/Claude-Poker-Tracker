@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-20T22:56:41.901Z",
-  "updated_by_event": "ev-1781996201901-f2f6ec28c036",
+  "updated_at": "2026-06-20T23:35:27.970Z",
+  "updated_by_event": "ev-1781998527970-6e38b1c0eeac",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2269,7 +2269,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-140": {
+      "id": "SPR-140",
+      "title": "Ship WS-251: ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project pha",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-06-20T23:09:17.128Z",
+      "approved_at": "2026-06-20T23:09:17.128Z",
+      "completed_at": "2026-06-20T23:35:27.305Z",
+      "goal": "Ship WS-251: ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1781996201901-f2f6ec28c036"
+  "last_event_log_head": "ev-1781998527970-6e38b1c0eeac"
 }

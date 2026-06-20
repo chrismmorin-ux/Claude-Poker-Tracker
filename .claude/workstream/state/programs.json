@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-06-20T22:56:29.492Z",
-  "updated_by_event": "ev-1781996189492-b75d0f2a4063",
+  "updated_at": "2026-06-20T23:35:28.168Z",
+  "updated_by_event": "ev-1781998528168-f44dcdedb2f0",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -726,7 +726,7 @@
         }
       },
       "health_breakdown": {
-        "finding_health": 0.9,
+        "finding_health": 1,
         "protocol_currency": 0.92,
         "problem_class_coverage": 1,
         "maturity_progress": 0.5,
@@ -1295,5 +1295,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1781996189492-b75d0f2a4063"
+  "last_event_log_head": "ev-1781998528168-f44dcdedb2f0"
 }

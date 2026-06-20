@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-06-20T22:56:43.092Z",
-  "updated_by_event": "ev-1781996203092-dc73034dffa6",
+  "updated_at": "2026-06-20T23:35:18.342Z",
+  "updated_by_event": "ev-1781998518341-a7b84cb6ceea",
   "items": {
     "FIND-014": {
       "id": "FIND-014",
@@ -203,11 +203,12 @@
       "title": "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)",
       "severity": "MEDIUM",
       "category": "theory-gap",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets",
       "promoted_to": "WS-251",
-      "created_at": "2026-06-20"
+      "created_at": "2026-06-20",
+      "resolved_at": "2026-06-20T23:35:17.515Z"
     },
     "FIND-032": {
       "id": "FIND-032",
@@ -232,5 +233,5 @@
       "created_at": "2026-06-20"
     }
   },
-  "last_event_log_head": "ev-1781996203092-dc73034dffa6"
+  "last_event_log_head": "ev-1781998518341-a7b84cb6ceea"
 }

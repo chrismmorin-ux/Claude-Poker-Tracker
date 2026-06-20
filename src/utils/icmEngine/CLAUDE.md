@@ -10,7 +10,7 @@ Converts `{ chip stacks } + { payout ladder } → { $EV per player }` (Malmuth-H
 |------|------|----------|
 | `malmuthHarville.js` | Exact ICM $EV (`computeIcmEquity`); proportional fallback for oversized fields | Assemble stacks or model decisions |
 | `buildIcmStacks.js` | Assemble the modeled field from live tournament state; flag exact vs approximate vs too-large | Compute $EV |
-| `riskPremium.js` | Risk premium / bubble factor + ICM-required equity for an all-in | Build trees or pick opponents (caller supplies the spot) |
+| `riskPremium.js` | Risk premium / bubble factor + ICM-required equity for an all-in; `computeCommittedIcmTax` (chip-EV penalty for a committed stack-off, the exact slice consumed by the postflop game tree) | Build trees or pick opponents (caller supplies the spot) |
 
 ## Anti-patterns (§10.8 — do not regress)
 - **DO NOT use chip-EV for tournament decisions near the money.** Use ICM $EV. Chip-EV ≈ $EV only deep early or when the pay structure behind hero is locked.

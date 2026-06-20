@@ -680,6 +680,8 @@ At short stacks (≈ ≤ 15–20bb effective), play collapses to shove-or-fold p
 
 The current app uses the cash equity-threshold label (`eq ≥ 0.55 = VALUE`) at all depths — that is the wrong model below ~15bb and must be replaced by push/fold $EV when that work lands.
 
+**ICM in the postflop game tree (WS-251, the exact slice).** Preflop all-in jams are ICM-aware in `pushFoldEngine`. The postflop game tree (`gameTreeEvaluator.js`) now also discounts **committed (effectively all-in) stack-offs** by the risk premium: `icmAdjustedEV = chipEV − (β−1)·P(lose)·atRiskChips`, applied via `computeCommittedIcmTax` when an optional `icmContext` (`{stacks, heroIndex, payouts, villainIndex}`) is supplied. This form is *exact* only when chips-won ≈ chips-risked, so it is gated to actions risking ≥85% of the effective stack, heads-up. **Still chip-EV (deferred):** partial-pot postflop bets (needs §10.6-flagged approximation) and multiway committed spots. Cash games pass no `icmContext` → identity (β ≤ 1 → zero tax).
+
 ### 10.5 M-Ratio Is a Descriptor, Not a Decision Driver
 
 M-ratio (Harrington) = `stack / (sb + bb + antes per orbit)` — a stack-depth descriptor. It usefully *describes* urgency, but like every label in §7 it must NOT be a direct decision input. Two players with the same M can face very different correct decisions depending on ICM (bubble vs. deep field), position, and the payout ladder. Compute from $EV and effective stack; let M *describe* the situation to the user, not drive the math.

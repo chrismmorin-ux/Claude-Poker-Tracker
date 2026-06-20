@@ -22,7 +22,7 @@ next_run_id: 1        # integer — scan runs/RUN-*.yaml for true max (none yet)
 next_rec_id: 1        # integer — scan recommendations/REC-*.yaml for true max
 next_enh_id: 1        # integer — scan enhancements/ENH-*.yaml for true max
 next_ready_id: 1      # integer — scan readiness/READY-*.yaml for true max
-next_sprint_id: 140
+next_sprint_id: 141
 
 # Dedup window for findings with matching dedup_key
 dedup_window_days: 30
