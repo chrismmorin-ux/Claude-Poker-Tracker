@@ -14,10 +14,12 @@ import { useShowdownCardSelection } from '../../../hooks/useShowdownCardSelectio
 
 import { getHandAbbreviation } from '../../../utils/displayUtils';
 import { getPositionName } from '../../../utils/positionUtils';
-import { getShowdownActions, hasShowdownAction } from '../../../utils/sequenceUtils';
+import { getShowdownActions, hasShowdownAction, getPotWinnerSeat } from '../../../utils/sequenceUtils';
+import { calculateSidePots } from '../../../utils/potCalculator';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { ShowdownHeader } from './ShowdownHeader';
 import { ShowdownSeatRow } from './ShowdownSeatRow';
+import { SidePotAttribution } from './SidePotAttribution';
 import { CardGrid } from './CardGrid';
 import { ActionHistoryGrid } from './ActionHistoryGrid';
 import { useShowdownEquity } from '../../../hooks/useShowdownEquity';
@@ -43,6 +45,7 @@ export const ShowdownView = ({ scale }) => {
     actionSequence,
     smallBlindSeat,
     bigBlindSeat,
+    blinds,
     dispatchGame,
     // AUDIT-2026-04-21-SDV F1: currentStreet + absentSeats needed for undo snapshot
     currentStreet,
@@ -85,6 +88,7 @@ export const ShowdownView = ({ scale }) => {
     handleClearShowdownCards,
     handleMuckSeat,
     handleWonSeat,
+    handleSetPotWinner,
     handleNextHandFromShowdown,
     handleCloseShowdown,
   } = useShowdownHandlers({
@@ -197,6 +201,26 @@ export const ShowdownView = ({ scale }) => {
     return entry ? entry.seat : null;
   }, [actionSequence]);
 
+  // HE-20b: side pots for this hand. When 2+ pots exist, winners are awarded
+  // per pot via the attribution panel (no auto-muck); single-pot hands keep the
+  // existing one-tap Won flow untouched.
+  const sidePots = useMemo(
+    () => calculateSidePots(actionSequence, blinds, { smallBlindSeat, bigBlindSeat }).pots,
+    [actionSequence, blinds, smallBlindSeat, bigBlindSeat]
+  );
+  const isMultiPot = sidePots.length > 1;
+
+  const getSeatLabel = useCallback((seat) => {
+    const pos = getPositionName(seat, dealerButtonSeat);
+    const name = getSeatPlayerName(seat);
+    return `S${seat}${pos ? ` · ${pos}` : ''}${name ? ` — ${name}` : ''}`;
+  }, [dealerButtonSeat, getSeatPlayerName]);
+
+  const getPotWinner = useCallback(
+    (potIndex) => getPotWinnerSeat(actionSequence, potIndex),
+    [actionSequence]
+  );
+
   // Handler to highlight a slot
   const handleHighlightSlot = (seat, cardSlot) => {
     setHighlightedSeat(seat);
@@ -226,8 +250,19 @@ export const ShowdownView = ({ scale }) => {
           />
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 p-4 relative">
-            {/* Winner confirmation overlay — requires explicit tap to advance */}
-            {anyoneHasWon && showdownMode === 'quick' && (
+            {/* HE-20b: per-pot winner attribution (multi-pot hands only). */}
+            {isMultiPot && (
+              <SidePotAttribution
+                pots={sidePots}
+                getWinner={getPotWinner}
+                onSelect={handleSetPotWinner}
+                getSeatLabel={getSeatLabel}
+              />
+            )}
+
+            {/* Winner confirmation overlay — requires explicit tap to advance.
+                Suppressed for multi-pot hands, which award via the panel above. */}
+            {anyoneHasWon && showdownMode === 'quick' && !isMultiPot && (
               <div
                 className="absolute inset-0 z-10 flex flex-col items-center justify-center"
                 style={{ background: 'rgba(0, 0, 0, 0.5)' }}
@@ -316,6 +351,7 @@ export const ShowdownView = ({ scale }) => {
                       /* AUDIT-2026-04-21-SDV F4: tapping Won on this seat would auto-muck
                          all OTHER active seats — preview the count. */
                       wonAutoMuckCount={Math.max(0, activeShowdownSeatCount - 1)}
+                      suppressWon={isMultiPot}
                     />
                   );
                 })}
@@ -354,6 +390,7 @@ export const ShowdownView = ({ scale }) => {
                         onHighlightSlot={handleHighlightSlot}
                         onMuck={handleMuckSeat}
                         onWon={handleWonSeat}
+                        suppressWon={isMultiPot}
                       />
                     );
                   })}

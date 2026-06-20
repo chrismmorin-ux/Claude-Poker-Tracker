@@ -217,6 +217,91 @@ describe('buildSeatActionPayload — raiseTo intent', () => {
   });
 });
 
+describe('buildSeatActionPayload — all-in intents', () => {
+  it('{ raiseTo, allIn } full-raise shove → RAISE with allIn, action reopens (no flag)', () => {
+    // Preflop UTG raised to 6 → minRaise = 6 + max(6-2, 2) = 10. A shove to 12
+    // is a full raise (>= 10), so it reopens action and carries no reopensAction flag.
+    const view = makeView({
+      actionSequence: [
+        { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, amount: 6, street: 'preflop', order: 1 },
+      ],
+    });
+    const payload = buildSeatActionPayload(view, 7, { raiseTo: 12, allIn: true });
+    expect(payload.payload).toEqual({
+      seat: 7,
+      action: PRIMITIVE_ACTIONS.RAISE,
+      amount: 12,
+      allIn: true,
+    });
+    expect(payload.payload.reopensAction).toBeUndefined();
+  });
+
+  it('{ raiseTo, allIn } sub-min shove → RAISE with allIn AND reopensAction:false', () => {
+    // Same spot, minRaise = 10. A short all-in to 8 is below a full raise:
+    // it does not reopen betting for players who already acted.
+    const view = makeView({
+      actionSequence: [
+        { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, amount: 6, street: 'preflop', order: 1 },
+      ],
+    });
+    const payload = buildSeatActionPayload(view, 7, { raiseTo: 8, allIn: true });
+    expect(payload.payload).toEqual({
+      seat: 7,
+      action: PRIMITIVE_ACTIONS.RAISE,
+      amount: 8,
+      allIn: true,
+      reopensAction: false,
+    });
+  });
+
+  it('{ callAmount, allIn } short call → CALL below the bet, no RangeError', () => {
+    // Flop bet 10; seat 3 is all-in for only 4. A capped call is representable
+    // here even though 4 <= currentBet (which { raiseTo } would reject).
+    const view = makeView({
+      currentStreet: 'flop',
+      actionSequence: [
+        { seat: 5, action: PRIMITIVE_ACTIONS.BET, amount: 10, street: 'flop', order: 1 },
+      ],
+    });
+    const payload = buildSeatActionPayload(view, 3, { callAmount: 4, allIn: true });
+    expect(payload.payload).toEqual({
+      seat: 3,
+      action: PRIMITIVE_ACTIONS.CALL,
+      amount: 4,
+      allIn: true,
+    });
+  });
+
+  it('{ callAmount } throws TypeError on non-positive amount', () => {
+    const view = makeView({ currentStreet: 'flop' });
+    expect(() => buildSeatActionPayload(view, 3, { callAmount: 0, allIn: true })).toThrow(TypeError);
+    expect(() => buildSeatActionPayload(view, 3, { callAmount: -4, allIn: true })).toThrow(TypeError);
+  });
+
+  it('{ match, allIn } exact all-in call → CALL with allIn stamped', () => {
+    // Seat 4 owes the bb (2) and is all-in for exactly that.
+    const view = makeView();
+    const payload = buildSeatActionPayload(view, 4, { match: true, allIn: true });
+    expect(payload.payload).toEqual({
+      seat: 4,
+      action: PRIMITIVE_ACTIONS.CALL,
+      amount: 2,
+      allIn: true,
+    });
+  });
+
+  it('a full-raise all-in BET (opening a street) carries allIn but no reopensAction', () => {
+    const view = makeView({ currentStreet: 'flop', actionSequence: [] });
+    const payload = buildSeatActionPayload(view, 5, { raiseTo: 40, allIn: true });
+    expect(payload.payload).toEqual({
+      seat: 5,
+      action: PRIMITIVE_ACTIONS.BET,
+      amount: 40,
+      allIn: true,
+    });
+  });
+});
+
 describe('buildSeatActionPayload — argument validation', () => {
   it('throws TypeError on non-integer seat', () => {
     const view = makeView();

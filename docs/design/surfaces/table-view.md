@@ -107,7 +107,9 @@ Root: absolute-positioned felt region with `tableRef`; right-click a seat → `S
 ## Key interactions
 
 1. **Tap seat action button (in CommandStrip):** appends action via `ACTIONS.*` constant → `useGameHandlers` → reducer → auto-recomputes exploit/advice.
-2. **Right-click a seat:** opens `SeatContextMenu` at seat coords.
+2. **Tap a seat:** single-select-**replace** — selects exactly that seat (`setSelectedPlayers([seat])`), collapsing any prior selection. (WS-191, 2026-06-19) Previously each tap toggle-appended, silently building multi-seat batches; that accumulation made routine seat entry error-prone. Multi-seat is now explicit only — see #2b.
+2b. **Touch-hold / right-click a seat:** opens `SeatContextMenu`; its **"➕ Add to multi-select"** row appends the seat to the current selection. During multi-seat, ControlZone shows a step-back **"Undo Seat"** button (pops the last added seat) alongside **"Deselect"** (clear all).
+3. **Right-click a seat:** opens `SeatContextMenu` at seat coords.
 3. **Drag dealer button:** pointer/touch → `findNearestSeat` → `GAME_ACTIONS.SET_DEALER`.
 4. **Tap community card slot:** opens `CardSelectorPanel`.
 5. **Auto-advance to showdown:** `useAutoStreetAdvance` calls `openShowdownScreen` when river is complete.
@@ -117,6 +119,7 @@ Root: absolute-positioned felt region with `tableRef`; right-click a seat → `S
 
 ## Known behavior notes
 
+- **All-in declaration + side pots (HE-19, 2026-06-19)** — a dedicated **ALL IN** button in `CommandStrip` (kept clear of the sizing GO control to absorb misclicks) opens an amount entry; the value routes to an all-in raise (`{raiseTo, allIn}`) when it exceeds the current bet, or a short/capped all-in call (`{callAmount, allIn}`) otherwise. A sub-minimum shove records `reopensAction:false`. The `PotDisplay` shows a Main/Side pot ledger (with per-pot eligible seats) once an all-in splits the pot, derived live from `calculateSidePots`. When hero is all-in the advice bar shows a neutral **ALL-IN** status (no bet/bluff/check recommendation); against an all-in villain fold equity is 0 so it never advises a bluff. Implements `docs/design/audits/2026-06-19-entry-allin-side-pots.md`.
 - **Seat coordinates** are percent-based (`SEAT_POSITIONS`) over the felt element — they recompute against `tableRef.getBoundingClientRect()`.
 - **Tournament overlay** is driven by `useTournament().isTournament` and replaces cash-game blinds with level-based blinds/timer.
 - **Live equity** is worker-offloaded (`useEquityWorker` + `useLiveEquity`) with fallback to in-thread computation.
@@ -166,3 +169,4 @@ Root: absolute-positioned felt region with `tableRef`; right-click a seat → `S
 - 2026-04-21 — DCOMP-W1-S2 (Gate 3 research): added MH-10, MH-11, HE-17, TS-43, TS-44 to JTBD list; added ringmaster-in-hand + newcomer-first-hand situational personas; linked blind-spot audit + 4 discoveries + persisted-hand-schema contract + briefing-review journey.
 - 2026-04-21 — DCOMP-W1-S3 (Gate 4 audit): 12 heuristic findings logged at `audits/2026-04-21-table-view.md`. Pending owner review; 4 P1 + 6 P2 + 2 P3 queued for Gate 5 implementation.
 - 2026-04-21 — **DCOMP-W1 S4–S8 (Gate 5): ALL 12 TableView audit findings SHIPPED** across 5 implementation sessions. S4: F1 (`window.confirm` → toast+undo), F2 (orbit +N preview badges), F3 (sizing preset editor slot highlight), F4 (AGING badge), F5 (unified undo duration), F10 (Reset Hand / Next Hand separation). S6: F8 (recent-players 44px floor). S7: F6 (recents count + scroll fade), F9 (PotDisplay long-press + inputMode=decimal), F11 (`useAnalysisContext` rename with deprecated alias), F12 (RangeDetailPanel reopen-last button). S8: F7 (orbit strip flex-wrap — silent off-screen seats eliminated). **All findings code-complete. Pending owner visual verification on device.**
+- 2026-06-19 — **Seat-tap semantics changed: single-select-replace (WS-191 scope #3, owner-decided).** Plain tap selects exactly one seat instead of toggle-appending; multi-seat selection moved behind the touch-hold/right-click `SeatContextMenu` ("➕ Add to multi-select" row) with an always-visible step-back "Undo Seat" button in ControlZone. Also fixed a latent in-place `selectedPlayers.sort()` mutation in `CommandStrip.jsx` (was corrupting insertion order; now copies before sort). Gate 1 GREEN, Gate 2 skipped (logged). Audit: [2026-06-19-multiseat-behind-context-menu](../audits/2026-06-19-multiseat-behind-context-menu.md).

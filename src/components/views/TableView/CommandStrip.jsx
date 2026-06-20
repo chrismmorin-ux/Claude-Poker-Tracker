@@ -398,6 +398,10 @@ export const CommandStrip = ({
   const canCheckAround = currentStreet !== 'preflop' && !hasBetOrRaiseOnStreet(actionSequence, currentStreet);
   const [customValue, setCustomValue] = useState('');
   const [sizingEditorOpen, setSizingEditorOpen] = useState(false);
+  // All-in declaration (HE-19): dedicated affordance, kept clear of the GO
+  // button to avoid the misclick surface flagged in the Gate 2 roundtable.
+  const [allInOpen, setAllInOpen] = useState(false);
+  const [allInValue, setAllInValue] = useState('');
   const longPressTimer = useRef(null);
 
   const isMultiSeat = selectedPlayers.length > 1;
@@ -539,6 +543,29 @@ export const CommandStrip = ({
     }
   }, [customValue, handleSizeSelected, minRaise]);
 
+  // All-in submit (HE-19). The entered value is the seat's TOTAL commitment on
+  // this street (same semantics as a raise-to level). Routing:
+  //  - level > current bet  → an all-in raise/shove (may be a legal sub-min raise)
+  //  - level <= current bet → a short/capped all-in CALL (records the increment)
+  // The min-raise gate that handleCustomSubmit enforces is intentionally skipped:
+  // a short shove is legal.
+  const handleAllInSubmit = useCallback((e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!recordSeatAction || singleSeat == null) return;
+    const level = parseFloat(allInValue);
+    if (isNaN(level) || level <= 0) return;
+    if (level > effectiveBet) {
+      recordSeatAction(singleSeat, { raiseTo: level, allIn: true });
+    } else {
+      const increment = level - seatAlreadyIn;
+      if (increment <= 0) return; // can't go all-in for less than already committed
+      recordSeatAction(singleSeat, { callAmount: increment, allIn: true });
+    }
+    setAllInValue('');
+    setAllInOpen(false);
+    handleAdvanceSeat(singleSeat);
+  }, [recordSeatAction, singleSeat, allInValue, effectiveBet, seatAlreadyIn, handleAdvanceSeat]);
+
   // Editor state for sizing customization
   const [editorValues, setEditorValues] = useState([]);
   // AUDIT-2026-04-21-TV F3: capture which slot was pressed so the editor can highlight it
@@ -596,9 +623,14 @@ export const CommandStrip = ({
   // Live action advice classification
   const actionAdvice = useMemo(() => {
     if (!liveEquity || liveEquity.equity === null) return null;
+    // Hero is all-in — no betting decision remains. Show a neutral committed
+    // status (equity still renders); never a VALUE/BLUFF/CHECK recommendation.
+    if (liveEquity.heroAllIn) return { label: 'ALL-IN', color: '#6b7280', icon: 'flat' };
     const eq = liveEquity.equity;
     const fp = liveEquity.foldPct;
     if (eq >= 0.55) return { label: 'VALUE', color: '#22c55e', icon: 'up' };
+    // A BLUFF needs real fold equity. Against an all-in villain fp is 0, so this
+    // correctly never fires — you can't bluff a player who's already committed.
     if (eq < 0.40 && fp !== null && fp >= 0.40) return { label: 'BLUFF', color: '#f59e0b', icon: 'down' };
     return { label: 'CHECK', color: '#6b7280', icon: 'flat' };
   }, [liveEquity]);
@@ -744,7 +776,9 @@ export const CommandStrip = ({
               {selectedPlayers.length}
             </div>
             <span className="text-white font-bold" style={{ fontSize: '14px' }}>
-              Seats {selectedPlayers.sort((a,b) => a-b).join(', ')}
+              {/* Copy before sort — selectedPlayers insertion order is load-bearing
+                  for the step-back Undo (WS-191); in-place .sort() would corrupt it. */}
+              Seats {[...selectedPlayers].sort((a, b) => a - b).join(', ')}
             </span>
           </div>
         ) : (
@@ -900,6 +934,49 @@ export const CommandStrip = ({
             editingSlotIndex={editingSlotIndex}
           />
 
+          {/* All-in declaration (HE-19) — single seat only. Dedicated button,
+              separated from the sizing GO control to absorb misclicks. */}
+          {singleSeat != null && !selectedSeatHasFolded && !handIsDecided && (
+            allInOpen ? (
+              <form onSubmit={handleAllInSubmit} className="flex gap-1.5 items-stretch">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  autoFocus
+                  value={allInValue}
+                  onChange={(e) => setAllInValue(e.target.value)}
+                  placeholder={`All-in amount${effectiveBet ? ` (bet $${effectiveBet})` : ''}`}
+                  className="flex-1 rounded-lg px-3 font-bold text-white bg-black/40 border border-red-700 outline-none"
+                  style={{ height: '68px', fontSize: '18px' }}
+                />
+                <button
+                  type="submit"
+                  className="btn-press rounded-lg font-extrabold text-white shadow-lg px-4"
+                  style={{ height: '68px', fontSize: '16px', minWidth: '96px', background: 'linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%)' }}
+                >
+                  ALL IN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAllInOpen(false); setAllInValue(''); }}
+                  className="btn-press rounded-lg font-bold text-gray-300 px-3"
+                  style={{ height: '68px', fontSize: '14px', background: 'rgba(255,255,255,0.08)' }}
+                >
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAllInOpen(true)}
+                className="btn-press w-full rounded-lg font-extrabold text-white shadow-lg"
+                style={{ height: '56px', fontSize: '18px', letterSpacing: '1px', background: 'linear-gradient(180deg, #991b1b 0%, #581c1c 100%)', border: '1px solid #b91c1c' }}
+              >
+                ALL IN
+              </button>
+            )
+          )}
+
           {/* Batch recording — Rest Fold / Fold Cold / Check All */}
           {remainingCount > 0 && (
             <div className="flex gap-1.5">
@@ -940,6 +1017,8 @@ export const CommandStrip = ({
         singleSeat={singleSeat}
         actionArray={actionArray}
         hasSeatSelected={hasSeatSelected}
+        isMultiSeat={isMultiSeat}
+        onUndoLastSeat={() => setSelectedPlayers(selectedPlayers.slice(0, -1))}
         remainingCount={remainingCount}
         currentStreet={currentStreet}
         batchUndoCount={orbitUndoPointRef.current !== null ? actionSequence.length - orbitUndoPointRef.current : 0}

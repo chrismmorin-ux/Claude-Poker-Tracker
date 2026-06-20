@@ -27,24 +27,47 @@ export const parseBlinds = (gameType) => {
 /**
  * Calculate pot total from an action sequence.
  *
+ * Amount semantics (load-bearing — see INV-POT-RAISETO-IS-NOT-INCREMENT):
+ * - CALL `amount` is the INCREMENT (amount owed) the seat adds.
+ * - BET/RAISE/STRADDLE `amount` is the raise-TO LEVEL (the seat's cumulative
+ *   contribution on that street), NOT an increment. Net new chips a raiser puts
+ *   in = level − what they already had in this street. Adding the full level
+ *   over-counts the pot whenever the seat already contributed (re-raises, or a
+ *   blind seat raising).
+ *
+ * Pass `{ smallBlindSeat, bigBlindSeat }` so a blind seat that later raises/calls
+ * is not double-counted (their blind is seeded as a prior preflop contribution).
+ * Omitting them keeps the headline total correct for every flow except a blind
+ * seat raising, where the total over-counts by the blind.
+ *
  * @param {Array} actionSequence - Array of ActionEntry objects
  * @param {{ sb: number, bb: number }} blinds - Blind amounts
+ * @param {{ smallBlindSeat?: number, bigBlindSeat?: number }} [opts] - Blind seats for exact per-seat seeding
  * @returns {{ total: number, currentBet: number, isEstimated: boolean }}
  */
-export const calculatePot = (actionSequence, blinds) => {
+export const calculatePot = (actionSequence, blinds, opts = {}) => {
   const { sb, bb } = blinds || { sb: 1, bb: 2 };
+  const { smallBlindSeat, bigBlindSeat } = opts;
   let total = sb + bb;
   let currentBet = bb;
   let currentStreet = 'preflop';
   let isEstimated = false;
-  let seatContribs = {}; // Track per-seat contributions for correct call amounts
+  // Per-seat contributions on the CURRENT street, used to derive raise increments
+  // and call amounts. Seeded with blinds on preflop when blind seats are provided.
+  const seedContribs = () => {
+    const c = {};
+    if (smallBlindSeat) c[smallBlindSeat] = sb;
+    if (bigBlindSeat) c[bigBlindSeat] = bb;
+    return c;
+  };
+  let seatContribs = seedContribs();
 
   if (!actionSequence || actionSequence.length === 0) {
     return { total, currentBet, isEstimated };
   }
 
   for (const entry of actionSequence) {
-    // Reset on street change
+    // Reset on street change (blinds only seed preflop; post-flop starts empty)
     if (entry.street !== currentStreet) {
       currentStreet = entry.street;
       currentBet = 0;
@@ -56,35 +79,26 @@ export const calculatePot = (actionSequence, blinds) => {
       case PRIMITIVE_ACTIONS.CHECK:
         break;
 
-      case PRIMITIVE_ACTIONS.CALL:
-        if (entry.amount !== undefined) {
-          total += entry.amount;
-          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
-        } else {
-          // Auto-calculate: match current bet minus what seat already contributed
-          const alreadyIn = seatContribs[entry.seat] || 0;
-          const increment = Math.max(0, currentBet - alreadyIn);
-          total += increment;
-          seatContribs[entry.seat] = currentBet;
-        }
+      case PRIMITIVE_ACTIONS.CALL: {
+        const alreadyIn = seatContribs[entry.seat] || 0;
+        // CALL.amount is the increment; fall back to matching the current bet.
+        const increment = entry.amount !== undefined
+          ? entry.amount
+          : Math.max(0, currentBet - alreadyIn);
+        total += increment;
+        seatContribs[entry.seat] = alreadyIn + increment;
         break;
+      }
 
       case PRIMITIVE_ACTIONS.BET:
-        if (entry.amount !== undefined) {
-          total += entry.amount;
-          currentBet = entry.amount;
-          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
-        } else {
-          isEstimated = true;
-        }
-        break;
-
       case PRIMITIVE_ACTIONS.RAISE:
       case PRIMITIVE_ACTIONS.STRADDLE:
         if (entry.amount !== undefined) {
-          total += entry.amount;
+          // amount is the raise-TO level; net new chips = level − alreadyIn.
+          const alreadyIn = seatContribs[entry.seat] || 0;
+          total += Math.max(0, entry.amount - alreadyIn);
           currentBet = entry.amount;
-          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
+          seatContribs[entry.seat] = entry.amount;
         } else {
           isEstimated = true;
         }
@@ -141,25 +155,25 @@ export const calculatePotProgression = (actionSequence, blinds) => {
       case PRIMITIVE_ACTIONS.CHECK:
         break;
 
-      case PRIMITIVE_ACTIONS.CALL:
-        if (entry.amount !== undefined) {
-          total += entry.amount;
-          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
-        } else {
-          const alreadyIn = seatContribs[entry.seat] || 0;
-          const increment = Math.max(0, currentBet - alreadyIn);
-          total += increment;
-          seatContribs[entry.seat] = currentBet;
-        }
+      case PRIMITIVE_ACTIONS.CALL: {
+        const alreadyIn = seatContribs[entry.seat] || 0;
+        const increment = entry.amount !== undefined
+          ? entry.amount
+          : Math.max(0, currentBet - alreadyIn);
+        total += increment;
+        seatContribs[entry.seat] = alreadyIn + increment;
         break;
+      }
 
       case PRIMITIVE_ACTIONS.BET:
       case PRIMITIVE_ACTIONS.RAISE:
       case PRIMITIVE_ACTIONS.STRADDLE:
         if (entry.amount !== undefined) {
-          total += entry.amount;
+          // amount is the raise-TO level; net new chips = level − alreadyIn.
+          const alreadyIn = seatContribs[entry.seat] || 0;
+          total += Math.max(0, entry.amount - alreadyIn);
           currentBet = entry.amount;
-          seatContribs[entry.seat] = (seatContribs[entry.seat] || 0) + entry.amount;
+          seatContribs[entry.seat] = entry.amount;
         } else {
           estimated = true;
         }
@@ -241,7 +255,10 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
       case PRIMITIVE_ACTIONS.RAISE:
       case PRIMITIVE_ACTIONS.STRADDLE:
         if (entry.amount !== undefined) {
-          contributions[entry.seat] = (contributions[entry.seat] || 0) + entry.amount;
+          // amount is the raise-TO level (the seat's cumulative street contribution),
+          // not an increment — set, don't add. Adding double-counts re-raises and
+          // blind seats that raise (see INV-POT-RAISETO-IS-NOT-INCREMENT).
+          contributions[entry.seat] = entry.amount;
           currentBet = entry.amount;
         }
         break;
@@ -251,6 +268,138 @@ export const getSeatContributions = (actionSequence, street, blinds, smallBlindS
   }
 
   return contributions;
+};
+
+/**
+ * Sum each seat's TOTAL contribution across every street of the hand (including
+ * preflop blinds). This is the input to side-pot layering — side pots are
+ * determined by how many chips each player committed over the whole hand.
+ *
+ * @param {Array} actionSequence
+ * @param {{ sb: number, bb: number }} blinds
+ * @param {number} [smallBlindSeat]
+ * @param {number} [bigBlindSeat]
+ * @returns {Object} Map of seat number → total chips committed
+ */
+export const getTotalContributions = (actionSequence, blinds, smallBlindSeat, bigBlindSeat) => {
+  const streets = ['preflop', 'flop', 'turn', 'river'];
+  const totals = {};
+  for (const street of streets) {
+    const perStreet = getSeatContributions(actionSequence, street, blinds, smallBlindSeat, bigBlindSeat);
+    for (const seatKey of Object.keys(perStreet)) {
+      const seat = Number(seatKey);
+      totals[seat] = (totals[seat] || 0) + perStreet[seatKey];
+    }
+  }
+  return totals;
+};
+
+const sameSeatSet = (a, b) => a.length === b.length && a.every((s, i) => s === b[i]);
+
+/**
+ * Partition committed chips into a main pot plus side pots from the action
+ * sequence. Side pots arise when all-in players commit different amounts: each
+ * pot is contested only by the players who put in at least that layer's chips.
+ *
+ * Doctrine (Gate 2 roundtable, INV-POT-CONSERVATION): pots are DERIVED from the
+ * recorded amounts — never entered. Folded players' chips are dead money (counted
+ * in pot amounts) but those players are not eligible to win. A top layer with a
+ * single contributor is an uncalled bet, returned to that seat (not a pot).
+ *
+ * @param {Array} actionSequence
+ * @param {{ sb: number, bb: number }} blinds
+ * @param {{ smallBlindSeat?: number, bigBlindSeat?: number }} [opts]
+ * @returns {{
+ *   pots: Array<{ amount: number, eligibleSeats: number[] }>,
+ *   returned: number,
+ *   returnedSeat: number|null,
+ *   totalContributed: number,
+ *   isEstimated: boolean
+ * }} Main pot is pots[0]; eligibleSeats are the non-folded contributors.
+ */
+export const calculateSidePots = (actionSequence, blinds, opts = {}) => {
+  const { smallBlindSeat, bigBlindSeat } = opts;
+  const totals = getTotalContributions(actionSequence, blinds, smallBlindSeat, bigBlindSeat);
+
+  const seq = actionSequence || [];
+  const foldedSeats = new Set(
+    seq.filter(e => e && e.action === PRIMITIVE_ACTIONS.FOLD).map(e => e.seat)
+  );
+  // Contributions are unreliable if any bet/raise lacked an amount (estimated pot).
+  const isEstimated = seq.some(e =>
+    e &&
+    (e.action === PRIMITIVE_ACTIONS.BET ||
+      e.action === PRIMITIVE_ACTIONS.RAISE ||
+      e.action === PRIMITIVE_ACTIONS.STRADDLE) &&
+    e.amount === undefined
+  );
+
+  const remaining = new Map();
+  let totalContributed = 0;
+  for (const seatKey of Object.keys(totals)) {
+    const amt = totals[seatKey];
+    if (amt > 0) {
+      remaining.set(Number(seatKey), amt);
+      totalContributed += amt;
+    }
+  }
+
+  const pots = [];
+  let returned = 0;
+  let returnedSeat = null;
+  const EPS = 1e-9;
+
+  // Layer from the bottom up. Each iteration removes at least one all-in seat,
+  // so the loop is bounded by the number of contributing seats.
+  let guard = 0;
+  while (guard++ < 64) {
+    const contributors = [...remaining.entries()]
+      .filter(([, amt]) => amt > EPS)
+      .map(([seat]) => seat);
+    if (contributors.length === 0) break;
+
+    const eligibleContributors = contributors.filter(s => !foldedSeats.has(s));
+    // Only folded money left — dead chips with no eligible winner (degenerate).
+    if (eligibleContributors.length === 0) break;
+
+    // An uncalled top bet (one lone contributor) is returned, not a pot.
+    if (contributors.length === 1) {
+      const s = contributors[0];
+      returned += remaining.get(s);
+      returnedSeat = s;
+      remaining.set(s, 0);
+      break;
+    }
+
+    // Layer height = smallest remaining among eligible (non-folded) contributors.
+    const layer = Math.min(...eligibleContributors.map(s => remaining.get(s)));
+
+    let amount = 0;
+    for (const s of contributors) {
+      const put = Math.min(remaining.get(s), layer);
+      amount += put;
+      remaining.set(s, remaining.get(s) - put);
+    }
+
+    pots.push({
+      amount,
+      eligibleSeats: [...eligibleContributors].sort((a, b) => a - b),
+    });
+  }
+
+  // Collapse adjacent layers that share the same eligible set (e.g. a folded
+  // seat capped a layer without changing who can win).
+  const merged = [];
+  for (const pot of pots) {
+    const last = merged[merged.length - 1];
+    if (last && sameSeatSet(last.eligibleSeats, pot.eligibleSeats)) {
+      last.amount += pot.amount;
+    } else {
+      merged.push({ ...pot });
+    }
+  }
+
+  return { pots: merged, returned, returnedSeat, totalContributed, isEstimated };
 };
 
 // =============================================================================

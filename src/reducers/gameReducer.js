@@ -5,7 +5,7 @@
  */
 
 import { createValidatedReducer, SCHEMA_RULES } from '../utils/reducerUtils';
-import { LIMITS } from '../constants/gameConstants';
+import { LIMITS, ACTIONS } from '../constants/gameConstants';
 import { PRIMITIVE_ACTIONS, isPrimitiveAction, isShowdownAction } from '../constants/primitiveActions';
 import { isValidSeat } from '../utils/validation';
 import { logger, DEBUG } from '../utils/errorHandler';
@@ -18,6 +18,7 @@ export const GAME_ACTIONS = {
   SET_DEALER: 'SET_DEALER',
   SET_MY_SEAT: 'SET_MY_SEAT',
   RECORD_SHOWDOWN_ACTION: 'RECORD_SHOWDOWN_ACTION',
+  SET_POT_WINNER: 'SET_POT_WINNER',
   CLEAR_STREET_ACTIONS: 'CLEAR_STREET_ACTIONS',
   CLEAR_SEAT_ACTIONS: 'CLEAR_SEAT_ACTIONS',
   UNDO_LAST_ACTION: 'UNDO_LAST_ACTION',
@@ -90,7 +91,7 @@ const rawGameReducer = (state, action) => {
       };
 
     case GAME_ACTIONS.RECORD_SHOWDOWN_ACTION: {
-      const { seat, action: showdownAction } = action.payload;
+      const { seat, action: showdownAction, pot } = action.payload;
 
       if (!isValidSeat(seat, NUM_SEATS)) {
         if (DEBUG) {
@@ -106,17 +107,54 @@ const rawGameReducer = (state, action) => {
         return state;
       }
 
-      // Append to actionSequence with street: 'showdown'
+      // Append to actionSequence with street: 'showdown'. `pot` (when present)
+      // attributes a WON entry to a specific side pot for multi-pot hands.
       const showdownEntry = createActionEntry({
         seat,
         action: showdownAction,
         street: 'showdown',
         order: getNextOrder(state.actionSequence),
+        pot,
       });
 
       return {
         ...state,
         actionSequence: [...state.actionSequence, showdownEntry],
+      };
+    }
+
+    // Per-pot winner attribution (multi-pot hands). Replaces any prior WON entry
+    // for this pot index, so a pot's winner is re-selectable. Unlike the single-
+    // pot auto-muck path, this NEVER mucks other seats — a seat that loses one
+    // pot may still win another (INV-MULTIWIN-NO-AUTOMUCK).
+    case GAME_ACTIONS.SET_POT_WINNER: {
+      const { seat, pot } = action.payload;
+
+      if (!isValidSeat(seat, NUM_SEATS)) {
+        if (DEBUG) logger.warn('gameReducer', `Invalid seat in SET_POT_WINNER: ${seat}`);
+        return state;
+      }
+      if (!Number.isInteger(pot) || pot < 0) {
+        if (DEBUG) logger.warn('gameReducer', `Invalid pot index in SET_POT_WINNER: ${pot}`);
+        return state;
+      }
+
+      // Drop any existing winner for this pot, then append the new one.
+      const withoutPot = state.actionSequence.filter(
+        e => !(e.street === 'showdown' && e.action === ACTIONS.WON && e.pot === pot)
+      );
+
+      const winnerEntry = createActionEntry({
+        seat,
+        action: ACTIONS.WON,
+        street: 'showdown',
+        order: getNextOrder(withoutPot),
+        pot,
+      });
+
+      return {
+        ...state,
+        actionSequence: [...withoutPot, winnerEntry],
       };
     }
 
@@ -350,7 +388,7 @@ const rawGameReducer = (state, action) => {
     }
 
     case GAME_ACTIONS.RECORD_PRIMITIVE_ACTION: {
-      const { seat, action: primitiveAction, amount } = action.payload;
+      const { seat, action: primitiveAction, amount, allIn, reopensAction } = action.payload;
 
       // Validate seat
       if (!isValidSeat(seat, NUM_SEATS)) {
@@ -368,13 +406,15 @@ const rawGameReducer = (state, action) => {
         return state;
       }
 
-      // Create new action entry
+      // Create new action entry (allIn / reopensAction flow through for all-in shoves)
       const newEntry = createActionEntry({
         seat,
         action: primitiveAction,
         street: state.currentStreet,
         order: getNextOrder(state.actionSequence),
         amount,
+        allIn,
+        reopensAction,
       });
 
       // Validate the entry

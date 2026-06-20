@@ -12,7 +12,13 @@ import {
   getPlayersInPot,
   wouldBeColdCall,
   wouldBeSqueeze,
+  createActionEntry,
+  isValidActionEntry,
+  getAllInSeats,
+  isSeatAllIn,
+  getPotWinnerSeat,
 } from '../sequenceUtils';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 describe('sequenceUtils', () => {
   describe('legacyToSequence', () => {
@@ -317,6 +323,81 @@ describe('sequenceUtils', () => {
         { seat: 3, action: 'raise', street: 'preflop', order: 3 },
       ];
       expect(wouldBeSqueeze(sequence, 4)).toBe(false);
+    });
+  });
+
+  describe('createActionEntry — all-in fields', () => {
+    it('carries allIn:true when set', () => {
+      const entry = createActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 1, amount: 40, allIn: true });
+      expect(entry.allIn).toBe(true);
+      expect(entry.amount).toBe(40);
+    });
+
+    it('omits allIn when falsey', () => {
+      const entry = createActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.CALL, street: 'flop', order: 1, amount: 10 });
+      expect('allIn' in entry).toBe(false);
+    });
+
+    it('carries reopensAction only when explicitly false', () => {
+      const sub = createActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 8, allIn: true, reopensAction: false });
+      expect(sub.reopensAction).toBe(false);
+      const full = createActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 12, allIn: true });
+      expect('reopensAction' in full).toBe(false);
+    });
+  });
+
+  describe('isValidActionEntry — all-in fields', () => {
+    it('accepts a valid all-in entry', () => {
+      expect(isValidActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 1, amount: 40, allIn: true })).toBe(true);
+    });
+
+    it('rejects a non-boolean allIn', () => {
+      expect(isValidActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 1, amount: 40, allIn: 'yes' })).toBe(false);
+    });
+
+    it('rejects a non-boolean reopensAction', () => {
+      expect(isValidActionEntry({ seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 1, amount: 8, allIn: true, reopensAction: 0 })).toBe(false);
+    });
+  });
+
+  describe('getAllInSeats / isSeatAllIn', () => {
+    const seq = [
+      { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 6 },
+      { seat: 7, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 2, amount: 50, allIn: true },
+      { seat: 2, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop', order: 3, amount: 20, allIn: true },
+      { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop', order: 4, amount: 44 },
+    ];
+
+    it('returns sorted seats with an all-in entry', () => {
+      expect(getAllInSeats(seq)).toEqual([2, 7]);
+    });
+
+    it('returns [] for empty/null', () => {
+      expect(getAllInSeats([])).toEqual([]);
+      expect(getAllInSeats(null)).toEqual([]);
+    });
+
+    it('isSeatAllIn reflects membership', () => {
+      expect(isSeatAllIn(seq, 7)).toBe(true);
+      expect(isSeatAllIn(seq, 2)).toBe(true);
+      expect(isSeatAllIn(seq, 4)).toBe(false);
+    });
+  });
+
+  describe('getPotWinnerSeat', () => {
+    const seq = [
+      { seat: 4, action: 'won', street: 'showdown', order: 10, pot: 0 },
+      { seat: 6, action: 'won', street: 'showdown', order: 11, pot: 1 },
+    ];
+
+    it('returns the winning seat for a pot index', () => {
+      expect(getPotWinnerSeat(seq, 0)).toBe(4);
+      expect(getPotWinnerSeat(seq, 1)).toBe(6);
+    });
+
+    it('returns null when a pot has no winner yet', () => {
+      expect(getPotWinnerSeat(seq, 2)).toBeNull();
+      expect(getPotWinnerSeat([], 0)).toBeNull();
     });
   });
 });

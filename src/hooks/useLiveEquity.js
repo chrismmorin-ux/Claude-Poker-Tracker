@@ -13,6 +13,7 @@ import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { estimateFoldPct } from '../utils/exploitEngine/foldEquityCalculator';
 import { getRangePositionCategory } from '../utils/positionUtils';
 import { getVillainActionKey, getVillainRange } from '../utils/rangeEngine/rangeAccessors';
+import { isSeatAllIn } from '../utils/sequenceUtils';
 import { SEAT_ARRAY, ACTIONS } from '../constants/gameConstants';
 import { useAbortControl } from './useAbortControl';
 
@@ -59,6 +60,14 @@ export const useLiveEquity = ({
   // Parse board
   const boardEncoded = useMemo(() => parseBoard(communityCards), [communityCards]);
 
+  // All-in awareness (POKER_THEORY §7 — game-state conditions, not labels):
+  //  - heroAllIn: hero has committed their last chips → no action decision remains.
+  //  - villainAllIn: the focused villain is all-in → they cannot fold to further
+  //    aggression, so fold equity against them is exactly 0 (you can't bluff a
+  //    player who's already all-in). Equity itself stays valid and is the key
+  //    number facing a shove.
+  const heroAllIn = useMemo(() => isSeatAllIn(actionSequence, mySeat), [actionSequence, mySeat]);
+
   // Find focused villain
   const villain = useMemo(() => {
     if (!mySeat || !dealerSeat || !tendencyMap || !getSeatPlayer) return null;
@@ -94,6 +103,11 @@ export const useLiveEquity = ({
 
     return bestVillain;
   }, [mySeat, dealerSeat, tendencyMap, getSeatPlayer, actionSequence]);
+
+  const villainAllIn = useMemo(
+    () => (villain ? isSeatAllIn(actionSequence, villain.seat) : false),
+    [actionSequence, villain]
+  );
 
   useEffect(() => {
     // Clear debounce on unmount
@@ -140,13 +154,21 @@ export const useLiveEquity = ({
           if (isCurrent(callId)) {
             setEquity(result.equity);
 
-            // Compute fold% from range segmentation (synchronous, cheap)
-            try {
-              const seg = segmentRange(range, boardEncoded, heroEncoded);
-              const fpResult = estimateFoldPct(seg, 'bet');
-              setFoldPct(fpResult.value);
-            } catch {
+            if (heroAllIn) {
+              // Hero is committed — no further action, so no fold-equity figure.
               setFoldPct(null);
+            } else if (villainAllIn) {
+              // Cannot fold out an all-in villain — fold equity is exactly 0.
+              setFoldPct(0);
+            } else {
+              // Compute fold% from range segmentation (synchronous, cheap)
+              try {
+                const seg = segmentRange(range, boardEncoded, heroEncoded);
+                const fpResult = estimateFoldPct(seg, 'bet');
+                setFoldPct(fpResult.value);
+              } catch {
+                setFoldPct(null);
+              }
             }
 
             setIsComputing(false);
@@ -160,7 +182,7 @@ export const useLiveEquity = ({
           }
         });
     }, 800);
-  }, [heroEncoded, boardEncoded, villain, dealerSeat, actionSequence]);
+  }, [heroEncoded, boardEncoded, villain, dealerSeat, actionSequence, heroAllIn, villainAllIn]);
 
-  return { equity, foldPct, isComputing, villainName, villainSeat };
+  return { equity, foldPct, isComputing, villainName, villainSeat, heroAllIn, villainAllIn };
 };

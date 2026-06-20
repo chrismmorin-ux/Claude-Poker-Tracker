@@ -124,6 +124,47 @@ describe('gameReducer', () => {
       });
       expect(newState.actionSequence[0].street).toBe('showdown');
     });
+
+    it('carries a pot index on the showdown entry when provided', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
+        payload: { seat: 4, action: 'won', pot: 1 },
+      });
+      expect(newState.actionSequence[0].pot).toBe(1);
+    });
+  });
+
+  describe('SET_POT_WINNER', () => {
+    it('records a winner for a pot index without mucking anyone', () => {
+      const newState = gameReducer(state, {
+        type: GAME_ACTIONS.SET_POT_WINNER,
+        payload: { pot: 0, seat: 4 },
+      });
+      expect(newState.actionSequence).toHaveLength(1);
+      expect(newState.actionSequence[0]).toMatchObject({ seat: 4, action: 'won', street: 'showdown', pot: 0 });
+      expect(newState.actionSequence.some(e => e.action === 'mucked')).toBe(false);
+    });
+
+    it('replaces a prior winner for the same pot (re-selectable)', () => {
+      let s = gameReducer(state, { type: GAME_ACTIONS.SET_POT_WINNER, payload: { pot: 0, seat: 4 } });
+      s = gameReducer(s, { type: GAME_ACTIONS.SET_POT_WINNER, payload: { pot: 0, seat: 6 } });
+      const pot0Winners = s.actionSequence.filter(e => e.action === 'won' && e.pot === 0);
+      expect(pot0Winners).toHaveLength(1);
+      expect(pot0Winners[0].seat).toBe(6);
+    });
+
+    it('keeps winners for different pots independent (a seat can win one, lose another)', () => {
+      let s = gameReducer(state, { type: GAME_ACTIONS.SET_POT_WINNER, payload: { pot: 0, seat: 4 } });
+      s = gameReducer(s, { type: GAME_ACTIONS.SET_POT_WINNER, payload: { pot: 1, seat: 6 } });
+      expect(s.actionSequence.filter(e => e.action === 'won')).toHaveLength(2);
+      expect(s.actionSequence.find(e => e.pot === 0).seat).toBe(4);
+      expect(s.actionSequence.find(e => e.pot === 1).seat).toBe(6);
+    });
+
+    it('rejects an invalid pot index', () => {
+      const s = gameReducer(state, { type: GAME_ACTIONS.SET_POT_WINNER, payload: { pot: -1, seat: 4 } });
+      expect(s.actionSequence).toEqual([]);
+    });
   });
 
   describe('CLEAR_STREET_ACTIONS', () => {

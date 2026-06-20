@@ -16,10 +16,18 @@ import { STREETS, isFoldAction } from '../constants/gameConstants';
 
 /**
  * Creates a new action entry
+ *
+ * `allIn` marks a bet/raise/call where the seat committed its last chips —
+ * load-bearing for side-pot derivation and engine all-in awareness. It is a
+ * derived game-state condition, never a free-floating label (POKER_THEORY §7).
+ * `reopensAction` is recorded on an all-in raise: false when the shove is below
+ * a full raise (an incomplete raise does not reopen betting for players who
+ * already acted). Omitted (treated as true) for full raises.
+ *
  * @param {Object} params - Action parameters
  * @returns {Object} ActionEntry
  */
-export const createActionEntry = ({ seat, action, street, order, amount }) => {
+export const createActionEntry = ({ seat, action, street, order, amount, allIn, reopensAction, pot }) => {
   const entry = {
     seat,
     action,
@@ -29,6 +37,17 @@ export const createActionEntry = ({ seat, action, street, order, amount }) => {
   };
   if (amount !== undefined && amount !== null) {
     entry.amount = amount;
+  }
+  if (allIn === true) {
+    entry.allIn = true;
+  }
+  if (reopensAction === false) {
+    entry.reopensAction = false;
+  }
+  // `pot` is the side-pot index a showdown WON entry refers to (0 = main pot).
+  // Omitted on single-pot hands, where a WON entry wins the whole pot.
+  if (pot !== undefined && pot !== null) {
+    entry.pot = pot;
   }
   return entry;
 };
@@ -53,6 +72,12 @@ export const isValidActionEntry = (entry) => {
   if (!Number.isInteger(order) || order < 1) return false;
 
   if (entry.amount !== undefined && (typeof entry.amount !== 'number' || entry.amount < 0)) return false;
+
+  if (entry.allIn !== undefined && typeof entry.allIn !== 'boolean') return false;
+
+  if (entry.reopensAction !== undefined && typeof entry.reopensAction !== 'boolean') return false;
+
+  if (entry.pot !== undefined && (!Number.isInteger(entry.pot) || entry.pot < 0)) return false;
 
   return true;
 };
@@ -266,6 +291,35 @@ export const getActivePlayers = (sequence) => {
 };
 
 /**
+ * Get the seats that are all-in (committed their last chips) anywhere in the
+ * sequence. An all-in seat stays in for showdown but makes no further decisions,
+ * so downstream consumers (side pots, the live advisor, tree pruning) treat
+ * these seats specially.
+ *
+ * @param {Array} sequence - Action sequence
+ * @returns {number[]} Sorted seat numbers that have an all-in entry
+ */
+export const getAllInSeats = (sequence) => {
+  if (!sequence || sequence.length === 0) return [];
+  const seats = new Set(
+    sequence.filter(e => e && e.allIn === true).map(e => e.seat)
+  );
+  return Array.from(seats).sort((a, b) => a - b);
+};
+
+/**
+ * Whether a given seat is all-in anywhere in the sequence.
+ *
+ * @param {Array} sequence - Action sequence
+ * @param {number} seat - Seat number
+ * @returns {boolean}
+ */
+export const isSeatAllIn = (sequence, seat) => {
+  if (!sequence) return false;
+  return sequence.some(e => e && e.seat === seat && e.allIn === true);
+};
+
+/**
  * Check if a seat has acted on the current street
  *
  * @param {Array} sequence - Action sequence
@@ -393,6 +447,22 @@ export const hasShowdownAction = (sequence, seat, action) => {
   return sequence.some(
     e => e.seat === seat && e.street === 'showdown' && e.action === action
   );
+};
+
+/**
+ * Get the winning seat recorded for a specific side-pot index, or null.
+ * Used by the multi-pot showdown attribution panel.
+ *
+ * @param {Array} sequence - Action sequence
+ * @param {number} potIndex - 0 = main pot
+ * @returns {number|null}
+ */
+export const getPotWinnerSeat = (sequence, potIndex) => {
+  if (!sequence) return null;
+  const entry = sequence.find(
+    e => e && e.street === 'showdown' && e.action === 'won' && e.pot === potIndex
+  );
+  return entry ? entry.seat : null;
 };
 
 export const wouldBeSqueeze = (sequence, seat) => {

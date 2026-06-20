@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseBlinds, calculatePot, calculatePotProgression, getCurrentBet, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
+import { parseBlinds, calculatePot, calculatePotProgression, getCurrentBet, getSeatContributions, getTotalContributions, calculateSidePots, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 describe('parseBlinds', () => {
@@ -103,6 +103,183 @@ describe('calculatePot', () => {
     ];
     const result = calculatePot(seq, blinds);
     expect(result.currentBet).toBe(0); // Reset on flop
+  });
+
+  // INV-POT-RAISETO-IS-NOT-INCREMENT — a raise-to amount is a level, not an increment.
+  it('does not over-count when a seat re-raises after already betting on the street', () => {
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 6 },
+      { seat: 2, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop', order: 2, amount: 6 },
+      // Flop: s1 bets 10, s2 raises to 30, s1 re-raises to 90 (already 10 in → +80, not +90)
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'flop', order: 3, amount: 10 },
+      { seat: 2, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 4, amount: 30 },
+      { seat: 1, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 5, amount: 90 },
+    ];
+    // preflop 3 + 6 + 6 = 15; flop 10 + 30 + 80 = 120; total 135 (buggy code gave 145)
+    expect(calculatePot(seq, blinds).total).toBe(135);
+  });
+
+  it('does not over-count a blind seat raising when blind seats are seeded', () => {
+    const seq = [
+      { seat: 2, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 10 },
+    ];
+    // BB (seat 2) raises to 10, already has bb=2 in → adds 8. Pot = sb 1 + 10 = 11.
+    const seeded = calculatePot(seq, blinds, { smallBlindSeat: 1, bigBlindSeat: 2 });
+    expect(seeded.total).toBe(11);
+    // Without seeding the blind is not subtracted, so the total over-counts by bb.
+    expect(calculatePot(seq, blinds).total).toBe(13);
+  });
+});
+
+describe('getSeatContributions', () => {
+  const blinds = { sb: 1, bb: 2 };
+
+  it('seeds blind contributions on preflop', () => {
+    expect(getSeatContributions([], 'preflop', blinds, 1, 2)).toEqual({ 1: 1, 2: 2 });
+  });
+
+  it('records a raise-to amount as a level, not an accumulating sum (4-bet pot)', () => {
+    const seq = [
+      { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 8 },
+      { seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 2, amount: 24 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 3, amount: 80 },
+    ];
+    const contribs = getSeatContributions(seq, 'preflop', blinds, 1, 2);
+    // seat 4 raised to 8 then to 80 → cumulative street contribution is 80, not 88.
+    expect(contribs[4]).toBe(80);
+    expect(contribs[5]).toBe(24);
+    expect(contribs[1]).toBe(1); // SB blind, never acted
+    expect(contribs[2]).toBe(2); // BB blind, never acted
+  });
+
+  it('accumulates a call increment onto a prior contribution', () => {
+    const seq = [
+      { seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', order: 1, amount: 10 },
+      { seat: 6, action: PRIMITIVE_ACTIONS.CALL, street: 'flop', order: 2, amount: 10 },
+    ];
+    const contribs = getSeatContributions(seq, 'flop', blinds);
+    expect(contribs[5]).toBe(10);
+    expect(contribs[6]).toBe(10);
+  });
+});
+
+describe('calculateSidePots', () => {
+  const blinds = { sb: 1, bb: 2 };
+  const A = PRIMITIVE_ACTIONS;
+
+  // Conservation: every test asserts sum(pots) + returned === totalContributed.
+  const assertConserved = (result) => {
+    const potSum = result.pots.reduce((s, p) => s + p.amount, 0);
+    expect(potSum + result.returned).toBe(result.totalContributed);
+  };
+
+  it('single pot when no one is all-in for less (flop bet + call)', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop', order: 1, amount: 10 },
+      { seat: 2, action: A.CALL, street: 'flop', order: 2, amount: 10 },
+    ];
+    const r = calculateSidePots(seq, blinds);
+    expect(r.pots).toEqual([{ amount: 20, eligibleSeats: [1, 2] }]);
+    expect(r.returned).toBe(0);
+    assertConserved(r);
+  });
+
+  it('main + side pot for a 3-way all-in with unequal stacks (47 / 120 / 120)', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop', order: 1, amount: 47, allIn: true },
+      { seat: 2, action: A.RAISE, street: 'flop', order: 2, amount: 120, allIn: true },
+      { seat: 3, action: A.CALL, street: 'flop', order: 3, amount: 120 },
+    ];
+    const r = calculateSidePots(seq, blinds);
+    expect(r.pots).toEqual([
+      { amount: 141, eligibleSeats: [1, 2, 3] }, // 47 × 3
+      { amount: 146, eligibleSeats: [2, 3] },    // 73 × 2
+    ]);
+    expect(r.totalContributed).toBe(287);
+    assertConserved(r);
+  });
+
+  it('returns an uncalled top bet to its seat (shove called for less)', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop', order: 1, amount: 100 },
+      { seat: 2, action: A.CALL, street: 'flop', order: 2, amount: 40, allIn: true },
+    ];
+    const r = calculateSidePots(seq, blinds);
+    expect(r.pots).toEqual([{ amount: 80, eligibleSeats: [1, 2] }]);
+    expect(r.returned).toBe(60);
+    expect(r.returnedSeat).toBe(1);
+    assertConserved(r);
+  });
+
+  it('counts a folded seat\'s chips as dead money but excludes it from eligibility', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop', order: 1, amount: 30 },
+      { seat: 2, action: A.CALL, street: 'flop', order: 2, amount: 30 },
+      { seat: 3, action: A.RAISE, street: 'flop', order: 3, amount: 100, allIn: true },
+      { seat: 1, action: A.FOLD, street: 'flop', order: 4 },
+      { seat: 2, action: A.CALL, street: 'flop', order: 5, amount: 70 },
+    ];
+    const r = calculateSidePots(seq, blinds);
+    // seat 1's 30 is dead money inside the single contested pot; only 2 & 3 win it.
+    expect(r.pots).toEqual([{ amount: 230, eligibleSeats: [2, 3] }]);
+    assertConserved(r);
+  });
+
+  it('layers two all-ins plus folded dead money into main + side', () => {
+    const seq = [
+      { seat: 4, action: A.BET, street: 'flop', order: 1, amount: 10 },
+      { seat: 1, action: A.RAISE, street: 'flop', order: 2, amount: 20, allIn: true },
+      { seat: 2, action: A.RAISE, street: 'flop', order: 3, amount: 50, allIn: true },
+      { seat: 3, action: A.CALL, street: 'flop', order: 4, amount: 50 },
+      { seat: 4, action: A.FOLD, street: 'flop', order: 5 },
+    ];
+    const r = calculateSidePots(seq, blinds);
+    expect(r.pots).toEqual([
+      { amount: 70, eligibleSeats: [1, 2, 3] }, // 10(dead) + 20 + 20 + 20
+      { amount: 60, eligibleSeats: [2, 3] },    // 30 + 30
+    ]);
+    expect(r.totalContributed).toBe(130);
+    assertConserved(r);
+  });
+
+  it('seeds preflop blinds as dead money when a blind seat folds', () => {
+    const seq = [
+      { seat: 3, action: A.RAISE, street: 'preflop', order: 1, amount: 30, allIn: true },
+      { seat: 1, action: A.FOLD, street: 'preflop', order: 2 }, // SB folds, 1 dead
+      { seat: 2, action: A.CALL, street: 'preflop', order: 3, amount: 28 }, // BB to 30
+    ];
+    const r = calculateSidePots(seq, blinds, { smallBlindSeat: 1, bigBlindSeat: 2 });
+    expect(r.pots).toEqual([{ amount: 61, eligibleSeats: [2, 3] }]); // 1(SB dead) + 30 + 30
+    assertConserved(r);
+  });
+
+  it('flags isEstimated when a bet/raise lacks an amount', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop', order: 1 }, // no amount
+      { seat: 2, action: A.CALL, street: 'flop', order: 2 },
+    ];
+    expect(calculateSidePots(seq, blinds).isEstimated).toBe(true);
+  });
+
+  it('returns an empty pot list for an empty sequence', () => {
+    const r = calculateSidePots([], blinds);
+    expect(r.pots).toEqual([]);
+    expect(r.totalContributed).toBe(0);
+  });
+});
+
+describe('getTotalContributions', () => {
+  const blinds = { sb: 1, bb: 2 };
+  it('sums a seat\'s contributions across streets', () => {
+    const seq = [
+      { seat: 5, action: PRIMITIVE_ACTIONS.RAISE, street: 'preflop', order: 1, amount: 6 },
+      { seat: 6, action: PRIMITIVE_ACTIONS.CALL, street: 'preflop', order: 2, amount: 6 },
+      { seat: 5, action: PRIMITIVE_ACTIONS.BET, street: 'flop', order: 3, amount: 12 },
+      { seat: 6, action: PRIMITIVE_ACTIONS.CALL, street: 'flop', order: 4, amount: 12 },
+    ];
+    const totals = getTotalContributions(seq, blinds);
+    expect(totals[5]).toBe(18); // 6 + 12
+    expect(totals[6]).toBe(18);
   });
 });
 

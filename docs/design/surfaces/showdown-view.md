@@ -101,6 +101,7 @@ Secondary:
 - **Multiple winners** are supported (chopped pot).
 - **Mucked cards** — seats that folded before showdown have no cards assigned; that's allowed.
 - **Destructive action (Next Hand)** — commits + resets state; no confirmation step today. See Known Issues.
+- **Per-pot winner attribution (HE-20b, 2026-06-19)** — when a hand splits into 2+ pots (all-ins of unequal size), a `SidePotAttribution` panel renders at the top of the body: each pot (Main / Side N) with its amount and a button per *eligible* seat. Winners are awarded independently (a short stack can win the main pot while a covering stack wins the side) via `SET_POT_WINNER`, which is re-selectable and **never auto-mucks** other seats (INV-MULTIWIN-NO-AUTOMUCK). Single-pot hands keep today's one-tap Won flow unchanged; the per-seat Won button is suppressed (`suppressWon`) and the quick-mode winner overlay is gated off in multi-pot mode. Winner records carry a `pot` index in `actionSequence`. Implements `docs/design/audits/2026-06-19-blindspot-allin-side-pots.md`.
 
 ## Known issues
 

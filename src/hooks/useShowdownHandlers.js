@@ -212,6 +212,18 @@ export const useShowdownHandlers = ({
     dispatchGame,
   ]);
 
+  // Handler: assign a winner to a specific side pot (multi-pot hands).
+  // Records via SET_POT_WINNER, which replaces any prior winner for that pot and
+  // mucks NO other seats — a seat losing one pot can still win another
+  // (INV-MULTIWIN-NO-AUTOMUCK). Distinct from handleWonSeat (single-pot auto-muck).
+  const handleSetPotWinner = useCallback((potIndex, seat) => {
+    dispatchGame({
+      type: GAME_ACTIONS.SET_POT_WINNER,
+      payload: { pot: potIndex, seat },
+    });
+    log('Pot', potIndex, 'winner: S' + seat);
+  }, [dispatchGame, log]);
+
   // Handler: Close showdown view and advance to next hand.
   // AUDIT-2026-04-21-SDV F1: replaces unguarded nextHand() + closeShowdownView() with a
   // snapshot + toast+undo pattern. Mirrors CommandStrip.handleNextHand (Next Hand in TableView)
@@ -307,6 +319,7 @@ export const useShowdownHandlers = ({
     handleClearShowdownCards,
     handleMuckSeat,
     handleWonSeat,
+    handleSetPotWinner,
     handleNextHandFromShowdown,
     handleCloseShowdown,
     handleCloseCardSelector,

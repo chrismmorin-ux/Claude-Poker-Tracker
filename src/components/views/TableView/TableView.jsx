@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { getActionsForSeatOnStreet, getPreflopAggressor, getStraddler, getStraddleAmount } from '../../../utils/sequenceUtils';
-import { getSeatContributions } from '../../../utils/potCalculator';
+import { getSeatContributions, calculateSidePots } from '../../../utils/potCalculator';
 import { getNextActiveSeat } from '../../../utils/seatUtils';
 import { CardSlot } from '../../ui/CardSlot';
 import { CollapsibleSidebar } from '../../ui/CollapsibleSidebar';
@@ -322,9 +322,35 @@ export const TableView = ({ scale }) => {
     [actionSequence, currentStreet, blinds, smallBlindSeat, bigBlindSeat]
   );
 
+  // Side pots (HE-19) — only renders a ledger when an all-in has split the pot.
+  const sidePots = useMemo(
+    () => calculateSidePots(actionSequence, blinds, { smallBlindSeat, bigBlindSeat }).pots,
+    [actionSequence, blinds, smallBlindSeat, bigBlindSeat]
+  );
+
   // Handle seat change from sidebar navigation
   const handleSeatChange = (seat) => {
     setSelectedPlayers([seat]);
+  };
+
+  // Plain tap on a seat = single-select REPLACE (not toggle-append). This is the
+  // load-bearing fix: accumulating multi-seat selection on every tap made seat
+  // entry error-prone (a stray second tap silently queued a multi-seat batch).
+  // Multi-seat is now an explicit, rare action behind the seat context menu
+  // ("➕ Add to multi-select"). A plain tap also collapses an existing multi-seat
+  // selection back to the single tapped seat — a built-in escape hatch.
+  // See WS-191 scope #3 + docs/design/surfaces/seat-context-menu.md.
+  const handleSeatSelect = (seat) => {
+    setSelectedPlayers([seat]);
+  };
+
+  // Explicit multi-seat gesture (rare): append this seat to the current
+  // selection. Reached only via touch-hold / right-click → context menu, so it
+  // can no longer fire by accident. togglePlayerSelection appends (or removes if
+  // already selected), preserving insertion order for the step-back Undo.
+  const handleAddToMultiSelect = (seat) => {
+    togglePlayerSelection(seat);
+    setContextMenu(null);
   };
 
   // Handler callbacks for sub-components
@@ -598,6 +624,7 @@ export const TableView = ({ scale }) => {
                   potTotal={potInfo.total}
                   isEstimated={potInfo.isEstimated}
                   onCorrect={handlePotCorrection}
+                  sidePots={sidePots}
                 />
               </div>
 
@@ -625,7 +652,7 @@ export const TableView = ({ scale }) => {
                   holeCardsVisible={holeCardsVisible}
                   getSeatColor={getSeatColor}
                   seatBet={seatContributions[seat] || 0}
-                  onSeatClick={togglePlayerSelection}
+                  onSeatClick={handleSeatSelect}
                   onSeatRightClick={handleSeatRightClick}
                   onDealerDragStart={handleDealerDragStart}
                   onHoleCardClick={handleHoleCardClick}
@@ -659,6 +686,8 @@ export const TableView = ({ scale }) => {
               contextMenu={contextMenu}
               onMakeMySeat={handleSetMySeat}
               onMakeDealer={handleMakeDealer}
+              onAddToMultiSelect={handleAddToMultiSelect}
+              isSeatInSelection={contextMenu ? selectedPlayers.includes(contextMenu.seat) : false}
               onStraddle={contextMenu && eligibleStraddleSeats.has(contextMenu.seat) ? handleSeatStraddle : undefined}
               onFindPlayer={handleFindPlayer}
               onSwapPlayer={handleSwapPlayer}

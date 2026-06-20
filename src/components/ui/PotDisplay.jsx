@@ -14,7 +14,7 @@ const POT_EDIT_LONG_PRESS_MS = 400;
  * The numeric input uses `inputMode="decimal"` for a compact keypad on Android
  * (H-ML03) — this is the first adopter; copy this pattern for other numeric inputs.
  */
-export const PotDisplay = ({ potTotal, isEstimated, onCorrect }) => {
+export const PotDisplay = ({ potTotal, isEstimated, onCorrect, sidePots }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [showTapHint, setShowTapHint] = useState(false);
@@ -92,29 +92,54 @@ export const PotDisplay = ({ potTotal, isEstimated, onCorrect }) => {
     );
   }
 
+  // Side-pot ledger (HE-19): only meaningful once an all-in has split the pot
+  // into 2+ pots. Render inclusion (which seats can win each pot), not exclusion,
+  // per the Gate 2 external-lens convention for a tiny felt.
+  const hasSidePots = Array.isArray(sidePots) && sidePots.length > 1;
+
   return (
-    <button
-      // AUDIT-2026-04-21-TV F9: long-press to edit. Single tap does not enter edit mode;
-      // mouse/touch down starts a 400ms timer, mouse/touch up before it fires = hint only.
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerEndOrLeave}
-      onPointerLeave={handlePointerEndOrLeave}
-      onPointerCancel={handlePointerEndOrLeave}
-      onContextMenu={(e) => e.preventDefault()}
-      className="absolute left-1/2 transform -translate-x-1/2 px-4 py-1 bg-amber-700 bg-opacity-90 border-2 border-amber-500 rounded-full text-white font-bold text-sm shadow-lg hover:bg-amber-600 transition-colors cursor-pointer"
-      style={{ top: '68%' }}
-      title="Long-press to correct pot"
-    >
-      {isEstimated ? '~' : ''}${potTotal}
-      {showTapHint && (
-        <span
-          className="absolute left-1/2 -translate-x-1/2 mt-2 px-2 py-0.5 text-[10px] font-semibold bg-gray-900 text-amber-300 rounded whitespace-nowrap"
-          style={{ top: '100%' }}
+    <>
+      <button
+        // AUDIT-2026-04-21-TV F9: long-press to edit. Single tap does not enter edit mode;
+        // mouse/touch down starts a 400ms timer, mouse/touch up before it fires = hint only.
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerEndOrLeave}
+        onPointerLeave={handlePointerEndOrLeave}
+        onPointerCancel={handlePointerEndOrLeave}
+        onContextMenu={(e) => e.preventDefault()}
+        className="absolute left-1/2 transform -translate-x-1/2 px-4 py-1 bg-amber-700 bg-opacity-90 border-2 border-amber-500 rounded-full text-white font-bold text-sm shadow-lg hover:bg-amber-600 transition-colors cursor-pointer"
+        style={{ top: '68%' }}
+        title="Long-press to correct pot"
+      >
+        {isEstimated ? '~' : ''}${potTotal}
+        {showTapHint && (
+          <span
+            className="absolute left-1/2 -translate-x-1/2 mt-2 px-2 py-0.5 text-[10px] font-semibold bg-gray-900 text-amber-300 rounded whitespace-nowrap"
+            style={{ top: '100%' }}
+          >
+            Long-press to correct
+          </span>
+        )}
+      </button>
+      {hasSidePots && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex gap-1 flex-wrap justify-center"
+          style={{ top: '77%', maxWidth: '280px' }}
         >
-          Long-press to correct
-        </span>
+          {sidePots.map((p, i) => (
+            <span
+              key={i}
+              className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-900 bg-opacity-90 border border-amber-600 text-amber-200 whitespace-nowrap"
+            >
+              {i === 0 ? 'Main' : `Side ${i}`} ${p.amount}
+              {Array.isArray(p.eligibleSeats) && p.eligibleSeats.length > 0 && (
+                <span className="text-gray-400"> · {p.eligibleSeats.map((s) => `S${s}`).join(',')}</span>
+              )}
+            </span>
+          ))}
+        </div>
       )}
-    </button>
+    </>
   );
 };
 

@@ -36,6 +36,9 @@ export const ShowdownSeatRow = ({
   // AUDIT-2026-04-21-SDV F4: when tapping Won would auto-muck ≥1 other seats,
   // surface a passive count sub-label so the scope is visible BEFORE the tap.
   wonAutoMuckCount = 0,
+  // HE-20b: multi-pot hands award winners via the side-pot attribution panel,
+  // so the per-seat (auto-muck) Won button is suppressed here.
+  suppressWon = false,
 }) => {
   // WS-183: Won seats hard-lock card edits by default; an explicit Unlock
   // affordance reopens them for correction without first unsetting Won.
@@ -151,8 +154,9 @@ export const ShowdownSeatRow = ({
             >
               Muck
             </button>
-            {/* Only show Won button if no seat has won yet */}
-            {!someoneHasWon && (
+            {/* Only show Won button if no seat has won yet (and not multi-pot,
+                where the side-pot attribution panel awards winners) */}
+            {!someoneHasWon && !suppressWon && (
               <button
                 onClick={() => onWon(seat)}
                 className={`btn-press bg-green-500 hover:bg-green-600 text-white rounded font-semibold flex flex-col items-center justify-center ${

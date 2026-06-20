@@ -17,11 +17,21 @@ Use contexts for cross-component access: useGame(), useUI(), useSession(), usePl
   mySeat: 5,                    // 1-9
   actionSequence: [             // single source of truth for ALL actions (betting + showdown)
     { seat: 5, action: 'raise', street: 'preflop', order: 1 },
-    { seat: 3, action: 'mucked', street: 'showdown', order: 5 }
+    { seat: 7, action: 'raise', street: 'preflop', order: 2, amount: 50, allIn: true },
+    { seat: 6, action: 'call', street: 'preflop', order: 3, amount: 30, allIn: true }, // short/capped all-in call
+    { seat: 3, action: 'mucked', street: 'showdown', order: 5 },
+    { seat: 5, action: 'won', street: 'showdown', order: 6, pot: 0 }   // pot index for multi-pot hands
   ],
   absentSeats: [] }             // [1-9]
 // No seatActions or showdownActions — actionSequence is the sole format
-// Query helpers: getActionsForSeatOnStreet(), hasSeatFolded(), hasShowdownAction() in sequenceUtils.js
+// Optional entry fields (all-in / side pots, 2026-06-19):
+//   amount        — CALL: increment owed; BET/RAISE/STRADDLE: raise-TO LEVEL (not increment)
+//   allIn: true   — seat committed its last chips (bet/raise/call). Detect via isSeatAllIn()/getAllInSeats()
+//   reopensAction:false — a sub-min-raise all-in that does NOT reopen betting
+//   pot           — side-pot index a showdown 'won' entry refers to (0=main). Set via SET_POT_WINNER
+// Query helpers: getActionsForSeatOnStreet(), hasSeatFolded(), hasShowdownAction(),
+//   getAllInSeats(), isSeatAllIn(), getPotWinnerSeat() in sequenceUtils.js
+// Side pots derived (never stored): calculateSidePots(actionSequence, blinds, {smallBlindSeat, bigBlindSeat}) in potCalculator.js
 ```
 
 ## cardReducer

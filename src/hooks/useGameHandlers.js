@@ -81,11 +81,12 @@ export const useGameHandlers = () => {
   // not betting actions. Previously misnamed `recordSeatAction` — that
   // name now belongs to the betting-API funnel above. Callers updated
   // simultaneously (ShowdownView, useShowdownHandlers).
-  const recordShowdownAction = useCallback((seat, action) => {
+  // `opts.pot` attributes a WON entry to a side-pot index (multi-pot hands).
+  const recordShowdownAction = useCallback((seat, action, opts = {}) => {
     log(`Seat ${seat}: ${action} on ${currentStreet}`);
     dispatchGame({
       type: GAME_ACTIONS.RECORD_SHOWDOWN_ACTION,
-      payload: { seat, action }
+      payload: { seat, action, ...(opts.pot !== undefined ? { pot: opts.pot } : {}) }
     });
   }, [currentStreet, dispatchGame]);
 
