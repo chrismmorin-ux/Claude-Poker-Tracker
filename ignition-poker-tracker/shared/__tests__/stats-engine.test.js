@@ -46,14 +46,33 @@ describe('analyzePreflopContext', () => {
     expect(seatContext.get(1).threeBet).toBe(false);
   });
 
-  it('detects fold-to-3bet', () => {
-    const actions = [
+  it('fold-to-3bet follows canonical main-app semantics (WS-236 parity)', () => {
+    // Canonical (tendencyCalculations.extract3BetStats): foldTo3Bet = the
+    // seat's FIRST action faced a raise, the seat never raised, and it
+    // folded. An OPENER who folds to a 3-bet does NOT count (its first
+    // action faced no raise). Pinned by statsEngineParity.seam.test.js.
+    const openerFolds = [
       pf(1, 'raise', 1, 300),
       pf(2, 'raise', 2, 900),
       pf(1, 'fold', 3),
     ];
-    const { seatContext } = analyzePreflopContext(actions);
-    expect(seatContext.get(1).foldTo3Bet).toBe(true);
+    const { seatContext: sc1 } = analyzePreflopContext(openerFolds);
+    expect(sc1.get(1).foldTo3Bet).toBe(false);
+    expect(sc1.get(1).facedRaise).toBe(false); // first action faced no raise
+
+    // A cold-caller whose first action faced the open, who then folds to a
+    // 3-bet without ever raising, DOES count.
+    const callerFolds = [
+      pf(1, 'raise', 1, 300),
+      pf(2, 'call', 2, 300),
+      pf(3, 'raise', 3, 900),
+      pf(1, 'call', 4, 900),
+      pf(2, 'fold', 5),
+    ];
+    const { seatContext: sc2 } = analyzePreflopContext(callerFolds);
+    expect(sc2.get(2).facedRaise).toBe(true);
+    expect(sc2.get(2).foldTo3Bet).toBe(true);
+    expect(sc2.get(3).threeBet).toBe(true);
   });
 
   it('detects limp', () => {

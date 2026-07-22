@@ -5,10 +5,10 @@
 total_items: 134
 by_status:
   decomposed: 1
-  done: 60
+  done: 61
   in_progress: 3
   deferred: 43
-  backlog: 17
+  backlog: 16
   dismissed: 1
   completed: 7
   review: 1
@@ -1155,7 +1155,7 @@ items:
 
   - id: "WS-236"
     title: "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024"
-    status: backlog
+    status: done
     priority_score: 7
     category: provenance
     effort: M

@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1782162558220-5edf20b82580"
-generated_content_hash: "aaa64172c2df3ed2d0120ce75cc486fbe13be279efa37d53a32b98dad8fafa63"
-generated_at: "2026-06-22T21:09:18.258Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl"]
-event_count: 913
+generated_from_event: "ev-1784750521127-4668fb837e58"
+generated_content_hash: "cb240df5280138af946971d67769d757cf6f4775f32b8d1bc06de86ac424b4c9"
+generated_at: "2026-07-22T20:02:01.162Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl"]
+event_count: 920
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 547
-- Events recorded: 913
-- Source chunks: 11
+- Commands recorded: 551
+- Events recorded: 920
+- Source chunks: 12
 
 ## Command `auto:42416:1781030643103`
 
@@ -5853,3 +5853,46 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-06-22T21:09:18.220Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-mqppptw4bbec4ba7c362`
+
+- Start: 2026-06-22T21:13:20.791Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-06-22T21:13:20.791Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-145", +8 more |
+
+## Command `cmd-sprintresumed-mrwhssy80e5acb12ea07`
+
+- Start: 2026-07-22T19:45:48.180Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-22T19:45:48.180Z | T6:workstream | C:/Program Files/Git/next | sprint_id="SPR-145", item_ids={1 keys}, +3 more |
+
+## Command `cmd-itemclosed-mrwibyev6d90d28bb620`
+
+- Start: 2026-07-22T20:00:41.724Z
+- Events: 4
+- Tracks: T6:workstream, T6:workstream-rebalance, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-22T20:00:41.724Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-236", +3 more |
+| 2 | 2026-07-22T20:00:41.961Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-145", +4 more |
+| 3 | 2026-07-22T20:00:42.522Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 4 | 2026-07-22T20:00:42.598Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-mrwidnoj989ac0fa347d`
+
+- Start: 2026-07-22T20:02:01.127Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-22T20:02:01.127Z | T10:compose-sprint | C:/Program Files/Git/next | command="/next", note="SPR-145 resumed and completed"..., +2 more |

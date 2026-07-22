@@ -97,7 +97,7 @@ findings:
     title: "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals"
     engine: provenance-audit
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "provenance-audit-data-quality-live-hud-raw-percent-no-sample-parallel-stats-engine"
     program: data-quality
     created_at: "2026-06-19"

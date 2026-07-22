@@ -89,6 +89,18 @@ Per R-4.1–R-4.5. The stale-advice indicator at 2.10 is the canonical freshness
 - H-PLT-01 glance-readable — pot chip + street indicator are glance-optimized
 - H-PLT-05 primary content prominence — Z1 prominence yields to Z3 active-hand (R-3.4 interruption discipline)
 
+## §Z1-POPOVER-ATTR — Seat popover stat attribution (WS-236 / FIND-024, 2026-07-22)
+
+The seat popover (opened by tapping a seat circle in the arc; `buildSeatPopoverHtml`, extracted to `render-orchestrator.js`) is the detail view for a seat's locally-captured stats (parallel engine `shared/stats-engine.js`) plus app-pushed villain profile. Its Stats section carries **mandatory attribution**:
+
+- **Sample count, `Nh` form** (INV-DENSITY-3 standalone raw-count form; never `n=N`, which is reserved for confidence-dot pairing) — shown in the popover header whenever `sampleSize > 0`, regardless of whether a style label exists. Previously the count only rendered alongside the style badge (sample ≥ 20), hiding attribution in exactly the small-sample case where it matters most.
+- **Sample-quality badge** — categorical text chip beside the Stats label: `DATA` (sampleSize ≥ 15), `PARTIAL` (≥ 5), `EST` (< 5). Vocabulary + thresholds mirror the main app's LiveAdviceBar fold% badge (DP-004); single threshold source `SAMPLE_QUALITY_TIERS` / `sampleQualityTier()` in `shared/stats-engine.js` beside `MIN_STYLE_SAMPLE`. Colors mirror LiveAdviceBar (green/amber/grey family), distinct from `--conf-tier-*` tokens.
+- **Concept-class boundary:** raw capture counts are NOT engine model outputs; they never receive `conf-tier-*` dots (shell-spec §III.5 scope). The quality badge is a separate concept-class (sample volume), not a fifth confidence tier — the closed 4-tier register is unchanged.
+- **Parity invariant:** the parallel stats engine's semantics are pinned to `src/utils/tendencyCalculations.js` by the seam test `src/utils/__tests__/statsEngineParity.seam.test.js` (raw counters + derived percentages + style classification on shared fixtures). Divergence between the two computation paths fails the main-app suite.
+
+Gate 1 audit: [`audits/2026-07-22-entry-hud-villain-stat-attribution.md`](../audits/2026-07-22-entry-hud-villain-stat-attribution.md).
+
 ## Change log
 
 - 2026-04-22 — Created (DCOMP-W5).
+- 2026-07-22 — §Z1-POPOVER-ATTR added: seat-popover sample-size (`Nh`) + DATA/PARTIAL/EST sample-quality badge + parity invariant (WS-236 / FIND-024, SPR-145).

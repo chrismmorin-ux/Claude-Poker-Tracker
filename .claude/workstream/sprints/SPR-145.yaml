@@ -1,7 +1,9 @@
 id: "SPR-145"
 title: "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine —"
-status: approved
+status: done
 approved_at: "2026-06-22T21:13:20.773Z"
+completed_at: "2026-07-22T20:00:41.695Z"
+completed_by_commit: "5aa1419"
 program_focus: "data-quality"
 
 goal: |
@@ -21,6 +23,7 @@ items:
     title: "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-07-22T20:00:41.695Z"
 
 created_at: "2026-06-22T21:13:20.773Z"

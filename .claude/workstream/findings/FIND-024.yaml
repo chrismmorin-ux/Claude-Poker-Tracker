@@ -1,7 +1,7 @@
 id: "FIND-024"
 title: "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals"
 severity: MEDIUM
-status: open
+status: resolved
 category: "provenance"
 program: "data-quality"
 problem_class: "Data Consistency"
@@ -31,3 +31,4 @@ dedup_key: "provenance-audit-data-quality-live-hud-raw-percent-no-sample-paralle
 created_at: "2026-06-19"
 updated_at: "2026-06-19"
 promoted_to: "WS-236"
+resolved_at: "2026-07-22T20:00:41.695Z"

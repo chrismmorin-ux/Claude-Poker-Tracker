@@ -10,7 +10,7 @@
  */
 
 import { escapeHtml, renderMiniCard, buildSeatArcPositions } from './render-utils.js';
-import { STYLE_COLORS } from '../shared/stats-engine.js';
+import { STYLE_COLORS, sampleQualityTier, SAMPLE_QUALITY_COLORS } from '../shared/stats-engine.js';
 import {
   renderRangeBreakdownSection,
   renderAllRecsSection, renderStreetTendenciesSection,
@@ -1219,6 +1219,123 @@ export const buildSeatArcHTML = (physicalStats, tableState, seatMap, opts = {}) 
     }
 
     html += `</div>`;
+  }
+
+  return html;
+};
+
+// =========================================================================
+// SEAT POPOVER (SR-6.5 pure builder; extracted from side-panel.js for
+// testability per the pure/impure split — WS-236)
+// =========================================================================
+
+/**
+ * Render the DATA/PARTIAL/EST sample-quality badge for a raw capture count.
+ * WS-236 / FIND-024: visible attribution on locally-computed villain stats.
+ * Tier + colors come from shared/stats-engine.js (single threshold source,
+ * DP-004 parity). Distinct concept-class from renderConfidenceBadge — see
+ * stats-engine.js comment.
+ *
+ * @param {number|null|undefined} sampleSize
+ * @returns {string} HTML
+ */
+export const renderSampleQualityBadge = (sampleSize) => {
+  const tier = sampleQualityTier(sampleSize);
+  const colors = SAMPLE_QUALITY_COLORS[tier];
+  return `<span class="sample-quality-badge" style="background:${colors.bg};color:${colors.text};font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;letter-spacing:0.5px" title="${tier === 'DATA' ? 'Observed sample large enough to lean on' : tier === 'PARTIAL' ? 'Directional read only — small sample' : 'Estimate — very few observed hands'}">${tier}</span>`;
+};
+
+/**
+ * Build the seat popover HTML (villain profile details on seat-circle tap).
+ * Returns null when there is nothing to show. DOM writes happen in
+ * side-panel.js renderSeatPopover.
+ *
+ * WS-236 / FIND-024 attribution rules:
+ *  - header shows the raw observed count in `Nh` form whenever > 0 —
+ *    independent of whether a style label exists (previously hidden below
+ *    the style threshold, i.e. exactly when attribution mattered most)
+ *  - the Stats section label carries the DATA/PARTIAL/EST quality badge
+ *
+ * @param {number} seatNum
+ * @param {Object|null} appSeatData - { [seat]: exploit push data }
+ * @param {Object|null} cachedSeatStats - { [seat]: stats-engine output }
+ * @returns {string|null} HTML string or null
+ */
+export const buildSeatPopoverHtml = (seatNum, appSeatData, cachedSeatStats) => {
+  const app = (appSeatData || {})[seatNum];
+  const vp = app?.villainProfile;
+  const seatStats = cachedSeatStats?.[seatNum];
+
+  if (!vp && !seatStats) return null;
+
+  const sampleSize = seatStats?.sampleSize || 0;
+  const sampleHtml = sampleSize > 0
+    ? `<span style="font-size:var(--type-meta-stat);color:var(--text-faint)">${sampleSize}h</span>`
+    : '';
+
+  let html = '';
+
+  // Header: seat + style + sample count (count renders with or without style)
+  const style = seatStats?.style || app?.style;
+  html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">`;
+  html += `<span style="font-weight:bold;color:var(--gold)">Seat ${seatNum}</span>`;
+  if (style) {
+    const colors = STYLE_COLORS[style] || STYLE_COLORS.Unknown;
+    html += `<span class="uh-style-badge" style="background:${colors.bg};color:${colors.text}">${style}</span>`;
+  }
+  html += sampleHtml;
+  html += `</div>`;
+
+  // Villain profile (from app)
+  if (vp?.headline) {
+    html += `<div class="seat-popover-headline">${escapeHtml(vp.headline)}</div>`;
+  } else if (app?.villainHeadline) {
+    html += `<div class="seat-popover-headline">${escapeHtml(app.villainHeadline)}</div>`;
+  }
+  if (vp?.maturityLabel) {
+    html += `<div style="font-size:var(--type-meta-stat);color:var(--text-muted);margin-bottom:4px">${escapeHtml(vp.maturityLabel)} (${vp.totalObservations || 0} obs)</div>`;
+  }
+  if (vp?.decisionModelDescription) {
+    html += `<div class="seat-popover-trait">${escapeHtml(vp.decisionModelDescription)}</div>`;
+  }
+
+  // Basic stats (always available from local capture, even without app).
+  // WS-236: label row carries the sample-quality badge + Nh count so the
+  // raw percentages below are never read without their sample context.
+  if (seatStats && sampleSize > 0) {
+    html += `<div class="seat-popover-label" style="display:flex;align-items:center;gap:6px">Stats ${renderSampleQualityBadge(sampleSize)}${sampleHtml}</div>`;
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat)">`;
+    if (seatStats.vpip != null) html += `<span style="color:var(--text-muted)">VPIP</span><span style="font-weight:600">${seatStats.vpip}%</span>`;
+    if (seatStats.pfr != null) html += `<span style="color:var(--text-muted)">PFR</span><span style="font-weight:600">${seatStats.pfr}%</span>`;
+    if (seatStats.af != null) html += `<span style="color:var(--text-muted)">AF</span><span style="font-weight:600">${seatStats.af === Infinity ? '∞' : seatStats.af.toFixed(1)}</span>`;
+    html += `</div>`;
+    // App-provided stats
+    if (app?.stats) {
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat);margin-top:2px">`;
+      if (app.stats.cbet != null) html += `<span style="color:var(--text-muted)">C-Bet</span><span style="font-weight:600">${app.stats.cbet}%</span>`;
+      if (app.stats.foldToCbet != null) html += `<span style="color:var(--text-muted)">Fold CB</span><span style="font-weight:600">${app.stats.foldToCbet}%</span>`;
+      html += `</div>`;
+    }
+  }
+
+  // Aggression response (from app villain profile)
+  if (vp?.aggressionResponse) {
+    const ar = vp.aggressionResponse;
+    const parts = [];
+    if (ar.facingBet) parts.push(`Facing bet: ${escapeHtml(ar.facingBet)}`);
+    if (ar.facingRaise) parts.push(`Facing raise: ${escapeHtml(ar.facingRaise)}`);
+    if (parts.length > 0) {
+      html += `<div class="seat-popover-label">Aggression</div>`;
+      html += `<div class="seat-popover-trait">${parts.join(' · ')}</div>`;
+    }
+  }
+
+  // Vulnerabilities
+  if (vp?.vulnerabilities?.length > 0) {
+    html += `<div class="seat-popover-label">Vulnerabilities</div>`;
+    for (const v of vp.vulnerabilities.slice(0, 4)) {
+      html += `<div class="seat-popover-vuln">• ${escapeHtml(v.label || v.id || '')}</div>`;
+    }
   }
 
   return html;

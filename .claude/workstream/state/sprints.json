@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-06-22T21:09:18.146Z",
-  "updated_by_event": "ev-1782162558145-d995a06b2e8f",
+  "updated_at": "2026-07-22T20:00:42.522Z",
+  "updated_by_event": "ev-1784750442522-e278fe77d226",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2347,7 +2347,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-145": {
+      "id": "SPR-145",
+      "title": "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine —",
+      "status": "done",
+      "program_focus": "data-quality",
+      "created_at": "2026-06-22T21:13:20.773Z",
+      "approved_at": "2026-06-22T21:13:20.773Z",
+      "completed_at": "2026-07-22T20:00:41.695Z",
+      "goal": "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1782162558145-d995a06b2e8f"
+  "last_event_log_head": "ev-1784750442522-e278fe77d226"
 }

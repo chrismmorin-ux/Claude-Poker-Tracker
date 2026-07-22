@@ -33,6 +33,7 @@ import {
   classifyBetweenHandsMode,
   buildBetweenHandsHTML,
   buildSeatArcHTML,
+  buildSeatPopoverHtml,
   buildMoreAnalysisHTML,
   buildModelAuditHTML,
   buildStreetProgressHTML,
@@ -1559,82 +1560,9 @@ injectTokens();
 
   const seatPopover = $('seat-popover');
 
-  // SR-6.5: pure builder — returns HTML string for a seat popover, or null
-  // if there's nothing to show. DOM writes happen in renderSeatPopover.
-  const buildSeatPopoverHtml = (seatNum, appSeatData, cachedSeatStats) => {
-    const app = (appSeatData || {})[seatNum];
-    const vp = app?.villainProfile;
-    const seatStats = cachedSeatStats?.[seatNum];
-
-    if (!vp && !seatStats) return null;
-
-    let html = '';
-
-    // Header: seat + style
-    const style = seatStats?.style || app?.style;
-    if (style) {
-      const colors = stats.STYLE_COLORS[style] || stats.STYLE_COLORS.Unknown;
-      html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">`;
-      html += `<span style="font-weight:bold;color:var(--gold)">Seat ${seatNum}</span>`;
-      html += `<span class="uh-style-badge" style="background:${colors.bg};color:${colors.text}">${style}</span>`;
-      if (seatStats?.sampleSize) html += `<span style="font-size:var(--type-meta-stat);color:var(--text-faint)">${seatStats.sampleSize}h</span>`;
-      html += `</div>`;
-    } else {
-      html += `<div style="font-weight:bold;color:var(--gold);margin-bottom:6px">Seat ${seatNum}</div>`;
-    }
-
-    // Villain profile (from app)
-    if (vp?.headline) {
-      html += `<div class="seat-popover-headline">${escapeHtml(vp.headline)}</div>`;
-    } else if (app?.villainHeadline) {
-      html += `<div class="seat-popover-headline">${escapeHtml(app.villainHeadline)}</div>`;
-    }
-    if (vp?.maturityLabel) {
-      html += `<div style="font-size:var(--type-meta-stat);color:var(--text-muted);margin-bottom:4px">${escapeHtml(vp.maturityLabel)} (${vp.totalObservations || 0} obs)</div>`;
-    }
-    if (vp?.decisionModelDescription) {
-      html += `<div class="seat-popover-trait">${escapeHtml(vp.decisionModelDescription)}</div>`;
-    }
-
-    // Basic stats (always available from local capture, even without app)
-    if (seatStats && seatStats.sampleSize > 0) {
-      html += `<div class="seat-popover-label">Stats</div>`;
-      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat)">`;
-      if (seatStats.vpip != null) html += `<span style="color:var(--text-muted)">VPIP</span><span style="font-weight:600">${seatStats.vpip}%</span>`;
-      if (seatStats.pfr != null) html += `<span style="color:var(--text-muted)">PFR</span><span style="font-weight:600">${seatStats.pfr}%</span>`;
-      if (seatStats.af != null) html += `<span style="color:var(--text-muted)">AF</span><span style="font-weight:600">${seatStats.af === Infinity ? '\u221E' : seatStats.af.toFixed(1)}</span>`;
-      html += `</div>`;
-      // App-provided stats
-      if (app?.stats) {
-        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:var(--type-meta-stat);margin-top:2px">`;
-        if (app.stats.cbet != null) html += `<span style="color:var(--text-muted)">C-Bet</span><span style="font-weight:600">${app.stats.cbet}%</span>`;
-        if (app.stats.foldToCbet != null) html += `<span style="color:var(--text-muted)">Fold CB</span><span style="font-weight:600">${app.stats.foldToCbet}%</span>`;
-        html += `</div>`;
-      }
-    }
-
-    // Aggression response (from app villain profile)
-    if (vp?.aggressionResponse) {
-      const ar = vp.aggressionResponse;
-      const parts = [];
-      if (ar.facingBet) parts.push(`Facing bet: ${escapeHtml(ar.facingBet)}`);
-      if (ar.facingRaise) parts.push(`Facing raise: ${escapeHtml(ar.facingRaise)}`);
-      if (parts.length > 0) {
-        html += `<div class="seat-popover-label">Aggression</div>`;
-        html += `<div class="seat-popover-trait">${parts.join(' \u00B7 ')}</div>`;
-      }
-    }
-
-    // Vulnerabilities
-    if (vp?.vulnerabilities?.length > 0) {
-      html += `<div class="seat-popover-label">Vulnerabilities</div>`;
-      for (const v of vp.vulnerabilities.slice(0, 4)) {
-        html += `<div class="seat-popover-vuln">\u2022 ${escapeHtml(v.label || v.id || '')}</div>`;
-      }
-    }
-
-    return html;
-  };
+  // SR-6.5 pure builder moved to render-orchestrator.js (WS-236) so the
+  // popover attribution rules are covered by the DOM test suite. This file
+  // only owns the DOM writes (renderSeatPopover below).
 
   // SR-6.5: renderSeatPopover owns every DOM write for the popover.
   // Reads FSM state + seatPopoverDetail (seat + coords) from the snapshot.

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-06-21T02:30:40.840Z",
-  "updated_by_event": "ev-1782009040840-5e1962e7df7c",
+  "updated_at": "2026-07-22T20:00:42.522Z",
+  "updated_by_event": "ev-1784750442522-e278fe77d226",
   "items": {
     "FIND-014": {
       "id": "FIND-014",
@@ -120,11 +120,12 @@
       "title": "Live HUD shows raw villain % with no sample size, via a parallel stats engine that bypasses the main-app Bayesian intervals",
       "severity": "MEDIUM",
       "category": "provenance",
-      "status": "open",
+      "status": "resolved",
       "program": "data-quality",
       "dedup_key": "provenance-audit-data-quality-live-hud-raw-percent-no-sample-parallel-stats-engine",
       "promoted_to": "WS-236",
-      "created_at": "2026-06-19"
+      "created_at": "2026-06-19",
+      "resolved_at": "2026-07-22T20:00:41.695Z"
     },
     "FIND-025": {
       "id": "FIND-025",
@@ -235,5 +236,5 @@
       "created_at": "2026-06-20"
     }
   },
-  "last_event_log_head": "ev-1782009040840-5e1962e7df7c"
+  "last_event_log_head": "ev-1784750442522-e278fe77d226"
 }

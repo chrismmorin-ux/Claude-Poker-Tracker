@@ -11,6 +11,43 @@
 export const MIN_STYLE_SAMPLE = 20;
 
 // =========================================================================
+// SAMPLE-QUALITY TIER (WS-236 / FIND-024)
+// =========================================================================
+// Categorical quality label for raw capture sample sizes. Vocabulary and
+// thresholds mirror the main app's LiveAdviceBar ConfidenceBadge (DP-004)
+// so the same words mean the same thing on every surface. Single source —
+// do not restate these thresholds at render sites.
+//
+// Distinct concept-class from the closed 4-tier confidence register in
+// render-confidence.js: that register is scoped to engine MODEL outputs
+// (shell-spec §III.5); these tiers qualify raw observed-hand counts.
+
+export const SAMPLE_QUALITY_THRESHOLDS = Object.freeze({
+  DATA: 15,     // enough observed hands to lean on directly
+  PARTIAL: 5,   // directional read only
+});                // below PARTIAL → 'EST'
+
+/**
+ * @param {number|null|undefined} sampleSize - Observed preflop hand count
+ * @returns {'DATA'|'PARTIAL'|'EST'}
+ */
+export const sampleQualityTier = (sampleSize) => {
+  const n = Number(sampleSize) || 0;
+  if (n >= SAMPLE_QUALITY_THRESHOLDS.DATA) return 'DATA';
+  if (n >= SAMPLE_QUALITY_THRESHOLDS.PARTIAL) return 'PARTIAL';
+  return 'EST';
+};
+
+// Badge colors mirror LiveAdviceBar (green/amber/grey family) — deliberately
+// NOT the --conf-tier-* token set, which belongs to the model-confidence
+// concept-class.
+export const SAMPLE_QUALITY_COLORS = Object.freeze({
+  DATA:    { bg: '#14532d', text: '#22c55e' },
+  PARTIAL: { bg: '#422006', text: '#f59e0b' },
+  EST:     { bg: '#1f2937', text: '#6b7280' },
+});
+
+// =========================================================================
 // PER-HAND PREFLOP ANALYSIS
 // =========================================================================
 
@@ -43,13 +80,19 @@ export const analyzePreflopContext = (actions) => {
         limpOpportunity: false,
         vpip: false,
         pfr: false,
+        _actedBefore: false,
       });
     }
     const ctx = seatContext.get(seat);
 
-    // Before processing action: did this seat face a raise?
-    if (raiseCount >= 1) {
-      ctx.facedRaise = true;
+    // Canonical parity (tendencyCalculations.didPlayerFaceRaise): a seat
+    // "faced a raise" ONLY if a raise happened before its FIRST preflop
+    // action. A raiser who later faces a re-raise is NOT a facedRaise —
+    // that would inflate the 3-bet-opportunity denominator. Pinned by
+    // src/utils/__tests__/statsEngineParity.seam.test.js (WS-236).
+    if (!ctx._actedBefore) {
+      ctx.facedRaise = raiseCount >= 1;
+      ctx._actedBefore = true;
     }
 
     // Limp opportunity: seat can voluntarily enter the pot preflop before any raise
@@ -60,7 +103,9 @@ export const analyzePreflopContext = (actions) => {
     if (a.action === 'raise') {
       ctx.vpip = true;
       ctx.pfr = true;
-      if (raiseCount >= 1) {
+      // Canonical 3-bet: raise by a seat whose FIRST action already faced a
+      // raise (extract3BetStats: threeBet = facedRaise && some(RAISE)).
+      if (ctx.facedRaise) {
         ctx.threeBet = true;
       }
       raiseCount++;
@@ -74,7 +119,13 @@ export const analyzePreflopContext = (actions) => {
     } else if (a.action === 'bet') {
       ctx.vpip = true;
     } else if (a.action === 'fold') {
-      if (ctx.facedRaise && raiseCount >= 2 && ctx.pfr) {
+      // Canonical fold-to-3bet (extract3BetStats: facedRaise && !threeBet
+      // && folded). NOTE the canonical semantics are broader than the name:
+      // any fold while facing a raise (incl. fold-to-open) counts when the
+      // seat never raised. Parity pins the extension to that definition;
+      // whether the definition itself is right is a domain-correctness
+      // question flagged at WS-236 close-out.
+      if (ctx.facedRaise && !ctx.pfr) {
         ctx.foldTo3Bet = true;
       }
     }

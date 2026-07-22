@@ -14,10 +14,13 @@ import {
   computeVisibility,
   buildUnifiedHeaderHTML,
   buildSeatArcHTML,
+  buildSeatPopoverHtml,
+  renderSampleQualityBadge,
   buildMoreAnalysisHTML,
   buildModelAuditHTML,
   buildStatusBar,
 } from '../render-orchestrator.js';
+import { sampleQualityTier } from '../../shared/stats-engine.js';
 import { STATUS_TIERS } from '../../shared/render-status.js';
 import {
   flopWithAdvice,
@@ -777,4 +780,107 @@ describe('no undefined/null text in rendered HTML', () => {
       expect(audit.html).not.toContain('>null<');
     });
   }
+});
+
+// =========================================================================
+// SEAT POPOVER — WS-236 / FIND-024 stat attribution
+// =========================================================================
+
+describe('sample quality badge (WS-236)', () => {
+  it('tiers follow the DP-004 thresholds (15/5)', () => {
+    expect(sampleQualityTier(0)).toBe('EST');
+    expect(sampleQualityTier(4)).toBe('EST');
+    expect(sampleQualityTier(5)).toBe('PARTIAL');
+    expect(sampleQualityTier(14)).toBe('PARTIAL');
+    expect(sampleQualityTier(15)).toBe('DATA');
+    expect(sampleQualityTier(500)).toBe('DATA');
+    expect(sampleQualityTier(null)).toBe('EST');
+    expect(sampleQualityTier(undefined)).toBe('EST');
+  });
+
+  it('renders the tier label in a badge span', () => {
+    expect(renderSampleQualityBadge(30)).toContain('DATA');
+    expect(renderSampleQualityBadge(30)).toContain('sample-quality-badge');
+    expect(renderSampleQualityBadge(7)).toContain('PARTIAL');
+    expect(renderSampleQualityBadge(2)).toContain('EST');
+  });
+});
+
+describe('buildSeatPopoverHtml (WS-236)', () => {
+  const statsFor = (over = {}) => ({
+    vpip: 67, pfr: 33, af: 1.5, style: null, sampleSize: 3, ...over,
+  });
+
+  it('returns null when there is nothing to show', () => {
+    expect(buildSeatPopoverHtml(4, {}, {})).toBeNull();
+    expect(buildSeatPopoverHtml(4, null, null)).toBeNull();
+  });
+
+  it('small sample WITHOUT style still shows the Nh count in the header (the FIND-024 gap)', () => {
+    const html = buildSeatPopoverHtml(2, {}, { 2: statsFor() });
+    expect(html).toContain('Seat 2');
+    expect(html).toContain('3h');
+    expect(html).not.toContain('uh-style-badge'); // no style at n=3
+  });
+
+  it('stats section carries the quality badge next to the label', () => {
+    const est = buildSeatPopoverHtml(2, {}, { 2: statsFor() });
+    expect(est).toContain('sample-quality-badge');
+    expect(est).toContain('EST');
+
+    const partial = buildSeatPopoverHtml(2, {}, { 2: statsFor({ sampleSize: 8 }) });
+    expect(partial).toContain('PARTIAL');
+
+    const data = buildSeatPopoverHtml(2, {}, { 2: statsFor({ sampleSize: 45, style: 'TAG' }) });
+    expect(data).toContain('DATA');
+    expect(data).toContain('45h');
+    expect(data).toContain('uh-style-badge');
+  });
+
+  it('raw percentages never render without the sample context in the same section', () => {
+    const html = buildSeatPopoverHtml(2, {}, { 2: statsFor() });
+    // VPIP shown → badge + count must be present too
+    expect(html).toContain('VPIP');
+    expect(html).toContain('sample-quality-badge');
+    expect(html).toContain('3h');
+  });
+
+  it('villain-profile-only seat (no local stats) renders without a stats grid or badge', () => {
+    const app = { 3: { style: 'TAG', villainProfile: { headline: 'Solid reg' } } };
+    const html = buildSeatPopoverHtml(3, app, {});
+    expect(html).toContain('Solid reg');
+    expect(html).not.toContain('VPIP');
+    expect(html).not.toContain('sample-quality-badge');
+  });
+
+  it('escapes app-provided text', () => {
+    const app = { 3: { villainProfile: { headline: '<img src=x onerror=alert(1)>' } } };
+    const html = buildSeatPopoverHtml(3, app, {});
+    expect(html).not.toContain('<img');
+    expect(html).toContain('&lt;img');
+  });
+
+  it('AF Infinity renders as the infinity glyph', () => {
+    const html = buildSeatPopoverHtml(2, {}, { 2: statsFor({ af: Infinity, sampleSize: 20 }) });
+    expect(html).toContain('∞');
+    expect(html).not.toContain('Infinity');
+  });
+
+  it('no "undefined"/"null" text across all fullNineHanded seats', () => {
+    for (const seat of [1, 2, 3, 4, 6, 7, 8, 9]) {
+      const html = buildSeatPopoverHtml(seat, fullNineHanded.appSeatData, fullNineHanded.cachedSeatStats);
+      expect(html).toBeTruthy();
+      expect(html).not.toContain('undefined');
+      expect(html).not.toContain('>null<');
+    }
+  });
+
+  it('every seat with a stats grid shows a quality badge (fullNineHanded sweep)', () => {
+    for (const seat of [1, 2, 3, 4, 6, 7, 8, 9]) {
+      const html = buildSeatPopoverHtml(seat, fullNineHanded.appSeatData, fullNineHanded.cachedSeatStats);
+      if (html.includes('VPIP')) {
+        expect(html).toContain('sample-quality-badge');
+      }
+    }
+  });
 });
