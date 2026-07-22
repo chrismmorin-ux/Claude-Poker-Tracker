@@ -1270,3 +1270,39 @@ sprints:
     created_at: "2026-06-20T23:09:17.128Z"
     completed_at: "2026-06-20T23:35:27.305Z"
 
+  - id: "SPR-141"
+    title: "Ship WS-250: Engine low-severity nits + missing live tells (FIND-030, FIND-032, FIND-033)"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-06-20T23:57:22.106Z"
+    completed_at: "2026-06-21T00:55:13.251Z"
+
+  - id: "SPR-142"
+    title: "Ship WS-235: Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "data-quality"
+    created_at: "2026-06-21T01:08:08.616Z"
+    completed_at: "2026-06-21T02:30:39.898Z"
+
+  - id: "SPR-143"
+    title: "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D "
+    status: approved
+    item_count: 1
+    items_done: 0
+    program_focus: "design"
+    created_at: "2026-06-21T02:43:50.044Z"
+    completed_at: null
+
+  - id: "SPR-144"
+    title: "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D "
+    status: abandoned
+    item_count: 1
+    items_done: 0
+    program_focus: "design"
+    created_at: "2026-06-22T20:50:08.731Z"
+    completed_at: null
+

@@ -2,10 +2,11 @@ id: "WS-235"
 title: "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: null
 completed_at: null
+completion_commit: "ecd20b8"
 priority_score: 8.0
 priority_label: "P1"
 category: "provenance"
@@ -43,7 +44,7 @@ blocked_by_legacy: []
 enables: []
 sprint_id: ""
 decision_flags: ["origin-answered-founder-estimate", "step2-needs-pool-hands"]
-status_note: "FIND-023 (HIGH). Origin answered 2026-06-19 (founder estimate). STEP 1 DONE 2026-06-19 — all 4 prior groups stamped 'founder estimate' (bayesianConfidence/populationPriors/gameTreeConstants/villainModelData), comment-only, 56/56 prior-module tests pass, zero numeric change. STEP 2 (empirical pool-baseline deriver) remains — needs accumulated pool hands via Ignition capture + export. WS stays OPEN until Step 2."
+status_note: "FIND-023 (HIGH). Origin answered 2026-06-19 (founder estimate). STEP 1 DONE 2026-06-19 — all 4 prior groups stamped 'founder estimate', comment-only, zero numeric change. STEP 2 DONE 2026-06-21 (SPR-142) — new src/utils/exploitEngine/poolBaseline.js derives a per-game-type empirical pool baseline (segmentKey by source+gameType: live/online never pooled), leave-one-out guard (excludePlayerId — villain never shrinks toward a baseline built from its own hands), sample-weighted hierarchical blend with the founder estimate (Beta(a0+k, b0+n-k); pseudocount capped at POOL_PRIOR_MAX_PSEUDOCOUNT=200 for between-player overdispersion, mean keeps converging). WIRED via analysisPipeline (memoized pool index keyed by hands ref) → derivePercentages intervals + generateExploits (runWithStatPriors swap covers statRules + rangeRules); opt-in by passing sessions, static-estimate fallback otherwise. usePlayerTendencies loads sessions + passes them. 16 new poolBaseline tests; full suite 12600 pass, build clean. Self-weighting → inert until a real pool accumulates. DEFERRED follow-ups: (a) range-grid + preflop fold/limp/open priors (populationPriors.js) stay founder-estimate — derivePercentages doesn't emit those splits; (b) useOnlineAnalysis HUD unwired — needs cross-session online-pool aggregation (single-session pool too thin). Core Step-2 accept criteria met."
 finding_id: "FIND-023"
 source:
   origin: "provenance-audit-baseline"
@@ -51,3 +52,4 @@ source:
   source_line: 0
 created_at: "2026-06-19"
 updated_at: "2026-06-19"
+closed_by_event: "ev-1782009039949-44622bf36e28"

@@ -1,0 +1,29 @@
+id: "SPR-142"
+title: "Ship WS-235: Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
+status: done
+approved_at: "2026-06-21T01:08:08.616Z"
+completed_at: "2026-06-21T02:30:39.898Z"
+completed_by_commit: "ecd20b8"
+program_focus: "data-quality"
+
+goal: |
+  Ship WS-235: Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-21T01:08:08.616Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-235 selected (8 × no damping = 8).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-235"
+    title: "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-06-21T02:30:39.898Z"
+
+created_at: "2026-06-21T01:08:08.616Z"

@@ -305,8 +305,12 @@ export const classifyStyle = (pct) => {
 // DERIVED PERCENTAGES
 // =============================================================================
 
-export const derivePercentages = (stats) => {
+export const derivePercentages = (stats, statPriors = STAT_PRIORS) => {
   if (!stats) return { vpip: null, pfr: null, af: null, threeBet: null, cbet: null, foldToCbet: null, foldTo3Bet: null, sampleSize: 0 };
+
+  // Priors for the credible intervals: segmented empirical baseline when supplied
+  // (WS-235 Step 2), else the static founder estimate. Defaulted per-stat for safety.
+  const P = statPriors || STAT_PRIORS;
 
   const sampleSize = stats.handsSeenPreflop;
 
@@ -344,17 +348,17 @@ export const derivePercentages = (stats) => {
   if (sampleSize > 0) {
     intervals = {};
     if (stats.vpipCount != null)
-      intervals.vpip = credibleInterval(stats.vpipCount, sampleSize, STAT_PRIORS.vpip.alpha, STAT_PRIORS.vpip.beta);
+      intervals.vpip = credibleInterval(stats.vpipCount, sampleSize, P.vpip.alpha, P.vpip.beta);
     if (stats.pfrCount != null)
-      intervals.pfr = credibleInterval(stats.pfrCount, sampleSize, STAT_PRIORS.pfr.alpha, STAT_PRIORS.pfr.beta);
+      intervals.pfr = credibleInterval(stats.pfrCount, sampleSize, P.pfr.alpha, P.pfr.beta);
     if (stats.threeBetCount != null && stats.facedRaisePreflop > 0)
-      intervals.threeBet = credibleInterval(stats.threeBetCount, stats.facedRaisePreflop, STAT_PRIORS.threeBet.alpha, STAT_PRIORS.threeBet.beta);
+      intervals.threeBet = credibleInterval(stats.threeBetCount, stats.facedRaisePreflop, P.threeBet.alpha, P.threeBet.beta);
     if (stats.cbetCount != null && stats.pfAggressorFlops > 0)
-      intervals.cbet = credibleInterval(stats.cbetCount, stats.pfAggressorFlops, STAT_PRIORS.cbet.alpha, STAT_PRIORS.cbet.beta);
+      intervals.cbet = credibleInterval(stats.cbetCount, stats.pfAggressorFlops, P.cbet.alpha, P.cbet.beta);
     if (stats.foldedToCbet != null && stats.facedCbet > 0)
-      intervals.foldToCbet = credibleInterval(stats.foldedToCbet, stats.facedCbet, STAT_PRIORS.foldToCbet.alpha, STAT_PRIORS.foldToCbet.beta);
+      intervals.foldToCbet = credibleInterval(stats.foldedToCbet, stats.facedCbet, P.foldToCbet.alpha, P.foldToCbet.beta);
     if (stats.foldTo3BetCount != null && stats.facedRaisePreflop > 0)
-      intervals.foldTo3Bet = credibleInterval(stats.foldTo3BetCount, stats.facedRaisePreflop, STAT_PRIORS.foldTo3Bet.alpha, STAT_PRIORS.foldTo3Bet.beta);
+      intervals.foldTo3Bet = credibleInterval(stats.foldTo3BetCount, stats.facedRaisePreflop, P.foldTo3Bet.alpha, P.foldTo3Bet.beta);
   }
 
   return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize, intervals };

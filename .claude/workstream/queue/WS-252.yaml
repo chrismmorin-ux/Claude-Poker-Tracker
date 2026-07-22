@@ -1,0 +1,60 @@
+id: "WS-252"
+title: "Wire sizing-tell correlation into live bluff-catch thresholds (N-gated + confidence-gated + per-street)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 7.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Follow-up to WS-250 (FIND-032). The sizing-tell read (Pearson r over bet-fraction
+  vs shown-hand strength) is now COMPUTED (decisionAccumulator.sizingTells) and
+  SURFACED (villainProfileBuilder.buildAwareness → AwarenessPanel + decision-model
+  description, direction-aware). WS-250 deliberately stopped at surface-only so a
+  noisy small-sample correlation could never flip a live EV decision.
+
+  This ticket wires the confirmed sizing tell into the live game-tree bluff-catch
+  decision (gameTreeDepth2 / gameTreeEquity bluff-catch thresholds): a POSITIVE
+  correlation should shade toward folding marginal hands to large bets and calling
+  small bets; an INVERSE correlation the opposite. Must be a bounded nudge behind a
+  strict sample-size + confidence gate — never a hard override (consequence-weighted
+  confidence, exploitEngine/CLAUDE.md §2).
+
+  Also owns the PER-STREET refinement: today's correlation pools all streets, which
+  can be spurious because bet sizes naturally grow across streets while strength
+  evolves. Per-street splitting matters most once it drives EV — and needs more
+  samples than the surface display does, so it lives here, not in WS-250.
+accept_criteria: |
+  - Sizing-tell correlation feeds bluff-catch call/fold thresholds, gated by both
+    sample count and bayesianSampleConfidence; bounded magnitude, no hard override.
+  - Direction-aware (positive vs inverse correlation produce opposite shades).
+  - Per-street correlation computed + gated independently; pooled-street correlation
+    no longer drives EV once per-street is available.
+  - Tests: EV decision flips only above the gate; below gate, behavior unchanged.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-032"
+  run_id: "ws-250-followup"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Deferred from WS-250 by founder decision (surface-only this sprint). The display
+  + classification path is already shipped; this is the EV-wiring half.

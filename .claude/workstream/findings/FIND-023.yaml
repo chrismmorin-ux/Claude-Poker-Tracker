@@ -1,7 +1,7 @@
 id: "FIND-023"
 title: "Population priors are uncited hand-authored constants — the whole Bayesian model shrinks toward an unattributed baseline"
 severity: HIGH
-status: open
+status: resolved
 category: "provenance"
 program: "data-quality"
 problem_class: "Data Consistency"
@@ -37,3 +37,4 @@ dedup_key: "provenance-audit-data-quality-population-priors-uncited-hand-authore
 created_at: "2026-06-19"
 updated_at: "2026-06-19"
 promoted_to: "WS-235"
+resolved_at: "2026-06-21T02:30:39.898Z"

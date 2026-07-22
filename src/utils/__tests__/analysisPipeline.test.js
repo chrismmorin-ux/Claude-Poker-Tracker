@@ -226,7 +226,7 @@ describe('runAnalysisPipeline', () => {
 
     it('calls derivePercentages with rawStats result', async () => {
       runAnalysisPipeline(PLAYER_ID, HANDS, USER_ID);
-      expect(mocks.derivePercentages).toHaveBeenCalledWith(STUB_RAW_STATS);
+      expect(mocks.derivePercentages).toHaveBeenCalledWith(STUB_RAW_STATS, null);
     });
 
     it('calls classifyStyle with percentages result', async () => {
@@ -297,6 +297,7 @@ describe('runAnalysisPipeline', () => {
         subActionSummary: STUB_SUB_ACTION,
         traits:           STUB_RANGE_PROFILE.traits,
         pips:             STUB_RANGE_PROFILE.pips,
+        statPriors:       null, // no sessions passed → static founder estimate (WS-235)
       });
     });
 

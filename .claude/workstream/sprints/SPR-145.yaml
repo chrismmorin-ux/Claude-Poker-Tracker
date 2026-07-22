@@ -1,0 +1,26 @@
+id: "SPR-145"
+title: "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine —"
+status: approved
+approved_at: "2026-06-22T21:13:20.773Z"
+program_focus: "data-quality"
+
+goal: |
+  Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-22T21:13:20.773Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-236 selected (7 × no damping = 7).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-236"
+    title: "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-06-22T21:13:20.773Z"

@@ -1,0 +1,64 @@
+id: "WS-253"
+title: "Timing tells — data-model change to capture time-to-act per action"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 5.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Scoped (not implemented) under WS-250 (FIND-032): timing tells require data the
+  model does not currently record. Hand timelines store the action and amount per
+  entry but NOT how long the player took to act ("time-to-act"). Without that field,
+  no timing-tell calibration is possible.
+
+  SCOPE (the data-model change this ticket owns):
+  - Capture point: the action-recording path (where each timeline entry is built).
+    A monotonic timestamp delta from when it became the seat's turn to when the
+    action was dispatched yields `timeToActMs` per action entry.
+  - Storage: add an optional `timeToActMs` field on the action/timeline entry shape.
+    Rides in the existing actionSequence — no IDB migration if added as an optional
+    field (mirror the all-in flag precedent, WS-251/1aee9c7).
+  - Consumer (later, separate ticket): a timing-tell evaluator analogous to the
+    sizing-tell correlation — e.g. snap-action vs tank correlated with shown
+    strength, surfaced in buildAwareness like sizingTells.
+  - First-principles guard: any timing read is a DERIVED tell, gated by sample size +
+    confidence; it must not become a free-floating label (POKER_THEORY §7).
+
+  This ticket delivers ONLY the data-model capture + storage. The evaluator/surface
+  is a downstream follow-up once data accrues. Live-only vs replay availability of
+  reliable timing must be assessed (manual hand entry has no real timing).
+accept_criteria: |
+  - `timeToActMs` (optional) captured per action where a reliable turn-start exists
+    (live/online capture), null otherwise (manual entry).
+  - Persists with no IDB migration (optional field on the existing entry shape).
+  - No behavior change to any existing read path when the field is absent.
+  - Documented capture-availability matrix (live/online vs manual replay).
+effort: "M"
+files_involved:
+  - "src/constants/gameConstants.js"
+  - "src/reducers"
+  - "src/utils/persistence"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Turn-start timestamp source for online/Ignition capture vs main-app live entry — confirm a reliable monotonic clock exists at the capture point."
+source:
+  type: finding
+  created_by: ai
+  finding_id: "FIND-032"
+  run_id: "ws-250-followup"
+created_at: "2026-06-20T00:00:00Z"
+status_note: |
+  Deferred behind sizing-tell per WS-250 accept criteria ("scope a data-model change
+  for time-to-act"). This is the scope artifact; implementation is the data-model
+  capture only, evaluator is a later ticket.

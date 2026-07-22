@@ -15,6 +15,7 @@ import { getAllHands, getHandCount, getRangeProfile, saveRangeProfile, GUEST_USE
 import { PROFILE_VERSION } from '../utils/rangeEngine';
 import { mergeBriefings } from '../utils/exploitEngine/briefingMerge';
 import { getAllPlayers as getAllPlayersFromDB, updatePlayer } from '../utils/persistence/playersStorage';
+import { getAllSessions } from '../utils/persistence/sessionsStorage';
 import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
 /**
@@ -85,6 +86,15 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
       const dbPlayers = await getAllPlayersFromDB(userId);
       const dbPlayerMap = new Map(dbPlayers.map(p => [p.playerId, p]));
 
+      // Sessions for game-type segmentation of the empirical pool baseline (WS-235 Step 2).
+      // Loaded once per recompute; failure degrades gracefully to the static estimate.
+      let sessions = null;
+      try {
+        sessions = await getAllSessions(userId);
+      } catch (e) {
+        logger.warn('PlayerTendencies', 'session load for pool baseline failed', { error: e.message });
+      }
+
       // Run pipeline ONLY for changed players
       const freshEntries = await Promise.all(changedPlayers.map(async (player) => {
         try {
@@ -99,7 +109,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
             logger.warn('PlayerTendencies', 'range profile cache read failed', { playerId: player.playerId, error: e.message });
           }
 
-          const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile);
+          const result = runAnalysisPipeline(player.playerId, hands, userId, cachedRangeProfile, sessions);
 
           // Cache range profile if it was freshly built
           if (result.rangeProfile && !cachedRangeProfile) {

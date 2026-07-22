@@ -484,10 +484,10 @@ describe('computeBucketEVsV2 happy path (MW, 2-villain, single-combo, standard)'
   });
 
   it('cascadingFoldProbability is below the primary fold rate (multiwayFoldPct cascading)', async () => {
-    // multiwayFoldPct returns primary × per-opponent fold rates × correlation
-    // adjustment. With primary=0.55 and a 'reg' opponent style, allFoldPct must
-    // be strictly less than 0.55 (one extra opponent always reduces all-fold
-    // probability, since the function multiplies fold rates).
+    // multiwayFoldPct returns primary × ∏ per-opponent fold rates (the exact
+    // joint under conditional independence, FIND-030). With primary=0.55 and a
+    // 'reg' opponent style, allFoldPct must be strictly less than 0.55 (one extra
+    // opponent always reduces all-fold probability, since fold rates multiply).
     const out = await computeBucketEVsV2(baseMWInput);
     expect(out.cascadingFoldProbability).toBeLessThan(0.55);
   });

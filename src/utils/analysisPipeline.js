@@ -10,6 +10,7 @@
 
 import { logger } from './errorHandler';
 import { buildPlayerStats, derivePercentages, classifyStyle } from './tendencyCalculations';
+import { buildPoolIndex, predominantSegmentForPlayer, resolveStatPriors } from './exploitEngine/poolBaseline';
 import { buildPositionStats } from './exploitEngine/positionStats';
 import { countLimps } from './sessionStats';
 import { buildRangeProfile, getRangeWidthSummary, getSubActionSummary } from './rangeEngine';
@@ -23,21 +24,67 @@ import { computeVillainObservations } from './exploitEngine/villainObservations'
 import { inferVillainThoughts } from './exploitEngine/thoughtInference';
 
 /**
+ * Memoized pool-baseline index, keyed by the `hands` array reference. The tendency
+ * hooks build the full corpus once per change and pass the SAME array reference to
+ * every player's pipeline run, so this builds the segmented pool index once per corpus
+ * (not once per player). A WeakMap lets old corpora be GC'd when a new array replaces them.
+ * WS-235 Step 2.
+ */
+const poolIndexCache = new WeakMap();
+
+const getPoolIndex = (hands, sessions) => {
+  if (!Array.isArray(hands) || hands.length === 0 || !Array.isArray(sessions) || sessions.length === 0) {
+    return null;
+  }
+  if (poolIndexCache.has(hands)) return poolIndexCache.get(hands);
+  let index = null;
+  try {
+    index = buildPoolIndex(hands, sessions, buildPlayerStats);
+  } catch (e) {
+    logger.warn('AnalysisPipeline', 'pool baseline build failed', e.message);
+    index = null;
+  }
+  poolIndexCache.set(hands, index);
+  return index;
+};
+
+/**
  * Run the full analysis pipeline for a single player.
  *
  * @param {string|number} playerId - Player or pseudo-player ID
- * @param {Array} hands - Hand history array
+ * @param {Array} hands - Hand history array (the full corpus — filtered per-player internally)
  * @param {string} userId - User ID for range profile scoping
  * @param {Object|null} [cachedRangeProfile] - Pre-loaded range profile (skip build if provided)
+ * @param {Array|null} [sessions] - Session records, for game-type segmentation of the empirical
+ *        pool baseline (WS-235 Step 2). When omitted, exploits use the static founder estimate
+ *        exactly as before — the empirical baseline is strictly opt-in.
  * @returns {Object} Full analysis result
  */
-export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile = null) => {
+export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile = null, sessions = null) => {
   const TOTAL_STEPS = 8;
   const diagnostics = { errors: [], warnings: [], stepsCompleted: [] };
 
+  // Resolve the segmented empirical prior for THIS villain (leave-one-out), if a pool
+  // index is available. excludePlayerId = playerId enforces the no-self-shrinkage guard.
+  // Used for both the display credible intervals and exploit generation (WS-235 Step 2).
+  // When no sessions/pool are provided, statPriors stays null → static founder estimate.
+  let statPriors = null;
+  try {
+    const poolIndex = getPoolIndex(hands, sessions);
+    if (poolIndex) {
+      const seg = predominantSegmentForPlayer(poolIndex, playerId);
+      if (seg) {
+        statPriors = resolveStatPriors({ poolIndex, segmentKey: seg, excludePlayerId: playerId });
+      }
+    }
+  } catch (e) {
+    logger.warn('AnalysisPipeline', 'pool prior resolution failed', e.message);
+    statPriors = null; // fall back to static estimate
+  }
+
   // Steps 1-2: Core stats (must succeed — no recovery possible)
   const rawStats = buildPlayerStats(playerId, hands);
-  const pct = derivePercentages(rawStats);
+  const pct = derivePercentages(rawStats, statPriors);
   const style = classifyStyle(pct);
   const positionStats = buildPositionStats(playerId, hands);
   const limpData = countLimps(playerId, hands);
@@ -119,6 +166,7 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
       rangeProfile, rangeSummary, subActionSummary,
       traits: rangeProfile?.traits || null,
       pips: rangeProfile?.pips || null,
+      statPriors,
     });
     observations = computeVillainObservations({
       rawStats, pct, positionStats, subActionSummary,

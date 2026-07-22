@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-06-20T23:07:48.958Z",
-  "goal": "Ship WS-251: ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
-  "program_focus": "domain-correctness",
+  "composed_at": "2026-06-22T21:09:43.886Z",
+  "goal": "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
+  "program_focus": "data-quality",
   "override_class": null,
   "items": [
     {
-      "id": "WS-251",
-      "title": "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)",
-      "raw_score": 17,
-      "adjusted_score": 17,
-      "effort": "L",
-      "program": "domain-correctness",
+      "id": "WS-236",
+      "title": "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
+      "raw_score": 7,
+      "adjusted_score": 7,
+      "effort": "M",
+      "program": "data-quality",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-251 selected (17 × no damping = 17).\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-236 selected (7 × no damping = 7).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 3,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }

@@ -1,0 +1,31 @@
+id: "SPR-144"
+title: "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D "
+status: abandoned
+approved_at: "2026-06-22T20:50:08.731Z"
+abandoned_at: "2026-06-22"
+abandoned_reason: |
+  Premise check at execution found WS-234's Gate 3 research already authored (audit doc + instrument built
+  2026-06-18); the two open accept criteria are blocked on an owner-only empirical run. Founder chose to defer
+  WS-234 (status: deferred) and recompose to a shippable data-quality/domain cluster. No items were executed.
+program_focus: "design"
+
+goal: |
+  Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-06-22T20:50:08.731Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-234 selected (7 × no damping = 7).
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-234"
+    title: "Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)"
+    mode: plan-first
+    effort: L
+    status: pending
+
+created_at: "2026-06-22T20:50:08.731Z"

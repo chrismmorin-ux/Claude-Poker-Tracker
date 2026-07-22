@@ -155,7 +155,7 @@ export const betaQuantile = (p, alpha, beta) => {
 };
 
 /**
- * Continuous confidence based on effective sample size (prior + observed).
+ * Continuous confidence based on the raw observed sample size.
  * Calibrated to approximate existing breakpoints:
  *   n=2 → ~0.23, n=5 → ~0.38, n=10 → ~0.57, n=20 → ~0.77, n=50 → ~0.92
  *
@@ -163,15 +163,19 @@ export const betaQuantile = (p, alpha, beta) => {
  * capped at 0.95. The slight reduction at low n is DESIRED — the old step
  * function was too generous at n ≤ 5.
  *
+ * There is intentionally NO separate prior-pseudocount term. `n` is the RAW
+ * observed count at every call site, and the slow tau=12 saturation already
+ * embodies the §6.5 prior weight (~10 observations before a read is confident).
+ * Adding explicit Beta priors here would double-count that — which is why the
+ * formerly-"reserved" priorAlpha/priorBeta parameters were removed (FIND-030).
+ *
  * Shared in pokerCore so BOTH engines may use it (rangeEngine must never import
  * from exploitEngine). exploitEngine/bayesianConfidence.js re-exports this.
  *
- * @param {number} n - Observed (effective) sample size
- * @param {number} [priorAlpha=1] - Prior α (unused in current calibration, reserved)
- * @param {number} [priorBeta=1]  - Prior β (unused in current calibration, reserved)
+ * @param {number} n - Raw observed sample size
  * @returns {number} Confidence in [0, 1]
  */
-export const bayesianSampleConfidence = (n, priorAlpha = 1, priorBeta = 1) => {
+export const bayesianSampleConfidence = (n) => {
   if (n <= 0) return 0;
   const tau = 12;
   const floor = 0.10;

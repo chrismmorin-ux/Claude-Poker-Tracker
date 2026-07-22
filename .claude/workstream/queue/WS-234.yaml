@@ -2,7 +2,17 @@ id: "WS-234"
 title: "Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D prototype, engine API)"
 legacy_id: ""
 type: feature
-status: backlog
+status: deferred
+deferred_reason: |
+  Gate 3 research design is already authored (docs/design/audits/2026-06-18-gate3-research-projection-explorer.md)
+  and the numeric calibration instrument is built (prototypes/projection-explorer-gate3.html). 5 of 7 accept
+  criteria are met. The remaining two — the 2D-vs-3D empirical modality decision and the Gate 2 re-run to GREEN —
+  are blocked on an OWNER action the project doctrine reserves for the founder: running the instrument on a real
+  poker-tracker-backup-*.json and reporting the four calibration numbers (silhouette-full, silhouette-blind,
+  k-means disagreement %, verdict) + the 2D-vs-3D readability preference. No atlas/persona commit and no
+  projectionEngine code is permitted until that premise check lands (it may refute players-first and pivot to hands).
+  Reversible: un-defer (status: backlog) once the founder reports those numbers; WS-234 then resumes from the
+  "commit or pivot" step. Deferred 2026-06-22 (SPR-144 abandoned) to free /next for shippable work.
 claimed_by: ""
 claimed_at: null
 completed_at: null
@@ -54,4 +64,4 @@ source:
   legacy_section: ""
   source_line: 0
 created_at: "2026-06-18"
-updated_at: "2026-06-18"
+updated_at: "2026-06-22"
