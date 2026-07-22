@@ -1,0 +1,115 @@
+id: "WS-256"
+title: "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Founder-articulated doctrine (2026-07-22): derived action tags must be
+  descriptive enough to distinguish decision contexts with DIFFERENT range
+  implications. "A cold 3-bet and a 3-bet are different — a cold 3-bet usually
+  indicates a stronger and maybe slightly more polar range than a 3-bet."
+
+  Current state: rangeEngine RANGE_ACTIONS = [fold, limp, open, coldCall,
+  threeBet]. One undifferentiated threeBet class absorbs cold 3-bets, squeezes,
+  blind 3-bets, and (worse) limp-reraises are INVISIBLE to the range classes
+  entirely — actionExtractor.js classifies only the seat's FIRST preflop action,
+  so a limp-reraise lands in 'limp' and the re-raise is discarded (the range-
+  engine twin of WS-255's stat gap). Squeeze exists only as a live predicate
+  (sequenceUtils.wouldBeSqueeze) + drill content; iso-raise over limper(s) is
+  classed as 'open'. rangeEngine/CLAUDE.md already notes squeeze as designed-
+  but-not-implemented.
+
+  Proposed derived tags (each = distinct decision context, derived from sequence
+  state — prior investment, callers between, raise count, posted blinds — NEVER
+  hand-labeled, per first-principles rule "labels are outputs"):
+    No-raise tree:    open (first-in) | isoRaise (over >=1 limper) | limp
+    Facing-raise:     cold3Bet (no prior investment, no callers between)
+                      | squeeze (open + >=1 caller, POKER_THEORY §2.4)
+                      | blind3Bet (SB/BB with posted money)
+                      | limpReraise (prior limp this hand — uncapped/trap,
+                        promotes the existing subActionExtractor 'limpRaise'
+                        sub-action to a first-class range action)
+                      | coldCall vs overCall (caller already in) — evaluate
+    4-bet family (stretch): fourBet | cold4Bet/backraise — may defer to a child
+
+  Range-shape doctrine to encode in populationPriors once classes exist:
+  cold3Bet strongest/slightly polar > squeeze (polar, leveraged) > blind3Bet
+  (wider, merged); limpReraise uncapped. Live-population priors, not GTO.
+
+  CRITICAL design constraint — sparse-data fragmentation: splitting classes
+  divides the same observations across more buckets. New subclasses MUST
+  shrink hierarchically toward their parent class (subclass prior = parent
+  threeBet posterior blended by subclass sample weight), mirroring the
+  poolBaseline hierarchical-blend philosophy. Do NOT give each subclass an
+  independent flat prior and let n=1 dominate.
+
+  Surface area: rangeProfile.js schema (persisted — needs additive
+  serialization compat for existing profiles), populationPriors per
+  position×class, crossRangeConstraints normalization sets (which classes are
+  mutually exclusive per scenario), bayesianUpdater, actionExtractor
+  (per-decision-point derivation — same question as WS-255), rangeAccessors,
+  exploit consumers reading the threeBet range, RangeDetailPanel /
+  RangeProvenance UI. POKER_THEORY.md gains a taxonomy section anchoring the
+  definitions (incl. the founder's cold-3bet-vs-3bet doctrine).
+
+  MANDATORY before editing: POKER_THEORY.md + rangeEngine/CLAUDE.md.
+  Siblings: WS-254 (foldTo3Bet stat definition), WS-255 (threeBet stat /
+  limp-reraise counting) — the stats layer and range layer should land on ONE
+  consistent taxonomy; consider a shared design step before any of the three
+  ships code.
+accept_criteria: |
+  - Taxonomy authored in POKER_THEORY.md (new section): precise sequence-state
+    definition per tag + expected range-shape doctrine per tag (founder's
+    cold-3bet claim recorded), reviewed against §2.4 squeeze doctrine.
+  - Design decision recorded (likely /decide): class list, hierarchical
+    shrinkage scheme, and persistence-compat approach BEFORE implementation.
+  - actionExtractor derives tags per decision point (limp-reraise no longer
+    invisible); parity with sequenceUtils live predicates (wouldBeSqueeze,
+    wouldBeColdCall) asserted by test.
+  - RANGE_ACTIONS extended additively; existing persisted range profiles
+    deserialize cleanly (compat test); crossRangeConstraints normalization
+    updated per scenario.
+  - populationPriors per new class encode the range-shape doctrine with
+    hierarchical shrinkage toward the parent class; bayesianUpdater tests cover
+    sparse-subclass behavior (n=1 subclass observation must not swamp).
+  - Exploit-engine consumers of the threeBet range reviewed; UI surfaces
+    (RangeDetailPanel) render the refined classes or explicitly aggregate.
+  - Full rangeEngine + exploitEngine suites green.
+effort: "L"
+files_involved:
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/rangeEngine/actionExtractor.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/crossRangeConstraints.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/sequenceUtils.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Final tag list (incl. whether overCall + 4-bet family ship in v1 or defer)"
+  - "Hierarchical shrinkage scheme for sparse subclasses"
+  - "Range-profile persistence compat approach"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Founder-articulated doctrine ticket (2026-07-22). Umbrella for the derived-
+  line taxonomy; WS-254/WS-255 are the stats-layer siblings. Design-first —
+  taxonomy + shrinkage decisions gate implementation.

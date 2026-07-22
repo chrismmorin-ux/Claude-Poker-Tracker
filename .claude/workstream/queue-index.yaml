@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 136
+total_items: 137
 by_status:
   decomposed: 1
   done: 61
   in_progress: 3
   deferred: 43
-  backlog: 18
+  backlog: 19
   dismissed: 1
   completed: 7
   review: 1
@@ -19,7 +19,7 @@ by_category:
   cwos-infrastructure: 1
   data-isolation: 1
   design-comprehension: 10
-  domain-correctness: 17
+  domain-correctness: 18
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1332,6 +1332,15 @@ items:
     priority_score: 12
     category: domain-correctness
     effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-256"
+    title: "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open"
+    status: backlog
+    priority_score: 15
+    category: domain-correctness
+    effort: L
     program: domain-correctness
     capability: core
 

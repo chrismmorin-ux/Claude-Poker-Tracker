@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-22T20:06:33.107Z",
-  "updated_by_event": "ev-1784750793107-f49cd17dac34",
+  "updated_at": "2026-07-22T20:15:00.807Z",
+  "updated_by_event": "ev-1784751300807-47ea310260e1",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3433,7 +3433,38 @@
         "src/utils/exploitEngine/bayesianConfidence.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-256": {
+      "id": "WS-256",
+      "title": "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
+      "status": "backlog",
+      "priority_score": 15,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/rangeProfile.js",
+        "src/utils/rangeEngine/actionExtractor.js",
+        "src/utils/rangeEngine/populationPriors.js",
+        "src/utils/rangeEngine/crossRangeConstraints.js",
+        "src/utils/rangeEngine/bayesianUpdater.js",
+        "src/utils/sequenceUtils.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784750793107-f49cd17dac34"
+  "last_event_log_head": "ev-1784751300807-47ea310260e1"
 }
