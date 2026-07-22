@@ -3,7 +3,7 @@ adopted_at: "2026-05-01T03:46:43.573Z"
 updated_at: "2026-06-09T18:42:24.198Z"
 capabilities_enabled: [core]
 level: L1
-homebase_path: "C:/Users/chris/Claude HomeBase"
+homebase_path: "C:/Users/chris/repos/homebase"
 kit_version_at_install: 3.8.0
 installed_files:
   .claude/commands/onboard-check.md: "sha256:3ce71469ab9855b5090b8d39ac0d373ea9982030a94b3507241a4685855b0351"
