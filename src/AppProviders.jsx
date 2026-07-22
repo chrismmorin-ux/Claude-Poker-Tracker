@@ -35,6 +35,7 @@ import { manifests as refresherCardRegistry } from './utils/printableRefresher/c
 import { EngineCtxBridge } from './components/EngineCtxBridge';
 import { GUEST_USER_ID } from './constants/authConstants';
 import { GuestDataMerge } from './components/GuestDataMerge';
+import { OnlineStakesBackfill } from './components/OnlineStakesBackfill';
 
 /**
  * AppProviders - Wraps children in all context providers
@@ -116,6 +117,7 @@ export const AppProviders = ({
                     <TendencyProvider userId={authState?.user?.uid || GUEST_USER_ID}>
                       <EngineCtxBridge engineCtxGetterRef={engineCtxGetterRef} />
                       <GuestDataMerge userId={authState?.user?.uid || GUEST_USER_ID} />
+                      <OnlineStakesBackfill userId={authState?.user?.uid || GUEST_USER_ID} />
                       <AssumptionProvider>
                       <SyncBridgeProvider>
                         <CardProvider cardState={cardState} dispatchCard={dispatchCard}>

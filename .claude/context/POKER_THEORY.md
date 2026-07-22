@@ -1,7 +1,7 @@
 ---
-version: 1.2
-last_verified: 2026-06-20
-verified_by: cwos-domain-correctness-delta-2026-06-20
+version: 1.3
+last_verified: 2026-07-22
+verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
 review_cadence_days: 90
 next_review: 2026-09-18
@@ -17,6 +17,9 @@ changelog:
   - date: 2026-06-20
     version: 1.2
     change: "domain-correctness delta run reconciled two theory-vs-code drifts: §6.5 PRIOR_WEIGHT corrected ~5 → ~10 (FIND-013; matches populationPriors.js + all sibling docs), and added §11 Implemented Engine Algorithms documenting the personalized fold-curve hierarchy, SPR zones + continuous sizing multiplier, and rake-adjusted EV (FIND-012; code was ahead of the doc). No code changes."
+  - date: 2026-07-22
+    version: 1.3
+    change: "domain-correctness sweep (run-sweep-2026-07-22 / FIND-034 / WS-257): added §6.5a documenting the 3-tier empirical prior hierarchy shipped in WS-235 (founder estimate → segmented pool aggregate via poolBaseline.js → per-villain Read), incl. the live/online segmentation rule, the leave-one-out guard, and the pseudocount-cap semantics. Doc-only; code was ahead of the doc."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -380,6 +383,26 @@ P(hand | action) = P(action | hand) × P(hand) / P(action)
 - P(action): normalizing constant (overall frequency of this action)
 
 With small samples, the prior dominates. With large samples, the likelihood dominates. This is why our `bayesianUpdater.js` uses ~10 virtual observations as prior weight (`PRIOR_WEIGHT = 10` in `rangeEngine/populationPriors.js`): a player needs ~10 real observations before their data outweighs the population prior, and at ~10 hands the blend is roughly 50/50. The same pseudocount-10 convention is mirrored across the Beta-Binomial machinery (`STAT_PRIORS` in `bayesianConfidence.js`, the assumption-engine priors). At ~30+ hands the data dominates.
+
+### 6.5a Three-Tier Empirical Prior Hierarchy (pool baseline)
+
+Since WS-235 (2026-06-21), the six scalar stat priors (vpip, pfr, threeBet, cbet, foldToCbet, foldTo3Bet) are no longer a single static founder estimate. The resolved prior a villain's stats shrink toward is a **three-tier hierarchy** (`exploitEngine/poolBaseline.js`):
+
+```
+founder estimate   Beta(α₀, β₀), pseudocount α₀+β₀ = 10 — STAT_PRIORS, the subjective prior
+      ↓ conjugate blend by observed sample weight
+pool aggregate     empirical Field layer — real observed hands from the villain's own segment
+      ↓ shrunk toward (per-villain Bayesian update, unchanged)
+per-villain Read   the deviation the exploit rules act on
+```
+
+The pool tier is an exact conjugate Beta-Binomial update of the founder estimate: pool successes k over n observed decisions give `Beta(α₀+k, β₀+(n−k))` while n is under the cap. Three load-bearing rules govern it:
+
+1. **Segmentation — different populations are never pooled.** Baselines are computed per segment (`segmentKey`: live vs online source × stake label). Online (Ignition) and live 1/2 are different populations; a villain shrinks only toward the baseline of its own segment, and the founder estimate is the per-segment fallback. (WS-260, 2026-07-22, closed both known wiring defects: online sessions now record real stakes from the captured wire blinds — with a one-time backfill re-keying legacy 'NL Holdem' sessions from their stored hands — and `segmentKey` canonicalizes free-text stake labels read-side via `canonicalStakeLabel`, so cosmetic variants like '1/2' / '$1/$2' / '1/2 NL' resolve to one segment. Residual: online sessions whose hands never captured blinds stay in the legacy segment and fall back to the founder estimate; online tournament hands carry no format marker and are labeled by majority blinds — a wire-side format flag is a noted follow-up.)
+2. **Leave-one-out — non-negotiable.** The baseline a given villain shrinks toward EXCLUDES that villain's own hands (`resolveStatPriors` `excludePlayerId`). Shrinking a villain toward a pool containing itself is circular and biases every Read toward the mean. Same rule as "derived values are outputs, never self-referential inputs."
+3. **Pseudocount cap bounds confidence, not the mean.** `POOL_PRIOR_MAX_PSEUDOCOUNT = 200` caps the pool's contribution to the prior's *strength* so a well-sampled villain can still override it; the pool *mean* still converges fully to the observed pool rate (the cap rescales α, β around the exact uncapped mean). This is a pragmatic proxy for between-player overdispersion; a full hierarchical τ² estimate is the future upgrade (PMC program).
+
+Safe degradation: a thin or empty segment reproduces the static founder estimate verbatim — the module is inert until a real pool accumulates. Scope (v1): only the six scalar proportions above; range-grid priors and preflop fold/limp/open trees (`rangeEngine/populationPriors.js`) remain on the founder estimate. See `poolBaseline.js` header and `bayesianConfidence.js` provenance comment for the implementation contract.
 
 ### 6.6 Combo Counting
 - Pocket pairs: 6 combos each (AA = A♠A♥, A♠A♦, A♠A♣, A♥A♦, A♥A♣, A♦A♣)

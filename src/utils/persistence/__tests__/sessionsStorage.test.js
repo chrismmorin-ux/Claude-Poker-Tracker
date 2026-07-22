@@ -661,5 +661,53 @@ describe('sessionsStorage', () => {
       const session = await getSessionById(sessionId);
       expect(session.userId).toBe('player_99');
     });
+
+    // WS-260: real stakes capture — online sessions must segment by stake,
+    // never collapse into one 'NL Holdem' pool.
+    it('records real stakes and a stake gameType when wire blinds are provided', async () => {
+      const sessionId = await getOrCreateOnlineSession('table-stakes', 'guest', {
+        blinds: { sb: 0.02, bb: 0.05 },
+      });
+      const session = await getSessionById(sessionId);
+      expect(session.stakes).toEqual({ sb: 0.02, bb: 0.05 });
+      expect(session.gameType).toBe('0.02/0.05');
+    });
+
+    it('falls back to the legacy label when blinds are absent or null (partial capture)', async () => {
+      const id1 = await getOrCreateOnlineSession('table-noblinds', 'guest');
+      const id2 = await getOrCreateOnlineSession('table-nullblinds', 'guest', {
+        blinds: { sb: null, bb: null },
+      });
+      const s1 = await getSessionById(id1);
+      const s2 = await getSessionById(id2);
+      expect(s1.gameType).toBe('NL Holdem');
+      expect(s1.stakes).toBeNull();
+      expect(s2.gameType).toBe('NL Holdem');
+      expect(s2.stakes).toBeNull();
+    });
+
+    it('heals a stakes-less reused session once blinds arrive', async () => {
+      const created = await getOrCreateOnlineSession('table-heal', 'guest'); // no blinds yet
+      const reused = await getOrCreateOnlineSession('table-heal', 'guest', {
+        blinds: { sb: 5, bb: 10 },
+      });
+      expect(reused).toBe(created);
+      const session = await getSessionById(created);
+      expect(session.stakes).toEqual({ sb: 5, bb: 10 });
+      expect(session.gameType).toBe('5/10');
+    });
+
+    it('does not overwrite existing stakes on reuse', async () => {
+      const created = await getOrCreateOnlineSession('table-keep', 'guest', {
+        blinds: { sb: 1, bb: 2 },
+      });
+      const reused = await getOrCreateOnlineSession('table-keep', 'guest', {
+        blinds: { sb: 5, bb: 10 },
+      });
+      expect(reused).toBe(created);
+      const session = await getSessionById(created);
+      expect(session.stakes).toEqual({ sb: 1, bb: 2 });
+      expect(session.gameType).toBe('1/2');
+    });
   });
 });

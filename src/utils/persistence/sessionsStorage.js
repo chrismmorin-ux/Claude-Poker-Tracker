@@ -383,10 +383,15 @@ export const getSessionHandCount = async (sessionId) => {
  *
  * @param {string} tableId - Unique table identifier from extension
  * @param {string} userId - User ID
+ * @param {Object} [meta] - Optional table metadata from the wire capture.
+ * @param {{sb: number, bb: number}} [meta.blinds] - Real table blinds (dollars). When
+ *        present, the session records the true stakes so the pool baseline segments
+ *        online populations by stake (WS-260 / FIND-037) instead of one blended pool.
  * @returns {Promise<number>} Session ID
  */
-export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) => {
+export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID, meta = {}) => {
   try {
+    const stakes = normalizeStakes(meta.blinds);
     // Reuse-check + create happen in ONE readwrite transaction so two
     // concurrent callers can't both create a session for the same table.
     return await atomicTx([SESSIONS_STORE_NAME], (stores, tx, setResult) => {
@@ -400,17 +405,28 @@ export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) 
           const existingSession = event.target.result;
 
           if (existingSession && existingSession.userId === userId) {
-            // Reuse existing session
-            log(`Reusing online session ${existingSession.sessionId} for table ${tableId}`);
+            // Reuse existing session — heal missing stakes if the wire now has them
+            // (covers sessions created before the first blinds frame arrived).
+            if (!existingSession.stakes && stakes) {
+              const healed = {
+                ...existingSession,
+                stakes,
+                gameType: stakesLabel(stakes),
+              };
+              sessionsStore.put(healed);
+              log(`Healed stakes on online session ${existingSession.sessionId} → ${healed.gameType}`);
+            } else {
+              log(`Reusing online session ${existingSession.sessionId} for table ${tableId}`);
+            }
             setResult(existingSession.sessionId);
           } else {
             // Create new session
-            createOnlineSession(sessionsStore, tableId, userId, setResult);
+            createOnlineSession(sessionsStore, tableId, userId, stakes, setResult);
           }
         };
       } else {
         // No tableId index (pre-v12) — just create
-        createOnlineSession(sessionsStore, tableId, userId, setResult);
+        createOnlineSession(sessionsStore, tableId, userId, stakes, setResult);
       }
     });
   } catch (error) {
@@ -419,13 +435,30 @@ export const getOrCreateOnlineSession = async (tableId, userId = GUEST_USER_ID) 
   }
 };
 
-function createOnlineSession(store, tableId, userId, setResult) {
+/**
+ * Validate wire blinds into a stakes record, or null when absent/malformed.
+ * The protocol adapter can emit { sb: null, bb: null } on partial captures.
+ */
+export const normalizeStakes = (blinds) => {
+  const sb = blinds?.sb;
+  const bb = blinds?.bb;
+  if (typeof sb !== 'number' || typeof bb !== 'number' || !(sb > 0) || !(bb > 0)) return null;
+  return { sb, bb };
+};
+
+/** Display label for a stakes record, e.g. { sb: 0.02, bb: 0.05 } → '0.02/0.05'. */
+export const stakesLabel = (stakes) => `${stakes.sb}/${stakes.bb}`;
+
+function createOnlineSession(store, tableId, userId, stakes, setResult) {
   const sessionRecord = {
     startTime: Date.now(),
     endTime: null,
     isActive: false, // Online sessions don't use active session tracking
     venue: 'Ignition',
-    gameType: 'NL Holdem',
+    // Real stakes when the wire capture provides blinds; legacy placeholder otherwise
+    // (healed on a later import or by the one-time WS-260 backfill).
+    gameType: stakes ? stakesLabel(stakes) : 'NL Holdem',
+    stakes: stakes || null,
     buyIn: null,
     rebuyTransactions: [],
     cashOut: null,
@@ -443,7 +476,7 @@ function createOnlineSession(store, tableId, userId, setResult) {
 
   addRequest.onsuccess = (event) => {
     const sessionId = event.target.result;
-    log(`Created online session ${sessionId} for table ${tableId}`);
+    log(`Created online session ${sessionId} for table ${tableId} (${sessionRecord.gameType})`);
     setResult(sessionId);
   };
 }

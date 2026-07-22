@@ -105,7 +105,11 @@ export const useSyncBridgeImpl = (userId) => {
         const tableId = hand.tableId || 'unknown_table';
         let sessionId = sessionCache.current.get(tableId);
         if (!sessionId) {
-          sessionId = await getOrCreateOnlineSession(tableId, userId);
+          // Real table blinds ride along so the session records true stakes
+          // (WS-260 — pool-baseline segmentation by online stake).
+          sessionId = await getOrCreateOnlineSession(tableId, userId, {
+            blinds: hand.ignitionMeta?.blinds,
+          });
           sessionCache.current.set(tableId, sessionId);
         }
 
