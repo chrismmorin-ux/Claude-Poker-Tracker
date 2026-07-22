@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-22T20:00:42.522Z",
-  "updated_by_event": "ev-1784750442522-e278fe77d226",
+  "updated_at": "2026-07-22T20:06:33.107Z",
+  "updated_by_event": "ev-1784750793107-f49cd17dac34",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3375,7 +3375,65 @@
         "src/utils/persistence"
       ],
       "source_class": "untagged"
+    },
+    "WS-254": {
+      "id": "WS-254",
+      "title": "foldTo3Bet stat counts ANY preflop fold facing a raise (incl. fold-to-open) — audit definition vs name, priors, and exploit consumers",
+      "status": "backlog",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "session-observation",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-145-ws236-parity-work"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/tendencyCalculations.js",
+        "ignition-poker-tracker/shared/stats-engine.js",
+        "src/utils/__tests__/statsEngineParity.seam.test.js",
+        "src/utils/exploitEngine/bayesianConfidence.js",
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/utils/exploitEngine/weaknessDetector.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-255": {
+      "id": "WS-255",
+      "title": "Limp-reraise is not counted as a 3-bet (facedRaise fixed at first action) — audit threeBet stat definition",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "session-observation",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-145-ws236-parity-work"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/tendencyCalculations.js",
+        "ignition-poker-tracker/shared/stats-engine.js",
+        "src/utils/__tests__/statsEngineParity.seam.test.js",
+        "src/utils/exploitEngine/bayesianConfidence.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784750442522-e278fe77d226"
+  "last_event_log_head": "ev-1784750793107-f49cd17dac34"
 }

@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 134
+total_items: 136
 by_status:
   decomposed: 1
   done: 61
   in_progress: 3
   deferred: 43
-  backlog: 16
+  backlog: 18
   dismissed: 1
   completed: 7
   review: 1
@@ -19,7 +19,7 @@ by_category:
   cwos-infrastructure: 1
   data-isolation: 1
   design-comprehension: 10
-  domain-correctness: 15
+  domain-correctness: 17
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1314,6 +1314,24 @@ items:
     priority_score: 5
     category: domain-correctness
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-254"
+    title: "foldTo3Bet stat counts ANY preflop fold facing a raise (incl. fold-to-open) — audit definition vs name, priors, and exploit consumers"
+    status: backlog
+    priority_score: 14
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-255"
+    title: "Limp-reraise is not counted as a 3-bet (facedRaise fixed at first action) — audit threeBet stat definition"
+    status: backlog
+    priority_score: 12
+    category: domain-correctness
+    effort: S
     program: domain-correctness
     capability: core
 

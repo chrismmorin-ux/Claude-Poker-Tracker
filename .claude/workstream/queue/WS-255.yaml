@@ -1,0 +1,78 @@
+id: "WS-255"
+title: "Limp-reraise is not counted as a 3-bet (facedRaise fixed at first action) — audit threeBet stat definition"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 12.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Surfaced by the WS-236 parity seam work (2026-07-22). Canonical
+  extract3BetStats (src/utils/tendencyCalculations.js) fixes facedRaise at the
+  seat's FIRST preflop action and computes threeBet = facedRaise && raised. A
+  limp-reraise line (seat limps → someone raises → seat re-raises) therefore
+  never increments threeBetCount: the seat's first action (the limp) faced no
+  raise, so facedRaise=false and the re-raise is invisible to the stat.
+
+  In live-game populations the limp-reraise is a classic (and highly
+  informative) 3-bet line — often the strongest range a passive player ever
+  shows. Missing it both under-counts threeBet% and, more importantly, discards
+  exactly the observation that most sharply updates a villain's continuing
+  range. It also interacts with the denominator: a limper who faces a raise and
+  folds/calls is arguably a 3-bet OPPORTUNITY that the current facedRaise
+  definition excludes.
+
+  First-principles framing: 3-bet% should measure "of the times the seat could
+  re-raise a raise, how often did it" — computed from the action sequence, not
+  from a first-action label. Decide whether facedRaise should become
+  per-decision-point (any action taken while raiseCount >= 1) for the 3-bet
+  family, and what that does to the denominator's comparability with the
+  Bayesian prior (STAT_PRIORS.threeBet) and pool baseline.
+
+  Extension stats-engine (ignition-poker-tracker/shared/stats-engine.js) was
+  aligned to the canonical first-action semantics in WS-236 and is pinned by
+  statsEngineParity.seam.test.js — any change here must update both engines and
+  the parity suite in the same change. POKER_THEORY.md + exploitEngine/CLAUDE.md
+  reads mandatory before editing. Sibling ticket WS-254 (foldTo3Bet definition)
+  touches the same extractor — consider one sprint for both.
+accept_criteria: |
+  - Definition decided from first principles and recorded: does a limp-reraise
+    count as a 3-bet, and does a limper-facing-a-raise count in the denominator.
+  - tendencyCalculations + ignition stats-engine updated in lockstep;
+    statsEngineParity.seam.test.js updated to pin the new semantics, with an
+    explicit limp-reraise scenario fixture.
+  - STAT_PRIORS.threeBet / pool baseline comparability reviewed; recalibrated or
+    confirmed with a comment.
+  - 3-bet consumers (range engine 3-bet width, statRules/range-profile rules,
+    weaknessDetector) re-checked against the new stat scale.
+  - No regression in the full src/utils engine suite + extension suite.
+effort: "S"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "ignition-poker-tracker/shared/stats-engine.js"
+  - "src/utils/__tests__/statsEngineParity.seam.test.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "3-bet opportunity definition: first-action label vs per-decision-point"
+source:
+  type: session-observation
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-145-ws236-parity-work"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Authored at founder request after WS-236 parity work exposed the gap. Both
+  engines currently agree (parity-pinned) — this is a definitional review, not a
+  drift fix. Sibling: WS-254.

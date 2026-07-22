@@ -1,0 +1,84 @@
+id: "WS-254"
+title: "foldTo3Bet stat counts ANY preflop fold facing a raise (incl. fold-to-open) — audit definition vs name, priors, and exploit consumers"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 14.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Surfaced by the WS-236 parity seam work (2026-07-22). The canonical pipeline's
+  extract3BetStats (src/utils/tendencyCalculations.js) computes:
+
+    facedRaise  = a raise occurred before the seat's FIRST preflop action
+    threeBet    = facedRaise && seat raised at any point
+    foldedTo3Bet = facedRaise && !threeBet && seat folded
+
+  So foldTo3BetCount increments for ANY fold while facing a raise — including a
+  plain fold-to-open (fold vs a single 2-bet, no 3-bet anywhere in the hand) and a
+  cold-caller folding later. The stat's NAME, its Bayesian prior calibration
+  (STAT_PRIORS.foldTo3Bet in exploitEngine/bayesianConfidence.js), the empirical
+  pool baseline (poolBaseline.js), and its exploit consumers (preflopAdvisor.js,
+  weaknessDetector.js, subActionRules.js, liveGameContext.js, villainObservations.js)
+  all read it as "folds specifically when 3-bet" — e.g. sizing up 3-bets vs a
+  villain "with high foldTo3Bet" is a very different exploit if the number is
+  mostly fold-to-open frequency (which for most players is far higher than true
+  fold-to-3bet). First-principles rule applies: the counter must measure the
+  decision it claims to measure, not a broader label.
+
+  Scope: decide the correct definition (denominator = raised-then-faced-a-3bet
+  opportunities; numerator = folded to the 3-bet), check whether STAT_PRIORS /
+  pool-baseline calibration assumed the narrow or broad definition, and fix
+  tendencyCalculations + the extension stats-engine IN LOCKSTEP — the WS-236
+  parity suite (src/utils/__tests__/statsEngineParity.seam.test.js) pins the two
+  engines together and MUST be updated in the same change (it currently pins the
+  broad/canonical definition on both sides deliberately).
+
+  POKER_THEORY.md + exploitEngine/CLAUDE.md reads are mandatory before editing
+  (engine guardrail). Sibling ticket WS-255 (limp-reraise not counted as 3-bet)
+  touches the same extractor — consider one sprint for both.
+accept_criteria: |
+  - Definition decided from first principles and recorded (decision noted or /decide
+    if trade-offs): what exactly is the foldTo3Bet denominator and numerator.
+  - tendencyCalculations.extract3BetStats and ignition stats-engine
+    analyzePreflopContext updated in lockstep; statsEngineParity.seam.test.js
+    updated to pin the NEW semantics (all 21+ tests green).
+  - STAT_PRIORS.foldTo3Bet (and poolBaseline segment handling) reviewed against the
+    new definition; recalibrated or explicitly confirmed with a comment.
+  - Exploit consumers (preflopAdvisor, weaknessDetector, subActionRules,
+    liveGameContext) reviewed — thresholds re-checked against the new stat scale;
+    tests updated where behavior legitimately shifts.
+  - No regression in the full src/utils engine suite + extension suite.
+effort: "M"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "ignition-poker-tracker/shared/stats-engine.js"
+  - "src/utils/__tests__/statsEngineParity.seam.test.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "foldTo3Bet denominator/numerator definition (first-principles stat semantics)"
+source:
+  type: session-observation
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-145-ws236-parity-work"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Authored at founder request after WS-236 parity work exposed the broad
+  definition. Both engines currently agree on the broad definition (parity-pinned)
+  so there is no drift risk — this ticket is about whether the definition itself
+  is right. Sibling: WS-255.
