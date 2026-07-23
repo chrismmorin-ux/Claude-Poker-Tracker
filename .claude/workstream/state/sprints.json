@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-22T20:00:42.522Z",
-  "updated_by_event": "ev-1784750442522-e278fe77d226",
+  "updated_at": "2026-07-23T00:58:46.204Z",
+  "updated_by_event": "ev-1784768326204-10c9acbcf381",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2363,7 +2363,57 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-146": {
+      "id": "SPR-146",
+      "title": "Ship WS-257: POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-22T22:06:06.656Z",
+      "approved_at": "2026-07-22T22:06:06.656Z",
+      "completed_at": "2026-07-22T22:33:25.592Z",
+      "goal": "Ship WS-257: POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)",
+      "item_count": 3,
+      "items_done": 3,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-147": {
+      "id": "SPR-147",
+      "title": "Ship WS-260: Pool-baseline segmentation correctness — capture real online stakes + canonicalize live",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-22T23:05:09.628Z",
+      "approved_at": "2026-07-22T23:05:09.628Z",
+      "completed_at": "2026-07-22T23:17:51.626Z",
+      "goal": "Ship WS-260: Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-148": {
+      "id": "SPR-148",
+      "title": "Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own rang",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-22T23:34:13.332Z",
+      "approved_at": "2026-07-22T23:34:13.332Z",
+      "completed_at": "2026-07-23T00:58:45.555Z",
+      "goal": "Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784750442522-e278fe77d226"
+  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
 }

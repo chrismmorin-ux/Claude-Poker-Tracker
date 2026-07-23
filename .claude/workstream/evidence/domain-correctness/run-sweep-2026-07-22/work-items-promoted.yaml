@@ -1,0 +1,14 @@
+# Work items created by run-sweep-2026-07-22 (priority floor 27, capability: governance)
+work_items:
+  - id: "WS-257"
+    finding_id: "FIND-034"
+    title: "POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy"
+    effort: S
+  - id: "WS-258"
+    finding_id: "FIND-035"
+    title: "runWithStatPriors thenable guard — fail loud on async rule code"
+    effort: S
+  - id: "WS-259"
+    finding_id: "FIND-036"
+    title: "Founder review + promotion of domain-spec draft"
+    effort: S

@@ -1,0 +1,37 @@
+id: "FIND-036"
+title: "Domain spec drafts pending founder promotion (docs/domain-spec.draft.md, 16 rules)"
+severity: INFO
+status: resolved
+category: "action-item"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "domain-audit"
+  protocol: "sweep"
+  run_id: "run-sweep-2026-07-22"
+  date: "2026-07-22"
+description: |
+  Phase 0b of the domain-audit engine generated the repo's first domain-spec
+  draft: 16 load-bearing rules (10 artifact-derived with file:line evidence +
+  6 model-level counterfactual rules) across all 9 problem classes, cross-
+  checked by the failure-engineer pass (0 removed, 2 downgraded, 1 noted).
+  Until the founder reviews and promotes the draft, future audit runs cannot
+  engage true rule-vs-code drift detection (Phase 1) and fall back to
+  doctrine-drift review. NOT tagged blindspot — this is an action item, not a
+  structural gap.
+affected_files:
+  - "docs/domain-spec.draft.md"
+  - "DRAFTS.md"
+recommended_fix: |
+  Founder: review docs/domain-spec.draft.md (~30 min; promotion checklist at
+  the bottom — 2 Low-confidence rules need an upgrade/delete decision, 3
+  Medium rules have review notes). Then promote:
+  mv docs/domain-spec.draft.md docs/domain-spec.md
+  After promotion, re-run /pulse run domain-correctness sweep to engage drift
+  and blindspot checks against the promoted spec.
+theory_citation: "run evidence: .claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/"
+dedup_key: "sweep-domain-correctness-domain-spec-draft-pending-promotion"
+created_at: "2026-07-22"
+updated_at: "2026-07-22"
+promoted_to: "WS-259"
+resolved_at: "2026-07-22T22:33:25.592Z"

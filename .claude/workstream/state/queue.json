@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-22T20:15:00.807Z",
-  "updated_by_event": "ev-1784751300807-47ea310260e1",
+  "updated_at": "2026-07-23T00:58:46.204Z",
+  "updated_by_event": "ev-1784768326204-10c9acbcf381",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3464,7 +3464,166 @@
         ".claude/context/POKER_THEORY.md"
       ],
       "source_class": "untagged"
+    },
+    "WS-257": {
+      "id": "WS-257",
+      "title": "POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)",
+      "status": "done",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "engine-finding",
+        "created_by": "ai",
+        "finding_id": "FIND-034",
+        "run_id": "run-sweep-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-258": {
+      "id": "WS-258",
+      "title": "runWithStatPriors thenable guard — fail loud on async rule code (cross-player prior leak prevention)",
+      "status": "done",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "engine-finding",
+        "created_by": "ai",
+        "finding_id": "FIND-035",
+        "run_id": "run-sweep-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/statRules.js",
+        "src/utils/exploitEngine/__tests__/statRules.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-259": {
+      "id": "WS-259",
+      "title": "Founder review + promotion of domain-spec draft (docs/domain-spec.draft.md, 16 rules)",
+      "status": "done",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "engine-finding",
+        "created_by": "ai",
+        "finding_id": "FIND-036",
+        "run_id": "run-sweep-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [
+        "future Phase 1 drift detection in domain-audit runs"
+      ],
+      "files_involved": [
+        "docs/domain-spec.draft.md",
+        "DRAFTS.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-260": {
+      "id": "WS-260",
+      "title": "Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels",
+      "status": "done",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "engine-finding",
+        "created_by": "ai",
+        "finding_id": "FIND-037",
+        "run_id": "run-sweep-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/persistence/sessionsStorage.js",
+        "src/utils/exploitEngine/poolBaseline.js",
+        "src/utils/exploitEngine/__tests__/poolBaseline.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-261": {
+      "id": "WS-261",
+      "title": "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
+      "status": "done",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "engine-finding",
+        "created_by": "ai",
+        "finding_id": "FIND-038",
+        "run_id": "run-sweep-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/decisionAccumulator.js",
+        "src/utils/exploitEngine/villainProfileBuilder.js",
+        "src/utils/pokerCore/handEvaluator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-262": {
+      "id": "WS-262",
+      "title": "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)",
+      "status": "backlog",
+      "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-22"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/poolBaseline.js",
+        ".claude/projects/exploit-model-architecture.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784751300807-47ea310260e1"
+  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
 }

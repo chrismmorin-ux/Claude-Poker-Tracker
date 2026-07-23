@@ -1,0 +1,54 @@
+id: "WS-257"
+title: "POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)"
+legacy_id: ""
+type: docs
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: "FIND-034"
+description: |
+  _Convergence: closes drift on rule 'PRIOR_WEIGHT (~10) pseudocount convention / theory-spec drift' — FIND-034, sweep run-sweep-2026-07-22_
+
+  POKER_THEORY.md §6.5 (lines ~374-382) still describes the 2-tier prior model
+  (population prior + per-player observed, PRIOR_WEIGHT=10) while the shipped
+  pipeline (WS-235, commit 5aa1419) is 3-tier: founder estimate → segmented
+  empirical pool aggregate (poolBaseline.js: live/online never pooled,
+  leave-one-out guard, POOL_PRIOR_MAX_PSEUDOCOUNT=200) → per-villain Read.
+  betaMath.js:168 cites §6.5 by number, so the stale section is the first thing
+  a reviewer reads. Content to port exists nearly verbatim in the
+  poolBaseline.js header comment. Consider folding open FIND-012's doc-drift
+  items (rake / SPR zones / fold curves absent from POKER_THEORY) into the
+  same doc pass.
+accept_criteria: |
+  - §6.5 (or new §6.5a) describes: the 3-tier hierarchy and precedence; the
+    live/online + stakes segmentation rule (never pooled); the leave-one-out
+    guard; the pseudocount cap semantics (bounds confidence, mean converges).
+  - Cross-references poolBaseline.js (and bayesianConfidence.js provenance).
+  - POKER_THEORY.md changelog entry added; last_verified frontmatter updated.
+  - No engine code changes (doc-only).
+effort: "S"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-034"
+  run_id: "run-sweep-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Auto-promoted from FIND-034 (domain-audit sweep 2026-07-22, priority floor 27).
+closed_by_event: "ev-1784759605619-9f0ce6959d91"

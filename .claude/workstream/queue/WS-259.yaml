@@ -1,0 +1,64 @@
+id: "WS-259"
+title: "Founder review + promotion of domain-spec draft (docs/domain-spec.draft.md, 16 rules)"
+legacy_id: ""
+type: governance
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: "FIND-036"
+description: |
+  _Convergence: Phase 0b draft spec pending founder promotion — FIND-036, sweep run-sweep-2026-07-22_
+
+  The domain-audit engine drafted the repo's first domain specification:
+  16 load-bearing poker-correctness rules (10 artifact-derived with verified
+  file:line evidence, 6 model-level counterfactual rules) across all 9
+  problem classes, failure-engineer cross-checked (0 removed / 2 downgraded /
+  1 noted). Promotion is founder-only (anti-overwrite contract) and unlocks
+  true rule-vs-code drift detection on all future domain-correctness runs.
+
+  Founder decisions embedded in the review (promotion checklist at file
+  bottom):
+  - 2 Low-confidence rules: live/online pool separation (poolBaseline.js
+    already implements it — promote with citation or close); study-section ↔
+    live-engine coherence (scope to bounded canonical spots, or delete).
+  - 3 Medium rules with review notes: WEAKNESS_EXPLOIT_MAP renamed-equivalent
+    grep; PRIOR_WEIGHT rule spec-vs-cadence placement; calibration rule's PMC
+    linkage.
+accept_criteria: |
+  - Founder has reviewed docs/domain-spec.draft.md and resolved the promotion
+    checklist (upgrade/rewrite/delete the 2 Low rules; confirm the 3 Medium
+    review notes).
+  - File renamed to docs/domain-spec.md (founder action) with Last verified
+    dates set, OR founder explicitly defers with a revival note.
+  - Next /pulse run domain-correctness sweep executes Phase 1 drift detection
+    against the promoted spec.
+effort: "S"
+files_involved:
+  - "docs/domain-spec.draft.md"
+  - "DRAFTS.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: ["future Phase 1 drift detection in domain-audit runs"]
+sprint_id: null
+decision_flags:
+  - "Promote, edit, or delete each of the 2 Low-confidence rules"
+  - "Spec placement of the PRIOR_WEIGHT reconciliation rule"
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-036"
+  run_id: "run-sweep-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Auto-promoted from FIND-036 (informational action item, priority floor 27).
+  Founder-action item — AI cannot promote the spec (anti-overwrite contract).
+closed_by_event: "ev-1784759605858-e6140b81fddf"

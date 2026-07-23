@@ -1,0 +1,18 @@
+# Findings promoted by run-sweep-2026-07-22 (domain-audit, sweep protocol)
+findings:
+  - id: "FIND-034"
+    severity: MEDIUM
+    title: "POKER_THEORY.md §6.5 not updated for 3-tier empirical prior hierarchy (poolBaseline)"
+    promoted_to: "WS-257"
+  - id: "FIND-035"
+    severity: MEDIUM
+    title: "runWithStatPriors module-global prior swap fragile against future async rule code"
+    promoted_to: "WS-258"
+  - id: "FIND-036"
+    severity: INFO
+    title: "Domain spec drafts pending founder promotion (16 rules)"
+    promoted_to: "WS-259"
+not_promoted:
+  - severity: LOW
+    title: "SIZING_TELL_EXPLOIT narrative map shaped like removed WEAKNESS_EXPLOIT_MAP (display-only today)"
+    disposition: "folded into WS-258 status_note as optional companion; below promotion threshold"

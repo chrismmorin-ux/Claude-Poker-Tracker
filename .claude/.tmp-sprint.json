@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-06-22T21:09:43.886Z",
-  "goal": "Ship WS-236: Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
-  "program_focus": "data-quality",
+  "composed_at": "2026-07-22T23:34:13.185Z",
+  "goal": "Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
+  "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-236",
-      "title": "Surface sample size + confidence on the live HUD; reconcile the parallel stats engine — FIND-024",
-      "raw_score": 7,
-      "adjusted_score": 7,
+      "id": "WS-261",
+      "title": "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
+      "raw_score": 27,
+      "adjusted_score": 27,
       "effort": "M",
-      "program": "data-quality",
+      "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-236 selected (7 × no damping = 7).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-261 selected (27 × no damping = 27).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 137
+total_items: 143
 by_status:
   decomposed: 1
-  done: 61
+  done: 66
   in_progress: 3
   deferred: 43
-  backlog: 19
+  backlog: 20
   dismissed: 1
   completed: 7
   review: 1
@@ -19,7 +19,7 @@ by_category:
   cwos-infrastructure: 1
   data-isolation: 1
   design-comprehension: 10
-  domain-correctness: 18
+  domain-correctness: 24
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1341,6 +1341,65 @@ items:
     priority_score: 15
     category: domain-correctness
     effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-257"
+    title: "POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    finding_id: "FIND-034"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-258"
+    title: "runWithStatPriors thenable guard — fail loud on async rule code (cross-player prior leak prevention)"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    finding_id: "FIND-035"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-259"
+    title: "Founder review + promotion of domain-spec draft (docs/domain-spec.draft.md, 16 rules)"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    finding_id: "FIND-036"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-260"
+    title: "Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: M
+    finding_id: "FIND-037"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-261"
+    title: "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate"
+    status: done
+    priority_score: 27
+    category: domain-correctness
+    effort: M
+    finding_id: "FIND-038"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-262"
+    title: "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)"
+    status: backlog
+    priority_score: 24
+    category: domain-correctness
+    effort: M
     program: domain-correctness
     capability: core
 

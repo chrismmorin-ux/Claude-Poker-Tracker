@@ -1,0 +1,53 @@
+# Sweep drift review — window ecd20b8..5aa1419 (2026-06-20 → 2026-07-22)
+# (Phase 1 proper skipped — no promoted spec; this is the sweep protocol's drift focus over the uncovered commit window.)
+sweep_drift:
+  window: "ecd20b8..5aa1419 (2026-06-20 → 2026-07-22)"
+  verdict: "CLEAN"
+  per_file:
+    - file: "src/utils/exploitEngine/poolBaseline.js"
+      verdict: aligned
+      evidence: "poolBaseline.js:75-81 segments by tier (live vs online, source==='ignition') + normalized stake string, never pooling live/online (poolBaseline.test.js:137-158 segmentation isolation). Leave-one-out verified at poolBaseline.js:206-212 (resolveStatPriors skips excludeKey row before summing k/n); blendPrior (166-174) is exact conjugate Beta update when n≤cap (alpha=α0+k, beta=β0+(n−k)). POOL_PRIOR_MAX_PSEUDOCOUNT=200 bounds only pseudocount/confidence; mean still converges to pool rate — honestly-documented overdispersion proxy, not a frequentist shortcut."
+    - file: "src/utils/exploitEngine/bayesianConfidence.js"
+      verdict: aligned
+      evidence: "bayesianConfidence.js:36-48 provenance comment updated to the 3-tier hierarchy (founder estimate → pool aggregate → per-villain), STAT_PRIORS still marked fallback."
+    - file: "src/utils/exploitEngine/gameTreeEquity.js"
+      verdict: aligned
+      evidence: "multiwayFoldPct (~633-655): removed ad-hoc correlationAdjustment multiplier (FIND-030) and replaced with exact product of per-opponent fold rates under conditional independence; new tests assert 0.60×0.45²=0.1215. Domain-correctness IMPROVEMENT; card-removal named as remaining second-order approximation."
+    - file: "src/utils/exploitEngine/generateExploits.js"
+      verdict: aligned
+      evidence: "generateExploits.js:103-201 wraps entire rule-evaluation body (all synchronous, no awaits) in runWithStatPriors(statPriors, ...) — segmented pool prior swap applies uniformly to every prior-reading rule family (WS-235 claim verified)."
+    - file: "src/utils/exploitEngine/statRules.js"
+      verdict: aligned
+      evidence: "statRules.js:45-54 set→run→restore-in-finally correctness-preserving under current synchronous call pattern (usePlayerTendencies.js:104-112). No math violation; structural caveat filed as finding."
+    - file: "src/utils/exploitEngine/villainProfileBuilder.js"
+      verdict: aligned
+      evidence: "Unstubs sizingTells (FIND-032) via showdown Pearson r (bet-fraction vs shown strength) gated |r|≥0.35 with sample-scaled confidence — showdown-calibrated per POKER_THEORY §3.5. Narrative text consumed only by display components (grep-verified); WS-250 disclaims live EV wiring."
+    - file: "src/utils/pokerCore/betaMath.js"
+      verdict: aligned
+      evidence: "betaMath.js:178 removed unused priorAlpha/priorBeta params from bayesianSampleConfidence — ~40 call sites grepped, none passed them; dead-parameter cleanup, not a math change."
+    - file: "src/utils/exploitEngine/CLAUDE.md"
+      verdict: aligned
+      evidence: "CLAUDE.md:117 adds poolBaseline.js row to File Responsibilities with correct Does/Does-NOT scoping."
+  findings:
+    - title: "POKER_THEORY.md §6.5 doctrine not updated for the new 3-tier empirical prior hierarchy"
+      severity: medium
+      anti_pattern: "doctrine-drift"
+      file: ".claude/context/POKER_THEORY.md"
+      lines: "374-382"
+      detail: "§6.5 still describes only the 2-tier model (population prior + per-player observed, PRIOR_WEIGHT=10) and is the section code cites (betaMath.js:168). The stat-prior pipeline is now 3-tier: founder estimate → segmented empirical pool aggregate (poolBaseline.js, live/online never pooled, leave-one-out) → per-villain Read. A reader following the §6.5 pointer never learns the pool layer exists. Same doc-drift class as open FIND-012."
+      suggested_fix: "Add §6.5a (or expand §6.5) describing the 3-tier hierarchy, live/online segmentation, leave-one-out guard, POOL_PRIOR_MAX_PSEUDOCOUNT cap, cross-referencing poolBaseline.js. Content exists nearly verbatim in poolBaseline.js header — copy-forward task."
+    - title: "Module-scoped mutable prior swap (activeStatPriors) is correctness-fragile against future async changes"
+      severity: medium
+      anti_pattern: "none"
+      file: "src/utils/exploitEngine/statRules.js"
+      lines: "35-54"
+      detail: "runWithStatPriors correctness under the Promise.all-over-players pattern (usePlayerTendencies.js:99-121) depends on an invisible, unenforced invariant: everything reachable from the wrapped closure stays fully synchronous. If a future change adds an await inside statRules/rangeRules, one villain's exploit rules could silently evaluate under a DIFFERENT villain's segmented priors mid-Promise.all — a cross-player prior leak with no error, just subtly wrong exploit confidence. No runtime guard exists; the safety net is a comment."
+      suggested_fix: "(a) 2-line guard: throw if fn returns a thenable (fail loud); or (b) thread statPriors as an explicit parameter through rule functions. (a) recommended at current scale."
+    - title: "SIZING_TELL_EXPLOIT narrative map reads as prescriptive hero-action advice, adjacent to removed WEAKNESS_EXPLOIT_MAP pattern"
+      severity: low
+      anti_pattern: "none"
+      file: "src/utils/exploitEngine/villainProfileBuilder.js"
+      lines: "508-523"
+      detail: "Display-only today (grep-verified: AwarenessPanel/VillainProfileModal/VillainModelCard only), but the directive phrasing is the same shape as the removed WEAKNESS_EXPLOIT_MAP stopgap — scope-creep risk if a future contributor consumes it in exploit-scoring code."
+      suggested_fix: "One-line comment: 'display narrative only — do not consume from generateExploits/gameTreeEvaluator; hero actions for sizing tells must derive from game-tree EV using the correlation as an input.'"
+  doc_drift_note: "Engine-local docs for 5aa1419 are unusually good (poolBaseline.js header, bayesianConfidence.js provenance, CLAUDE.md row, WS-235 status_note all consistent). The gap is one level up: POKER_THEORY.md §6.5 was not touched. Recommend folding the §6.5 update into the next domain-correctness sprint."

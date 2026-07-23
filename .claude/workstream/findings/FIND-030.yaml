@@ -1,7 +1,7 @@
 id: "FIND-030"
 title: "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors"
 severity: LOW
-status: open
+status: resolved
 category: "game-tree"
 program: "domain-correctness"
 problem_class: "Game tree EV correctness"
@@ -32,5 +32,15 @@ recommended_fix: |
 theory_citation: "POKER_THEORY.md §6.5; multiway fold correlation"
 dedup_key: "challenge-domain-correctness-multiway-independence-and-sampleconf-priors"
 created_at: "2026-06-20"
-updated_at: "2026-06-20"
+updated_at: "2026-07-22"
 promoted_to: "WS-250"
+resolved_at: "2026-07-22"
+resolution: |
+  Both parts fixed in commit 5aa1419, verified by the 2026-07-22 sweep + challenge:
+  (a) correlationAdjustment removed; multiwayFoldPct now uses the exact
+  conditional-independence product (gameTreeEquity.js:636-655, tested
+  0.60*0.45^2=0.1215), card removal explicitly documented as the residual
+  second-order approximation. Challenge pass confirmed the independence
+  product is the theoretically correct treatment.
+  (b) dead priorAlpha/priorBeta params removed from bayesianSampleConfidence
+  (betaMath.js:178; ~40 call sites grepped, none passed them).

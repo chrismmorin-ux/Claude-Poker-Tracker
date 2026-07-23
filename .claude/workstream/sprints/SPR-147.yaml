@@ -1,0 +1,29 @@
+id: "SPR-147"
+title: "Ship WS-260: Pool-baseline segmentation correctness — capture real online stakes + canonicalize live"
+status: done
+approved_at: "2026-07-22T23:05:09.628Z"
+completed_at: "2026-07-22T23:17:51.626Z"
+completed_by_commit: "6b39b7f"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-260: Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-22T23:05:09.628Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-260 selected (27 × no damping = 27).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-260"
+    title: "Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-22T23:17:51.626Z"
+
+created_at: "2026-07-22T23:05:09.628Z"

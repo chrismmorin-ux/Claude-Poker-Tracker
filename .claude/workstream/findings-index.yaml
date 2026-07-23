@@ -151,7 +151,7 @@ findings:
     title: "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors"
     engine: eng-engine
     severity: low
-    status: open
+    status: resolved
     dedup_key: "challenge-domain-correctness-multiway-independence-and-sampleconf-priors"
     program: domain-correctness
     created_at: "2026-06-20"
@@ -182,4 +182,58 @@ findings:
     dedup_key: "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing"
     program: domain-correctness
     created_at: "2026-06-20"
+
+  - id: "FIND-034"
+    title: "POKER_THEORY.md §6.5 not updated for 3-tier empirical prior hierarchy (poolBaseline)"
+    engine: domain-audit
+    severity: medium
+    status: resolved
+    dedup_key: "sweep-domain-correctness-poker-theory-6-5-three-tier-prior-hierarchy-doc-drift"
+    program: domain-correctness
+    created_at: "2026-07-22"
+
+  - id: "FIND-035"
+    title: "runWithStatPriors module-global prior swap is fragile against future async rule code (silent cross-player prior leak)"
+    engine: domain-audit
+    severity: medium
+    status: resolved
+    dedup_key: "sweep-domain-correctness-runwithstatpriors-async-fragility-guard"
+    program: domain-correctness
+    created_at: "2026-07-22"
+
+  - id: "FIND-036"
+    title: "Domain spec drafts pending founder promotion (docs/domain-spec.draft.md, 16 rules)"
+    engine: domain-audit
+    severity: info
+    status: resolved
+    dedup_key: "sweep-domain-correctness-domain-spec-draft-pending-promotion"
+    program: domain-correctness
+    created_at: "2026-07-22"
+
+  - id: "FIND-037"
+    title: "Online sessions hardcode gameType 'NL Holdem' — all Ignition play collapses into one pool-baseline segment"
+    engine: domain-audit
+    severity: high
+    status: resolved
+    dedup_key: "challenge-domain-correctness-online-session-gametype-literal-segment-collapse"
+    program: domain-correctness
+    created_at: "2026-07-22"
+
+  - id: "FIND-038"
+    title: "sizingTells calibration is circular — correlates bet size with the model's own range estimate, never the actual shown hand"
+    engine: domain-audit
+    severity: high
+    status: resolved
+    dedup_key: "challenge-domain-correctness-sizingtells-circular-avgsegmentation-not-handshown"
+    program: domain-correctness
+    created_at: "2026-07-22"
+
+  - id: "FIND-039"
+    title: "Live-session stake labels are free-text — naive segmentKey normalization fragments identical stakes into separate pools"
+    engine: domain-audit
+    severity: medium
+    status: open
+    dedup_key: "challenge-domain-correctness-segmentkey-freetext-label-fragmentation"
+    program: domain-correctness
+    created_at: "2026-07-22"
 

@@ -1,0 +1,45 @@
+# Phase 0b-iii cross-check — failure-engineer false-positive sweep, run-sweep-2026-07-22
+# 16 rules reviewed (10 artifact + 6 model). 0 removed, 0 rewritten, 2 downgraded, 1 keep_with_note.
+alterations:
+  - rule_name: "PRIOR_WEIGHT (~10) pseudocount convention must stay consistent across all Bayesian engines"
+    origin: artifact
+    action: downgrade_confidence
+    reason: >
+      Verified the cited constants (populationPriors.js:63, bayesianConfidence.js:32-49) and they do
+      match the ~10 pseudocount convention, so the artifact evidence is real — but the rule itself is
+      doc/code consistency-hygiene (keep a magic-number convention identical across files), not a
+      poker-decision-correctness rule. The value of the pseudocount (5 vs 10) barely moves actual
+      exploit output for any villain with a meaningful sample; it only matters in the near-empty-sample
+      edge case. The same draft-rules.yaml file explicitly excludes a structurally identical concern
+      ("POKER_THEORY.md staleness threshold... doc-governance, not a poker-domain rule... excluded per
+      definition") — this rule sits in the same category (doc-vs-code drift) but was included and given
+      confidence:High + a recurring 14-day audit cadence, which is disproportionate to the actual
+      decision-quality risk. It should not compete for review priority with the equity/rake/ICM rules.
+    new_confidence: "Medium — real drift-history justifies periodic reconciliation, but this is engineering-hygiene severity, not decision-correctness severity"
+
+  - rule_name: "The study section and the live engine must express one consistent theory, not two"
+    origin: model
+    action: downgrade_confidence
+    reason: >
+      Compliant with the model-rule citation constraint (cites system/intention.md + counterfactual
+      only, no source code) — but as stated the verification criterion ("does not rest on assumptions
+      contradicting the taught principle") is not mechanically checkable: there is no bounded list of
+      "canonical spots," no defined equivalence test, and "contradicting assumptions" requires open-ended
+      subjective judgment across two large, independently-evolving surfaces (study content and live
+      engine reasoning). Left as-is this generates exactly the kind of unbounded, recurring compliance
+      work the audit should avoid manufacturing. The rule is a plausible product-coherence goal, not yet
+      an operationalizable domain-correctness invariant.
+    new_confidence: "Low — hold until scoped to a concrete, bounded set of canonical-spot equivalence checks"
+
+  - rule_name: "Live and online opponent pools are distinct reference populations, never merged"
+    origin: model
+    action: keep_with_note
+    note: >
+      Compliant with the model-rule citation constraint. Flagging only because the rule's own
+      review_notes understate the evidence available: per project memory (empirical pool-baseline
+      deriver, WS-235 Step 2), src/utils/exploitEngine/poolBaseline.js already segments baselines by
+      source+gameType with live/online never pooled — this is not merely an unconfirmed inference from
+      intention.md, it is implemented behavior. Recommend cross-referencing that artifact before the next
+      pass rather than carrying this indefinitely as a speculative Low-confidence model rule; either
+      promote it (with the poolBaseline.js citation) or explicitly confirm with the founder and close the
+      open question — don't let it sit as a permanently-unconfirmed inference generating repeated review.

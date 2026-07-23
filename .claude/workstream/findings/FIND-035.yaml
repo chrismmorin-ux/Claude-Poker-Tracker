@@ -1,0 +1,42 @@
+id: "FIND-035"
+title: "runWithStatPriors module-global prior swap is fragile against future async rule code (silent cross-player prior leak)"
+severity: MEDIUM
+status: resolved
+category: "structural-fragility"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "domain-audit"
+  protocol: "sweep"
+  run_id: "run-sweep-2026-07-22"
+  date: "2026-07-22"
+description: |
+  statRules.js:35-54 runWithStatPriors implements the WS-235 segmented-prior
+  swap as a module-scoped mutable (activeStatPriors) with set→run→restore-in-
+  finally. Correct TODAY because everything reachable from generateExploits's
+  wrapped closure (statRules + rangeRules + boardTexture/pip/subAction rule
+  families) is fully synchronous, and usePlayerTendencies.js:99-121 calls it
+  synchronously-to-completion inside each player's async closure. But the
+  invariant "wrapped code never awaits" is invisible and unenforced: if any
+  future change adds an await inside the reachable set, JS interleaving under
+  the Promise.all-over-players pattern would let one villain's exploit rules
+  silently evaluate under a DIFFERENT villain's segmented priors — no error,
+  just subtly wrong exploit confidence/thresholds. The safety net is a code
+  comment, not structure. (Same class as memory rule "prefer unrepresentable
+  to validated" — the temporal coupling should fail loud or be removed.)
+affected_files:
+  - "src/utils/exploitEngine/statRules.js"
+  - "src/utils/exploitEngine/generateExploits.js"
+  - "src/hooks/usePlayerTendencies.js"
+recommended_fix: |
+  Minimal (recommended at current scale): 2-line guard in runWithStatPriors —
+  if fn's return value is a thenable, throw (fail loud), plus a test asserting
+  the throw. Structural alternative: thread statPriors as an explicit parameter
+  through the rule functions, removing the module global entirely (larger
+  refactor, defer unless rule code goes async for real reasons).
+theory_citation: "n/a — correctness-preservation of the WS-235 segmented prior hierarchy"
+dedup_key: "sweep-domain-correctness-runwithstatpriors-async-fragility-guard"
+created_at: "2026-07-22"
+updated_at: "2026-07-22"
+promoted_to: "WS-258"
+resolved_at: "2026-07-22T22:33:25.592Z"

@@ -1,0 +1,9 @@
+# Phase 3a engine-depth-gap precondition (FIND-108) — deterministic count over cross-check.yaml
+# mechanical_count = removes(0) + rewrites(0) + keep_with_note matching /right home|governance|adjacent/i (0)
+#                  + downgrade_confidence to Low (1: study-section rule)
+mechanical_count: 1
+total_architect_rules: 16
+mechanical_ratio: 0.06
+model_level_count: 6
+trip_condition_met: false
+threshold: 0.70

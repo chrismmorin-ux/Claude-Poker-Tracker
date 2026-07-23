@@ -7,6 +7,7 @@ import {
   STRENGTH_BUCKETS,
   computeBoardStrengthTable,
   classifyVillainCombo,
+  comboStrengthPercentile,
 } from '../handEvaluator';
 import { encodeCard } from '../cardParser';
 
@@ -401,6 +402,64 @@ describe('handEvaluator', () => {
       const c2 = encodeCard(11, 1);
       expect(classifyVillainCombo(c1, c2, board, table))
         .toBe(classifyVillainCombo(c1, c2, board));
+    });
+  });
+
+  describe('comboStrengthPercentile (WS-261)', () => {
+    // K♠ 7♦ 2♥ rainbow board used throughout
+    const board = [encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1)];
+
+    test('top set is near the top of the scale', () => {
+      const pct = comboStrengthPercentile(encodeCard(11, 1), encodeCard(11, 2), board);
+      expect(pct).toBeGreaterThan(95);
+      expect(pct).toBeLessThanOrEqual(100);
+    });
+
+    test('unconnected low air is near the bottom of the scale', () => {
+      // 4♣ 3♣ on K72r — no pair, no draw
+      const pct = comboStrengthPercentile(encodeCard(2, 3), encodeCard(1, 3), board);
+      expect(pct).toBeLessThan(25);
+      expect(pct).toBeGreaterThanOrEqual(0);
+    });
+
+    test('ordering is monotone with classifyVillainCombo tiers', () => {
+      const setPct = comboStrengthPercentile(encodeCard(11, 1), encodeCard(11, 2), board); // KK set
+      const tpPct = comboStrengthPercentile(encodeCard(11, 1), encodeCard(10, 1), board);  // KQ top pair
+      const airPct = comboStrengthPercentile(encodeCard(2, 3), encodeCard(1, 3), board);   // 43 air
+      expect(setPct).toBeGreaterThan(tpPct);
+      expect(tpPct).toBeGreaterThan(airPct);
+    });
+
+    test('order-independent: (c1, c2) and (c2, c1) yield the same percentile', () => {
+      const c1 = encodeCard(11, 1);
+      const c2 = encodeCard(10, 1);
+      expect(comboStrengthPercentile(c1, c2, board)).toBe(comboStrengthPercentile(c2, c1, board));
+    });
+
+    test('null when a combo card collides with the board', () => {
+      expect(comboStrengthPercentile(encodeCard(11, 0), encodeCard(10, 1), board)).toBeNull();
+    });
+
+    test('null for a degenerate combo (same card twice)', () => {
+      const c = encodeCard(11, 1);
+      expect(comboStrengthPercentile(c, c, board)).toBeNull();
+    });
+
+    test('null for invalid board sizes', () => {
+      expect(comboStrengthPercentile(encodeCard(11, 1), encodeCard(10, 1), [])).toBeNull();
+      expect(comboStrengthPercentile(
+        encodeCard(11, 1), encodeCard(10, 1),
+        [encodeCard(11, 0), encodeCard(5, 2)]
+      )).toBeNull();
+    });
+
+    test('works on 5-card boards (river)', () => {
+      const river = [
+        encodeCard(11, 0), encodeCard(5, 2), encodeCard(0, 1),
+        encodeCard(8, 3), encodeCard(3, 0),
+      ];
+      const pct = comboStrengthPercentile(encodeCard(11, 1), encodeCard(11, 2), river);
+      expect(pct).toBeGreaterThan(90);
     });
   });
 });

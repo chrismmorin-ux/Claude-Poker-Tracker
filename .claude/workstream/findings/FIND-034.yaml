@@ -1,0 +1,41 @@
+id: "FIND-034"
+title: "POKER_THEORY.md §6.5 not updated for 3-tier empirical prior hierarchy (poolBaseline)"
+severity: MEDIUM
+status: resolved
+category: "doctrine-drift"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "domain-audit"
+  protocol: "sweep"
+  run_id: "run-sweep-2026-07-22"
+  date: "2026-07-22"
+description: |
+  §6.5 "Bayesian Updates for Ranges" (POKER_THEORY.md:374-382) still describes
+  only the 2-tier model (population prior + per-player observed data,
+  PRIOR_WEIGHT=10) and is the section engine code cites by number
+  (betaMath.js:168). As of commit 5aa1419 (WS-235/SPR-142) the exploit engine's
+  stat-prior pipeline is actually 3-tier: founder estimate → segmented empirical
+  pool aggregate (poolBaseline.js — live/online never pooled, leave-one-out
+  guard, POOL_PRIOR_MAX_PSEUDOCOUNT=200 cap) → per-villain Read. A reader
+  following the §6.5 pointer never learns the pool-aggregate layer exists.
+  Same doc-drift class as open FIND-012 (code source-of-truth advances,
+  canonical doctrine doesn't follow). Engine-local docs (poolBaseline.js
+  header, bayesianConfidence.js:36-48 provenance) are accurate — the gap is
+  only at the cross-engine doctrine level.
+affected_files:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/poolBaseline.js"
+recommended_fix: |
+  Add §6.5a (or expand §6.5) describing the 3-tier hierarchy, the live/online
+  segmentation rule, the leave-one-out guard, and the pseudocount cap,
+  cross-referencing poolBaseline.js. Content exists nearly verbatim in the
+  poolBaseline.js header comment — mostly a copy-forward task. Consider folding
+  the open FIND-012 doc-drift items (rake/SPR-zones/fold-curves) into the same
+  doc pass.
+theory_citation: "POKER_THEORY.md §6.5; poolBaseline.js:75-81 (segmentation), :206-212 (leave-one-out)"
+dedup_key: "sweep-domain-correctness-poker-theory-6-5-three-tier-prior-hierarchy-doc-drift"
+created_at: "2026-07-22"
+updated_at: "2026-07-22"
+promoted_to: "WS-257"
+resolved_at: "2026-07-22T22:33:25.592Z"

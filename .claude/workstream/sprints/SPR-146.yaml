@@ -1,0 +1,41 @@
+id: "SPR-146"
+title: "Ship WS-257: POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy"
+status: done
+approved_at: "2026-07-22T22:06:06.656Z"
+completed_at: "2026-07-22T22:33:25.592Z"
+completed_by_commit: "ff82bff"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-257: POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-22T22:06:06.656Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-257 selected (27 × no damping = 27).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-257"
+    title: "POKER_THEORY.md §6.5 — document the 3-tier empirical prior hierarchy (poolBaseline copy-forward)"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-07-22T22:33:25.592Z"
+  - id: "WS-258"
+    title: "runWithStatPriors thenable guard — fail loud on async rule code (cross-player prior leak prevention)"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-07-22T22:33:25.592Z"
+  - id: "WS-259"
+    title: "Founder review + promotion of domain-spec draft (docs/domain-spec.draft.md, 16 rules)"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-07-22T22:33:25.592Z"
+
+created_at: "2026-07-22T22:06:06.656Z"

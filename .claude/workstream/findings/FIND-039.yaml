@@ -1,0 +1,34 @@
+id: "FIND-039"
+title: "Live-session stake labels are free-text — naive segmentKey normalization fragments identical stakes into separate pools"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "domain-audit"
+  protocol: "challenge"
+  run_id: "run-sweep-2026-07-22"
+  date: "2026-07-22"
+description: |
+  segmentKey() (poolBaseline.js:75-81) only lowercases and swaps whitespace/
+  slashes to '-'. Game-type labels are fully free-text (GameTypesManager.jsx:
+  19-23; SessionForm), and real-world fixture diversity already shows '1/2',
+  '$1/$2', '1/2 NL', '$2/$5 NLH' for equivalent games — each becomes a
+  distinct segment with its own thin pool. Safe degradation (thin pools fall
+  back toward the founder estimate) means nothing corrupts, but the empirical-
+  baseline goal is silently defeated whenever a founder logs the same live
+  game under label variants across sessions.
+affected_files:
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/components/views/SettingsView/GameTypesManager.jsx"
+recommended_fix: |
+  Either constrain gameType entry to a canonical stake+currency vocabulary at
+  the writer boundary, or add a normalization step in segmentKey (strip
+  currency symbols, strip NL/NLH/NLHE format suffixes, sort blind numbers).
+  Same fix family as FIND-037 — bundle in one work item (WS-260).
+theory_citation: "poolBaseline.js segmentation doctrine; anti_invariant (stakes/pool conditioning)"
+dedup_key: "challenge-domain-correctness-segmentkey-freetext-label-fragmentation"
+created_at: "2026-07-22"
+updated_at: "2026-07-22"
+promoted_to: "WS-260"

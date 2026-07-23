@@ -1,0 +1,42 @@
+id: "FIND-038"
+title: "sizingTells calibration is circular — correlates bet size with the model's own range estimate, never the actual shown hand"
+severity: HIGH
+status: resolved
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "domain-audit"
+  protocol: "challenge"
+  run_id: "run-sweep-2026-07-22"
+  date: "2026-07-22"
+description: |
+  POKER_THEORY §3.5/§5.9 requires sizing-to-strength calibration against the
+  ACTUAL hand shown at showdown. decisionAccumulator.js stores handShown in
+  bucket.showdownResults (:362-369) but never reads it when computing
+  strengthOrdinal (:501-517) — it uses bucket.avgSegmentation, the model's own
+  recency-weighted range-narrowing estimate (constant per bucket, derived from
+  board/action only). The Pearson r (computePearsonR :32-46) therefore measures
+  "do buckets the model already believes have stronger ranges see bigger bets"
+  — a self-consistency check on the engine's own prior, not an empirical
+  showdown-verified tell. villainProfileBuilder.js:451-474 + UI copy ("a
+  readable tell when confirmed by showdowns") present it as ground-truth-
+  calibrated. Blast radius limited: WS-250 gates the output display-only (no
+  live EV feed, villainProfileBuilder.js:457-460) — but the read shown to the
+  founder at the table is misleading and violates the documented doctrine.
+  Supersedes the "fixed" half of FIND-032 (unstubbed, but unstubbed WRONG).
+affected_files:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+recommended_fix: |
+  Compute strengthOrdinal from handShown evaluated against the board at that
+  street (pokerCore/handEvaluator.js is available and engine-agnostic).
+  Surface the MNAR selection-bias caveat (only called-to-showdown bets
+  observed; folded-out bluffs invisible) in the confidence/description per the
+  rangeEngine revealMechanism doctrine.
+theory_citation: "POKER_THEORY.md §3.5 (:142-162), §5.9 (:324-341); rangeEngine MNAR revealMechanism rail"
+dedup_key: "challenge-domain-correctness-sizingtells-circular-avgsegmentation-not-handshown"
+created_at: "2026-07-22"
+updated_at: "2026-07-22"
+promoted_to: "WS-261"
+resolved_at: "2026-07-23T00:58:45.555Z"

@@ -335,3 +335,43 @@ export const classifyVillainCombo = (card1, card2, board, table = null) => {
   const t = table ?? computeBoardStrengthTable(board);
   return t.get(comboKey(card1, card2)) ?? null;
 };
+
+/**
+ * Continuous board-relative strength percentile for a single 2-card combo.
+ *
+ * Enumerates every legal combo on the board (same enumeration as
+ * computeBoardStrengthTable) and returns where this combo ranks, scaled to
+ * 0-100: 100 = beats every other legal combo, 0 = loses to all of them.
+ * Ties take the tie-group midpoint, so a combo tying with k others gets
+ * credit for beating half of them.
+ *
+ * Same validity guards as classifyVillainCombo: null for boards outside
+ * 3-5 cards, combo/board collisions, or a degenerate combo.
+ *
+ * @param {number} card1 - First combo card (0-51)
+ * @param {number} card2 - Second combo card (0-51)
+ * @param {number[]} board - 3, 4, or 5 encoded board cards
+ * @returns {number | null} Percentile in [0, 100] or null
+ */
+export const comboStrengthPercentile = (card1, card2, board) => {
+  if (!Array.isArray(board) || board.length < 3 || board.length > 5) return null;
+  if (board.includes(card1) || board.includes(card2)) return null;
+  if (card1 === card2) return null;
+
+  const boardSet = new Set(board);
+  const ownScore = bestFiveFromSeven([card1, card2, ...board]);
+  let total = 0, worse = 0, tiedOthers = 0;
+  for (let a = 0; a < 52; a++) {
+    if (boardSet.has(a)) continue;
+    for (let b = a + 1; b < 52; b++) {
+      if (boardSet.has(b)) continue;
+      total++;
+      if (a === Math.min(card1, card2) && b === Math.max(card1, card2)) continue;
+      const score = bestFiveFromSeven([a, b, ...board]);
+      if (score < ownScore) worse++;
+      else if (score === ownScore) tiedOthers++;
+    }
+  }
+  if (total <= 1) return null;
+  return (100 * (worse + 0.5 * tiedOthers)) / (total - 1);
+};

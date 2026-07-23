@@ -1,0 +1,29 @@
+id: "SPR-148"
+title: "Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own rang"
+status: done
+approved_at: "2026-07-22T23:34:13.332Z"
+completed_at: "2026-07-23T00:58:45.555Z"
+completed_by_commit: "6b39b7f"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-22T23:34:13.332Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-261 selected (27 × no damping = 27).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-261"
+    title: "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-23T00:58:45.555Z"
+
+created_at: "2026-07-22T23:34:13.332Z"

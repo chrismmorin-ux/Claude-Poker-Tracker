@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-07-22T20:00:42.522Z",
-  "updated_by_event": "ev-1784750442522-e278fe77d226",
+  "updated_at": "2026-07-23T00:58:46.204Z",
+  "updated_by_event": "ev-1784768326204-10c9acbcf381",
   "items": {
     "FIND-014": {
       "id": "FIND-014",
@@ -194,11 +194,12 @@
       "title": "Low-severity engine nits: multiway fold independence + bayesianSampleConfidence ignores priors",
       "severity": "LOW",
       "category": "game-tree",
-      "status": "open",
+      "status": "resolved",
       "program": "domain-correctness",
       "dedup_key": "challenge-domain-correctness-multiway-independence-and-sampleconf-priors",
       "promoted_to": "WS-250",
-      "created_at": "2026-06-20"
+      "created_at": "2026-06-20",
+      "resolved_at": "2026-07-22"
     },
     "FIND-031": {
       "id": "FIND-031",
@@ -234,7 +235,78 @@
       "dedup_key": "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing",
       "promoted_to": "WS-250",
       "created_at": "2026-06-20"
+    },
+    "FIND-034": {
+      "id": "FIND-034",
+      "title": "POKER_THEORY.md §6.5 not updated for 3-tier empirical prior hierarchy (poolBaseline)",
+      "severity": "MEDIUM",
+      "category": "doctrine-drift",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "sweep-domain-correctness-poker-theory-6-5-three-tier-prior-hierarchy-doc-drift",
+      "promoted_to": "WS-257",
+      "created_at": "2026-07-22",
+      "resolved_at": "2026-07-22T22:33:25.592Z"
+    },
+    "FIND-035": {
+      "id": "FIND-035",
+      "title": "runWithStatPriors module-global prior swap is fragile against future async rule code (silent cross-player prior leak)",
+      "severity": "MEDIUM",
+      "category": "structural-fragility",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "sweep-domain-correctness-runwithstatpriors-async-fragility-guard",
+      "promoted_to": "WS-258",
+      "created_at": "2026-07-22",
+      "resolved_at": "2026-07-22T22:33:25.592Z"
+    },
+    "FIND-036": {
+      "id": "FIND-036",
+      "title": "Domain spec drafts pending founder promotion (docs/domain-spec.draft.md, 16 rules)",
+      "severity": "INFO",
+      "category": "action-item",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "sweep-domain-correctness-domain-spec-draft-pending-promotion",
+      "promoted_to": "WS-259",
+      "created_at": "2026-07-22",
+      "resolved_at": "2026-07-22T22:33:25.592Z"
+    },
+    "FIND-037": {
+      "id": "FIND-037",
+      "title": "Online sessions hardcode gameType 'NL Holdem' — all Ignition play collapses into one pool-baseline segment",
+      "severity": "HIGH",
+      "category": "domain-defect",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-online-session-gametype-literal-segment-collapse",
+      "promoted_to": "WS-260",
+      "created_at": "2026-07-22",
+      "resolved_at": "2026-07-22T23:17:51.626Z"
+    },
+    "FIND-038": {
+      "id": "FIND-038",
+      "title": "sizingTells calibration is circular — correlates bet size with the model's own range estimate, never the actual shown hand",
+      "severity": "HIGH",
+      "category": "domain-defect",
+      "status": "resolved",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-sizingtells-circular-avgsegmentation-not-handshown",
+      "promoted_to": "WS-261",
+      "created_at": "2026-07-22",
+      "resolved_at": "2026-07-23T00:58:45.555Z"
+    },
+    "FIND-039": {
+      "id": "FIND-039",
+      "title": "Live-session stake labels are free-text — naive segmentKey normalization fragments identical stakes into separate pools",
+      "severity": "MEDIUM",
+      "category": "domain-defect",
+      "status": "open",
+      "program": "domain-correctness",
+      "dedup_key": "challenge-domain-correctness-segmentkey-freetext-label-fragmentation",
+      "promoted_to": "WS-260",
+      "created_at": "2026-07-22"
     }
   },
-  "last_event_log_head": "ev-1784750442522-e278fe77d226"
+  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
 }

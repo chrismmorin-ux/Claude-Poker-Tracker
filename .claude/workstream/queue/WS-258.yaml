@@ -1,0 +1,56 @@
+id: "WS-258"
+title: "runWithStatPriors thenable guard — fail loud on async rule code (cross-player prior leak prevention)"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: "FIND-035"
+description: |
+  _Convergence: closes FIND-035 (structural fragility in the WS-235 segmented prior swap) — sweep run-sweep-2026-07-22_
+
+  statRules.js:35-54 runWithStatPriors swaps a module-scoped activeStatPriors
+  around the synchronous rule-evaluation body. Correctness under the
+  Promise.all-over-players pattern (usePlayerTendencies.js:99-121) depends on
+  an invisible invariant: nothing reachable from the wrapped closure ever
+  awaits. If a future change adds an await, one villain's rules could silently
+  evaluate under another villain's segmented priors — no error, subtly wrong
+  exploit output. Convert the comment-level invariant into a structural one:
+  guard that fn's return value is not a thenable; throw if it is.
+  ("Prefer unrepresentable to validated" — fail loud beats silent corruption.)
+accept_criteria: |
+  - runWithStatPriors throws (with a descriptive message naming the invariant)
+    when the wrapped fn returns a thenable/Promise.
+  - Test asserts the throw for an async fn AND asserts normal passthrough +
+    finally-restore for a synchronous fn (including when fn throws).
+  - exploitEngine suite green; no behavior change for existing callers.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/statRules.js"
+  - "src/utils/exploitEngine/__tests__/statRules.test.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-035"
+  run_id: "run-sweep-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Auto-promoted from FIND-035 (domain-audit sweep 2026-07-22, priority floor 27).
+  Optional companion (LOW, from same sweep): one-line "display narrative only"
+  comment on SIZING_TELL_EXPLOIT (villainProfileBuilder.js:508-523) to pre-empt
+  WEAKNESS_EXPLOIT_MAP-shaped scope creep — fold in if touching the area.
+closed_by_event: "ev-1784759605796-3edebebb9492"

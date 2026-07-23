@@ -15,3 +15,13 @@ Promote: `mv docs/provenance/data-source-registry.draft.md docs/provenance/data-
 Promote: `mv docs/provenance/provenance-chain-map.draft.md docs/provenance/provenance-chain-map.md`
 
 > After promoting, the registry + chain map become the live provenance baseline for the Exploit Model (`.claude/projects/exploit-model-architecture.md` §1.5) and ground the trust-tier ladder ratification.
+
+## Domain Specification
+
+Generated 2026-07-22 · run-sweep-2026-07-22 · engine: domain-audit (sweep, Phase 0b)
+
+### `docs/domain-spec.draft.md`
+**Founder review COMPLETE (2026-07-22, SPR-146).** Final shape: 14 load-bearing poker-correctness rules (9 artifact + 5 model). Review outcomes: live/online pool separation ratified High ("live and online are very distinctly different… the mass data analysis supports this"); WEAKNESS-map rule upgraded High (exhaustive grep clean); calibration rule expanded (3 surfaces + PMC Prediction Ledger enforcement); PRIOR_WEIGHT rule removed (sweep cadence owns it); study↔engine coherence rule removed (unenforceable until canonical spots exist). Theory-spec-drift bucket intentionally empty, protocol-owned. **Only the rename remains.**
+Promote: `mv docs/domain-spec.draft.md docs/domain-spec.md`
+
+> After promoting, the next `/pulse run domain-correctness sweep` engages true rule-vs-code drift detection (Phase 1) + structural blindspot checks against the promoted spec. Tracked as WS-259 / FIND-036.

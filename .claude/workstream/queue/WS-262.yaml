@@ -1,0 +1,78 @@
+id: "WS-262"
+title: "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  _Convergence: founder direction 2026-07-22 — "the mass data analysis supports this [live/online distinctness] and we should look into bringing more mass data"_
+
+  Investigation spike: how to bring larger external/mass population data into
+  the empirical pool-baseline layer (poolBaseline.js) so per-segment priors
+  are grounded in real distributions rather than only the founder's own
+  accumulated sessions. Ratified context: live and online are permanently
+  distinct reference populations (founder decision 2026-07-22, promoted into
+  the domain spec) — any imported data must arrive pre-segmented (live vs
+  online, and by stake) and must never blend across pools.
+
+  Questions for the spike (deliverable = a short options memo, not code):
+  - Sources: purchasable/free online hand-history corpora (e.g. HH archives),
+    published population studies for live games, solver-adjacent population
+    reports. Licensing + ToS constraints per source (flag legal-safety review
+    if scraping or redistributed HH data is on the table).
+  - Ingestion shape: pool baselines need only per-stat (k, n) count pairs per
+    segment (STAT_COUNT_FIELDS in poolBaseline.js) — a mass import can be a
+    tiny aggregate table, not full hand records. That keeps IndexedDB
+    footprint trivial and sidesteps most licensing issues (aggregates vs raw
+    hands).
+  - Trust tier: external aggregates are Reference-class data (Exploit Model
+    3-class doctrine) — they seed the founder-estimate tier or a new
+    "imported reference pool" tier; they must NOT masquerade as the founder's
+    own observed pool (provenance registry entry required, prog-data-provenance).
+  - Segmentation fit: imported data must map onto segmentKey's target state
+    (post-WS-260 canonicalization) — sequence this spike after or alongside
+    WS-260.
+  - Overdispersion: imported mass data is heterogeneous — cap/discount policy
+    (POOL_PRIOR_MAX_PSEUDOCOUNT analog) for imported pseudocounts.
+accept_criteria: |
+  - Options memo in docs/ or the exploit-model project file: candidate
+    sources w/ licensing posture, ingestion shape (aggregate counts), trust-
+    tier placement, segmentation mapping, cap policy recommendation.
+  - Explicit go/no-go recommendation + rough effort for the chosen path.
+  - No code shipped in this item; follow-up implementation ticket(s) drafted
+    if GO.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - ".claude/projects/exploit-model-architecture.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Source selection + licensing posture (may need legal-safety review)"
+  - "Trust-tier placement of imported aggregates (Reference class vs new tier)"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Founder-articulated direction during SPR-146 / domain-spec review
+  (2026-07-22): live/online distinctness ratified as binding; "we should look
+  into bringing more mass data." Feeds the Exploit Model Field frame
+  ([[project_exploit_model_architecture]]); extends the WS-235 pool-baseline
+  layer. Sequence with WS-260 (segmentation fixes) so imported data maps onto
+  canonical segment keys.

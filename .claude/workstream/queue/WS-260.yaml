@@ -1,0 +1,73 @@
+id: "WS-260"
+title: "Pool-baseline segmentation correctness — capture real online stakes + canonicalize live stake labels"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: "FIND-037"
+description: |
+  _Convergence: closes FIND-037 (HIGH) + FIND-039 (MEDIUM) — challenge protocol, run-sweep-2026-07-22_
+
+  Two segmentation defects defeat the WS-235 empirical pool baseline's
+  core doctrine (different populations never pooled):
+
+  (a) HIGH — createOnlineSession() (sessionsStorage.js:428) hardcodes
+  gameType 'NL Holdem', so segmentKey() yields ONE segment for all online
+  play; $1/$2 zone and $5/$10 regular blend into a single wrong-population
+  baseline every online villain shrinks toward. Fix: capture real stakes/
+  format from the Ignition wire data (blinds/table metadata exist per
+  wire-schemas.js) into the session record; decide backfill policy for
+  existing literal-labeled sessions.
+
+  (b) MEDIUM — live gameType labels are free-text; segmentKey's naive
+  normalization splits '1/2' / '$1/$2' / '1/2 NL' into distinct thin
+  segments that individually fall back to the founder estimate, silently
+  defeating the empirical baseline. Fix: canonicalize (strip currency
+  symbols + NL/NLH/NLHE suffixes, sort blind numbers) in segmentKey or
+  constrain the writer boundary vocabulary.
+
+  MANDATORY before editing: POKER_THEORY.md + exploitEngine/CLAUDE.md.
+  Note segmentation isolation tests at poolBaseline.test.js:137-158 must be
+  extended, not weakened.
+accept_criteria: |
+  - Online sessions record real stakes/format from wire data; segmentKey
+    produces distinct segments for distinct online stakes (test with two
+    stake levels).
+  - segmentKey canonicalization: '1/2', '$1/$2', '1/2 NL', '2/5' vs '$2/$5
+    NLH' resolve to the expected canonical segments (table-driven test).
+  - Live/online never pooled (existing isolation tests still green).
+  - Backfill decision recorded (re-key existing online sessions vs fresh
+    start) — decision note in the commit or /decide if trade-offs emerge.
+  - exploitEngine + persistence suites green.
+effort: "M"
+files_involved:
+  - "src/utils/persistence/sessionsStorage.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/__tests__/poolBaseline.test.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Backfill policy for existing online sessions (re-key from wire captures vs fresh start)"
+  - "Canonicalization at writer boundary vs segmentKey read side"
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-037"
+  run_id: "run-sweep-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Auto-promoted from FIND-037 (HIGH) with FIND-039 (MEDIUM) bundled — same
+  fix family (segment-key quality). Challenge protocol 2026-07-22.
+closed_by_event: "ev-1784762271651-ed2a828b6342"

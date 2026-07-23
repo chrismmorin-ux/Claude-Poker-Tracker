@@ -1,0 +1,278 @@
+# Phase 0b final rules — merged artifact (10) + model (6), cross-check alterations applied
+# Order: artifact rules, then model rules. run-sweep-2026-07-22
+# Phase 0b-ii artifact-derived rules — architect pass, run-sweep-2026-07-22
+rules:
+  - name: "Villain per-combo action probabilities derive from equity ratio, not labels"
+    statement: "Villain fold/call/raise probabilities for a given combo must be computed from a logistic function of equityRatio (villainEquity / potOddsNeeded), adjusted by implied odds and SPR — never assigned directly from position, bucket, or style labels."
+    category: "First-principles decision modeling"
+    source_evidence:
+      - file: "src/utils/exploitEngine/gameTreeDepth2.js"
+        lines: "121-182"
+        note: "comboActionProbabilities: computes equityRatio = villainEquity/potOddsNeeded, feeds a scaledLogistic for pCall/pRaise; comment block explicitly states 'derive from decision factors...rather than position labels or bucket names'."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§7.1-§7.3, §7.5"
+        note: "Doctrine: decisions derive from equity/pot-odds/SPR/players-remaining; labels are outputs, not inputs."
+    confidence: "High"
+    review_notes: "Confirm no call site overrides comboActionProbabilities output with a bucket- or label-keyed lookup downstream (e.g. gameTreeContext.js consumers)."
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "prog-domain-correctness invariant: 'Villain decisions derive from equity/potOdds/SPR/players-remaining — never from position/bucket/style labels'"
+    origin: artifact
+
+  - name: "Single-source fold-curve/style hierarchy — no double-counting"
+    statement: "When resolving a villain's fold-response parameters (or steepness), use the single highest-fidelity source available (personalized fold curve > explicit override > style-conditioned default > population default / reliable villain-model rate) and skip all lower tiers — never stack a style adjustment on top of a model or observed-stat adjustment."
+    category: "Villain decision model fidelity"
+    source_evidence:
+      - file: "src/utils/exploitEngine/foldEquityCalculator.js"
+        lines: "143-159"
+        note: "findOptimalBetSize: curveSource = personalizedFoldCurve || FOLD_CURVE_PARAMS[style] || FOLD_CURVE_PARAMS.default (single-source resolution, no stacking)."
+      - file: "src/utils/exploitEngine/gameTreeDepth2.js"
+        lines: "161-177"
+        note: "comboActionProbabilities: reliableModel check skips style-conditioned steepness/raise params entirely when a model exists, with an explicit '§7.4: pick ONE source' comment."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§7.4, §11.1"
+        note: "Doctrine + documented fold-curve hierarchy (personalized > explicit > style > population)."
+    confidence: "High"
+    review_notes: null
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "prog-domain-correctness invariant: 'Style adjustments are not stacked on top of the stats that define the style'"
+    origin: artifact
+
+  - name: "Range priors are Bayesian population priors, never uniform or frequentist"
+    statement: "Preflop range estimation must start from population priors (pseudocount PRIOR_WEIGHT=10) encoding typical live-pool behavior and update via Bayesian posterior blending — never a uniform prior and never a frequentist point estimate (z-test/p-value)."
+    category: "Range estimation correctness"
+    source_evidence:
+      - file: "src/utils/rangeEngine/populationPriors.js"
+        lines: "63"
+        note: "export const PRIOR_WEIGHT = 10 — the pseudocount weight for population priors."
+      - file: "src/utils/rangeEngine/CLAUDE.md"
+        lines: "9-10, 43-44"
+        note: "'Bayesian, Not Frequentist' principle + 'DO NOT use uniform priors' anti-pattern."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§6.5"
+        note: "Bayesian update formula and the ~10-virtual-observation convention (corrected from ~5 in v1.2)."
+    confidence: "High"
+    review_notes: null
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "src/utils/rangeEngine/__tests__ (bayesianUpdater/populationPriors suites); prog-domain-correctness anti_invariant 'No frequentist statistical method...in inference paths'"
+    origin: artifact
+
+  - name: "Equity computation: exact enumeration fast-path for sparse ranges, MC otherwise"
+    statement: "Combo-vs-range equity on turn/river must use deterministic exact enumeration when the villain range is sparse (≤20 combos), and Monte Carlo rollout with sufficient trials otherwise — never MC-only or an under-sampled approximation presented as exact."
+    category: "Equity calculation correctness"
+    source_evidence:
+      - file: "src/utils/pokerCore/monteCarloEquity.js"
+        lines: "297-330"
+        note: "'Fast path: exact enumeration for sparse ranges (≤20 combos on turn/river)' — enumerateCombos + exactEnumerateEquity invoked before falling through to MC rollout."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§6.6"
+        note: "Combo counting math (1326 combos / 169 classes) underpinning when exhaustive enumeration is computationally tractable."
+    confidence: "High"
+    review_notes: "Verify the 20-combo threshold is still current (prior domain-correctness delta run flagged this fast path had been relocated from exploitEngine into pokerCore — confirm no duplicate/divergent enumeration path exists elsewhere per FIND-008 resolution)."
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "src/utils/pokerCore/__tests__ (monteCarloEquity/exactComboEquity suites); prog-domain-correctness problem_class 'Equity calculation correctness' detection notes"
+    origin: artifact
+
+  - name: "Rake is threaded through showdown-pot EV, never the pure fold-equity term"
+    statement: "Rake must be subtracted from the showdown pot inside fold-equity/bet-sizing EV computation (via estimateRake, respecting no-flop-no-drop preflop and pct/cap config) — but must never reduce the fold-equity term itself, since a folded pot is never raked."
+    category: "Game tree EV correctness"
+    source_evidence:
+      - file: "src/utils/potCalculator.js"
+        lines: "412-424"
+        note: "estimateRake(potSize, rakeConfig, street): returns 0 for preflop when noFlopNoDrop, else min(potSize*pct, cap)."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§11.3"
+        note: "'Rake reduces the EV of marginal value bets and thin calls; it never affects fold-equity from villain folding (no showdown, no drop).'"
+    confidence: "High"
+    review_notes: null
+    enforcement_mechanism: deterministic_script
+    enforcement_ref: "src/utils/exploitEngine/__tests__/foldEquityCalculator.test.js (rake-threading assertions)"
+    origin: artifact
+
+  - name: "ICM tax on committed stack-offs is gated to the exact slice, never applied to partial-pot bets"
+    statement: "Postflop game-tree EV may only apply the ICM risk-premium tax (icmAdjustedEV = chipEV − (β−1)·P(lose)·riskChips) to actions that risk ≥85% of the effective stack, heads-up, with an icmContext supplied — because the formula is exact only when chips-won ≈ chips-risked; cash games and partial-pot/multiway spots must fall through untaxed rather than approximated."
+    category: "Game tree EV correctness"
+    source_evidence:
+      - file: "src/utils/exploitEngine/gameTreeEvaluator.js"
+        lines: "1003-1039"
+        note: "ICM_COMMIT_FRACTION=0.85 gate; icmEligible requires icmContext, numOpponents===1, effectiveStack>0; risk.riskChips < effectiveStack*0.85 skips the tax."
+      - file: "src/utils/icmEngine/riskPremium.js"
+        lines: "108-146"
+        note: "computeCommittedIcmTax doc comment: 'exact ONLY when winChips ≈ riskChips...callers MUST gate this to committed/all-in spots'."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§10.4, §10.6"
+        note: "WS-251 exact-slice doctrine + multi-table approximation honesty (never present approximated ICM as exact)."
+    confidence: "High"
+    review_notes: "Domain-correctness delta run (2026-06-20) already flagged one LOW defect here (riskPremium.js covered-shove asymmetry, riskChips vs winChips) — check whether WS-244/245 follow-ups closed it before treating this as fully clean."
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "src/utils/icmEngine/__tests__ (Malmuth-Harville conservation + ICM-tax gating tests); prog-domain-correctness §10 governance"
+    origin: artifact
+
+  - name: "Sample-size confidence must propagate as a Beta-Binomial credible interval, never a bare point estimate"
+    statement: "Any villain stat used for decision-relevant confidence (VPIP, PFR, foldToCbet, etc.) must be modeled as a Beta(α,β) posterior with a defined credible interval — pseudocount totaling ~10 — rather than surfaced as a frequentist point estimate or p-value."
+    category: "Bayesian confidence representation"
+    source_evidence:
+      - file: "src/utils/exploitEngine/bayesianConfidence.js"
+        lines: "32-49, 143-150"
+        note: "STAT_PRIORS Beta(α,β) table (pseudocount=10 per stat) and credibleInterval() computing equal-tailed posterior interval from betaPosterior."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§6.5"
+        note: "Bayesian update doctrine; pseudocount-10 convention mirrored across STAT_PRIORS and rangeEngine's PRIOR_WEIGHT."
+    confidence: "High"
+    review_notes: null
+    enforcement_mechanism: existing_invariant
+    enforcement_ref: "prog-domain-correctness problem_class 'Bayesian confidence representation' detection (audit bayesianConfidence.js + downstream consumers reaching UI)"
+    origin: artifact
+
+  - name: "Range-narrowing decisions use per-combo equity ranking, not bucket-keyed lookup (AP-RL-01)"
+    statement: "Postflop range narrowing (how a villain's range shrinks street-to-street given a betting line) must rank/select combos by per-combo equity (plus draw potential) conditioned on observed continuation frequency — never via a bucket-label filter (e.g. bucket >= TPGK) or a per-bucket rate lookup table."
+    category: "Anti-pattern enforcement"
+    source_evidence:
+      - file: "src/utils/exploitEngine/postflopNarrower.js"
+        lines: "624-666"
+        note: "narrowByBoard doc comment: 'Instead of arbitrary bucket multipliers, this sorts all combos by total equity...and keeps the top N% based on the villain's observed continuation frequency.' Confirmed wired into production via gameTreeEvaluator.js, gameTreeContext.js, gameTreeDepth2.js (comboMultiplier, the bucket-anchored alternative, is referenced only from its own test file)."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§7.6 (AP-RL-01)"
+        note: "Binding anti-pattern statement: range-narrowing must be per-combo derivation, not bucket-label heuristics."
+    confidence: "High"
+    review_notes: "comboMultiplier (bucket-anchored) still exists in postflopNarrower.js and is exercised only by its own test — confirm it is genuinely dead/legacy in production paths, not a shadow narrowing path invoked conditionally."
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "CI lint pattern proposed in POKER_THEORY §7.6 enforcement mechanisms (grep for POP_NARROWING_RATES[bucket] / bucket-keyed switches) — not yet implemented as of this audit"
+    origin: artifact
+
+  - name: "Hero action recommendations come exclusively from game-tree EV, never a weakness-label lookup map"
+    statement: "Hero action recommendations must be computed by the game-tree evaluator using situation-specific EV (hand, board, pot, position, stack depth) — a detected villain weakness is an input to the game tree, never a hero-action label looked up directly from a weakness-to-exploit map."
+    category: "Exploit generation soundness"
+    source_evidence:
+      - file: "src/utils/exploitEngine/generateExploits.js"
+        lines: "1-103"
+        note: "No WEAKNESS_EXPLOIT_MAP symbol present in generateExploits.js (grep across src/ finds it only in the two sub-directory CLAUDE.md anti-pattern docs, not in any executable module) — consistent with the documented removal."
+      - file: "src/utils/exploitEngine/CLAUDE.md"
+        lines: "61-69"
+        note: "'The former WEAKNESS_EXPLOIT_MAP stopgap has been removed — hero action recommendations now come exclusively from the game tree evaluator (gameTreeEvaluator.js)'."
+      - file: ".claude/workstream/programs/prog-domain-correctness.yaml"
+        lines: "110-116"
+        note: "problem_class 'Exploit generation soundness' + anti_invariant 'No new entry added to WEAKNESS_EXPLOIT_MAP'."
+    confidence: "Medium"
+    review_notes: "Confirmed the map is absent from generateExploits.js and gameTreeEvaluator.js by grep, but did not exhaustively grep every exploitEngine file for a re-introduced or renamed equivalent lookup table — worth a targeted grep for any WEAKNESS_.*_MAP or hardcoded weakness->action string switch before promoting to a hard invariant."
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "grep gate for WEAKNESS_EXPLOIT_MAP / weakness->action string literals across src/utils/exploitEngine/ — not currently a scripted check"
+    origin: artifact
+
+  - name: "PRIOR_WEIGHT (~10) pseudocount convention must stay consistent across all Bayesian engines"
+    statement: "Any module implementing a Beta-Binomial or Dirichlet-style prior for poker stats (rangeEngine, bayesianConfidence, assumptionEngine) must use the same ~10-virtual-observation pseudocount convention as POKER_THEORY.md §6.5 — a divergence between the doc's stated value and any engine's actual constant is theory-spec drift requiring an ADR or a doc fix, not silent coexistence."
+    category: "Theory-spec drift"
+    source_evidence:
+      - file: "src/utils/rangeEngine/populationPriors.js"
+        lines: "63"
+        note: "PRIOR_WEIGHT = 10."
+      - file: "src/utils/exploitEngine/bayesianConfidence.js"
+        lines: "32, 47-49"
+        note: "STAT_PRIORS Beta(α,β), 'total pseudocount = 10' comment."
+      - file: "src/utils/assumptionEngine/assumptionProducer.js"
+        lines: "732, 751, 766"
+        note: "Comments explicitly cross-reference 'matches rangeEngine's PRIOR_WEIGHT convention' / 'Same PRIOR_WEIGHT ≈ 10 convention' at three separate sites."
+      - file: ".claude/context/POKER_THEORY.md"
+        lines: "§6.5, changelog v1.2 (2026-06-20)"
+        note: "Doc's own changelog records a prior drift incident: '§6.5 PRIOR_WEIGHT corrected ~5 → ~10 (FIND-013; matches populationPriors.js + all sibling docs)' — i.e. this exact rule has already been violated and fixed once."
+    confidence: "Medium"
+    review_notes: "[cross-check downgrade: engineering-hygiene severity, not decision-correctness severity] This convention has already drifted once (doc said ~5 while code said ~10, fixed 2026-06-20) — treat as a recurring risk, not a one-time fix; next_review per program frontmatter is 2026-09-18."
+    enforcement_mechanism: cross_component_reconciliation
+    enforcement_ref: "prog-domain-correctness protocol 'sweep' (14-day cadence, cross-checks POKER_THEORY.md against engine constants) + POKER_THEORY.md frontmatter 'last_verified'/'next_review' fields"
+    origin: artifact
+
+  # --- model-level rules (origin: model) ---
+  - name: "Villain model is a continuously-updating belief state, not a fixed label"
+    statement: "This system's model of a villain is correct iff it represents a continuously-updating posterior belief per opponent, where Y is independently verifiable by confirming that a villain's displayed profile/exploit read changes measurably after each new hand involving that villain, rather than remaining a static classification assigned once and reused for the rest of the session."
+    category: "Villain decision model fidelity"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "'Deliver the most accurate predictive poker decisions in the moment new data arrives' implies the villain model must actually move when new data arrives, not just accumulate it inertly."
+      - file: "counterfactual"
+        lines: null
+        note: "If the villain model were a fixed label rather than an updating belief state, the user would experience the tool giving the same exploit read on a villain across an entire session even after that villain visibly changed how they were playing — advice that ignores what just happened at the table."
+    confidence: "Medium"
+    review_notes: null
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "Proposed: audit confirming per-villain model output changes within N hands of a new observed action for that villain; not currently a scripted check."
+    origin: model
+
+  - name: "Villain tendencies are non-stationary within a session — recent evidence can override stale priors"
+    statement: "This system's model of 'new data arriving mid-session' is correct iff a single sufficiently informative event for a villain can measurably override an established prior for that villain even against a large accumulated sample, where Y is independently verifiable by feeding a manufactured, decisively contradicting observation into a well-established villain profile and confirming the posterior shifts by more than a negligible amount, rather than being averaged into near-invisibility."
+    category: "First-principles decision modeling"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "'...in the moment new data arrives' is the load-bearing clause: the model must treat within-session change as real, not just noise around a fixed long-run rate."
+      - file: "counterfactual"
+        lines: null
+        note: "If the model treated villain tendencies as time-invariant regardless of new evidence, the user would experience the tool ignoring a villain's obvious in-session adjustment (e.g., a villain who just started 3-betting light after being caught bluffing) because the old, larger sample still dominates — the system would feel behind the table, not ahead of it."
+    confidence: "Medium"
+    review_notes: null
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "Proposed: contradiction-injection test — inject a manufactured decisive contradicting observation into a high-sample villain profile and assert the posterior moves by more than epsilon; not currently implemented."
+    origin: model
+
+  - name: "Displayed confidence must be empirically calibrated, not merely well-formed"
+    statement: "This system's model of decision confidence is correct iff its stated confidence level matches real-world accuracy at that level (predictions labeled, e.g., '80% confident' are correct roughly 80% of the time in aggregate), where Y is independently verifiable via a calibration curve built from logged prediction-vs-outcome pairs — not merely by confirming the underlying math produces a well-formed credible interval."
+    category: "Bayesian confidence representation"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "'Most accurate predictive poker decisions' requires that 'confidence' mean something calibrated in reality, not just an internally consistent statistical object."
+      - file: "counterfactual"
+        lines: null
+        note: "If confidence were internally well-formed but not empirically calibrated, the user would experience being told a read is 'high confidence' and acting on it (e.g., committing a stack), only to discover over many repetitions that 'high confidence' reads are wrong far more often than the stated confidence implied — eroding trust that the confidence number means anything."
+    confidence: "Medium"
+    review_notes: null
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "Proposed: calibration-curve check comparing stated-confidence bins to observed outcome accuracy over a rolling window of resolved predictions; not currently a scripted check."
+    origin: model
+
+  - name: "An 'exploit' must be an attributable edge, not any deviation from equilibrium"
+    statement: "This system's model of an 'exploit' is correct iff a recommended exploitative deviation is directly attributable to villain-specific evidence that exceeds a defined noise floor, where Y is independently verifiable by confirming that removing the villain-specific evidence for that spot causes the recommendation to revert to the equilibrium/baseline line, rather than persisting as a labeled 'exploit' with no attributable cause."
+    category: "Exploit generation soundness"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "'Most accurate predictive poker decisions' implies exploit recommendations must track real edge, not merely look different from a textbook baseline."
+      - file: "counterfactual"
+        lines: null
+        note: "If any deviation from GTO could be labeled an exploit regardless of attributable evidence, the user would experience being told to take a 'clever' exploitative line that, on reflection, has no real read behind it — and would lose money on lines that felt sophisticated but were unfounded."
+    confidence: "Medium"
+    review_notes: null
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "Proposed: reversibility test — for any exploit-flagged recommendation, strip villain-specific evidence and confirm the recommendation reverts to the equilibrium baseline; not currently a scripted check."
+    origin: model
+
+  - name: "Live and online opponent pools are distinct reference populations, never merged"
+    statement: "This system's model of a 'population baseline' is correct iff live-table and online populations are treated as two distinct reference distributions that are never merged into one pooled average, where Y is independently verifiable by confirming the two populations' aggregate stats (e.g., VPIP/PFR/3-bet frequency) form measurably different distributions, such that a pooled average would sit between two real modes rather than describing either actual population."
+    category: "Range estimation correctness"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "Not named directly — inferred from 'most accurate predictive poker decisions' requiring the reference population a villain is compared against to actually resemble the villain's real context (live vs. online)."
+      - file: "counterfactual"
+        lines: null
+        note: "If live and online opponents were modeled against one pooled baseline, the user would experience the tool importing online-typical tendencies (e.g., wider 3-bet ranges) onto a live opponent it has little data on, or vice versa — producing exploit suggestions calibrated to a population the person across the table doesn't actually belong to."
+    confidence: "Low"
+    review_notes: "Intention.md does not mention live vs. online pools at all; this rule is my inference of an unstated precondition for 'accurate' predictions to hold across both contexts the app supports. Should be confirmed with the founder as an actual goal before treating as binding. [cross-check note: poolBaseline.js already implements live/online segmentation (WS-235) — either promote with that citation or confirm with founder; do not carry indefinitely as speculative.]"
+    enforcement_mechanism: proposable_invariant
+    enforcement_ref: "Proposed: distributional-divergence check (e.g., a two-sample test) confirming live-tagged and online-tagged aggregate stats differ significantly and are never combined into a single baseline; not currently a scripted check."
+    origin: model
+
+  - name: "The study section and the live engine must express one consistent theory, not two"
+    statement: "This system's model relating the study section to the live decision engine is correct iff both express a single underlying poker theory, where Y is independently verifiable by confirming that for any canonical spot taught in the study section, the live engine's recommendation in an equivalent live spot does not rest on assumptions contradicting the taught principle."
+    category: "Theory-spec drift"
+    source_evidence:
+      - file: "system/intention.md"
+        lines: "Imagined Outcome"
+        note: "The outcome names two coupled deliverables — 'most accurate predictive poker decisions...paired with a complete beginner-to-pro study section' — implying the pairing must be coherent, not two independently-evolving artifacts."
+      - file: "counterfactual"
+        lines: null
+        note: "If the study section taught one framework while the live engine's recommendations rested on a different or contradictory one, the user would experience studying a concept (e.g., 'bet sizing doesn't reliably indicate hand strength'), then seeing the live tool make an in-hand recommendation that only makes sense if sizing does indicate strength — undermining trust in both the lessons and the live advice simultaneously."
+    confidence: "Low"
+    review_notes: "[cross-check downgrade] Not mechanically checkable as stated — no bounded canonical-spot list or equivalence test; hold until scoped to concrete canonical-spot equivalence checks before treating as binding."
+    enforcement_mechanism: cross_component_reconciliation
+    enforcement_ref: "Proposed periodic reconciliation between study-section content and live-engine behavior on a shared set of canonical spots, analogous in spirit to the existing theory-doc-vs-engine-constants sweep cadence; no such reconciliation currently targets study-section content specifically."
+    origin: model

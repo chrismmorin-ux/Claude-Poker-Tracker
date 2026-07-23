@@ -1,0 +1,67 @@
+id: "WS-261"
+title: "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: "FIND-038"
+description: |
+  _Convergence: closes FIND-038 (HIGH) — challenge protocol, run-sweep-2026-07-22_
+
+  The WS-235-era sizingTells unstub is circular: decisionAccumulator.js stores
+  handShown (:362-369) but computes strengthOrdinal from
+  bucket.avgSegmentation (:501-517) — the model's OWN range-narrowing
+  estimate, constant per bucket. The Pearson r then measures self-consistency
+  with the engine's prior, not an empirical showdown-verified tell, while the
+  UI copy claims "confirmed by showdowns" (POKER_THEORY §3.5/§5.9 violation).
+  Display-only today (WS-250 gate — no live EV feed), so blast radius is the
+  founder-facing read text, but that read is exactly what the founder acts on
+  at the table.
+
+  Fix: evaluate handShown against the board at the bet's street via
+  pokerCore/handEvaluator.js to produce a real per-sample strengthOrdinal;
+  recompute r over true per-sample pairs. Surface the MNAR caveat (only
+  called-to-showdown bets observed; folded-out bluffs invisible — per the
+  rangeEngine revealMechanism doctrine) in the confidence/description, and an
+  n-floor gate if not already present.
+
+  MANDATORY before editing: POKER_THEORY.md §3.5/§5.9 + exploitEngine/CLAUDE.md.
+accept_criteria: |
+  - strengthOrdinal derives from handShown vs board (handEvaluator), per
+    sample — bucket.avgSegmentation no longer feeds the correlation.
+  - Test: synthetic showdown set where actual strength anti-correlates with
+    the model's range estimate — r must track ACTUAL strength.
+  - MNAR/selection-bias caveat present in the tell's description or
+    confidence; minimum-sample gate asserted by test.
+  - Display copy ("confirmed by showdowns") is true after the change.
+  - exploitEngine suite green.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/pokerCore/handEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-038"
+  run_id: "run-sweep-2026-07-22"
+created_at: "2026-07-22T00:00:00Z"
+status_note: |
+  Auto-promoted from FIND-038 (HIGH, challenge protocol 2026-07-22).
+  Supersedes the "unstubbed" half of FIND-032 — unstubbed, but circular.
+closed_by_event: "ev-1784768325577-7a36e3ac30ca"
