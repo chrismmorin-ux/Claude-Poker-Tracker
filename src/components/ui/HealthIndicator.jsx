@@ -20,7 +20,7 @@ import { getErrorCount } from '../../utils/errorLog';
 const POLL_MS = 60000;
 
 export const HealthIndicator = () => {
-  const { setCurrentScreen } = useUI();
+  const { setCurrentScreen, openSettings } = useUI();
   const { isExtensionConnected, syncError, versionMismatch, lastSyncTime } = useSyncBridge();
   const [errorCount, setErrorCount] = useState(() => getErrorCount());
 
@@ -50,6 +50,10 @@ export const HealthIndicator = () => {
       label: `${errorCount} error${errorCount > 1 ? 's' : ''} logged`,
       tone: 'red',
       target: SCREEN.SETTINGS,
+      // Settings alone isn't the destination — the Error Log is the 11th panel
+      // down a single long scroll, and collapsed. Landing at the top of Settings
+      // is indistinguishable from not having navigated anywhere useful.
+      settingsFocus: 'errorLog',
       icon: <AlertTriangle size={16} />,
     };
   }
@@ -61,7 +65,10 @@ export const HealthIndicator = () => {
   return (
     <button
       type="button"
-      onClick={() => setCurrentScreen(fault.target)}
+      onClick={() => {
+        if (fault.settingsFocus) openSettings(fault.settingsFocus);
+        else setCurrentScreen(fault.target);
+      }}
       className="fixed bottom-3 right-3 z-[60] flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-white/60"
       style={{ backgroundColor: bg }}
       title={`${fault.label} — tap to view`}

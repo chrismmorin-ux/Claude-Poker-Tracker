@@ -8,9 +8,16 @@
  * Limit: 50 entries (FIFO - oldest removed when limit exceeded)
  */
 
+import { BUILD_SHA } from './buildInfo';
+
 const STORAGE_KEY = 'poker-tracker-error-log';
 const MAX_ENTRIES = 50;
-const APP_VERSION = 'v122';
+// The build the error actually happened on. This was a hand-maintained string
+// ('v122') that stopped being updated at v123, so every entry — and every bug
+// report exported from one — carried a version that was simply wrong, which is
+// worse than carrying none. BUILD_SHA is stamped in at build time and cannot
+// drift.
+const APP_VERSION = BUILD_SHA;
 
 /**
  * Error log entry shape

@@ -14,6 +14,7 @@ import {
   exportErrorLog,
 } from '../errorLog';
 import { AppError } from '../errorHandler';
+import { BUILD_SHA } from '../buildInfo';
 
 const STORAGE_KEY = 'poker-tracker-error-log';
 
@@ -73,7 +74,11 @@ describe('errorLog', () => {
       expect(entry.context.sessionActive).toBe(true);
       expect(entry.context.handCount).toBe(5);
       expect(entry.userAgent).toBeDefined();
-      expect(entry.appVersion).toBe('v122');
+      // The build the error happened on. Was a hand-maintained literal that
+      // froze at 'v122' while the app moved to v123 — every entry claimed a
+      // version it wasn't. Now stamped from the build, so assert it tracks
+      // BUILD_SHA rather than pinning another literal that can go stale.
+      expect(entry.appVersion).toBe(BUILD_SHA);
     });
 
     it('persists entry to localStorage', () => {
@@ -240,7 +245,7 @@ describe('errorLog', () => {
       const exported = exportErrorLog();
       const parsed = JSON.parse(exported);
 
-      expect(parsed.appVersion).toBe('v122');
+      expect(parsed.appVersion).toBe(BUILD_SHA);
       expect(parsed.exportedAt).toBeDefined();
       expect(parsed.errorCount).toBe(1);
       expect(parsed.errors).toHaveLength(1);
