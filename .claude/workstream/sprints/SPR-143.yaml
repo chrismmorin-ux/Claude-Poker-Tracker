@@ -1,7 +1,15 @@
 id: "SPR-143"
 title: "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D "
-status: approved
+status: abandoned
 approved_at: "2026-06-21T02:43:50.044Z"
+abandoned_at: "2026-07-25"
+abandoned_reason: |
+  Orphaned by the fb-002/fr-012 gate gap: approved 2026-06-21 but never executed, and invisible to the
+  resume path (which matched status:active only), so SPR-144 was composed for the SAME item (WS-234) the
+  next day. SPR-144 premise-checked WS-234, founder deferred it (status: deferred), and SPR-144 was
+  abandoned — leaving this sprint sitting at status:approved for a month. No items were executed here.
+  Closed out during WS-269 (the fix for that gate gap); WS-234 remains deferred pending the owner-only
+  empirical run, so there is nothing to resume.
 program_focus: "design"
 
 goal: |

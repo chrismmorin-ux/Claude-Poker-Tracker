@@ -1290,7 +1290,7 @@ sprints:
 
   - id: "SPR-143"
     title: "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D "
-    status: approved
+    status: abandoned
     item_count: 1
     items_done: 0
     program_focus: "design"
@@ -1368,4 +1368,13 @@ sprints:
     program_focus: "domain-correctness"
     created_at: "2026-07-25T16:26:11.471Z"
     completed_at: "2026-07-25T17:12:17.455Z"
+
+  - id: "SPR-152"
+    title: "Ship WS-269: cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as d"
+    status: approved
+    item_count: 1
+    items_done: 0
+    program_focus: "kit-quality"
+    created_at: "2026-07-25T18:25:44.559Z"
+    completed_at: null
 

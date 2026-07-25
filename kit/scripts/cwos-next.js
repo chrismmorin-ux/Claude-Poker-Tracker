@@ -90,6 +90,85 @@ function repoRoot() {
   return path.resolve(ws, '..', '..');
 }
 
+// WS-269 (fb-002 / fr-012 / fr-017 / fr-019): the resume-check used to match
+// status:'active' only, but nothing in the pipeline ever writes that status —
+// approve writes 'approved', done writes 'done'. So an approved-but-unexecuted
+// sprint (composed + approved, execution not yet started — e.g. plan-first
+// design awaiting founder decisions) was invisible to the resume path, and a
+// later /next composed a duplicate sprint over it. On 2026-07-25 that produced
+// two sprints independently executing WS-263.
+//
+// 'active' stays first so any hand-set or future active sprint keeps priority.
+function findResumableSprint(sprints) {
+  const list = (sprints || []).filter(
+    (s) => s && s.id && s.status !== 'abandoned' && s.status !== 'done' && s.status !== 'completed'
+  );
+  const byRecency = (a, b) =>
+    String(b.approved_at || b.created_at || '').localeCompare(String(a.approved_at || a.created_at || ''));
+  const live = list.filter((s) => s.status === 'active').sort(byRecency);
+  if (live.length) return live[0];
+  const approved = list
+    .filter((s) => s.status === 'approved' && !s.completed_at)
+    .sort(byRecency);
+  return approved.length ? approved[0] : null;
+}
+
+// Third resume source: the sprint YAMLs themselves. approve() writes the YAML
+// synchronously but state/sprints.json and sprint-index.yaml are only refreshed
+// when the T6 reducer / reconcile fires, so a just-approved sprint can be
+// absent from both caches. Scanning the dir closes that race window.
+function readSprintsFromDir() {
+  const out = [];
+  try {
+    const dir = path.join(repoRoot(), '.claude', 'workstream', 'sprints');
+    if (!fs.existsSync(dir)) return out;
+    for (const f of fs.readdirSync(dir)) {
+      if (!/^SPR-\d{3,4}\.yaml$/.test(f)) continue;
+      const r = readYAMLFile(path.join(dir, f));
+      if (!r.ok || !r.data) continue;
+      const d = r.data;
+      const items = Array.isArray(d.items) ? d.items : [];
+      out.push({
+        id: d.id || f.replace(/\.yaml$/, ''),
+        title: d.title || null,
+        status: d.status || null,
+        approved_at: d.approved_at || null,
+        created_at: d.created_at || null,
+        completed_at: d.completed_at || null,
+        item_count: items.length,
+        items_done: items.filter((it) => it && (it.status === 'done' || it.status === 'skipped')).length,
+      });
+    }
+  } catch { /* non-fatal — the cache sources still apply */ }
+  return out;
+}
+
+// Unions the three sources by sprint id — later sources overwrite earlier ones,
+// so the freshest record for each id wins (dir scan > sprint-index > state
+// store). Union rather than first-hit: a stale cache can hold an old approved
+// sprint that a fresher source shows as closed, and picking the most recent
+// resumable sprint requires seeing all of them at once.
+function resolveResumableSprint(store) {
+  const merged = new Map();
+  const absorb = (list) => {
+    for (const s of list || []) {
+      if (s && s.id) merged.set(s.id, Object.assign({}, merged.get(s.id), s));
+    }
+  };
+
+  absorb((store && store.sprints && store.sprints.all && store.sprints.all()) || []);
+
+  const idxPath = path.join(repoRoot(), '.claude', 'workstream', 'sprint-index.yaml');
+  if (fs.existsSync(idxPath)) {
+    const r = readYAMLFile(idxPath);
+    if (r.ok && r.data && Array.isArray(r.data.sprints)) absorb(r.data.sprints);
+  }
+
+  absorb(readSprintsFromDir());
+
+  return findResumableSprint(Array.from(merged.values()));
+}
+
 function readContextOverrideClass() {
   // Step 3a-rotation: scans system/context.md for an *active* override_class.
   // Active = under "## Active overrides", not "## Archived overrides".
@@ -259,25 +338,18 @@ function runGate(args) {
     blocked: false,
   };
 
-  // Step 1: active sprint?
-  // State-store is the preferred read path, but if a sprint YAML was just
-  // written without a T6 event firing (e.g., manual compose-and-claim
-  // session), state/sprints.json lags. Fall back to sprint-index.yaml so
-  // gate doesn't propose a fresh sprint over an unmaterialized active one.
-  let active = null;
-  const sprintsAll = (store.sprints && store.sprints.all && store.sprints.all()) || [];
-  active = sprintsAll.find((s) => s && s.status === 'active') || null;
-  if (!active) {
-    const idxPath = path.join(repoRoot(), '.claude', 'workstream', 'sprint-index.yaml');
-    if (fs.existsSync(idxPath)) {
-      const r = readYAMLFile(idxPath);
-      if (r.ok && r.data && Array.isArray(r.data.sprints)) {
-        active = r.data.sprints.find((s) => s && s.status === 'active') || null;
-      }
-    }
-  }
+  // Step 1: resumable sprint? (WS-269)
+  // Matches status:active OR status:approved with completed_at:null, across
+  // three sources of decreasing staleness — see resolveResumableSprint.
+  const active = resolveResumableSprint(store);
   if (active) {
-    result.active_sprint = { id: active.id, title: active.title || null, items_done: active.items_done || 0, item_count: active.item_count || 0 };
+    result.active_sprint = {
+      id: active.id,
+      title: active.title || null,
+      status: active.status || null,
+      items_done: active.items_done || 0,
+      item_count: active.item_count || 0,
+    };
     if (json) writeJson(result);
     process.exit(0);
   }
@@ -1055,6 +1127,15 @@ function runApprove(args) {
   const aiAutonomous = hasFlag(args, 'ai-autonomous');
   const forceStale = hasFlag(args, 'force-stale');
   const approvedAt = readFlag(args, 'clock') || new Date().toISOString();
+
+  // WS-269: rationale validated up front, mirroring the gate's
+  // --override-token-budget friction-by-design pattern.
+  const overrideActive = readFlag(args, 'override-active-sprint');
+  if (overrideActive != null && overrideActive.length < 20) {
+    process.stderr.write(`approve: --override-active-sprint rationale must be ≥ 20 characters; got ${overrideActive.length}\n`);
+    process.exit(2);
+  }
+
   if (!sprintFile) {
     process.stderr.write('approve: --sprint-file <path-to-compose-output.json> is required\n');
     process.exit(2);
@@ -1130,6 +1211,42 @@ function runApprove(args) {
       });
     } catch (e) {
       process.stderr.write(`approve: force_stale_approve event emission failed (non-fatal): ${e.message}\n`);
+    }
+  }
+
+  // WS-269 duplicate-sprint block: approve is the mutation boundary, so refuse
+  // to mint a second sprint while an active/approved-unexecuted one is open.
+  // The gate normally catches this first; this is the backstop for direct
+  // approve calls and for concurrent sessions that gated before the other
+  // session's approve landed.
+  let openSprint = null;
+  try { openSprint = resolveResumableSprint(loadStore()); }
+  catch { /* store unavailable; dir scan inside resolveResumableSprint still applies */ }
+  if (openSprint && overrideActive == null) {
+    process.stderr.write(
+      `approve: sprint ${openSprint.id} is ${openSprint.status === 'active' ? 'active' : 'approved but not executed'} — ` +
+      `resume it via /next, abandon it, or pass --override-active-sprint "<rationale ≥20 chars>".\n`
+    );
+    process.exit(2);
+  }
+  if (openSprint && overrideActive != null && appendEvent && ensureCommandId) {
+    try {
+      appendEvent({
+        source_track: 'T6:workstream-rebalance',
+        source_tier: aiAutonomous ? 'llm-emission' : 'founder-prompt',
+        track_tag: '/next',
+        command_id: ensureCommandId('sprint-approve-override-active'),
+        payload: {
+          type: 'duplicate_sprint_acknowledged',
+          open_sprint_id: openSprint.id,
+          open_sprint_status: openSprint.status || null,
+          rationale: overrideActive,
+          acknowledged_at: approvedAt,
+          authorized_by: aiAutonomous ? 'ai-autonomous' : 'founder',
+        },
+      });
+    } catch (e) {
+      process.stderr.write(`approve: duplicate_sprint_acknowledged event emission failed (non-fatal): ${e.message}\n`);
     }
   }
 
@@ -1635,5 +1752,6 @@ module.exports = {
   candidatesInline, buildCompositionNotes, renderSprintYaml, renderSprintYamlClosed,
   readContextOverrideClass, ceremonyDefaults, effortSessions,
   nextSprintId,
+  findResumableSprint, readSprintsFromDir, resolveResumableSprint,
   loadProgramCapsByProgram,
 };
