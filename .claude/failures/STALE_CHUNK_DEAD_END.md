@@ -77,6 +77,45 @@ identifies the running build has to be compiled INTO it (`buildInfo.js`).
 the rug from under open pages.** If you keep them, you owe the app an automatic
 reload path AND a recovery path for the window in between.
 
+## Sweep for the same pattern (2026-07-25)
+
+Audited the rest of the codebase for the three shapes above.
+
+**Found and fixed — `OnlineView.handleReloadConfirm`.** The extension
+protocol-mismatch modal called plain `window.location.reload()`. A mismatch can
+mean either side is behind; when it's the app, the active worker answers that
+navigation from its own precache and the same stale build returns. The code
+already had a `postReloadStatus === 'still-mismatched'` branch acknowledging the
+reload can fail, and its advice ("update the extension manually") is wrong in
+exactly the app-stale case. Now uses `hardRefresh()`.
+
+**Found — the two staleness surfaces disagreed, which is how the bug hid.**
+`DataAndAbout` computed `isStale` as `BUILD_SHA !== latestVersion` (running →
+server, correct). `UpdateBanner` used `useBuildVersion`'s `updateAvailable`
+(server → server, structurally blind). Same question, two answers, and the one
+on the always-visible surface was the broken one. Fixed with the main change.
+
+**Found, not fixed — a hanging chunk request still has no exit.**
+`importWithRecovery` catches rejection; a stalled request never rejects, so the
+Suspense fallback in `PokerTracker.jsx` spins forever with no timeout, message,
+or button. Same dead-end shape, different trigger. Deliberately left open: the
+obvious fix (timeout → `hardRefresh`) clears the offline cache in response to a
+network problem, which makes a bad-signal case worse. Wants a founder decision.
+
+**Found, not fixed — persistence init failures degrade silently.**
+`usePersistence`, `useSessionPersistence`, `usePlayerPersistence` and
+`useSettingsPersistence` all `catch → setIsReady(true)` with a "continue
+without persistence" comment. The app looks completely normal and saves nothing.
+At a live table that surfaces when the session is already gone. Adjacent
+pattern (silent degradation, not recovery-behind-failure) and higher severity
+than the bug that started this; needs a visible surface, so it needs the design
+gates rather than a unilateral patch.
+
+**Clean — the extension.** `onInstalled` writes `EXTENSION_JUST_UPDATED` so the
+side panel surfaces a one-shot "reload the Ignition tab" banner. Orphaned
+content scripts after an update are the exact same hazard, and the extension
+warns instead of failing quietly. This is the pattern done right.
+
 ## Prevention
 
 - `src/utils/__tests__/chunkRecovery.test.js` — detection across browser

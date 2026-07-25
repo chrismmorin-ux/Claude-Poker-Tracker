@@ -14,6 +14,7 @@ import { ScaledContainer } from '../../ui/ScaledContainer';
 import VillainProfileModal from '../../ui/VillainProfileModal';
 import VersionMismatchModal from '../../ui/VersionMismatchModal';
 import { writeReloadFlag } from '../../../utils/versionMismatchStorage';
+import { hardRefresh } from '../../../utils/swUpdate';
 import { SeatGrid } from './SeatGrid';
 import { SeatDetailPanel } from './SeatDetailPanel';
 
@@ -53,13 +54,21 @@ export const OnlineView = ({ scale }) => {
     }
   }, [postReloadStatus, showSuccess, clearPostReloadStatus]);
 
+  // hardRefresh, not window.location.reload(). A protocol mismatch can mean
+  // EITHER side is behind, and when it's the app, a plain reload is answered by
+  // the service worker out of its own precache — the same stale app comes back
+  // and the mismatch survives. That is what the 'still-mismatched' branch above
+  // was catching, and its advice ("update the extension") is wrong in exactly
+  // that case. Clearing the caches first makes the reload able to fix an
+  // app-side mismatch; when the extension is the stale side it costs nothing.
+  // IndexedDB is untouched either way.
   const handleReloadConfirm = useCallback(() => {
     writeReloadFlag({
       extProtocolVersion,
       extManifestVersion,
       appProtocolVersion,
     });
-    window.location.reload();
+    hardRefresh();
   }, [extProtocolVersion, extManifestVersion, appProtocolVersion]);
 
   const handleReloadCancel = useCallback(() => {

@@ -54,6 +54,12 @@ vi.mock('../../../../contexts/ToastContext', () => ({
   useToast: () => mockToast,
 }));
 
+// The mismatch reload clears the service-worker caches before reloading — stub
+// it so the test run isn't reloading jsdom under itself.
+vi.mock('../../../../utils/swUpdate', () => ({
+  hardRefresh: vi.fn(),
+}));
+
 // ScaledContainer wraps OnlineView; its scaling math doesn't affect our
 // assertions, but importing it pulls in DOM-measurement code that adds noise.
 // Mock it to a passthrough.
@@ -105,6 +111,7 @@ vi.mock('../SeatDetailPanel', () => ({
 
 // Import AFTER mocks so the mocked modules are wired before OnlineView resolves.
 import { OnlineView } from '../OnlineView';
+import { hardRefresh } from '../../../../utils/swUpdate';
 
 // ---------------------------------------------------------------------------
 // Reset mocks between rows — fresh defaults + clear vi.fn() call counts.
@@ -298,6 +305,30 @@ describe('WS-076 — version-mismatch diagnostic modal interactions', () => {
     // Modal now mounted
     expect(screen.queryByTestId('version-mismatch-modal')).not.toBeNull();
     expect(screen.queryByText('99.99.99', { exact: false })).not.toBeNull();
+  });
+
+  it('confirming the reload clears the caches first — a plain reload is answered from the stale precache', () => {
+    Object.assign(mockSyncBridge, {
+      versionMismatch: true,
+      extProtocolVersion: 99,
+      extManifestVersion: '99.99.99',
+      appProtocolVersion: 2,
+    });
+
+    render(<OnlineView scale={1} />);
+
+    const banner = screen.getByTestId('version-mismatch-banner');
+    fireEvent.click(banner.querySelector('button'));
+
+    const modal = screen.getByTestId('version-mismatch-modal');
+    const confirmBtn = Array.from(modal.querySelectorAll('button'))
+      .find((b) => b.textContent === 'Reload Page');
+    fireEvent.click(confirmBtn);
+
+    // A mismatch can mean either side is behind. When it's the app, the active
+    // worker answers window.location.reload() from its own precache and the
+    // same stale build comes straight back — the mismatch survives the "fix".
+    expect(hardRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('postReloadStatus="recovered" fires a success toast and clears the flag', () => {
