@@ -1,5 +1,6 @@
 import React, { lazy } from 'react';
 import { SCREEN } from './uiConstants';
+import { importWithRecovery } from '../utils/chunkRecovery';
 // Eager hot-path views — first frames the user can see, no Suspense spinner.
 import { HomebaseView } from '../components/views/HomebaseView';
 import { TableView } from '../components/views/TableView';
@@ -31,8 +32,16 @@ import { TableView } from '../components/views/TableView';
  */
 
 // lazy() wrapper for the repo's named-export view modules.
+//
+// The import goes through importWithRecovery so that a chunk which vanished
+// under a mid-session deploy self-heals with one refresh instead of dead-ending
+// on the error boundary. See src/utils/chunkRecovery.js.
 const lz = (importFn, exportName) =>
-  lazy(() => importFn().then((m) => ({ default: exportName ? m[exportName] : m.default })));
+  lazy(() =>
+    importWithRecovery(importFn, exportName).then((m) => ({
+      default: exportName ? m[exportName] : m.default,
+    }))
+  );
 
 const StatsView = lz(() => import('../components/views/StatsView'), 'StatsView');
 const SessionsView = lz(() => import('../components/views/SessionsView'), 'SessionsView');

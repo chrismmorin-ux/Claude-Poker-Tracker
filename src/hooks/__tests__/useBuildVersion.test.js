@@ -21,35 +21,58 @@ describe('useBuildVersion', () => {
     delete global.fetch;
   });
 
-  it('returns nulls before the first fetch resolves', () => {
-    fetchMock.mockReturnValue(new Promise(() => {})); // never resolves
-    const { result } = renderHook(() => useBuildVersion({ enabled: true }));
-    expect(result.current.currentVersion).toBeNull();
-    expect(result.current.latestVersion).toBeNull();
-    expect(result.current.updateAvailable).toBe(false);
-  });
+  // Fallback path: no build identity compiled in (unstamped bundle, or a build
+  // made where `git rev-parse` failed). `current` then seeds from the first poll
+  // — server-vs-server, which can only spot deploys that land AFTER this page
+  // started polling. `build: null` selects that path explicitly.
+  describe('without a known running build', () => {
+    it('returns nulls before the first fetch resolves', () => {
+      fetchMock.mockReturnValue(new Promise(() => {})); // never resolves
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build: null }));
+      expect(result.current.currentVersion).toBeNull();
+      expect(result.current.latestVersion).toBeNull();
+      expect(result.current.updateAvailable).toBe(false);
+    });
 
-  it('populates currentVersion on first fetch and marks up-to-date', async () => {
-    fetchMock.mockResolvedValue(makeResponse({ version: 'abc1234', built: '2026-04-17T23:00:00Z' }));
-    const { result } = renderHook(() => useBuildVersion({ enabled: true }));
+    it('populates currentVersion on first fetch and marks up-to-date', async () => {
+      fetchMock.mockResolvedValue(makeResponse({ version: 'abc1234', built: '2026-04-17T23:00:00Z' }));
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build: null }));
 
-    await waitFor(() => expect(result.current.currentVersion).toBe('abc1234'));
-    expect(result.current.latestVersion).toBe('abc1234');
-    expect(result.current.currentBuiltAt).toBe('2026-04-17T23:00:00Z');
-    expect(result.current.updateAvailable).toBe(false);
-    expect(result.current.error).toBeNull();
-  });
+      await waitFor(() => expect(result.current.currentVersion).toBe('abc1234'));
+      expect(result.current.latestVersion).toBe('abc1234');
+      expect(result.current.currentBuiltAt).toBe('2026-04-17T23:00:00Z');
+      expect(result.current.updateAvailable).toBe(false);
+      expect(result.current.error).toBeNull();
+    });
 
-  it('flips updateAvailable when polled version differs from current', async () => {
-    fetchMock
-      .mockResolvedValueOnce(makeResponse({ version: 'abc1234', built: '2026-04-17T23:00:00Z' }))
-      .mockResolvedValue(makeResponse({ version: 'def5678', built: '2026-04-18T10:00:00Z' }));
+    it('flips updateAvailable when polled version differs from current', async () => {
+      fetchMock
+        .mockResolvedValueOnce(makeResponse({ version: 'abc1234', built: '2026-04-17T23:00:00Z' }))
+        .mockResolvedValue(makeResponse({ version: 'def5678', built: '2026-04-18T10:00:00Z' }));
 
-    const { result } = renderHook(() => useBuildVersion({ enabled: true, pollIntervalMs: 20 }));
-    await waitFor(() => expect(result.current.currentVersion).toBe('abc1234'));
-    await waitFor(() => expect(result.current.latestVersion).toBe('def5678'), { timeout: 1000 });
-    expect(result.current.currentVersion).toBe('abc1234'); // pinned to first-seen
-    expect(result.current.updateAvailable).toBe(true);
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, pollIntervalMs: 20, build: null }));
+      await waitFor(() => expect(result.current.currentVersion).toBe('abc1234'));
+      await waitFor(() => expect(result.current.latestVersion).toBe('def5678'), { timeout: 1000 });
+      expect(result.current.currentVersion).toBe('abc1234'); // pinned to first-seen
+      expect(result.current.updateAvailable).toBe(true);
+    });
+
+    it('surfaces fetch errors and recovers on next successful poll', async () => {
+      fetchMock
+        .mockRejectedValueOnce(new Error('offline'))
+        .mockResolvedValue(makeResponse({ version: 'xyz9999', built: null }));
+
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, pollIntervalMs: 20, build: null }));
+      await waitFor(() => expect(result.current.currentVersion).toBe('xyz9999'), { timeout: 1000 });
+      expect(result.current.error).toBeNull();
+    });
+
+    it('treats malformed version.json as an error', async () => {
+      fetchMock.mockResolvedValue(makeResponse({ notAVersion: true }));
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build: null }));
+      await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
+      expect(result.current.currentVersion).toBeNull();
+    });
   });
 
   it('is disabled in dev by default (skips polling)', () => {
@@ -58,21 +81,37 @@ describe('useBuildVersion', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('surfaces fetch errors and recovers on next successful poll', async () => {
-    fetchMock
-      .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValue(makeResponse({ version: 'xyz9999', built: null }));
+  // The running bundle's SHA is the only reliable "am I stale?" signal:
+  // version.json always reports the server's newest build, so seeding `current`
+  // from the first poll compares the server to itself and can never detect that
+  // THIS page is out of date. That gap is why an install left open across a
+  // deploy never saw the update banner.
+  describe('seeded from the running build', () => {
+    const build = { version: 'oldsha1', built: '2026-07-23T16:15:00Z' };
 
-    const { result } = renderHook(() => useBuildVersion({ enabled: true, pollIntervalMs: 20 }));
-    await waitFor(() => expect(result.current.currentVersion).toBe('xyz9999'), { timeout: 1000 });
-    expect(result.current.error).toBeNull();
-  });
+    it('reports the running build as current before any fetch resolves', () => {
+      fetchMock.mockReturnValue(new Promise(() => {}));
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build }));
+      expect(result.current.currentVersion).toBe('oldsha1');
+      expect(result.current.updateAvailable).toBe(false);
+    });
 
-  it('treats malformed version.json as an error', async () => {
-    fetchMock.mockResolvedValue(makeResponse({ notAVersion: true }));
-    const { result } = renderHook(() => useBuildVersion({ enabled: true }));
-    await waitFor(() => expect(result.current.error).toBeInstanceOf(Error));
-    expect(result.current.currentVersion).toBeNull();
+    it('flips updateAvailable on the FIRST poll when the server is ahead', async () => {
+      fetchMock.mockResolvedValue(makeResponse({ version: 'newsha2', built: '2026-07-25T18:43:00Z' }));
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build }));
+
+      await waitFor(() => expect(result.current.latestVersion).toBe('newsha2'));
+      expect(result.current.currentVersion).toBe('oldsha1');
+      expect(result.current.updateAvailable).toBe(true);
+    });
+
+    it('stays quiet when the server matches the running build', async () => {
+      fetchMock.mockResolvedValue(makeResponse({ version: 'oldsha1', built: '2026-07-23T16:15:00Z' }));
+      const { result } = renderHook(() => useBuildVersion({ enabled: true, build }));
+
+      await waitFor(() => expect(result.current.latestVersion).toBe('oldsha1'));
+      expect(result.current.updateAvailable).toBe(false);
+    });
   });
 
   it('clears its interval on unmount', () => {
