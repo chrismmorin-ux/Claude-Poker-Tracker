@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
+import { logErrorObject } from '../utils/errorLog';
 import { isChunkLoadError } from '../utils/chunkRecovery';
 import { hardRefresh } from '../utils/swUpdate';
 
@@ -76,6 +77,17 @@ export class ErrorBoundary extends React.Component {
         );
 
     logger.error('ErrorBoundary', appError);
+
+    // Persist to the error log the founder can actually read (Settings → Error
+    // Log) and export as a bug report. Only ViewErrorBoundary did this, so a
+    // crash caught HERE — the whole-app failures, the most serious kind — left
+    // nothing behind but a console line on a phone with no console. The
+    // 2026-07-25 stale-chunk incident showed both boundaries firing and only
+    // the per-view one appearing in the export.
+    logErrorObject(appError, appError.code, {
+      view: 'app-root',
+      componentStack: errorInfo.componentStack?.substring(0, 500),
+    });
   }
 
   /**
