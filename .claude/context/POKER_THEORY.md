@@ -1,5 +1,5 @@
 ---
-version: 1.3
+version: 1.4
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -20,6 +20,9 @@ changelog:
   - date: 2026-07-22
     version: 1.3
     change: "domain-correctness sweep (run-sweep-2026-07-22 / FIND-034 / WS-257): added §6.5a documenting the 3-tier empirical prior hierarchy shipped in WS-235 (founder estimate → segmented pool aggregate via poolBaseline.js → per-villain Read), incl. the live/online segmentation rule, the leave-one-out guard, and the pseudocount-cap semantics. Doc-only; code was ahead of the doc."
+  - date: 2026-07-25
+    version: 1.4
+    change: "WS-263 (WS-262 mass-data follow-up #1): §6.5a rewritten Three-Tier → Four-Tier — imported HandHQ Reference tier (SRC-011, online numeric-stake segments only, nearest-stake by log distance, per-villain seat-bucket lookup) inserted between founder estimate and founder-observed pool. Flat POOL_PRIOR_MAX_PSEUDOCOUNT=200 removed (WS-262 refuted it ~20× too confident); replaced by measured per-stat prior weights PER_STAT_PRIOR_WEIGHT (10–35) from between-player overdispersion — the 'hierarchical τ² future upgrade' the previous version promised is now delivered. Code + doc landed same session."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -384,25 +387,28 @@ P(hand | action) = P(action | hand) × P(hand) / P(action)
 
 With small samples, the prior dominates. With large samples, the likelihood dominates. This is why our `bayesianUpdater.js` uses ~10 virtual observations as prior weight (`PRIOR_WEIGHT = 10` in `rangeEngine/populationPriors.js`): a player needs ~10 real observations before their data outweighs the population prior, and at ~10 hands the blend is roughly 50/50. The same pseudocount-10 convention is mirrored across the Beta-Binomial machinery (`STAT_PRIORS` in `bayesianConfidence.js`, the assumption-engine priors). At ~30+ hands the data dominates.
 
-### 6.5a Three-Tier Empirical Prior Hierarchy (pool baseline)
+### 6.5a Four-Tier Empirical Prior Hierarchy (pool baseline)
 
-Since WS-235 (2026-06-21), the six scalar stat priors (vpip, pfr, threeBet, cbet, foldToCbet, foldTo3Bet) are no longer a single static founder estimate. The resolved prior a villain's stats shrink toward is a **three-tier hierarchy** (`exploitEngine/poolBaseline.js`):
+Since WS-235 (2026-06-21), the six scalar stat priors (vpip, pfr, threeBet, cbet, foldToCbet, foldTo3Bet) are no longer a single static founder estimate. WS-263 (2026-07-25) added an imported reference tier. The resolved prior a villain's stats shrink toward is a **four-tier hierarchy** (`exploitEngine/poolBaseline.js`):
 
 ```
-founder estimate   Beta(α₀, β₀), pseudocount α₀+β₀ = 10 — STAT_PRIORS, the subjective prior
-      ↓ conjugate blend by observed sample weight
-pool aggregate     empirical Field layer — real observed hands from the villain's own segment
-      ↓ shrunk toward (per-villain Bayesian update, unchanged)
-per-villain Read   the deviation the exploit rules act on
+founder estimate    Beta(α₀, β₀), pseudocount α₀+β₀ = 10 — STAT_PRIORS, the subjective prior
+      ↓ conjugate blend, capped at the per-stat prior weight
+imported reference  HandHQ online aggregates (SRC-011, 12.9M imported hands) — ONLINE
+      ↓             numeric-stake segments only; Reference-class yardstick
+pool aggregate      founder-observed empirical Field layer — real observed hands from the
+      ↓             villain's own segment; its mean DOMINATES the reference as n grows
+per-villain Read    the deviation the exploit rules act on (per-villain update, unchanged)
 ```
 
-The pool tier is an exact conjugate Beta-Binomial update of the founder estimate: pool successes k over n observed decisions give `Beta(α₀+k, β₀+(n−k))` while n is under the cap. Three load-bearing rules govern it:
+Each pool stage is an exact conjugate Beta-Binomial update of the prior entering it: pool successes k over n observed decisions give `Beta(α₀+k, β₀+(n−k))` while n is under the stage's cap. Load-bearing rules:
 
 1. **Segmentation — different populations are never pooled.** Baselines are computed per segment (`segmentKey`: live vs online source × stake label). Online (Ignition) and live 1/2 are different populations; a villain shrinks only toward the baseline of its own segment, and the founder estimate is the per-segment fallback. (WS-260, 2026-07-22, closed both known wiring defects: online sessions now record real stakes from the captured wire blinds — with a one-time backfill re-keying legacy 'NL Holdem' sessions from their stored hands — and `segmentKey` canonicalizes free-text stake labels read-side via `canonicalStakeLabel`, so cosmetic variants like '1/2' / '$1/$2' / '1/2 NL' resolve to one segment. Residual: online sessions whose hands never captured blinds stay in the legacy segment and fall back to the founder estimate; online tournament hands carry no format marker and are labeled by majority blinds — a wire-side format flag is a noted follow-up.)
 2. **Leave-one-out — non-negotiable.** The baseline a given villain shrinks toward EXCLUDES that villain's own hands (`resolveStatPriors` `excludePlayerId`). Shrinking a villain toward a pool containing itself is circular and biases every Read toward the mean. Same rule as "derived values are outputs, never self-referential inputs."
-3. **Pseudocount cap bounds confidence, not the mean.** `POOL_PRIOR_MAX_PSEUDOCOUNT = 200` caps the pool's contribution to the prior's *strength* so a well-sampled villain can still override it; the pool *mean* still converges fully to the observed pool rate (the cap rescales α, β around the exact uncapped mean). This is a pragmatic proxy for between-player overdispersion; a full hierarchical τ² estimate is the future upgrade (PMC program).
+3. **Per-stat pseudocount caps bound confidence, not the mean — and they are MEASURED.** `PER_STAT_PRIOR_WEIGHT` (vpip 10 · foldTo3Bet 10 · cbet 13 · pfr 21 · foldToCbet 22 · threeBet 35) caps each pool stage's contribution to the prior's *strength* so a well-sampled villain can still override it; the pool *mean* still converges fully to the observed pool rate (the cap rescales α, β around the exact uncapped mean). The weights are the between-player overdispersion estimate the former flat cap only approximated: method-of-moments N_eff = mean(1−mean)/sd_between² − 1 over players with n ≥ 30, measured on the WS-262 HandHQ corpus (`docs/research/mass-pool-data-2026-07-25.md`). The former `POOL_PRIOR_MAX_PSEUDOCOUNT = 200` was refuted as ~20× too confident and removed; `PRIOR_WEIGHT = 10` was validated (vpip). The caps apply to both the imported-reference and founder-pool stages, live and online alike.
+4. **Imported reference is online-only, nearest-stake, seat-bucketed, and always subordinate (WS-263).** The HandHQ table (SRC-011; 25NL–1000NL, 6-max + full-ring, July 2009) serves ONLY `online/<numeric-stake>` segments — `resolveReferenceCounts` is the single choke point enforcing the founder-ratified live/online separation, and legacy non-numeric online segments (`online/nl-holdem`) conservatively get nothing. Stakes match by log distance with ties to the lower (softer) stake, so micro segments below the 25NL floor use 25NL. The villain's table-size bucket (≤6 dealt in → 6-max, ≥7 → full-ring; the two differ on every stat) is a reference-*lookup* dimension picked from observed dealt-in tallies — `segmentKey` itself stays 2D (founder decision 2026-07-25). Unknown table size → pooled counts. Because the founder-observed pool blends last with its uncapped-n mean, founder data overrides the reference as it accumulates; the reference never masquerades as observed pool data. Staleness (2009 era) is self-limiting: the per-stat weights make it a deliberately weak prior.
 
-Safe degradation: a thin or empty segment reproduces the static founder estimate verbatim — the module is inert until a real pool accumulates. Scope (v1): only the six scalar proportions above; range-grid priors and preflop fold/limp/open trees (`rangeEngine/populationPriors.js`) remain on the founder estimate. See `poolBaseline.js` header and `bayesianConfidence.js` provenance comment for the implementation contract.
+Safe degradation: a thin or empty LIVE segment reproduces the static founder estimate verbatim; an online numeric-stake segment starts from the imported reference instead of the bare founder estimate. Scope (v1): only the six scalar proportions above; range-grid priors and preflop fold/limp/open trees (`rangeEngine/populationPriors.js`) remain on the founder estimate. See `poolBaseline.js` header and `bayesianConfidence.js` provenance comment for the implementation contract.
 
 ### 6.6 Combo Counting
 - Pocket pairs: 6 combos each (AA = A♠A♥, A♠A♦, A♠A♣, A♥A♦, A♥A♣, A♦A♣)

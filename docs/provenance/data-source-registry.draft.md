@@ -206,6 +206,28 @@ review_notes: "FINDING F1 (headline). ORIGIN ANSWERED 2026-06-19: these are the 
 last_verified:
 ```
 
+#### SRC-011 — HandHQ imported online pool aggregates (Reference tier)
+```yaml
+source_id: SRC-011
+name: "HandHQ Reference-tier online pool aggregates (HANDHQ_REFERENCE_STAKES + PER_STAT_PRIOR_WEIGHT)"
+type: static_import
+surface_class: reference_data
+source_evidence:
+  - file: src/utils/exploitEngine/handhqReferencePool.js
+    lines: "1-45"
+    note: "GENERATED module — 7 stakes × {6max, full} × 6 stats (k, n) pairs; 12.9M imported hands"
+  - file: scripts/generate-handhq-reference.mjs
+    lines: "1-40"
+    note: "Deterministic codegen from C:/Users/chris/data/phh-mining/out/combined.json (WS-262 mining)"
+  - file: src/utils/exploitEngine/poolBaseline.js
+    lines: "1-60"
+    note: "Consumed by resolveStatPriors as the reference stage; resolveReferenceCounts is the online-only choke point"
+trust_tier: T4
+confidence: High
+review_notes: "WS-262/WS-263 (2026-07-25). CORPUS: uoftcprg/phh-dataset HandHQ subset — 21.6M real-money online NLHE cash hands, 6 networks, 25NL–1000NL, July 2009 (CC-BY 4.0; licensing clean). Imported buckets total 12.9M hands (6max+full; short/HU excluded). MEASURED reference (unlike SRC-009's founder estimate) — but STALENESS is real (2009 era): self-limiting because PER_STAT_PRIOR_WEIGHT (10–35, method-of-moments on between-player overdispersion) makes it a deliberately weak prior any observed data quickly overrides. RULES: online numeric-stake segments ONLY (founder-ratified live/online separation, domain spec 2026-07-22); nearest-stake by log distance with ties to lower — micro segments below the 25NL floor use 25NL (GAP: founder's 0.02/0.05 games have no exact-stake data; recorded here honestly); seat bucket (6max vs full) picked per villain from dealt-in tallies, segmentKey stays 2D (founder decision 2026-07-25). foldTo3Bet mirrors the app's CURRENT quirk definition (folds facing any raise) — comparable today; if WS-254 changes the definition, re-mine and regenerate. Blend order: founder-observed pool > imported reference > founder estimate — a re-aggregation with observed hands would be a trust-tier upgrade through the chain (violation)."
+last_verified: 2026-07-25
+```
+
 ---
 
 ## Sources NOT covered (engine self-flagged gaps)
