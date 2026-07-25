@@ -111,7 +111,12 @@ function candidatesFor(fromFile, importPath) {
   for (const ext of exts) candidates.push(`${joined}.${ext}`);
   // Bare-extension hit (e.g., './foo' where the file is literally named './foo')
   // — only valid when the importPath already includes a recognizable extension.
-  if (/\.(jsx?|tsx?|mjs|cjs)$/i.test(joined)) candidates.push(joined);
+  // Asset extensions belong here too: Vite resolves `import './index.css'` to
+  // that literal file, and omitting them reported every stylesheet and image
+  // import as UNRESOLVABLE.
+  if (/\.(jsx?|tsx?|mjs|cjs|css|scss|sass|less|svg|png|jpe?g|gif|webp|avif|woff2?|json|wasm|txt|md)$/i.test(joined)) {
+    candidates.push(joined);
+  }
   // Directory + index variants (e.g., './foo' → './foo/index.jsx')
   for (const ext of exts) candidates.push(`${joined}/index.${ext}`);
   return candidates;
@@ -235,7 +240,7 @@ function main() {
       console.error(`    → resolved to: ${p.resolved}`);
       console.error(`    → status: UNTRACKED (run \`git status\` to verify)`);
     } else {
-      console.error(`    → status: UNRESOLVABLE (no matching file with .js/.jsx/.ts/.tsx/index variants)`);
+      console.error(`    → status: UNRESOLVABLE (no matching source, asset, or /index file)`);
     }
     console.error('');
   }
