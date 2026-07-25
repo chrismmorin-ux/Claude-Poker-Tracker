@@ -16,7 +16,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { logger } from '../utils/errorHandler';
-import { getHandsBySessionId, GUEST_USER_ID } from '../utils/persistence/index';
+import { getHandsBySessionId, getSessionById, GUEST_USER_ID } from '../utils/persistence/index';
 import { runAnalysisPipeline } from '../utils/analysisPipeline';
 
 /**
@@ -31,6 +31,7 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
   const lastHandCountRef = useRef(-1);
   const seatHandCountRef = useRef(new Map());
   const analysisCacheRef = useRef(new Map());
+  const sessionRecordRef = useRef({ sessionId: null, session: null });
 
   const calculate = useCallback(async () => {
     if (!sessionId) {
@@ -59,6 +60,16 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
       lastHandCountRef.current = hands.length;
       setHandCount(hands.length);
 
+      // Session record for pool-baseline segmentation (WS-263 online wiring): without it
+      // the pipeline never resolves an online/<stake> segment, so neither the imported
+      // reference tier nor the observed table pool applies. Missing record → null →
+      // static founder estimate, exactly the pre-wiring behavior.
+      if (sessionRecordRef.current.sessionId !== sessionId) {
+        sessionRecordRef.current = { sessionId, session: await getSessionById(sessionId) };
+      }
+      const sessionRecord = sessionRecordRef.current.session;
+      const sessions = sessionRecord ? [sessionRecord] : null;
+
       // Compute per-seat hand counts for delta detection
       const seatHandCounts = new Map();
       const seatsSeen = new Set();
@@ -86,7 +97,7 @@ export const useOnlineAnalysis = (sessionId, userId = GUEST_USER_ID) => {
         const playerId = `seat_${seatStr}`;
 
         try {
-          const result = runAnalysisPipeline(playerId, hands, userId);
+          const result = runAnalysisPipeline(playerId, hands, userId, null, sessions);
 
           map[seatStr] = {
             playerId,

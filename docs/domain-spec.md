@@ -82,10 +82,10 @@ If a rule is wrong: edit the statement, downgrade confidence, or delete the rule
 - **Statement:** This system's model of a "population baseline" is correct iff live-table and online populations are treated as two distinct reference distributions that are never merged into one pooled average — verifiable by confirming the two populations' aggregate stats form measurably different distributions.
 - **Source evidence:**
   - **Founder ratification (2026-07-22):** "live and online are very distinctly different. Even at a close-up look at high levels. The mass data analysis supports this." — binding product goal, not an implementation detail.
-  - `src/utils/exploitEngine/poolBaseline.js:13-15, 75-81` — segmentation doctrine + segmentKey implementation (live/online never pooled); isolation tests at `poolBaseline.test.js:137-158`
+  - `src/utils/exploitEngine/poolBaseline.js` — segmentation doctrine (header) + `segmentKey` implementation (live/online never pooled); `resolveReferenceCounts` is the single online-only choke point keeping the imported HandHQ reference tier (WS-263, SRC-011) out of live segments; isolation tests in `poolBaseline.test.js` ("segmentation isolation" + "never serves reference data to live" suites)
   - counterfactual — a pooled baseline would import online-typical tendencies onto a live opponent (or vice versa), calibrating exploits to a population the person across the table doesn't belong to
 - **Confidence:** High *(founder-confirmed 2026-07-22; was Low as an engine inference)*
-- **Review notes:** Resolved — founder confirmed as a binding goal. Follow-up direction captured as a queue item: acquire more mass/population data to further ground the per-pool baselines (Field frame). Wiring defects that currently weaken within-online segmentation are tracked separately (FIND-037/039 → WS-260).
+- **Review notes:** Resolved — founder confirmed as a binding goal. The mass-data follow-up landed: WS-262 mined 21.6M HandHQ online hands and WS-263 (2026-07-25) imported the aggregates as a Reference-class tier for online numeric-stake segments only, with per-stat prior weights (10–35 pseudocounts, measured overdispersion) replacing the flat 200 cap. Wiring defects that previously weakened within-online segmentation were closed by WS-260 (FIND-037/039).
 - **Enforcement:** existing_invariant — poolBaseline segmentation isolation tests; distributional-divergence check remains a proposable upgrade
 - **Last verified:** 2026-07-22 (founder ratification)
 
