@@ -45,8 +45,20 @@ user_feedback:
       approved work. Caught only by luck (reading a sprint file for schema reference).
       Fix: Step 1 resume-check should also surface sprints where status==approved AND
       completed_at==null (especially items_done<item_count) and offer to resume them.
-    resolved: false
-    resolution: null
+    resolved: true
+    resolution: >
+      Fixed in WS-269 / SPR-152 (commit af6c35d here; upstreamed to the HomeBase
+      canonical kit as 29361a4 so /kit-upgrade won't revert it). cwos-next.js gained
+      findResumableSprint() — matches status:active, else status:approved with
+      completed_at:null — and resolveResumableSprint(), which unions state/sprints.json,
+      sprint-index.yaml, and a direct sprints/ dir scan (the dir scan closes the window
+      where approve has written the YAML but neither cache has refreshed). approve now
+      also refuses to mint a second sprint while one is open, with an
+      --override-active-sprint escape valve. Root cause was broader than reported:
+      NOTHING in the pipeline ever wrote status:active, so the entire resume path was
+      dead code. Regression coverage: kit/scripts/__tests__/cwos-next-resume-approved.test.js
+      (11 cases). SPR-143, orphaned by this gap since 2026-06-21, was abandoned in the
+      same commit.
   - id: fb-003
     timestamp: "2026-05-20T00:00:00Z"
     session_id: "session-2026-05-20-next"
@@ -172,6 +184,8 @@ friction_log:
     detail: "/next Step 1 resume-check only matches status:active. SPR-095 was status:approved, items_done:0 (prior session composed + approved, never executed). It was invisible to the resume path; without catching it, this session would have composed SPR-096 (WS-190) on top, orphaning approved engineering work. Discovered incidentally while reading a sprint file for schema reference. See user_feedback fb-002."
     component: next-step1-resume-check
     workaround: "Manually detected the approved-but-unexecuted sprint, surfaced the conflict to the founder via AskUserQuestion (resume / set aside / parallel), founder chose resume. Activated SPR-095 (status approved→active) and executed it instead of composing a new sprint."
+    resolved: true
+    resolution: "Fixed in WS-269 / SPR-152 — commit af6c35d (HomeBase upstream 29361a4). Gate now resumes status:approved && completed_at:null sprints. See user_feedback fb-002 resolution for detail."
   - id: fr-013
     timestamp: "2026-05-20T00:00:00Z"
     session_id: "session-2026-05-20-next"
@@ -212,6 +226,8 @@ friction_log:
     detail: "cwos-next.js approve emitted sprint_approved and wrote SPR-116.yaml but did NOT claim the queue item (WS-213 stayed status:backlog, sprint_id empty) despite /next skill doc stating approve 'claims items'. Also fr-012 still live: gate returned active_sprint:null for the just-approved status:approved sprint — invisible to resume until execution starts."
     component: cwos-next-approve
     workaround: "Hand-stamped WS-213 status:in_progress + sprint_id:SPR-116 before execution; cwos-next done closed it correctly afterward. Kit fix: approve should write status:claimed + sprint_id into each item's queue YAML (and gate should match status:approved sprints per fr-012)."
+    resolved: false
+    resolution: "PARTIAL — the gate half (fr-012: approved sprints invisible to resume) is fixed in WS-269 / SPR-152, commit af6c35d. The approve-doesn't-claim-queue-items half is still open: approve writes the sprint YAML and emits sprint_approved, but leaves each item at status:backlog with an empty sprint_id, so a claimed item is only visible via the sprint. Stays unresolved until that half ships."
   - id: fr-018
     timestamp: "2026-07-25T07:48:00Z"
     session_id: "session-2026-07-25-next"
@@ -228,6 +244,8 @@ friction_log:
     detail: "fb-002/fr-012 MATERIALIZED as duplicate work: SPR-150 (WS-263, plan-first) was approved at 07:51Z, then sat in design while awaiting founder decisions. A concurrent session ran /next at 16:26Z; gate returned active_sprint:null (it only matches status:active), so it composed SPR-151 for the SAME WS-263 and shipped it (commit a054376). First occurrence where the gate gap produced an actual duplicate sprint executing the same anchor — previous occurrences were caught by luck before execution. Duplicate implementation was avoided only because this session diff-checked the target file before writing."
     component: cwos-next-gate
     workaround: "This session verified SPR-151's shipped work against the approved SPR-150 plan, implemented the residual it missed (WS-263 online wiring in useOnlineAnalysis + domain-spec refresh), and hand-marked SPR-150 status:abandoned (SPR-144 precedent) in sprint YAML + sprint-index. Kit fix (now urgent): gate must treat status:approved && completed_at:null as the active sprint and resume it."
+    resolved: true
+    resolution: "Fixed in WS-269 / SPR-152 — commit af6c35d (HomeBase upstream 29361a4), the sprint immediately after this was logged. Gate resumes approved-but-unexecuted sprints across three sources and approve refuses to stack a duplicate. Verified on live state: gate returned SPR-152 itself, and approve refused a second sprint while it was open. Two more instances of the same gap were found and closed during the fix — SPR-143 (orphaned since 2026-06-21, abandoned) and HomeBase's own SPR-185."
 
 # Pre-existing entry (kept for context):
 # Entry format:
@@ -242,16 +260,16 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 17
+  total_friction_events: 19
   total_user_feedback: 3
-  unresolved_feedback: 3
+  unresolved_feedback: 2
   by_severity:
-    high: 2
+    high: 3
     medium: 5
-    low: 10
+    low: 11
   by_category:
-    file_not_found: 9
-    manual_fix: 5
+    file_not_found: 10
+    manual_fix: 6
     workaround: 3
   by_component:
     cwos-constitutional-audit.js: 1
@@ -265,9 +283,12 @@ summary:
     findings-reconciliation: 1
     next-step1-resume-check: 1
     queue-index: 2
+    cwos-adopt-install / kit-MANIFEST (distribution surface): 1
     cwos-next-compose: 1
     cwos-next-approve: 1
-  most_recent_friction: "fr-017 — 2026-06-10 — cwos-next approve doesn't claim queue items (hand-stamped WS-213); fr-016 same session: compose anchored stale umbrella WS-150 (5/7 children done) over the session cap without flagging"
+    cwos-next-done-auto-resolved: 1
+    cwos-next-gate: 1
+  most_recent_friction: "fr-019 — 2026-07-25 — the fb-002/fr-012 gate gap materialized as duplicate sprint execution (SPR-150 + SPR-151 both ran WS-263); fixed same day by WS-269"
   most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
