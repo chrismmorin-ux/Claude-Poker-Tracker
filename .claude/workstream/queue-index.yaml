@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 143
+total_items: 149
 by_status:
   decomposed: 1
-  done: 66
+  done: 68
   in_progress: 3
   deferred: 43
-  backlog: 20
+  backlog: 24
   dismissed: 1
   completed: 7
   review: 1
@@ -17,13 +17,16 @@ by_status:
 by_category:
   correctness: 1
   cwos-infrastructure: 1
+  data-integrity: 1
   data-isolation: 1
   design-comprehension: 10
-  domain-correctness: 24
+  documentation: 1
+  domain-correctness: 26
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
   input-ux: 3
+  kit-quality: 1
   line-study-slice-widening: 11
   monetization-and-pmf: 8
   played-hand-review-protocol: 6
@@ -39,6 +42,7 @@ by_category:
   seam-integrity: 6
   seat-selection: 1
   self-coach-foundation: 4
+  self-compliance: 1
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 6
@@ -1394,12 +1398,66 @@ items:
     program: domain-correctness
     capability: governance
 
-  - id: "WS-262"
-    title: "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)"
-    status: backlog
-    priority_score: 24
+  - id: "WS-263"
+    title: "Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry"
+    status: done
+    priority_score: 20
     category: domain-correctness
     effort: M
     program: domain-correctness
+    capability: core
+
+  - id: "WS-264"
+    title: "HandHQ mining pass 2 — per-spot pot sizes, concealment premium, position open/fold trees, board-texture c-bet splits"
+    status: backlog
+    priority_score: 12
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-265"
+    title: "Bluff-triggers surface — 'when to bluff' model gap, grounded in Field-frame Maxim II (river air 4-7%)"
+    status: backlog
+    priority_score: 10
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-266"
+    title: "exportAllData omits anchorObservations — owner-captured judgment is unrecoverable if lost (backup gap)"
+    status: backlog
+    priority_score: 9
+    category: data-integrity
+    effort: S
+    program: data-quality
+    capability: core
+
+  - id: "WS-267"
+    title: "FAIL: INV-F1 — No Unnecessary Burden"
+    status: done
+    priority_score: 55
+    category: self-compliance
+    effort: M
+    program: kit-quality
+    capability: core
+
+  - id: "WS-268"
+    title: "Domain-doc sweep — reconcile POKER_THEORY + domain docs with recent/pending changes; heal challenge-protocol date drift"
+    status: backlog
+    priority_score: 8
+    category: documentation
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-269"
+    title: "cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as duplicate sprint execution (fr-019)"
+    status: backlog
+    priority_score: 18
+    category: kit-quality
+    effort: S
+    program: kit-quality
     capability: core
 

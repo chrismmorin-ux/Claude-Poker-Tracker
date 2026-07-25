@@ -1,0 +1,70 @@
+id: "WS-269"
+title: "cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as duplicate sprint execution (fr-019)"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P2"
+category: "kit-quality"
+capability: "core"
+program: "kit-quality"
+finding_id: ""
+description: |
+  The /next gate (kit/scripts/cwos-next.js gate) resolves active_sprint by
+  matching status:active only. A sprint that is status:approved with
+  completed_at:null (composed + approved, execution not yet started — e.g.
+  plan-first design in progress) is invisible to the resume path, so a
+  concurrent or later /next composes a NEW sprint on top of the approved one.
+
+  Known since 2026-05-20 (fb-002, fr-012, fr-017 in .cwos-feedback.yaml) but
+  previously only caught by luck. On 2026-07-25 it MATERIALIZED (fr-019):
+  SPR-150 (WS-263, plan-first, approved 07:51Z) sat in design awaiting founder
+  decisions; a concurrent session's gate returned active_sprint:null at 16:26Z,
+  composed SPR-151 for the SAME anchor item, and executed it. Two sprints
+  independently executing the same ticket — duplicate implementation avoided
+  only because the second session diff-checked the target file before writing.
+
+  Fix in the kit (canonical source lives in HomeBase — patch this repo's
+  kit/scripts/cwos-next.js AND upstream to the HomeBase kit so the next
+  /kit-upgrade doesn't revert it):
+  - gate: treat a sprint with status:approved && completed_at:null as the
+    active sprint (return it in active_sprint so /next Step 1 jumps to resume).
+  - approve: refuse to compose/approve while such a sprint exists, with the
+    same override ergonomics as other blocks.
+  - Note /next skill doc already documents the intended semantics ("gate
+    detects it on next /next and resumes"); the code just doesn't implement
+    the approved-state half.
+accept_criteria: |
+  - cwos-next.js gate returns an approved-but-unexecuted sprint (status:
+    approved, completed_at:null) as active_sprint; /next resumes it instead
+    of composing a new one.
+  - Regression test (kit test harness or fixture run) covering the
+    approved-unstarted state; abandoned sprints stay excluded.
+  - Fix upstreamed to the HomeBase canonical kit copy (fleet), not just this
+    repo's kit/scripts.
+  - fb-002 / fr-012 / fr-019 marked resolved in .cwos-feedback.yaml with the
+    fixing commit.
+effort: "S"
+files_involved:
+  - "kit/scripts/cwos-next.js"
+  - ".cwos-feedback.yaml"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: friction
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-25-spr150"
+created_at: "2026-07-25T18:05:00Z"
+status_note: |
+  Drafted at SPR-150 close-out from fr-019 (the fb-002 recurrence that produced
+  duplicate sprint SPR-151 for WS-263). Founder approved queueing 2026-07-25.
