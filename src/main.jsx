@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import PokerTrackerWireframes from './PokerTracker.jsx'
+import { registerUpdateReload } from './utils/swUpdate'
 import './index.css'
 import './styles/printable-refresher.css'
 
@@ -23,15 +24,8 @@ if (import.meta.env.DEV) {
   import('./__dev__/mwEquityValidation/index.js')
 }
 
-// PWA update listener — reload when new service worker activates
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.ready.then((registration) => {
-    registration.addEventListener('controllerchange', () => {
-      // New SW has taken control — reload to get fresh assets
-      window.location.reload()
-    })
-  })
-}
+// PWA update listener — reload when a new service worker takes control
+registerUpdateReload()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

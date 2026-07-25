@@ -5,6 +5,7 @@ import { SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
 import { useBuildVersion } from '../../../hooks/useBuildVersion';
 import { BUILD_SHA, BUILD_TIME } from '../../../utils/buildInfo';
+import { hardRefresh } from '../../../utils/swUpdate';
 
 const formatBuildTime = (iso) => {
   if (!iso) return null;
@@ -159,21 +160,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
   // hands / players live there and are untouched).
   const handleForceUpdate = useCallback(async () => {
     setUpdating(true);
-    try {
-      if (typeof caches !== 'undefined') {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
-      }
-    } catch (err) {
-      logger.error('DataAndAbout:forceUpdate', err);
-    } finally {
-      // Reload to fetch fresh assets. Data in IndexedDB is preserved.
-      window.location.reload();
-    }
+    await hardRefresh();
   }, []);
 
   return (

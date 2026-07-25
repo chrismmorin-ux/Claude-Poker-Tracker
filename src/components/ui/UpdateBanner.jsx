@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { RefreshCw, X } from 'lucide-react';
 import { useBuildVersion } from '../../hooks/useBuildVersion';
+import { hardRefresh } from '../../utils/swUpdate';
 
 const DISMISS_KEY = 'updateBannerDismissedUntil';
 const DISMISS_DURATION_MS = 30 * 60 * 1000;
@@ -28,8 +29,10 @@ export const UpdateBanner = () => {
     return () => clearInterval(id);
   }, []);
 
+  // A plain reload can be answered from the active worker's precache, leaving
+  // the banner up and the build unchanged. Clear caches first.
   const handleUpdate = useCallback(() => {
-    window.location.reload();
+    hardRefresh();
   }, []);
 
   const handleDismiss = useCallback(() => {
