@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUILD_SHA, BUILD_TIME } from '../utils/buildInfo';
+import { requestSwUpdate } from '../utils/swUpdate';
 
 // Production polls /version.json every minute to detect new deploys. The file
 // is stamped by CI (.github/workflows/deploy.yml) and served no-cache by
@@ -41,6 +42,7 @@ export const useBuildVersion = ({
   const [current, setCurrent] = useState(build);
   const [latest, setLatest] = useState(null);
   const [error, setError] = useState(null);
+  const [lastCheckedAt, setLastCheckedAt] = useState(null);
   const currentRef = useRef(build);
 
   useEffect(() => {
@@ -60,16 +62,42 @@ export const useBuildVersion = ({
           setLatest(fetched);
         }
         setError(null);
+        setLastCheckedAt(Date.now());
       } catch (err) {
         if (!cancelled) setError(err);
       }
     };
 
-    check();
+    // Ask the browser for a newer worker at the same moments we ask the server
+    // for a newer version. Otherwise the app can KNOW it's behind while the new
+    // worker has never even been fetched.
+    const checkBoth = () => {
+      check();
+      requestSwUpdate();
+    };
+
+    checkBoth();
     const id = setInterval(check, pollIntervalMs);
+
+    // A phone PWA is resumed, not reloaded. While it's backgrounded the
+    // interval above is throttled or frozen outright, so on resume the hook
+    // would keep displaying whatever it last fetched — possibly hours old —
+    // as though it were current. That is why the app could say "up to date"
+    // right up until a manual Force Update. Re-check the moment it comes back
+    // to the foreground, and again when the network returns.
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') checkBoth();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', checkBoth);
+    window.addEventListener('online', checkBoth);
+
     return () => {
       cancelled = true;
       clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', checkBoth);
+      window.removeEventListener('online', checkBoth);
     };
   }, [isEnabled, pollIntervalMs]);
 
@@ -83,6 +111,10 @@ export const useBuildVersion = ({
     latestVersion: latest?.version || null,
     latestBuiltAt: latest?.built || null,
     updateAvailable,
+    // When the last successful check happened. A caller showing a confident
+    // "up to date" needs this: without it, an answer fetched hours ago reads
+    // exactly like one fetched a second ago.
+    lastCheckedAt,
     error,
   };
 };
