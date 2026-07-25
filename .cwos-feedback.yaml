@@ -212,6 +212,22 @@ friction_log:
     detail: "cwos-next.js approve emitted sprint_approved and wrote SPR-116.yaml but did NOT claim the queue item (WS-213 stayed status:backlog, sprint_id empty) despite /next skill doc stating approve 'claims items'. Also fr-012 still live: gate returned active_sprint:null for the just-approved status:approved sprint — invisible to resume until execution starts."
     component: cwos-next-approve
     workaround: "Hand-stamped WS-213 status:in_progress + sprint_id:SPR-116 before execution; cwos-next done closed it correctly afterward. Kit fix: approve should write status:claimed + sprint_id into each item's queue YAML (and gate should match status:approved sprints per fr-012)."
+  - id: fr-018
+    timestamp: "2026-07-25T07:48:00Z"
+    session_id: "session-2026-07-25-next"
+    category: file_not_found
+    severity: low
+    detail: "cwos-next done SPR-149 auto-resolved write for FIND-CA-INV-F1 looked for findings-feedback.yaml + finding-lifecycle.yaml at docs/evolution/ — neither exists in this adopted repo. /next skill doc says lib/auto-resolved.js resolveEvolutionDir should fall back to .claude/workstream/ in adopted repos; it resolved docs/evolution/ instead. Non-blocking (warnings only); item_closed + sprint_completed emitted fine and the finding YAML flipped to resolved."
+    component: cwos-next-done-auto-resolved
+    workaround: "None needed this session — finding status resolved correctly via the main path; only the calibration feedback/lifecycle append was skipped. Kit fix: resolveEvolutionDir adopted-repo fallback, or scaffold the two YAMLs at adopt time."
+  - id: fr-019
+    timestamp: "2026-07-25T17:55:00Z"
+    session_id: "session-2026-07-25-spr150"
+    category: manual_fix
+    severity: high
+    detail: "fb-002/fr-012 MATERIALIZED as duplicate work: SPR-150 (WS-263, plan-first) was approved at 07:51Z, then sat in design while awaiting founder decisions. A concurrent session ran /next at 16:26Z; gate returned active_sprint:null (it only matches status:active), so it composed SPR-151 for the SAME WS-263 and shipped it (commit a054376). First occurrence where the gate gap produced an actual duplicate sprint executing the same anchor — previous occurrences were caught by luck before execution. Duplicate implementation was avoided only because this session diff-checked the target file before writing."
+    component: cwos-next-gate
+    workaround: "This session verified SPR-151's shipped work against the approved SPR-150 plan, implemented the residual it missed (WS-263 online wiring in useOnlineAnalysis + domain-spec refresh), and hand-marked SPR-150 status:abandoned (SPR-144 precedent) in sprint YAML + sprint-index. Kit fix (now urgent): gate must treat status:approved && completed_at:null as the active sprint and resume it."
 
 # Pre-existing entry (kept for context):
 # Entry format:

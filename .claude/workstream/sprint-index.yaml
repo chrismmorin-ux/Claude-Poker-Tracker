@@ -1342,3 +1342,30 @@ sprints:
     created_at: "2026-07-22T23:34:13.332Z"
     completed_at: "2026-07-23T00:58:45.555Z"
 
+  - id: "SPR-149"
+    title: "Ship WS-267: FAIL: INV-F1 — No Unnecessary Burden"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "kit-quality"
+    created_at: "2026-07-25T07:45:45.361Z"
+    completed_at: "2026-07-25T07:47:08.386Z"
+
+  - id: "SPR-150"
+    title: "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights"
+    status: abandoned
+    item_count: 1
+    items_done: 0
+    program_focus: "domain-correctness"
+    created_at: "2026-07-25T07:51:55.365Z"
+    completed_at: null
+
+  - id: "SPR-151"
+    title: "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-07-25T16:26:11.471Z"
+    completed_at: "2026-07-25T17:12:17.455Z"
+
