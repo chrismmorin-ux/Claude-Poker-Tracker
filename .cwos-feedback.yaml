@@ -246,6 +246,14 @@ friction_log:
     workaround: "This session verified SPR-151's shipped work against the approved SPR-150 plan, implemented the residual it missed (WS-263 online wiring in useOnlineAnalysis + domain-spec refresh), and hand-marked SPR-150 status:abandoned (SPR-144 precedent) in sprint YAML + sprint-index. Kit fix (now urgent): gate must treat status:approved && completed_at:null as the active sprint and resume it."
     resolved: true
     resolution: "Fixed in WS-269 / SPR-152 — commit af6c35d (HomeBase upstream 29361a4), the sprint immediately after this was logged. Gate resumes approved-but-unexecuted sprints across three sources and approve refuses to stack a duplicate. Verified on live state: gate returned SPR-152 itself, and approve refused a second sprint while it was open. Two more instances of the same gap were found and closed during the fix — SPR-143 (orphaned since 2026-06-21, abandoned) and HomeBase's own SPR-185."
+  - id: fr-020
+    timestamp: "2026-07-25T18:50:00Z"
+    session_id: "session-2026-07-25-spr152"
+    category: manual_fix
+    severity: low
+    detail: "cwos-next.js done never stamps completed_at / completion_commit on queue items created from the standard ticket template. The patch logic guards on field PRESENCE (`if (!/^completed_at:/m.test(patched))`) but the template pre-declares `completed_at: null` and `completion_commit: null`, so the guard sees the field, skips the write, and the null survives closure. Measured across this repo's queue: 42 of 69 done items carry completed_at:null; the 27 stamped ones predate the template or were hand-fixed. Closure is still fully recoverable — the item_closed event carries the timestamp and state/queue.json materializes correctly — so this is a provenance gap in the editable surface, not lost data. Also affects closed_by_event only incidentally (that one appends unconditionally). Noticed while closing WS-269."
+    component: cwos-next-done
+    workaround: "None applied — out of scope for WS-269 (the sprint in flight) and non-blocking. Kit fix: change the three guards from presence to value checks (treat `null`/empty as unstamped) and patch in place rather than inserting, e.g. replace `^completed_at:.*$` when the captured value is null. Worth a backfill pass over the 42 stale items at the same time."
 
 # Pre-existing entry (kept for context):
 # Entry format:
@@ -260,16 +268,16 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 19
+  total_friction_events: 20
   total_user_feedback: 3
   unresolved_feedback: 2
   by_severity:
     high: 3
     medium: 5
-    low: 11
+    low: 12
   by_category:
     file_not_found: 10
-    manual_fix: 6
+    manual_fix: 7
     workaround: 3
   by_component:
     cwos-constitutional-audit.js: 1
@@ -288,7 +296,8 @@ summary:
     cwos-next-approve: 1
     cwos-next-done-auto-resolved: 1
     cwos-next-gate: 1
-  most_recent_friction: "fr-019 — 2026-07-25 — the fb-002/fr-012 gate gap materialized as duplicate sprint execution (SPR-150 + SPR-151 both ran WS-263); fixed same day by WS-269"
+    cwos-next-done: 1
+  most_recent_friction: "fr-020 — 2026-07-25 — cwos-next done never stamps completed_at/completion_commit on template-created queue items (42 of 69 closed items affected, non-blocking); prior: fr-019 — 2026-07-25 — the fb-002/fr-012 gate gap materialized as duplicate sprint execution (SPR-150 + SPR-151 both ran WS-263); fixed same day by WS-269"
   most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
