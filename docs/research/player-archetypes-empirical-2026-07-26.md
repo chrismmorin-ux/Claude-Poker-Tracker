@@ -413,3 +413,84 @@ relative to their base rate — and Finding 5 showed they are also the least
 observable. **The most diagnostic behaviours are the rarest.** That tension, not the
 switch-vs-dial question, is the real constraint on villain modelling, and it is
 another argument for pooling reads at an archetype level rather than per player.
+
+---
+
+## Part 5 — CORRECTION: most of these features are intent-blind
+
+> *"Triple barrel bluff and triple barrel are not the same, of course a value
+> player can intuitively triple barrel a good hand. And I bet there are a lot of
+> these small distinctions."* — founder, 2026-07-26
+
+Correct, and it invalidates the interpretation of most of Part 2 and Part 4.
+
+`triple_barrel` as implemented is "bet river, having bet turn, having c-bet flop".
+That is **every competent player betting a good hand three times**. It measures an
+ACTION; the read a live player wants is an INTENT. Conflating them is why Finding
+11 scored triple-barrel as *low* individual variation — near-universal value
+barrelling drowns whatever bluff signal exists.
+
+This is the same error class as WS-278 (protection vs value vs bluff): **a bet's
+motivation is not recoverable from the bet alone.**
+
+### Audit — which features are intent-blind
+
+| feature | conflates | status |
+|---|---|---|
+| `triple_barrel` | value barrel vs bluff barrel | ✗ **blind** |
+| `double_barrel` | value barrel vs bluff barrel | ✗ **blind** |
+| `check_raise_flop` | nutted check-raise vs bluff check-raise | ✗ **blind** |
+| `donk_flop` | value lead vs probe/bluff lead | ✗ **blind** |
+| `limp_raise` | trapping AA vs light limp-raise | ✗ **blind** |
+| `cbet` | value c-bet vs bluff c-bet vs **protection** (WS-278) | ✗ **blind** |
+| `threeBet` | value 3-bet vs 3-bet **bluff** — the founder's own example | ✗ **blind** |
+| `river_bet_air` | — uses showdown cards to identify air | ✓ intent-aware |
+| `foldToCbet` | — a fold is a fold | ✓ intent-free by nature |
+| `wtsd` | — reaching showdown is unambiguous | ✓ intent-free by nature |
+
+**Seven of ten are blind.** Every headline "aggression" number in Parts 2 and 4 is
+an action-frequency, not a strategic read. They are not wrong, but they answer a
+question nobody asked at the table.
+
+### The hard limit on fixing it
+
+Intent is recoverable only from **shown** cards, and that sample is severely
+censored in a direction that matters:
+
+**A bluff that works is never shown.** The opponent folds and the hand is mucked.
+So showdown-derived bluff rates measure *caught* bluffs — bluffs that got called.
+A player who bluffs often and successfully looks, in this data, like a player who
+rarely bluffs.
+
+That is not a mining defect to be engineered away; it is what the medium permits.
+Three consequences, all binding:
+
+1. Any intent-split feature must be labelled as the conditional it is —
+   *"air-shown rate GIVEN called and shown"*, never "bluff frequency".
+2. Level comparisons across players are unsafe (different call rates against them
+   produce different censoring). Rank comparisons are *probably* safer, unverified.
+3. `river_bet_air` (Part 2, 3.5% vs 7.4% between clusters) already carries this
+   caveat and should be read as caught-bluff rate. The 2× difference is real; its
+   absolute level is not.
+
+### What to build instead
+
+Intent-split versions of the blind features, computed only over shown hands:
+
+```
+triple_barrel_shown_air   / triple_barrel_shown      "caught triple-barrel bluff"
+check_raise_shown_air     / check_raise_shown        "caught check-raise bluff"
+donk_shown_air            / donk_shown
+cbet_shown_air            / cbet_shown
+```
+
+plus their value counterparts, so the SPLIT is visible rather than the total. The
+denominators will be small — Finding 5 already showed these behaviours are rare per
+player, and requiring a showdown shrinks them further. Expect these to be
+pool-level or archetype-level statistics, not per-villain reads. That is not a
+failure of the method; it is the same conclusion Finding 5 reached, arrived at from
+a second direction.
+
+**Status: flagged, not fixed.** Parts 2 and 4 stand as action-frequency findings.
+Their *interpretation* as strategic reads does not, and the ranking in Finding 11
+must be re-derived once the intent splits exist.
