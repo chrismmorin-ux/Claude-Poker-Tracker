@@ -1,5 +1,5 @@
 ---
-version: 1.6
+version: 1.7
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -31,6 +31,9 @@ changelog:
   - date: 2026-07-25
     version: 1.5
     change: "WS-256: added §2.5 Derived Preflop Line Taxonomy — the founder's cold-3bet-vs-3bet doctrine generalized into sequence-state-derived line classes (openFirstIn/isoRaise; cold3Bet/squeeze/limpReraise), expected range shape per class, the hierarchical sparse-data shrinkage rule (subclass prior = parent posterior × doctrine split, mirroring §6.5a), and the per-decision-point extraction rule that keeps limp-reraise hands counted in the limp range per §5.8. Records the founder decision to merge blind3Bet into cold3Bet (the position dimension already carries posted money) with the straddle residual noted; §2.5.5 flags the facing-3-bet tree as unmodeled (WS-270, high priority). Doc authored ahead of the code per the ticket's design-first gate."
+  - date: 2026-07-26
+    version: 1.7
+    change: "WS-256 (SPR-154): §3.4 rewritten Three Motivations → Four. PROTECTION / EQUITY DENIAL added as a first-class betting motive — it is neither value (which profits from a CALL) nor a bluff (which is BEHIND); it profits from hands with live equity folding while the bettor is ahead. Adds §3.4.1 reconciling protection's size-UP rule with §4.1's thin-value-sizes-DOWN rule (they optimize different terms of §6.1 — call-equity vs denial), and §3.4.2 making expressibility of protection BINDING on any motive classifier, because a missing category misfiles rather than blanks. Inducing recorded as the inverse fifth motive. Adds §8 mistake #14. Found by asking the open completeness question by hand, not by the code-vs-doc sweep — the code faithfully implemented an incomplete doc, which is the structural gap WS-272 exists to close. Motivating defect: weaknessDetector flagged correct wet-board protection bets as 'C-bets unprofitably on wet boards' and 'Over-values medium hands'."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -235,16 +238,41 @@ The preflop aggressor bets the flop. Theory:
 - **High c-bet frequency (>65%)**: Likely betting range is wide and includes air. Exploit: call/raise more.
 - **Low c-bet frequency (<45%)**: Gives up with air, only bets value. Exploit: fold non-premiums to their flop bet.
 
-### 3.4 Why Players Bet — The Three Motivations
-Every bet, by any player in any spot, is motivated by one or more of:
+### 3.4 Why Players Bet — The Four Motivations
 
-1. **Value**: Get called by hands with worse equity. The bet is +EV because the calling range contains enough worse hands. A value bet is correct when hero's hand has >50% equity **against the opponent's calling range** (not their full range).
+Every bet is motivated by one or more of the following. Each is distinguished by **what it profits from** — not by bet size, and not by hand strength alone. Two motives can share a bet; the sizing implication comes from whichever dominates.
 
-2. **Bluff / Fold Equity**: Get better hands to fold. The bet targets the opponent's folding range — hands that currently have more equity than hero's hand but will surrender the pot. A bluff is +EV when the fold rate exceeds the breakeven threshold: `foldPct > betSize / (pot + betSize)`.
+1. **Value**: Profits from being **called by worse**. The bet is +EV because the calling range contains enough hands with less equity. A value bet is correct when hero's hand has >50% equity **against the opponent's calling range** (not their full range).
 
-3. **Information** (rare, situational): Bet to observe the response and narrow the opponent's range. A "probe bet" or "blocking bet" can reveal whether villain has a strong or weak range based on their reaction. This is the least common motivation and is usually secondary to value or fold equity.
+2. **Bluff / Fold Equity**: Profits from **better hands folding**. The bet targets the opponent's folding range — hands that currently have more equity than hero's but will surrender the pot. +EV when the fold rate exceeds the breakeven threshold: `foldPct > betSize / (pot + betSize)`.
 
-**Critical insight**: The same bet size can serve different motivations for different players. A half-pot bet can be a value bet, a bluff, or a blocker bet. A 2x pot bet can be a polarized bluff, a value bet with a vulnerable hand seeking protection, or an overbet with the nuts maximizing extraction. The motivation is determined by the player's tendencies and their hand, NOT by the size alone.
+3. **Protection / Equity Denial**: Profits from **hands with live equity folding, while the bettor is already ahead**. This is not value (value wants a call) and not a bluff (a bluff is behind). The bettor holds a made hand that is currently best but **vulnerable** — top pair on J♥T♥9♦, an overpair on a two-tone connected board — and the profit comes from charging or folding out the flush and straight draws that would otherwise realize their equity for free. Checking surrenders that equity; the bet reclaims it.
+
+4. **Information** (rare, situational): Bet to observe the response and narrow the opponent's range. A "probe bet" can reveal whether villain's range is strong or weak from their reaction. Least common, and usually secondary to one of the first three.
+
+**A fifth, inverse motive — inducing.** Checking, or betting deliberately small, to profit from **villain betting**: it invites a bluff from a range that would have folded to a bet. It is the mirror image of the four above (all of which profit from villain's call or fold), which is why it does not collapse into "information."
+
+#### 3.4.1 Protection sizes UP — and why that does not contradict §4.1
+
+§4.1 holds that **thin value bets should be smaller** (a larger size folds out the worse hands you wanted to call). Protection runs the opposite way: **against a draw-heavy continuing range, size up.** There is no contradiction, because the two are optimizing different terms:
+
+- Thin value maximizes the **call-equity term** — you need the worse hands to stay in, so you price them in.
+- Protection maximizes the **denial term** — you need the live draws to fold or to pay a bad price, so you charge them.
+
+The discriminator is what the opponent's continuing range is made of. Against a range of worse **made** hands, size down (thin value). Against a range of **draws**, size up (protection). On a wet board holding a vulnerable made hand, protection usually dominates — which is why the same hand strength warrants a small bet on K72r and a large one on JT9ss.
+
+#### 3.4.2 Consequence for classification (binding)
+
+Because a missing category does not produce a blank but a **misfile**, any code that classifies a bet by motive MUST be able to express protection. A villain correctly protecting a vulnerable made hand on a wet board otherwise gets scored as either:
+
+- **thin value** — which makes them look like a player who over-values medium hands, or
+- **a bluff** — which makes them look like a player who over-bluffs.
+
+Both are false leaks. Both point hero's counter-strategy the wrong way, and both accumulate into the villain model as evidence for a weakness that does not exist. **Betting a vulnerable made hand on a draw-heavy board is correct play, not a leak** — see §5.2's rule that a deviation is only a weakness if it loses EV.
+
+**Multiway amplification:** equity denial is worth MORE with more opponents, because there are more live draws to deny. The heads-up framing of this section understates protection in exactly the spots the app is most used (§6 is heads-up throughout — see the multiway spine work).
+
+**Critical insight (unchanged)**: The same bet size can serve different motivations for different players. A half-pot bet can be a value bet, a bluff, a protection bet, or a blocker bet. A 2x pot bet can be a polarized bluff, a vulnerable hand charging draws, or an overbet with the nuts maximizing extraction. The motivation is determined by the player's tendencies, their hand, and the opponent's range composition — NOT by the size alone.
 
 ### 3.5 Bet Sizing — What It Does and Doesn't Tell Us
 Bet sizing and range shape interact, but the relationship is **mediated by context** — it is not a direct mapping.
@@ -679,6 +707,8 @@ Per-combo derivation: equity is computed from cards, frequency is derived from e
 12. **Double-counting style and stats**: Style IS stats. A "Fish" is defined by VPIP>40 + PFR<10. Applying a Fish multiplier AND a VPIP>40 multiplier AND a low-AF multiplier counts the same signal 3×. Each behavioral dimension should be counted exactly once — use the highest-fidelity source available and skip the rest. (See §7.4)
 
 13. **Treating IP/OOP as a binary structural fact**: IP/OOP is contextual — UTG+1 is IP vs UTG but OOP vs everyone else. The advantage comes from acting last (better information, free cards, equity realization), not from a label. Whether a player is IP depends on who they're against in the current hand, not their seat number.
+
+14. **Reading a protection bet as a leak**: Betting a vulnerable made hand on a draw-heavy board is *correct play* — the profit is equity denial, not a call from worse (§3.4). A classifier that can only express value / bluff will file it as thin value (→ "over-values medium hands") or as a bluff (→ "over-bluffs"), inventing a weakness the player does not have and pointing hero's counter-strategy the wrong way. Before flagging aggression with medium-strength hands, ask whether the board gives the opposing range live draws. On a dry static board the same line IS over-valuing; on a wet board it is protection. **Board texture is the discriminator, and omitting it turns a correct play into a false read.** (See §3.4.2)
 
 ---
 
