@@ -10,6 +10,7 @@ import {
   logErrorObject,
   clearErrorLog,
   getErrorCount,
+  getErrorCountForBuild,
   getRecentErrors,
   exportErrorLog,
 } from '../errorLog';
@@ -338,5 +339,60 @@ describe('errorLog', () => {
 
       localStorage.setItem = originalSetItem;
     });
+  });
+});
+
+// The health pill's input. Counting the whole log meant a single crash kept a
+// red alert on screen indefinitely — through reloads, through Force Update,
+// through a new deploy — until the log was cleared by hand.
+describe('getErrorCountForBuild', () => {
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
+
+  it('counts errors recorded on the running build', () => {
+    logError({ code: 'E101', message: 'A' });
+    logError({ code: 'E102', message: 'B' });
+
+    expect(getErrorCountForBuild()).toBe(2);
+  });
+
+  it('ignores errors from a different build', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([
+      { id: '1', code: 'E401', message: 'yesterday', appVersion: 'some-older-sha' },
+    ]));
+
+    // An error recorded under a build that is no longer running says nothing
+    // about the one that is.
+    expect(getErrorCountForBuild()).toBe(0);
+    // ...but the log itself keeps it — the panel is a history view.
+    expect(getErrorCount()).toBe(1);
+  });
+
+  it('ignores legacy entries stamped with the frozen v122 literal', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([
+      { id: '1', code: 'E401', message: 'legacy', appVersion: 'v122' },
+      { id: '2', code: 'E401', message: 'no version at all' },
+    ]));
+
+    expect(getErrorCountForBuild()).toBe(0);
+  });
+
+  it('counts only the matching build in a mixed log', () => {
+    logError({ code: 'E101', message: 'current' });
+    const log = getErrorLog();
+    log.push({ id: 'old', code: 'E401', message: 'old', appVersion: 'older-sha' });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
+
+    expect(getErrorCountForBuild()).toBe(1);
+    expect(getErrorCount()).toBe(2);
+  });
+
+  it('accepts an explicit build id', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([
+      { id: '1', code: 'E401', message: 'x', appVersion: 'build-a' },
+      { id: '2', code: 'E401', message: 'y', appVersion: 'build-b' },
+    ]));
+
+    expect(getErrorCountForBuild('build-a')).toBe(1);
   });
 });

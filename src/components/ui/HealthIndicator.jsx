@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import { useSyncBridge, useUI } from '../../contexts';
 import { SCREEN } from '../../constants/uiConstants';
-import { getErrorCount } from '../../utils/errorLog';
+import { getErrorCountForBuild } from '../../utils/errorLog';
 
 /**
  * HealthIndicator — operator health signal, mounted at app-root so it is visible
@@ -22,11 +22,15 @@ const POLL_MS = 60000;
 export const HealthIndicator = () => {
   const { setCurrentScreen, openSettings } = useUI();
   const { isExtensionConnected, syncError, versionMismatch, lastSyncTime } = useSyncBridge();
-  const [errorCount, setErrorCount] = useState(() => getErrorCount());
+  // Errors from THIS build only. Counting the whole log meant one crash pinned
+  // a red alert on screen forever — a day-old failure from a build that is no
+  // longer running is history, not a fault. Full history still lives in
+  // Settings → Error Log.
+  const [errorCount, setErrorCount] = useState(() => getErrorCountForBuild());
 
   // errorLog is localStorage-backed (not reactive) — poll it modestly.
   useEffect(() => {
-    const id = setInterval(() => setErrorCount(getErrorCount()), POLL_MS);
+    const id = setInterval(() => setErrorCount(getErrorCountForBuild()), POLL_MS);
     return () => clearInterval(id);
   }, []);
 

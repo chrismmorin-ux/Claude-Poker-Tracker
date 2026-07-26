@@ -21,7 +21,7 @@ vi.mock('../../../contexts', () => ({
 }));
 
 vi.mock('../../../utils/errorLog', () => ({
-  getErrorCount: () => mockErrorCount,
+  getErrorCountForBuild: () => mockErrorCount,
 }));
 
 import { HealthIndicator } from '../HealthIndicator';
