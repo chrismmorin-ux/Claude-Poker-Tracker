@@ -25,6 +25,9 @@ export const EngineCtxBridge = ({ engineCtxGetterRef }) => {
     if (!engineCtxGetterRef) return;
     engineCtxGetterRef.current = () => ({
       getRangeProfile: (playerId) => tendencyMap?.[playerId]?.rangeProfile ?? null,
+      // WS-273: lets reconstruct.js populate villain POSTFLOP distributions, so
+      // the founder's live captures and the corpus backtest score on one scale.
+      getVillainModel: (playerId) => tendencyMap?.[playerId]?.villainModel ?? null,
       evaluateGameTree,
     });
     // Don't null on unmount — keep the last-known getter alive so debounced

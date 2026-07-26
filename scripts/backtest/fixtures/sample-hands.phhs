@@ -1,0 +1,129 @@
+[1]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0]
+blinds_or_straddles = [0.25, 0.50]
+min_bet = 0.50
+starting_stacks = [20.70, 52.20]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'p2 cbr 1.50', 'p1 f']
+venue = 'Full Tilt Poker'
+time = 00:00:00
+day = 1
+month = 7
+year = 2009
+hand = 26262271344
+seats = [1, 2]
+table = 'ZKLubky3hYGubv3nwzXIHA'
+players = ['T/N22IhM3qrxee2S4+kaNQ', 'ezgbg/cUTX55fMWlyW15RQ']
+winnings = [0, 0]
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+
+[2]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0]
+blinds_or_straddles = [0.25, 0.50]
+min_bet = 0.50
+starting_stacks = [197.65, 54.75]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'p2 cbr 2.50', 'p1 f']
+venue = 'Full Tilt Poker'
+time = 00:00:00
+day = 1
+month = 7
+year = 2009
+hand = 26262271586
+seats = [1, 2]
+table = 'ukOXeolnxSSsQpf3WYDUYg'
+players = ['mDhuzU8Dd/3Fu4I/TCHcvA', 'n+Apj93GUxz34Boa9u/OSQ']
+winnings = [0, 0]
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+
+[3]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0, 0, 0, 0]
+blinds_or_straddles = [0.25, 0.50, 0, 0, 0]
+min_bet = 0.50
+starting_stacks = [51, 10.85, 54.45, 83.80, 50]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'd dh p4 ????', 'd dh p5 ????', 'p3 f', 'p4 cbr 1.50', 'p5 cc', 'p1 f', 'p2 cc', 'd db 3c6hKc', 'p2 cc', 'p4 cbr 3', 'p5 f', 'p2 cbr 9.35', 'p4 cc', 'p2 sm 3d6c', 'p4 sm TsKh', 'd db Ac', 'd db 3s']
+venue = 'Full Tilt Poker'
+time = 00:00:01
+day = 1
+month = 7
+year = 2009
+hand = 26262271782
+seats = [3, 4, 6, 1, 2]
+seat_count = 6
+table = 'iRwJH2qZu56/8L7VRk8K4w'
+players = ['GSig8Jfjwt/27vtX2aj++A', '4RBVgvVnd10+BFw+RmZzJg', 'SIVDQKHeFkTkskCkcpHMeQ', 'tSOFJrIoODci1ouBZymq2A', 'pjjB4GvD2Uwwl9Bm+hZnWQ']
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+
+[4]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0, 0, 0, 0, 0]
+blinds_or_straddles = [0.25, 0.50, 0, 0, 0, 0]
+min_bet = 0.50
+starting_stacks = [140.30, 9.50, 50, 49.50, 58, 58.10]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'd dh p4 ????', 'd dh p5 ????', 'd dh p6 ????', 'p3 cbr 2', 'p4 f', 'p5 f', 'p6 f', 'p1 f', 'p2 cc', 'd db 2cJcJd', 'p2 cc', 'p3 cbr 3.50', 'p2 cbr 7', 'p3 f']
+venue = 'Full Tilt Poker'
+time = 00:00:02
+day = 1
+month = 7
+year = 2009
+hand = 26262272228
+seats = [3, 4, 5, 6, 1, 2]
+seat_count = 6
+table = 'qbNxyvjNtjAdv76PMZooCA'
+players = ['xCdENmZvYZ4a+AfcU7u0hw', 'Sz2sXI84lMEtr2BJzZpLXw', 'yzeQ2AtdJjWSwp3p2sbt6A', 'kity7YZrxUnr11IMIFOa5A', 'bAgQOqGrnlbwlK3UWyEaog', '5v60qLpy/CA7f1oAIPmxew']
+winnings = [0, 0, 0, 0, 0, 0]
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+
+[5]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0, 0, 0, 0]
+blinds_or_straddles = [0.25, 0.50, 0, 0, 0]
+min_bet = 0.50
+starting_stacks = [87.55, 87.10, 56.80, 50, 53.90]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'd dh p4 ????', 'd dh p5 ????', 'p3 f', 'p4 cbr 1.50', 'p5 f', 'p1 f', 'p2 f']
+venue = 'Full Tilt Poker'
+time = 00:00:02
+day = 1
+month = 7
+year = 2009
+hand = 26262272486
+seats = [1, 2, 3, 5, 6]
+seat_count = 6
+table = 'E2vgQzw+7Z5nqW+aXZHqFw'
+players = ['F16kwQ0mROhTe7UVKHqjGQ', '7z+pLgCs/eNfiyYQRkqUWQ', 'FSz049aWHCYP/E0jimOUHQ', '6bAkTEDHUYxEh6UMNF/T3Q', 'gah+x7EY7JeEmVCTzZKiLQ']
+winnings = [0, 0, 0, 1.25, 0]
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+
+[6]
+variant = 'NT'
+ante_trimming_status = false
+antes = [0, 0, 0, 0, 0, 0]
+blinds_or_straddles = [0.25, 0.50, 0, 0, 0, 0]
+min_bet = 0.50
+starting_stacks = [39.10, 48.25, 50.75, 19.40, 71.90, 55.25]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'd dh p4 ????', 'd dh p5 ????', 'd dh p6 ????', 'p3 f', 'p4 f', 'p5 f', 'p6 f', 'p1 cc', 'p2 cbr 1.50', 'p1 cc', 'd db 9h8c7h', 'p1 cc', 'p2 cbr 2', 'p1 cc', 'd db 3c', 'p1 cc', 'p2 cc', 'd db 2s', 'p1 cbr 4', 'p2 f']
+venue = 'Full Tilt Poker'
+time = 00:00:02
+day = 1
+month = 7
+year = 2009
+hand = 26262272480
+seats = [4, 5, 6, 1, 2, 3]
+seat_count = 6
+table = 'VwGuaWztn6o8cQQg52panw'
+players = ['kfx7jw8hbXvOJW8+5vFgVg', 'D2zPrxn8980ShRMlPfYWqw', 'oGGzjf2VNtMlnCITAWbP5Q', 'rvf5D5Iqq+1C6REZ8gOeJA', 'E9SaB4KZ0xoT7A7+2HmZxQ', 'ZcRNbyriB2Blwy3MrYxSow']
+winnings = [0, 0, 0, 0, 0, 0]
+currency_symbol = '$'
+time_zone_abbreviation = 'ET'
+

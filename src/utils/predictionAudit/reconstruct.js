@@ -36,6 +36,8 @@
 import { composeModelVersion } from '../persistence/predictionAuditWriter';
 import { getVillainRange } from '../rangeEngine/rangeAccessors';
 import { getPositionName } from '../positionUtils';
+import { accumulateDecisions } from '../exploitEngine/decisionAccumulator';
+import { queryActionDistribution } from '../exploitEngine/villainDecisionModel';
 
 const HERO_ACTOR_ID = 'hero';
 
@@ -94,6 +96,71 @@ const buildVillainPreflopDistribution = (rangeProfile, position) => {
   if (totals.length === 0) return [];
   const totalRaw = totals.reduce((s, x) => s + x.raw, 0);
   return totals.map(x => ({ action: x.action, weight: x.raw / totalRaw }));
+};
+
+/**
+ * Villain POSTFLOP action distributions, indexed by `${seat}:${order}` (WS-273).
+ *
+ * Phase 5a-2 recorded `distribution: []` for these nodes (D3=A) because the
+ * villain decision model was out of scope. That left the corpus backtest and the
+ * founder's live captures reporting on DIFFERENT scales — the backtest scores
+ * exactly the class the live path recorded as blank.
+ *
+ * WHY THIS USES accumulateDecisions RATHER THAN DERIVING CONTEXT HERE.
+ * `queryActionDistribution` needs the 6-dimension situation context (street,
+ * texture, position category, aggressor, IP/OOP, facing action). All six are
+ * derived inside `decisionAccumulator` by private helpers. Re-deriving them here
+ * would be a SECOND implementation, and the readback would then be scoring a
+ * model the app does not run — the same trap the backtest harness avoids. We
+ * instead run the accumulator over this single hand and observe its derivations
+ * through the WS-273 `onDecision` seam.
+ *
+ * Opt-in: without `deps.getVillainModel` the index is empty and every villain
+ * postflop node keeps its Phase 5a-2 empty distribution.
+ *
+ * @returns {Object} { 'seat:order': [{ action, weight }] }
+ */
+const buildVillainPostflopIndex = (handData, deps) => {
+  const { getVillainModel, getRangeProfile } = deps;
+  if (typeof getVillainModel !== 'function') return {};
+
+  const seatPlayers = (handData && handData.seatPlayers) || {};
+  const index = {};
+
+  for (const [seat, playerId] of Object.entries(seatPlayers)) {
+    if (playerId == null) continue;
+
+    let model = null;
+    let rangeProfile = null;
+    try {
+      model = getVillainModel(playerId);
+      rangeProfile = typeof getRangeProfile === 'function' ? getRangeProfile(playerId) : null;
+    } catch {
+      continue;
+    }
+    if (!model || !rangeProfile) continue;
+
+    try {
+      accumulateDecisions(playerId, [handData], rangeProfile, undefined, {
+        onDecision: (ctx) => {
+          const dist = queryActionDistribution(
+            model, ctx.street, ctx.texture, ctx.posCategory,
+            ctx.isAgg, ctx.isIP, ctx.facingAction,
+          );
+          const actions = dist?.actions;
+          if (!actions) return;
+          const entries = Object.entries(actions).filter(([, w]) => Number.isFinite(w) && w > 0);
+          if (entries.length === 0) return;
+          index[`${ctx.playerSeat}:${ctx.order}`] =
+            entries.map(([action, weight]) => ({ action, weight }));
+        },
+      });
+    } catch {
+      // A model that cannot evaluate this hand records nothing — D3=A preserved.
+    }
+  }
+
+  return index;
 };
 
 /**
@@ -198,7 +265,8 @@ export const reconstructPredictionAudit = async (handData, deps = {}) => {
   const hasAnyDep = deps && (
     typeof deps.isModeledNode === 'function' ||
     typeof deps.getRangeProfile === 'function' ||
-    typeof deps.evaluateGameTree === 'function'
+    typeof deps.evaluateGameTree === 'function' ||
+    typeof deps.getVillainModel === 'function'
   );
   if (!hasAnyDep) {
     return { predictedDistribution: [], observedAction, modelVersion: composeModelVersion() };
@@ -209,6 +277,10 @@ export const reconstructPredictionAudit = async (handData, deps = {}) => {
     getRangeProfile,
     evaluateGameTree,
   } = deps;
+
+  // WS-273: villain postflop distributions, so live captures and the corpus
+  // backtest report on ONE scale. Empty unless getVillainModel was supplied.
+  const villainPostflopIndex = buildVillainPostflopIndex(handData, deps);
 
   const predictedDistribution = [];
   const prevActionsByStreet = {};
@@ -245,8 +317,12 @@ export const reconstructPredictionAudit = async (handData, deps = {}) => {
               : null;
             const position = getPositionName(seat, dealerButtonSeat);
             distribution = buildVillainPreflopDistribution(rangeProfile, position);
+          } else {
+            // WS-273: villain postflop, from the villain decision model. Still []
+            // when no model was supplied or the model could not evaluate the
+            // node — D3=A ("empty means the model could not evaluate") intact.
+            distribution = villainPostflopIndex[`${seat}:${entry?.order}`] || [];
           }
-          // postflop villain → distribution stays [] this ship (D3=A)
         }
         predictedDistribution.push({ actor, actorId, seat, distribution });
       }

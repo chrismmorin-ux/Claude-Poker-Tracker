@@ -99,6 +99,35 @@ Layer 3: Exploit Generation (exploitEngine pipeline)
   Output: ranked exploit suggestions with EV estimates + confidence
 ```
 
+#### 2.2a Calibration loop (WS-273, 2026-07-26)
+
+The pipeline is measured, not just run. `exploitEngine/calibrationMetrics.js` is
+the single scoring core — Brier, log-loss, calibration curve, fallback-level
+quality, slice aggregation — with three consumers reporting on ONE scale:
+
+```
+modelAudit.js            live per-villain rolling audit (in-app)
+scripts/backtest/        HandHQ corpus replay over held-out players (offline)
+predictionAudit/         the founder's own captured live predictions
+```
+
+`scripts/backtest/` is an OFFLINE harness, not part of the app bundle. It runs the
+real engine modules through a Vite SSR loader (`loader.mjs`) so it cannot drift
+from what ships. Two seams exist in production modules purely to serve it, both
+no-ops when unused:
+
+- `decisionAccumulator.accumulateDecisions(..., { onDecision })` — observation seam
+  exposing per-decision derived context (buckets are aggregates; the context is
+  otherwise lost). Prevents a second implementation of the context derivation.
+- `villainDecisionModel.queryActionDistribution(..., options)` — injects an
+  alternative fallback ladder / `minEffectiveN` for A/B measurement.
+
+**Leakage discipline is structural.** The shipped Reference table
+(`handhqReferencePool.js`, SRC-011) was mined from the WHOLE corpus, so scoring
+corpus hands against it measures memorisation. `scripts/backtest/leakageGuard.mjs`
+refuses to run without an explicitly stamped POOL-partition table or an explicit
+opt-out. See `docs/research/engine-backtest-baseline-2026-07-26.md`.
+
 ### 2.3 Game Tree Evaluation Flow
 
 ```

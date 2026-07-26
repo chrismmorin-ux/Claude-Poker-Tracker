@@ -1,0 +1,274 @@
+{
+ "note": "WS-273 cross-language partition contract. Asserted by scripts/__tests__/partition.test.js AND scripts/backtest/partition.py --check. Pseudonyms are real HandHQ obfuscated player IDs from the WS-262 smoke sample.",
+ "poolPct": 50,
+ "hashVectors": [
+  {
+   "input": "",
+   "fnv1a32": 2166136261
+  },
+  {
+   "input": "a",
+   "fnv1a32": 3826002220
+  },
+  {
+   "input": "foobar",
+   "fnv1a32": 3214735720
+  },
+  {
+   "input": "T/N22IhM3qrxee2S4+kaNQ",
+   "fnv1a32": 880544485
+  }
+ ],
+ "partitionVectors": [
+  {
+   "playerId": "T/N22IhM3qrxee2S4+kaNQ",
+   "fnv1a32": 880544485,
+   "group": "eval"
+  },
+  {
+   "playerId": "ezgbg/cUTX55fMWlyW15RQ",
+   "fnv1a32": 333375990,
+   "group": "eval"
+  },
+  {
+   "playerId": "mDhuzU8Dd/3Fu4I/TCHcvA",
+   "fnv1a32": 1666783086,
+   "group": "eval"
+  },
+  {
+   "playerId": "n+Apj93GUxz34Boa9u/OSQ",
+   "fnv1a32": 3716319184,
+   "group": "eval"
+  },
+  {
+   "playerId": "GSig8Jfjwt/27vtX2aj++A",
+   "fnv1a32": 1042657700,
+   "group": "pool"
+  },
+  {
+   "playerId": "4RBVgvVnd10+BFw+RmZzJg",
+   "fnv1a32": 2477187228,
+   "group": "pool"
+  },
+  {
+   "playerId": "SIVDQKHeFkTkskCkcpHMeQ",
+   "fnv1a32": 2809057032,
+   "group": "pool"
+  },
+  {
+   "playerId": "tSOFJrIoODci1ouBZymq2A",
+   "fnv1a32": 2474351623,
+   "group": "pool"
+  },
+  {
+   "playerId": "pjjB4GvD2Uwwl9Bm+hZnWQ",
+   "fnv1a32": 167971298,
+   "group": "eval"
+  },
+  {
+   "playerId": "xCdENmZvYZ4a+AfcU7u0hw",
+   "fnv1a32": 1957340665,
+   "group": "eval"
+  },
+  {
+   "playerId": "Sz2sXI84lMEtr2BJzZpLXw",
+   "fnv1a32": 3001125059,
+   "group": "eval"
+  },
+  {
+   "playerId": "yzeQ2AtdJjWSwp3p2sbt6A",
+   "fnv1a32": 1318237767,
+   "group": "eval"
+  },
+  {
+   "playerId": "kity7YZrxUnr11IMIFOa5A",
+   "fnv1a32": 3468471276,
+   "group": "eval"
+  },
+  {
+   "playerId": "bAgQOqGrnlbwlK3UWyEaog",
+   "fnv1a32": 3954910773,
+   "group": "eval"
+  },
+  {
+   "playerId": "5v60qLpy/CA7f1oAIPmxew",
+   "fnv1a32": 3182288425,
+   "group": "pool"
+  },
+  {
+   "playerId": "F16kwQ0mROhTe7UVKHqjGQ",
+   "fnv1a32": 2229698508,
+   "group": "pool"
+  },
+  {
+   "playerId": "7z+pLgCs/eNfiyYQRkqUWQ",
+   "fnv1a32": 2388021845,
+   "group": "pool"
+  },
+  {
+   "playerId": "FSz049aWHCYP/E0jimOUHQ",
+   "fnv1a32": 2785875640,
+   "group": "pool"
+  },
+  {
+   "playerId": "6bAkTEDHUYxEh6UMNF/T3Q",
+   "fnv1a32": 275797164,
+   "group": "eval"
+  },
+  {
+   "playerId": "gah+x7EY7JeEmVCTzZKiLQ",
+   "fnv1a32": 233348907,
+   "group": "pool"
+  },
+  {
+   "playerId": "kfx7jw8hbXvOJW8+5vFgVg",
+   "fnv1a32": 3605919690,
+   "group": "eval"
+  },
+  {
+   "playerId": "D2zPrxn8980ShRMlPfYWqw",
+   "fnv1a32": 3352214348,
+   "group": "pool"
+  },
+  {
+   "playerId": "oGGzjf2VNtMlnCITAWbP5Q",
+   "fnv1a32": 4173944243,
+   "group": "pool"
+  },
+  {
+   "playerId": "rvf5D5Iqq+1C6REZ8gOeJA",
+   "fnv1a32": 2804948822,
+   "group": "pool"
+  },
+  {
+   "playerId": "E9SaB4KZ0xoT7A7+2HmZxQ",
+   "fnv1a32": 2311406083,
+   "group": "eval"
+  },
+  {
+   "playerId": "ZcRNbyriB2Blwy3MrYxSow",
+   "fnv1a32": 3469222006,
+   "group": "pool"
+  },
+  {
+   "playerId": "b2N/Wggbzwkkw5f/3+l2fQ",
+   "fnv1a32": 3951276286,
+   "group": "eval"
+  },
+  {
+   "playerId": "OX1v9pGaNtJP5MvCTeZgsw",
+   "fnv1a32": 413462867,
+   "group": "eval"
+  },
+  {
+   "playerId": "DSMHaN5nSKn5a1oS2Zy1jw",
+   "fnv1a32": 2164584387,
+   "group": "eval"
+  },
+  {
+   "playerId": "GqkwM0lkvijWrNefHKPqBA",
+   "fnv1a32": 2680928805,
+   "group": "pool"
+  },
+  {
+   "playerId": "61t/c/6A415oOTADOlECfg",
+   "fnv1a32": 2682179167,
+   "group": "eval"
+  },
+  {
+   "playerId": "jxEy8p4q9ZvsLpvIbmNu+g",
+   "fnv1a32": 2743899249,
+   "group": "pool"
+  },
+  {
+   "playerId": "9Etsv383ooc89vHaP/GdVg",
+   "fnv1a32": 801704944,
+   "group": "pool"
+  },
+  {
+   "playerId": "ueg7fvtK7jYh5fLUQTwTfg",
+   "fnv1a32": 3820734705,
+   "group": "pool"
+  },
+  {
+   "playerId": "k0STK68vhb9Wx4YIOUm18A",
+   "fnv1a32": 1921664187,
+   "group": "eval"
+  },
+  {
+   "playerId": "1xNpTTH6PXAzNDKxCdibIg",
+   "fnv1a32": 341739858,
+   "group": "eval"
+  },
+  {
+   "playerId": "QqYEG43jjsuvKERixGosmQ",
+   "fnv1a32": 3488551255,
+   "group": "eval"
+  },
+  {
+   "playerId": "uIwSDJ7gSFCGzbqb6Va3DQ",
+   "fnv1a32": 4230042926,
+   "group": "pool"
+  },
+  {
+   "playerId": "cW1GBnSZN+kJxv8sZgk/4A",
+   "fnv1a32": 504568613,
+   "group": "pool"
+  },
+  {
+   "playerId": "IObXuOX8pbGJPZAZ/8NUmw",
+   "fnv1a32": 2273362123,
+   "group": "pool"
+  },
+  {
+   "playerId": "DVQ6zOiPYUMISn0HbcWH4Q",
+   "fnv1a32": 2668173868,
+   "group": "eval"
+  },
+  {
+   "playerId": "7arrAScAa2hkPjjgqOpC7g",
+   "fnv1a32": 3797162437,
+   "group": "pool"
+  },
+  {
+   "playerId": "EzerfErlPFslp/9szQAbcQ",
+   "fnv1a32": 3881890944,
+   "group": "pool"
+  },
+  {
+   "playerId": "gILYgsvtPxzJXA+aWSaQTw",
+   "fnv1a32": 2464203488,
+   "group": "eval"
+  },
+  {
+   "playerId": "RDT7Fc112JUciW603gTU4Q",
+   "fnv1a32": 2925682043,
+   "group": "pool"
+  },
+  {
+   "playerId": "mADijDGFNfT9gHt7ScpQwg",
+   "fnv1a32": 4108513581,
+   "group": "eval"
+  },
+  {
+   "playerId": "9wEnDu9BMYSEGUtOvqvZcA",
+   "fnv1a32": 1455315840,
+   "group": "pool"
+  },
+  {
+   "playerId": "rcUSfxy7zOxM7z3wUcfFkw",
+   "fnv1a32": 2350826229,
+   "group": "pool"
+  },
+  {
+   "playerId": "JFblqZ+y96NXiiVeLL1K0g",
+   "fnv1a32": 2261028083,
+   "group": "eval"
+  },
+  {
+   "playerId": "RFEWRda+x4Tn/L6q8gmX7A",
+   "fnv1a32": 1612547059,
+   "group": "eval"
+  }
+ ]
+}

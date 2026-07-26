@@ -20,6 +20,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { reconstructPredictionAudit } from '../reconstruct';
 import { composeModelVersion, sanitizePredictionAudit } from '../../persistence/predictionAuditWriter';
+import { buildVillainDecisionModel } from '../../exploitEngine/villainDecisionModel';
 
 const baseHandData = (overrides = {}) => {
   const { gameState: gameStateOverride, ...rest } = overrides;
@@ -545,5 +546,114 @@ describe('reconstructPredictionAudit — purity', () => {
     const original = JSON.parse(JSON.stringify(handData));
     await reconstructPredictionAudit(handData);
     expect(handData).toEqual(original);
+  });
+});
+
+// =============================================================================
+// WS-273 — villain postflop distributions (the "one scale" criterion)
+// =============================================================================
+
+describe('reconstructPredictionAudit — villain postflop distribution (WS-273)', () => {
+  // A hand where the villain (seat 3) calls preflop and then acts on the flop.
+  // Seat 3 with the button on seat 1 is the BB under the app's position model.
+  const villainPostflopHand = () => baseHandData({
+    gameState: {
+      currentStreet: 'flop',
+      dealerButtonSeat: 1,
+      mySeat: 2,
+      communityCards: ['A♠', 'K♥', '7♦', '', ''],
+      actionSequence: [
+        { order: 0, seat: 2, action: 'raise', street: 'preflop', amount: 3 },
+        { order: 1, seat: 3, action: 'call', street: 'preflop', amount: 2 },
+        { order: 2, seat: 3, action: 'check', street: 'flop' },
+        { order: 3, seat: 2, action: 'bet', street: 'flop', amount: 4 },
+        { order: 4, seat: 3, action: 'fold', street: 'flop' },
+      ],
+    },
+    // decisionAccumulator reads `cardState.communityCards` FIRST and only falls
+    // back to gameState — the base fixture's all-empty-strings array is truthy
+    // and would shadow the board, leaving no postflop decision to model.
+    cardState: {
+      communityCards: ['A♠', 'K♥', '7♦', '', ''],
+      holeCards: ['', ''],
+      holeCardsVisible: false,
+      allPlayerCards: {},
+    },
+    seatPlayers: { 2: 'hero-seat', 3: 42 },
+  });
+
+  // A prior-only model: no observed buckets, so queryActionDistribution answers
+  // from the population prior. Enough to prove the wiring populates the node —
+  // the accuracy of the number is what the corpus backtest measures.
+  const priorOnlyModel = () => buildVillainDecisionModel(
+    { buckets: {}, totalActions: 0 }, {},
+  );
+
+  const fullRangeProfile = () => buildRangeProfile('BB', {
+    open: 169, coldCall: 169, threeBet: 169,
+  });
+
+  // Preflop villain nodes are labelled with LINE actions (open / coldCall /
+  // threeBet); postflop nodes with PRIMITIVES. That difference is what lets these
+  // tests target the postflop node specifically — asserting merely that "some
+  // villain node is populated" would pass on the preflop node alone and prove
+  // nothing about the class WS-273 actually cares about.
+  const POSTFLOP_PRIMITIVES = new Set(['check', 'bet', 'fold', 'call', 'raise']);
+  const postflopNodes = (result) => result.predictedDistribution.filter(
+    d => d.actor === 'villain'
+      && d.distribution.length > 0
+      && d.distribution.every(x => POSTFLOP_PRIMITIVES.has(x.action)),
+  );
+
+  it('leaves villain postflop nodes empty when no model is supplied (D3=A preserved)', async () => {
+    const result = await reconstructPredictionAudit(villainPostflopHand(), {
+      getRangeProfile: () => fullRangeProfile(),
+    });
+    // The preflop node still populates from the range profile; the postflop one
+    // must stay empty, exactly as it did before WS-273.
+    expect(postflopNodes(result)).toHaveLength(0);
+    expect(result.predictedDistribution.some(
+      d => d.actor === 'villain' && d.distribution.length > 0,
+    )).toBe(true);
+  });
+
+  it('populates the villain POSTFLOP node when a model IS supplied', async () => {
+    const result = await reconstructPredictionAudit(villainPostflopHand(), {
+      getRangeProfile: () => fullRangeProfile(),
+      getVillainModel: () => priorOnlyModel(),
+    });
+
+    const nodes = postflopNodes(result);
+    expect(nodes).toHaveLength(1);
+
+    // Seat 3 is first to act on the flop with nothing owed, so the model's
+    // response set is exactly {check, bet} — not the fold/call/raise set.
+    const actions = nodes[0].distribution.map(x => x.action).sort();
+    expect(actions).toEqual(['bet', 'check']);
+
+    const total = nodes[0].distribution.reduce((s, x) => s + x.weight, 0);
+    expect(total).toBeCloseTo(1, 6);
+    for (const { weight } of nodes[0].distribution) {
+      expect(weight).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps observedAction and predictedDistribution alignment intact', async () => {
+    const result = await reconstructPredictionAudit(villainPostflopHand(), {
+      getRangeProfile: () => fullRangeProfile(),
+      getVillainModel: () => priorOnlyModel(),
+    });
+    expect(result.observedAction).toHaveLength(5);
+    expect(result.modelVersion).toBe(composeModelVersion());
+  });
+
+  it('survives a model that throws rather than failing the whole save', async () => {
+    // A hand save must never be lost because the audit reconstruction stumbled.
+    const result = await reconstructPredictionAudit(villainPostflopHand(), {
+      getRangeProfile: () => fullRangeProfile(),
+      getVillainModel: () => { throw new Error('model unavailable'); },
+    });
+    expect(result.observedAction).toHaveLength(5);
+    expect(Array.isArray(result.predictedDistribution)).toBe(true);
   });
 });
