@@ -40,7 +40,7 @@ policy (`VIEW_TO_ORIENTATION`) all **derive** from it.
 | **Homebase** (`HomebaseView`) | The default entry screen | The hub. Primary tiles (Live Table, Online) + a secondary nav grid + the results dashboard. The launchpad for between-sessions use. |
 | **`CollapsibleSidebar`** | Inside `TableView` only | In-flow nav during/around live play. Carries the table-specific seat-position widget + session venue/game editors. Has its own "Home" item. |
 | **`NavShell`** (`src/components/ui/NavShell.jsx`) | App-root overlay, every screen **except** Homebase, Table, auth, showdown | A fixed one-tap **Home** button — the throughpoint glue so any screen returns to the hub. Implemented as an overlay (not a wrapping bar) because ~20 views are pixel-fit `ScaledContainer` layouts with their own in-header back buttons. |
-| **`HealthIndicator`** (`src/components/ui/HealthIndicator.jsx`) | App-root overlay, every screen | Not navigation per se — the operator health signal (silent until a sync/extension/error fault), tappable to the relevant screen. |
+| **`HealthIndicator`** (`src/components/ui/HealthIndicator.jsx`) | App-root overlay, every screen | Not navigation per se — the operator health signal (silent until a fault), tappable to the relevant screen. Fault precedence, highest first: **not-saving** → sync/version-mismatch → extension-offline → errors-logged-on-this-build. |
 
 ## Routing contracts
 
@@ -94,6 +94,23 @@ list; ask before adding a tile.
 
 ## Change log
 
+- 2026-07-26 — `HealthIndicator` gained a **not-saving** fault (highest precedence) and its
+  error-count fault was scoped to the running build. Gate 1: surface-bound fix, GREEN — no new
+  persona or JTBD; this doc's own extension rule ("an operator/health signal → extend
+  HealthIndicator") is the warrant, so no Gate 2. Personas: the live-session operator. JTBD:
+  app-entry / trust-the-record.
+  *Why not-saving needed a surface at all:* the four persistence hooks each caught an init failure
+  and continued with a `// Continue without persistence` comment. Continuing is correct — a tracker
+  that refuses to open is useless at a table — but it was silent: every control worked, hands
+  appeared to record, nothing was written, and the founder would find out when the session was
+  gone. `src/utils/persistenceHealth.js` makes it observable; the pill makes it visible from the
+  table, which a per-view warning could not be. Precedence puts it above sync because a sync fault
+  costs re-importable hands while this costs the session being played.
+  *Escape hatch, same release:* `ViewLoadingFallback` replaced the bare Suspense spinner, which had
+  no timeout, message, or exit when a lazy chunk stalled rather than failed. Tiered at 6s (explain
+  + Back to Home) and 18s (add Update App). Deliberately never auto-clears caches — doing that in
+  response to a weak connection would strip the offline copy exactly when the network can't
+  replace it.
 - 2026-06-20 — Created. Documents the navigation model as built after the Homebase throughpoint work
   (view registry + NavShell + the two-surface model + tile-promotion rule). Authored after the code
   (cross-critic sequencing: a navigation-IA doc written before the registry refactor would have canonized

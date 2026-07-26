@@ -57,6 +57,9 @@ export const ERROR_CODES = {
   DELETE_FAILED: 'E304',
   MIGRATION_FAILED: 'E305',
   QUOTA_EXCEEDED: 'E306',
+  // A persistence subsystem failed to initialise and the app is running
+  // without it — nothing is being saved. See src/utils/persistenceHealth.js.
+  PERSISTENCE_DEGRADED: 'E307',
 
   // Component errors (4xx)
   RENDER_FAILED: 'E401',
@@ -118,6 +121,7 @@ export class AppError extends Error {
       E302: 'Failed to save. Please try again.',
       E303: 'Failed to load data. Please refresh the page.',
       E306: 'Storage is full. Please clear some old hands.',
+      E307: 'Your hands are not being saved. Finish this hand, then restart the app.',
       E401: 'Something went wrong. Please refresh the page.',
       E405: 'The app was updated. Refresh to load the new version.',
     };

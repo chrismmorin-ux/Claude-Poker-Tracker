@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, WifiOff } from 'lucide-react';
+import { AlertTriangle, WifiOff, Database } from 'lucide-react';
 import { useSyncBridge, useUI } from '../../contexts';
 import { SCREEN } from '../../constants/uiConstants';
 import { getErrorCountForBuild } from '../../utils/errorLog';
+import { getPersistenceFailureCount } from '../../utils/persistenceHealth';
 
 /**
  * HealthIndicator — operator health signal, mounted at app-root so it is visible
@@ -18,6 +19,9 @@ import { getErrorCountForBuild } from '../../utils/errorLog';
  */
 
 const POLL_MS = 60000;
+// Persistence init resolves within a second or two of boot; check once shortly
+// after mount rather than making the founder wait a whole poll cycle.
+const FIRST_CHECK_MS = 3000;
 
 export const HealthIndicator = () => {
   const { setCurrentScreen, openSettings } = useUI();
@@ -27,11 +31,24 @@ export const HealthIndicator = () => {
   // longer running is history, not a fault. Full history still lives in
   // Settings → Error Log.
   const [errorCount, setErrorCount] = useState(() => getErrorCountForBuild());
+  const [saveFailures, setSaveFailures] = useState(() => getPersistenceFailureCount());
 
-  // errorLog is localStorage-backed (not reactive) — poll it modestly.
+  // Neither source is reactive (localStorage / module state) — poll modestly.
   useEffect(() => {
-    const id = setInterval(() => setErrorCount(getErrorCountForBuild()), POLL_MS);
+    const id = setInterval(() => {
+      setErrorCount(getErrorCountForBuild());
+      setSaveFailures(getPersistenceFailureCount());
+    }, POLL_MS);
     return () => clearInterval(id);
+  }, []);
+
+  // Persistence init runs during the first render pass, so a failure can land
+  // after this component mounted. One short re-read catches it without waiting
+  // out a full poll interval — the whole point is that the founder finds out
+  // BEFORE recording a session, not a minute into one.
+  useEffect(() => {
+    const id = setTimeout(() => setSaveFailures(getPersistenceFailureCount()), FIRST_CHECK_MS);
+    return () => clearTimeout(id);
   }, []);
 
   const syncFault = Boolean(syncError) || versionMismatch;
@@ -39,8 +56,20 @@ export const HealthIndicator = () => {
   const hasErrors = errorCount > 0;
 
   // Primary fault drives the label, color, and tap target.
+  //
+  // Save failure outranks everything else. A sync problem costs you imported
+  // hands you can re-import; not saving costs you the session you are playing
+  // right now, and you would not find out until it was gone.
   let fault = null;
-  if (syncFault) {
+  if (saveFailures > 0) {
+    fault = {
+      label: 'Not saving — data at risk',
+      tone: 'red',
+      target: SCREEN.SETTINGS,
+      settingsFocus: 'errorLog',
+      icon: <Database size={16} />,
+    };
+  } else if (syncFault) {
     fault = {
       label: versionMismatch ? 'Extension version mismatch' : 'Sync problem',
       tone: 'red',

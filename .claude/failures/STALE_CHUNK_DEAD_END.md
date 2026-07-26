@@ -95,21 +95,31 @@ server, correct). `UpdateBanner` used `useBuildVersion`'s `updateAvailable`
 (server → server, structurally blind). Same question, two answers, and the one
 on the always-visible surface was the broken one. Fixed with the main change.
 
-**Found, not fixed — a hanging chunk request still has no exit.**
+**Found, then fixed (2026-07-26) — a hanging chunk request had no exit.**
 `importWithRecovery` catches rejection; a stalled request never rejects, so the
-Suspense fallback in `PokerTracker.jsx` spins forever with no timeout, message,
-or button. Same dead-end shape, different trigger. Deliberately left open: the
-obvious fix (timeout → `hardRefresh`) clears the offline cache in response to a
-network problem, which makes a bad-signal case worse. Wants a founder decision.
+Suspense fallback spun forever with no timeout, message, or button. Now
+`ViewLoadingFallback` (`src/components/ui/ViewLoadingFallback.jsx`): quiet while
+the load is plausibly still working, then at 6s explains the delay and offers
+Back to Home (leaving the Suspense boundary for an eager view always works), and
+at 18s adds Update App. It deliberately never auto-refreshes — `hardRefresh`
+clears the precache, so firing it in response to a weak connection would strip
+the offline copy at the moment the network cannot replace it, turning a slow load
+into a broken app. The founder chooses; the app only explains.
 
-**Found, not fixed — persistence init failures degrade silently.**
+**Found, then fixed (2026-07-26) — persistence init failures degraded silently.**
 `usePersistence`, `useSessionPersistence`, `usePlayerPersistence` and
-`useSettingsPersistence` all `catch → setIsReady(true)` with a "continue
-without persistence" comment. The app looks completely normal and saves nothing.
-At a live table that surfaces when the session is already gone. Adjacent
-pattern (silent degradation, not recovery-behind-failure) and higher severity
-than the bug that started this; needs a visible surface, so it needs the design
-gates rather than a unilateral patch.
+`useSettingsPersistence` all `catch → setIsReady(true)` with a "continue without
+persistence" comment. The app looked completely normal and saved nothing; at a
+live table that surfaces when the session is already gone. Continuing is still
+the right call — a tracker that refuses to open is useless at a table — so the
+degradation is unchanged and only the silence was fixed:
+`src/utils/persistenceHealth.js` records per-subsystem failures (and writes
+**E307** to the exportable error log), and the app-root `HealthIndicator` shows
+"Not saving — data at risk" at the top of its fault precedence, above sync,
+because a sync fault costs re-importable hands while this costs the session being
+played. Surfacing it on the pill rather than in a view was `navigation-ia.md`'s
+own rule ("an operator/health signal → extend HealthIndicator") — a per-view
+warning is invisible from the table, the one place it matters.
 
 **Clean — the extension.** `onInstalled` writes `EXTENSION_JUST_UPDATED` so the
 side panel surfaces a one-shot "reload the Ignition tab" banner. Orphaned
@@ -123,4 +133,13 @@ warns instead of failing quietly. This is the pattern done right.
 - `src/components/ui/__tests__/ViewErrorBoundary.test.jsx` — E405 classification
   and the stale-build surface (no Try Again, no Return to Table).
 - `src/hooks/__tests__/useBuildVersion.test.js` — `updateAvailable` flips on the
-  FIRST poll when the server is ahead of the running build.
+  FIRST poll when the server is ahead of the running build, and re-checks on
+  foreground/focus/online rather than trusting a frozen interval.
+- `src/components/ui/__tests__/ViewLoadingFallback.test.jsx` — the tiers appear
+  on schedule, Home leaves the boundary, and the fallback NEVER clears caches on
+  its own.
+- `src/utils/__tests__/persistenceHealth.test.js` — per-subsystem failure
+  recording, E307 written to the exportable log, recovery clearing on a
+  successful retry.
+- `src/components/ui/__tests__/HealthIndicator.test.jsx` — not-saving outranks
+  sync and logged errors; the error-count fault is scoped to the running build.
