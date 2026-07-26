@@ -27,7 +27,7 @@ Read this before any multi-file change. Update after any architectural shift.
 | **20 Views + Showdown** (was 14; PEO added PlayerEditor + PlayerPicker, PRF added PrintableRefresher, EAL added AnchorLibrary; **[verify-pending]** for full list) | UI rendering | Receive `scale` only; pull state from contexts. Note: PIO-line player-identification screens render portrait-native, not 1600×720 (per memory `feedback_portrait_mode_player_screens.md`). |
 | 40 UI Components | Reusable visual elements | Stateless or locally stateful; no context access |
 | `pokerCore/` (5 modules) | Shared poker primitives (cards, ranges, hand eval, board texture, exact preflop equity) | Imported by both engines; imports from neither |
-| `rangeEngine/` (9 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB |
+| `rangeEngine/` (10 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB. `lineTaxonomy.js` (WS-256) is the single source of truth for deriving preflop line classes from sequence state |
 | `exploitEngine/` (41 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
 | `icmEngine/` (3 modules) | Tournament ICM: Malmuth-Harville $EV per stack + risk premium / bubble factor (chips→dollars). Governed by POKER_THEORY §10 / its own CLAUDE.md under prog-domain-correctness | Pure; stacks + payout ladder → $EV. Consumed by TournamentContext (2026-06-19) |
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
@@ -114,11 +114,19 @@ useLiveActionAdvisor → gameTreeEvaluator.evaluateGameTree()
 
 ```
 New player observed → populationPriors.js creates default profile
-  → Each hand: bayesianUpdater.js updates (prior × likelihood)
-  → Showdown: anchor confirmed hands (weight=1.0, semantic boost)
-  → Profile cached in IndexedDB `rangeProfiles` store
+  → Each hand: lineTaxonomy.js derives line tags from sequence state
+      (one hand may yield SEVERAL decision points — a limp-reraise emits
+       both `limp` and `limpReraise`)
+  → bayesianUpdater.js updates (prior × likelihood) for the retained parents,
+      then shrinks derived subclasses toward their parent's posterior
+  → Showdown: anchor confirmed hands (weight=1.0, semantic boost) on BOTH
+      the parent and the subclass grid
+  → Profile cached in IndexedDB `rangeProfiles` store (PROFILE_VERSION gate;
+      derived cache, rebuilt on bump — no migration)
   → Queried by exploitEngine for villain range in EV calcs
 ```
+
+**Preflop line taxonomy (WS-256 / DEC-025).** Two decision trees, each with a retained parent aggregate whose semantics are unchanged, plus derived subclasses: `open` → {`openFirstIn`, `isoRaise`}; `threeBet` → {`cold3Bet`, `squeeze`, `limpReraise`}. Parents keep today's meaning so every existing consumer is unaffected. Facing a 3-bet (the 4-bet tree) is a *third* scenario that does not exist yet — such raises count in the `threeBet` parent with `subAction: null` (WS-270). Doctrine: `POKER_THEORY.md §2.5`.
 
 ---
 

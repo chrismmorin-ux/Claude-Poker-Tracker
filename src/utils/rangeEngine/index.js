@@ -11,6 +11,7 @@ import { updateProfileFromActions, updateSubActionCounts } from './bayesianUpdat
 import { normalizeAllPositions } from './crossRangeConstraints';
 import { rangeWidth } from '../pokerCore/rangeMatrix';
 import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
+import { PARENT_SUBCLASSES } from './lineTaxonomy';
 import { detectTraits } from './traitDetector';
 import { computeAllPips, computePipConfidence } from './pipCalculator';
 
@@ -90,11 +91,29 @@ export const getRangeWidthSummary = (profile) => {
       facedRaiseFreqs[action] = Math.round((c / facedRaiseTotal) * 100);
     }
 
+    // Derived subclasses (POKER_THEORY §2.5). Reported alongside — never
+    // instead of — the parents, so existing consumers are untouched.
+    // `counts` is the observed backing evidence; surfaces should gate on it
+    // rather than on posterior width, which never reaches 0 (prior mass).
+    const subclasses = {};
+    for (const [parent, subs] of Object.entries(PARENT_SUBCLASSES)) {
+      const scenarioTotal = parent === 'open' ? noRaiseTotal : facedRaiseTotal;
+      for (const sub of subs) {
+        subclasses[sub] = {
+          parent,
+          width: rangeWidth(profile.ranges[pos][sub]),
+          count: counts[sub] || 0,
+          pct: scenarioTotal === 0 ? null : Math.round(((counts[sub] || 0) / scenarioTotal) * 100),
+        };
+      }
+    }
+
     summary[pos] = {
       noRaise,
       facedRaise,
       noRaiseFreqs,
       facedRaiseFreqs,
+      subclasses,
       noRaiseHands: noRaiseTotal,
       facedRaiseHands: facedRaiseTotal,
       hands: opp.total,
@@ -147,7 +166,16 @@ export const getSubActionSummary = (profile) => {
 };
 
 // Re-exports for convenience
-export { RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
+export { RANGE_ACTIONS, RANGE_PARENT_ACTIONS, RANGE_SUBCLASS_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
+export {
+  derivePreflopDecisions,
+  PARENT_ACTIONS,
+  SUBCLASS_ACTIONS,
+  SUBCLASS_PARENT,
+  PARENT_SUBCLASSES,
+} from './lineTaxonomy';
+export { SUBCLASS_SPLIT, SUBCLASS_PRIOR_WEIGHT, NO_RAISE_SUBCLASSES, FACED_RAISE_SUBCLASSES } from './populationPriors';
+export { extractPreflopDecisions } from './actionExtractor';
 export { createEmptyProfile, serializeProfile, deserializeProfile, PROFILE_VERSION } from './rangeProfile';
 export { extractPreflopAction, extractAllActions } from './actionExtractor';
 export { updateProfileFromActions, applyShowdownAnchor, updateSubActionCounts } from './bayesianUpdater';

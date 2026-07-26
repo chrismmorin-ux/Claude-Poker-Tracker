@@ -2,25 +2,32 @@ import { describe, it, expect } from 'vitest';
 import {
   PROFILE_VERSION,
   RANGE_ACTIONS,
+  RANGE_PARENT_ACTIONS,
+  RANGE_SUBCLASS_ACTIONS,
   RANGE_POSITIONS,
   createEmptyProfile,
   serializeProfile,
   deserializeProfile,
 } from '../rangeProfile';
+import { SUBCLASS_PARENT } from '../lineTaxonomy';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 describe('PROFILE_VERSION', () => {
-  it('equals 3', () => {
-    expect(PROFILE_VERSION).toBe(3);
+  it('equals 4 (v4: derived line-taxonomy subclasses, WS-256)', () => {
+    expect(PROFILE_VERSION).toBe(4);
   });
 });
 
 describe('RANGE_ACTIONS', () => {
-  it('contains exactly 5 actions', () => {
-    expect(RANGE_ACTIONS).toHaveLength(5);
+  it('is the parents followed by the derived subclasses', () => {
+    expect(RANGE_ACTIONS).toEqual([...RANGE_PARENT_ACTIONS, ...RANGE_SUBCLASS_ACTIONS]);
+  });
+
+  it('retains exactly the 5 pre-taxonomy parents', () => {
+    expect(RANGE_PARENT_ACTIONS).toEqual(['fold', 'limp', 'open', 'coldCall', 'threeBet']);
   });
 
   it('contains fold', () => {
@@ -41,6 +48,14 @@ describe('RANGE_ACTIONS', () => {
 
   it('contains threeBet', () => {
     expect(RANGE_ACTIONS).toContain('threeBet');
+  });
+
+  it('every subclass in the schema is one the taxonomy knows how to derive', () => {
+    for (const sub of RANGE_SUBCLASS_ACTIONS) {
+      expect(SUBCLASS_PARENT[sub]).toBeDefined();
+      expect(RANGE_PARENT_ACTIONS).toContain(SUBCLASS_PARENT[sub]);
+    }
+    expect(RANGE_SUBCLASS_ACTIONS.sort()).toEqual(Object.keys(SUBCLASS_PARENT).sort());
   });
 });
 

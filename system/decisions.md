@@ -680,3 +680,73 @@ assumptions:
 **Context:** WS-245 (FIND-009 + FIND-010) — confidence-gating display-layer categorical verdicts. Extends the "verify the ticket's data-shape assumption before implementing" discipline.
 
 ---
+
+## DEC-025: Derived preflop line taxonomy — subclasses under retained parents, hierarchical shrinkage, version-bump persistence (WS-256)
+
+**Date:** 2026-07-25 | **Status:** Accepted | **Detected:** explicit (founder, ratified via AskUserQuestion 2026-07-25)
+
+**Decision:**
+1. **Class list.** Preflop line tags are derived from sequence state into two trees, each keeping its existing action as a **retained parent aggregate** with new subclasses beneath it: `open` → {`openFirstIn`, `isoRaise`}; `threeBet` → {`cold3Bet`, `squeeze`, `limpReraise`}. `limpReraise` takes precedence over `cold3Bet`/`squeeze`. Doctrine recorded in POKER_THEORY §2.5.
+2. **`blind3Bet` merged into `cold3Bet`.** The distinguishing factor (posted money) is already carried by the position dimension — ranges are per position × class, so a no-callers-between 3-bet from SB/BB *is* a blind 3-bet. The wider/merged blind shape is expressed as the prior for `SB.cold3Bet` / `BB.cold3Bet`. Straddler 3-bets are a documented residual.
+3. **4-bet family and `overCall` deferred** to WS-270 (filed P1 same session at founder direction).
+4. **Hierarchical shrinkage.** A subclass shrinks toward its parent in two dimensions — the conditional split `splitPost_sub = (SUBCLASS_PRIOR_WEIGHT · SPLIT[pos][sub] + n_sub) / (SUBCLASS_PRIOR_WEIGHT + n_parent)`, and the grid, which is carved out of the parent's: `ranges[sub][h] = ranges[parent][h] × share_sub(h) × totalShare`. `SUBCLASS_PRIOR_WEIGHT = PRIOR_WEIGHT = 10`. Never an independent flat prior per subclass. *(Amended 2026-07-26 — see Amendment 1 below; the originally-ratified form used a marginal frequency against the scenario-wide `N` and built subclass grids independently.)*
+5. **Per-decision-point extraction.** The extractor emits one record per decision, not per hand; a limp-reraise hand emits both `limp` and `limpReraise`.
+6. **Persistence.** Bump `PROFILE_VERSION` 3 → 4. No migration — profiles are a derived cache already version-gated at `usePlayerTendencies.js`. Additionally harden `deserializeProfile` against missing action keys.
+
+**Reasoning:** Keeping parents as retained aggregates makes the entire change **additive**: `open`, `threeBet`, `coldCall` and `limp` come out numerically identical to today, so no existing consumer (rangeAccessors, rangeRules, RangeDetailPanel, PlayerAnalysisPanel) changes behavior, and "parents unchanged" becomes a hard snapshot assertion rather than a hope. Merging `blind3Bet` avoids splitting the same observations twice on a dimension the profile already indexes — `SB.cold3Bet` would otherwise be permanently empty. Hierarchical shrinkage is the direct answer to the fragmentation the split creates: it mirrors the `poolBaseline.js` philosophy (§6.5a) so a thin subclass reproduces its parent's behavior and only accumulating evidence pulls it away, which is what stops an n=1 squeeze from manufacturing a confident read. Emitting the limp-reraise hand into **both** trees rather than reclassifying it preserves §5.8 — reclassifying would strip trapped hands out of the limp range and silently manufacture the "limp range is capped" exploit the trait detector exists to suppress. Version-bump-over-migration is available only because the profile is derived, not authored, data.
+
+**Context:** WS-256, design-first gate. Founder doctrine 2026-07-22: *"a cold 3-bet and a 3-bet are different — a cold 3-bet usually indicates a stronger and maybe slightly more polar range than a 3-bet."* WS-254 / WS-255 are the stats-layer twins and should adopt this same taxonomy.
+
+**Consequences:**
+- WS-254 / WS-255 now have a ratified taxonomy to land on; divergence between the stats layer and the range layer becomes a detectable drift rather than a design question.
+- WS-270 (4-bet tree) inherits `lineTaxonomy.js` and the shrinkage scheme — sequenced after, not beside.
+- `SPLIT` ships as a founder estimate. WS-264's HandHQ pass-2 is its empirical grounding path; per the WS-263 precedent these weights should eventually be *measured* from between-player overdispersion.
+- Straddler 3-bets classify as plain `cold3Bet` despite having posted money — the one place the merge decision loses information.
+- Profile cache invalidates once on upgrade; every villain profile rebuilds from hand history on next load.
+
+**Load-Bearing Assumptions (AS-N, advisory — impact: medium):**
+```yaml
+assumptions:
+  - id: AS-1
+    type: empirical
+    claim: "The SPLIT[position][subclass] fractions apportioning the parent threeBet posterior across cold3Bet / squeeze / limpReraise (and open across openFirstIn / isoRaise) are a founder estimate that is close enough to the live 1/2 pool's true split that a thin subclass inherits a usable prior. They are informed judgment, not a measured dataset — the same provenance class as FACED_RAISE_FREQUENCIES."
+    falsifies_if:
+      threshold: "WS-264 HandHQ pass-2 position/open-fold trees measure a subclass split fraction diverging from the founder estimate by >=15 absolute percentage points for any position"
+      window: "on WS-264 completion, or 2026-10-25, whichever first"
+    revisit: "2026-10-25"
+    status: active
+    severity: medium
+  - id: AS-2
+    type: methodological
+    claim: "Shrinking a subclass toward its parent's posterior with SUBCLASS_PRIOR_WEIGHT = PRIOR_WEIGHT = 10 against the scenario-wide denominator N keeps a sparse subclass prior-dominated at the founder's real per-villain data volumes. Measured behavior (2026-07-25): the estimate always lies strictly between the parent-derived prior and the raw empirical rate, and is closer to the PRIOR whenever N <= 10 — the crossover falls exactly at N = SUBCLASS_PRIOR_WEIGHT, matching the documented PRIOR_WEIGHT 50/50 semantics in §6.5."
+    falsifies_if:
+      threshold: "a subclass estimate falls outside the open interval between its parent-derived prior and the raw empirical rate n_sub/N, OR is closer to the empirical rate than to the prior while N <= 10, OR an exploit rule fires off a subclass grid backed by fewer than 3 observations"
+      window: "first 3 live sessions after the taxonomy ships, or 2026-09-25, whichever first"
+      control_case: "the same villain and position evaluated against the pre-taxonomy parent threeBet grid, which pools all raise-facing-raise observations and is the behavior a zero-observation subclass must reproduce (× its split fraction)"
+      pass_criterion: "for every position: a zero-observation subclass reproduces its parent's posterior share; every non-zero subclass estimate lies strictly between the parent-derived prior and n_sub/N; the estimate is prior-dominated for N <= 10; and no exploit rule fires off a subclass grid with fewer than 3 backing observations"
+    revisit: "2026-09-25"
+    status: active
+    severity: medium
+```
+
+### Amendment 1 (2026-07-26) — shrinkage must bind the GRID, not just the frequency
+
+**Trigger:** pre-close review of the WS-256 implementation, founder-approved fix same session.
+
+**Defect found.** The ratified scheme in §4 was implemented on the *frequency* scalar only. Each subclass grid was built independently from its own doctrine prior and scaled by a ratio, so nothing bound a child to its parent's grid. Measured at the pure prior, before any observation:
+
+- `limpReraise[QQ] = 1.00` against `threeBet[QQ] = 0.58` — the model claimed the villain limp-reraises QQ more often than they raise-facing-a-raise at all, though limp-reraise is a strict subset.
+- `Σ subclasses > parent` in **151 of 169 hands**, directly contradicting §1's ratified "a parent means exactly the union of its subclasses."
+- One squeeze in 40 spots inflated the squeeze range ~**4×** (mass 1.82 → 7.30) — the swamping the ticket's design constraint existed to prevent.
+
+**Amendment.**
+1. **Split estimated conditionally.** Denominator is `n_parent` (times the parent action actually occurred), not the scenario-wide `N`. A fold is not an opportunity to observe *which kind* of 3-bet happened. One observation now shifts the subclass's share of its parent 23.3% — inside AS-2's 25% band.
+2. **Grid carved out of the parent.** `ranges[sub][h] = ranges[parent][h] × share_sub(h) × totalShare`, where `share_sub(h) ∝ splitPost_sub · prior_sub(h)` sums to 1 across siblings. Containment holds by construction and is re-enforced at normalization (`crossRangeConstraints` Pass B) so showdown anchoring cannot break it.
+3. **`totalShare = Σ splitPost ≤ 1`**, with the shortfall being the unmodelled 4-bet tree — WS-270's slice, left with the parent. The residual is now derived rather than assumed.
+4. **Doctrine priors are propensities, not distributions.** `prior_sub(h)` is used as-is. Normalizing it by its own mass (an intermediate attempt) divides each cell by the range's breadth and penalizes wide ranges everywhere — it made the deliberately uncapped `limpReraise` range *less* likely at AA than the narrow `squeeze` range, inverting §2.5.2.
+
+**Unchanged:** §1's parent-invariance guarantee still holds — parents remain bit-identical to their pre-taxonomy values, asserted by test against an independent reimplementation of the pre-taxonomy rule.
+
+**New consequence — parent priors are narrower than the union of their children.** Containment means a child can only place weight where its parent already has some. The parent priors predate the taxonomy, so a child's doctrine shape is expressed *relative to* the parent's support rather than beyond it: the `squeeze` bluff tail cannot appear at hands the parent `threeBet` prior scores 0, and subclasses end up differing more in *how much* of a hand they claim than in *which* hands. §1 ("parent = union") and §2.5.2 (per-class shapes) are only jointly satisfiable if the parent prior is itself the union of its children's shapes — it currently is not. **Open follow-up:** widen the parent priors to that union, which would change parent grids and so requires re-validating every existing consumer. Deliberately not done here; it would break the parent-invariance guarantee that makes WS-256 additive and safe.
+
+---

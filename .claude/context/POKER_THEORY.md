@@ -1,5 +1,5 @@
 ---
-version: 1.4
+version: 1.6
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -23,6 +23,14 @@ changelog:
   - date: 2026-07-25
     version: 1.4
     change: "WS-263 (WS-262 mass-data follow-up #1): §6.5a rewritten Three-Tier → Four-Tier — imported HandHQ Reference tier (SRC-011, online numeric-stake segments only, nearest-stake by log distance, per-villain seat-bucket lookup) inserted between founder estimate and founder-observed pool. Flat POOL_PRIOR_MAX_PSEUDOCOUNT=200 removed (WS-262 refuted it ~20× too confident); replaced by measured per-stat prior weights PER_STAT_PRIOR_WEIGHT (10–35) from between-player overdispersion — the 'hierarchical τ² future upgrade' the previous version promised is now delivered. Code + doc landed same session."
+  - date: 2026-07-25
+    version: 1.5
+  - date: 2026-07-26
+    version: 1.6
+    change: "WS-256 pre-close review: §2.5.3 rewritten. The shrinkage rule now binds in TWO dimensions — the split estimated conditionally against n_parent (not the scenario-wide N), and the subclass GRID carved out of the parent's grid rather than built independently. Fixes a defect where children exceeded their own parent (limpReraise[QQ]=1.00 vs threeBet[QQ]=0.58; Σ children > parent in 151/169 cells) and one observation swung a range ~300%. Adds the measured guarantees (containment; 23.3% single-observation shift, inside AS-2's 25% band) and records the cost of containment: parent priors predate the taxonomy and are narrower than the union of their children, so a child's shape is expressed only within the parent's support. Ratified as DEC-025 Amendment 1."
+  - date: 2026-07-25
+    version: 1.5
+    change: "WS-256: added §2.5 Derived Preflop Line Taxonomy — the founder's cold-3bet-vs-3bet doctrine generalized into sequence-state-derived line classes (openFirstIn/isoRaise; cold3Bet/squeeze/limpReraise), expected range shape per class, the hierarchical sparse-data shrinkage rule (subclass prior = parent posterior × doctrine split, mirroring §6.5a), and the per-decision-point extraction rule that keeps limp-reraise hands counted in the limp range per §5.8. Records the founder decision to merge blind3Bet into cold3Bet (the position dimension already carries posted money) with the straddle residual noted; §2.5.5 flags the facing-3-bet tree as unmodeled (WS-270, high priority). Doc authored ahead of the code per the ticket's design-first gate."
 ---
 
 # Poker Theory Reference — Mandatory Reading for Analysis Edits
@@ -103,6 +111,99 @@ A squeeze is a 3-bet when facing a raise + one or more callers. It's more powerf
 - The initial raiser's range is wide (they opened, not super strong)
 - The caller(s) showed passive interest (unlikely to have premiums)
 - More dead money in the pot = better risk-to-reward
+
+### 2.5 Derived Preflop Line Taxonomy
+
+**The doctrine (founder, 2026-07-22):** *"A cold 3-bet and a 3-bet are different — a cold 3-bet usually indicates a stronger and maybe slightly more polar range than a 3-bet."*
+
+Generalized: **a derived action tag must be descriptive enough to distinguish decision contexts with different range implications.** "Raise facing a raise" is not one decision — it is at least three, and lumping them averages over spots whose fold/continue economics diverge. §2.3's "a 3-bet from a typical player is almost always a monster" is really a statement about *cold* 3-bets; it is materially weaker for blind 3-bets and materially stronger for limp-reraises.
+
+#### 2.5.1 The classes
+
+Tags are **derived from sequence state** — prior investment, callers between, raise count, posted blinds. They are never hand-labeled and never inferred from position alone. This is §7.1 applied to line classification: **the tag is an output of the action sequence, not an input to the model.**
+
+Two independent decision trees (§4 of `rangeEngine/CLAUDE.md`), each with a retained parent aggregate and derived subclasses:
+
+**No raise faced** — `fold | limp | open`
+| Tag | Sequence-state condition |
+|---|---|
+| `openFirstIn` | raise; no raise faced; **no limpers ahead** |
+| `isoRaise` | raise; no raise faced; **≥1 limper ahead** |
+
+**Facing a raise** — `fold | coldCall | threeBet`
+| Tag | Sequence-state condition |
+|---|---|
+| `coldCall` | call facing a raise; no prior voluntary investment |
+| `cold3Bet` | raise facing a raise; **no callers between** raiser and seat |
+| `squeeze` | raise facing a raise; **≥1 caller between** (§2.4) |
+| `limpReraise` | raise facing a raise; seat **voluntarily limped earlier this hand** |
+
+`limpReraise` takes precedence over `cold3Bet` / `squeeze`. `open` and `threeBet` are retained as **aggregate parents** — their meaning is exactly the union of their subclasses, unchanged from the pre-taxonomy definition.
+
+#### 2.5.2 Expected range shape per class
+
+Live-population doctrine, **not GTO**. Ordered strongest/narrowest to widest:
+
+| Class | Shape | Why |
+|---|---|---|
+| `cold3Bet` | **Strongest, slightly polar.** | No money invested and players still to act behind. Re-raising into that with a marginal hand has poor implied odds, so the live pool does it only with genuine value plus a thin bluff tail. |
+| `squeeze` | **Polar and leveraged.** | Dead money and a capped caller range make the bluff side profitable, so the range splits: real value + more bluffs than a cold 3-bet, with the medium region hollowed out (§2.4). |
+| `blind3Bet` (= `cold3Bet` from SB/BB) | **Wider and more merged.** | Money is already posted, so the price to continue is discounted and the equity threshold drops. Medium hands stay in — the range is merged rather than polar. |
+| `limpReraise` | **Uncapped.** | The passive line was chosen deliberately to trap (§5.8). This range is never treated as capped, and a single observation makes the *limp* range permanently uncapped too. |
+| `isoRaise` | **Wider than `openFirstIn`, value-tilted.** | Raising over limpers targets a known-weak capped range rather than folding out the field (§5.7), so it correctly includes hands too weak to open first-in. |
+
+**Why `blind3Bet` is not its own class.** The distinguishing factor — posted money — is already carried by the position dimension: ranges are stored per position × class, and a 3-bet from SB or BB with no callers between *is* a blind 3-bet by definition. A separate class would leave `SB.cold3Bet` permanently empty and split the same observations twice. The wider/merged blind shape is expressed as the **prior for `SB.cold3Bet` / `BB.cold3Bet`**, which is where it belongs. (Founder decision, 2026-07-25 / WS-256.)
+
+*Known residual:* a **straddler** who 3-bets also has posted money but is not SB/BB, so their line is classed as a plain `cold3Bet`. Straddles are recorded (`sequenceUtils.getStraddler`) but not yet threaded into the taxonomy.
+
+#### 2.5.3 Sparse-data rule: subclasses shrink toward their parent
+
+Splitting a class divides the same observations across more buckets. **New subclasses MUST shrink hierarchically toward their parent** — never toward an independent flat prior. The shrinkage binds in **two dimensions**, and omitting either one breaks the taxonomy.
+
+**1. The split — how often.** Estimate the subclass share *conditionally, against the parent's own occurrences*:
+
+```
+splitPost_sub = (SUBCLASS_PRIOR_WEIGHT · SPLIT[position][sub] + n_sub) / (SUBCLASS_PRIOR_WEIGHT + n_parent)
+```
+
+The denominator is **`n_parent`, the number of times the parent action actually occurred** — not the scenario-wide opportunity count `N`. A fold is not an opportunity to observe *which kind* of 3-bet happened, and counting it as one lets one squeeze in 40 spots move the estimate ~4×. `SUBCLASS_PRIOR_WEIGHT` then reads exactly like `PRIOR_WEIGHT`: ~10 virtual 3-bets before observed data dominates the doctrine split.
+
+**2. The grid — which hands.** The subclass grid is **carved out of the parent's grid**, never built beside it:
+
+```
+share_sub(h)   = splitPost_sub · prior_sub(h) / Σ_siblings (splitPost_sib · prior_sib(h))
+ranges[sub][h] = ranges[parent][h] · share_sub(h) · totalShare      totalShare = min(1, Σ splitPost)
+```
+
+`prior_sub(h)` is the doctrine prior used **as-is**. `getPopulationPrior` returns a per-hand *propensity* — the same semantics every grid in this engine carries — not a distribution over hands. Normalizing it by its own total would divide each cell by the range's breadth, penalizing wide ranges everywhere; that made the deliberately uncapped `limpReraise` range *less* likely at AA than the narrow `squeeze` range, inverting §2.5.2.
+
+`totalShare < 1` exactly when some parent observations carry no subclass — the unmodelled 4-bet tree (§2.5.5). That residual is not a fudge factor; it is WS-270's slice, left with the parent.
+
+This mirrors the `poolBaseline.js` hierarchical philosophy (§6.5a): a thin subclass reproduces its parent's behavior, and only accumulating evidence pulls it away.
+
+**What the scheme guarantees** (measured 2026-07-26, asserted by test):
+1. **Containment.** Per cell, every child ≤ its parent and Σ children ≤ parent — a squeeze *is* a 3-bet. Re-enforced at normalization (`crossRangeConstraints` Pass B) so showdown anchoring cannot break it. Where the parent is 0, every child is 0.
+2. A **zero-observation** subclass still carries its parent-derived share — it degrades to the parent, never to a flat guess and never to zero.
+3. The split posterior lies **strictly between** the doctrine split and the raw rate `n_sub / n_parent`, and is **prior-dominated while `n_parent ≤ SUBCLASS_PRIOR_WEIGHT`** — the 50/50 crossover at 10, matching §6.5 for `PRIOR_WEIGHT`.
+4. **One observation shifts the subclass's share of its parent by <25%** (measured 23.3% at n_parent=5), satisfying DEC-025 AS-2. Two shift it 44.6%. Heavy evidence does override the doctrine split.
+
+**The anti-pattern this rule exists to prevent** — and the actual WS-256 review defect: deriving each subclass grid from an independent prior and shrinking only the frequency. That produced `limpReraise[QQ] = 1.00` against `threeBet[QQ] = 0.58`, subclass mass summing above the parent in **151/169 cells**, and a ~300% range swing from a single observation.
+
+**Known cost of containment:** a child can only place weight where its parent already has some. The parent priors predate the taxonomy, so a subclass's doctrine shape is expressed *relative to* the parent's support, not beyond it — e.g. the `squeeze` bluff tail cannot appear at hands the parent `threeBet` prior scores 0. Subclasses therefore differ most in *how much* of each hand they claim. Widening the parent priors to the true union of their children is the open follow-up (see DEC-025 amendment).
+
+`SPLIT[position][*]` sums to 1.0 across a parent's subclasses and is a **founder estimate** (author-estimate trust, Field-frame) carrying the same provenance discipline as `FACED_RAISE_FREQUENCIES` — not a measured dataset. Per the WS-263 precedent these weights should eventually be *measured* from between-player overdispersion rather than assumed.
+
+#### 2.5.4 One hand can yield several decision points
+
+A seat that limps and later re-raises made **two** decisions in two different game states, and both are real: the limp (no-raise tree) and the re-raise (facing-raise tree). The extractor therefore emits one record **per decision point**, not per hand.
+
+Consequence that must be preserved: the limp-reraise hand **stays counted in the `limp` range**. Removing trapped hands from the limp range would make that range look capped — the exact inverse of §5.8, which holds that any limp-reraise makes the range permanently uncapped. Reclassifying rather than adding would silently manufacture the "limp range is capped" exploit the trait detector exists to suppress.
+
+Limp-call and limp-fold remain in the **sub-action tree** (`subActionExtractor.js`), not the facing-raise tree: there *is* prior investment, so they are not cold calls, and folding them into `coldCall` would corrupt its definition.
+
+#### 2.5.5 What is NOT yet modeled
+
+**Facing a 3-bet is a third decision tree and does not exist yet.** A 4-bet is currently invisible to the range classes, exactly as limp-reraise was before this section. This matters out of proportion to its frequency: 4-bet pots are large before the flop is dealt and SPR is low, so a misread has no later street on which to be recovered, and whether a villain's 4-bet range is polarized or pure QQ+/AK value is the difference between stacking off and folding — paid at maximum pot size. Tracked at high priority as **WS-270**; `overCall` (calling behind an existing caller) is deferred with it.
 
 ---
 

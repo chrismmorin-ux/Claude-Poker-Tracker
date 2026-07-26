@@ -7,10 +7,35 @@
 
 const GRID_SIZE = 169;
 
-/** Bump when profile schema changes to invalidate cached profiles */
-export const PROFILE_VERSION = 3;
+/**
+ * Bump when profile schema changes to invalidate cached profiles.
+ * Profiles are a DERIVED cache, rebuildable from hand history — the gate in
+ * usePlayerTendencies (`cached.profileVersion === PROFILE_VERSION`) makes a
+ * bump sufficient and a migration unnecessary (DEC-025).
+ *
+ * v4 (WS-256): derived line-taxonomy subclasses added.
+ */
+export const PROFILE_VERSION = 4;
 
-export const RANGE_ACTIONS = ['fold', 'limp', 'open', 'coldCall', 'threeBet'];
+/**
+ * Retained parent aggregates. These keep their pre-taxonomy semantics exactly —
+ * every existing consumer reads these and is unaffected by the subclass split.
+ */
+export const RANGE_PARENT_ACTIONS = ['fold', 'limp', 'open', 'coldCall', 'threeBet'];
+
+/**
+ * Derived subclasses (POKER_THEORY §2.5 / DEC-025). Each sums into one parent;
+ * see `lineTaxonomy.js` SUBCLASS_PARENT for the mapping.
+ */
+export const RANGE_SUBCLASS_ACTIONS = [
+  'openFirstIn',
+  'isoRaise',
+  'cold3Bet',
+  'squeeze',
+  'limpReraise',
+];
+
+export const RANGE_ACTIONS = [...RANGE_PARENT_ACTIONS, ...RANGE_SUBCLASS_ACTIONS];
 export const RANGE_POSITIONS = ['EARLY', 'MIDDLE', 'LATE', 'SB', 'BB'];
 
 /**
@@ -87,7 +112,15 @@ export const deserializeProfile = (record) => {
   for (const pos of RANGE_POSITIONS) {
     ranges[pos] = {};
     for (const action of RANGE_ACTIONS) {
-      ranges[pos][action] = new Float64Array(record.ranges[pos][action]);
+      // Records written by an older PROFILE_VERSION lack the subclass keys.
+      // `new Float64Array(undefined)` silently yields a LENGTH-0 array rather
+      // than throwing, which would propagate a corrupt grid shape into every
+      // consumer — getAllRangeProfiles has no version gate. Fall back to a
+      // correctly-sized zero grid instead (DEC-025).
+      const stored = record.ranges?.[pos]?.[action];
+      ranges[pos][action] = Array.isArray(stored) || ArrayBuffer.isView(stored)
+        ? new Float64Array(stored)
+        : new Float64Array(GRID_SIZE);
     }
   }
 

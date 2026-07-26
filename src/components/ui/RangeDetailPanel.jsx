@@ -22,6 +22,29 @@ const DISPLAY_ACTIONS = {
   ],
 };
 
+/**
+ * Derived line subclasses (POKER_THEORY §2.5), shown as a refinement row
+ * beneath their parent.
+ *
+ * EVIDENCE GATE: a subclass pill appears only once the villain has actually
+ * been observed taking that line. Every subclass grid carries prior mass, so
+ * its posterior width never reaches 0 — rendering an unbacked pill would show
+ * a confident-looking "Squeeze: 8%" built from nothing but the prior. This is
+ * the same trap that kept a rangeRules rule dead until WS-223. Until there is
+ * evidence, the parent pill IS the honest aggregate.
+ */
+const DISPLAY_SUBCLASSES = {
+  noRaise: [
+    { key: 'openFirstIn', label: 'First-In', parent: 'open' },
+    { key: 'isoRaise', label: 'Iso', parent: 'open' },
+  ],
+  facedRaise: [
+    { key: 'cold3Bet', label: 'Cold 3-Bet', parent: 'threeBet' },
+    { key: 'squeeze', label: 'Squeeze', parent: 'threeBet' },
+    { key: 'limpReraise', label: 'Limp-3Bet', parent: 'threeBet' },
+  ],
+};
+
 const POSITION_LABELS = {
   EARLY: 'EP',
   MIDDLE: 'MP',
@@ -84,9 +107,21 @@ export const RangeDetailPanel = ({
   const handCount = positionSummary?.hands || 0;
   const width = weights ? rangeWidth(weights) : 0;
 
+  // Subclass pills, gated on observed evidence (see DISPLAY_SUBCLASSES).
+  const availableSubclasses = useMemo(() => {
+    const summarySubs = positionSummary?.subclasses;
+    if (!summarySubs) return [];
+    return DISPLAY_SUBCLASSES[effectiveScenario].filter(
+      (s) => (summarySubs[s.key]?.count || 0) > 0
+    );
+  }, [positionSummary, effectiveScenario]);
+
+  const selectedSubclass = positionSummary?.subclasses?.[effectiveAction] || null;
+
   // Get observed frequency for selected action
   const getFrequency = () => {
     if (!positionSummary) return null;
+    if (selectedSubclass) return selectedSubclass.pct;
     if (effectiveScenario === 'noRaise') {
       return positionSummary.noRaiseFreqs?.[effectiveAction] ?? null;
     }
@@ -170,6 +205,27 @@ export const RangeDetailPanel = ({
               ))}
             </div>
 
+            {/* Derived-line refinement pills — only once observed */}
+            {availableSubclasses.length > 0 && (
+              <div className="flex gap-1 mb-3 items-center pl-2 border-l-2 border-gray-200">
+                {availableSubclasses.map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => setAction(s.key)}
+                    title={`${s.label} — ${positionSummary.subclasses[s.key].count} observed`}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+                      effectiveAction === s.key
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-gray-50 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {s.label}
+                    <span className="ml-1 opacity-70">{positionSummary.subclasses[s.key].count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Grid */}
             <div className="flex justify-center mb-3">
               <RangeGrid
@@ -184,8 +240,20 @@ export const RangeDetailPanel = ({
             <div className="flex justify-between text-xs text-gray-600 bg-gray-50 rounded px-3 py-2">
               <span>Range: <strong>{width}%</strong></span>
               <span>Observed: <strong>{getFrequency() != null ? `${getFrequency()}%` : '--'}</strong></span>
-              <span>Hands: <strong>{handCount}</strong></span>
+              <span>
+                {selectedSubclass ? 'Seen: ' : 'Hands: '}
+                <strong>{selectedSubclass ? selectedSubclass.count : handCount}</strong>
+              </span>
             </div>
+
+            {/* Thin-evidence honesty: a subclass shrinks toward its parent, so
+                say so rather than presenting a confident-looking narrow range. */}
+            {selectedSubclass && selectedSubclass.count < 3 && (
+              <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 rounded px-3 py-1.5">
+                Only {selectedSubclass.count} observed — this range is mostly inherited
+                from their overall {selectedSubclass.parent === 'threeBet' ? '3-bet' : 'open'} range.
+              </div>
+            )}
           </>
         )}
       </div>

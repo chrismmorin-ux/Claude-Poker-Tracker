@@ -19,14 +19,30 @@ The two decision trees are normalized independently:
 
 The two scenarios are independent — a player's open range tells you nothing about their cold-call range. Fold is not stored as a grid; it is derived within each scenario. This is enforced in `crossRangeConstraints.js`.
 
-### 4. Two Independent Decision Trees
+Normalization runs in **two passes**. Pass A normalizes the retained parents exactly as above. Pass B enforces **containment** — per cell, every subclass ≤ its parent and `Σ subclasses ≤ parent` — scaling *only* subclass grids. This subsumes the sibling-headroom rule rather than restating it: Pass A has already established `sibling + parent ≤ 1.0`, so `Σ subclasses ≤ parent` yields `sibling + Σ subclasses ≤ 1.0` for free. Parents are held fixed, which is what keeps `open` / `threeBet` / `coldCall` / `limp` bit-identical to their pre-taxonomy values.
+
+### 4. Two Independent Decision Trees + Derived Subclasses
 Preflop has two fundamentally different situations:
 - **No raise faced**: fold / limp / open raise
 - **Facing a raise**: fold / cold-call / 3-bet
 
 These are separate decision trees with separate frequency tracking. A player's open range tells you NOTHING about their cold-call range. See `subActionExtractor.js`.
 
-**Note**: Squeeze (vs raise + caller(s)) is documented in the design spec but not yet implemented in `RANGE_ACTIONS`.
+Since WS-256 each raise parent carries **derived subclasses**, classified in `lineTaxonomy.js` from sequence state (never hand labels, never position labels):
+
+| Parent | Subclasses |
+|--------|-----------|
+| `open` | `openFirstIn` (nobody entered) · `isoRaise` (over ≥1 limper) |
+| `threeBet` | `cold3Bet` (no callers between) · `squeeze` (≥1 caller between) · `limpReraise` (limped earlier this hand) |
+
+**Parents keep their pre-taxonomy meaning exactly** — every existing consumer of `open` / `threeBet` is unaffected. Full doctrine and range-shape expectations: [`POKER_THEORY.md §2.5`](../../../.claude/context/POKER_THEORY.md), ratified in DEC-025.
+
+Three rules bind here:
+1. **Subclasses shrink toward their parent** (§2.5.3), never toward an independent flat prior — in BOTH dimensions. The split is estimated against the parent's own count (`n_parent`, not the scenario-wide `N`), and the grid is **carved out of the parent's grid**, never built beside it. `updateSubclassRanges` in `bayesianUpdater.js`. A zero-observation subclass reproduces its parent's share; a child can never exceed its parent. Deriving subclass grids independently was the WS-256 review defect (DEC-025 Amendment 1) — it let `limpReraise[QQ] = 1.00` stand against `threeBet[QQ] = 0.58`.
+2. **One hand can yield several decision points** (§2.5.4). A limp-reraise emits BOTH `limp` and `limpReraise` — the limp emission is load-bearing, since dropping it would make the limp range read as capped and invert §5.8's trap doctrine.
+3. **`blind3Bet` is deliberately NOT a class.** Posted money is already carried by the position dimension, so a no-callers-between 3-bet from SB/BB *is* the blind case; the wider/merged shape lives in the `SB`/`BB` `cold3Bet` prior. Straddler 3-bets are the documented residual.
+
+**Not modelled**: facing a 3-bet (the 4-bet tree) is a *third* scenario that does not exist yet. A raise over two or more prior raises counts in the `threeBet` parent with `subAction: null`. Tracked at high priority as **WS-270**.
 
 ### 5. BB Has No Voluntary No-Raise Scenario
 When BB checks without facing a raise, this is not a voluntary action — it's a forced option. BB is excluded from the no-raise decision tree: `NO_RAISE_FREQUENCIES.BB` is all zeros, and `actionExtractor.js` returns null for BB checks with no raise faced. This is correct poker theory — do not attempt to "fix" it.
@@ -88,7 +104,8 @@ Extracted in `subActionExtractor.js`, summarized per position.
 |------|------|----------|
 | `bayesianUpdater.js` | Update range weights from observations | Generate exploits |
 | `populationPriors.js` | Define starting range assumptions | Use GTO as baseline |
-| `actionExtractor.js` | Parse hand timeline into preflop actions | Postflop actions |
+| `lineTaxonomy.js` | Derive preflop line tags from sequence state (§2.5) | Read hand records, positions, or showdowns |
+| `actionExtractor.js` | Seat/position/showdown resolution + per-decision-point records | Classify lines (delegates to `lineTaxonomy`); postflop actions |
 | `subActionExtractor.js` | Parse limp follow-up patterns | Direct range updates |
 | `crossRangeConstraints.js` | Normalize weights to sum ≈ 1.0 | Override showdown evidence |
 | `pipCalculator.js` | Compute PIP deviations vs GTO | Generate recommendations |
