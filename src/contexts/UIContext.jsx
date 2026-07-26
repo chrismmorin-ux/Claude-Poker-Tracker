@@ -40,6 +40,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     profileReturnScreen,
     dashboardAnchorDeepLink,
     dashboardReturnScreen,
+    settingsFocus,
   } = uiState;
 
   // Handler: Set current screen/view
@@ -211,6 +212,24 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.CALIBRATION_DASHBOARD });
   }, [dispatchUi, currentView]);
 
+  // Open Settings ON a specific section rather than at the top of it.
+  // Settings is one long scroll of collapsed panels, so a plain
+  // setCurrentScreen(SETTINGS) leaves the founder hunting for whatever they
+  // tapped to get there — which is what the health pill's "tap to view" did.
+  const openSettings = useCallback((focus = null) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_SETTINGS_FOCUS,
+      payload: typeof focus === 'string' && focus.length > 0 ? focus : null,
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.SETTINGS });
+  }, [dispatchUi]);
+
+  // One-shot: the target panel clears the intent once it has acted on it, so
+  // a later visit to Settings doesn't re-open the same section.
+  const clearSettingsFocus = useCallback(() => {
+    dispatchUi({ type: UI_ACTIONS.SET_SETTINGS_FOCUS, payload: null });
+  }, [dispatchUi]);
+
   const closeCalibrationDashboard = useCallback(() => {
     const prev = dashboardReturnScreen || SCREEN.TABLE;
     dispatchUi({ type: UI_ACTIONS.SET_CALIBRATION_DASHBOARD, payload: { dashboardAnchorDeepLink: null, dashboardReturnScreen: null } });
@@ -242,6 +261,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     profileReturnScreen,
     dashboardAnchorDeepLink,
     dashboardReturnScreen,
+    settingsFocus,
     // Screen constants
     SCREEN,
     // Handlers
@@ -276,6 +296,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     // EAL Stream D — Calibration Dashboard navigation (WS-169 / SPR-066)
     openCalibrationDashboard,
     closeCalibrationDashboard,
+    openSettings,
+    clearSettingsFocus,
   }), [
     currentView,
     selectedPlayers,
@@ -299,6 +321,7 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     profileReturnScreen,
     dashboardAnchorDeepLink,
     dashboardReturnScreen,
+    settingsFocus,
     setCurrentScreen,
     togglePlayerSelection,
     clearSelection,
@@ -326,6 +349,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerProfile,
     openCalibrationDashboard,
     closeCalibrationDashboard,
+    openSettings,
+    clearSettingsFocus,
   ]);
 
   return (

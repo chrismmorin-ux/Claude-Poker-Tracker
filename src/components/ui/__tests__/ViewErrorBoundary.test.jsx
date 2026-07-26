@@ -8,6 +8,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ViewErrorBoundary } from '../ViewErrorBoundary';
 import { AppError, ERROR_CODES } from '../../../utils/errorHandler';
+import { hardRefresh } from '../../../utils/swUpdate';
+
+// The stale-build exit clears caches and reloads the page — stub it out so the
+// test run isn't reloading jsdom under itself.
+vi.mock('../../../utils/swUpdate', () => ({
+  hardRefresh: vi.fn(),
+}));
 
 // Mock the logger to avoid console noise in tests
 vi.mock('../../../utils/errorHandler', async () => {
@@ -360,6 +367,70 @@ describe('ViewErrorBoundary', () => {
       );
 
       expect(screen.getByText('Unique error message')).toBeInTheDocument();
+    });
+  });
+
+  // A code-split view whose chunk vanished under a mid-session deploy is not a
+  // render bug — retrying or going home leaves the app just as broken, so this
+  // case gets its own copy and the only exit that actually works.
+  describe('stale-build (missing chunk) failures', () => {
+    const chunkError = () => new Error(
+      'Failed to fetch dynamically imported module: https://app.web.app/assets/PlayerFinderView-a1b2c3.js'
+    );
+
+    it('renders the update prompt instead of the generic view error', () => {
+      render(
+        <ViewErrorBoundary {...defaultProps}>
+          <ThrowError error={chunkError()} />
+        </ViewErrorBoundary>
+      );
+
+      expect(screen.getByText('A new version is ready')).toBeInTheDocument();
+      expect(screen.queryByText('TestView Error')).not.toBeInTheDocument();
+    });
+
+    it('reports E405 rather than E401', () => {
+      render(
+        <ViewErrorBoundary {...defaultProps}>
+          <ThrowError error={chunkError()} />
+        </ViewErrorBoundary>
+      );
+
+      expect(screen.getByText(ERROR_CODES.CHUNK_LOAD_FAILED)).toBeInTheDocument();
+    });
+
+    it('offers only the hard refresh — Try Again and Return to Table cannot fix it', () => {
+      render(
+        <ViewErrorBoundary {...defaultProps}>
+          <ThrowError error={chunkError()} />
+        </ViewErrorBoundary>
+      );
+
+      expect(screen.getByRole('button', { name: /update app/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /return to table/i })).not.toBeInTheDocument();
+    });
+
+    it('clears the caches and reloads when Update App is tapped', () => {
+      render(
+        <ViewErrorBoundary {...defaultProps}>
+          <ThrowError error={chunkError()} />
+        </ViewErrorBoundary>
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /update app/i }));
+      expect(hardRefresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves ordinary render errors on the generic surface', () => {
+      render(
+        <ViewErrorBoundary {...defaultProps}>
+          <ThrowError error={new Error("Cannot read properties of undefined (reading 'seat')")} />
+        </ViewErrorBoundary>
+      );
+
+      expect(screen.getByText('TestView Error')).toBeInTheDocument();
+      expect(screen.queryByText('A new version is ready')).not.toBeInTheDocument();
     });
   });
 });

@@ -11,22 +11,24 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { SCREEN } from '../../../constants/uiConstants';
 
 let mockSetCurrentScreen;
+let mockOpenSettings;
 let mockSync;
 let mockErrorCount;
 
 vi.mock('../../../contexts', () => ({
-  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen }),
+  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen, openSettings: mockOpenSettings }),
   useSyncBridge: () => mockSync,
 }));
 
 vi.mock('../../../utils/errorLog', () => ({
-  getErrorCount: () => mockErrorCount,
+  getErrorCountForBuild: () => mockErrorCount,
 }));
 
 import { HealthIndicator } from '../HealthIndicator';
 
 beforeEach(() => {
   mockSetCurrentScreen = vi.fn();
+  mockOpenSettings = vi.fn();
   mockErrorCount = 0;
   mockSync = { isExtensionConnected: true, syncError: null, versionMismatch: false, lastSyncTime: null };
 });
@@ -73,7 +75,11 @@ describe('HealthIndicator', () => {
     render(<HealthIndicator />);
     expect(screen.getByTestId('health-indicator').textContent).toMatch(/3 errors logged/);
     fireEvent.click(screen.getByTestId('health-indicator'));
-    expect(mockSetCurrentScreen).toHaveBeenCalledWith(SCREEN.SETTINGS);
+    // Not setCurrentScreen(SETTINGS): the Error Log is the 11th panel down a
+    // single long scroll and starts collapsed, so landing at the top of
+    // Settings reads as though the tap did nothing.
+    expect(mockOpenSettings).toHaveBeenCalledWith('errorLog');
+    expect(mockSetCurrentScreen).not.toHaveBeenCalled();
   });
 
   it('singularizes a single error', () => {

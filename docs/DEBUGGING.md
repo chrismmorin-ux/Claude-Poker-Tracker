@@ -10,6 +10,7 @@ This document provides a reference for debugging the Poker Tracker application.
 | Invalid input | E201-E206 | validation.js, actionValidation.js |
 | Database errors | E301-E306 | persistence.js |
 | Component crashes | E401-E404 | ErrorBoundary.jsx, specific component |
+| View won't load after a deploy | E405 | chunkRecovery.js, swUpdate.js |
 
 ---
 
@@ -80,11 +81,21 @@ Errors from React components and hooks.
 | E402 | `HANDLER_FAILED` | Event handler threw exception | Undefined callback, state race condition |
 | E403 | `HOOK_FAILED` | Custom hook threw exception | Missing dependency, stale closure |
 | E404 | `PROP_INVALID` | PropTypes validation failed | Wrong prop type, missing required prop |
+| E405 | `CHUNK_LOAD_FAILED` | A code-split view's JS chunk could not be fetched | A deploy landed while the page was open — the old build's hashed chunks no longer exist |
 
 **How to debug:**
 1. Check React DevTools for component tree
 2. ErrorBoundary catches crashes and shows fallback UI
 3. Look for PropTypes warnings in console (development mode)
+
+**E405 specifically** is a staleness problem, not a render bug — nothing in the
+view is broken, the file just isn't on the server any more. `chunkRecovery.js`
+self-heals it once per tab (clear caches → unregister worker → reload); if it
+still fails after that, the chunk is genuinely missing from the deploy. Check
+that `dist/assets/` on Firebase actually contains the requested filename.
+Note that `firebase.json` rewrites unmatched paths to `/index.html`, so a
+missing chunk comes back as HTML with a 200 rather than a 404 — the browser
+reports it as a fetch or MIME-type failure, not as "not found".
 
 ---
 

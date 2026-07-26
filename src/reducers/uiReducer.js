@@ -41,6 +41,10 @@ export const UI_ACTIONS = {
   SET_PLAYER_PROFILE: 'SET_PLAYER_PROFILE',
   // EAL Stream D / WS-169 / SPR-066 (2026-05-09) — Calibration Dashboard nav state.
   SET_CALIBRATION_DASHBOARD: 'SET_CALIBRATION_DASHBOARD',
+  // Which section Settings should open on. Settings is a long single-scroll
+  // page of collapsed panels, so "go to Settings" is not the same as "show me
+  // the thing I tapped for".
+  SET_SETTINGS_FOCUS: 'SET_SETTINGS_FOCUS',
 };
 
 import { SCREEN } from '../constants/uiConstants';
@@ -93,6 +97,10 @@ export const initialUiState = {
   //   ANCHOR_LIBRARY when entered via deep-link, else TABLE).
   dashboardAnchorDeepLink: null,
   dashboardReturnScreen: null,
+  // settingsFocus: id of the Settings section to expand and scroll to on entry
+  // (e.g. 'errorLog'); null when Settings is opened from primary nav. Consumed
+  // and cleared by the target panel.
+  settingsFocus: null,
 };
 
 // =============================================================================
@@ -137,6 +145,7 @@ export const UI_STATE_SCHEMA = {
   // EAL Stream D / WS-169 / SPR-066
   dashboardAnchorDeepLink: { type: 'string', required: false }, // null when no deep-link
   dashboardReturnScreen: { type: 'string', required: false },
+  settingsFocus: { type: 'string', required: false }, // null when no deep-link
 };
 
 // =============================================================================
@@ -348,6 +357,12 @@ const rawUiReducer = (state, action) => {
         ...state,
         dashboardAnchorDeepLink: action.payload?.dashboardAnchorDeepLink ?? null,
         dashboardReturnScreen: action.payload?.dashboardReturnScreen ?? null,
+      };
+
+    case UI_ACTIONS.SET_SETTINGS_FOCUS:
+      return {
+        ...state,
+        settingsFocus: action.payload ?? null,
       };
 
     // Open/close the unified PlayerFinder. Payload is either the finder

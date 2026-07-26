@@ -27,6 +27,12 @@ const getSimState = () => {
 
 const UNDO_TOAST_DURATION_MS = 12000;
 
+// How recent a /version.json answer has to be before the UI will assert
+// "Up to date". Two poll intervals — long enough that a single missed tick
+// doesn't flip the copy, short enough that a resumed-from-background app
+// can't claim currency on a hours-old answer.
+const ANSWER_FRESH_MS = 150_000;
+
 export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSettings, showWarning, showSuccess, showError, addToast }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
@@ -42,12 +48,17 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
   const [updating, setUpdating] = useState(false);
   // W4-A4-F2: Pending sim-clear timer ID for deferred-commit + undo.
   const pendingSimClearRef = useRef(null);
-  const { latestVersion, latestBuiltAt, error: versionError } = useBuildVersion();
+  const { latestVersion, latestBuiltAt, lastCheckedAt, error: versionError } = useBuildVersion();
   // Stale = the bundle running now (BUILD_SHA, baked into this build) differs from the
   // latest the server is advertising (version.json). This is the definitive cache-stale
   // signal — a /version.json fetch alone only reports the server, not what's loaded.
   const runningKnown = BUILD_SHA && BUILD_SHA !== 'dev' && BUILD_SHA !== 'local';
   const isStale = Boolean(runningKnown && latestVersion && BUILD_SHA !== latestVersion);
+  // "Up to date" is a claim about right now, so only make it on a recent answer.
+  // A phone PWA gets resumed rather than reloaded, and a frozen poll interval
+  // leaves an hours-old result sitting in state looking exactly like a fresh
+  // one — which is how the app could say up-to-date until a manual Force Update.
+  const answerIsFresh = Boolean(lastCheckedAt && Date.now() - lastCheckedAt < ANSWER_FRESH_MS);
 
   // Refresh sim total when localStorage changes (e.g. console usage)
   useEffect(() => {
@@ -207,7 +218,7 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
               You&apos;re on an older cached version — tap &ldquo;Force Update&rdquo; to get the latest.
             </p>
-          ) : latestVersion ? (
+          ) : latestVersion && answerIsFresh ? (
             <p className="text-green-400 text-xs flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
               Up to date
