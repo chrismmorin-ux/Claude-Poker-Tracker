@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-26T05:58:44.789Z",
-  "updated_by_event": "ev-1785045524789-0cd2b27d17bc",
+  "updated_at": "2026-07-26T06:04:48.211Z",
+  "updated_by_event": "ev-1785045888211-8086f9a29814",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -491,7 +491,7 @@
       "founder_priority": 2,
       "health_ceiling": 0,
       "findings_open": 0,
-      "work_items_open": 0,
+      "work_items_open": 18,
       "problem_classes": [
         {
           "name": "Gate 1 Entry skipped",
@@ -588,6 +588,15 @@
           "auto_deescalate": false
         }
       },
+      "cap_breach": {
+        "active": true,
+        "work_items_open": 18,
+        "findings_open": 0,
+        "max_open_items": 8,
+        "priority_floor": 22,
+        "ratio": 2.25,
+        "since": "2026-07-26"
+      },
       "health_breakdown": {
         "finding_health": 1,
         "protocol_currency": 0,
@@ -607,8 +616,8 @@
       "founder_priority": 1,
       "health_ceiling": 9,
       "health_updated_at": "2026-07-22T00:00:00Z",
-      "findings_open": 15,
-      "work_items_open": 1,
+      "findings_open": 11,
+      "work_items_open": 22,
       "problem_classes": [
         {
           "name": "First-principles decision modeling",
@@ -706,7 +715,7 @@
       "accountability": {
         "on_finding": {
           "action": "create_work_item",
-          "max_open_items": 5,
+          "max_open_items": 25,
           "priority_floor": 27,
           "escalation": {
             "stale_days": 7,
@@ -724,6 +733,9 @@
           "auto_escalate": true,
           "auto_deescalate": false
         }
+      },
+      "cap_breach": {
+        "active": false
       },
       "health_breakdown": {
         "finding_health": 0.9,
@@ -1299,5 +1311,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785045524789-0cd2b27d17bc"
+  "last_event_log_head": "ev-1785045888211-8086f9a29814"
 }

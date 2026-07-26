@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785045524789-0cd2b27d17bc"
-generated_content_hash: "e0cc2ef5b68ee811245d44a775847a8c58c9477134ee900865ca8a9fd232fe38"
-generated_at: "2026-07-26T05:58:44.822Z"
+generated_from_event: "ev-1785045888211-8086f9a29814"
+generated_content_hash: "69586b17cea0f9afe6fd397bb7c158f6feeb7a862d25a10517146ae1b3122ce2"
+generated_at: "2026-07-26T06:04:48.248Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl"]
-event_count: 1025
+event_count: 1034
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 623
-- Events recorded: 1025
+- Commands recorded: 632
+- Events recorded: 1034
 - Source chunks: 15
 
 ## Command `auto:42416:1781030643103`
@@ -6649,3 +6649,93 @@ path, not direct markdown edits.
 | 2 | 2026-07-26T05:58:44.693Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
 | 3 | 2026-07-26T05:58:44.731Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 4 | 2026-07-26T05:58:44.789Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:4500:1785045855414`
+
+- Start: 2026-07-26T06:04:15.414Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:15.414Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:4500:1785045855451`
+
+- Start: 2026-07-26T06:04:15.451Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:15.451Z | T6:program-integrity | program_cap_breach | program="design", work_items_open=18, +4 more |
+
+## Command `auto:4500:1785045855463`
+
+- Start: 2026-07-26T06:04:15.463Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:15.463Z | T6:program-integrity | program_cap_breach | program="domain-correctness", work_items_open=22, +4 more |
+
+## Command `auto:4500:1785045855476`
+
+- Start: 2026-07-26T06:04:15.476Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:15.476Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:4500:1785045855538`
+
+- Start: 2026-07-26T06:04:15.538Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:15.538Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:25672:1785045888089`
+
+- Start: 2026-07-26T06:04:48.089Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:48.089Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:25672:1785045888130`
+
+- Start: 2026-07-26T06:04:48.130Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:48.130Z | T6:program-integrity | program_cap_cleared | program="domain-correctness", work_items_open=22, +1 more |
+
+## Command `auto:25672:1785045888147`
+
+- Start: 2026-07-26T06:04:48.146Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:48.146Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:25672:1785045888211`
+
+- Start: 2026-07-26T06:04:48.211Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T06:04:48.211Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

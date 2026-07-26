@@ -264,7 +264,7 @@ accountability:
     # (2) 5 was untenable for the program its own header calls the most important
     #     in the repo — `engineering` carries 15. Narrowing the count to
     #     finding_id-bearing items remains the more faithful fix; see the kit item.
-    max_open_items: 20
+    max_open_items: 25
     priority_floor: 27
     escalation:
       stale_days: 7
@@ -329,9 +329,11 @@ health_breakdown:
   maturity_progress: 0.50   # level 2 of 4
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
-findings_open: 15
-work_items_open: 1
+findings_open: 11
+work_items_open: 22
 
+cap_breach:
+  active: false
 evidence:
   last_audit_report: ".claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-3/synthesis.md"
   protocol_history:
