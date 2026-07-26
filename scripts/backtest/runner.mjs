@@ -235,13 +235,18 @@ export const scorePlayer = ({
   minTrainHands = DEFAULT_MIN_TRAIN_HANDS,
   checkpointInterval = DEFAULT_CHECKPOINT_INTERVAL,
   referenceTable = null,
-  hierarchyOptions = {},
+  // One entry per scoring arm. All arms share the SAME model, the same decision
+  // contexts and the same slices — only `hierarchyOptions` differs — so scoring
+  // N arms costs one pass plus N cheap distribution queries per decision, not N
+  // passes. Rebuilding the profile per arm would make a 13-arm ablation a
+  // multi-hour job instead of a single run.
+  arms = [{ name: 'shipped', hierarchyOptions: {} }],
 }) => {
   guard.assertEvalPlayer(playerId);
 
   const { segmentKey, seatBucket } = segmentFor(hands);
 
-  const records = [];
+  const recordsByArm = new Map(arms.map(a => [a.name, []]));
   let checkpoints = 0;
   let skippedCheckpoints = 0;
 
@@ -303,48 +308,59 @@ export const scorePlayer = ({
           const globalHandIdx = cp + ctx.handIdx;
           guard.assertWalkForward({ playerId, trainEndIdx: cp, handIdx: globalHandIdx });
 
-          const dist = queryActionDistribution(
-            model, ctx.street, ctx.texture, ctx.posCategory,
-            ctx.isAgg, ctx.isIP, ctx.facingAction,
-            hierarchyOptions,
-          );
-          const predicted = dist.actions;
-          if (!predicted || Object.keys(predicted).length === 0) return;
-
           const actual = ctx.action;
           const timeline = buildTimeline(ctx.hand);
+          const baseline = priorPrediction(ctx.facingAction);
 
-          records.push({
-            predicted,
-            baseline: priorPrediction(ctx.facingAction),
-            actual,
-            predictedAction: argmaxAction(predicted),
-            modelBrier: brierScore(predicted, actual),
-            source: dist.source,
-            confidence: dist.confidence,
-            slices: {
-              street: ctx.street,
-              lineClass: lineClassFor(ctx.hand, ctx.playerSeat, timeline),
-              sprZone: sprZoneFor(ctx.hand, ctx.order),
-              playersInPot: playersInPotAt(ctx.hand, ctx.order),
-              stakeSegment: ctx.hand?._backtest?.stakeLabel ?? 'unknown',
-              obsBucket: observationBucket(model.totalObservations),
-              facingAction: ctx.facingAction,
-              sizeBucket: potAndBetBB(ctx.hand, ctx.order, ctx.street).sizeBucket ?? 'unknown',
-            },
-            // Provenance for auditing an individual record back to its hand,
-            // plus the pot/bet context the EV bridge needs.
-            _meta: {
-              playerId,
-              handId: ctx.handId,
-              order: ctx.order,
-              ...potAndBetBB(ctx.hand, ctx.order, ctx.street),
-              trainEndIdx: cp,
-              handIdx: globalHandIdx,
-              texture: ctx.texture,
-              posCategory: ctx.posCategory,
-            },
-          });
+          // Derived once and shared across arms — these depend on the hand and
+          // the decision, never on which fallback ladder answered the query.
+          const potBet = potAndBetBB(ctx.hand, ctx.order, ctx.street);
+          const sharedSlices = {
+            street: ctx.street,
+            lineClass: lineClassFor(ctx.hand, ctx.playerSeat, timeline),
+            sprZone: sprZoneFor(ctx.hand, ctx.order),
+            playersInPot: playersInPotAt(ctx.hand, ctx.order),
+            stakeSegment: ctx.hand?._backtest?.stakeLabel ?? 'unknown',
+            obsBucket: observationBucket(model.totalObservations),
+            facingAction: ctx.facingAction,
+            sizeBucket: potBet.sizeBucket ?? 'unknown',
+          };
+
+          // Provenance for auditing a record back to its hand, plus the pot/bet
+          // context the EV bridge needs.
+          const sharedMeta = {
+            playerId,
+            handId: ctx.handId,
+            order: ctx.order,
+            potBB: potBet.potBB,
+            facingBetBB: potBet.facingBetBB,
+            trainEndIdx: cp,
+            handIdx: globalHandIdx,
+            texture: ctx.texture,
+            posCategory: ctx.posCategory,
+          };
+
+          for (const arm of arms) {
+            const dist = queryActionDistribution(
+              model, ctx.street, ctx.texture, ctx.posCategory,
+              ctx.isAgg, ctx.isIP, ctx.facingAction,
+              arm.hierarchyOptions,
+            );
+            const predicted = dist.actions;
+            if (!predicted || Object.keys(predicted).length === 0) continue;
+
+            recordsByArm.get(arm.name).push({
+              predicted,
+              baseline,
+              actual,
+              predictedAction: argmaxAction(predicted),
+              modelBrier: brierScore(predicted, actual),
+              source: dist.source,
+              confidence: dist.confidence,
+              slices: sharedSlices,
+              _meta: sharedMeta,
+            });
+          }
         },
       });
     } catch {
@@ -352,7 +368,7 @@ export const scorePlayer = ({
     }
   }
 
-  return { records, checkpoints, skippedCheckpoints };
+  return { recordsByArm, checkpoints, skippedCheckpoints };
 };
 
 // =============================================================================
@@ -419,6 +435,8 @@ export const runBacktest = async ({
   minTrainHands = DEFAULT_MIN_TRAIN_HANDS,
   checkpointInterval = DEFAULT_CHECKPOINT_INTERVAL,
   hierarchyVariant = HIERARCHY_VARIANTS.SHIPPED,
+  // When supplied, overrides `hierarchyVariant` and scores every arm in ONE pass.
+  arms = null,
   log = () => {},
 }) => {
   const startedAt = Date.now();
@@ -428,7 +446,9 @@ export const runBacktest = async ({
   const guard = new LeakageGuard({ poolPct, reference });
 
   // Throws on an unknown variant before any work is done.
-  const hierarchyOptions = hierarchyOptionsFor(hierarchyVariant);
+  const scoringArms = arms && arms.length > 0
+    ? arms
+    : [{ name: hierarchyVariant, hierarchyOptions: hierarchyOptionsFor(hierarchyVariant) }];
 
   {
     log(`Indexing ${files.length} corpus file(s)…`);
@@ -443,29 +463,41 @@ export const runBacktest = async ({
 
     log(`${byPlayer.size} eval players indexed, ${eligible.length} with > ${minTrainHands} hands.`);
 
-    const records = [];
+    const recordsByArm = new Map(scoringArms.map(a => [a.name, []]));
     let checkpoints = 0;
     let skippedCheckpoints = 0;
     let scoredPlayers = 0;
 
+    log(`Scoring ${scoringArms.length} arm(s) in a single pass: ${scoringArms.map(a => a.name).join(', ')}`);
+
     for (const [playerId, hands] of eligible) {
       const out = scorePlayer({
-        playerId, hands, guard, minTrainHands, checkpointInterval, hierarchyOptions,
+        playerId, hands, guard, minTrainHands, checkpointInterval,
+        arms: scoringArms,
         // Read from the guard, never from the raw input — this is the table that
         // passed the provenance check.
         referenceTable: guard.referenceTable,
       });
-      records.push(...out.records);
+      for (const [name, recs] of out.recordsByArm) {
+        const target = recordsByArm.get(name);
+        for (const r of recs) target.push(r);
+      }
       checkpoints += out.checkpoints;
       skippedCheckpoints += out.skippedCheckpoints;
       scoredPlayers++;
       if (scoredPlayers % 25 === 0) {
-        log(`  scored ${scoredPlayers}/${eligible.length} players, ${records.length} decisions`);
+        const n = recordsByArm.get(scoringArms[0].name).length;
+        log(`  scored ${scoredPlayers}/${eligible.length} players, ${n} decisions/arm`);
       }
     }
 
+    const primary = recordsByArm.get(scoringArms[0].name);
+
     return {
-      records,
+      // Backward-compatible single-arm view (the first arm).
+      records: primary,
+      recordsByArm: Object.fromEntries(recordsByArm),
+      arms: scoringArms.map(a => ({ name: a.name, kind: a.kind ?? null, dim: a.dim ?? null })),
       integrity: guard.summary(),
       counters: {
         handsRead,
@@ -474,12 +506,13 @@ export const runBacktest = async ({
         scoredPlayers,
         checkpoints,
         skippedCheckpoints,
-        decisionsScored: records.length,
+        decisionsScored: primary.length,
         adapterSkips: skipStats,
       },
       config: {
         poolPct, maxPlayers, maxHandsPerPlayer,
         minTrainHands, checkpointInterval, hierarchyVariant,
+        armCount: scoringArms.length,
         files: files.length,
       },
       runtimeMs: Date.now() - startedAt,

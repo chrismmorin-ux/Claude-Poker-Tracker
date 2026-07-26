@@ -132,15 +132,23 @@ export const renderScorecard = (card) => {
   if (!ev || ev.applicable === 0) {
     L.push('    no fold-vs-bet decisions with pot context in this run');
   } else {
+    const ci = ev.bbPer100DecisionsCI;
     L.push(`    applicable nodes    ${ev.applicable} across ${ev.handsRepresented} hands, grouped by ${ev.groupBy}`);
     L.push(`    COST                ${ev.bbPer100Hands == null ? 'n/a' : ev.bbPer100Hands.toFixed(2)} bb/100 HANDS  ← winrate-comparable`);
     L.push(`                        ${ev.bbPer100Decisions == null ? 'n/a' : ev.bbPer100Decisions.toFixed(2)} bb/100 decisions of this class`);
-    L.push('    group                    n    pred fold  actual   error    bb/100 dec');
+    if (ci) {
+      L.push(`    95% CI              [${ci.lo.toFixed(2)}, ${ci.hi.toFixed(2)}] bb/100 dec  (${ci.resamples} bootstrap resamples)`);
+    }
+    if (ev.nonZeroShare != null) {
+      L.push(`    decisions that cost ${pct(ev.nonZeroShare)} — the rest are FREE (the error did not flip the call)`);
+    }
+    L.push('    group                    n    pred fold  actual   error    bb/100 dec   costly%');
     for (const g of ev.groups) {
       L.push(
         `    ${g.group.padEnd(22)} ${String(g.n).padStart(5)}   ${pct(g.predictedFold)}  ${pct(g.actualFold)}  ` +
         `${(g.foldError >= 0 ? '+' : '') + (g.foldError * 100).toFixed(1)}pp   ` +
-        `${g.bbPer100Decisions == null ? 'n/a' : g.bbPer100Decisions.toFixed(2)}${g.thin ? ' (thin)' : ''}`,
+        `${(g.bbPer100Decisions == null ? 'n/a' : g.bbPer100Decisions.toFixed(2)).padStart(9)}   ` +
+        `${pct(g.nonZeroShare)}${g.thin ? ' (thin)' : ''}`,
       );
     }
     L.push(`    ${ev.note}`);
@@ -163,6 +171,144 @@ export const renderScorecard = (card) => {
   L.push('═'.repeat(78));
   L.push('');
 
+  return L.join('\n');
+};
+
+/**
+ * ABLATION REPORT — "what should I be paying attention to at the table?"
+ *
+ * Ranks each context dimension by how much predictive accuracy it carries, in
+ * two readings that answer different practical questions:
+ *
+ *   ONLY  — this dimension alone, against nothing. "If I could track exactly one
+ *           thing about a spot, which one earns its keep?"
+ *   DROP  — everything except this dimension. "Given I already track the rest,
+ *           what does this one still add?" — i.e. what I can stop recording.
+ *
+ * Both are expressed as a share of the total information the full context
+ * carries, so they read as percentages of an achievable ceiling rather than as
+ * raw log-loss units nobody can interpret.
+ *
+ *   captureShare = (none.logLoss - only.logLoss) / (none.logLoss - full.logLoss)
+ *   marginal     = (drop.logLoss - full.logLoss) / (none.logLoss - full.logLoss)
+ *
+ * A dimension can be LOW on marginal and HIGH on capture — that means it is
+ * informative but redundant with what you already record. For a live-capture
+ * decision that is the crucial distinction, and it is invisible if you only
+ * measure one of the two.
+ *
+ * @param {Object} run - a runBacktest result carrying recordsByArm + arms
+ * @returns {Object} ranked dimensions + the two controls
+ */
+export const buildAblationReport = (run) => {
+  const scoreOf = (name) => {
+    const recs = run.recordsByArm?.[name];
+    return recs ? scoreWithBaseline(recs) : null;
+  };
+
+  const full = scoreOf('ctrl:full');
+  const none = scoreOf('ctrl:none');
+  const shipped = scoreOf('shipped');
+
+  if (!full || !none || full.model.logLoss == null || none.model.logLoss == null) {
+    return { available: false, reason: 'ablation controls missing from this run' };
+  }
+
+  // NO NORMALISATION BY A "SPAN".
+  //
+  // The first version of this report divided every dimension by
+  // (none.logLoss - full.logLoss), assuming full context is the ceiling and
+  // facing-action alone is the floor. The data refuted that assumption: full
+  // context routinely scores WORSE than facing-action alone, because a fully
+  // specified spot has almost no observations for a given villain, falls below
+  // MIN_EFFECTIVE_N, and answers from the bare population prior instead. The
+  // "span" is therefore often NEGATIVE, and dividing by it produced inverted
+  // nonsense.
+  //
+  // That inversion is not noise — it is the central result (see `specificityCost`
+  // below), and it is exactly why the fallback ladder is load-bearing. So the
+  // report now compares everything to the honest reference point — facing-action
+  // alone, the cheapest thing you could possibly track — in raw log-loss units,
+  // where NEGATIVE delta means the dimension helped.
+  const ref = none.model.logLoss;
+  const dims = (run.arms || []).filter(a => a.kind === 'only').map(a => a.dim);
+
+  const rows = dims.map((dim) => {
+    const only = scoreOf(`only:${dim}`);
+    const drop = scoreOf(`drop:${dim}`);
+    return {
+      dimension: dim,
+      onlyLogLoss: only?.model.logLoss ?? null,
+      onlyAccuracy: only?.model.accuracy ?? null,
+      // Negative = tracking this ONE thing beats tracking nothing.
+      onlyDelta: only?.model.logLoss != null ? only.model.logLoss - ref : null,
+      dropLogLoss: drop?.model.logLoss ?? null,
+      // Negative = the full context is BETTER without this dimension.
+      dropDelta: drop?.model.logLoss != null && full.model.logLoss != null
+        ? drop.model.logLoss - full.model.logLoss
+        : null,
+      n: only?.model.n ?? 0,
+    };
+  }).sort((a, b) => (a.onlyDelta ?? Infinity) - (b.onlyDelta ?? Infinity));
+
+  return {
+    available: true,
+    caveat: CORPUS_CAVEAT,
+    controls: {
+      fullLogLoss: full.model.logLoss,
+      noneLogLoss: none.model.logLoss,
+      shippedLogLoss: shipped?.model.logLoss ?? null,
+      fullAccuracy: full.model.accuracy,
+      noneAccuracy: none.model.accuracy,
+      // > 0 means specifying the spot fully HURTS relative to not specifying it
+      // at all — the data-starvation effect the ladder exists to counter.
+      specificityCost: full.model.logLoss - none.model.logLoss,
+    },
+    dimensions: rows,
+    note:
+      'onlyDelta = log-loss change from tracking THIS DIMENSION ALONE versus tracking ' +
+      'nothing but the action faced. NEGATIVE = it helped. dropDelta = change from ' +
+      'removing it from full context; NEGATIVE = full context is better WITHOUT it. ' +
+      'Ranked best-first by onlyDelta, which is the table-capture question. ' +
+      'specificityCost > 0 means full context loses to no context, because narrow ' +
+      'spots run out of observations and fall back to the bare prior.',
+  };
+};
+
+/** Render the ablation report as console text. */
+export const renderAblation = (ab, labels = {}) => {
+  if (!ab?.available) return `\n  (ablation unavailable: ${ab?.reason ?? 'unknown'})\n`;
+  const L = [];
+  const c = ab.controls;
+  L.push('');
+  L.push('═'.repeat(78));
+  L.push('  WHAT ACTUALLY CARRIES THE INFORMATION');
+  L.push('  "what minimum pieces of info make the most difference at the table"');
+  L.push('═'.repeat(78));
+  L.push(`  ${ab.caveat}`);
+  L.push('─'.repeat(78));
+  L.push(`  reference  facing-action only   log-loss ${num(c.noneLogLoss)}   accuracy ${pct(c.noneAccuracy)}`);
+  L.push(`  full spot  every dimension     log-loss ${num(c.fullLogLoss)}   accuracy ${pct(c.fullAccuracy)}`);
+  L.push(`  shipped    ladder as built     log-loss ${num(c.shippedLogLoss)}`);
+  L.push('');
+  if (c.specificityCost > 0) {
+    L.push(`  ⚠ SPECIFYING THE SPOT FULLY COSTS ${num(c.specificityCost)} LOG-LOSS vs specifying nothing.`);
+    L.push('    Narrow spots run out of observations for a given villain, drop below the');
+    L.push('    minimum-evidence bar, and answer from the bare population prior. This is');
+    L.push('    the data-starvation effect the fallback ladder exists to counter.');
+    L.push('');
+  }
+  L.push('  ranked by what ONE dimension alone buys you (negative = helps):');
+  L.push('  dimension                        alone Δ    accuracy   drop Δ     n');
+  for (const d of ab.dimensions) {
+    const label = (labels[d.dimension] || d.dimension).padEnd(30);
+    const sign = (v) => (v == null ? '   n/a' : (v >= 0 ? '+' : '') + v.toFixed(4));
+    L.push(`  ${label} ${sign(d.onlyDelta).padStart(8)}   ${pct(d.onlyAccuracy).padStart(7)}   ${sign(d.dropDelta).padStart(8)}   ${d.n}`);
+  }
+  L.push('');
+  L.push(`  ${ab.note}`);
+  L.push('═'.repeat(78));
+  L.push('');
   return L.join('\n');
 };
 

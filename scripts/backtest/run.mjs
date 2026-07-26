@@ -35,7 +35,12 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
-import { ALL_VARIANTS, HIERARCHY_VARIANTS } from './hierarchyVariants.mjs';
+import {
+  ALL_VARIANTS,
+  HIERARCHY_VARIANTS,
+  buildAblationArms,
+  DIMENSION_LABELS,
+} from './hierarchyVariants.mjs';
 import { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } from './corpusFiles.mjs';
 
 const parseArgs = (argv) => {
@@ -87,7 +92,7 @@ const main = async () => {
   const loader = await openLoader(process.cwd());
   try {
     const { runBacktest } = await loader.load('/scripts/backtest/runner.mjs');
-    const { buildScorecard, renderScorecard, compareScorecards } =
+    const { buildScorecard, renderScorecard, compareScorecards, buildAblationReport, renderAblation } =
       await loader.load('/scripts/backtest/reporter.mjs');
 
     const baseOpts = {
@@ -100,6 +105,38 @@ const main = async () => {
       checkpointInterval: int(args['checkpoint-interval'], 10),
       log,
     };
+
+    // --ablate answers "what should I be paying attention to at the table":
+    // every dimension scored alone and scored-by-omission, in ONE pass over the
+    // corpus (all arms share the model and the decision contexts).
+    if (args.ablate) {
+      const arms = buildAblationArms();
+      log(`\n── ablation: ${arms.length} arms in a single pass ──`);
+      const run = await runBacktest({ ...baseOpts, arms });
+
+      const ablation = buildAblationReport(run);
+      console.log(renderAblation(ablation, DIMENSION_LABELS));
+
+      // Full scorecard for the shipped arm, so the run also yields a baseline.
+      const shippedCard = buildScorecard({ ...run, records: run.recordsByArm.shipped ?? run.records });
+      console.log(renderScorecard(shippedCard));
+
+      const perArm = Object.fromEntries(
+        run.arms.map(a => {
+          const recs = run.recordsByArm[a.name] || [];
+          const card = buildScorecard({ ...run, records: recs });
+          return [a.name, { overall: card.overall, fallbackQuality: card.fallbackQuality }];
+        }),
+      );
+
+      const out = { ablation, shippedScorecard: shippedCard, perArm };
+      if (typeof args.out === 'string') {
+        mkdirSync(dirname(args.out), { recursive: true });
+        writeFileSync(args.out, JSON.stringify(out, null, 1));
+        log(`Wrote ${args.out}`);
+      }
+      return;
+    }
 
     const variants = args.sweep
       ? ALL_VARIANTS

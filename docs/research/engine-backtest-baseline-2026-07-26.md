@@ -299,3 +299,81 @@ node scripts/backtest/run.mjs --reference out/pool-reference.json \
 Tests: `bash scripts/smart-test-runner.sh` — partition cross-language agreement,
 adapter golden-file round-trip, scoring-core arithmetic, EV-bridge arithmetic,
 and the adversarial leakage-guard suite.
+
+---
+
+## Update — full-scale run + dimension ablation (2026-07-26, later session)
+
+### Baseline at 3× scale — this is now the reference point to improve against
+
+1,070,493 hands · 230 held-out players · **10,147 scored decisions** (vs 3,145 above).
+
+| Metric | Model | Population prior |
+|---|---|---|
+| log-loss | 0.7932 | 0.8068 |
+| accuracy | **52.2%** | 43.1% |
+| lift | **1.69%** | — |
+
+Lift fell from 2.69% to 1.69% as the sample grew — the smaller run was optimistic,
+which is the expected direction. **Treat 1.69% lift / 52.2% accuracy as the number
+to beat** when the game-tree model or tree depth changes.
+
+Finding 4 re-confirmed at this scale: reference-tier ON and OFF are byte-identical
+across all 10,147 decisions.
+
+### The ladder levels, conditional on having data
+
+| level | n | log-loss |
+|---|---|---|
+| level-1 (full context) | 157 | **0.737** |
+| level-2 | 79 | 0.710 |
+| level-3 | 135 | 0.745 |
+| level-4 | 930 | 0.749 |
+| level-5 | 4,095 | 0.754 |
+| level-6 (street only) | 3,035 | 0.801 |
+| bare prior | 1,716 | 0.909 |
+
+**Monotone.** The more specific the level that answers, the better the prediction —
+and the bare prior is far worse than any level backed by data.
+
+### Ablation — "what should I be paying attention to at the table?"
+
+Founder's framing, 2026-07-26: at a live table you cannot enter every hand, so
+which *minimum* pieces of information carry the most predictive weight?
+
+Each dimension was scored ALONE (single-level context, no fallback), against the
+cheapest possible reference — facing-action only. Smoke run, 708 decisions:
+
+| dimension | alone Δlog-loss | accuracy |
+|---|---|---|
+| in position / out of position | +0.0054 | 52.0% |
+| who is the aggressor | +0.0109 | 54.7% |
+| position category | +0.0254 | 47.6% |
+| street | +0.0265 | 50.1% |
+| board texture | +0.0273 | 48.7% |
+| *all five together* | *+0.0412* | *46.3%* |
+
+**Every dimension made it worse on its own, and all five together made it worst.**
+Positive = harmful.
+
+**This is not a contradiction of the ladder table above — it is the same fact from
+the other side.** Conditioning on a dimension splits a villain's history into
+smaller cells. Below the minimum-evidence bar the cell answers from the bare
+population prior (log-loss 0.909), which is far worse than a well-sampled broad
+estimate. So:
+
+- **Specificity pays when it has observations** (ladder table: 0.737 at level-1).
+- **Specificity costs when it doesn't** (ablation: every single-dimension arm loses).
+- **The fallback ladder is the mechanism that converts the first into a net gain**,
+  by using detail only when the detail is backed and retreating when it isn't.
+
+That is the direct answer to the table question: **detail is only worth capturing
+in proportion to how often you will capture it on the same villain.** A dimension
+you record sporadically is worse than not recording it.
+
+**⚠️ Confounded by depth, and the confound is the interesting part.** This smoke run
+gave each villain very few decisions. The actionable version of this experiment is a
+*curve* — re-run the ablation at several per-villain sample depths to find, for each
+dimension, the observation count at which it starts paying. That threshold is the
+real deliverable for live-capture guidance, and the harness now supports it
+(`--ablate`, 13 arms in a single pass).

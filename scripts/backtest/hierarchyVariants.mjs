@@ -91,3 +91,124 @@ export const hierarchyOptionsFor = (variant) => {
 
 /** Every variant name, for CLI validation and sweep loops. */
 export const ALL_VARIANTS = Object.values(HIERARCHY_VARIANTS);
+
+// =============================================================================
+// ABLATION — "what should I be paying attention to at the table?"
+// =============================================================================
+
+/**
+ * THE FOUNDER'S QUESTION, 2026-07-26, and it is the right one:
+ *
+ *   "This translates pretty closely to 'what should I be paying attention to at
+ *    the table', where the user won't be able to enter live hands fast enough to
+ *    keep up with all hands. So what minimum pieces of info make the most
+ *    difference is an important question."
+ *
+ * The fallback ladder already encodes an ANSWER to that question — it drops
+ * dimensions in the order aggressor → IP → texture → position → street, which is
+ * an implicit ranking of what matters least to most. That ranking was authored,
+ * never measured. Finding 1 showed the ladder as a whole is load-bearing (remove
+ * it and the model falls below the population prior), which makes the ORDER worth
+ * getting right rather than an academic question.
+ *
+ * Reordering variants alone cannot answer it, because at realistic sample sizes
+ * almost every query falls through to the broad levels regardless of order — the
+ * arms barely differ in what they DO. So we ablate instead.
+ *
+ * TWO FAMILIES, and they answer different questions:
+ *
+ *   ONLY_<dim>  — context is facingAction + that ONE dimension, then the prior.
+ *                 "If I could track exactly one thing about a spot, which?"
+ *                 This is the direct answer to the table-capture question.
+ *
+ *   DROP_<dim>  — full context MINUS that one dimension.
+ *                 "Given I'm already tracking everything else, what does this
+ *                 one still add?" Marginal value, which is what tells you what
+ *                 you can afford to STOP recording.
+ *
+ * A dimension can score low on DROP (redundant with the others) while scoring
+ * high on ONLY (informative on its own). Both readings matter for a live-capture
+ * decision, so both are reported.
+ *
+ * facingAction is never ablated — it defines which actions are even available,
+ * so removing it compares different questions rather than different answers.
+ */
+export const ABLATABLE_DIMENSIONS = ['street', 'texture', 'posCategory', 'isAgg', 'isIP'];
+
+/** Human-readable names, for the report. */
+export const DIMENSION_LABELS = {
+  street: 'street (flop/turn/river)',
+  texture: 'board texture (wet/dry/paired)',
+  posCategory: 'position category',
+  isAgg: 'who is the aggressor',
+  isIP: 'in position / out of position',
+};
+
+const WILD = WILDCARD;
+
+/**
+ * Build a one-level pattern from an explicit set of KEPT dimensions.
+ * Everything not kept is wildcarded; facingAction is always kept.
+ */
+const patternBuilderKeeping = (keep) =>
+  (street, texture, posCategory, isAgg, isIP, facingAction) => {
+    const v = { street, texture, posCategory, isAgg, isIP };
+    const pattern = { facingAction, contextAction: WILD };
+    for (const dim of ['street', 'texture', 'posCategory', 'isAgg', 'isIP']) {
+      pattern[dim] = keep.includes(dim) ? v[dim] : WILD;
+    }
+    return [pattern];
+  };
+
+export const onlyVariantName = (dim) => `only:${dim}`;
+export const dropVariantName = (dim) => `drop:${dim}`;
+
+/**
+ * The full ablation arm set, including the two controls.
+ *
+ * `full` (all dimensions, one level) is the ceiling any single-dimension arm is
+ * measured against; `none` (facingAction only) is the floor. Without both, an
+ * ONLY_<dim> number has nothing to be a fraction of.
+ *
+ * @returns {Array<{name: string, hierarchyOptions: Object, kind: string, dim: string|null}>}
+ */
+export const buildAblationArms = () => {
+  const all = ABLATABLE_DIMENSIONS;
+  const arms = [
+    {
+      name: 'ctrl:full',
+      kind: 'control',
+      dim: null,
+      hierarchyOptions: { hierarchyBuilder: patternBuilderKeeping(all) },
+    },
+    {
+      name: 'ctrl:none',
+      kind: 'control',
+      dim: null,
+      hierarchyOptions: { hierarchyBuilder: patternBuilderKeeping([]) },
+    },
+    {
+      name: HIERARCHY_VARIANTS.SHIPPED,
+      kind: 'control',
+      dim: null,
+      hierarchyOptions: {},
+    },
+  ];
+
+  for (const dim of all) {
+    arms.push({
+      name: onlyVariantName(dim),
+      kind: 'only',
+      dim,
+      hierarchyOptions: { hierarchyBuilder: patternBuilderKeeping([dim]) },
+    });
+    arms.push({
+      name: dropVariantName(dim),
+      kind: 'drop',
+      dim,
+      hierarchyOptions: { hierarchyBuilder: patternBuilderKeeping(all.filter(d => d !== dim)) },
+    });
+  }
+
+  return arms;
+};

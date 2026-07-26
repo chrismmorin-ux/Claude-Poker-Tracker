@@ -41,6 +41,43 @@
 import { calcBluffEV } from '../../src/utils/exploitEngine/foldEquityCalculator.js';
 
 /**
+ * Percentile bootstrap CI for the mean of a heavy-tailed sample.
+ *
+ * Regret is mostly zeros with a long right tail, so the mean is a legitimate EV
+ * statistic (EV is additive — rare big losses genuinely count) but a badly
+ * ESTIMATED one at these sample sizes. Quoting it bare implies a precision the
+ * data does not support; an interval says "12 ± 9", which is honest.
+ *
+ * Deterministic LCG rather than Math.random: a backtest must reproduce exactly,
+ * and an interval that moves between identical runs is worse than none.
+ *
+ * @returns {{mean, lo, hi, n, resamples}|null}
+ */
+export const bootstrapMeanCI = (values, { resamples = 2000, alpha = 0.05, seed = 0x9e3779b9 } = {}) => {
+  const n = values?.length ?? 0;
+  if (n < 2) return null;
+
+  let state = seed >>> 0;
+  const nextIdx = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state % n;
+  };
+
+  const means = new Array(resamples);
+  for (let b = 0; b < resamples; b++) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += values[nextIdx()];
+    means[b] = sum / n;
+  }
+  means.sort((a, b) => a - b);
+
+  const at = (q) => means[Math.min(resamples - 1, Math.max(0, Math.floor(q * resamples)))];
+  const mean = values.reduce((s, v) => s + v, 0) / n;
+
+  return { mean, lo: at(alpha / 2), hi: at(1 - alpha / 2), n, resamples };
+};
+
+/**
  * Records must face a BET for the bridge to apply.
  *
  * Facing a RAISE is deliberately excluded. It is a structurally different
@@ -161,6 +198,12 @@ export const priceFoldVsBet = (records, { groupBy = 'sizeBucket', minGroupN = 20
       medianRegretBB: median,
       bbPer100Decisions: priced > 0 ? (regretSum / priced) * 100 : null,
       medianBbPer100Decisions: median != null ? median * 100 : null,
+      // The share of decisions where the estimate error actually flipped the
+      // bluff/no-bluff call. This is the number that makes the mean readable:
+      // "3% of spots cost anything at all, and those cost a lot" is a finding;
+      // an unexplained mean of 97 is not.
+      nonZeroShare: priced > 0 ? regrets.filter(v => v > 0).length / priced : null,
+      _regrets: regrets,
     };
     rows.push(row);
 
@@ -168,6 +211,24 @@ export const priceFoldVsBet = (records, { groupBy = 'sizeBucket', minGroupN = 20
   }
 
   rows.sort((a, b) => b.n - a.n);
+
+  // Bootstrap CI on the pooled mean.
+  //
+  // Regret is heavy-tailed — most decisions cost exactly zero and a few large
+  // pots carry the whole average — so the mean is a legitimate EV statistic
+  // (EV is additive; rare big losses genuinely count) but a BADLY ESTIMATED one
+  // at these sample sizes. Quoting it without an interval implies a precision
+  // the data does not support. The interval is what says "this is 12 ± 9",
+  // which is an honest answer, rather than "83", which is not.
+  //
+  // Deterministic LCG rather than Math.random so a run is reproducible.
+  const allRegrets = [];
+  for (const r of rows) {
+    if (!r.thin && Array.isArray(r._regrets)) allRegrets.push(...r._regrets);
+  }
+  const bootstrap = bootstrapMeanCI(allRegrets);
+
+  for (const r of rows) delete r._regrets;
 
   // TWO DENOMINATORS, AND THEY MEAN DIFFERENT THINGS.
   //
@@ -193,6 +254,14 @@ export const priceFoldVsBet = (records, { groupBy = 'sizeBucket', minGroupN = 20
     totalRegretBB: totalRegret,
     bbPer100Decisions: totalN > 0 ? (totalRegret / totalN) * 100 : null,
     bbPer100Hands: handsRepresented > 0 ? (totalRegret / handsRepresented) * 100 : null,
+    // 95% bootstrap CI on the per-decision mean, ×100 for bb/100-decisions.
+    bbPer100DecisionsCI: bootstrap
+      ? { lo: bootstrap.lo * 100, hi: bootstrap.hi * 100, resamples: bootstrap.resamples }
+      : null,
+    // Share of priced decisions where the error actually flipped the decision.
+    nonZeroShare: bootstrap && bootstrap.n > 0
+      ? allRegrets.filter(v => v > 0).length / bootstrap.n
+      : null,
     note:
       'Fold-vs-BET class only (facing a raise is excluded — different pot geometry). ' +
       'Regret from the fold estimate flipping the bluff/no-bluff decision across breakeven ' +
