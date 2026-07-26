@@ -2,9 +2,9 @@ id: "WS-273"
 title: "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
-claimed_at: null
+claimed_at: "2026-07-26T00:00:00Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -97,7 +97,7 @@ enables:
   - "WS-275"
   - "WS-277"
   - "WS-279"
-sprint_id: null
+sprint_id: "SPR-154"
 decision_flags:
   - "Held-out split strategy — by hand, by player, or by time window? (By player is the strictest and the most honest for a per-villain model.)"
   - "Does the harness live in the app repo or beside the mining pipeline at C:/Users/chris/data/phh-mining?"
@@ -112,3 +112,4 @@ status_note: |
   Filed 2026-07-26. Direct answer to the founder's "anchoring a measurable
   strategy" question. Sibling of WS-264 (second mining pass) — same corpus,
   different use: WS-264 extracts aggregates, this replays and scores.
+closed_by_event: "ev-1785092491218-c78f107f8597"

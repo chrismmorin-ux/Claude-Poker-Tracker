@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-26T06:04:48.146Z",
-  "updated_by_event": "ev-1785045888146-7d2ee8ec2bf2",
+  "updated_at": "2026-07-26T19:31:14.433Z",
+  "updated_by_event": "ev-1785094274433-a8b06a6f58e2",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3836,14 +3836,14 @@
     "WS-272": {
       "id": "WS-272",
       "title": "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)",
-      "status": "backlog",
+      "status": "claimed",
       "priority_score": 22,
       "category": "domain-correctness",
       "effort": "M",
       "program": "domain-correctness",
       "capability": "governance",
       "sprint_id": null,
-      "claimed_at": null,
+      "claimed_at": "2026-07-26T19:30:28Z",
       "completed_at": null,
       "source": {
         "type": "founder-request",
@@ -3864,14 +3864,14 @@
     "WS-273": {
       "id": "WS-273",
       "title": "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 24,
       "category": "domain-correctness",
       "effort": "L",
       "program": "domain-correctness",
       "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
+      "sprint_id": "SPR-154",
+      "claimed_at": "2026-07-26T00:00:00Z",
       "completed_at": null,
       "source": {
         "type": "founder-request",
@@ -3994,14 +3994,14 @@
     "WS-277": {
       "id": "WS-277",
       "title": "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway",
-      "status": "backlog",
+      "status": "claimed",
       "priority_score": 19,
       "category": "domain-correctness",
       "effort": "L",
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": null,
-      "claimed_at": null,
+      "claimed_at": "2026-07-26T19:30:28Z",
       "completed_at": null,
       "source": {
         "type": "founder-request",
@@ -4021,35 +4021,6 @@
         "src/utils/exploitEngine/generateExploits.js",
         "src/utils/exploitEngine/rangeSegmenter.js",
         ".claude/context/POKER_THEORY.md"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-278": {
-      "id": "WS-278",
-      "title": "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)",
-      "status": "backlog",
-      "priority_score": 15,
-      "category": "domain-correctness",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": null,
-      "source": {
-        "type": "founder-request",
-        "created_by": "ai",
-        "finding_id": "",
-        "run_id": "session-2026-07-26"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        ".claude/context/POKER_THEORY.md",
-        "src/utils/exploitEngine/actionClassifier.js",
-        "src/utils/exploitEngine/weaknessDetector.js",
-        "src/utils/exploitEngine/thoughtCatalog.js",
-        "src/utils/exploitEngine/CLAUDE.md"
       ],
       "source_class": "untagged"
     },
@@ -4111,5 +4082,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785045888146-7d2ee8ec2bf2"
+  "last_event_log_head": "ev-1785094274433-a8b06a6f58e2"
 }

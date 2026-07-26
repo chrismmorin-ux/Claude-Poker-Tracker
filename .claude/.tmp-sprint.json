@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-07-25T20:11:09.213Z",
-  "goal": "Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
+  "composed_at": "2026-07-26T17:13:19.044Z",
+  "goal": "Ship WS-274: Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-256",
-      "title": "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
-      "raw_score": 15,
-      "adjusted_score": 15,
+      "id": "WS-274",
+      "title": "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
+      "raw_score": 26,
+      "adjusted_score": 26,
       "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-256 selected (15 × no damping = 15).\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-274 selected (26 × no damping = 26).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 3,

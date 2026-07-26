@@ -86,3 +86,6 @@ docs/chris-notes
 # Python bytecode (scripts/backtest/*.py)
 __pycache__/
 *.pyc
+
+# Backtest harness output artifacts (scripts/backtest/run.mjs --out, mined tables)
+out/

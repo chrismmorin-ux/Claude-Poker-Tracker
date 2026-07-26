@@ -1,0 +1,67 @@
+id: "SPR-154"
+title: "Poker-theory gap batch #1 — fix the §3.4 taxonomy hole, then build the instrument that measures the rest"
+status: done
+approved_at: "2026-07-26T00:00:00Z"
+completed_at: "2026-07-26T19:01:38.968Z"
+completed_by_commit: "49ed584"
+program_focus: "domain-correctness"
+
+goal: |
+  Open the WS-272..WS-280 batch with one correctness fix and one instrument.
+  
+  WS-278 ships real correctness cheaply: POKER_THEORY §3.4 asserts an exhaustive
+  taxonomy of betting motivations and omits protection / equity denial, so
+  actionClassifier + weaknessDetector actively MISFILE correctly-played
+  protection bets as either thin value (villain looks like they over-value) or
+  as bluffs (villain looks like they over-bluff). Both misreads point hero the
+  wrong way and both accumulate into the villain model as evidence for a leak
+  that does not exist. It is also the proof case for WS-272 — the code
+  faithfully implements a doc that is itself incomplete, so no code-vs-doc sweep
+  could ever have found it.
+  
+  WS-273 is the instrument. Every remaining item in the batch (274, 275, 277,
+  279) has "measure it via WS-273" written into its acceptance criteria.
+  Building it second means the rest of the batch gets evaluated rather than
+  argued, and it is the empirical arm of WS-272's outward-facing check.
+  
+  Deliberately NOT leading with WS-274 despite its 26 anchor score: it is an L
+  with three open decisions, and running it after the harness lets us actually
+  test whether table-composition-derived advice predicts better than the chart
+  it replaces. Founder-approved sequencing, 2026-07-26.
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-26T00:00:00Z"
+  matches: []
+
+composition_notes: |
+  Founder-directed composition, NOT the CLI anchor. `cwos-next compose` selected
+  WS-274 alone (26 x no damping = 26); founder approved WS-278 + WS-273 instead
+  after reviewing the sequencing argument above.
+  
+  CAP OVERAGE, RECORDED DELIBERATELY: M + L is ~4 sessions against
+  sprints.max_effort_sessions = 2. Noted rather than silently absorbed. The cap
+  is already non-binding in practice — the CLI's own single-item WS-274
+  composition was 3 sessions against the same cap of 2. Flagged as a config
+  question for a later pass; not treated as a blocker here.
+  
+  Program cap-breach active on `design` (18/8, priority_floor 22) — surfaced for
+  the first time this session after the case-sensitivity fix to
+  cwos-reconcile.js:1370. Unrelated to this sprint's items; design triage is a
+  separate pass.
+
+items:
+  - id: "WS-278"
+    title: "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)"
+    mode: just-do-it
+    effort: M
+    status: done
+    completed_at: "2026-07-26T00:00:00Z"
+  - id: "WS-273"
+    title: "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-07-26T19:01:31.194Z"
+
+created_at: "2026-07-26T00:00:00Z"

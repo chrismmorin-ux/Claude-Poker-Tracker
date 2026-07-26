@@ -2,11 +2,11 @@ id: "WS-278"
 title: "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
-claimed_at: null
-started_at: null
-completed_at: null
+claimed_at: "2026-07-26T00:00:00Z"
+started_at: "2026-07-26T00:00:00Z"
+completed_at: "2026-07-26T00:00:00Z"
 completion_commit: null
 priority_score: 15.0
 priority_label: "P2"
@@ -94,7 +94,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: null
+sprint_id: "SPR-154"
 decision_flags:
   - "Is inducing a fifth first-class motive, or a note under information? (It profits from villain BETTING, which is structurally distinct from all four.)"
 source:
@@ -108,3 +108,44 @@ status_note: |
   doc that is itself incomplete, so the existing code-vs-doc sweep is
   structurally incapable of finding it. Cheapest item in the batch and the one
   with the clearest wrong-answer consequence.
+completion_notes: |
+  Shipped 2026-07-26 (SPR-154).
+
+  PREMISE CORRECTION made during execution, per feedback_verify_ticket_premise_at_
+  composition. The ticket claimed actionClassifier misfiles villain protection
+  bets. Two things were wrong: (a) actionClassifier classifies HERO actions, not
+  villain bets, and (b) it ALREADY had a `protection` type. The real villain-side
+  misfile is in weaknessDetector, and it is worse than the ticket described
+  because it is silent — it manufactures a false weakness rather than dropping a
+  classification.
+
+  WHAT WAS ACTUALLY WRONG (both verified by mutation test):
+  1. weaknessDetector `sit-cbets-wet-unprofitable` — "value" means nuts+strong
+     only, so a wet-board range of 20% strong / 40% marginal / 30% air scored as
+     valueless despite being ~60% made hands charging draws. Fired on correct play.
+  2. weaknessDetector `sit-overvalues-medium` — consulted NO board texture at all.
+     A protection bet IS a medium-strength hand played aggressively, so this fired
+     on every correctly-played wet-board protection line. The textbook misfile.
+  3. actionClassifier — protection existed but only above 0.55 equity, so an
+     ahead-but-vulnerable hand at 0.50-0.55 fell through to thin-value. Not
+     cosmetic: thin value sizes DOWN, protection sizes UP (§3.4.1).
+
+  WHY THE EXISTING SUITE NEVER CAUGHT IT: makeShowdownBucket defaults to
+  texture:'dry', and the one "wet" over-values test set the situationKey string
+  but not the texture field. The wet + marginal-heavy case was never exercised.
+
+  DECISION (resolved the open flag): inducing is recorded as a distinct FIFTH
+  motive, not a note under information. Rationale: all four others profit from
+  villain's call or fold; inducing profits from villain BETTING, so it does not
+  collapse into information-gathering.
+
+  Thresholds PROTECTION_MARGINAL_FLOOR=35 and PROTECTION_DRAW_FLOOR=25 are
+  founder estimates, explicitly labeled unmeasured in code and flagged for
+  calibration by WS-273.
+
+  VERIFICATION: 2511 exploitEngine tests pass. One pre-existing failure,
+  gameTreeDepth2 "computeCallDepth2EV > returns correct shape" — a Monte-Carlo
+  test that passes in isolation at 5.4s and times out only under full-suite CPU
+  contention (15s cap). gameTreeDepth2.js imports neither changed module and both
+  its files are unmodified this session. Matches the recorded MC-flakiness finding.
+  Mutation-tested all 3 new guard tests: each fails with the guard removed.

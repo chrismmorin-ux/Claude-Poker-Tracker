@@ -2,13 +2,14 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 160
+total_items: 159
 by_status:
   decomposed: 1
-  done: 70
+  done: 71
   in_progress: 3
   deferred: 43
-  backlog: 33
+  backlog: 29
+  claimed: 2
   dismissed: 1
   completed: 7
   review: 1
@@ -21,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 36
+  domain-correctness: 35
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1482,7 +1483,7 @@ items:
 
   - id: "WS-272"
     title: "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)"
-    status: backlog
+    status: claimed
     priority_score: 22
     category: domain-correctness
     effort: M
@@ -1491,10 +1492,11 @@ items:
 
   - id: "WS-273"
     title: "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions"
-    status: backlog
+    status: done
     priority_score: 24
     category: domain-correctness
     effort: L
+    sprint_id: "SPR-154"
     program: domain-correctness
     capability: core
 
@@ -1527,19 +1529,10 @@ items:
 
   - id: "WS-277"
     title: "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway"
-    status: backlog
+    status: claimed
     priority_score: 19
     category: domain-correctness
     effort: L
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-278"
-    title: "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)"
-    status: backlog
-    priority_score: 15
-    category: domain-correctness
-    effort: M
     program: domain-correctness
     capability: core
 

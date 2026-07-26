@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-26T05:58:44.731Z",
-  "updated_by_event": "ev-1785045524731-027638859b51",
+  "updated_at": "2026-07-26T19:01:39.666Z",
+  "updated_by_event": "ev-1785092499666-9849c32de8c3",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2492,7 +2492,24 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-154": {
+      "id": "SPR-154",
+      "title": "Poker-theory gap batch #1 — fix the §3.4 taxonomy hole, then build the instrument that measures the rest",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-26T00:00:00Z",
+      "approved_at": "2026-07-26T00:00:00Z",
+      "completed_at": "2026-07-26T19:01:38.968Z",
+      "goal": "Open the WS-272..WS-280 batch with one correctness fix and one instrument.\n\nWS-278 ships real correctness cheaply: POKER_THEORY §3.4 asserts an exhaustive\ntaxonomy of betting motivations and omits protection / equity denial, so\nactionClassifier + weaknessDetector actively MISFILE correctly-played\nprotection bets as either thin value (villain looks like they over-value) or\nas bluffs (villain looks like they over-bluff). Both misreads point hero the\nwrong way and both accumulate into the villain model as evidence for a leak\nthat does not exist. It is also the proof case for WS-272 — the code\nfaithfully implements a doc that is itself incomplete, so no code-vs-doc sweep\ncould ever have found it.\n\nWS-273 is the instrument. Every remaining item in the batch (274, 275, 277,\n279) has \"measure it via WS-273\" written into its acceptance criteria.\nBuilding it second means the rest of the batch gets evaluated rather than\nargued, and it is the empirical arm of WS-272's outward-facing check.\n\nDeliberately NOT leading with WS-274 despite its 26 anchor score: it is an L\nwith three open decisions, and running it after the harness lets us actually\ntest whether table-composition-derived advice predicts better than the chart\nit replaces. Founder-approved sequencing, 2026-07-26.",
+      "item_count": 2,
+      "items_done": 2,
+      "last_anchor_source_classes": [
+        "untagged",
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785045524731-027638859b51"
+  "last_event_log_head": "ev-1785092499666-9849c32de8c3"
 }
