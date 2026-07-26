@@ -308,3 +308,108 @@ python scripts/backtest/mine-stationarity.py \
   --corpus-root C:/Users/chris/data/phh-dataset/data/handhq \
   --out out/stationarity.json --workers 12
 ```
+
+---
+
+## Part 4 — is a behaviour a SWITCH or a DIAL?
+
+> *"I was referring to villains being in different stages of their poker
+> lifecycle. I would expect that there are categories of things that if a player
+> does, they do regularly, and if they don't, they almost never."*
+
+A cross-sectional claim, distinct from Part 3: a behaviour like 3-bet bluffing is
+governed by a latent binary "has this player acquired it" trait, so the population
+should be **bimodal or zero-inflated**, not a smooth spread.
+
+Parts 1–2 could not have detected this. Euclidean k-means on continuous rate
+vectors reports a continuum unless clusters separate in the metric it optimises; a
+set of binary latent traits is not what that method recovers. Testing it needs a
+mixture model on **counts** — and it must use counts, never rates, because a player
+with 8 opportunities and 0 successes is perfectly consistent with a 10% true rate.
+Rate histograms manufacture fake zero-inflation.
+
+Three models per behaviour, compared by BIC:
+
+| model | meaning | params |
+|---|---|---|
+| single binomial | one rate for everyone | 1 |
+| **beta-binomial** | a **DIAL** — continuum of personal rates | 2 |
+| **2-component mixture** | a **SWITCH** — two discrete classes | 3 |
+
+### Finding 9 — they are dials, not switches
+
+| behaviour | n players | pooled | winner | BIC margin |
+|---|---|---|---|---|
+| threeBet | 10,555 | 3.9% | dial | 1644 |
+| cbet | 2,814 | 58.5% | dial | 1020 |
+| donk_flop | 7,657 | 14.6% | dial | 815 |
+| double_barrel | 3,613 | 18.5% | dial | 69 |
+| foldToCbet | 1,345 | 54.8% | dial | 55 |
+| limp_raise | 13,926 | 0.9% | dial | 25 |
+| river_bet_air | 3,285 | 5.7% | dial | 8 |
+| check_raise_flop | 1,191 | 2.3% | dial | 7 |
+| **triple_barrel** | 1,361 | 24.1% | *mixture* | **2** |
+
+**Eight of nine are dials, decisively.** Triple-barrel nominally picks the switch
+model, but by a BIC margin of **2** — below the threshold worth more than a bare
+mention. Treat it as a tie, not a win.
+
+So the literal hypothesis — two discrete classes — is **not supported**.
+
+### Finding 10 — but the "almost never" group is real for two behaviours
+
+The model comparison is not the whole story. Excess zeros — players with zero
+occurrences versus the number a single pooled rate predicts:
+
+| behaviour | players at zero | expected | **excess** |
+|---|---|---|---|
+| **donk_flop** | 638 | 249 | **2.56×** |
+| **threeBet** | 1,440 | 671 | **2.15×** |
+| double_barrel | 131 | 91 | 1.44× |
+| triple_barrel | 169 | 135 | 1.25× |
+| check_raise_flop | 868 | 843 | 1.03× |
+| limp_raise | 11,461 | 11,163 | 1.03× |
+| river_bet_air | 2,172 | 2,127 | 1.02× |
+
+**For 3-betting and donk-betting there genuinely is a "never does this" population**
+— more than double the zeros chance allows. The intuition is right; the mechanism is
+a heavily zero-skewed *continuum* rather than a discrete class.
+
+That distinction is not pedantic, it is the design: you do **not** need a latent
+class variable. You need a prior with real mass near zero — which a Beta prior
+provides and a fixed population rate does not. `STAT_PRIORS` is already a Beta
+family, so the engine has the right shape; whether its fitted parameters match
+these is a direct, checkable follow-up.
+
+### Finding 11 — which spots are actually worth modelling per villain
+
+> *"it should feed our frequencies and which spots are most important to
+> study/model."*
+
+The beta-binomial concentration answers this directly. Low concentration = players
+genuinely differ = a per-villain read pays. High concentration = everyone is alike =
+use the population number and spend the modelling effort elsewhere.
+
+Ranked by spread relative to the base rate:
+
+| behaviour | pooled | across-player SD | per-villain read |
+|---|---|---|---|
+| limp_raise | 0.9% | 1.0pp | **HIGH** |
+| check_raise_flop | 2.3% | 1.7pp | **HIGH** |
+| donk_flop | 14.6% | 9.1pp | medium |
+| river_bet_air (bluff rate) | 5.7% | 3.4pp | medium |
+| threeBet | 3.9% | 2.0pp | medium |
+| triple_barrel | 24.1% | 8.1pp | low |
+| double_barrel | 18.5% | 5.1pp | low |
+| cbet | 58.5% | 11.1pp | low |
+| foldToCbet | 54.8% | 8.3pp | low |
+
+**C-betting and folding-to-c-bet are the two stats the engine leans on hardest, and
+they are the two where players differ least.** Everyone c-bets around 58%. Tracking
+it per villain buys little; it is close to a constant.
+
+Meanwhile limp-raising and flop check-raising carry the most individual signal
+relative to their base rate — and Finding 5 showed they are also the least
+observable. **The most diagnostic behaviours are the rarest.** That tension, not the
+switch-vs-dial question, is the real constraint on villain modelling, and it is
+another argument for pooling reads at an archetype level rather than per player.
