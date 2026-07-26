@@ -712,10 +712,21 @@ advance**, three separate families agreeing.
 This corroborates WS-262's river findings (called big river bets: 76–83% two-pair+,
 ≤7% air) by a different route, and lands *more* extreme.
 
-**The table read is unusually clean: in this pool, a river check-raise is value.
-Always.** Rare (14% of players ever), and when it happens it is not a bluff. That is
-a stronger read than any frequency estimate in this entire study, and it needs a
-sample of exactly one.
+**Do NOT record this as a table read.** Founder direction, 2026-07-26: *"lets not
+hard record anything like 'river check raise is always value' because even if it is
+true, we are dealing with old data, and there are a LOT of things that are more
+prevalent now than 17 years ago. The game has changed completely in some ways."*
+
+Right, and this finding is the single most era-fragile result in the document — see
+Part 9. Solver study barely existed in 2009 (PioSOLVER arrived ~2013); the polarised
+river check-raise is a *modern* solver-derived line. A 2009 microstakes pool having
+zero river check-raise bluffs is entirely consistent with that line being standard
+today. The number is a strong statement about **this pool in July 2009** and carries
+no weight about a 2026 live game.
+
+What survives era-independently is the STRUCTURE: bluff share declining monotonically
+by street, in three families independently. The *levels* are 2009's; the *shape* is a
+better candidate for a durable property.
 
 *Censoring caveat still binds — a bluff that works is never shown, and a caught
 bluffer may muck rather than show. True bluff share is above zero. But 0/1,526 puts
@@ -766,3 +777,72 @@ bold line is more likely to hold the rest of the bold lines* — and that is exa
 the inference the starvation wall blocked, since bold lines are the ones you can
 never observe enough of directly. It does not license adjusting their fold-to-c-bet
 or their showdown tendencies.
+
+---
+
+## Part 9 — ERA DRIFT: which of these findings will still be true in 2026?
+
+Founder direction, 2026-07-26, prompted by the river check-raise result:
+
+> *"lets not hard record anything like 'river check raise is always value' because
+> even if it is true, we are dealing with old data, and there are a LOT of things
+> that are more prevalent now than 17 years ago. The game has changed completely in
+> some ways. But for now it is a good standout and example"*
+
+This is a correction to how the whole document should be read, not to one line.
+
+**The caveat repeated on every page above — "live generalisation is an assumption" —
+covers online→live and says nothing about 2009→2026.** That was a gap. The corpus is
+**seventeen years old**, and it predates the solver era: PioSOLVER arrived around
+2013, GTO-derived strategy reached the general population later still. Several
+behaviours measured here are precisely the ones solver study changed most —
+polarised river aggression, donk betting (a "leak" in 2009, rehabilitated since),
+small c-bet sizings, river bluff frequency.
+
+### Findings ranked by era-fragility
+
+**FRAGILE — strategic content, likely to have moved, do not carry forward as fact**
+
+| finding | why it is exposed |
+|---|---|
+| 18 — bluff share by street, 0% river check-raise bluffs | the exact line solver study added |
+| 15 — 86% never check-raise a river | same; adoption should have risen |
+| 12 — triple barrel is 66% value | barrelling frequency is a solver-era change |
+| 3 — model under-predicts folds by 5–10pp | pool fold tendencies shifted |
+| 2 — a "Fish" centroid at 40.5% VPIP | pools tightened at every stake |
+| 13 — 52% of c-bets are one pair | c-bet sizing and range construction both changed |
+
+**ROBUST — structural or statistical, largely era-independent**
+
+| finding | why it should hold |
+|---|---|
+| 5 — rare reads are not individually estimable | arithmetic of opportunity counts, not strategy |
+| 14 — per-villain intent reads do not exist | same, via showdown availability |
+| 7 — most players are stationary short-term | a property of habit, not of theory |
+| 9 — behaviours are dials, not switches | distributional shape of skill acquisition |
+| 19 — inference does not jump across families | correlation structure, not levels |
+| 16/19 — the starvation wall itself | follows from how rare the behaviours are |
+
+**The durable output of this study is the METHOD and the STRUCTURAL constraints, not
+the frequencies.** The instrument (WS-273 harness), the sample-size walls, and the
+finding that intent must be pooled at archetype level will all still be true. The
+specific percentages are era-stamped.
+
+### Consequence for the shipped engine
+
+This sharpens a live risk. The HandHQ Reference tier (SRC-011) feeds
+`poolBaseline.js` as a prior for online numeric-stake segments. Its per-stat weights
+are already deliberately weak (10–35 pseudocounts), which was justified on
+*staleness* grounds when imported — that judgement now has evidence behind it, and a
+refinement:
+
+**Era drift is not uniform across stats.** Structural frequencies (VPIP, PFR) are far
+more stable than strategic ones (bluff rates, barrel frequencies, river aggression).
+A single staleness discount applied to all six stats is therefore the wrong shape —
+the aggressive-line stats deserve a heavier discount than the entry-frequency stats.
+Worth a ticket.
+
+And Finding 4 already showed the Reference tier cannot reach villain action
+prediction at all, so this is currently a latent risk rather than an active one —
+but it becomes active the moment anyone wires pool priors into the predictor, which
+is exactly what the archetype-rung work would do.
