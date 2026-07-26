@@ -234,3 +234,77 @@ behaviours. But the group level should be built on **both** axes measured here
 poles were 76.7/23.3 and Part 2's are 75.3/24.7, similar in size but fitted on
 disjoint features. Whether they identify the *same* players is the next question,
 and it needs `cluster-player-types.py` to persist member ids.
+
+---
+
+## Part 3 — do players change in steps, or drift?
+
+> *"I am optimistically expecting to see little cliffs where one player sort of
+> slides or drops into another bucket, probably based on skill/education level…
+> I have to think that we will see a sharp change in particular behaviors."*
+
+**Binding limitation, before any number.** The corpus spans **2009-07-01 to
+2009-07-23 — twenty-three days**. Learning of the kind the hypothesis describes
+happens over months. This tests whether changes are *sharp or gradual*, and can see
+session-to-session mode switching. It **cannot** test the education arc.
+
+Method: block each player's hands by calendar day (≥30 hands to count as a block,
+≥5 blocks required). Dispersion = χ²/df against a single fixed rate — 1.0 means the
+day-to-day variation is exactly what coin-flipping would produce. Shape chosen by
+BIC among flat / linear drift / single step. ~1,976 players qualify.
+
+### Finding 7 — 95% of players are stationary over 23 days
+
+| | VPIP | PFR |
+|---|---|---|
+| players tested | 1,976 | 1,975 |
+| **median dispersion** | **1.079** | **1.026** |
+| non-stationary (p<0.01) | 6.1% | 5.1% |
+| best shape = flat | **95.6%** | **96.0%** |
+| best shape = drift | 3.3% | 3.3% |
+| best shape = step | **1.1%** | 0.7% |
+| step ≥5pp | 4.9% | 3.7% |
+| median \|Δ\| among changers | **8.3pp** | 7.1pp |
+
+**The cliffs are real but rare.** Only ~5–6% of players change detectably in three
+weeks. Among those who do, the change is *large* — a median 8pp swing in VPIP is a
+different player. But 95% are indistinguishable from a fixed rate plus noise.
+
+And among changers, **drift beats step ~3:1** (3.3% vs 1.1%). Hold that ratio
+loosely: with only 5–8 blocks, BIC has weak power to separate a mid-series step
+from a ramp. What is solid is the flat-vs-changing split, not the shape breakdown.
+
+### Finding 8 — this makes `DECAY_HALFLIFE = 50` look actively harmful
+
+`decisionAccumulator.js` halves an observation's weight every 50 hands, so hands
+older than ~150 carry under 13%. That is the right model for a player who changes.
+
+**For the 95% who don't, it discards most of the evidence for nothing.** And it
+compounds the starvation finding: the model's central weakness is cells too thin to
+beat the population prior, and recency decay makes every cell thinner still. We are
+paying an accuracy cost on the overwhelming majority of villains to track a minority
+that a change-point detector could identify explicitly.
+
+That is the founder's own intuition arriving somewhere he did not aim it: the
+adaptation mechanism should be **detection, not decay**. Use a villain's full
+history by default; watch for a break; reset when one fires.
+
+### The next experiment, with a stated prediction
+
+This is directly testable on the existing harness — `DECAY_HALFLIFE` is one
+constant, and the backtest measures exactly the affected quantity.
+
+**Prediction: raising the half-life (or disabling decay) improves overall
+log-loss**, because the stationary majority dominates the decision count. If that
+holds, the follow-up is a per-villain change-point detector rather than a global
+constant.
+
+Number to beat: **1.69% lift / 52.2% accuracy** over 10,147 held-out decisions.
+
+### Reproduce
+
+```bash
+python scripts/backtest/mine-stationarity.py \
+  --corpus-root C:/Users/chris/data/phh-dataset/data/handhq \
+  --out out/stationarity.json --workers 12
+```
