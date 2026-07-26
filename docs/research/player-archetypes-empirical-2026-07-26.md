@@ -660,3 +660,109 @@ properly into early/late/blinds, and use shrunk per-player estimates instead of 
 rates. Until then the gate-jumping strategy is unproven, not disproven — and it
 remains the highest-value hypothesis outstanding, because it is the only proposed
 route around the starvation wall that Findings 5, 11 and 14 all ran into.
+
+---
+
+## Part 8 — nesting, bluff share by line, and what one rare act licenses
+
+22,003 players with ≥30 postflop actions. Q3 uses the **whole** population with no
+intersection filter — the range-restriction flaw that weakened Finding 16 is gone.
+
+### Finding 17 — YES, it is the same folks (nesting confirmed)
+
+> *"did we look at if this is same folks who are check raising the turn are the
+> same ones daring enough to check raise the river?"*
+
+| | base rate | given flop CR | given turn CR | given river CR |
+|---|---|---|---|---|
+| flop check-raise | 42.9% | — | 78.4% | 60.4% |
+| turn check-raise | 26.3% | 35.8% | — | **41.5%** |
+| river check-raise | 8.2% | 10.9% | **13.0%** | — |
+
+P(turn CR | river CR) = 41.5% against a 26.3% base — **1.58×**. P(river CR | turn CR)
+= 13.0% against 8.2% — **1.59×**. The lines are genuinely nested.
+
+Not a strict hierarchy though: 58.5% of river check-raisers never check-raised a
+turn. It is a strong tendency, not a ladder.
+
+### Finding 18 — bluff share collapses street by street, and the river is pure value
+
+> *"you again are missing BLUFFS... 86% never check raised the river. So how much
+> of those were bluffs?"*
+
+Correct again — Part 7 counted actions. The split, over shown hands:
+
+| line | shown | air | **bluff share** |
+|---|---|---|---|
+| flop donk | 43,019 | 3,859 | **9.0%** |
+| flop check-raise | 9,784 | 526 | 5.4% |
+| turn barrel | 23,229 | 1,076 | 4.6% |
+| turn probe | 47,925 | 1,561 | 3.3% |
+| turn check-raise | 5,448 | 92 | 1.7% |
+| river barrel | 14,639 | 141 | 1.0% |
+| river probe | 45,408 | 294 | 0.6% |
+| **river check-raise** | **1,526** | **0** | **0.0%** |
+
+**Zero of 1,526 shown river check-raises held air. Not one.**
+
+And the gradient is monotone within every line family independently — check-raise
+5.4 → 1.7 → 0.0, barrel 4.6 → 1.0, probe 3.3 → 0.6. **Bluffing collapses as streets
+advance**, three separate families agreeing.
+
+This corroborates WS-262's river findings (called big river bets: 76–83% two-pair+,
+≤7% air) by a different route, and lands *more* extreme.
+
+**The table read is unusually clean: in this pool, a river check-raise is value.
+Always.** Rare (14% of players ever), and when it happens it is not a bluff. That is
+a stronger read than any frequency estimate in this entire study, and it needs a
+sample of exactly one.
+
+*Censoring caveat still binds — a bluff that works is never shown, and a caught
+bluffer may muck rather than show. True bluff share is above zero. But 0/1,526 puts
+a hard ceiling on how far above.*
+
+### Finding 19 — the gate does NOT jump sideways to unrelated behaviour
+
+> *"what does that one act say is statistically likely about them across the board?
+> how confident can we classify their archetype and immediately adjust in seemingly
+> unrelated way on different board textures streets and positions"*
+
+Lift = E[Y | ever did X] / E[Y | never did X]:
+
+| marker | target | lift | p |
+|---|---|---|---|
+| flop check-raise | donk_flop | **0.77×** | 3e-44 |
+| turn check-raise | donk_flop | 0.82× | 8e-24 |
+| river check-raise | limp_raise | 1.16× | 4e-10 |
+| river check-raise | double_barrel | 1.07× | 5e-03 |
+| river check-raise | wtsd | 1.06× | 4e-12 |
+| any check-raise | **river_bet_air** | 0.82–0.88× | **n.s.** |
+
+**Nearly every lift sits between 0.8× and 1.2×.** The microscopic p-values are an
+artefact of n in the thousands, not evidence of a useful effect — at these sample
+sizes a 3% difference is "highly significant" and practically worthless.
+
+The largest real effect, check-raisers donking **23% less**, is a strategic
+*substitution* (they check-raise instead of leading), not a skill factor. And most
+telling: **observing a check-raise says nothing at all about the player's river
+bluffing** — not significant for any marker.
+
+**This is now a much stronger null than Finding 16.** That test was crippled by
+range restriction; this one uses 22,003 players with no intersection filter and
+still finds nothing. The gate-jumping hypothesis, as stated — one caught act
+licensing adjustment on *seemingly unrelated* streets and textures — is **not
+supported by the data**.
+
+### What DOES transfer, and it is worth having
+
+Inference works **within a skill family, not across families**:
+
+- **Sideways within aggression: yes.** A river check-raiser is 1.6× more likely to
+  check-raise turns. Rare-line usage predicts other rare-line usage.
+- **Across to unrelated frequencies: no.** ~1.0× on everything.
+
+So the usable rule is narrower than hoped but real: *a villain who shows you one
+bold line is more likely to hold the rest of the bold lines* — and that is exactly
+the inference the starvation wall blocked, since bold lines are the ones you can
+never observe enough of directly. It does not license adjusting their fold-to-c-bet
+or their showdown tendencies.
