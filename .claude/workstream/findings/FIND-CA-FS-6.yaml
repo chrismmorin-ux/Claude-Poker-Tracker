@@ -1,0 +1,23 @@
+id: "FIND-CA-FS-6"
+title: "INFEASIBLE: FS-6 — Founder becomes CWOS operator"
+engine: constitutional-audit
+persona: constitutional-audit
+run_id: "run-self-compliance-sweep-2026-07-25"
+date: "2026-07-25"
+severity: low
+priority_score: 20
+category: self-compliance
+description: "Only 1 items in queue — need ≥10 for ratio signal"
+recommended_action: "Build detector — see kit/scripts/cwos-constitutional-audit.js `detectFS6()` for the current implementation + rationale"
+files_involved: []
+dedup_key: "constitutional-audit-FS-6-infeasible"
+status: open
+promoted_to: ""
+program: kit-quality
+source:
+  engine: constitutional-audit
+  run_id: "run-self-compliance-sweep-2026-07-25"
+  audit_item: "FS-6"
+  audit_status: infeasible
+proposed_route:
+  would_promote_to_queue: false

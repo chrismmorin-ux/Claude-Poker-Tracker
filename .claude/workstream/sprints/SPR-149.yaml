@@ -1,0 +1,29 @@
+id: "SPR-149"
+title: "Ship WS-267: FAIL: INV-F1 — No Unnecessary Burden"
+status: done
+approved_at: "2026-07-25T07:45:45.361Z"
+completed_at: "2026-07-25T07:47:08.386Z"
+completed_by_commit: "bdcb32b"
+program_focus: "kit-quality"
+
+goal: |
+  Ship WS-267: FAIL: INV-F1 — No Unnecessary Burden
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-25T07:45:45.361Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-267 selected (55 × no damping = 55).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-267"
+    title: "FAIL: INV-F1 — No Unnecessary Burden"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-25T07:47:08.386Z"
+
+created_at: "2026-07-25T07:45:45.361Z"

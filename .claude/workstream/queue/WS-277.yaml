@@ -1,0 +1,112 @@
+id: "WS-277"
+title: "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 19.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FINDING. The mathematical spine of POKER_THEORY.md — §6.1 fold equity, §6.2
+  MDF, §6.3 breakeven bluff frequency, §6.4 value-bet threshold — is written
+  entirely in two-player form. So is §4.1 ("value bet when >50% equity against
+  the opponent's calling range") and the §4.2 bluff-catching framework.
+
+  The app's stated purpose is 9-handed live games, where a large share of pots
+  played are multiway. The math that governs the recommendations is for a game
+  the founder is mostly not playing.
+
+  HOW MULTIWAY ACTUALLY BREAKS EACH ONE:
+    - Bluffing: a bluff needs ALL N opponents to fold. Fold-through probability
+      compounds, and the folds are correlated (a wet board makes everyone
+      continue), so it is neither p^N nor p. Breakeven bluff frequency rises
+      steeply with each additional player — bluffing largely collapses multiway,
+      which is exactly the live-population truth the engine should be asserting.
+    - MDF: defense is DIVIDED among N defenders. Each individual defends far
+      less than the heads-up MDF while the field collectively meets it. Applying
+      the HU MDF per-player over-defends badly.
+    - Value threshold: ">50% vs the calling range" becomes "beat the union of N
+      calling ranges" — you must beat the BEST of N continuing hands, a much
+      higher bar. The HU rule systematically over-values thin bets multiway,
+      which is a real money leak in the exact spot live players face most.
+    - Bluff-catching: with players still to act behind, calling risks a raise
+      from the third player. The HU call/fold framework has no term for it.
+
+  CURRENT STATE — PATCHES, NOT A FRAME. Multiway machinery exists in places:
+  multiway fold correlation in the game tree, multiway equity in villain
+  ranges, FLOP_MULTIWAY in HSP (WS-154 replaces the v1 stub with a full
+  sequential-decision model), multiwayFrameworks.js in drill content. But they
+  are patches applied ON TOP of a heads-up doctrine, which means each new
+  multiway feature re-derives its own correction instead of falling out of a
+  shared frame. That is how inconsistencies accumulate.
+
+  PROPOSED SCOPE.
+    - Rewrite the §6 spine in N-player form, with the HU case as the N=2
+      specialization rather than the base case. Same for §4.1 and §4.2.
+    - Correlated fold-through as one shared primitive, used by every consumer
+      (preflop steal EV in WS-274, postflop bluff EV, breakeven thresholds) —
+      not re-derived per site.
+    - Multiway value threshold: beat-the-best-of-N formulation, with the
+      protection/equity-denial term (WS-278) which is MORE load-bearing
+      multiway, not less.
+    - Audit existing consumers for silent HU assumptions and route them to the
+      shared primitives.
+    - Where an exact multiway computation is too expensive, the approximation is
+      allowed but must carry a MEASURED cost via WS-273, per the founder's
+      "simplifications" framing — not an assumed-harmless note.
+
+  RELATIONSHIP TO WS-154 (HSP-M1 full multiway model): that item models HERO's
+  hand-state multiway. This item fixes the decision math both it and the exploit
+  engine sit on. They should be sequenced together or this one first.
+accept_criteria: |
+  - POKER_THEORY §4.1, §4.2, §6.1-6.4 restated in N-player form with N=2 shown
+    as the specialization; doc version + changelog bumped per drift policy.
+  - A single shared correlated-fold-through primitive exists and is the only
+    implementation; consumers call it rather than re-deriving.
+  - Multiway value-bet threshold implemented as beat-the-best-of-N; test shows
+    the same hand qualifying as a value bet heads-up and NOT qualifying against
+    three opponents.
+  - Per-defender MDF correctly divides defensive burden across the field;
+    asserted by test against the HU case.
+  - Audit report of existing consumers that assumed heads-up, each either fixed
+    or explicitly documented as HU-only with the reason.
+  - Any retained approximation carries a measured cost from WS-273 or an
+    explicit unmeasured-estimate label with a follow-up item.
+  - exploitEngine + gameTree suites green; heads-up numbers unchanged
+    (N=2 regression snapshot).
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/generateExploits.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-154"
+sprint_id: null
+decision_flags:
+  - "Correlated fold-through model — full correlation structure, or a documented single-parameter approximation with its cost measured?"
+  - "Sequence with WS-154 (HSP-M1) or ahead of it? Doing HSP-M1 on a heads-up spine repeats the patch pattern."
+  - "Scope ceiling: rewrite the whole §6 spine, or start with the value threshold + bluff breakeven (the two with direct money consequences)?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. The gap is doctrinal, not merely implementational: multiway
+  handling exists as patches on a heads-up frame. Related but distinct from
+  WS-154 (hero hand-state multiway) and WS-114 (multiway content corpus).

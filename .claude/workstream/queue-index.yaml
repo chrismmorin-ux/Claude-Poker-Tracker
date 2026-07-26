@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 149
+total_items: 160
 by_status:
   decomposed: 1
-  done: 68
+  done: 70
   in_progress: 3
   deferred: 43
-  backlog: 24
+  backlog: 33
   dismissed: 1
   completed: 7
   review: 1
@@ -21,7 +21,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 26
+  domain-correctness: 36
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -47,7 +47,7 @@ by_category:
   sidebar-program: 1
   sidebar-recurrence: 6
   table-view: 1
-  test-reliability: 1
+  test-reliability: 2
   ux: 3
 
 items:
@@ -1341,7 +1341,7 @@ items:
 
   - id: "WS-256"
     title: "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open"
-    status: backlog
+    status: done
     priority_score: 15
     category: domain-correctness
     effort: L
@@ -1454,10 +1454,110 @@ items:
 
   - id: "WS-269"
     title: "cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as duplicate sprint execution (fr-019)"
-    status: backlog
+    status: done
     priority_score: 18
     category: kit-quality
     effort: S
     program: kit-quality
+    capability: core
+
+  - id: "WS-270"
+    title: "4-bet decision tree — fourBet / call4 range classes facing a 3-bet (third preflop scenario)"
+    status: backlog
+    priority_score: 16
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-256"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-271"
+    title: "Dev range seeder is broken — seedRangeTestData passes title-case `build` against the lowercase enum, so __seedRangeData() throws"
+    status: backlog
+    priority_score: 7
+    category: test-reliability
+    effort: S
+    program: engineering
+    capability: core
+
+  - id: "WS-272"
+    title: "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)"
+    status: backlog
+    priority_score: 22
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-273"
+    title: "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions"
+    status: backlog
+    priority_score: 24
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-274"
+    title: "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind"
+    status: backlog
+    priority_score: 26
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-275"
+    title: "Non-stationarity — villain models are lifetime averages with zero recency weighting or regime detection"
+    status: backlog
+    priority_score: 20
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-276"
+    title: "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)"
+    status: backlog
+    priority_score: 18
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-277"
+    title: "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway"
+    status: backlog
+    priority_score: 19
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-278"
+    title: "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)"
+    status: backlog
+    priority_score: 15
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-279"
+    title: "Equity realization is still a base lookup keyed on position/SPR/texture — should fall out of the game tree"
+    status: backlog
+    priority_score: 14
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-280"
+    title: "Game and seat selection — the largest $/hour lever in live poker, entirely outside the model"
+    status: backlog
+    priority_score: 11
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
     capability: core
 

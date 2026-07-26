@@ -1,0 +1,24 @@
+id: "FIND-CA-INV-F1"
+title: "FAIL: INV-F1 — No Unnecessary Burden"
+engine: constitutional-audit
+persona: constitutional-audit
+run_id: "run-self-compliance-sweep-2026-07-25"
+date: "2026-07-25"
+severity: high
+priority_score: 55
+category: self-compliance
+description: "CLAUDE.md has no Purpose section — cannot enforce proportional-value rule on components"
+recommended_action: "Fix now — run `node kit/scripts/cwos-constitutional-audit.js --only INV-F1` to re-verify after fix"
+files_involved: []
+dedup_key: "constitutional-audit-INV-F1-fail"
+status: resolved
+promoted_to: "WS-267"
+program: kit-quality
+source:
+  engine: constitutional-audit
+  run_id: "run-self-compliance-sweep-2026-07-25"
+  audit_item: "INV-F1"
+  audit_status: fail
+proposed_route:
+  would_promote_to_queue: true
+resolved_at: "2026-07-25T07:47:08.386Z"

@@ -1,0 +1,119 @@
+id: "WS-270"
+title: "4-bet decision tree — fourBet / call4 range classes facing a 3-bet (third preflop scenario)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 16.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+description: |
+  Founder-prioritized 2026-07-25 (during WS-256 plan review): "4 bets need a
+  pretty high priority in the queue. Knowing what to do in a 4bet situation
+  means a huge pot where too many bluffs or overvaluing a hand can be a big
+  single loss or gain."
+
+  WHY THIS OUTRANKS ITS FREQUENCY. 4-bet pots are large before the flop is
+  dealt and SPR is low, so there is no later street on which to recover a
+  misread. Misjudging whether a villain's 4-bet range is POLARIZED (value +
+  bluffs) or PURE VALUE (QQ+/AK — the live-1/2 default per POKER_THEORY §2.3)
+  is the difference between stacking off and folding, and the error is paid at
+  maximum pot size. Low frequency x very high consequence still ranks high —
+  the same consequence-weighting the exploit engine already applies to its
+  confidence tiers (exploitEngine/CLAUDE.md §2). The usual sparse-data
+  objection to splitting a class does NOT dominate here.
+
+  CURRENT STATE. rangeEngine models exactly two preflop decision trees
+  (rangeEngine/CLAUDE.md §4): no-raise-faced (fold|limp|open) and facing-raise
+  (fold|coldCall|threeBet). "Facing a 3-bet" is a THIRD scenario and has no
+  representation at all — a 4-bet is currently invisible to the range classes,
+  exactly as limp-reraise was before WS-256. There is no fourBet grid, no
+  FOUR_BET_FREQUENCIES, and no normalization set for it.
+
+  PROPOSED SCOPE.
+    - Third scenario + its normalization set: fold | call4 | fourBet
+      (crossRangeConstraints gains a third independent tree; per WS-256's
+      rule the trees normalize independently and tell you nothing about
+      each other).
+    - Derived classes from sequence state (never hand labels):
+        fourBet      raise facing a 3-bet, seat made the original open
+                     (i.e. re-raising one's own raise)
+        cold4Bet     raise facing a 3-bet with NO prior voluntary investment
+                     (backraise — structurally stronger/narrower, the 4-bet
+                     analogue of WS-256's cold3Bet-vs-3bet doctrine)
+        call4        call facing a 3-bet
+      Reuses the WS-256 lineTaxonomy.js derivation machinery.
+    - Priors that DISTINGUISH a polarized 4-bet range from a pure-value one.
+      This is the load-bearing modeling question: the live-1/2 population
+      default is value-only (QQ+/AK), but a reg who 4-bet bluffs changes hero's
+      correct response completely. Per-position priors + hierarchical shrinkage
+      toward the parent threeBet posterior, same scheme as WS-256.
+    - Consequence-weighted confidence gate: any exploit that recommends
+      stacking off (or folding) to a 4-bet must clear a HIGH evidence tier.
+      A wrong high-consequence 4-bet read is the most expensive single error
+      the engine can produce.
+    - Exploit + UI consumers: RangeDetailPanel, rangeRules, preflopAdvisor.
+
+  MANDATORY before editing: POKER_THEORY.md + rangeEngine/CLAUDE.md.
+accept_criteria: |
+  - Taxonomy section for the facing-3-bet tree added to POKER_THEORY.md
+    (sequence-state definition + range-shape doctrine per class, incl. the
+    polarized-vs-pure-value distinction and its exploit consequence); doc
+    version + changelog bumped per its drift policy.
+  - Third scenario represented end-to-end: FOUR_BET_ACTIONS grouping,
+    FOUR_BET_FREQUENCIES per position, normalization set, prior grids.
+  - Classes derived per decision point from sequence state via lineTaxonomy.js
+    (WS-256); 4-bets no longer invisible to the range classes.
+  - Hierarchical shrinkage toward the parent posterior; sparse-subclass test
+    (n=1 four-bet must not swamp).
+  - Existing no-raise and facing-raise trees numerically unchanged (parent-
+    invariance snapshot, same guard WS-256 establishes).
+  - Any stack-off / fold-to-4bet exploit gated behind a high consequence-
+    weighted confidence tier; asserted by test.
+  - Persisted profiles: PROFILE_VERSION bump, clean deserialize of prior
+    versions.
+  - Full rangeEngine + exploitEngine suites green.
+effort: "L"
+files_involved:
+  - "src/utils/rangeEngine/lineTaxonomy.js"
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/rangeEngine/actionExtractor.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/crossRangeConstraints.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/exploitEngine/rangeRules.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/components/ui/RangeDetailPanel.jsx"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-256"
+blocked_by_legacy: []
+blocked_reason: |
+  Builds directly on WS-256's lineTaxonomy.js sequence-state derivation and its
+  hierarchical-shrinkage scheme. Deliberately NOT folded into WS-256: the
+  facing-3-bet tree is a third normalization scenario with its own frequencies,
+  priors and UI surface, and adding it to an already-over-cap L item is where
+  regressions come from, not where speed comes from.
+enables: []
+sprint_id: null
+decision_flags:
+  - "Polarized vs pure-value 4-bet prior shape per position (and how a reg who 4-bet bluffs is detected)"
+  - "Evidence tier required before a stack-off recommendation is surfaced"
+  - "Whether cold4Bet/backraise is its own class in v1 or shrinks into fourBet"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-25"
+created_at: "2026-07-25T00:00:00Z"
+status_note: |
+  Founder-prioritized child of WS-256, filed 2026-07-25 during that ticket's
+  plan review. Founder explicitly raised it above stretch-goal status on
+  consequence grounds (huge pot, low SPR, no recovery street). Unblocks when
+  WS-256 lands.

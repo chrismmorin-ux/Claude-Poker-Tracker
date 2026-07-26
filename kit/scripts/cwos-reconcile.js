@@ -1367,8 +1367,16 @@ function validateProgramCaps(wsDir, queueItems, findingItems, warnings, dryRun) 
     const data = r.data;
 
     if (data.monitor_only === true) continue;
-    const status = data.status || '';
-    if (status && status !== 'active' && status !== 'NEW') continue;
+    // Status gate is case-insensitive: program YAMLs in the wild use both
+    // `status: active` and `status: ACTIVE`. The former comparison was
+    // case-sensitive against 'active'/'NEW', so any program promoted to
+    // uppercase ACTIVE fell through this `continue` and was silently exempt
+    // from cap-breach evaluation entirely — inverted severity, since the
+    // programs mature enough to be promoted are the ones most worth governing.
+    // (Found 2026-07-26: prog-domain-correctness and prog-design, the repo's
+    // only two ACTIVE programs, had no cap_breach block at all.)
+    const status = String(data.status || '').toLowerCase();
+    if (status && status !== 'active' && status !== 'new') continue;
 
     const acc = data.accountability && data.accountability.on_finding;
     if (!acc || typeof acc.max_open_items !== 'number') continue;

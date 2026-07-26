@@ -1,0 +1,116 @@
+id: "WS-275"
+title: "Non-stationarity — villain models are lifetime averages with zero recency weighting or regime detection"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FINDING (verified 2026-07-26): src/utils/rangeEngine/bayesianUpdater.js contains
+  no recency, decay, half-life, timestamp, or session-boundary handling of any
+  kind. A villain's range model is a flat average over every hand ever observed,
+  weighting a hand from four months ago identically to the one three minutes ago.
+  The four-tier prior hierarchy (§6.5a) is likewise fully stationary.
+
+  WHY THIS IS THE BIGGEST LIVE-SPECIFIC GAP. The model is online-shaped: stats
+  aggregated over all time, which is roughly correct for a large online sample of
+  a stable population. Live players are violently non-stationary over a single
+  session:
+    - the player who just lost a big pot and is steaming
+    - the player who is stuck and playing to get even (opens up, calls wider)
+    - the player who is up and protecting a win (tightens, avoids variance)
+    - hour six vs hour one
+    - the player who rebought short vs the one sitting 300bb deep
+  These are the reads a competent live player makes continuously, and a flat
+  lifetime average actively ERASES them — the more data you have, the more
+  strongly the model asserts the pre-tilt player. This is currently the place
+  where the human at the table beats the machine, in the app whose stated purpose
+  is the reverse.
+
+  NOT ALREADY COVERED. src/utils/emotionalState/ computes per-node fear/greed as
+  a reshape operator on villain's decision distribution — driven by BOARD TEXTURE
+  and holding within a hand. That is a different object: within-hand, board-
+  derived. This item is across-hand, history-derived regime change. They compose
+  (a tilted player's fear/greed response is also amplified); they do not overlap.
+
+  PROPOSED SCOPE.
+    - Recency weighting in the villain update: exponential decay or a sliding
+      effective-n, so recent observations carry more weight. The half-life is a
+      real modeling parameter with a real cost — too fast and every read is
+      noise, too slow and it is today's model. WS-273 measures it rather than
+      assuming it.
+    - Session-boundary awareness: current-session observations are a distinct,
+      more relevant sub-sample than cross-session history. At minimum, report
+      both.
+    - Regime / change-point detection: flag when a villain's recent behavior has
+      diverged materially from their established model, rather than silently
+      averaging the two into a player who never existed. The flag is arguably
+      more valuable than the adjusted number — "this player has changed" is
+      directly actionable at the table.
+    - Candidate observable triggers (all already in the data model, none
+      currently consumed for this): hands since a large pot lost, current stack
+      relative to buy-in, session duration, recent VPIP vs baseline VPIP.
+    - Per §7 discipline: "tilted" is a DERIVED LABEL and an OUTPUT. It must
+      never become a lookup key for a fold-rate adjustment. The regime detector
+      changes which observations carry weight; it does not multiply a tilt
+      coefficient onto a decision.
+
+  CONSTRAINT WORTH STATING. Live sample sizes are small. Recency weighting spends
+  effective sample size — it reduces n to buy relevance. On a villain with 30
+  hands observed, aggressive decay leaves almost nothing. Interaction with the
+  §6.5a shrinkage hierarchy must be worked out deliberately, not bolted on:
+  decayed data should shrink harder toward the pool baseline, not float free.
+accept_criteria: |
+  - Villain range/stat updates support recency weighting with an explicit,
+    documented decay parameterization; stationary behavior recoverable exactly
+    (decay off → today's numbers, asserted by test).
+  - Effective-n correctly reduced by decay and correctly threaded into the
+    §6.5a shrinkage so decayed data shrinks harder toward the segment baseline.
+    Test: heavily decayed thin data does not produce over-confident reads.
+  - Current-session observations distinguishable from lifetime history in both
+    model and surface.
+  - Regime-change detection emits a flag when recent behavior diverges materially
+    from the established model; surfaced to the founder as an observation.
+  - "Tilted"/regime labels are outputs only — asserted by test that no label is a
+    lookup key into any rate (§7.2 / §7.4).
+  - Composition with emotionalState/ documented — no double-counting of the same
+    behavioral signal.
+  - Half-life / threshold parameters justified by WS-273 measurement, or shipped
+    explicitly labeled as unmeasured founder estimates with a follow-up.
+  - POKER_THEORY.md gains a non-stationarity section; version + changelog bumped.
+effort: "L"
+files_involved:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/emotionalState/CLAUDE.md"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Decay form and half-life — measured via WS-273, or founder estimate with follow-up?"
+  - "Does regime detection adjust the model, or only raise a flag to the founder in v1? (Flag-only is the conservative first step and is independently valuable.)"
+  - "Which regime triggers ship in v1 — stack-vs-buy-in and hands-since-big-loss are the cheapest; session duration and VPIP drift need more plumbing."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. Verified by direct grep of bayesianUpdater.js — zero recency
+  handling present. Distinct from the shipped emotionalState/ module (within-hand,
+  board-driven); this is across-hand regime change.

@@ -1,0 +1,29 @@
+id: "SPR-153"
+title: "Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / bli"
+status: done
+approved_at: "2026-07-25T20:11:09.363Z"
+completed_at: "2026-07-26T05:58:44.158Z"
+completed_by_commit: "c0ac302"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-25T20:11:09.363Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-256 selected (15 × no damping = 15).
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-256"
+    title: "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-07-26T05:29:06.290Z"
+
+created_at: "2026-07-25T20:11:09.363Z"

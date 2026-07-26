@@ -1,9 +1,52 @@
 {
   "schema_version": 2,
   "domain": "findings",
-  "updated_at": "2026-07-23T00:58:46.204Z",
-  "updated_by_event": "ev-1784768326204-10c9acbcf381",
+  "updated_at": "2026-07-25T07:47:10.144Z",
+  "updated_by_event": "ev-1784965630144-dcbda2fc2607",
   "items": {
+    "FIND-CA-INV-F1": {
+      "id": "FIND-CA-INV-F1",
+      "title": "FAIL: INV-F1 — No Unnecessary Burden",
+      "engine": "constitutional-audit",
+      "run_id": "run-self-compliance-sweep-2026-07-25",
+      "date": "2026-07-25",
+      "severity": "high",
+      "category": "self-compliance",
+      "status": "resolved",
+      "program": "kit-quality",
+      "dedup_key": "constitutional-audit-INV-F1-fail",
+      "promoted_to": "WS-267",
+      "resolved_at": "2026-07-25T07:47:08.386Z",
+      "files_involved": []
+    },
+    "FIND-CA-FS-3": {
+      "id": "FIND-CA-FS-3",
+      "title": "NO-DETECTOR: FS-3 — Compliance over value",
+      "engine": "constitutional-audit",
+      "run_id": "run-self-compliance-sweep-2026-07-25",
+      "date": "2026-07-25",
+      "severity": "low",
+      "category": "self-compliance",
+      "status": "open",
+      "program": "kit-quality",
+      "dedup_key": "constitutional-audit-FS-3-no-detector",
+      "promoted_to": "",
+      "files_involved": []
+    },
+    "FIND-CA-FS-6": {
+      "id": "FIND-CA-FS-6",
+      "title": "INFEASIBLE: FS-6 — Founder becomes CWOS operator",
+      "engine": "constitutional-audit",
+      "run_id": "run-self-compliance-sweep-2026-07-25",
+      "date": "2026-07-25",
+      "severity": "low",
+      "category": "self-compliance",
+      "status": "open",
+      "program": "kit-quality",
+      "dedup_key": "constitutional-audit-FS-6-infeasible",
+      "promoted_to": "",
+      "files_involved": []
+    },
     "FIND-014": {
       "id": "FIND-014",
       "title": "gameTreeContext.styleFallback shifts equity ANCHORS by villain style",
@@ -308,5 +351,5 @@
       "created_at": "2026-07-22"
     }
   },
-  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
+  "last_event_log_head": "ev-1784965630144-dcbda2fc2607"
 }

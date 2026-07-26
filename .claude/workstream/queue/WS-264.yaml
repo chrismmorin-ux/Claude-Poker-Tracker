@@ -1,0 +1,54 @@
+id: "WS-264"
+title: "HandHQ mining pass 2 — per-spot pot sizes, concealment premium, position open/fold trees, board-texture c-bet splits"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 12.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Research follow-up #2 from WS-262 (docs/research/mass-pool-data-2026-07-25.md).
+  Second mining pass over the retained HandHQ corpus (blobless sparse
+  clone at C:/Users/chris/data/phh-dataset; pipeline at
+  C:/Users/chris/data/phh-mining/phh_miner.py — re-materialize
+  directories via git sparse-checkout add, no re-download):
+
+  - Per-spot pot sizes → money-weighted maxim/study ranking (founder
+    factor for the data-derived doctrine).
+  - Concealment premium → perceived-range factor (founder factor,
+    pending founder completion of the factor definition).
+  - Position-level open/fold trees.
+  - Board-texture c-bet splits.
+accept_criteria: |
+  - Aggregates for the four families written to the mining out/ dir and
+    summarized in a dated addendum to docs/research/.
+  - Same caveats discipline as pass 1 (era, Reference-class, online-only,
+    censored-sample labeling where applicable).
+  - Any engine-relevant deltas listed with concrete consumer pointers.
+effort: "M"
+files_involved:
+  - "docs/research/mass-pool-data-2026-07-25.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Concealment-premium mining shape depends on the founder's perceived-range factor definition (in progress)"
+source:
+  type: followup
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-25"
+created_at: "2026-07-25T07:40:00Z"
+status_note: |
+  Drafted at WS-262 close-out per the memo's follow-up list (item 2).
+  Mining runs outside the repo; the repo deliverable is the addendum memo.

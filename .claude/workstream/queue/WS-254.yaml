@@ -82,3 +82,12 @@ status_note: |
   definition. Both engines currently agree on the broad definition (parity-pinned)
   so there is no drift risk — this ticket is about whether the definition itself
   is right. Sibling: WS-255.
+
+  EMPIRICAL EVIDENCE (2026-07-25, WS-262 HandHQ mining,
+  docs/research/mass-pool-data-2026-07-25.md): on identical hands, the
+  tracker's broad definition reads 78-86% while the TRUE opener-facing-3bet
+  response is fold 49.9% / call 38.8% / 4-bet 11.0% (n=1.83M). The gap is
+  ~30-36pp — exploit consumers reading the broad number as "folds to 3-bets"
+  are drastically overestimating fold equity. Raises the urgency of this
+  audit; the mined true-response rates are the recalibration reference for
+  STAT_PRIORS.foldTo3Bet once the narrow definition lands.

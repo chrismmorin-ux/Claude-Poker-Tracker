@@ -1,0 +1,66 @@
+id: "WS-263"
+title: "Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Implementation follow-up #1 from the WS-262 mass-data research
+  (docs/research/mass-pool-data-2026-07-25.md). Import the mined HandHQ
+  aggregate table (per-segment (k, n) count pairs for STAT_COUNT_FIELDS,
+  from C:/Users/chris/data/phh-mining/out/) into the poolBaseline.js path
+  as a Reference-class tier:
+
+  - New "imported reference pool" tier per the Exploit Model 3-class
+    doctrine — must never masquerade as founder-observed pool data.
+  - Replace the single POOL_PRIOR_MAX_PSEUDOCOUNT=200 cap with per-stat
+    effective prior weights derived from between-player overdispersion:
+    vpip 10 · foldTo3Bet 10 · cbet 13 · pfr 21 · foldToCbet 22 ·
+    threeBet 35 (memo cap-policy row; 200 refuted as ~20x too confident).
+  - Provenance registry entry (SRC-new) at import time
+    (prog-data-provenance).
+  - Segment mapping onto canonical segmentKey (online/<stake>); WS-260
+    canonicalization shipped SPR-146→147 so the dependency is satisfied.
+  - Online pools only — never blends into live segments (domain spec,
+    ratified 2026-07-22). Reference-class: founder's accumulating data
+    overrides.
+accept_criteria: |
+  - Aggregate table lands in the app (static asset or seed) with a
+    provenance registry entry; poolBaseline consumes it as a distinct
+    reference tier below founder-observed pool data.
+  - Per-stat prior weights replace the flat 200 pseudocount cap; unit
+    tests cover the blend order (founder pool > imported reference).
+  - No live segment ever receives imported online aggregates (test).
+  - Segment keys match post-WS-260 canonical shape.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - ".claude/projects/exploit-model-architecture.md"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Seat-count dimension in segmentKey (6-max vs full-ring differ on every stat) — schema change, founder sign-off"
+source:
+  type: followup
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-25"
+created_at: "2026-07-25T07:40:00Z"
+status_note: |
+  Drafted at WS-262 close-out per the memo's follow-up list (item 1).
+  Research GO decision + empirical cap policy already ratified in the
+  memo; this ticket is implementation only.
+closed_by_event: "ev-1784999537485-08f823f287a6"

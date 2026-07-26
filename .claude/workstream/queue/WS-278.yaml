@@ -1,0 +1,110 @@
+id: "WS-278"
+title: "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 15.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FINDING. POKER_THEORY.md §3.4 "Why Players Bet — The Three Motivations" opens
+  with an explicit exhaustiveness claim: "Every bet, by any player in any spot,
+  is motivated by one or more of:" and then lists Value, Bluff/Fold Equity, and
+  Information.
+
+  It is missing PROTECTION / EQUITY DENIAL, which is a distinct fourth motive,
+  not a special case of the other three:
+    - Not value: value is defined (§4.1) as being called by WORSE. Protection
+      profits from hands FOLDING.
+    - Not a bluff: a bluff wants BETTER hands to fold. Protection bets a hand
+      that is currently AHEAD.
+    - The profit comes from denying equity realization to hands that fold but
+      held live outs.
+  On wet boards with vulnerable made hands — top pair on J♥T♥9♦, an overpair on
+  a two-tone connected board — protection is the DOMINANT motive, and it drives
+  sizing in the opposite direction from thin value (§4.1 says thin value bets
+  smaller; protection bets larger). The §6.1 formula captures the arithmetic
+  implicitly in the foldPct·pot term, but the CONCEPT is absent, and concepts
+  are what the classifiers key on.
+
+  Also absent: INDUCING (checking or betting small specifically to invite a
+  bluff from a range that folds to a bet). §3.4's "Information" is a weak,
+  partial stand-in.
+
+  WHY THIS IS MORE THAN A DOC NIT. src/utils/exploitEngine/actionClassifier.js
+  and weaknessDetector.js classify villain bets against this taxonomy. A missing
+  category does not produce a blank — it produces MISFILING. A villain's
+  protection bets get scored as either thin value (making them look like a
+  player who over-values hands) or as bluffs (making them look like they
+  over-bluff). Both misreads point hero's response the wrong way, and both
+  accumulate into the villain model as evidence for a leak that does not exist.
+
+  WHY THIS ITEM IS THE PROOF CASE FOR WS-272. No code-vs-doc sweep could ever
+  find this. The code faithfully implements the doc; the doc is incomplete. It
+  is exactly the class of gap the outward-facing check exists to catch, and it
+  was found in one session by asking the open question by hand.
+
+  PROPOSED SCOPE.
+    - §3.4 rewritten with protection/equity-denial as a first-class motive
+      (definition, when it dominates, its sizing implication, how it differs
+      from value and bluff), plus inducing. Exhaustiveness claim either
+      justified or softened per WS-272 mechanism 2.
+    - Sizing doctrine: protection sizes UP against draw-heavy continuing
+      ranges — the inverse of thin value. Make the divergence explicit so it
+      is not read as a contradiction of §4.1.
+    - actionClassifier / weaknessDetector: protection-motivated bets recognized
+      rather than misfiled. A villain betting a vulnerable made hand large on a
+      wet board is playing CORRECTLY and must stop generating a false
+      over-valuing or over-bluffing signal.
+    - Multiway amplification: equity denial matters MORE with more opponents
+      (more live outs to deny). Coordinate with WS-277.
+
+  SMALL, CONCRETE, HIGH-CONFIDENCE. Unlike the rest of the batch this needs no
+  new architecture — it is a taxonomy correction and its consumers.
+accept_criteria: |
+  - §3.4 restated with four motives (value, bluff/fold equity, protection/equity
+    denial, information) plus inducing; each distinguished by WHAT it profits
+    from, not by bet size. Doc version + changelog bumped per drift policy.
+  - Protection's sizing implication documented and explicitly reconciled with
+    §4.1's thin-value-bets-smaller rule.
+  - §8 (Common Mistakes) gains the corresponding entry.
+  - actionClassifier recognizes protection-motivated bets; test asserts a
+    vulnerable-made-hand bet on a draw-heavy board is NOT classified as a bluff
+    or as thin value.
+  - weaknessDetector no longer accrues a false over-valuing / over-bluffing
+    signal from correctly-played protection bets; regression test on a fixture
+    villain.
+  - Multiway amplification noted, with the pointer to WS-277.
+  - exploitEngine suite green.
+effort: "M"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/thoughtCatalog.js"
+  - "src/utils/exploitEngine/CLAUDE.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Is inducing a fifth first-class motive, or a note under information? (It profits from villain BETTING, which is structurally distinct from all four.)"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. The proof case for WS-272: the code correctly implements a
+  doc that is itself incomplete, so the existing code-vs-doc sweep is
+  structurally incapable of finding it. Cheapest item in the batch and the one
+  with the clearest wrong-answer consequence.

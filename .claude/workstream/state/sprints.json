@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-23T00:58:46.204Z",
-  "updated_by_event": "ev-1784768326204-10c9acbcf381",
+  "updated_at": "2026-07-26T05:58:44.731Z",
+  "updated_by_event": "ev-1785045524731-027638859b51",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2321,7 +2321,7 @@
     "SPR-143": {
       "id": "SPR-143",
       "title": "Ship WS-234: Projection Explorer (PJX) — Gate 3 Research (de-circularize, numeric instrument, 2D/3D ",
-      "status": "approved",
+      "status": "abandoned",
       "program_focus": "design",
       "created_at": "2026-06-21T02:43:50.044Z",
       "approved_at": "2026-06-21T02:43:50.044Z",
@@ -2413,7 +2413,86 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-149": {
+      "id": "SPR-149",
+      "title": "Ship WS-267: FAIL: INV-F1 — No Unnecessary Burden",
+      "status": "done",
+      "program_focus": "kit-quality",
+      "created_at": "2026-07-25T07:45:45.361Z",
+      "approved_at": "2026-07-25T07:45:45.361Z",
+      "completed_at": "2026-07-25T07:47:08.386Z",
+      "goal": "Ship WS-267: FAIL: INV-F1 — No Unnecessary Burden",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-150": {
+      "id": "SPR-150",
+      "title": "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights",
+      "status": "abandoned",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-25T07:51:55.365Z",
+      "approved_at": "2026-07-25T07:51:55.365Z",
+      "goal": "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry",
+      "item_count": 1,
+      "items_done": 0,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-151": {
+      "id": "SPR-151",
+      "title": "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-25T16:26:11.471Z",
+      "approved_at": "2026-07-25T16:26:11.471Z",
+      "completed_at": "2026-07-25T17:12:17.455Z",
+      "goal": "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-152": {
+      "id": "SPR-152",
+      "title": "Ship WS-269: cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as d",
+      "status": "done",
+      "program_focus": "kit-quality",
+      "created_at": "2026-07-25T18:25:44.559Z",
+      "approved_at": "2026-07-25T18:25:44.559Z",
+      "completed_at": "2026-07-25T18:49:02.195Z",
+      "goal": "Ship WS-269: cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as duplicate sprint execution (fr-019)",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-153": {
+      "id": "SPR-153",
+      "title": "Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / bli",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-25T20:11:09.363Z",
+      "approved_at": "2026-07-25T20:11:09.363Z",
+      "completed_at": "2026-07-26T05:58:44.158Z",
+      "goal": "Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
+  "last_event_log_head": "ev-1785045524731-027638859b51"
 }

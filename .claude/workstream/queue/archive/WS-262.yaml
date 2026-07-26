@@ -2,12 +2,33 @@ id: "WS-262"
 title: "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)"
 legacy_id: ""
 type: research
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-07-25T07:45:00Z"
 completion_commit: null
+drift_correction: true
+completion_notes: |
+  Closed retroactively at /next premise check (founder-approved 2026-07-25).
+  Work shipped 2026-07-25 under direct founder instruction ("do it") during
+  the data-derived doctrine session — scope extended past the options memo
+  into full research execution. Deliverable:
+  docs/research/mass-pool-data-2026-07-25.md.
+
+  Accept criteria vs delivery:
+  - Options memo: DONE (source = uoftcprg/phh-dataset HandHQ subset,
+    21.6M real-money NLHE cash hands; licensing clean, CC-BY 4.0 /
+    MIT, no legal-safety escalation; ingestion = per-segment (k,n)
+    aggregates; trust tier = Reference-class with provenance entry;
+    segmentation maps onto post-WS-260 segmentKey with a new seat-count
+    dimension flagged; cap policy answered empirically — per-stat prior
+    weights, POOL_PRIOR_MAX_PSEUDOCOUNT=200 refuted).
+  - Go/no-go: GO, executed through research phase.
+  - No code shipped: holds — mining pipeline lives outside the repo.
+  - Follow-up tickets drafted: WS-263 (import), WS-264 (mining pass 2),
+    WS-265 (bluff triggers), WS-266 (export backup gap); foldTo3Bet
+    evidence appended to existing WS-254 instead of a duplicate ticket.
 priority_score: 24.0
 priority_label: "P2"
 category: "domain-correctness"

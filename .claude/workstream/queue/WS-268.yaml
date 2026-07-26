@@ -1,0 +1,65 @@
+id: "WS-268"
+title: "Domain-doc sweep — reconcile POKER_THEORY + domain docs with recent/pending changes; heal challenge-protocol date drift"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 8.0
+priority_label: "P3"
+category: "documentation"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder request 2026-07-25 (mid-WS-263): keep the canonical domain docs
+  current with recent and pending changes. WS-263 landed its own doc
+  updates same-session (POKER_THEORY v1.4 four-tier hierarchy, exploitEngine
+  CLAUDE.md, exploit-model-architecture Reference rule, SRC-011). Remaining
+  gaps this ticket covers:
+
+  1. WS-262 field maxims (river air 4-7%, barrel funnel 41/40%, fold-vs-size
+     curves, true opener-facing-3bet 49.9/38.8/11.0) enter POKER_THEORY only
+     WITH their consuming code (drift policy: doc tracks what engines
+     implement) — verify WS-264/WS-265 accept criteria include the doc
+     updates, and add them if missing.
+  2. Reconcile the domain-correctness challenge-protocol date drift flagged
+     by the /next gate (YAML 2026-07-22 vs event log 2026-06-20, 32-day
+     divergence) via /pulse run domain-correctness challenge. This drift +
+     block_sprint currently caps program health at 2/9.
+  3. SYSTEM_MODEL.md staleness: last-verified 2026-05-10, predates
+     WS-235/WS-263 — §2.2 analysis pipeline should reference the
+     poolBaseline four-tier prior path; also fix the §4 pointer to the
+     nonexistent .claude/context/INVARIANTS.md (real catalog is
+     system/invariants.md).
+accept_criteria: |
+  - WS-264/WS-265 tickets carry explicit POKER_THEORY-update accept criteria
+    (or this ticket adds the maxims if code already shipped).
+  - /pulse run domain-correctness challenge executed; gate no longer reports
+    the 32-day yaml/event divergence.
+  - SYSTEM_MODEL.md mentions the pool-baseline prior path and the invariants
+    pointer is corrected; last-verified stamp advanced.
+effort: "S"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - ".claude/context/SYSTEM_MODEL.md"
+  - ".claude/workstream/queue/WS-264.yaml"
+  - ".claude/workstream/queue/WS-265.yaml"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: manual
+  created_by: user
+  finding_id: ""
+  run_id: "session-2026-07-25"
+created_at: "2026-07-25T17:15:00Z"
+status_note: |
+  Founder-requested during SPR-151 (WS-263 execution). WS-263's own doc
+  updates already shipped; this covers the residual sweep.

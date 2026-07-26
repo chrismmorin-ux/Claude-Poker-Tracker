@@ -1,0 +1,119 @@
+id: "WS-276"
+title: "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  TWO HALVES OF ONE OBJECT. Filed as one item because they cannot be built
+  separately: villain's model of hero IS a function of hero's actual range.
+
+  HALF A — HERO HAS NO RANGE. The engine answers "what is the best action with
+  THIS hand, HERE." It never constructs hero's strategy at a node — the
+  partition of hero's whole range into actions. Against a non-adjusting fish,
+  node-local max-EV is genuinely correct and this is not a bug; the app is
+  exploitative by design (§5.4) and balance is a cost against opponents who do
+  not observe. But three things are lost:
+    - Hero self-audit is impossible. You cannot ask "am I over-folding AS A
+      RANGE in this spot" or "is my c-bet frequency defensible" — the same
+      weakness-detection machinery pointed at hero requires a hero range to
+      point it at. This is the measurable-strategy surface the founder asked
+      about, on the hero side.
+    - Half B has no object to operate on.
+    - Against recurring opponents (the same live room every week), maximal
+      deviation is not maximal EV forever.
+
+  HALF B — NOTHING MODELS WHAT VILLAIN THINKS HERO HAS. Verified 2026-07-26:
+  perceived-range logic exists ONLY in src/utils/handAnalysis/replayAnalysis.js
+  and hindsightAnalysis.js — post-hoc review. The live decision path has none.
+  Every villain fold/call decision is currently computed against hero's actual
+  holding or a generic range, but a villain's decision derives from their equity
+  vs THEIR PERCEPTION of hero's range. A villain who thinks hero is a nit folds
+  differently from one who thinks hero is a maniac — against the identical hand.
+
+  This is the biggest lever in the batch that the founder was already reaching
+  for: WS-264 names "concealment premium → perceived-range factor (founder
+  factor, pending founder completion of the factor definition)". The finding here
+  is that it is not a FACTOR. It is a missing state variable — and the only input
+  to villain's decision process that hero DELIBERATELY CONTROLS. Table image is
+  a resource hero spends and accumulates; the engine currently cannot represent
+  it at all, which means it can never advise on it.
+
+  PROPOSED SCOPE (v1 deliberately narrow — this is design-first).
+    - A hero range object at a node, constructed from hero's actual action
+      history the same way villain ranges already are (reuse rangeEngine, do not
+      rewrite range semantics).
+    - Hero self-audit: weaknessDetector pointed at hero's own aggregate play.
+      Read-only, non-grading — per feedback_owner_volunteered_grading, an opt-in
+      observation surface, never an imposed rank.
+    - Perceived-hero-range as an explicit modeled quantity threaded into
+      villainDecisionModel: what THIS villain has plausibly observed of hero
+      (hands seen, showdowns hero revealed, hero's recent visible aggression) —
+      NOT hero's true range and NOT an omniscient one. Per-villain, because a
+      villain who arrived twenty minutes ago has seen almost nothing.
+    - Discipline: perceived range is a DERIVED OUTPUT of the observation
+      history (§7.1). No "hero image = tight" label used as a decision input.
+    - Recursion stops at level 2 in v1. Hero models villain modeling hero. No
+      deeper. Document the stopping point as deliberate.
+
+  SEQUENCING NOTE. WS-264's concealment-premium mining feeds the empirical side
+  of Half B. This item defines the object that mining result plugs into; the
+  founder-factor definition WS-264 is waiting on is arguably this design work.
+accept_criteria: |
+  - Gate 1 (Entry) + Gate 4 (Design) per docs/design/LIFECYCLE.md completed
+    before implementation — new surface, new persona-facing concept.
+  - Hero range constructible at a node from hero's own action history, using
+    existing rangeEngine semantics.
+  - Hero self-audit surface produces range-level observations about hero's own
+    play (frequencies, over/under-fold vs the spot's requirement). Opt-in;
+    observational, not graded.
+  - Perceived-hero-range modeled per-villain from what that villain has
+    plausibly observed, threaded into villainDecisionModel as an input to their
+    equity estimate. Test: two villains at the same table with different
+    observation histories produce different predicted responses to the identical
+    hero action.
+  - Perceived range is derived from observation history, asserted by test — no
+    image label used as a rate lookup (§7.1/§7.2).
+  - Level-2 recursion boundary documented in POKER_THEORY.md as a deliberate
+    stopping point, with what would justify going deeper.
+  - POKER_THEORY.md gains a hero-range / perceived-range section; version +
+    changelog bumped.
+effort: "L"
+files_involved:
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-264"
+sprint_id: null
+decision_flags:
+  - "Does v1 ship Half A (hero range + self-audit) alone, with Half B as a follow-up? Half A is independently valuable and much cheaper."
+  - "What counts as 'plausibly observed' by a villain — showdowns only, or all visible hero aggression? Determines how fast image accumulates."
+  - "Hero self-audit presentation — per feedback_owner_volunteered_grading this must be opt-in and observational; confirm the surface framing."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. Verified by grep: perceived-range logic exists only in
+  handAnalysis/ (post-hoc), absent from the live exploitEngine path. Directly
+  answers the "perceived-range factor pending founder completion" note carried
+  in WS-264 — the finding is that it is a state variable, not a factor.
+  Design-first: Gates 1 and 4 required before code.

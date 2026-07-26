@@ -1,0 +1,97 @@
+id: "WS-272"
+title: "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  STRUCTURAL FINDING (founder + AI session 2026-07-25/26). prog-domain-correctness
+  verifies ENGINE CODE against POKER_THEORY.md on a 14-day sweep. That loop is
+  closed. Nothing in the repo ever verifies POKER_THEORY.md against POKER.
+
+  Consequence, in the founder's words: "it's been a pull-you-along build process."
+  Every automated check the system can run only finds contradictions with what the
+  founder has already articulated. The doc is a strong spec — it is also the
+  boundary of what the system can discover. A very good map with no process for
+  asking "what is off the edge of this map" produces exactly the observed failure
+  mode: increasingly sharp reasoning inside the boundary, and zero volunteering of
+  the boundary itself. Six real gaps (WS-273..WS-280) were found in one session
+  only because the founder asked the open question by hand.
+
+  THIS IS THE META-ITEM. It is not "write more theory." It is: add one
+  outward-facing check so the next six gaps surface without the founder having to
+  suspect them.
+
+  PROPOSED SCOPE (three mechanisms, cheapest first).
+    1. Completeness interrogation as a protocol, not a vibe. A recurring pass
+       whose ONLY job is "what is absent from POKER_THEORY.md?" — run against
+       an external theory index (solver literature, coaching-content taxonomy,
+       modern GTO curricula), producing candidate gaps with a claim + a source +
+       a proposed doc section. Distinct from the existing sweep, which asks
+       "does the code match the doc?" This asks "does the doc match the game?"
+       Note the failure this catches concretely: §3.4 presents an EXHAUSTIVE
+       taxonomy of betting motivations ("Every bet, by any player in any spot,
+       is motivated by one or more of") and is missing protection / equity
+       denial entirely (WS-278). No code-vs-doc sweep can ever find that.
+    2. Exhaustiveness claims get flagged. Any section asserting completeness
+       ("every", "the three", "all") is a standing liability. Inventory them and
+       require each to name what would falsify it.
+    3. Empirical arbitration where possible. Where a doctrine claim is
+       measurable against the HandHQ corpus or the founder's own hands, the
+       backtest (WS-273) settles it with a number instead of an argument. This
+       is the strongest form of the check and the reason WS-273 is sequenced
+       alongside this item rather than after it.
+
+  RELATIONSHIP TO EXISTING PROGRAM. This does not replace the domain-correctness
+  baseline/sweep — code-vs-doc drift is real and the sweep catches it. It adds the
+  missing second direction. Both belong to prog-domain-correctness.
+
+  WHY THIS OUTRANKS ITS APPARENT ABSTRACTION. Every other item in this batch is a
+  gap this mechanism would have found. Shipping the eight and not the mechanism
+  means the ninth gap waits for the founder to guess at it again.
+accept_criteria: |
+  - A named, repeatable outward-facing verification pass exists (skill or program
+    protocol) whose output is candidate ADDITIONS to POKER_THEORY.md, not
+    code-vs-doc drift. Distinct entry point from the existing baseline/sweep.
+  - Inventory of every exhaustiveness/completeness claim currently in
+    POKER_THEORY.md, each annotated with its falsifier.
+  - First run executed; its output is a ranked gap list with sources, filed as
+    findings under prog-domain-correctness.
+  - prog-domain-correctness.yaml documents BOTH directions of verification and
+    which protocol covers which.
+  - Cadence set (proposed: on the same 14-day sweep, or quarterly — founder call).
+effort: "M"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-278"
+sprint_id: null
+decision_flags:
+  - "Cadence: same 14-day sweep, or a slower independent quarterly pass?"
+  - "External theory index — which sources are admissible as arbiters (solver output, coaching content, published research), and how is source authority recorded?"
+  - "Does a candidate gap enter as a finding (auto-promotes at priority floor) or as a founder-review draft?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26 from the founder's direct question: "it's possible we're in
+  another stuck node, except I can't describe us over the hill because it's either
+  complete or missing something." This item is the answer to that question —
+  the system cannot currently tell the difference between complete and
+  unquestioned. Parent of the WS-273..WS-280 batch.

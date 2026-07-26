@@ -1,0 +1,115 @@
+schema_version: 2
+run_timestamp: "2026-07-25T07:32:00.137Z"
+compliance_score: 0.73
+coverage_score: 0.82
+pass_rate: 0.89
+total_items: 11
+items_with_detector: 9
+items_passing: 8
+by_suite:
+  founder-invariants:
+    total: 1
+    passing: 0
+    failing: 1
+    infeasible: 0
+    no_detector: 0
+    skipped: 0
+  principles:
+    total: 3
+    passing: 3
+    failing: 0
+    infeasible: 0
+    no_detector: 0
+    skipped: 0
+  failed-states:
+    total: 10
+    passing: 5
+    failing: 0
+    infeasible: 1
+    no_detector: 1
+    skipped: 3
+items:
+  - id: "INV-F1"
+    title: "No Unnecessary Burden"
+    suite: founder-invariants
+    status: fail
+    severity: high
+    evidence: "CLAUDE.md has no Purpose section — cannot enforce proportional-value rule on components"
+  - id: "P1"
+    title: "The Repo's Goal Is Supreme"
+    suite: principles
+    status: pass
+    severity: low
+    evidence: "Repo goal declared; 12/13 programs reference goal-advancement concepts"
+  - id: "P2"
+    title: "Non-Technical Founders Not Asked to Be Technical"
+    suite: principles
+    status: pass
+    severity: low
+    evidence: "No kit commands ask founder to validate schemas, debug YAML, or resolve agent conflicts (regex + Jaccard near-miss layer both clean)"
+  - id: "P3"
+    title: "Progressive Over Prescriptive"
+    suite: principles
+    status: pass
+    severity: low
+    evidence: "No kit commands hard-block on milestone/configuration completion (regex + Jaccard near-miss layer both clean)"
+  - id: "FS-1"
+    title: "Ceremony theater"
+    suite: failed-states
+    status: pass
+    severity: low
+    evidence: "4/5 recent sprints completed items (ratio 0.80) — rituals drove action"
+  - id: "FS-2"
+    title: "Tool-shaped hammer"
+    suite: failed-states
+    status: skipped
+    severity: low
+    evidence: "HomeBase-only detector — depends on fleet/registry.yaml, kit/VERSION, or a HomeBase-only engine. Not applicable in adopted repos; excluded from compliance + coverage denominators."
+  - id: "FS-3"
+    title: "Compliance over value"
+    suite: failed-states
+    status: no-detector
+    severity: low
+    evidence: "goal-progress engine not yet run; adoption-level unknown"
+  - id: "FS-4"
+    title: "Fleet as lock-in"
+    suite: failed-states
+    status: skipped
+    severity: low
+    evidence: "HomeBase-only detector — depends on fleet/registry.yaml, kit/VERSION, or a HomeBase-only engine. Not applicable in adopted repos; excluded from compliance + coverage denominators."
+  - id: "FS-5"
+    title: "AI-session dependency"
+    suite: failed-states
+    status: pass
+    severity: low
+    evidence: "Founder-facing files (state.md, intention.md) are standalone-legible"
+  - id: "FS-6"
+    title: "Founder becomes CWOS operator"
+    suite: failed-states
+    status: infeasible
+    severity: low
+    evidence: "Only 1 items in queue — need ≥10 for ratio signal"
+  - id: "FS-7"
+    title: "Findings noise"
+    suite: failed-states
+    status: pass
+    severity: low
+    evidence: "No engine runs in last 30 days produced ≥15 findings — finding_cap is holding"
+  - id: "FS-8"
+    title: "Silent drift between kit and fleet"
+    suite: failed-states
+    status: skipped
+    severity: low
+    evidence: "HomeBase-only detector — depends on fleet/registry.yaml, kit/VERSION, or a HomeBase-only engine. Not applicable in adopted repos; excluded from compliance + coverage denominators."
+  - id: "FS-9"
+    title: "Non-technical founder asked to be technical"
+    suite: failed-states
+    status: pass
+    severity: low
+    evidence: "[shared detector with P2] No kit commands ask founder to validate schemas, debug YAML, or resolve agent conflicts (regex + Jaccard near-miss layer both clean)"
+  - id: "FS-10"
+    title: "Self-aggrandizing complexity"
+    suite: failed-states
+    status: pass
+    severity: low
+    evidence: "All 13 programs have contract + trace to intention.md concepts"

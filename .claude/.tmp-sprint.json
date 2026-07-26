@@ -1,15 +1,15 @@
 {
-  "composed_at": "2026-07-22T23:34:13.185Z",
-  "goal": "Ship WS-261: sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
+  "composed_at": "2026-07-25T20:11:09.213Z",
+  "goal": "Ship WS-256: Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-261",
-      "title": "sizingTells — ground strengthOrdinal in the actual shown hand, not the model's own range estimate",
-      "raw_score": 27,
-      "adjusted_score": 27,
-      "effort": "M",
+      "id": "WS-256",
+      "title": "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
+      "raw_score": 15,
+      "adjusted_score": 15,
+      "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-261 selected (27 × no damping = 27).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-256 selected (15 × no damping = 15).\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 1.5,
+    "effort_sessions": 3,
     "ceremony": "standard"
   }
 }

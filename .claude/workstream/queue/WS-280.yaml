@@ -1,0 +1,107 @@
+id: "WS-280"
+title: "Game and seat selection — the largest $/hour lever in live poker, entirely outside the model"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 11.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FINDING. Every decision the engine models happens AFTER hero is already seated
+  in a hand. The two decisions that precede all of them — which table to sit at,
+  and which seat — are absent from POKER_THEORY.md and from the engine.
+
+  In live poker these are plausibly worth more than most in-hand exploits
+  combined, because they are compounding and continuous: a better table improves
+  the EV of every subsequent hand, whereas an in-hand exploit pays once when the
+  spot occurs. Standard live doctrine: sit to the LEFT of the loose-aggressive
+  players (act after them) and to the RIGHT of the tight-passive ones. The
+  positional value of a seat is a function of WHO is in the adjacent seats.
+
+  WHY THIS APP SPECIFICALLY. It already stores per-player models, styles, VPIP,
+  and identification data (PIO) across sessions for the founder's regular rooms.
+  It therefore already holds every input this needs. "Table 7 seat 4 puts you
+  two to the left of the two biggest fish at the table" is a recommendation
+  nothing else the founder has can produce, and it requires no new data
+  collection — only a new consumer of existing data.
+
+  It is also squarely the stated purpose: compensating for human limits in
+  memory and pattern recognition. Remembering which of forty tracked regulars is
+  at which table across a large room, and computing the seat ordering, is
+  exactly the thing a human does poorly and a tracker does trivially.
+
+  PROPOSED SCOPE (v1 narrow).
+    - Seat-value scoring for the CURRENT table: given the occupied seats and
+      their models, score each open seat by expected positional value —
+      aggressive/wide players to hero's right, passive/tight to hero's left,
+      weighted by each player's exploitability and stack.
+    - Seat-change prompt: when a better seat opens, say so. This is the whole
+      v1 feature if scope needs to be cut.
+    - Table-level score: aggregate softness of the current lineup, trended over
+      the session so lineup DECAY is visible (the good game broke up two hours
+      ago and the founder is still sitting in it — a real and expensive live
+      leak).
+    - Deliberately NOT in v1: room-wide table comparison (needs data the app
+      does not observe — who is sitting at tables hero is not at), and any
+      leave/stay recommendation, which touches bankroll and session-management
+      policy the founder has not specified.
+
+  DEPENDENCIES AND DISCIPLINE.
+    - Per §7.1, seat value must be COMPUTED from adjacent players' modeled
+      tendencies, not from style labels used as a lookup key.
+    - Requires a UX surface — Gates 1 and 4 per docs/design/LIFECYCLE.md are
+      mandatory before code. New surface, and a genuinely new persona job
+      ("where should I sit"), so a Gate 2 blind-spot roundtable is likely
+      triggered rather than optional.
+    - Live-only ergonomics: this advice is consumed while standing at a table
+      with a floorman waiting. It must be glanceable, or it will not be used.
+  PRIORITIZED BELOW THE ENGINE BATCH because it is a new surface with full
+  design-gate cost, while WS-272..WS-279 are corrections to machinery that
+  already exists. Its ceiling may nonetheless be the highest in the batch.
+accept_criteria: |
+  - Gate 1 (Entry) completed with the gap analysis output; Gate 2 run if YELLOW
+    or RED (expected — new surface, new job); Gate 4 surface artifact authored
+    in docs/design/surfaces/ before implementation.
+  - Seat-value scoring computes from adjacent players' modeled tendencies;
+    asserted by test that no style label is used as a rate lookup (§7.1/§7.2).
+  - Open seats at the current table ranked, with the reason stated in plain
+    language ("acts before you, plays 48% of hands").
+  - Seat-change prompt fires when a materially better seat opens.
+  - Table softness score trended across the session so lineup decay is visible.
+  - Surface is glanceable under live conditions (verified visually per the
+    project's visual-verification rule).
+  - POKER_THEORY.md gains a game/seat-selection section — it is currently silent
+    on the highest-$/hour decision in live play. Version + changelog bumped.
+effort: "L"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/design/surfaces/"
+  - "src/utils/exploitEngine/liveGameContext.js"
+  - "src/utils/exploitEngine/positionStats.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "v1 ceiling — seat-change prompt only, or the full table-softness trend as well?"
+  - "Does room-wide table comparison ever enter scope? It requires observing tables hero is not seated at, i.e. a manual entry flow."
+  - "Leave/stay recommendations touch bankroll and session policy — explicitly out of scope until the founder specifies that policy?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. The one item in the batch entirely outside the current model
+  rather than a correction to it. Highest potential ceiling, highest design cost,
+  so sequenced last. Needs no new data collection — only a new consumer of the
+  player models the app already keeps.

@@ -3,6 +3,33 @@
 # Updated by /engine (via cwos-reconcile)
 
 findings:
+  - id: "FIND-CA-INV-F1"
+    title: "FAIL: INV-F1 — No Unnecessary Burden"
+    engine: constitutional-audit
+    severity: high
+    status: resolved
+    dedup_key: "constitutional-audit-INV-F1-fail"
+    program: kit-quality
+    created_at: "2026-07-25"
+
+  - id: "FIND-CA-FS-3"
+    title: "NO-DETECTOR: FS-3 — Compliance over value"
+    engine: constitutional-audit
+    severity: low
+    status: open
+    dedup_key: "constitutional-audit-FS-3-no-detector"
+    program: kit-quality
+    created_at: "2026-07-25"
+
+  - id: "FIND-CA-FS-6"
+    title: "INFEASIBLE: FS-6 — Founder becomes CWOS operator"
+    engine: constitutional-audit
+    severity: low
+    status: open
+    dedup_key: "constitutional-audit-FS-6-infeasible"
+    program: kit-quality
+    created_at: "2026-07-25"
+
   - id: "FIND-014"
     title: "gameTreeContext.styleFallback shifts equity ANCHORS by villain style"
     engine: eng-engine

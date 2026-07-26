@@ -229,7 +229,9 @@ When working autonomously: active sprint → resume | no sprint → `/next` → 
 
 # CLAUDE.md - Poker Tracker
 
-Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table.
+## Purpose
+
+Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table. Every installed component (program, engine, surface) must earn its place by advancing this goal — proportional value over governance ceremony.
 
 React + Vite + Tailwind, mobile-optimized (1600x720).
 

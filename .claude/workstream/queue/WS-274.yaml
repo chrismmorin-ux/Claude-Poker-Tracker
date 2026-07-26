@@ -1,0 +1,116 @@
+id: "WS-274"
+title: "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  TWO FINDINGS, ONE FIX. Verified by code read 2026-07-26.
+
+  (1) DOCTRINE VIOLATION IN THE LIVE ADVICE PATH.
+  src/utils/exploitEngine/preflopAdvisor.js:47 defines POSITIONAL_FOLD_TO_3BET —
+  a hardcoded position-label → fold-rate lookup ('SB_vs_EARLY': 0.72,
+  'BB_vs_LATE': 0.48, ...), consulted at Priority 1 in the resolution order, with
+  a sibling POSITIONAL_FOLD_TO_4BET. This is precisely the pattern POKER_THEORY
+  §7.2 forbids ("never use position labels as direct lookup keys for fold rates")
+  and that prog-domain-correctness lists as anti-pattern #1 — sitting in the path
+  that produces live preflop advice at the table. Adjacent to WS-244
+  (STYLE_FOLD_DEFAULTS routed to logistic): same anti-pattern class, different
+  table. §7.2 does permit position labels AS PRIORS; the violation is that this
+  is the answer, not the prior.
+
+  (2) THE LARGER MISS UNDERNEATH IT — and the reason this ranks highest in the
+  batch. The app KNOWS EXACTLY WHO IS SITTING BEHIND HERO. It has per-seat
+  villain models, VPIP/PFR/foldTo3Bet, styles, and observation counts. It then
+  throws that away and consults a table keyed on an abstract position category.
+
+  Opening 76s from the hijack is a completely different decision with three
+  loose-passive callers behind than with three nits. No preflop chart on earth
+  encodes that, because no chart knows the table. This app is one of very few
+  things that CAN compute it — and it is exactly the founder's stated purpose:
+  compensating for human limits in memory and pattern recognition at the table.
+
+  This is also §7.2 done properly rather than merely obeyed: the doctrine says
+  compute from players-remaining-to-act and their ranges. Currently the app
+  computes from a proxy FOR that quantity while holding the quantity itself.
+
+  PROPOSED SCOPE.
+    - Open/steal EV computed from the ACTUAL seats yet to act: each live
+      villain's own fold-to-open / fold-to-steal estimate (per-villain Read where
+      n supports it, segment pool baseline otherwise, founder prior last — the
+      §6.5a hierarchy already exists and already resolves this correctly for
+      other stats). Compound across seats behind for the fold-through
+      probability, then add the called-branch EV that preflopFlopEV.js already
+      computes.
+    - Same treatment for fold-to-3bet and fold-to-4bet: resolve against the
+      specific villain being 3-bet, not the position matchup.
+    - Position tables demoted to what §7.2 permits — the prior when the seat is
+      unknown or unobserved, never the resolved answer. Explicit resolution
+      order, single choke point, no stacking (§7.4).
+    - Multiway/compounding honesty: folding through N players is not N
+      independent events; correlation matters and the existing multiway fold
+      correlation work is the reference. Do not silently multiply.
+    - Surface the driver. When advice changes because of who is behind, say so
+      ("HJ open widened — 3 tight seats behind"). That is the read the founder
+      cannot hold manually and the reason the feature is worth building.
+
+  ANTI-SCOPE. Do not rewrite the preflop chart tables out of existence — they
+  remain the unobserved-seat prior. Do not thread this into the 4-bet tree; that
+  is WS-270.
+accept_criteria: |
+  - Preflop open / 3-bet / 4-bet advice resolves fold estimates from the actual
+    occupied seats yet to act, with the §6.5a fidelity hierarchy (per-villain →
+    segment pool → founder prior) as the single resolution path.
+  - POSITIONAL_FOLD_TO_3BET / POSITIONAL_FOLD_TO_4BET are demoted to
+    unobserved-seat priors only; asserted by test that an observed villain's own
+    data takes precedence and that adjustments do not stack (§7.4).
+  - Test: identical hero hand + position produces materially different advice
+    against a tight-behind vs loose-behind table configuration, in the correct
+    direction.
+  - Fold-through across multiple seats accounts for correlation rather than naive
+    independent multiplication; approach documented in POKER_THEORY.
+  - Advice surface names the composition driver when it is what moved the
+    recommendation.
+  - POKER_THEORY.md §2.1 amended: position charts are the unobserved-seat prior;
+    the computed path is canonical. Doc version + changelog bumped per drift
+    policy.
+  - preflopAdvisor + exploitEngine suites green; no regression when zero villain
+    data exists (must reproduce today's chart behavior exactly).
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/positionStats.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Minimum observation count n before a live seat's own fold rate outranks the position prior"
+  - "Fold-through correlation model across seats behind — reuse multiway fold correlation, or a simpler documented approximation with a measured cost (WS-273)?"
+  - "How prominently does composition-driven advice surface at the table without adding read-time at a live decision?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. Ranked highest value-per-effort in the batch: closes a live
+  §7.2 violation AND unlocks an edge no chart-based tool can have. Verified by
+  direct read of preflopAdvisor.js on 2026-07-26 (per feedback_verify_ticket_
+  premise_at_composition — the lookup table is real and is at Priority 1).

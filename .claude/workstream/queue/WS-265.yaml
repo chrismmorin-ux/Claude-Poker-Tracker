@@ -1,0 +1,57 @@
+id: "WS-265"
+title: "Bluff-triggers surface — 'when to bluff' model gap, grounded in Field-frame Maxim II (river air 4-7%)"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 10.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Follow-up #3 from WS-262 (docs/research/mass-pool-data-2026-07-25.md).
+  Founder-named model gap: the engine advises bluff-catching and value
+  sizing but has no first-class "when to bluff" guidance. Maxim II
+  (pool under-bluffs big river bets ~5x vs equilibrium; fold rates run
+  12-16pp past bluff-breakeven vs big sizings) is the Field-frame basis:
+  the pool's over-folding vs large river sizings is a directly minable
+  bluff-trigger signal.
+
+  Scope for this ticket: design/research phase only — define the trigger
+  taxonomy (fold-vs-size curves per street, stickiest cells, barrel-funnel
+  exits) and where it surfaces (live advice bar vs hand replay vs study).
+  First-principles guard applies: triggers derive from fold-response
+  curves + pot odds + range composition, never from labels.
+accept_criteria: |
+  - Design note: trigger taxonomy + consumer surface decision, with
+    Design Program Gate 1 (Entry) completed if a new UX surface is
+    proposed (Gate 2 roundtable if YELLOW/RED).
+  - Implementation ticket(s) drafted with concrete engine touchpoints
+    (gameTreeEvaluator / exploit generation).
+  - No production UX code in this ticket.
+effort: "L"
+files_involved:
+  - "docs/research/mass-pool-data-2026-07-25.md"
+  - "src/utils/exploitEngine/"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags:
+  - "Consumer surface choice (live advice vs replay vs study atlas) — design-gated"
+source:
+  type: followup
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-25"
+created_at: "2026-07-25T07:40:00Z"
+status_note: |
+  Drafted at WS-262 close-out per the memo's follow-up list (item 3).
+  Founder named the gap during the 2026-07-25 doctrine session.

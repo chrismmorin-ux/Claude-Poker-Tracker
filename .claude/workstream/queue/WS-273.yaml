@@ -1,0 +1,114 @@
+id: "WS-273"
+title: "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE MEASUREMENT ANCHOR. Founder asked (2026-07-25) how to anchor a measurable
+  strategy, offering bankroll as the yardstick. Bankroll is the right ultimate
+  goal and the wrong instrument: a live winrate needs six figures of hands to
+  separate from variance — a multi-year feedback loop. Use it as ratification,
+  not as the loop.
+
+  The fast anchor is PREDICTION CALIBRATION, and both pieces already exist and
+  are both idle:
+    - predictionAudit capture shipped (WS-169/172/175/177/178/188 archive).
+      Nothing active reads it. A live feedback loop sitting unused.
+    - The HandHQ corpus is retained and mineable (blobless sparse clone at
+      C:/Users/chris/data/phh-dataset; pipeline C:/Users/chris/data/phh-mining/
+      phh_miner.py — WS-262). It has so far been used only as a PRIOR SOURCE.
+      It is also a BACKTEST HARNESS.
+
+  PROPOSED SCOPE.
+    - Replay corpus hands through the engine. At every villain decision point,
+      have the engine emit its predicted action distribution BEFORE the actual
+      action is revealed, then score it.
+    - Scoring: log-loss + calibration curve (reliability diagram), sliced by
+      decision class — street, line class (WS-256 taxonomy), SPR zone, players
+      in pot, stake segment, observation count n. The slicing is the whole
+      point: a single aggregate number tells you nothing about WHERE the model
+      is wrong.
+    - Strict leakage discipline. The corpus already feeds priors
+      (PER_STAT_PRIOR_WEIGHT, reference tier). Backtesting on the same hands
+      that trained the priors measures memorization, not accuracy. Requires a
+      held-out split, declared and enforced in code — this is the single most
+      likely way to get a falsely good number.
+    - predictionAudit readback: the same scoring path applied to the founder's
+      own captured predictions, so live play and corpus replay report on one
+      scale.
+    - EV-COST-OF-SIMPLIFICATION as a first-class output. Founder's framing:
+      a model "that adapts and allows for cliffs and holes and other features
+      that allow simplifications." Every simplification in the engine (bucket
+      instead of per-combo, HU formula in a multiway spot, static prior) should
+      carry a MEASURED cost in bb/100 for its spot class, not an argument.
+      Run the harness with the simplification on and off; the delta is the
+      price. That converts "we use an approximation here" from a defensible
+      opinion into a number you keep or kill on.
+
+  WHY THIS IS NEAR THE TOP. It does not itself improve play. It makes every
+  other item in this batch measurable instead of arguable, and it is the
+  empirical arm of WS-272's outward-facing check. Doing the other seven without
+  it means shipping seven more claims nobody can score.
+
+  CAVEATS INHERITED FROM THE CORPUS (same discipline as WS-262/263): online-only,
+  2009 era, numeric stakes. It measures whether the model predicts THAT
+  population. Live-1/2 generalization is an assumption, and must be labeled as
+  one wherever a backtest number is surfaced.
+accept_criteria: |
+  - Harness replays corpus hands and emits, per villain decision point, a
+    predicted action distribution scored against the actual action.
+  - Log-loss + calibration curve reported, sliced by at minimum: street, line
+    class, SPR zone, players-in-pot, stake segment, and villain observation
+    count.
+  - Held-out split enforced in code and asserted by test — no hand used for
+    prior fitting may appear in the scored set. Leakage guard is the acceptance
+    gate, not a note.
+  - predictionAudit records readable through the same scoring path; founder's
+    live predictions and corpus replay report on one scale.
+  - At least one simplification measured both ways, with its EV/accuracy cost
+    reported in the harness output (demonstrates the mechanism works).
+  - Baseline results written to docs/research/ with the online-only / 2009-era /
+    generalization caveats stated at the point of every number.
+  - Runtime documented; harness runnable on a subset for iteration.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "docs/research/mass-pool-data-2026-07-25.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-272"
+  - "WS-274"
+  - "WS-275"
+  - "WS-277"
+  - "WS-279"
+sprint_id: null
+decision_flags:
+  - "Held-out split strategy — by hand, by player, or by time window? (By player is the strictest and the most honest for a per-villain model.)"
+  - "Does the harness live in the app repo or beside the mining pipeline at C:/Users/chris/data/phh-mining?"
+  - "Which simplification is measured first as the mechanism demo?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. Direct answer to the founder's "anchoring a measurable
+  strategy" question. Sibling of WS-264 (second mining pass) — same corpus,
+  different use: WS-264 extracts aggregates, this replays and scores.

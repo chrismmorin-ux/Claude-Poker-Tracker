@@ -1,0 +1,29 @@
+id: "SPR-151"
+title: "Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights"
+status: done
+approved_at: "2026-07-25T16:26:11.471Z"
+completed_at: "2026-07-25T17:12:17.455Z"
+completed_by_commit: "a054376"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-263: Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-25T16:26:11.471Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-263 selected (20 × no damping = 20).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-263"
+    title: "Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-25T17:12:17.455Z"
+
+created_at: "2026-07-25T16:26:11.471Z"

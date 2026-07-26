@@ -2,7 +2,7 @@ id: "WS-256"
 title: "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -113,3 +113,4 @@ status_note: |
   Founder-articulated doctrine ticket (2026-07-22). Umbrella for the derived-
   line taxonomy; WS-254/WS-255 are the stats-layer siblings. Design-first —
   taxonomy + shrinkage decisions gate implementation.
+closed_by_event: "ev-1785043746318-83c83360bd8b"

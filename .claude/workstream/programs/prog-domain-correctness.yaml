@@ -257,7 +257,14 @@ accountability:
   # /next composition — they carried no concrete findings and kept winning the anchor slot).
   on_finding:
     action: create_work_item
-    max_open_items: 5
+    # Raised 5 → 20 on 2026-07-26 (founder decision). Two reasons:
+    # (1) The cap evaluator counts EVERY item carrying program: domain-correctness,
+    #     not just findings-sourced ones, so founder-directed roadmap batches were
+    #     being policed by a limit written for audit-generated sprawl.
+    # (2) 5 was untenable for the program its own header calls the most important
+    #     in the repo — `engineering` carries 15. Narrowing the count to
+    #     finding_id-bearing items remains the more faithful fix; see the kit item.
+    max_open_items: 20
     priority_floor: 27
     escalation:
       stale_days: 7

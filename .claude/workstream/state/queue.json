@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-23T00:58:46.204Z",
-  "updated_by_event": "ev-1784768326204-10c9acbcf381",
+  "updated_at": "2026-07-26T05:58:44.731Z",
+  "updated_by_event": "ev-1785045524731-027638859b51",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3437,7 +3437,7 @@
     "WS-256": {
       "id": "WS-256",
       "title": "Derived preflop line taxonomy — split the threeBet umbrella (cold 3-bet / squeeze / blind 3-bet / limp-reraise) + iso-raise vs open",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 15,
       "category": "domain-correctness",
       "effort": "L",
@@ -3598,11 +3598,437 @@
       ],
       "source_class": "untagged"
     },
-    "WS-262": {
-      "id": "WS-262",
-      "title": "Mass population data acquisition — source external hand data to ground per-pool baselines (Field frame)",
+    "WS-263": {
+      "id": "WS-263",
+      "title": "Import HandHQ Reference-tier pool aggregates into poolBaseline — per-stat prior weights + provenance entry",
+      "status": "done",
+      "priority_score": 20,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "followup",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/poolBaseline.js",
+        ".claude/projects/exploit-model-architecture.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-264": {
+      "id": "WS-264",
+      "title": "HandHQ mining pass 2 — per-spot pot sizes, concealment premium, position open/fold trees, board-texture c-bet splits",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "followup",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/research/mass-pool-data-2026-07-25.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-265": {
+      "id": "WS-265",
+      "title": "Bluff-triggers surface — 'when to bluff' model gap, grounded in Field-frame Maxim II (river air 4-7%)",
+      "status": "backlog",
+      "priority_score": 10,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "followup",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/research/mass-pool-data-2026-07-25.md",
+        "src/utils/exploitEngine/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-266": {
+      "id": "WS-266",
+      "title": "exportAllData omits anchorObservations — owner-captured judgment is unrecoverable if lost (backup gap)",
+      "status": "backlog",
+      "priority_score": 9,
+      "category": "data-integrity",
+      "effort": "S",
+      "program": "data-quality",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "followup",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/persistence/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-267": {
+      "id": "WS-267",
+      "title": "FAIL: INV-F1 — No Unnecessary Burden",
+      "status": "done",
+      "priority_score": 55,
+      "category": "self-compliance",
+      "effort": "M",
+      "program": "kit-quality",
+      "capability": "core",
+      "completed_at": "2026-07-25T07:47:08.386Z",
+      "source": {
+        "finding_id": "FIND-CA-INV-F1",
+        "promoted_via": "cwos-reconcile auto-promote",
+        "promoted_at": "2026-07-25"
+      },
+      "source_class": "untagged"
+    },
+    "WS-268": {
+      "id": "WS-268",
+      "title": "Domain-doc sweep — reconcile POKER_THEORY + domain docs with recent/pending changes; heal challenge-protocol date drift",
+      "status": "backlog",
+      "priority_score": 8,
+      "category": "documentation",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "manual",
+        "created_by": "user",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md",
+        ".claude/context/SYSTEM_MODEL.md",
+        ".claude/workstream/queue/WS-264.yaml",
+        ".claude/workstream/queue/WS-265.yaml"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-269": {
+      "id": "WS-269",
+      "title": "cwos-next gate misses approved-but-unexecuted sprints — fb-002/fr-012 materialized as duplicate sprint execution (fr-019)",
+      "status": "done",
+      "priority_score": 18,
+      "category": "kit-quality",
+      "effort": "S",
+      "program": "kit-quality",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "friction",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25-spr150"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "kit/scripts/cwos-next.js",
+        ".cwos-feedback.yaml"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-270": {
+      "id": "WS-270",
+      "title": "4-bet decision tree — fourBet / call4 range classes facing a 3-bet (third preflop scenario)",
+      "status": "backlog",
+      "priority_score": 16,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-25"
+      },
+      "blocked_by": [
+        "WS-256"
+      ],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/lineTaxonomy.js",
+        "src/utils/rangeEngine/rangeProfile.js",
+        "src/utils/rangeEngine/actionExtractor.js",
+        "src/utils/rangeEngine/populationPriors.js",
+        "src/utils/rangeEngine/crossRangeConstraints.js",
+        "src/utils/rangeEngine/bayesianUpdater.js",
+        "src/utils/exploitEngine/rangeRules.js",
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/components/ui/RangeDetailPanel.jsx",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-271": {
+      "id": "WS-271",
+      "title": "Dev range seeder is broken — seedRangeTestData passes title-case `build` against the lowercase enum, so __seedRangeData() throws",
+      "status": "backlog",
+      "priority_score": 7,
+      "category": "test-reliability",
+      "effort": "S",
+      "program": "engineering",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "incidental-discovery",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-153"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/__dev__/seedRangeTestData.js",
+        "src/utils/persistence/playersStorage.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-272": {
+      "id": "WS-272",
+      "title": "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)",
+      "status": "backlog",
+      "priority_score": 22,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "governance",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-278"
+      ],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md",
+        ".claude/workstream/programs/prog-domain-correctness.yaml"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-273": {
+      "id": "WS-273",
+      "title": "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions",
       "status": "backlog",
       "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-272",
+        "WS-274",
+        "WS-275",
+        "WS-277",
+        "WS-279"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/villainDecisionModel.js",
+        "src/utils/exploitEngine/poolBaseline.js",
+        "src/utils/exploitEngine/handhqReferencePool.js",
+        "src/utils/exploitEngine/modelAudit.js",
+        "src/utils/rangeEngine/bayesianUpdater.js",
+        "docs/research/mass-pool-data-2026-07-25.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-274": {
+      "id": "WS-274",
+      "title": "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
+      "status": "backlog",
+      "priority_score": 26,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/utils/exploitEngine/preflopFlopEV.js",
+        "src/utils/exploitEngine/villainDecisionModel.js",
+        "src/utils/exploitEngine/poolBaseline.js",
+        "src/utils/exploitEngine/positionStats.js",
+        "src/utils/rangeEngine/populationPriors.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-275": {
+      "id": "WS-275",
+      "title": "Non-stationarity — villain models are lifetime averages with zero recency weighting or regime detection",
+      "status": "backlog",
+      "priority_score": 20,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/bayesianUpdater.js",
+        "src/utils/rangeEngine/rangeProfile.js",
+        "src/utils/exploitEngine/bayesianConfidence.js",
+        "src/utils/exploitEngine/poolBaseline.js",
+        "src/utils/exploitEngine/villainObservations.js",
+        "src/utils/emotionalState/CLAUDE.md",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-276": {
+      "id": "WS-276",
+      "title": "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)",
+      "status": "backlog",
+      "priority_score": 18,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-264"
+      ],
+      "files_involved": [
+        "src/utils/rangeEngine/rangeProfile.js",
+        "src/utils/exploitEngine/villainDecisionModel.js",
+        "src/utils/exploitEngine/weaknessDetector.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/handAnalysis/replayAnalysis.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-277": {
+      "id": "WS-277",
+      "title": "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway",
+      "status": "backlog",
+      "priority_score": 19,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-154"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/foldEquityCalculator.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/weaknessDetector.js",
+        "src/utils/exploitEngine/generateExploits.js",
+        "src/utils/exploitEngine/rangeSegmenter.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-278": {
+      "id": "WS-278",
+      "title": "§3.4 betting-motivation taxonomy claims completeness and omits protection / equity denial (and inducing)",
+      "status": "backlog",
+      "priority_score": 15,
       "category": "domain-correctness",
       "effort": "M",
       "program": "domain-correctness",
@@ -3614,16 +4040,76 @@
         "type": "founder-request",
         "created_by": "ai",
         "finding_id": "",
-        "run_id": "session-2026-07-22"
+        "run_id": "session-2026-07-26"
       },
       "blocked_by": [],
       "enables": [],
       "files_involved": [
-        "src/utils/exploitEngine/poolBaseline.js",
-        ".claude/projects/exploit-model-architecture.md"
+        ".claude/context/POKER_THEORY.md",
+        "src/utils/exploitEngine/actionClassifier.js",
+        "src/utils/exploitEngine/weaknessDetector.js",
+        "src/utils/exploitEngine/thoughtCatalog.js",
+        "src/utils/exploitEngine/CLAUDE.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-279": {
+      "id": "WS-279",
+      "title": "Equity realization is still a base lookup keyed on position/SPR/texture — should fall out of the game tree",
+      "status": "backlog",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/preflopFlopEV.js",
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/gameTreeConstants.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-280": {
+      "id": "WS-280",
+      "title": "Game and seat selection — the largest $/hour lever in live poker, entirely outside the model",
+      "status": "backlog",
+      "priority_score": 11,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md",
+        "docs/design/surfaces/",
+        "src/utils/exploitEngine/liveGameContext.js",
+        "src/utils/exploitEngine/positionStats.js"
       ],
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1784768326204-10c9acbcf381"
+  "last_event_log_head": "ev-1785045524731-027638859b51"
 }

@@ -1,0 +1,75 @@
+id: "WS-271"
+title: "Dev range seeder is broken — seedRangeTestData passes title-case `build` against the lowercase enum, so __seedRangeData() throws"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 7.0
+priority_label: "P3"
+category: "test-reliability"
+capability: "core"
+program: "engineering"
+description: |
+  Found 2026-07-25 while doing visual verification for WS-256.
+
+  `window.__seedRangeData()` throws immediately:
+
+    Invalid player data: build must be one of: slim, average, heavy, muscular
+    (got "Average")
+      at createPlayer (playersStorage.js:62)
+      at seedRangeTestData (src/__dev__/seedRangeTestData.js:479)
+
+  `src/__dev__/seedRangeTestData.js` sets title-case build values at 5 archetype
+  definitions (lines ~50, 73, 96, 119, 142: 'Average', 'Muscular', 'Heavy',
+  'Average', 'Slim'). The canonical enum is lowercase — see
+  `PlayerEditorView/BuildSection.jsx` (`{ value: 'slim', ... }`),
+  `identityAvatar/avatarMapping.js`, and `migratePlayerLegacyFields.js`
+  (`b === 'slim' || b === 'average' || b === 'heavy' || b === 'muscular'`).
+  `createPlayer` validates against the lowercase set and rejects.
+
+  IMPACT: the dev seeding path for the Bayesian range engine is completely
+  dead, so there is no in-app way to populate villain range profiles for visual
+  verification. WS-256 had to verify the engine by importing the modules
+  directly in the browser console instead of exercising the real UI. Any future
+  range/exploit UI work hits the same wall.
+
+  Likely a latent regression from the PEO player-entry overhaul (which
+  introduced the structured lowercase identity enums) — the dev seeder was not
+  migrated with the production writers.
+
+  Worth checking the sibling dev seeders in `src/__dev__/` for the same
+  title-case drift (`handSimulator.js`, `seedDrillAssumptions.js`).
+accept_criteria: |
+  - `window.__seedRangeData()` completes without throwing and creates players.
+  - Build values in `src/__dev__/seedRangeTestData.js` use the canonical
+    lowercase enum.
+  - Sibling dev seeders audited for the same drift; any found are fixed.
+  - Seeded players produce range profiles visible in the Analysis view
+    (spot-check RangeDetailPanel renders a grid + subclass pills).
+  - A cheap guard so this cannot rot again silently — e.g. a smoke test that
+    validates each dev-seed archetype against the same validator createPlayer
+    uses, rather than only exercising it by hand.
+effort: "S"
+files_involved:
+  - "src/__dev__/seedRangeTestData.js"
+  - "src/utils/persistence/playersStorage.js"
+blocked_by: []
+blocked_by_legacy: []
+blocked_reason: ""
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: incidental-discovery
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-153"
+created_at: "2026-07-25T00:00:00Z"
+status_note: |
+  Discovered during WS-256 visual verification (SPR-153). Not fixed in that
+  sprint — out of scope, and the taxonomy work was verified via direct module
+  import in the browser instead.

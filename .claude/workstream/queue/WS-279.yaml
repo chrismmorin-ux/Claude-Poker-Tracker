@@ -1,0 +1,108 @@
+id: "WS-279"
+title: "Equity realization is still a base lookup keyed on position/SPR/texture — should fall out of the game tree"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 14.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FINDING (verified 2026-07-26, and stated with the credit the existing work is
+  due). src/utils/exploitEngine/preflopFlopEV.js already does the hard and
+  correct thing: it generates stratified flops by archetype with probability
+  weights and computes a called-branch EV by sampling, replacing the old flat
+  realization multiplier (project_flop_conditional_ev). That is genuinely
+  computed, not looked up, and this item does not undo it.
+
+  What remains: preflopFlopEV.js:440 still resolves a "base realization factor
+  for this position/SPR/texture" that is multiplied into the result. That is a
+  three-label lookup key — position, SPR zone, texture class — of exactly the
+  kind §7.2 (position labels), §11.2 (SPR zones are descriptive, the decision
+  math is the continuous function), and §7.3 (bucket labels) each independently
+  forbid as a decision input.
+
+  THE DEEPER POINT. Equity realization is not a property a hand HAS. It is
+  DEFINED as the gap between raw showdown equity and the EV of actually playing
+  the hand out. Once a game tree exists that plays the hand out — and one does,
+  at depth 2/3 — realization is an OUTPUT of that tree, not a coefficient
+  multiplied into it. Keeping a lookup alongside the tree means the two can
+  disagree, and when they do, the lookup silently wins.
+
+  This is the same category of error the codebase has already corrected
+  elsewhere: §11.2 records that a zone-based sizing lookup was DELIBERATELY
+  replaced by the continuous sprMidpointMultiplier for precisely this reason.
+  Realization is the same fix, not yet made.
+
+  PROPOSED SCOPE.
+    - Derive realization from the tree where the tree is available: R =
+      (tree EV) / (raw equity × pot), computed rather than looked up. Position,
+      SPR and texture then influence realization through their real causal
+      channels — players to act, commitment, draw density — instead of through
+      a key.
+    - Retain the lookup strictly as the unavailable-tree fallback, flagged as a
+      lower-confidence path per §7.6's precedent for genuinely-unavailable
+      per-combo data.
+    - Reconcile with the archetype-stratified flop sampling already in place:
+      the sampler is the right mechanism; the question is whether the base
+      factor is still doing work once the tree's own output is used, or whether
+      it is now double-counting realization that the sampled branch EV already
+      captures. RESOLVE THIS FIRST — if it is double-counting, the fix is a
+      deletion, not a computation.
+    - Measure via WS-273: does the computed path predict better than the lookup?
+      If the delta is negligible for some spot classes, the lookup is a
+      justified simplification there — with a number attached, per the founder's
+      simplification framing.
+
+  SEQUENCING. Cheaper and lower-risk after WS-273 exists, because the
+  double-counting question above is empirically answerable rather than
+  arguable.
+accept_criteria: |
+  - The double-counting question resolved first and documented: does the base
+    realization factor still do independent work alongside the stratified
+    called-branch EV, or is realization counted twice? Finding recorded either
+    way.
+  - Where a game tree is available, realization is derived from tree EV rather
+    than resolved from the position/SPR/texture key.
+  - Lookup retained only as the tree-unavailable fallback, explicitly flagged as
+    a lower-confidence path in code and surfaced as such (§7.6 precedent).
+  - Test: two spots sharing a position/SPR/texture key but with materially
+    different villain populations produce different realization.
+  - Computed-vs-lookup delta measured through WS-273 per spot class; any spot
+    class where the lookup is retained carries its measured cost.
+  - POKER_THEORY §1.4 amended — realization is an output of the tree, with the
+    fallback documented; §11 gains the algorithm entry. Version + changelog
+    bumped.
+  - preflopAdvisor / preflopFlopEV / exploitEngine suites green.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "If the base factor turns out to double-count the sampled branch EV, is the fix a straight deletion in v1?"
+  - "Cost ceiling — deriving realization from the tree at every preflop decision may be too slow for live use; is a cached/precomputed form acceptable?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T00:00:00Z"
+status_note: |
+  Filed 2026-07-26. Partial-credit finding: the stratified flop sampling in
+  preflopFlopEV.js is correct and stays. The residual base realization factor at
+  ~line 440 is the label-lookup remnant. Same fix pattern as the §11.2 SPR-zone
+  → continuous-multiplier replacement already made.
