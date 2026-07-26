@@ -140,3 +140,97 @@ python scripts/backtest/cluster-player-types.py \
 
 k-means++ with a fixed seed (a clustering that moves between runs cannot be cited);
 sklearn is not a dependency, the algorithm is implemented in the script.
+
+---
+
+## Part 2 — behavioural clustering (the founder's objection, tested)
+
+> *"it is a little concerning that the labels don't encompass potential
+> sub-behavior… It certainly feels like there are more styles of play when at a
+> live table (observing trapping frequencies, bluff frequencies, aggression, limp
+> raises, triple barrel bluff capable) but that all finds its way into a specific
+> player's history."*
+
+**The objection was correct and Part 1 over-claimed.** Part 1 clustered on six
+stats — five preflop plus one c-bet frequency. Not one of the behaviours above was
+in the feature set. So the real Part 1 finding is *"the stats we currently record
+resolve two types"*, not *"the pool contains two types"*.
+
+New pass: `mine-behavioral-features.py` extracts those behaviours **per player**
+(the WS-262 miner computed several of them, but pooled only). 59,736 players, 10s.
+
+### Finding 5 — the reads you most want are not individually estimable
+
+Per-player denominators across all 59,736 corpus players:
+
+| behaviour | median n | p90 | p99 | max |
+|---|---|---|---|---|
+| triple barrel | 0 | 2 | **9** | 80 |
+| flop check-raise | 0 | 4 | **13** | 86 |
+| river bet shown (bluff rate) | 0 | 3 | **10** | 51 |
+| double barrel | 1 | 7 | 46 | 456 |
+| donk flop | 3 | 18 | 63 | 425 |
+
+**Even the 99th-percentile player offers under a dozen observations** of triple
+barrelling, check-raising, or river bluffing. A per-villain rate for these is not
+estimable at any realistic sample size — and that is a property of poker, not of
+the mining.
+
+This is the strongest argument yet for the founder's convergence idea. You cannot
+learn *whether this villain triple-barrels*. You may be able to learn *whether
+players like him do*. Archetype-level pooling is not a convenience here; for these
+behaviours it is the only way to have an estimate at all.
+
+### Finding 6 — behaviour splits the same way: two poles, not six
+
+2,812 players cleared the (relaxed) minimums. Fitted on double-barrel, donk, WTSD,
+fold-to-small, postflop AF.
+
+| k | silhouette |
+|---|---|
+| **2** | **0.3128** |
+| 3 | 0.1837 |
+| 4 | 0.1946 |
+| 6 | 0.1636 |
+| 8 | 0.1466 |
+
+Same signature as Part 1: k=2 wins by ~1.7×, no elbow. Independent feature set,
+same conclusion.
+
+| | cluster 0 (75.3%) | cluster 1 (24.7%) |
+|---|---|---|
+| double barrel | 17.0% | **28.7%** |
+| triple barrel *(descr.)* | 22.4% | **30.8%** |
+| donk flop | 11.4% | **20.5%** |
+| WTSD | 18.9% | 23.5% |
+| fold to small bet | **84.4%** | 62.4% |
+| postflop AF | 2.69 | 2.34 |
+| **river bet shown as air** *(descr.)* | 3.5% | **7.4%** |
+| showdown slowplay *(descr.)* | 49.3% | 44.9% |
+
+Cluster 1 barrels more, donks more, folds far less to small bets, and **bluffs the
+river at twice the rate**. That is a genuine behavioural axis and it is not visible
+in VPIP/PFR — so the behaviours the founder named *are* real and *do* separate
+players. They simply separate them along **one** axis, not six.
+
+**Interesting null: trapping does not separate.** Showdown slowplay is 49.3% vs
+44.9% — essentially equal. In this pool, checking a strong flop is universal
+behaviour rather than a player type.
+
+### Known defect in this pass
+
+`fold_big` is degenerate — 99.9% vs 99.5%, no variance, contributed nothing to the
+fit. Cause: the denominator uses pot AFTER the bet is added rather than before, so
+the "≥66% of pot" bucket actually captures overbets only, which are near-always
+folded to. `fold_small` (84.4% vs 62.4%) is unaffected and is doing real work.
+Fix before this feature is cited.
+
+### What this changes about the plan
+
+Nothing about direction, one thing about design. The archetype rung is *more*
+justified, not less — it is the only route to an estimate for the rare-but-decisive
+behaviours. But the group level should be built on **both** axes measured here
+(preflop looseness × postflop aggression/bluffiness), which are separate: Part 1's
+poles were 76.7/23.3 and Part 2's are 75.3/24.7, similar in size but fitted on
+disjoint features. Whether they identify the *same* players is the next question,
+and it needs `cluster-player-types.py` to persist member ids.
