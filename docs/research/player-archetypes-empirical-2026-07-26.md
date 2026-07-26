@@ -494,3 +494,86 @@ a second direction.
 **Status: flagged, not fixed.** Parts 2 and 4 stand as action-frequency findings.
 Their *interpretation* as strategic reads does not, and the ranking in Finding 11
 must be re-derived once the intent splits exist.
+
+---
+
+## Part 6 — the intent splits, measured
+
+`mine-intent-splits.py`. Every aggressive action classified against the board **as
+it stood on the acting street** (a flop c-bet with a flush draw that rivers the
+flush is a flop semi-bluff, not flop value), and only where the player showed.
+
+> **CENSORING, BINDING.** A bluff that works is never shown. These are **caught**-
+> bluff rates and understate true bluffing, probably severely. Level comparisons
+> across players are unsafe. Read the *composition*, not the absolute bluff rate.
+
+### Finding 12 — a triple barrel is a value bet
+
+| action | n shown | air (bluff) | draw (semi) | pair | strong (value) |
+|---|---|---|---|---|---|
+| c-bet flop | 43,294 | 14.9% | 16.0% | **52.2%** | 16.9% |
+| barrel turn | 71,154 | 4.1% | 24.2% | 31.7% | 40.0% |
+| **barrel river** | 60,047 | **6.1%** | 0.0% | 27.7% | **66.3%** |
+| check-raise flop | 9,784 | 5.7% | 16.0% | 41.6% | 36.7% |
+| donk flop | 43,019 | 9.5% | 21.3% | **50.6%** | 18.6% |
+
+**The founder's objection, quantified: two thirds of shown river barrels are made
+with two pair or better, and 6% with air.** Part 2's `triple_barrel` feature —
+24.1% pooled, scored as a behavioural trait — was overwhelmingly measuring *value
+betting*. "Triple-barrel capable" and "triple barrels" are different populations,
+and we were counting the second while reasoning about the first.
+
+(River `draw` is 0.0% by construction — there are no draws on the river. The
+classifier collapses them to air, correctly.)
+
+### Finding 13 — WS-278's ambiguous category is the MODAL case
+
+**52.2% of shown flop c-bets, and 50.6% of donk bets, are made with exactly one
+pair** — precisely the holding WS-278 identified as ambiguous between thin value
+and protection/equity denial.
+
+Half of all c-betting sits in the category the taxonomy was incomplete about. WS-278
+was filed as a correctness fix for a missing motive; this measures the size of the
+hole it closed. Any rule that classifies c-bets as value-or-bluff is mis-filing
+about half of them, and the c-bet is the single most common postflop action.
+
+That also re-frames Finding 11. `cbet` scored *low* individual variation (58.5%
+pooled, 11.1pp across-player SD) — but that was the intent-blind total. The
+composition may vary far more between players than the frequency does. Two villains
+both c-betting 58% can be doing completely different things, and the total cannot
+see it.
+
+### Finding 14 — intent reads are not per-villain, confirmed a third time
+
+Shown observations available **per player**:
+
+| action | players with ≥1 | ≥10 | **≥30** | max |
+|---|---|---|---|---|
+| c-bet flop | 17,490 | 624 | 38 | 105 |
+| barrel turn | 27,377 | 863 | 33 | 85 |
+| barrel river | 25,106 | 549 | **12** | 49 |
+| donk flop | 21,733 | 249 | 4 | 43 |
+| **check-raise flop** | 7,137 | **10** | **1** | 30 |
+
+**Exactly one player out of 59,700 has 30+ shown flop check-raises.** The best-
+observed player in the entire corpus has 49 shown river barrels. A per-villain
+bluff-rate read is not thin — it does not exist.
+
+This is now the **third independent route** to the same conclusion (Finding 5 from
+raw frequency, Finding 11 from across-player variance, this from showdown
+availability). Intent-split statistics must live at the **pool or archetype level**.
+Three methods agreeing is reasonable evidence it is a property of poker rather than
+an artefact of any one of them.
+
+### What this changes
+
+1. **Finding 11's ranking is superseded for the aggressive actions.** It ranked
+   intent-blind totals. The re-derivation needs composition, and composition is only
+   available pooled — which is itself the answer to "what should I model per
+   villain": *not these*.
+2. **The archetype rung gains its clearest justification yet.** Bluff composition is
+   exactly the read that cannot be learned per player but might be learnable per
+   type.
+3. **WS-278's fix should be checked against Finding 13.** If `isProtectionMotivated`
+   fires on materially fewer than ~half of one-pair c-bets on wet boards, it is
+   under-triggering.
