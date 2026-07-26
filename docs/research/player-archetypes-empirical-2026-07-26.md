@@ -577,3 +577,86 @@ an artefact of any one of them.
 3. **WS-278's fix should be checked against Finding 13.** If `isProtectionMotivated`
    fires on materially fewer than ~half of one-pair c-bets on wet boards, it is
    under-triggering.
+
+---
+
+## Part 7 — do leaks travel together? (and are lines missing entirely?)
+
+Two claims from the founder, 2026-07-26. They came out differently.
+
+### Finding 15 — CONFIRMED: players are missing whole lines
+
+> *"some players may be missing whole lines entirely (board texture and full bet
+> line, check bet shove, donk bet bet, check check donk, etc)"*
+
+7,594 players with ≥30 postflop actions. Mean lines used: **7.76 of 10**.
+
+| line | share of players who EVER use it |
+|---|---|
+| flop donk / turn probe | 99.7% |
+| river probe | 98.2% |
+| flop c-bet | 96.5% |
+| flop check-call | 94.1% |
+| turn barrel | 89.3% |
+| river barrel | 76.5% |
+| flop check-raise | 64.5% |
+| turn check-raise | 43.0% |
+| **river check-raise** | **14.1%** |
+
+**86% of players never check-raise a river. 57% never check-raise a turn.** The
+claim is correct and the gradient is steep — line absence is real, and it
+concentrates in exactly the aggressive, high-skill lines.
+
+This has immediate table value, and it runs in the useful direction: a villain who
+has *never* check-raised a river tells you little (most haven't). A villain who
+*does* is instantly in the top 14%. **Presence is informative; absence is not.**
+That is a cheap, robust read available from a small sample — the opposite of the
+frequency estimates that need hundreds of hands.
+
+### Finding 16 — NOT SUPPORTED: leaks do not visibly travel together
+
+> *"if a player has not learned this... then we probably see a whole host of other
+> sizing mistakes... we can jump the statistical gate because we know how they are
+> correlated"*
+
+Spearman correlations across 564 players clearing every minimum:
+
+| | sizing spread | line cov | dbl barrel | donk | wtsd | fold small |
+|---|---|---|---|---|---|---|
+| **sizing_spread** | 1.000 | −0.064 | −0.072 | 0.001 | 0.010 | −0.027 |
+| line_coverage | | 1.000 | 0.102 | −0.098 | 0.096 | −0.126 |
+| double_barrel | | | 1.000 | 0.071 | 0.135 | −0.072 |
+| donk_flop | | | | 1.000 | −0.090 | 0.054 |
+
+**3-bet sizing adjustment correlates with nothing** — every |ρ| ≤ 0.07. PCA's first
+factor explains **26.7%** of covariance against ~14.3% for pure independence, and
+most of that excess comes from one pair.
+
+The only strong relationship, `fold_small` ↔ `postflop_af` at **0.627**, is
+**mechanical, not behavioural**: AF is aggression divided by calls, and a player who
+folds more to small bets calls less, shrinking the denominator. Same for
+`wtsd` ↔ `postflop_af` at −0.283. Neither is evidence of a skill factor.
+
+**No dominant sophistication axis is visible in these measures.**
+
+### Why this is "not supported" rather than "refuted"
+
+Three reasons the null is weak, in descending order of seriousness:
+
+1. **Range restriction, and it is severe.** Requiring every metric's minimum
+   simultaneously cut 59,700 players to **564** — the highest-volume players in the
+   corpus, who are disproportionately regulars. If a sophistication axis separates
+   regs from recreationals, testing only inside the reg population is exactly where
+   it would be invisible. This alone could produce the null.
+2. **Regression dilution.** Every per-player rate is noisy, and noise attenuates
+   correlation. Observed values are a lower bound on true ones.
+3. **The sizing metric is crude.** `sizing_spread` is |blinds − non-blinds| 3-bet
+   ratio, which merges late position into "non-blinds" and discards sign. The
+   founder's hypothesis distinguishes late position *and* blinds; this test does not.
+
+**What would settle it:** relax the joint-minimum requirement (test each metric pair
+on its own qualifying population rather than the intersection), split position
+properly into early/late/blinds, and use shrunk per-player estimates instead of raw
+rates. Until then the gate-jumping strategy is unproven, not disproven — and it
+remains the highest-value hypothesis outstanding, because it is the only proposed
+route around the starvation wall that Findings 5, 11 and 14 all ran into.
