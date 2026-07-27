@@ -23,6 +23,7 @@ import {
   GUEST_USER_ID,
   createPersistenceLogger,
 } from '../utils/persistence/index';
+import { reportPersistenceFailure, reportPersistenceHealthy } from '../utils/persistenceHealth';
 import { SETTINGS_ACTIONS, DEFAULT_SETTINGS } from '../constants/settingsConstants';
 
 // =============================================================================
@@ -76,10 +77,15 @@ export const useSettingsPersistence = (settingsState, dispatchSettings, userId =
 
         isInitializedRef.current = true;
         setIsReady(true);
+        reportPersistenceHealthy('settings');
         log('Settings persistence ready');
       } catch (error) {
+        // Continue with defaults, but not silently — see persistenceHealth.js.
+        // Settings are the least dangerous of the four to lose (no hand data),
+        // but a failure here usually means the database itself is unavailable,
+        // which is exactly what the founder needs to know before playing.
+        reportPersistenceFailure('settings', error);
         logError(error);
-        // Continue with default settings
         dispatchSettings({
           type: SETTINGS_ACTIONS.HYDRATE_SETTINGS,
           payload: { settings: null },

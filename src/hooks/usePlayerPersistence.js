@@ -21,6 +21,7 @@ import {
   GUEST_USER_ID,
   createPersistenceLogger,
 } from '../utils/persistence/index';
+import { reportPersistenceFailure, reportPersistenceHealthy } from '../utils/persistenceHealth';
 import { appendSighting } from '../utils/persistence/sightingLogsStore';
 import { PLAYER_ACTIONS } from '../constants/playerConstants';
 import { AppError, ERROR_CODES } from '../utils/errorHandler';
@@ -67,10 +68,13 @@ export const usePlayerPersistence = (playerState, dispatchPlayer, userId = GUEST
         });
 
         setIsReady(true);
+        reportPersistenceHealthy('players');
         log('Player persistence ready');
       } catch (error) {
+        // Continue without player persistence, but not silently — see
+        // persistenceHealth.js. HealthIndicator surfaces this.
+        reportPersistenceFailure('players', error);
         logError('Initialization failed:', error);
-        // Continue without player persistence
         setIsReady(true);
       }
     };

@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { initDB, saveHand, loadLatestHand, GUEST_USER_ID, createPersistenceLogger } from '../utils/persistence/index';
+import { reportPersistenceFailure, reportPersistenceHealthy } from '../utils/persistenceHealth';
 import { sanitizePredictionAudit } from '../utils/persistence/predictionAuditWriter';
 import { reconstructPredictionAudit } from '../utils/predictionAudit/reconstruct';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
@@ -111,10 +112,15 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
 
         isInitializedRef.current = true;
         setIsReady(true);
+        reportPersistenceHealthy('hands');
         log('Persistence ready');
       } catch (error) {
+        // Continue without persistence — refusing to open would be worse at a
+        // live table — but REPORT it. Continuing silently meant every button
+        // worked while nothing was written, and the founder found out when the
+        // session was already gone. HealthIndicator surfaces this.
+        reportPersistenceFailure('hands', error);
         logError('Initialization failed:', error);
-        // Continue without persistence
         isInitializedRef.current = true;
         setIsReady(true);
       }
