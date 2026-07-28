@@ -82,11 +82,14 @@ Crossing the breakeven bluff frequency changes the character of the optimal resp
 **Already partially present:** the shape-language topologist identified "isolated saddles (indifference points between value-bet and bluff-catch regimes)" independently.
 **Falsified if:** measured EV is smooth and monotone through the threshold with no change in the argmax action.
 
-**A3 · Entropy → how defined a range is. (Computable, and currently NOT computed.)**
-Shannon entropy over the normalised combo-weight distribution, `H = −Σ wᵢ log wᵢ`, is well defined, and §3.7's claim that ranges narrow monotonically flop→river is exactly the claim that H decreases monotonically. The shape-language lessons already use "very high entropy" informally for a uniform-50% range.
-**Number:** H in bits. Uniform over 1326 combos ≈ 10.4 bits; a range of 6 combos ≈ 2.6 bits.
-**Why it earns entry:** it turns "polarised / condensed / capped" — currently threshold heuristics in `postflopDrillContent/frameworks.js` `RANGE_MORPHOLOGY` — into one continuous measured quantity. Genuine gap, genuine deliverable.
-**Falsified if:** H fails to separate morphology classes that the existing threshold classifier separates, or fails to decrease monotonically across streets on real hand histories.
+**A3 · Entropy → how defined a range is. — ⚠️ DOWNGRADED TO PARTIAL, 2026-07-28, by measurement.**
+Shannon entropy over a normalised weight distribution, `H = −Σ pᵢ log pᵢ`, is well defined and computable. **But the morphology claim was probed and failed.** See "Probe results" §5a.
+
+What survives: **H is a valid measure of range *concentration*.** Over hand-type shares it separates `capped` from `polarized` strongly (Cohen's d = 3.13) and `capped` from `linear` (d = 1.51) — capped ranges genuinely do have mass piled into few classes.
+
+What does not survive: **H cannot measure morphology, because entropy is permutation-invariant over classes.** Polarization is a claim about *where* mass sits on an ordered strength axis, not how spread it is. Probed directly: three share-vectors that are the same multiset in different positions — mass-at-the-ends, mass-in-the-middle, monotone decay — all have **identical H = 1.7920 bits.** Entropy is structurally blind to the distinction it was proposed to measure.
+**Corrected replacement:** standardised moments over the ordered strength axis. On those same three vectors, sd and kurtosis separate them cleanly (polarized sd 3.21 / kurt 1.33; condensed sd 0.96 / kurt 6.19; linear sd 1.37 / kurt 8.61). Bimodality is a 4th-moment property, so kurtosis is the natural polarization statistic.
+**Status:** admitted for concentration, rejected for morphology. `RANGE_MORPHOLOGY`'s threshold classifier is **not** replaceable by entropy.
 
 **A4 · Measurement collapse → range narrowing on action.**
 An action is a measurement; the posterior over combos renarrows by Bayes. `P(hand|action) = P(action|hand)·P(hand)/P(action)` (§6.5). Already implemented (`postflopNarrower.js`, `decisionTreeBuilder.js`), and §7.6/AP-RL-01 already *requires* per-combo derivation rather than bucket heuristics.
@@ -147,10 +150,31 @@ assumptions:
     falsifies_if:
       threshold: "EV-optimal action frequency varies smoothly across an SPR zone boundary with no discontinuity in the argmax action, on >=3 of the 5 boundaries"
       window: "one gameTreeEvaluator sweep across SPR; cheap, no new infrastructure"
-    revisit: "before any regime-conditioned coefficient ships"
-    status: unverified
+    revisit: "2026-08-15 — needs a multi-street or elastic-defence model"
+    status: PARTIALLY-SUPPORTED-AMENDED
     severity: high
-    note: "Load-bearing for the whole regime map AND for P2's Reynolds-role claim. If boundaries are smooth, §3's five zones are a teaching device, not physics, and the map must be rewritten as a gradient."
+    probed: "2026-07-28 (probes/probe-spr.mjs)"
+    result: >
+      SUPPORTED for two of the four cuts by independent derivation: the geometric
+      stacking law S_n(f) = ((1+2f)^n - 1)/2 gives, for pot-sized bets,
+      S = 1, 4, 13, 40. The cuts at 4 and 13 are EXACT (0.0% error) and are
+      genuinely discrete because n is an integer. NOT supported for 2 and 8 —
+      nearest law thresholds are 2.19 (n=2 at 0.66x pot, 9.6% off) and 7.50
+      (n=4 at 0.50x pot, 6.3% off), i.e. the declared set mixes three different
+      implied bet sizings rather than following one law.
+      The falsification test itself could NOT be run as written — see the
+      circularity note below. A one-street MDF model degenerates (EV reduces to
+      E*(1+2b)/(1+b), monotone in b, so "always jam" wins and switch points sit
+      only where the stack cap binds, all at SPR <= 2, invariant to hero equity).
+      Conclusion: SPR regimes are multi-street commitment objects and are
+      invisible to single-street EV entirely.
+    amendment: >
+      Original falsification threshold was CIRCULAR and is retired.
+      gameTreeConstants.js:93-97 hardcodes the cuts and buildHeroActions /
+      adjustedRealization / foldEquityCalculator all branch on getSPRZone(), so
+      an evaluateGameTree sweep would rediscover its own input. Replacement test
+      requires either a multi-street commitment model or an elastic villain
+      defence curve (defence better than MDF at large sizings).
 
   - id: AS-GUT-3
     type: structural
@@ -169,10 +193,56 @@ assumptions:
     falsifies_if:
       threshold: "H's class separation is worse than the threshold classifier's on a labelled sample, OR H is non-monotone across streets on >10% of real hands"
       window: "one pass over stored hand histories; no new infrastructure"
-    revisit: "at entropy probe"
-    status: unverified
+    revisit: "closed — superseded by AS-GUT-6"
+    status: FALSIFIED
     severity: low
-    note: "Cheapest admitted-analogy test in the register. Run it first — it is the one that most cleanly demonstrates whether this method produces deliverables or vocabulary."
+    probed: "2026-07-28 (probes/probe-entropy.mjs)"
+    result: >
+      FALSIFIED on the separation criterion. 564 (range x board) pairs from 47
+      real archetype ranges x 12 flops. NO class pair separates cleanly — every
+      pair is either "no separation" or "shifted but overlapping".
+      polarized vs linear d=0.73 (no separation). linear vs condensed d=0.73
+      (no separation). The mechanism was then isolated directly: entropy is
+      permutation-invariant, so mass-at-the-ends, mass-in-the-middle and
+      monotone-decay share vectors built from the same multiset all return
+      H = 1.7920 bits exactly. Entropy cannot see the ordering that morphology
+      is defined by.
+      Partial survival: H does separate capped from polarized (d=3.13) and
+      capped from linear (d=1.51) — so H is a valid CONCENTRATION measure.
+      The monotone-across-streets half was NOT tested (no real hand histories
+      available in this environment) and remains open.
+      Incidental finding: the existing classifier is heavily skewed on this
+      sample — capped 294, linear 239, polarized 19, condensed 12. Polarized
+      plus condensed is 5.5% of cases, which is itself suspicious and is now
+      AS-GUT-7.
+
+  - id: AS-GUT-6
+    type: empirical
+    claim: "Standardised moments over the ordered strength axis (sd for spread, kurtosis for bimodality) separate the four morphology classes where entropy failed."
+    falsifies_if:
+      threshold: "sd and kurtosis together achieve Cohen's d < 0.8 on any adjacent class pair over the same 564-pair sample"
+      window: "one probe; reuses probe-entropy.mjs scaffolding"
+    revisit: "next probe session"
+    status: unverified
+    severity: medium
+    note: >
+      Successor to the falsified AS-GUT-4. Motivated, not assumed: on hand-built
+      vectors sd and kurtosis DID separate the three shapes entropy could not
+      (sd 3.21/0.96/1.37, kurtosis 1.33/6.19/8.61). Untested on real ranges.
+
+  - id: AS-GUT-7
+    type: empirical
+    claim: "frameworks.js RANGE_MORPHOLOGY's thresholds are correctly tuned — the observed 5.5% combined rate for polarized + condensed reflects reality, not mis-set cutoffs."
+    falsifies_if:
+      threshold: "re-tuning the four cutoffs against an order-aware statistic moves >20% of the 564-pair sample between classes"
+      window: "with the AS-GUT-6 probe"
+    revisit: "next probe session"
+    status: unverified
+    severity: medium
+    note: >
+      Fell out of the AS-GUT-4 probe as a side observation. If the classifier is
+      mis-tuned, every framework narration keyed on morphology is affected, and
+      FQS inherits the error.
 
   - id: AS-GUT-5
     type: methodological
@@ -185,6 +255,79 @@ assumptions:
     severity: medium
     note: "This charter graded 6 accurate / 2 partial / 1 rejected. If the roundtable overturns most of the 6, the gate is too permissive and the method is a metaphor farm."
 ```
+
+## 5a. Probe results — 2026-07-28
+
+Two probes run. Scripts and run instructions in `probes/`. **Both changed the register.** Neither confirmed what it set out to confirm, which is the method working rather than failing.
+
+### The circularity lesson — the most transferable finding
+
+`AS-GUT-2`'s falsification test, as written in this charter's first draft, was **not runnable**. It proposed sweeping SPR through `evaluateGameTree` and looking for discontinuities at the zone boundaries. But `gameTreeConstants.js:93-97` hardcodes those boundaries and `buildHeroActions`, `adjustedRealization`, and `foldEquityCalculator` all branch on `getSPRZone()`. The probe would have rediscovered its own input and reported success.
+
+**Standing rule, now in `probes/README.md`:** every probe must name the code path that could make its result circular and route around it. A probe that consumes the constant it is testing measures the implementation, not the game. This charter shipped one circular test out of two on its first attempt — assume the next batch has one too.
+
+### AS-GUT-2 — SPR boundaries: two of four are exact, and the set is internally inconsistent
+
+Derived independently of the code, from the stacking law the SPR manifest itself claims (*"zones reflect the geometry of how many pot-sized bets fit before all-in"*):
+
+`S_n(f) = ((1+2f)ⁿ − 1) / 2` — the stack depth, in pots, at which the n-th bet of fraction `f` exactly fits.
+
+| sizing | n=1 | n=2 | n=3 | n=4 |
+|---|---|---|---|---|
+| **1.00× pot** | **1.00** | **4.00** | **13.00** | **40.00** |
+| 0.75× pot | 0.75 | 2.63 | 7.31 | 19.03 |
+| 0.66× pot | 0.66 | 2.19 | 5.74 | 13.99 |
+| 0.50× pot | 0.50 | 1.50 | 3.50 | 7.50 |
+
+For pot-sized bets the sequence is exactly `(3ⁿ − 1)/2` = **1, 4, 13, 40**.
+
+| stated cut | nearest law threshold | error |
+|---|---|---|
+| 2 | 2.19 — n=2 at 0.66× pot | 9.6% |
+| **4** | **4.00 — n=2 at 1.00× pot** | **0.0%** |
+| 8 | 7.50 — n=4 at 0.50× pot | 6.3% |
+| **13** | **13.00 — n=3 at 1.00× pot** | **0.0%** |
+
+**Reading:** 4 and 13 are not arbitrary — they are exactly where a second and third pot-sized bet fit, and because `n` is an integer they are genuinely discrete. That is real support for "regime, not gradient." But 2 and 8 do not come from the same law: the declared set mixes **three different implied bet sizings**. The zone vocabulary is therefore not one geometry, it is three geometries stapled together.
+
+**Second finding — undeclared thresholds.** `getSPRZone()` declares four cuts. The engine actually branches on **six**: `gameTreeDepth2.js:988-989` adds `spr > 10` and `spr < 5`, neither of which is a zone boundary. `gameTreeDepth2.js:103` additionally applies a *continuous* `sprStiffening = 1 + (4−spr)·0.1` below SPR 4, so SPR is treated as discrete and continuous in the same engine. This is precisely the interference class §2b predicted the coherence scanner cannot see — it flags orphans, not contradictions.
+
+**Third finding — regimes are invisible to single-street EV.** The first-principles one-street model degenerates: with villain defending at exact MDF, `EV(bet b)` reduces algebraically to `E·(1+2b)/(1+b)`, monotone increasing in `b`. So "bet the maximum" always wins, and the only switch points are where the stack cap binds — all at SPR ≤ 2, and **identical across every hero equity from 0.25 to 0.85.** Only 1 of the 4 stated cuts appeared. SPR regimes are multi-street commitment objects; a single-street EV cannot express them at all. The replacement test needs multi-street modelling or an elastic defence curve.
+
+### AS-GUT-4 — entropy: falsified for morphology, survives for concentration
+
+564 (range × board) pairs, from all 47 real archetype ranges × 12 flop textures, classified by the real `RANGE_MORPHOLOGY`.
+
+`H_type` — entropy over the 22 hand-type class shares, bits:
+
+| morphology | n | mean | sd | min | max |
+|---|---|---|---|---|---|
+| polarized | 19 | 2.790 | 0.252 | 2.242 | 3.114 |
+| linear | 239 | 2.348 | 0.820 | 0.000 | 3.924 |
+| condensed | 12 | 1.804 | 0.667 | 0.707 | 2.894 |
+| capped | 294 | 1.227 | 0.660 | 0.000 | 3.283 |
+
+Pairwise, **no class pair separates cleanly.** polarized vs linear **d = 0.73** (no separation). linear vs condensed **d = 0.73** (no separation). The strong pairs — capped vs polarized d = 3.13, capped vs linear d = 1.51 — are shifted but with fully overlapping ranges.
+
+Then the mechanism, isolated directly. Three share-vectors built from the *same multiset* in different positions on the strength axis:
+
+```
+mass at both ends   (polarized)  H = 1.7920 bits
+mass in the middle  (condensed)  H = 1.7920 bits
+monotone decay      (linear)     H = 1.7920 bits
+```
+
+**Entropy is permutation-invariant, so it is structurally blind to the ordering that morphology is defined by.** Polarization is a claim about *where* mass sits, not how spread it is. This was predicted before running and it held.
+
+Order-aware statistics on those same vectors do separate them — polarized sd 3.21 / kurtosis 1.33; condensed sd 0.96 / kurtosis 6.19; linear sd 1.37 / kurtosis 8.61. Bimodality is a 4th-moment property, so **kurtosis is the natural polarization statistic.** That is now `AS-GUT-6`.
+
+**Not tested:** the monotone-decrease-across-streets half. No real hand histories are available in this environment; it stays open.
+
+**Incidental finding, now `AS-GUT-7`:** the existing classifier is badly skewed on this sample — capped 294, linear 239, polarized 19, condensed 12. Polarized plus condensed is **5.5%** of cases. Either real ranges genuinely are rarely polarized on a flop, or the four cutoffs in `frameworks.js:257-261` are mis-tuned. If mis-tuned, every framework narration keyed on morphology is affected — and FQS would inherit it.
+
+### What the two probes say about the method
+
+`AS-GUT-5` asked whether the admission gate is productive. Early evidence: of the two ACCURATE entries probed, **one was downgraded and one was amended.** Zero survived unchanged. That is a high correction rate for a register that was authored with reasonable care, and it suggests the gate was too permissive on first pass — analogies that *feel* rigorous cleared it. The gate should be tightened: **an analogy is not ACCURATE until it has been probed.** Unprobed entries are CANDIDATE. Applied retroactively, that demotes A1, A2, A5, A6, P1 and P2 to CANDIDATE and leaves the register with **zero** ACCURATE entries — which is the honest state.
 
 ## 6. The scrutiny roundtable — specified, deliberately NOT run yet
 
@@ -228,4 +371,5 @@ The owner's instinct is right and the timing matters: *"worth a dedicated roundt
 
 ## Change log
 
+- 2026-07-28 (later, same day) — **Two probes run; both changed the register.** AS-GUT-4 **FALSIFIED** for morphology (entropy is permutation-invariant; three opposite morphologies return identical H = 1.7920 bits) and A3 downgraded to PARTIAL, surviving only as a concentration measure. AS-GUT-2 **AMENDED**: its original falsification test was circular and is retired; the stacking law independently derives the cuts at 4 and 13 exactly `((3ⁿ−1)/2)` but 2 and 8 come from different implied sizings, so the declared zone set mixes three geometries. Two undeclared engine SPR thresholds found (`spr > 10`, `spr < 5` in `gameTreeDepth2.js:988-989`) plus a continuous `sprStiffening` below 4 — SPR is treated as both discrete and continuous in one engine. Three new assumptions registered: AS-GUT-6 (order-aware moments as entropy's replacement), AS-GUT-7 (morphology classifier may be mis-tuned — polarized+condensed is 5.5% of 564 samples). Admission gate tightened: unprobed entries are CANDIDATE, not ACCURATE — which leaves the register at **zero ACCURATE**. Probe scripts committed to `probes/` with a run shim that works without `npm install`.
 - 2026-07-28 — Charter authored. Quark/field distinction mapped to existing §7 doctrine. Interference identified as the gap in model-coherence (orphans covered, contradictions not). Regime map assembled from 5 axes, 4 with real numbers. Analogy register opened: 6 ACCURATE, 2 PARTIAL-with-correction, 1 REJECTED. 5 assumptions registered, all unverified. Scrutiny roundtable specified with trigger condition and pre-stated pass condition; deliberately not run. No production code.
