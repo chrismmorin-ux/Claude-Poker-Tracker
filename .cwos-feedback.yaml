@@ -64,6 +64,31 @@ user_feedback:
       before ranking (slower but correct).
     resolved: false
     resolution: null
+  - id: fb-004
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: concern
+    summary: "Session startup cost is holding back mobile sessions — orientation burns tokens before any work begins"
+    detail: >
+      Founder directive, 2026-07-28: "drop any notes that would increase the ease
+      at which you're able to operate on the repo to HomeBase's queue, so that my
+      mobile device Claude sessions aren't held back excessively, and you don't use
+      a ton of tokens just to get started on the work."
+      Treat per-session orientation cost as a first-class kit metric, not an
+      accepted overhead. The measurable items found this session are logged as
+      fr-020..fr-026; the two with the largest token effect are fr-020 (the
+      documented fast-orient artifact system-summary.yaml has never existed, so
+      every Standard-mode session takes the full-read path) and fr-021 (~7.8KB of
+      always-injected stack rules, ~80% of which target stacks this repo does not
+      use). Both are kit-side, both are fixable without touching repo content, and
+      both are paid on every device including mobile.
+      NOTE ON DELIVERY: homebase_path is "C:/Users/chris/repos/homebase" — a Windows
+      path, unreachable from the Linux container Claude Code on the web runs in. This
+      file is the only channel that reaches HomeBase from a web session (it is read by
+      /fleet feedback for cross-repo aggregation), so these notes are filed here
+      rather than in HomeBase's queue directly. See fr-022.
+    resolved: false
+    resolution: null
 # Entry format:
 #   - id: fb-001
 #     timestamp: "2026-04-07T19:00:00Z"
@@ -229,6 +254,94 @@ friction_log:
     component: cwos-next-gate
     workaround: "This session verified SPR-151's shipped work against the approved SPR-150 plan, implemented the residual it missed (WS-263 online wiring in useOnlineAnalysis + domain-spec refresh), and hand-marked SPR-150 status:abandoned (SPR-144 precedent) in sprint YAML + sprint-index. Kit fix (now urgent): gate must treat status:approved && completed_at:null as the active sprint and resume it."
 
+  # ── fr-020..fr-026: startup-cost cluster (fb-004). All measured 2026-07-28 on
+  # a Claude-Code-on-the-web Linux container. Theme: orientation and tooling cost
+  # paid on every session, every device, before any work begins.
+
+  - id: fr-020
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: file_not_found
+    severity: high
+    detail: "system-summary.yaml has NEVER existed in this repo. CLAUDE.md Standard Mode instructs 'Fast orient: Read system-summary.yaml first (if exists). Escalate to full reads only if vitals failing, programs stale, or critical findings.' The parenthetical makes the fast path optional, so it silently never fires — verified absent at system/, .claude/, and repo root. Every Standard-mode session therefore takes the full-read path (state.md + context.md + queue-index.yaml + program files). This is the single largest per-session orientation cost and it is the ONE artifact whose entire purpose is to avoid that cost. Note fr-009 already logged component 'system-summary' once; this is the standing-gap version."
+    component: system-summary
+    workaround: "None available — the artifact cannot be read into existence. Kit fix: have /session-end or cwos-reconcile.js emit system-summary.yaml as a derived rollup, exactly as queue-index.yaml is already derived from queue/WS-*.yaml. Deriving it costs one write per session-end and saves the full-read path on every session-start thereafter."
+
+  - id: fr-021
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: workaround
+    severity: medium
+    detail: >
+      .claude/rules/ is 5 files / ~7.8KB injected verbatim into every session, and
+      roughly 80% of the content targets stacks this repo does not contain. Verified
+      absent: requirements.txt, manage.py, pyproject.toml (no Python/Django); zero
+      matches for express|helmet|bcrypt in package.json (no Node backend); no SQL
+      database (IndexedDB only). Yet security-baseline.md prescribes Django CSRF
+      tokens, @login_required and bcrypt; performance-baseline.md prescribes Django
+      select_related/prefetch_related and N+1 SQL avoidance; error-handling.md
+      prescribes Python logging.exception and context managers; testing-strategy.md
+      prescribes pytest fixtures and pytest-xdist; deployment-checklist.md prescribes
+      reversible database migrations. Only the "Universal Rules" blocks plus the
+      React/Next.js sub-blocks are applicable. Declared repo_archetype is already
+      "frontend", so the information needed to filter this exists and is unused.
+    component: rules-injection
+    workaround: "None taken — the rules are injected by the harness, not read on demand. Kit fix: filter .claude/rules/ by declared repo_archetype at adopt/install time, OR split each rule file into a universal fragment plus per-stack fragments and install only the matching stack fragment. Either removes ~6KB from every session on every device at zero information loss for this repo."
+
+  - id: fr-022
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: platform_issue
+    severity: medium
+    detail: "Two related platform mismatches. (1) This file records platform: win32 and CLAUDE.md's Friction & Feedback block instructs 'on Windows, prefer Python for datetime, avoid set -euo pipefail in hooks, avoid $$ for PID' — Claude Code on the web runs a Linux container, so that guidance is inverted for every web and mobile session. Platform is modelled as a property of the repo when it is actually a property of the environment. (2) .cwos-version records homebase_path: 'C:/Users/chris/repos/homebase', which is unreachable from a web container, so a web session asked to file notes to HomeBase's queue cannot reach it and must fall back to this file."
+    component: adopt-platform-detection
+    workaround: "Filed the founder's HomeBase-bound notes into this file's friction_log instead (it is the documented /fleet feedback aggregation channel). Kit fix: detect platform at session start rather than storing it at adopt time, and either record a reachable HomeBase channel or document this file as the canonical fallback for HomeBase-bound notes from non-local environments."
+
+  - id: fr-023
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: command_failure
+    severity: high
+    detail: "node_modules is absent in a fresh Claude-Code-on-the-web container, so every command CLAUDE.md presents as a standard entry point fails on first use: npm run dev, npm run build, npm test, bash scripts/smart-test-runner.sh. CLAUDE.md's Proactive Automation block also mandates 'After modifying code: run vital sign checks' and Self-Verification mandates tests before commit — neither is satisfiable. settings.json configures only PreToolUse hooks (no SessionStart), so nothing installs dependencies on container start. A session discovers this by failing rather than being told, and the failure is silent about the cause. Concrete cost this session: vitest could not run at all, and executing a single numeric probe required hand-authoring an ESM resolver shim."
+    component: session-start
+    workaround: "Authored a resolver shim (see fr-025) to run probes on bare node without installing anything. Kit fix: scaffold a SessionStart hook at adopt time that runs `npm ci` when node_modules is missing — a session-start-hook skill already exists for exactly this. Failing that, CLAUDE.md's Commands block should state the precondition so a session doesn't spend turns discovering it."
+
+  - id: fr-024
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: workaround
+    severity: medium
+    detail: "No primitive-to-file index exists, so locating engine code costs one or more greps per lookup. docs/QUICK_REF.md indexes constants, contexts, hooks and utils, but NONE of the six engine primitives this session needed are listed: solverBaselines.js, spotKeyExtractor.js, archetypeRanges.js, poolBaseline.js, boardTexture.js, drillContent/shapes.js (verified by grep against QUICK_REF.md — 0 of 6 present). Engine-heavy sessions pay this repeatedly, and grep output is far more expensive than an index line."
+    component: quick-ref
+    workaround: "Located each by grep. Kit/repo fix: generate a primitive-to-file index rather than hand-maintaining one — the model-coherence program already enumerates the six decision-relevant directories and its scanner (scripts/coherence-scan.cjs) already walks every module's __coherence__ block, so the index is derivable from data the kit already collects. That also makes it self-updating, which a hand-written QUICK_REF section would not be."
+
+  - id: fr-025
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: workaround
+    severity: low
+    detail: "src/ uses extensionless relative imports (e.g. `from '../pokerCore/rangeMatrix'`). Vite resolves these; bare node does not. Combined with fr-023 (no node_modules, therefore no Vite), no repo module can be executed at all in a fresh web container without a resolver shim. Cost this session: two failed run attempts plus authoring the shim before any measurement could happen."
+    component: repo-convention
+    workaround: "Wrote an ESM resolve hook and committed it at docs/projects/grand-unified-theory/probes/{loader,register}.mjs — it appends .js/.jsx/index.js on resolution failure and lets any repo module run on bare node with `node --import ./register.mjs <script>`. Verified working from its committed location. Fix: reference the shim from CLAUDE.md so the next session reuses it instead of re-deriving it."
+
+  - id: fr-026
+    timestamp: "2026-07-28T00:00:00Z"
+    session_id: "session-2026-07-28-fqs-gut"
+    category: file_not_found
+    severity: low
+    detail: "system/constraints.md is 100% unfilled template — every row is still a placeholder comment (HC-001 with '<!-- e.g., \"Must run on Node 18+\" -->', WA-001, scale-assumption rows). A session that reads it per the assumptions discipline pays full token cost for zero information. Second-order cost: this is the file the 'methodical written assumptions' discipline points at, so its emptiness also means labelled assumptions get authored ad hoc into audit docs instead (this session wrote AS-1..8 and AS-GUT-1..7 into two project docs) with no central register."
+    component: adopt-scaffolding
+    workaround: "Left unpopulated rather than inventing constraints the founder has not stated; flagged to the founder instead. Kit fix: either omit template files that were never filled (so orientation can skip them) or have /adopt mark them explicitly unpopulated so a session can skip on a one-line read instead of a full one."
+
+  # ── Housekeeping: fr-001/002/003 are now STALE ──
+  # All three logged kit/scripts/cwos-* as absent. Verified present 2026-07-28:
+  # cwos-constitutional-audit.js, cwos-reconcile.js, cwos-state-store.js (plus
+  # cwos-next.js, cwos-workstream-snapshot.js) all exist under kit/scripts/.
+  # The "4 of 9 are kit/scripts missing" pattern note at the foot of this file is
+  # therefore also stale. Left in place rather than rewritten, since /fleet
+  # feedback aggregation may key on these IDs — but they should not be counted as
+  # live gaps in the next fleet roll-up.
+
 # Pre-existing entry (kept for context):
 # Entry format:
 #   - id: fr-001
@@ -242,17 +355,21 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 17
-  total_user_feedback: 3
-  unresolved_feedback: 3
+  total_friction_events: 26
+  total_user_feedback: 4
+  unresolved_feedback: 4
+  # Recomputed from friction_log 2026-07-28 — the previous declared values had
+  # drifted (17 declared across buckets while the log already held more entries).
   by_severity:
-    high: 2
-    medium: 5
-    low: 10
+    high: 5
+    medium: 8
+    low: 13
   by_category:
-    file_not_found: 9
-    manual_fix: 5
-    workaround: 3
+    file_not_found: 12
+    manual_fix: 6
+    workaround: 6
+    command_failure: 1
+    platform_issue: 1
   by_component:
     cwos-constitutional-audit.js: 1
     cwos-reconcile.js: 1
@@ -261,16 +378,34 @@ summary:
     cwos-scripts-suite: 2
     session-tracking: 2
     usage-telemetry: 1
-    system-summary: 1
+    system-summary: 2
     findings-reconciliation: 1
     next-step1-resume-check: 1
     queue-index: 2
+    "cwos-adopt-install / kit-MANIFEST (distribution surface)": 1
     cwos-next-compose: 1
     cwos-next-approve: 1
-  most_recent_friction: "fr-017 — 2026-06-10 — cwos-next approve doesn't claim queue items (hand-stamped WS-213); fr-016 same session: compose anchored stale umbrella WS-150 (5/7 children done) over the session cap without flagging"
-  most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
+    cwos-next-done-auto-resolved: 1
+    cwos-next-gate: 1
+    rules-injection: 1
+    adopt-platform-detection: 1
+    session-start: 1
+    quick-ref: 1
+    repo-convention: 1
+    adopt-scaffolding: 1
+  most_recent_friction: "fr-020..fr-026 — 2026-07-28 — startup-cost cluster (fb-004). Highest-value: fr-020 system-summary.yaml has never existed so the documented fast-orient path never fires; fr-023 no node_modules in web containers so every documented npm command fails and no SessionStart hook installs deps; fr-021 ~7.8KB of always-injected rules, ~80% targeting stacks this repo does not contain."
+  most_recent_feedback: "fb-004 — 2026-07-28 — founder: session startup cost is holding back mobile sessions; treat per-session orientation cost as a first-class kit metric"
 
-# Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
-# /adopt run or kit-version bump should install the script suite. Operational
-# impact this session was low (manual fallbacks worked) but worth tracking
-# as a kit-installation gap for fleet aggregation.
+# STALE (verified 2026-07-28): the "4 of 9 are kit/scripts/cwos-* missing" pattern
+# below no longer holds — kit/scripts/ now contains cwos-constitutional-audit.js,
+# cwos-reconcile.js, cwos-state-store.js, cwos-next.js and
+# cwos-workstream-snapshot.js. fr-001/002/003 should not be counted as live gaps.
+#
+# CURRENT PATTERN (fr-020..fr-026): the live cluster is per-session STARTUP COST,
+# not missing scripts. Four of the seven are fixable entirely kit-side with no
+# repo content change — derive system-summary.yaml (fr-020), archetype-filter the
+# injected rules (fr-021), detect platform at session start (fr-022), scaffold a
+# SessionStart dependency install (fr-023). Together these are the difference
+# between a session that can orient and run tests cheaply and one that pays a
+# full-read plus several failed commands before starting. Cost falls on every
+# device and is most visible on mobile.
