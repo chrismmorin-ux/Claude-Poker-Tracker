@@ -223,12 +223,25 @@ assumptions:
       threshold: "sd and kurtosis together achieve Cohen's d < 0.8 on any adjacent class pair over the same 564-pair sample"
       window: "one probe; reuses probe-entropy.mjs scaffolding"
     revisit: "next probe session"
-    status: unverified
+    status: PARTIALLY-SUPPORTED-AMENDED
     severity: medium
-    note: >
-      Successor to the falsified AS-GUT-4. Motivated, not assumed: on hand-built
-      vectors sd and kurtosis DID separate the three shapes entropy could not
-      (sd 3.21/0.96/1.37, kurtosis 1.33/6.19/8.61). Untested on real ranges.
+    probed: "2026-07-28 (probes/probe-narrower-polarization.mjs, incidental)"
+    result: >
+      sd HOLDS as a spread discriminator on real ranges — bet@0.40 collapses to
+      2.134 against raw 3.799, cleanly separating a strength-filtered range from
+      an unfiltered one.
+      KURTOSIS FAILS as a bimodality statistic. It conflates peakedness with
+      heavy tails, so it only reads bimodality when both arms carry real mass.
+      Measured on the check condition (bottom 65% + a 10% trapping slice, which
+      code reading predicted would be bimodal): kurtosis 3.985 vs raw 3.096 —
+      MORE peaked, not more bimodal, because a thin second arm raises kurtosis
+      rather than lowering it.
+    amendment: >
+      Replace kurtosis with the bimodality coefficient BC = (skew^2 + 1)/kurtosis,
+      or a dip test. Re-test both on the same 470-pair sample before claiming any
+      order-aware statistic separates the four morphology classes.
+      Standing caution: this is the second time a conclusion drawn from reading
+      code was refuted by measuring it. Read-then-assert is not evidence.
 
   - id: AS-GUT-7
     type: empirical
@@ -236,13 +249,45 @@ assumptions:
     falsifies_if:
       threshold: "re-tuning the four cutoffs against an order-aware statistic moves >20% of the 564-pair sample between classes"
       window: "with the AS-GUT-6 probe"
-    revisit: "next probe session"
-    status: unverified
+    revisit: "blocked on AS-GUT-8"
+    status: BLOCKED-PREMISE-INVALID
     severity: medium
+    probed: "2026-07-28 round 2 (probes/probe-narrower-polarization.mjs)"
+    result: >
+      The question cannot be answered while the upstream defect stands. Founder
+      correctly identified that round 1 measured pre-action ranges. Re-measured
+      WITH action narrowing across 470 pairs x 4 conditions, polarized share goes
+      DOWN not up: raw 4.0%, bet@0.40 0.0%, bet@0.95 3.0%, check@0.65 0.0%.
+      Cause is upstream of the classifier — narrowByBoard cannot produce a
+      polarized range for any betting action (see AS-GUT-8), so the classifier is
+      being asked to detect a shape the range-construction layer never generates.
+      Tuning the cutoffs against that input would fit noise.
+      Founder's second prediction CONFIRMED: bet@0.95 (a range bet) reproduces
+      the unfiltered distribution within 1pp on every class and within 0.07 on sd
+      — range-betting is a no-op filter.
+    blocked_by: AS-GUT-8
+
+  - id: AS-GUT-8
+    type: empirical
+    claim: "narrowByBoard's top-slice betting model is an adequate representation of villain betting ranges — the absence of a pure-bluff arm does not materially bias hero's decisions."
+    falsifies_if:
+      threshold: "hero's EV-optimal response flips (call<->fold) on >10% of a representative flop sample when villain's bet range is rebuilt as top-slice PLUS a calibrated bluff arm, versus top-slice only"
+      window: "one gameTreeEvaluator comparison run; needs a bluff-arm implementation first"
+    revisit: "with the engine-accuracy ticket"
+    status: unverified
+    severity: high
     note: >
-      Fell out of the AS-GUT-4 probe as a side observation. If the classifier is
-      mis-tuned, every framework narration keyed on morphology is affected, and
-      FQS inherits the error.
+      Found 2026-07-28 while chasing AS-GUT-7. postflopNarrower.js:690-720 sorts
+      by equity descending and keeps the TOP continuationRate fraction for
+      bet/call/raise. Villain bet ranges are therefore pure top-slices with no
+      lower arm; pure air is unrepresentable at any rate < 1 (draws enter only via
+      total-equity sorting). Contradicts POKER_THEORY.md 3.6 ("Bet ... Range is
+      value + bluffs"). Predicted direction: villain bet ranges read stronger than
+      real, biasing hero toward over-folding vs bets. Maxim I/II suggest the bias
+      is accidentally correct for big river bets (pool bluff share ~1/5 of
+      equilibrium) and wrong for cheap flop stabs (flop 1/3-pot folds only 38.1%).
+      This is an engine-accuracy semantic defect, not a coherence gap — recommend
+      ticketing under prog-engine-accuracy rather than tracking it only here.
 
   - id: AS-GUT-5
     type: methodological
@@ -325,7 +370,46 @@ Order-aware statistics on those same vectors do separate them — polarized sd 3
 
 **Incidental finding, now `AS-GUT-7`:** the existing classifier is badly skewed on this sample — capped 294, linear 239, polarized 19, condensed 12. Polarized plus condensed is **5.5%** of cases. Either real ranges genuinely are rarely polarized on a flop, or the four cutoffs in `frameworks.js:257-261` are mis-tuned. If mis-tuned, every framework narration keyed on morphology is affected — and FQS would inherit it.
 
-### What the two probes say about the method
+### AS-GUT-7 round 2 — founder hypothesis, 2026-07-28 (`probes/probe-narrower-polarization.mjs`)
+
+Founder raised two objections to round 1 and one about the data. **The methodological objection is correct, the data objection is contradicted by the only corpus we have, and chasing the first one uncovered an engine defect that matters more than the original question.**
+
+**Objection 1 — round 1 measured the wrong node. CORRECT.** Round 1 classified archetype *preflop* ranges projected onto a flop, with no postflop action applied. Polarization is *created* by betting action (the bet separates value from bluffs; the check keeps the middle), so a pre-action range should not be polarized and 5.5% was not evidence of a mis-tuned classifier.
+
+**But fixing it does not rescue the classifier.** Applying real `narrowByBoard` action narrowing, 470 (range × board) pairs × 4 conditions:
+
+| condition | capped | condensed | linear | polarized |
+|---|---|---|---|---|
+| raw (round 1's node) | 50.2% | 1.7% | 44.0% | **4.0%** |
+| bet @0.40 *(engine default)* | 45.5% | 0.0% | 54.5% | **0.0%** |
+| bet @0.95 *(a "range bet")* | 50.2% | 1.5% | 45.3% | **3.0%** |
+| check @0.65 *(engine default)* | 48.1% | 0.9% | 51.1% | **0.0%** |
+
+Action narrowing drives polarization **down to zero**, not up. So the low polarized share is not an artifact of measuring pre-action ranges.
+
+**Objection 2 — "a range c-bet or check does nothing to filter a range." CONFIRMED numerically.** `bet @0.95` reproduces the raw distribution within 1pp on every class, and on the ordered-strength moments within 0.25 on mean-index (14.69 vs 14.94) and 0.07 on sd (3.727 vs 3.799). A range bet is a no-op filter, exactly as predicted.
+
+**Root cause — the narrower cannot represent a polarized bet at all.** `postflopNarrower.js:690-720` sorts combos by equity descending, then for `bet`/`call`/`raise` keeps the **top** `continuationRate` fraction. A modelled betting range is a pure top-slice with no lower arm. Pure air can never enter a villain's betting range at any rate < 1; draws get in only because the sort key is *total* equity, so semi-bluffs are represented and pure bluffs never are.
+
+This contradicts `POKER_THEORY.md §3.6`, which states: *"Bet: Removes weak hands (would check). Range is value + bluffs."* The implementation delivers value-only. **Directional consequence:** villain's modelled bet range is systematically stronger than a real one, which biases hero toward over-folding versus bets. Whether that bias hurts depends on the spot — Maxim I/II say the 2009 pool under-bluffs big river bets by ~4× (bluff share ≈ ⅕ of equilibrium), so the bias is accidentally *right* there and wrong for cheap flop stabs, where Maxim IV measures the pool as sticky (flop ⅓-pot folds only 38.1%). **Recommend ticketing under `prog-engine-accuracy`** — this is a semantic defect, not a coherence gap.
+
+**Self-correction — a code-reading claim of mine was empirically false.** From reading Step 4 I asserted that `check` is the only action producing a bimodal range (it keeps the bottom fraction *plus* a 10% trapping slice). Measured, it is not: check kurtosis is **3.985 vs raw 3.096** — *more* peaked, not more bimodal. The trap arm at 10% is too thin against a 65% bottom slice, and a thin tail *raises* kurtosis. Code reading predicted bimodality; measurement refuted it.
+
+**That refutes part of AS-GUT-6 too.** Kurtosis conflates peakedness with heavy tails, so it only reads bimodality when *both* arms carry real mass — which is why it worked on the hand-built vectors and fails here. sd remains discriminating (bet@0.40 collapses to 2.134 vs raw 3.799). The standard fix is the bimodality coefficient `BC = (skew² + 1) / kurtosis`, or a dip test. AS-GUT-6 amended below.
+
+### On the founder's data hypotheses — one contradicted, one unmined, both worth stating precisely
+
+The claim was that the pool continues *wider* against c-bets than assumed, because range-c-betting does no filtering and defenders know it.
+
+**Contradicted by the corpus, from the scoreboard in the mass-data artifact:** fold-to-c-bet hand-tuned prior 45%, mined **50–55%**, verdict *"Pool folds more."* The pool folds to c-bets **more** than the engine assumed, not less. Mined c-bet frequency is **57–60%** — selective c-betting, not range-betting.
+
+**But the corpus cannot test the hypothesis.** It is **July 2009** online data (`21,606,087` hands, 6 networks, 25NL–1000NL) — precisely the "c-betting was a default" era the founder identifies as the legacy. A claim about a *modern* range-c-bet meta cannot be tested against pre-modern data. The artifact's own honesty box says so: *"the corpus is July 2009. Pools are tougher today."*
+
+**One measured gradient runs in the founder's direction.** Maxim VIII: fold-vs-c-bet *falls* as stakes climb — 53.7% at 25NL → **50.3%** at 1000NL — with the stated lesson *"skill shows up as aggression frequency, not as folding more."* If range-c-betting is a sophistication marker, stake level is a weak proxy for era, and better pools do defend wider. Suggestive, not confirming.
+
+**The sizing claim is unmined.** Flop c-bet *size distribution* does not exist yet — "board-texture c-bet splits" is explicitly listed as **mining pass 2**, not done. What does exist supports the spirit at the river: called-bet counts run ⅓-pot `n=252,915` and ½–⅔ `n=303,529` against overbet `n=23,012`, so small and medium sizings outnumber overbets roughly **24:1**. Flop remains untested and is now a named mining target.
+
+### What the probes say about the method
 
 `AS-GUT-5` asked whether the admission gate is productive. Early evidence: of the two ACCURATE entries probed, **one was downgraded and one was amended.** Zero survived unchanged. That is a high correction rate for a register that was authored with reasonable care, and it suggests the gate was too permissive on first pass — analogies that *feel* rigorous cleared it. The gate should be tightened: **an analogy is not ACCURATE until it has been probed.** Unprobed entries are CANDIDATE. Applied retroactively, that demotes A1, A2, A5, A6, P1 and P2 to CANDIDATE and leaves the register with **zero** ACCURATE entries — which is the honest state.
 
@@ -371,5 +455,6 @@ The owner's instinct is right and the timing matters: *"worth a dedicated roundt
 
 ## Change log
 
+- 2026-07-28 (third pass) — **Founder hypothesis probed; found an engine defect upstream of the original question.** Founder's methodological objection to round 1 was correct (it classified pre-action ranges, and polarization is created by action) but fixing it does not rescue the classifier: with real `narrowByBoard` narrowing across 470 pairs × 4 conditions, polarized share goes *down* — raw 4.0%, bet@0.40 **0.0%**, check@0.65 **0.0%**. Root cause found upstream: `postflopNarrower.js:690-720` keeps the **top** slice by equity for bet/call/raise, so villain betting ranges have no lower arm and pure bluffs are unrepresentable — contradicting `POKER_THEORY.md §3.6` ("Bet … Range is value + bluffs"). Registered as **AS-GUT-8** (severity high) with a recommendation to ticket under `prog-engine-accuracy`; **AS-GUT-7** is now BLOCKED-PREMISE-INVALID behind it. Founder's second prediction — that a range c-bet does no filtering — **confirmed numerically**: bet@0.95 reproduces the unfiltered distribution within 1pp on every class. His data prediction (pool continues wider vs c-bets) is **contradicted** by the mined corpus (fold-to-c-bet 50–55% vs 45% assumed, "pool folds more") but that corpus is **July 2009**, the very era he identifies as legacy, so it cannot test a modern-meta claim; the stake gradient (53.7% → 50.3% fold-vs-c-bet, 25NL → 1000NL) runs weakly in his direction. Flop c-bet sizing distribution is unmined ("board-texture c-bet splits", mining pass 2). **AS-GUT-6 amended** — kurtosis refuted as a bimodality statistic (check condition measured 3.985 vs raw 3.096, *more* peaked, because a thin trap arm raises kurtosis); sd survives; replace with the bimodality coefficient. Second instance this session of a code-reading conclusion being refuted by measurement.
 - 2026-07-28 (later, same day) — **Two probes run; both changed the register.** AS-GUT-4 **FALSIFIED** for morphology (entropy is permutation-invariant; three opposite morphologies return identical H = 1.7920 bits) and A3 downgraded to PARTIAL, surviving only as a concentration measure. AS-GUT-2 **AMENDED**: its original falsification test was circular and is retired; the stacking law independently derives the cuts at 4 and 13 exactly `((3ⁿ−1)/2)` but 2 and 8 come from different implied sizings, so the declared zone set mixes three geometries. Two undeclared engine SPR thresholds found (`spr > 10`, `spr < 5` in `gameTreeDepth2.js:988-989`) plus a continuous `sprStiffening` below 4 — SPR is treated as both discrete and continuous in one engine. Three new assumptions registered: AS-GUT-6 (order-aware moments as entropy's replacement), AS-GUT-7 (morphology classifier may be mis-tuned — polarized+condensed is 5.5% of 564 samples). Admission gate tightened: unprobed entries are CANDIDATE, not ACCURATE — which leaves the register at **zero ACCURATE**. Probe scripts committed to `probes/` with a run shim that works without `npm install`.
 - 2026-07-28 — Charter authored. Quark/field distinction mapped to existing §7 doctrine. Interference identified as the gap in model-coherence (orphans covered, contradictions not). Regime map assembled from 5 axes, 4 with real numbers. Analogy register opened: 6 ACCURATE, 2 PARTIAL-with-correction, 1 REJECTED. 5 assumptions registered, all unverified. Scrutiny roundtable specified with trigger condition and pre-stated pass condition; deliberately not run. No production code.

@@ -20,6 +20,7 @@ If `node_modules` is present you can instead run them through Vite's own resolve
 |---|---|---|---|
 | `probe-entropy.mjs` | **AS-GUT-4** — does range entropy separate morphology classes? | 564 (range × board) pairs from 47 real archetype ranges × 12 flops. No class pair cleanly separates. polarized-vs-linear d=0.73, linear-vs-condensed d=0.73. | **FALSIFIED** as written |
 | `probe-spr.mjs` | **AS-GUT-2** — are SPR regime boundaries switch-like, and do they follow a law? | Stacking law derives 4 and 13 exactly; 2 and 8 do not follow the same sizing. One-street model degenerates to always-jam. | **AMENDED** — partially supported |
+| `probe-narrower-polarization.mjs` | **AS-GUT-7** round 2 (founder hypothesis) — does morphology change once action narrowing is applied? | 470 pairs × 4 conditions. Polarized share goes DOWN with action: raw 4.0%, bet@0.40 0.0%, check@0.65 0.0%. bet@0.95 reproduces raw within 1pp — a range bet is a no-op filter, as predicted. Root cause found upstream in narrowByBoard. | **AS-GUT-7 blocked**; new **AS-GUT-8** (high) |
 
 ## Design rule learned the hard way
 
