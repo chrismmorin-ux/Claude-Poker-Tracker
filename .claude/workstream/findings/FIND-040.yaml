@@ -1,0 +1,89 @@
+id: "FIND-040"
+title: "narrowByBoard models villain betting ranges as a pure equity top-slice — no bluff arm, so polarized bet ranges are unrepresentable and hero is biased toward over-folding"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "engine-accuracy"
+problem_class: "Range narrowing correctness"
+source:
+  engine: "grand-unified-theory probe"
+  protocol: "measurement"
+  run_id: "probe-narrower-polarization-2026-07-28"
+  date: "2026-07-28"
+description: |
+  postflopNarrower.js:690-720 narrows a villain range conditional on an observed
+  action by (a) sorting all live combos by total equity DESCENDING, then (b) for
+  action in {bet, call, raise} keeping the TOP `continuationRate` fraction.
+
+  A modelled betting range is therefore a pure top-slice of the equity
+  distribution with no lower arm. Pure air can never appear in a villain's
+  betting range at any continuationRate < 1. Draws are represented only because
+  the sort key is TOTAL equity (so semi-bluffs survive), but pure bluffs are
+  structurally excluded.
+
+  This contradicts POKER_THEORY.md 3.6, which specifies:
+    "Bet: Removes weak hands (would check). Range is value + bluffs."
+  The implementation delivers value-only.
+
+  MEASURED (470 range x board pairs, all 47 archetypeRanges x 10 flop textures,
+  classified by the real RANGE_MORPHOLOGY):
+    condition      capped  condensed  linear  polarized
+    raw             50.2%      1.7%    44.0%      4.0%
+    bet @0.40       45.5%      0.0%    54.5%      0.0%   <- engine default
+    bet @0.95       50.2%      1.5%    45.3%      3.0%   <- a "range bet"
+    check @0.65     48.1%      0.9%    51.1%      0.0%
+  Ordered-strength-axis moments: bet@0.40 collapses sd to 2.134 vs raw 3.799 and
+  shifts mean strength index from 14.94 to 11.72 — a strictly narrower, strictly
+  stronger, unimodal range.
+
+  DIRECTIONAL CONSEQUENCE: villain's modelled bet range reads stronger than a
+  real one, so hero's computed equity-vs-betting-range is too low and hero is
+  biased toward OVER-FOLDING versus bets. The bias is not uniform:
+    - Big river bets: bias is accidentally CORRECT. Mined pool bluff share is
+      ~1/5 of equilibrium (called river overbets: 83.0% two-pair+, 4.3% air,
+      n=23,012) — the real pool barely bluffs big, so a value-only model is
+      close to right.
+    - Cheap flop stabs: bias is WRONG. Pool folds only 38.1% to a 1/3-pot flop
+      bet (n from the 10.6M-decision fold-vs-size grid), i.e. flop betting
+      ranges are wide and contain plenty of air the model cannot represent.
+
+  Secondary effect: this blocks any assessment of RANGE_MORPHOLOGY's tuning
+  (AS-GUT-7). The classifier is being asked to detect a shape the
+  range-construction layer never emits, so re-tuning its cutoffs against this
+  input would fit noise.
+
+  Incidental correction recorded during the probe: a code-reading claim that
+  `check` produces the only bimodal range (bottom fraction + 10% traps) was
+  refuted by measurement — check kurtosis 3.985 vs raw 3.096 (MORE peaked, not
+  bimodal), because a 10% trap arm against a 65% bottom slice is too thin and a
+  thin tail raises kurtosis.
+affected_files:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/postflopDrillContent/frameworks.js"
+  - ".claude/context/POKER_THEORY.md"
+recommended_fix: |
+  Give the bet/raise narrowing a second (bluff) arm so a polarized betting range
+  is representable, then verify the direction of the change rather than assuming
+  it:
+
+  1. Split `continuationRate` for aggressive actions into a value fraction and a
+     bluff fraction, selecting the bluff arm from the BOTTOM of the equity sort
+     (optionally blocker-weighted, since POKER_THEORY 3.x already treats blockers
+     as bluff-selection criteria). Keep merged/linear representable — the fix is
+     to ADD the polarized shape, not to force it.
+  2. Condition the value:bluff split on street and sizing rather than a single
+     constant, because the measured pool composition differs sharply by both
+     (river overbet ~4% air vs flop 1/3-pot ranges that are wide). Do NOT author
+     one global ratio.
+  3. Run the AS-GUT-8 falsification test before shipping: rebuild villain bet
+     ranges with the bluff arm and compare hero's EV-optimal action against the
+     current top-slice model over a representative flop sample. The finding is
+     confirmed as material if the action flips on >10% of spots.
+  4. Note POKER_THEORY 9.4 (live-pool small-sizing donk composition skews
+     value-heavy, ~60-80% value) — the live-pool target is NOT solver-balanced
+     50:50, so the bluff arm must be calibratable per segment, not fixed.
+theory_citation: "POKER_THEORY.md 3.6 (range narrowing — bet = value + bluffs); 3.5 (sizing/composition mediated by context); 9.4 (live-pool value-heavy small-sizing composition); mass-pool-data-2026-07-25.md Maxims I, II, IV"
+dedup_key: "gut-probe-engine-accuracy-narrowbyboard-no-bluff-arm-topslice"
+created_at: "2026-07-28"
+updated_at: "2026-07-28"
+promoted_to: ""
