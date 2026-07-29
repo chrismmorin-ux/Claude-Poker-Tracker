@@ -1,0 +1,78 @@
+id: "WS-301"
+title: "A single depth-2 evaluation measured 8.5s in-harness while the whole-evaluation budget is 150ms"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "performance"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED, NOT ESTIMATED. One call to `computeCallDepth2EV` against a full 169-cell
+  villain range on a flop took **8.5 seconds** (measured 2026-07-28 through the backtest
+  loader, `gameTreeDepth2.js:490`). `gameTreeEvaluator` budgets **150 ms** for the entire
+  evaluation (`timeBudgetMs`, gameTreeEvaluator.js:630) — a factor of ~57 between the
+  budget for everything and the cost of one part of it.
+
+  TWO SEPARATE FACTS, AND THE SECOND IS THE INTERESTING ONE.
+
+  1. `computeCallDepth2EV` accepts NO time budget. The `startTime` / `timeBudgetMs` pair
+     exists on the depth-3 paths (gameTreeDepth2.js:798, guards at 833 and 921) but not on
+     this function. `gameTreeEvaluator` checks `isTimeBudgetExceeded()` BEFORE calling it
+     (lines 776, 803) and then has no way to interrupt it. A budget that is only checked at
+     the door is not a budget.
+
+  2. The cost is NOT per-combo. Measured with the same board and hero cards, on a range of
+     456 live combos: 8.09 s. On 1081 combos: 8.70 s. **2.4x the combos, 7% the time.** So
+     the work is dominated by something that does not scale with range width — the
+     stratified next-street card sampling and its rollouts. Any optimisation aimed at
+     trimming combos is therefore aimed at 7% of the problem.
+
+  WHY IT SURFACED NOW AND WHY THAT IS NOT THE CAUSE. WS-291 replaced the hard quantile cut
+  in `narrowByBoard` with a soft weighting, so narrowed ranges no longer have zeroed cells
+  and `enumerateCombos` returns ~2.4x more combos. That added the 7% above, which pushed a
+  marginal 15 s test (`gameTreeDepth2.test.js:417`) over its limit — the test's limit was
+  raised to 30 s with the measurement recorded in a comment. The slowness predates WS-291.
+
+  WHAT IS NOT YET KNOWN — state it rather than assume it. Whether the LIVE path actually
+  pays this. The 8.5 s figure is in-harness with a full range and no cache; the live path
+  passes a `cache` and a model-narrowed range, and the founder has not reported the app
+  hanging. So the first task is to measure the real thing, not to optimise the benchmark.
+accept_criteria: |
+  - The live cost is MEASURED, not inferred: instrument an actual live-path evaluation
+    (`useLiveActionAdvisor` -> `gameTreeEvaluator`) and record wall-clock for a realistic
+    flop/turn spot with a real villain model and a warm cache. If the live number is small,
+    say so and close this — the finding becomes "the harness case is unrepresentative".
+  - `computeCallDepth2EV` takes `startTime` / `timeBudgetMs` and honours them, matching the
+    depth-3 paths, with a partial result rather than an unbounded run.
+  - The dominant cost is identified by measurement (sampling vs rollouts vs equity), not by
+    reading the code.
+  - No accuracy regression: whatever is trimmed is re-scored through the WS-273 harness and
+    the WS-293 range-calibration probe.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeSampling.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "If the live path turns out to be fast, is there anything left to fix? Proposed: yes, the missing time budget, but at much lower priority."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-158"
+created_at: "2026-07-28T21:30:00Z"
+status_note: |
+  Filed 2026-07-28 during SPR-158 (WS-291). Surfaced by a timing-out test; the timing
+  measurements above were taken while diagnosing whether WS-291 had caused it. It had not.

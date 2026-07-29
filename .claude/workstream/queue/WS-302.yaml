@@ -1,0 +1,93 @@
+id: "WS-302"
+title: "The PREFLOP range still says 'impossible' — 30-37% of cells are hard zeros, and that is now the only thing keeping coverage off 100%"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-291 removed the hard cut from POSTFLOP narrowing. This is the same defect one layer
+  up, and it is now the binding constraint on the whole measurement.
+
+  MEASURED. `buildBaselineRange(null, null, pos)` (preflopAdvisor.js) assigns weight zero
+  to a third of the grid:
+
+    EARLY   106/169 cells non-zero (63%)
+    MIDDLE  108/169                (64%)
+    LATE    119/169                (70%)
+    BLINDS  106/169                (63%)
+
+  Every zeroed cell is a claim that villain CANNOT hold that hand. `narrowByBoard`
+  deliberately preserves it (`postflopNarrower.js:875` — "that is the CALLER's exclusion,
+  not this function inventing one"), which is correct layering and also means the postflop
+  fix cannot reach it.
+
+  IT IS THE RESIDUAL. With WS-291's floor guaranteeing every combo positive weight
+  postflop, coverage against revealed showdown hands is now FLAT across streets instead of
+  decaying — the compounding is gone — but it plateaus below 100%:
+
+    acting seat   ~90% at flop, turn AND river (was 89% -> 71% -> 56%)
+    villain seat  ~96% overall
+
+  Those misses are hands the preflop range never contained. That is the entire remaining
+  gap, and it is measurable to the cell.
+
+  WHY IT MATTERS MORE THAN THE PERCENTAGE SUGGESTS. The hands a positional chart excludes
+  are exactly the ones a live 9-handed player actually shows up with off-chart: a limped
+  84s from early position, a defended K3o in the blinds. The engine's response to those is
+  not "unlikely" but "impossible", so the moment villain turns one over the model was never
+  in the running. POKER_THEORY 2.1 already demotes these charts to the UNOBSERVED-SEAT
+  PRIOR (WS-274) — a prior is a starting belief, and a starting belief of zero can never be
+  updated off zero by any amount of evidence. That is the Bayesian point, not a stylistic
+  one.
+
+  THE FIX HAS THE SAME SHAPE AS WS-291. Make the preflop range a probability over all 169
+  cells: chart hands keep their weight, off-chart hands get a small positive floor rather
+  than zero, and the aggregate range width (VPIP/open frequency) is preserved so a rate
+  derived from observation is not silently rescaled. `softContinuationWeights` in
+  `postflopNarrower.js` is the mean-preserving primitive and should be reused, not
+  re-derived.
+accept_criteria: |
+  - No preflop range assigns exactly zero to a live cell. Range width is preserved: the
+    mean weight matches the intended open/defend frequency.
+  - Coverage measured by the WS-293 probe reaches ~100% at every street on BOTH sites, for
+    the acting seat AND the villain seat — the criterion WS-291 could not reach alone.
+  - Discrimination (Δlog vs uniform) is POSITIVE overall, not merely conditional on being
+    covered. Overall Δlog is currently dragged negative by these zeros alone; removing them
+    is what makes the headline metric meaningful.
+  - The floor is chosen by the same sweep method WS-291 used, not picked.
+  - No regression through the WS-273 villain-prediction harness.
+  - POKER_THEORY 2.1 records that the chart is a prior with support everywhere.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-294"
+sprint_id: null
+decision_flags:
+  - "Uniform floor across off-chart hands, or a floor that respects how far off-chart the hand is (K3o is likelier than 72o)? The second is more honest and needs a score to rank by — reuse per-combo preflop equity."
+  - "Does the same treatment apply to the range-grid population priors, or only to the positional baseline?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-158"
+created_at: "2026-07-28T21:35:00Z"
+status_note: |
+  Filed 2026-07-28 during SPR-158 while verifying WS-291. Isolated by elimination: once the
+  postflop floor guaranteed non-zero weight, whatever coverage remained missing had to come
+  from upstream, and the baseline-range cell counts confirmed it directly.

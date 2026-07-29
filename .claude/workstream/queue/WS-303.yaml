@@ -1,0 +1,105 @@
+id: "WS-303"
+title: "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Two residuals WS-291 measured and did not fix. Both are about DISCRIMINATION — whether the
+  range says anything useful — rather than coverage, which WS-291 did fix.
+
+  Metric: Δlog|cov, the mean log probability the range assigns to the hand actually held,
+  minus uniform, over decisions where the range contains it. Positive = the range beats
+  "every combo equally likely". Measured on revealed showdown hands, two independent sites,
+  400 files / 600 players each (FTP n=7,793 · PS n=6,194 villain decisions, 2026-07-28).
+
+  1. THE CHECK BRANCH IS WORSE THAN UNIFORM.
+
+       action    coverage (FTP/PS)      Δlog|cov (FTP/PS)
+       raise     92.9% / 92.7%          +0.821 / +0.827
+       call      93.9% / 90.2%          +0.474 / +0.333
+       bet       90.5% / 91.1%          +0.383 / +0.387
+       check     84.2% / 86.3%          -0.082 / -0.095     <-- worse than uniform
+
+     A check is the MOST COMMON action in the sample (3,913 of 7,793 FTP decisions, 3,383
+     of 6,194 PS). So the single most frequent thing villain does is the one the engine
+     reads worst, and it reads it worse than not reading it at all. It is also the branch
+     with the LOWEST coverage, on both sites — the two failures point the same way.
+
+     WS-291 did improve the check branch's coverage (60.5% -> ~86%) by making the two-slice
+     "bottom N% plus a 10% trap slice" into a continuous U-shape. It did not make it
+     INFORMATIVE. The baseline already suspected this — lift 1.21 against random
+     elimination — and the suspicion is now confirmed with the sign attached.
+
+     HYPOTHESIS, TO BE TESTED NOT ASSUMED. The U-shape is scored on equity alone, and a
+     check is the action LEAST determined by equity: villain checks with air, with medium
+     hands controlling the pot, with monsters trapping, and — mostly — because it is their
+     default when nothing suggests otherwise. Equity may simply be close to independent of
+     checking, in which case the honest model is a much flatter likelihood for check than
+     for the aggressive actions, and the current U-shape is confidently wrong rather than
+     humbly uninformative.
+
+  2. RE-NARROWING SHARPENS UNTIL IT HURTS.
+
+       successive narrowings   1        2        3
+       Δlog|cov (FTP)        +0.245   +0.135   -0.074
+       Δlog|cov (PS)         +0.159   +0.010   -0.239
+
+     Coverage no longer decays (WS-291 fixed that — it is now flat ~89% at every depth), but
+     each application multiplies the likelihood in again, so the distribution keeps
+     concentrating on high-equity combos. By the third application the range is sharper than
+     the evidence supports and is worse than uniform. `gameTreeDepth2` chains exactly this
+     way inside a single evaluation (flopCallRange -> turnRange -> turnCallRange), so the
+     deep branches that produce the multi-street plan are the ones affected.
+
+     HYPOTHESIS. Repeatedly applying a likelihood that is only approximately right compounds
+     its error, and applying the SAME likelihood to a range it already conditioned on
+     double-counts the evidence. Candidate treatments, to be measured against each other:
+     temper the likelihood by depth (raise to a power < 1); narrow once from the ORIGINAL
+     prior against the full observed action sequence instead of iteratively; or carry the
+     un-narrowed prior plus the sequence and condition once.
+accept_criteria: |
+  - Δlog|cov for the check branch is POSITIVE on both sites, or — if the measurement says a
+    check genuinely carries little information about villain's holding — the check
+    likelihood is deliberately flattened toward uninformative and that is RECORDED in
+    POKER_THEORY as a finding rather than hidden as a tuning choice. Confidently wrong is
+    the failure mode; humbly uninformative is an acceptable answer.
+  - Discrimination does not go negative with chaining depth: depth-3 Δlog|cov >= 0 on both
+    sites, ideally monotonically non-increasing rather than sign-flipping.
+  - Whatever changes is chosen by sweep against the WS-293 probe, on the SAME decisions
+    across arms, and re-scored through the WS-273 villain harness for regression.
+  - The trap component keeps a testable meaning: a villain who slowplays must still be
+    representable (see the TRAP_LIFT guard in postflopNarrower.js).
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "If a check really is uninformative, is a near-flat check likelihood acceptable product behaviour? It means the engine says 'villain checked, I know nothing new' — honest, and less useful than the current confidently-wrong read."
+  - "Chaining: temper by depth, or restructure to condition once on the whole action sequence? The second is more correct and a larger change to gameTreeDepth2."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-158"
+created_at: "2026-07-28T21:45:00Z"
+status_note: |
+  Filed 2026-07-28 during SPR-158 as the honest residual of WS-291. WS-291's own accept
+  criteria demanded positive discrimination at every street; it is met at flop and turn and
+  fails at the river, and these two effects are why. Splitting them out rather than
+  quietly widening WS-291 keeps the measurement attached to the claim it refutes.

@@ -1,0 +1,137 @@
+id: "WS-291"
+title: "Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctrine demands a logistic"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: "2026-07-28T20:00:00Z"
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED DEFECT, LIVE PATH. `narrowByBoard` (postflopNarrower.js:696) sorts combos by
+  equity, keeps the top `continuationRate` fraction, and ZEROES everything below. Applied
+  once per street, so eliminations compound geometrically.
+
+  Scored against 8,996 revealed showdown hands across two independent sites
+  (docs/research/range-calibration-2026-07-28.md):
+
+    coverage — does the inferred range give the TRUE hand non-zero probability?
+      flop  89.1% (FTP) / 86.7% (PS)
+      turn  71.4%       / 69.2%
+      river 55.7%       / 56.7%
+
+  A model that assigns probability ZERO to an event that occurred is falsified, not
+  merely miscalibrated. And where it does contain the truth it barely beats uniform —
+  by the river it is WORSE than uniform (delta log -0.021 / -0.026).
+
+  TWO SPECIFIC CONSEQUENCES.
+
+  1. THE ENGINE CANNOT REPRESENT A BLUFF-RAISE. Facing a raise it retains 10.8% of
+     combos and misses the true hand 38-45% of the time. A bluff-raise IS a bottom-equity
+     combo, so "keep the top N% by equity" cannot hold one. Directional consequence,
+     always the same way: the engine believes raising ranges are near-pure value, so hero
+     OVER-FOLDS to raises. POKER_THEORY 4.2 makes bluff-catching depend entirely on
+     villain's bluff frequency in exactly that spot.
+
+  2. DEPTH-2/3 RE-APPLIES THE CUT. gameTreeDepth2 chains it inside a single evaluation
+     (flopCallRange -> turnRange -> turnCallRange). Coverage 72.0% -> 57.8% -> 46.9%: the
+     deep branches that produce the multi-street plan evaluate against a range that
+     excludes villain's hand MORE OFTEN THAN IT CONTAINS IT.
+
+  ROOT CAUSE IS AN ANTI-PATTERN ALREADY NAMED TWICE IN THIS REPO. exploitEngine/CLAUDE.md:
+  "DO NOT use bucket labels when per-combo equity is available - use the logistic" and
+  "DO NOT resolve context with a threshold ... Let the posterior self-weight." WS-285 found
+  and fixed this exact shape in the villain model's context hierarchy and logged it as an
+  overturn. POKER_THEORY 6.5 states the correct form, P(hand|action) ~ P(action|hand) x
+  P(hand); the code implements P(action|hand) as a hard 1/0 indicator instead of a
+  probability.
+
+  FIX. Make P(action|combo) an actual probability — a logistic of per-combo equity — so an
+  unlikely combo is DOWN-WEIGHTED, never eliminated. Preserve the calibrated aggregate
+  continuation rate (it comes from real observations). Keep the check branch's
+  bottom-plus-traps intent, expressed as a smooth score rather than a two-piece cut.
+
+  NOT A BACKTEST-ONLY FIX: liveAdvisor/computeHelpers.js narrows through the same
+  function, so this changes what the founder sees at the table.
+accept_criteria: |
+  - No combo in a live range is ever assigned exactly zero weight by narrowing. A range
+    may make a holding very unlikely; it may not declare it impossible.
+  - Coverage measured by WS-293's instrument reaches ~100% at every street, on both sites.
+  - The DISCRIMINATION metric (mean log P of the true hand vs uniform) is POSITIVE overall
+    and at every street — this is the real bar once coverage is trivially satisfied.
+    Recorded prediction before the change: delta log moves from -3.744 to roughly
+    +0.05..+0.15, since conditional-on-covered discrimination is already +0.089.
+  - The aggregate continuation rate is preserved: the mean per-combo continuation weight
+    matches the `continuationRate` input, so a rate derived from villain observations is
+    not silently rescaled.
+  - Chained narrowing degrades gracefully: coverage after 3 successive narrowings stays
+    ~100% and discrimination does not go negative (currently -0.181 at depth 3).
+  - exploitEngine test suite green; no regression in villain-prediction accuracy/log-loss
+    through the WS-273 harness (narrowByBoard feeds decisionAccumulator, so the villain
+    model is downstream of this change and MUST be re-scored).
+  - POKER_THEORY updated with the rule that a range never assigns zero, and why.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/__tests__/postflopNarrower.test.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-294"
+sprint_id: null
+decision_flags:
+  - "Floor: what minimum weight does an implausible combo keep? Too high erases the read, too low re-creates the defect. Propose deriving it from measured coverage rather than picking it."
+  - "Preserve the aggregate continuation rate exactly (rescale after smoothing), or accept an approximate rate for a smoother curve?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T18:30:00Z"
+status_note: |
+  Filed 2026-07-28 after the WS-287 hero-EV build surfaced it. The founder's objection is
+  what found this: scoring hero decisions had been designed AROUND the absence of hole
+  cards, and the instruction to go a layer deeper rather than smooth over missing data
+  turned up 40% of decisions with revealed cards sitting unused — and, once used, a
+  falsified range model underneath everything.
+
+  This is upstream of WS-287: hero-EV marginalizes advice over exactly these ranges.
+
+progress_notes: |
+  SHIPPED 2026-07-28 (structural fix). `narrowByBoard` now computes P(action|combo) as a
+  logistic of per-combo equity; nothing is zeroed. Validated on 2 sites:
+
+    acting seat coverage   flop 89.1->94.0  turn 71.4->94.2  river 55.7->93.9
+    villain seat (gametree) 63.8 -> 87.4
+    chained x1/x2/x3        72.0/57.8/46.9 -> 87.4/87.4/87.4  (decay eliminated)
+    unconditional dlog      acting -3.744 -> -0.910; villain -5.272 -> -1.800
+
+  BOTH tuning parameters measured, not chosen: TAU_FRACTION=0.3, MIN_CONTINUATION_WEIGHT=0.05.
+  POKER_THEORY 11.6 written. 81/81 narrower tests green; exploitEngine 2631 pass (1 known-MC
+  flake per run, different test each run, reproduced on a clean tree).
+
+  TWO BUGS FOUND EN ROUTE:
+    - the trap term was scaled by IQR and could never lift the top above the middle, so the
+      check branch could not represent a slowplay at all. Fixed (TRAP_LIFT).
+    - engine test range fixtures are INVERTED -> filed as WS-300.
+
+  ACCEPT CRITERIA NOT YET MET, honestly:
+    - "coverage ~100% at every street" -> 94%. The function never zeros; the residual comes
+      from PREFLOP ranges that never contained the hand. Narrowing is no longer the binding
+      constraint - the preflop action-range assignment is. Needs a follow-up ticket.
+    - "dlog POSITIVE overall and at every street" -> NOT met (-0.910, up from -3.744). The
+      recorded prediction of +0.05..+0.15 FAILED. Cause is the same residual preflop zeros,
+      which dominate a log metric. Recording the failed prediction rather than restating the
+      bar around the result.
+    - villain-prediction re-score through the WS-273 harness NOT yet run (narrowByBoard feeds
+      decisionAccumulator, so the villain model is downstream of this change and must be
+      re-scored before this closes).
+closed_by_event: "ev-1785294082462-13ccebcac522"

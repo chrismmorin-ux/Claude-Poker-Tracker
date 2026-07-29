@@ -1,5 +1,5 @@
 ---
-version: 1.7
+version: 1.9
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-07-28
+    version: 1.9
+    change: "WS-291 (SPR-158): added §3.6.1 — A RANGE NEVER ASSIGNS ZERO, binding. `narrowByBoard` implemented the §6.5 likelihood P(action|hand) as a hard 1/0 quantile cut (keep the top `continuationRate` by equity, zero the rest), re-applied every street and again inside each depth-2/3 evaluation. Measured against revealed showdown hands on two independent sites: coverage of the hand actually held decayed 89% → 71% → 56% flop-to-river and 72% → 58% → 47% under chaining; facing a RAISE it retained 10.8% of combos and missed the true hand 45% of the time, so the engine could not represent a bluff-raise at all and hero systematically OVER-FOLDED to raises (§4.2 makes bluff-catching depend on exactly that frequency). Replaced by a logistic of per-combo equity whose mean is pinned to the observed continuation rate — severity unchanged in aggregate, but 'unlikely' replaces 'impossible'. After: coverage ~94% flat by street, 94% facing a raise, ~89% flat under chaining. Floor (0.05) and softness were SWEPT against the discrimination metric, not chosen. Third instance of the same threshold-instead-of-posterior shape after §11.5 (WS-285) and §7.6/AP-RL-01. Records two open residuals honestly: preflop ranges still hard-zero 30–37% of the grid (WS-302), and the check branch plus deep chaining remain close to information-free (WS-303)."
   - date: 2026-05-01
     version: 1.0
     change: "Frontmatter header added (FIND-003 / WS-118). Doc content unchanged. Subsequent edits MUST bump `version` and add a changelog entry recording what changed and why."
@@ -31,6 +34,9 @@ changelog:
   - date: 2026-07-25
     version: 1.5
     change: "WS-256: added §2.5 Derived Preflop Line Taxonomy — the founder's cold-3bet-vs-3bet doctrine generalized into sequence-state-derived line classes (openFirstIn/isoRaise; cold3Bet/squeeze/limpReraise), expected range shape per class, the hierarchical sparse-data shrinkage rule (subclass prior = parent posterior × doctrine split, mirroring §6.5a), and the per-decision-point extraction rule that keeps limp-reraise hands counted in the limp range per §5.8. Records the founder decision to merge blind3Bet into cold3Bet (the position dimension already carries posted money) with the straddle residual noted; §2.5.5 flags the facing-3-bet tree as unmodeled (WS-270, high priority). Doc authored ahead of the code per the ticket's design-first gate."
+  - date: 2026-07-26
+    version: 1.8
+    change: "WS-274 (SPR-155): preflop advice now derives from the ACTUAL table. §2.1 amended — position opening charts are demoted to the unobserved-seat prior; the canonical path resolves each live seat behind hero through the §6.5a hierarchy. Adds §11.4 deriving the fold-through chain rule and naming its mean-field card-removal approximation honestly (it is strictly better than the independence product and strictly weaker than an exact joint). Motivating defect: `preflopAdvisor` reduced the seats behind hero to a COUNT and priced every one of them with an invented constant (85% fold facing a 3-bet, 70% facing a squeeze, 4% 3-bet rate), so opening 76s from the hijack produced identical advice against three nits and three loose-passive callers — while the app held a full model for each of those seats. Also records that INV PFA-EC-002's raise-pressure claim moved from a ×0.85 multiplier on the finished Bayesian posterior (a label overriding observed data) into the PRIOR, where observations can outvote it."
   - date: 2026-07-26
     version: 1.7
     change: "WS-256 (SPR-154): §3.4 rewritten Three Motivations → Four. PROTECTION / EQUITY DENIAL added as a first-class betting motive — it is neither value (which profits from a CALL) nor a bluff (which is BEHIND); it profits from hands with live equity folding while the bettor is ahead. Adds §3.4.1 reconciling protection's size-UP rule with §4.1's thin-value-sizes-DOWN rule (they optimize different terms of §6.1 — call-equity vs denial), and §3.4.2 making expressibility of protection BINDING on any motive classifier, because a missing category misfiles rather than blanks. Inducing recorded as the inverse fifth motive. Adds §8 mistake #14. Found by asking the open completeness question by hand, not by the code-vs-doc sweep — the code faithfully implemented an incomplete doc, which is the structural gap WS-272 exists to close. Motivating defect: weaknessDetector flagged correct wet-board protection bets as 'C-bets unprofitably on wet boards' and 'Over-values medium hands'."
@@ -80,6 +86,14 @@ Not all equity is captured. Factors that reduce realization:
 Ranges widen dramatically with position because later positions have:
 - Fewer players left to act (lower chance of running into a premium)
 - Positional advantage postflop (act last = more information)
+
+**These charts are the UNOBSERVED-SEAT PRIOR, not the answer (WS-274).** They describe
+what a typical unknown player opens. When the app knows who is actually sitting behind
+hero — and at a live table it usually does — the canonical path resolves each of those
+seats through the §6.5a fidelity hierarchy and computes hero's opening decision from the
+fold-through those specific seats produce. A chart cannot encode that opening 76s from
+the hijack is a different decision with three loose-passive callers behind than with
+three nits, because no chart knows the table. See §11.4.
 
 Typical full-ring ranges (9-handed):
 | Position | Open Range | ~% of hands |
@@ -298,12 +312,73 @@ Without showdown data, bet sizing is an unreliable signal. With showdown data, i
 
 ### 3.6 Postflop Range Narrowing
 Each action narrows the range:
-- **Bet**: Removes weak hands (would check). Range is value + bluffs.
-- **Check**: Removes some strong hands (would bet for value). Range includes medium hands + traps.
-- **Raise**: Removes medium hands (would just call). Range is strong value + bluffs.
-- **Call**: Removes air (would fold) and the nuts (would raise). Range is medium + draws.
+- **Bet**: Makes weak hands less likely (they would check). Range is weighted toward value + bluffs.
+- **Check**: Makes some strong hands less likely (they would bet for value). Range is weighted toward medium hands + traps.
+- **Raise**: Makes medium hands less likely (they would just call). Range is weighted toward strong value + bluffs.
+- **Call**: Makes air (would fold) and the nuts (would raise) less likely. Range is weighted toward medium + draws.
 
 This narrowing is cumulative across streets. By the river, ranges are very defined.
+
+#### 3.6.1 A range NEVER assigns zero (WS-291, binding)
+
+Read "removes" above as **down-weights**, never **eliminates**. A narrowed range may make a
+holding very unlikely. It may not declare it impossible.
+
+**The rule.** `P(action | combo)` is a probability in `(0, 1]`, never a 1/0 indicator. Every
+combo the caller's prior admits keeps positive weight after narrowing, at or above a floor
+(`MIN_CONTINUATION_WEIGHT`). The one legitimate zero is a **fold** — that removes the seat
+from the pot, which is a fact about the hand, not a claim about what they could hold.
+
+**Why it is a rule and not a preference.** §6.5 gives the form
+`P(hand | action) ∝ P(action | hand) × P(hand)`. A hard cut implements the likelihood as an
+indicator, and multiplying a prior by zero is irreversible: no volume of later evidence can
+lift a combo off zero. So the error is not "a bit overconfident" — it is **unfalsifiable in
+the wrong direction**. A model that assigns probability zero to an event that then occurs
+has been refuted, not merely miscalibrated. RANGE_ENGINE_DESIGN.md §4.3 states the same
+constraint from the design side ("every hand has a weight in EVERY action range", with
+`P(limp | AA) = 0.05` as its rare-but-not-zero illustration).
+
+**What it cost, measured.** `narrowByBoard` sorted combos by equity, kept the top
+`continuationRate` fraction and zeroed the rest. Scored against revealed showdown hands
+across two independent sites (`docs/research/range-calibration-2026-07-28.md`):
+
+| | before | after |
+|---|---|---|
+| coverage, flop → turn → river | 89% → 71% → 56% | **~94% flat** |
+| coverage facing a **raise** | 55% (10.8% of combos retained) | **93%** |
+| chained ×3, as depth-2/3 re-applies it | 72% → 58% → 47% | **~87–89% flat** |
+
+The decay was **compounding**: each street re-applied the cut to a range already cut, so by
+the river the model excluded villain's actual hand nearly half the time, and the deep
+branches that produce the multi-street plan were evaluated against a range that excluded it
+more often than it contained it.
+
+**The specific poker failure this produced.** *The engine could not represent a bluff-raise.*
+A bluff-raise is by definition a bottom-equity combo, so "keep the top N% by equity" cannot
+hold one — facing a raise the model retained 10.8% of combos and believed raising ranges
+were near-pure value. The consequence is directional and always the same way: **hero
+over-folds to raises**, because §4.2 makes bluff-catching depend entirely on villain's bluff
+frequency in exactly that spot, and the model had set it near zero by construction.
+
+**The correct form.** Score each combo (equity for bet/call/raise; a U-shape for check,
+because weak hands check *and* the strongest hands check to trap), then map scores to
+probabilities through a logistic whose **mean is pinned to the observed continuation rate**.
+The aggregate stays exactly where the evidence put it; only the boundary softens. Softness
+and floor are **swept against the discrimination metric**, not chosen by taste.
+
+**Where this generalises.** This is the third time the same shape has been found in this
+engine: a threshold standing in for a posterior. §11.5 records it in the villain context
+hierarchy (WS-285), §7.6/AP-RL-01 forbids the bucket-label version, and this is the range
+version. Any `if (x >= K) keep else discard` in an inference path is the same defect wearing
+different clothes. Let the posterior self-weight.
+
+> **Known residual, stated rather than implied (2026-07-28).** Coverage plateaus at ~88–94%,
+> not 100%, because the **preflop** range still hard-zeros 30–37% of the grid — the same
+> defect one layer up, tracked as WS-302. Until that lands, *unconditional* discrimination
+> measures preflop assignment rather than narrowing. And narrowing still **degrades with
+> depth** (+0.25 → +0.14 → −0.07 over three applications) while the **check** branch — the
+> most common action there is — scores *worse than uniform*. Tracked as WS-303. All
+> measured, none fixed by this rule.
 
 ### 3.7 Polarization by Street
 - **Flop**: Ranges are wide, strategies can be mixed
@@ -318,6 +393,12 @@ The bet SIZE should generally increase across streets as ranges polarize: small 
 
 ### 4.1 Value Betting Theory
 A value bet is +EV when hero's hand has **>50% equity against the opponent's calling range**. This is the critical threshold — not equity against their full range.
+
+> **Multiway (WS-277).** The >50% rule is the **one-caller specialization**. Against
+> k callers hero must beat all of them, so the bar is `0.5^(1/k)` on pairwise
+> equity — 71% vs two callers, 79% vs three (§6.4). Everything below about thin
+> value is stated heads-up and gets strictly harder as the field grows: the
+> thin-value band is the first thing to disappear multiway, not the last.
 
 **Thin value betting**: Betting a hand that barely clears the >50% threshold. Second pair, weak top pair, or middle pair can be thin value bets against opponents who call with worse.
 
@@ -349,6 +430,20 @@ A **bluff catcher** is a hand that beats all bluffs in the opponent's range but 
 - **Blockers matter**: A hand that blocks the opponent's value range (e.g., holding A♥ when they could have the nut flush) is a better bluff catcher than one that blocks their bluffing range.
 
 **Connection to pot odds**: Facing a half-pot bet, you need the opponent to be bluffing >25% of the time to profitably call. Facing a pot-size bet, you need >33%. Facing a 2x pot bet, you need >40%. These thresholds determine whether bluff catching is profitable against a specific player's tendencies.
+
+> **Multiway (WS-277) — stated as a KNOWN GAP, not a solved one.** The framework
+> above is heads-up. Two things change with players still to act behind:
+> 1. **Hero must beat every caller, not one.** A bluff catcher that beats the
+>    bettor's bluffs can still be drawing near-dead to a third player who called
+>    or is yet to act. The §6.4 `0.5^(1/k)` bar applies to calling too.
+> 2. **Calling risks a squeeze from behind.** The heads-up call/fold framework
+>    has no term for a player still to act raising over the top, which turns a
+>    marginal call into a fold-out-of-position for a larger amount.
+>
+> Item 1 falls out of the §6.4 threshold and is implemented. **Item 2 is NOT
+> modelled** — deliberately deferred at WS-277's scope ceiling, tracked as
+> WS-282. Until it ships, bluff-catch advice multiway with players behind should
+> be read as an upper bound on how often calling is right.
 
 ---
 
@@ -478,33 +573,72 @@ Showdown observations are the most valuable data point for weakness detection. E
 
 ## 6. Mathematical Foundations
 
+> **§6.1–6.4 are stated in N-player form (WS-277, 2026-07-26).** The app's purpose
+> is 9-handed live poker, where a large share of pots are multiway; a heads-up
+> spine with multiway patches bolted on top makes every new multiway feature
+> re-derive its own correction. So each formula below is written for N opponents
+> with the **heads-up case as the N=1 specialization**, not as the base case.
+> Every N=1 expression reduces to the classic textbook formula exactly, and that
+> identity is asserted by test (`__tests__/multiwayDecisionMath.test.js`).
+>
+> **Shared assumption, stated once.** All four treat opponents' holdings as
+> conditionally independent GIVEN the shared board. This is the same
+> justification `multiwayFoldPct` already carries, and the same reason no
+> separate correlation coefficient appears: board texture enters through each
+> opponent's own fold rate and equity, so a correlation term on top would
+> double-count it (§7.4, FIND-030). The named residual is **card removal**
+> between opponents' ranges — second-order, unmodelled, UNMEASURED as of
+> 2026-07-26 (WS-281 prices it through the WS-273 harness).
+
 ### 6.1 Fold Equity Formula
 ```
-EV(bet) = foldPct × pot + (1 - foldPct) × (heroEquity × (pot + 2×bet) - bet)
+k = expected callers      (k = 1 heads-up)
+F = P(ALL opponents fold) (fold-through, not one opponent's fold rate)
+
+EV(bet) = F × pot + (1 - F) × (heroEquity × (pot + (k+1)×bet) - bet)
 ```
 This has TWO terms: the fold-equity term AND the call-equity term. Both matter. A value bet is profitable primarily from the call-equity term. A bluff is profitable primarily from the fold-equity term.
 
+Multiway changes both terms. `F` compounds — it is the product of the individual fold rates, so fold equity **decays geometrically** with each extra player, which is why bluffing largely collapses multiway. The called pot **grows** by one bet per caller, which is why semi-bluffs and value hands gain multiway even as pure bluffs lose. A pure bluff (heroEquity = 0) is indifferent to `k`: it never wins the called pot.
+
+`k` is recovered from `F` and the opponent count by inverting `F = f^N`:
+`E[k | called] = N(1 - F^(1/N)) / (1 - F)`, which is exactly 1 when N = 1.
+Implementation: `expectedCallers` / `calcFoldEquity` in `foldEquityCalculator.js`.
+
 ### 6.2 Minimum Defense Frequency (MDF)
 ```
-MDF = pot / (pot + bet)
+breakeven b = bet / (pot + bet)
+per-defender MDF = 1 - b^(1/N)          (N defenders)
+N = 1  →  1 - b = pot / (pot + bet)      (the classic formula)
 ```
-Against a half-pot bet: MDF = 66.7% (villain must defend 2/3 of range)
-Against a pot-size bet: MDF = 50%
-Against a 2x pot bet: MDF = 33%
+Against a half-pot bet heads-up: MDF = 66.7% (villain must defend 2/3 of range). Pot-size: 50%. 2x pot: 33%.
 
-If villain folds more than (1 - MDF), our bluffs auto-profit. This is the mathematical basis for bluff-frequency exploits. But MDF is a theoretical baseline, not a mandate — exploitative play deliberately deviates from MDF when we know an opponent's bluff-to-value ratio.
+**Defense DIVIDES across the field.** MDF exists to hold `P(everyone folds) ≤ b`. With N defenders folding independently that constraint is `(1-d)^N ≤ b`, so each individual defends far less while the field collectively meets the same bar. Against a 3/4-pot bet: one defender must continue 57%, but each of three defenders needs only 25%. **Applying the heads-up MDF per-player multiway over-defends badly** — it demands the field collectively defend far past the point that denies the bettor an auto-profit.
+
+If the field folds more than `b`, our bluffs auto-profit. This is the mathematical basis for bluff-frequency exploits. But MDF is a theoretical baseline, not a mandate — exploitative play deliberately deviates from MDF when we know an opponent's bluff-to-value ratio.
 
 ### 6.3 Breakeven Bluff Frequency
 ```
-Breakeven = bet / (pot + bet)
+Breakeven = bet / (pot + bet)      — independent of N
 ```
-This tells us the minimum fold rate needed for a bluff to be profitable. Half-pot bluff needs 33% folds. Pot-size bluff needs 50% folds. 2x pot bluff needs 66% folds.
+This tells us the minimum **fold-through** rate needed for a bluff to be profitable. Half-pot bluff needs 33% folds. Pot-size bluff needs 50% folds. 2x pot bluff needs 66% folds.
+
+The threshold does not move with N — but the quantity compared against it does. The required rate is on `F`, the probability **everyone** folds, and `F` collapses multiway: three opponents each folding 60% fold through only 21.6% of the time, well under the 33% a half-pot bluff needs. Same bluff, same sizing, profitable heads-up and badly -EV three-way. That is the multiway bluff collapse in one line.
 
 ### 6.4 Value Bet Threshold
 ```
-EV(value bet) > 0 when: heroEquity_vs_callingRange > 0.50
+EV(value bet) > 0 when: e > 0.5^(1/k)
+
+  e = PAIRWISE equity vs ONE caller's continuing range
+  k = number of callers
+
+  k=1 → 0.500   k=2 → 0.707   k=3 → 0.794   k=4 → 0.841
 ```
-A value bet is correct when we win more than half the time against the hands that call. The calling range is always stronger than the full range (weak hands fold), so we need more equity than we'd need against their full range.
+Heads-up, a value bet is correct when we win more than half the time against the hands that call. The calling range is always stronger than the full range (weak hands fold), so we need more equity than we'd need against their full range.
+
+**Multiway, hero must beat the BEST of the callers, not an average one.** With pairwise equity `e` against each continuing range, hero wins with probability `e^k`, so the threshold is `0.5^(1/k)`. The bar rises steeply, and the heads-up rule therefore **systematically over-values thin bets multiway** — a real money leak in the exact spot live 9-handed players face most often. Thin value is the band that collapses fastest: its 45% heads-up floor becomes 77% against three callers.
+
+**This requires a pairwise equity input.** `gameTreeContext` computes `heroEquity` via `exactEquityTwoHands` against the primary villain's narrowed range, which is pairwise — correct for this formula. Passing an equity already taken against the whole field would apply the multiway discount twice (§7.4). The generalization is `multiwayEquityThreshold(target, k) = target^(1/k)`, which applies to every rung of the classifier ladder, not just 0.50.
 
 ### 6.5 Bayesian Updates for Ranges
 ```
@@ -934,3 +1068,214 @@ bluff/value thresholds. `estimateRake(potSize, rakeConfig, street)` (`potCalcula
 Rake reduces the EV of marginal value bets and thin calls; it never affects fold-equity
 from villain folding (no showdown, no drop). This is a refinement of the §6.1 fold-equity
 formula, not a replacement.
+
+### 11.4 Preflop Fold-Through — Per-Seat Resolution and the Chain Rule (WS-274)
+
+Hero's open only wins the blinds uncontested if **every** live seat behind folds. Before
+WS-274 that probability was `f^n` for a single invented `f` — 0.85 per seat facing a
+3-bet, 0.70 per caller facing a squeeze, with re-raise risk a flat `0.04 · n`. The seats
+behind hero were carried as a COUNT, so a table of nits and a table of calling stations
+produced identical advice while the app held a full model for each seat.
+
+**Resolution — one choke point.** `exploitEngine/preflopFoldResolver.js` resolves every
+seat, in front of hero or behind, through the §6.5a fidelity hierarchy: villain decision
+model → the seat's own observed `facedRaisePreflop` counts, Beta-blended against → the
+segment pool baseline → founder estimate / position table. **Position labels are legal
+only at that last tier** (§7.2 permits them as priors, never as the answer), and this is
+now the single place in the preflop path that may consult one.
+
+Two consequences of doing it there rather than at the call sites:
+
+- **Sizing enters as price, not as a multiplier.** A seat's fold response is a logistic
+  in the required equity to call, `c / (p + c)` — the §7.1 decision input — replacing
+  additive nudges like `+ (multiplier − 2.5) · 0.05`. The postflop fold curves are fitted
+  in pot-fraction units around a 0.75 midpoint and do NOT transfer to preflop opens of
+  1.5–3.5× pot, so only the curve's SLOPE is carried over, via the change of variables
+  `d(potOdds)/df = 1/(1+2f)²`. WS-283 governs the curve's absolute calibration.
+- **No observation cutoff.** A seat with three observed hands contributes three
+  observations against the prior's pseudocount; the Beta posterior self-weights. A
+  minimum-N gate would be a threshold label, the same anti-pattern in another costume
+  (founder decision, 2026-07-26). The gate exists only on the NARRATIVE — advice will not
+  say "3 tight seats behind" off four hands.
+
+**Fold-through — chain rule, with its approximation named.** Fold-through is
+
+```
+P(all fold) = P(f₁) · P(f₂ | f₁) · P(f₃ | f₁, f₂) · …
+```
+
+which is exact by construction, not a fitted correlation term — consistent with FIND-030
+rejecting a correlation coefficient on `multiwayFoldPct` as texture double-counting.
+
+Each conditional term is where the honesty is owed. Seats that fold were holding weak
+cards, so those cards leave the pool and later seats are richer in strong hands and fold
+slightly less: folding through three players is **harder** than `f³`. `foldThroughPerCombo`
+computes each term per combo — fold probability is the equity-ratio logistic of §7.3, never
+a bucket lookup, with the logistic's centre fitted per seat so the range-weighted mean
+reproduces that seat's resolved aggregate rate (the refinement rides on the data, it does
+not overrule it). After each seat, card availability is reduced by the probability that
+seat held each card **given it folded**.
+
+That last step is a **mean-field update, not an exact joint**. The exact conditional would
+enumerate C(50,2)·C(48,2)·… card assignments and is not computable at a live decision. So
+the model is strictly better than assuming independence and strictly weaker than exact —
+state it that way, and do not describe the result as an exact chain rule without the
+qualifier.
+
+**MEASURED SIZE OF THE EFFECT (2026-07-26).** Card removal is real and correctly signed,
+and it is **small**. Against the naive independence product, per-seat rates held equal:
+
+| Seats behind | Fold rate 0.50 | 0.75 | 0.90 |
+|---|---|---|---|
+| 1 | 0.00% | 0.00% | 0.00% |
+| 2 | 0.21% | 0.07% | 0.01% |
+| 3 | 0.62% | 0.20% | 0.04% |
+| 5 | 2.02% | 0.67% | 0.14% |
+| 8 | — | 1.80% | 0.38% |
+
+Relative shift in fold-through; the largest absolute movement across the grid is 0.18
+percentage points. That is well inside the sampling error on the fold rates themselves —
+a villain with 30 observed hands carries several points of uncertainty on its own rate.
+
+Record this plainly: the per-combo path is the more correct model and it costs ~4ms for a
+full table, but the quantity it recovers is second-order next to the inputs feeding it.
+The first-order wins in WS-274 came from resolving each seat's rate individually at all,
+not from the coupling between them. This is the measurement WS-281 was filed to obtain —
+the approximation is now priced rather than merely named.
+
+At one seat behind, the per-combo and aggregate paths agree exactly (there is nothing to
+condition on), which is asserted by test as a calibration identity.
+
+Per-combo equity comes from `pokerCore/preflopEquityTable.js`, a generated 5 × 169 table
+of hand-class equity against hero's population opening range. **Hero's side of that table
+is a placeholder**: the engine has no model of hero's strategy nor of what villain believes
+hero holds (WS-276). Resolving hero's side to 169 × 169 would be false precision until that
+lands.
+
+Degradation is load-bearing. With no hero cards there is no deck to condition on, and the
+independence product is the honest answer. With no seat data at all, every seat resolves to
+the same population prior the pre-WS-274 code used, so a cold table reproduces the old
+structure rather than inventing a different one.
+
+### 11.5 Villain Context Hierarchy — Shrinkage, Not a Threshold (WS-285)
+
+`queryActionDistribution` answers "what will this villain do here?" by looking up their past
+decisions in a matching context. Contexts are nested from `facingAction` alone out to the
+full six-dimensional spot, and the question is how to combine them.
+
+**The answer is shrinkage.** Every level contributes, each one serving as the prior for the
+next narrower one, scaled to a parent-constraint weight `W = 10`. A thin contextual cell
+barely moves off the villain's pooled behaviour; a deep one dominates it. There is no
+threshold at which specificity switches on. This is the same staged conjugate construction
+as §6.5a — founder estimate → imported reference → pool aggregate → per-villain read, each
+stage priming the next — applied to context instead of to population.
+
+**Dimension order is MEASURED** (`HIERARCHY_ORDER`), broad → specific:
+
+```
+facingAction  →  isAgg  →  isIP  →  texture  →  street  →  posCategory
+```
+
+Ranked as single-dimension arms against a pooled baseline on 10,147 paired decisions:
+`isAgg` −0.0167 · `isIP` −0.0081 · **pooled 0** · `street` +0.0096 · `texture` +0.0132 ·
+`posCategory` +0.0153. Street, texture and position are each **worse than pooling on their
+own**. Whatever survives fallback longest should be the dimension that beats pooling.
+
+**Measured result** (paired, same decisions, HandHQ 50NL July 2009):
+
+| Arm | log-loss | accuracy | vs old ladder | vs pure pooling |
+|---|---|---|---|---|
+| shrinkage W10 + measured order | **0.7582** | **58.7%** | −0.0350 (t=−10.7) | −0.0201 (t=−7.4) |
+| pool everything by facingAction | 0.7783 | 55.0% | −0.0149 (t=−10.8) | — |
+| reorder alone (keep the gate) | 0.7858 | 54.2% | −0.0074 (t=−5.4) | *loses to pooling* |
+| old six-level gate | 0.7932 | 52.2% | — | +0.0149 |
+| old gate, `min-n` raised to 25 | 0.8239 | 48.6% | +0.0307 (t=+15.0) | worse |
+
+**Order and shrinkage are complements, not substitutes.** Reordering alone gains 0.0074;
+shrinkage alone gains 0.0172; together they gain 0.0350 — more than the sum. The gate can
+only *choose* one level, so a good ordering just changes which single level wins. Shrinkage
+lets every level speak, which is only worth something once the levels nearest the root are
+the informative ones. Neither fix alone beats pooling; both together beat it decisively.
+
+**The gain scales with the read, and is never negative.** By villain depth: established
+(≥30 obs) −0.0528 and 52.9% → 61.6% accuracy; developing −0.0152; speculative (<10 obs)
+−0.0026. Live per-villain samples are far smaller than the corpus's, so expect the modest
+end of that range at the table — but the change is safe when thin and compounds as reads
+accumulate, which is the correct shape for a live tool.
+
+#### The fallback-level table is a SELECTION EFFECT — do not cite it as evidence
+
+The engine reports log-loss by which level a decision resolved at, and it rises
+monotonically as the ladder falls back (level-1 0.737 → level-6 0.801 → prior 0.909). That
+looks like specificity paying for itself. **It is not evidence of anything.**
+
+*Different decisions reach different levels.* A decision that reaches level-1 is one with
+many observations in a narrow cell, and those decisions are inherently more predictable. The
+table compares **easy decisions to hard ones**, not one method to another. It ranks the
+spots, not the ladder.
+
+The same error in another costume: the `flat` arm (a single fully-specific level with no
+fallback) scored −3.98%, which was read as "the ladder is load-bearing." It shows that
+over-specificity *without* fallback is bad. It says nothing about whether the ladder beats
+**pooling**, because no pooled arm existed until WS-285 ran one — and pooling won.
+
+**The general rule: to compare two methods, score both on the SAME decisions and difference
+them per decision.** Any comparison across different decision sets is measuring the decisions.
+This is why `dump-records.mjs` emits index-paired per-decision records rather than scorecards.
+
+#### On admissibility of corpus evidence (founder decision, 2026-07-27)
+
+This hierarchy was fitted on online 2009 50NL, and §6.5a forbids sharing priors across the
+live/online boundary. That rule binds prior **values** — base rates are population-specific.
+It does not bind **estimator structure**: at what sample depth contextual splitting beats
+pooling is a bias-variance question governed by sample depth, not by pool tendencies. Live
+per-villain samples are *smaller*, which pushes the same direction harder, so the finding
+errs conservative for live. Values stay segregated; structure may be fitted anywhere,
+provided the direction of the error is stated.
+
+### 11.6 A Range Never Assigns Zero — Narrowing Is Reweighting, Not Elimination (WS-291)
+
+**Rule.** Postflop narrowing multiplies a range by `P(action | combo)`. That factor is a
+**probability**, never an indicator. A range may make a holding very unlikely; it may not
+declare it impossible.
+
+This is not new doctrine. `RANGE_ENGINE_DESIGN.md` §4.3 has always required it —
+
+> *"We CANNOT exclude a hand from a range just because we saw it in another range … every
+> hand has a weight in EVERY action range."* — with `P(limp | AA) = 0.05`, "rare but not zero"
+
+— and §6.5 has always stated the form, `P(hand | action) ∝ P(action | hand) × P(hand)`.
+`narrowByBoard` nonetheless implemented `P(action | hand)` as a hard top-N quantile cut
+until 2026-07-28, zeroing everything below the line and re-applying the cut each street.
+
+**Why it matters, measured.** Scored against 8,996 revealed showdown hands on two
+independent sites (`docs/research/range-calibration-2026-07-28.md`), the cut assigned
+probability **zero to the hand actually held** 11% of the time on the flop, 29% on the turn
+and **44% on the river**; `gameTreeDepth2` re-narrows within one evaluation, reaching 53%.
+A model that says an observed event was impossible is falsified, not miscalibrated.
+
+**The consequence is directional, and it is the expensive kind.** "Keep the top N% by
+equity" cannot represent a **bluff-raise**, because a bluff is a bottom-equity combo. Facing
+a raise the old cut retained 10.8% of combos and missed villain's real hand ~40% of the
+time, so the engine modelled raising ranges as near-pure value — and hero **over-folds to
+raises**. §4.2 makes bluff-catching depend entirely on villain's bluff frequency in exactly
+that spot.
+
+**Three properties any replacement must hold.**
+
+1. **Never zero.** A floor keeps every live combo above zero (`MIN_CONTINUATION_WEIGHT`).
+   Only the *caller's* prior may zero a cell — a preflop range that never contained the
+   hand — and that exclusion belongs upstream, not here.
+2. **The likelihood is independent of the prior it multiplies.** Calibrating the threshold
+   on the input range makes `P(action | combo)` depend on what else the range holds: pass a
+   range of nothing but quads and mean-preservation drives `P(raise | quads)` down to the
+   population raise rate. Calibrate against every combo live on the board.
+3. **The aggregate continuation rate is preserved.** `continuationRate` comes from observed
+   behaviour; smoothing the boundary must not silently move how often villain continues.
+
+**What the fix bought, and what it did not.** Coverage stopped decaying by street (89/71/56
+→ 94/94/94) and the chained decay vanished entirely (72/58/47 → 87/87/87). But the softness
+sweep showed the equity ordering earns only **~0.05 nats over not narrowing at all**, and
+every setting sharper than ~0.30 loses to switching narrowing off. Same shape as §11.5: an
+elaborate mechanism, never measured, barely beating the trivial alternative. Treat the
+narrowing's *value* as small and provisional; treat "never zero" as settled.

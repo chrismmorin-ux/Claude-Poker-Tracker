@@ -223,10 +223,11 @@ If a rule is wrong: edit the statement, downgrade confidence, or delete the rule
 
 #### Rule: Range-narrowing decisions use per-combo equity ranking, not bucket-keyed lookup (AP-RL-01) `[artifact]`
 
-- **Statement:** Postflop range narrowing must rank/select combos by per-combo equity (plus draw potential) conditioned on observed continuation frequency — never via a bucket-label filter or a per-bucket rate lookup table.
+- **Statement:** Postflop range narrowing must rank/select combos by per-combo equity (plus draw potential) conditioned on observed continuation frequency — never via a bucket-label filter or a per-bucket rate lookup table. **And the ranking must produce a PROBABILITY, never a 1/0 indicator (WS-291): a range may make a holding very unlikely, it may not declare it impossible.**
 - **Source evidence:**
-  - `src/utils/exploitEngine/postflopNarrower.js:624-666` — narrowByBoard sorts combos by total equity, keeps top N% by observed continuation frequency; wired into production via gameTreeEvaluator/gameTreeContext/gameTreeDepth2
-  - `.claude/context/POKER_THEORY.md §7.6 (AP-RL-01)` — binding anti-pattern statement
+  - `src/utils/exploitEngine/postflopNarrower.js` — `narrowByBoard` scores every live combo by total equity and converts scores to `P(action | combo)` via `softContinuationWeights`, a logistic whose mean is pinned to the observed continuation rate; wired into production via gameTreeEvaluator/gameTreeContext/gameTreeDepth2
+  - `.claude/context/POKER_THEORY.md §3.6 (never-zero rule) + §7.6 (AP-RL-01)` — binding anti-pattern statements
+  - `docs/research/range-calibration-2026-07-28.md` — the measurement that forced the change: the previous hard quantile cut assigned probability zero to the hand actually held 44% of the time by the river
 - **Confidence:** High
 - **Review notes:** comboMultiplier (bucket-anchored alternative) still exists in postflopNarrower.js, exercised only by its own test — confirm it is genuinely dead in production paths, not a conditional shadow path.
 - **Enforcement:** proposable_invariant — CI lint pattern proposed in POKER_THEORY §7.6 (not yet implemented)
