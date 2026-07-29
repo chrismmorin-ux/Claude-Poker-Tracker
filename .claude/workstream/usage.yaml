@@ -5,10 +5,14 @@ repo_type: ""       # Set during /adopt (SaaS, Frontend, etc.)
 
 # Command usage tracking — incremented each time a command runs
 # Updated by: session-end (batch), quick-fix epilogue, individual commands
+# NOTE (2026-07-27): this ledger was all-zero before today — the "update
+# silently" step never actually ran in prior sessions, so these totals count
+# from this session forward and UNDERCOUNT the repo's real history. Do not read
+# them as lifetime figures until backfilled.
 command_usage:
   status: 0
   session_start: 0
-  session_end: 0
+  session_end: 1
   next: 0
   workstream: 0
   engine: 0
@@ -20,7 +24,10 @@ command_usage:
   decide: 0
   # Quick fix and standard mode aren't commands but track session types
   quick_fix_sessions: 0
-  standard_sessions: 0
+  # Entered as Quick Fix, escalated to Standard on the second file and stayed
+  # there. Counted once, as Standard — the mode it actually ran in. (The
+  # session-end protocol nominally says strategic; that would misreport it.)
+  standard_sessions: 1
   strategic_sessions: 0
 
 # Engine run tracking — which engines are actually used
@@ -32,14 +39,25 @@ engine_runs:
 # Value ledger — concrete evidence of CWOS impact
 # Each entry is a timestamped record of value delivered
 value_ledger:
+  # 8 real defects found + fixed this session, but none were filed as formal
+  # FIND-NNN records (the work was founder-reported and shipped directly), so
+  # this counter stays 0 rather than being inflated. The findings live in
+  # .claude/failures/STALE_CHUNK_DEAD_END.md and DEC-025..028.
   total_findings_caught: 0
-  total_items_completed: 0
+  total_items_completed: 0       # No queue items — unqueued founder-reported work
   total_items_created: 0
-  regressions_prevented: 0       # Findings that matched failure library patterns
-  invariant_violations_caught: 0  # Times invariant checks caught issues
-  drift_corrections: 0           # State drift detected and fixed
-  decisions_recorded: 0          # Decisions logged (institutional memory)
-  sessions_with_handoff: 0       # Sessions that wrote handoff notes (continuity)
+  # The OnlineView mismatch-reload defect was the SAME pattern already fixed
+  # once in 963451f (UpdateBanner); the pattern sweep caught the second instance
+  # before it shipped a wrong "update the extension" instruction to the founder.
+  regressions_prevented: 1
+  invariant_violations_caught: 0
+  # (1) system/state.md claimed kit/scripts was never installed — it is.
+  # (2) errorLog stamped a hand-maintained 'v122' that froze while the app moved
+  #     to v123, so every logged error and exported bug report carried a wrong
+  #     build. Now stamped from BUILD_SHA.
+  drift_corrections: 2
+  decisions_recorded: 4          # DEC-025, DEC-026, DEC-027, DEC-028
+  sessions_with_handoff: 1
   # Calculated at read time:
   # value_density = total_findings_caught / max(engine_runs_total, 1)
   # session_continuity = sessions_with_handoff / max(total_sessions, 1)
@@ -50,8 +68,8 @@ feature_engagement:
   # Feature: { available: true, used: bool, last_used: date, value_score: 0-10 }
   session_discipline:
     available: true
-    used: false
-    last_used: ""
+    used: true
+    last_used: "2026-07-27"
     value_score: 0    # Updated by convergence engine based on handoff quality
   queue_management:
     available: false   # Set true at L2+
@@ -91,8 +109,9 @@ escalation_signals:
 # Convergence metrics — is the system embedding deeper or being ignored?
 convergence:
   trend: "unknown"        # "embedding", "stable", "declining", "unused"
-  weeks_tracked: 0
-  weekly_snapshots: []
+  weeks_tracked: 1
+  weekly_snapshots:
+    - { week: "2026-W31", sessions: 1, commands: 1, findings: 0, items_done: 0, decisions: 4 }
   # Each snapshot: { week: "2026-W14", sessions: N, commands: N, findings: N, items_done: N }
   # Convergence = positive slope on commands+findings over 4+ weeks
   # Decline = negative slope or zero activity for 2+ weeks

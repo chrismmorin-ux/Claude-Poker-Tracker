@@ -241,8 +241,35 @@ friction_log:
 #     workaround: "What was done instead (if applicable)"
 
 # Section C: Aggregation summary (auto-maintained)
+  - id: fr-020
+    timestamp: "2026-07-26T18:00:00Z"
+    session_id: "session-2026-07-26-pwa-stale-chunk-recovery"
+    category: platform_issue
+    severity: medium
+    detail: "Repo pins lucide-react ^0.263.1, whose installed build has no `DatabaseZap` export. Importing it compiled cleanly under Vite/Vitest and failed only at RENDER time as \"element type is invalid\" from HealthIndicator, with no mention of the icon name — 4 tests failed with a stack trace pointing at the component rather than the import. Diagnosis needed grepping node_modules/lucide-react/dist/lucide-react.d.ts for the exported aliases, because the package ships no per-icon files at this version and can't be require()d from a node -e one-liner either."
+    component: dependency-lucide-react
+    workaround: "Swapped to `Database`, verified present via `grep -oE '(Database|HardDrive|Save|CloudOff)[A-Za-z]* as [A-Za-z]+' node_modules/lucide-react/dist/lucide-react.d.ts`. Suggested kit/repo improvement: any new lucide icon should be grep-verified against the INSTALLED d.ts before use — the icon set on lucide.dev is far ahead of 0.263.1."
+
+  - id: fr-021
+    timestamp: "2026-07-26T17:20:00Z"
+    session_id: "session-2026-07-26-pwa-stale-chunk-recovery"
+    category: platform_issue
+    severity: low
+    detail: "Two environment frictions while verifying a deploy. (1) The agent proxy returns 403 on CONNECT for poker-tracker-68b97.web.app, so the deployed /version.json cannot be fetched directly — `curl` reports 'CONNECT tunnel failed, response 403' and a bare `curl -sf` exits 0 with empty output, which reads as success. (2) `mcp__github__actions_list` for deploy.yml returns ~465KB and blows the token cap every time, so every deploy check needs the saved-file + python-parse detour."
+    component: environment-proxy / github-mcp-actions_list
+    workaround: "Deployment verification now relies on the deploy workflow's own 'Verify deployment' step (it curls version.json in CI and fails the job on mismatch) rather than a direct fetch — recorded in the session file's context_notes so future sessions don't retry the curl. For actions_list, parse the tool-result file with python instead of reading it."
+
+  - id: fr-022
+    timestamp: "2026-07-27T15:20:00Z"
+    session_id: "session-2026-07-26-pwa-stale-chunk-recovery"
+    category: platform_issue
+    severity: medium
+    detail: "A scheduled self-check-in wake-up prompt carried a stale timestamp: the prompt asserted 09:06 UTC while `date -u` reported 17:18 UTC — an 8-hour gap. Pacing decisions (poll interval, daytime-vs-overnight cadence) had been made from the prompt's stated time and were wrong as a result; one already-scheduled follow-up had to be deleted and re-created with the correct framing. Also observed: the github MCP server disconnects and reconnects between wake-ups, so mcp__github__* tools are intermittently absent at the start of a fired check-in."
+    component: send_later / scheduled-wakeup
+    workaround: "Every subsequent check-in ran `date -u` first and derived cadence from the real clock, and carried a note in its own prompt text telling the next firing to do the same and to reload github tools via ToolSearch if missing. Any future self-scheduling loop should treat times stated in its own prompt as untrusted."
+
 summary:
-  total_friction_events: 17
+  total_friction_events: 20
   total_user_feedback: 3
   unresolved_feedback: 3
   by_severity:

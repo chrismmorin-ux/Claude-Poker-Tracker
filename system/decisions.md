@@ -680,3 +680,51 @@ assumptions:
 **Context:** WS-245 (FIND-009 + FIND-010) — confidence-gating display-layer categorical verdicts. Extends the "verify the ticket's data-shape assumption before implementing" discipline.
 
 ---
+
+---
+
+## DEC-025: A recovery control must live in the eager bundle, never behind the thing it recovers
+
+**Date:** 2026-07-26 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** Any self-healing affordance — force update, hard refresh, reset, safe mode — must be reachable from code that is already loaded when the failure occurs. Concretely: both error boundaries (`ErrorBoundary`, `ViewErrorBoundary`) and `ViewLoadingFallback` render their escape hatch from the main bundle rather than delegating to Settings.
+
+**Reasoning:** The 2026-07-25 E401 incident had exactly one usable fix — Settings → Force Update — and `SettingsView` is a lazy chunk, so the missing-chunk failure took out the fix along with the feature. "Try Again" was also dead because `React.lazy` caches the rejected promise, and "Reload Page" was answered from the service worker's own precache. Three exits, all closed by the same root cause. The generalisation is stronger than the specific bug: code-splitting a recovery path couples its availability to the failure it handles. Cheap to honour (the recovery UI is small), expensive to violate (the founder is locked out mid-session at a table).
+
+**Context:** PR #3, founder-reported crash selecting a player from the Table screen. Recorded in `.claude/failures/STALE_CHUNK_DEAD_END.md` §Generalisation.
+
+---
+
+## DEC-026: A staleness check compares the running artifact to the server — never the server to itself
+
+**Date:** 2026-07-26 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** `useBuildVersion` seeds `current` from `BUILD_SHA` (compiled into the bundle by Vite `define`) instead of from the first `/version.json` poll. Freshness is additionally re-checked on `visibilitychange`/`focus`/`online`, and `requestSwUpdate()` asks the browser for a newer worker at the same moments. Callers that assert "up to date" must gate on `lastCheckedAt` recency.
+
+**Reasoning:** `version.json` always reports the SERVER's newest build, so seeding `current` from the first poll compared the server to itself — structurally incapable of detecting that THIS page was already behind, which was the banner's entire job. It silently never fired. `DataAndAbout` had independently done it correctly (`BUILD_SHA !== latestVersion`), so two surfaces answered the same question differently and the always-visible one was wrong. Separately, a bare `setInterval` is not a freshness guarantee on a phone PWA: the app is resumed rather than reloaded and the timer is throttled or frozen while backgrounded, so an hours-old answer was presented as current. Trade-off accepted: `'dev'`/`'local'` builds fall back to first-poll seeding so local runs don't show a phantom update.
+
+**Context:** PR #3, root-cause layer of the E401 incident. The founder observed the symptom directly ("app says updated before forcing the update"). Verified in production 2026-07-27: the phone self-updated 963f1ec → 57ef88d with no manual Force Update.
+
+---
+
+## DEC-027: Degrade-and-continue is kept for persistence init failure, but it must announce itself
+
+**Date:** 2026-07-26 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** The four persistence hooks (`usePersistence`, `useSessionPersistence`, `usePlayerPersistence`, `useSettingsPersistence`) still catch init failure and set `isReady(true)` — the degradation strategy is unchanged. They now also call `reportPersistenceFailure()` (`src/utils/persistenceHealth.js`), which records the subsystem and writes **E307** to the exportable error log; the app-root `HealthIndicator` surfaces "Not saving — data at risk" at the TOP of its fault precedence, above sync.
+
+**Reasoning:** Continuing is correct — a tracker that refuses to open is useless at a table, and the founder can still play. Silence is not: every control worked, hands appeared to record, nothing was written, and discovery came when the session was already gone. Precedence above sync is deliberate: a sync fault costs re-importable hands, this costs the session being played. Surfaced on the pill rather than in a view per `navigation-ia.md`'s own extension rule ("an operator/health signal → extend HealthIndicator") — a per-view warning is invisible from the Table, the one place it matters. Failures are module-scoped rather than persisted, and `reportPersistenceHealthy()` clears on a successful retry, because `userId` changes re-run init and a guest-session failure must not keep alarming after sign-in.
+
+**Context:** PR #4. Found during the 2026-07-25 sweep for the DEC-025 pattern; deliberately deferred from PR #3 because it needed a user-visible surface. Gate 1 GREEN (surface-bound fix on an existing surface), no Gate 2.
+
+---
+
+## DEC-028: A stalled chunk load explains itself and offers choices — it never auto-clears caches
+
+**Date:** 2026-07-26 | **Status:** Accepted | **Detected:** implicit
+
+**Decision:** `ViewLoadingFallback` replaces the bare Suspense spinner. It stays silent for 6s, then explains the delay and offers "Back to Home" (leaving the Suspense boundary for an eager view), and at 18s adds "Update App". It never fires `hardRefresh()` on a timer.
+
+**Reasoning:** `chunkRecovery` (DEC-025's mechanism) handles a chunk that *rejects*; one that never arrives never rejects, so the old spinner turned forever with no timeout, message, or exit. The tempting fix — timeout → `hardRefresh` — is actively harmful: `hardRefresh` clears the precache, so firing it in response to a weak connection strips the offline copy at the exact moment the network cannot replace it, converting a slow load into a broken app. In a poker room, weak signal is the common case and a missing chunk is the rare one, so the default must not assume the rare cause. Hence: the app explains, the founder chooses. Trade-off: a genuinely stuck load costs the founder two taps instead of self-healing.
+
+**Context:** PR #4. The second gap deferred from PR #3; the founder was offered the trade-off explicitly and chose to ship the non-destructive version.

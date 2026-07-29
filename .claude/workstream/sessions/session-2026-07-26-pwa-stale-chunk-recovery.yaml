@@ -1,0 +1,154 @@
+id: "session-2026-07-26-pwa-stale-chunk-recovery"
+status: completed
+started_at: "2026-07-25T21:55:00Z"
+ended_at: "2026-07-27T15:45:00Z"
+mode: standard
+ceremony: standard
+session_end_count: 1
+
+# Founder-reported production crash, not a queue item. Entered as Quick Fix
+# ("error when trying to select a player from the table screen", screenshot),
+# escalated to Standard on the second file and stayed there — the root cause
+# turned out to be four independent defects, and the sweep for the same pattern
+# found four more. No /session-start was run; no session file existed until now.
+claimed_items: []
+sprints_completed: []
+
+unqueued_work: true
+unqueued_reason: >
+  Founder-reported E401 crash from a live device with a screenshot. Diagnosed,
+  fixed, swept for the same pattern, shipped in two PRs, deployed and
+  confirmed working in production. Never entered the queue.
+
+pull_requests:
+  - { number: 3, title: "fix(pwa): recover from a mid-session deploy, and stop the app hiding it", merged: "2026-07-26T00:00:00Z", merge_commit: "963f1ec", commits: 5 }
+  - { number: 4, title: "feat(reliability): surface silent save failures, give stalled loads an exit", merged: "2026-07-27T15:33:14Z", merge_commit: "57ef88d", commits: 1 }
+
+decisions_recorded: ["DEC-025", "DEC-026", "DEC-027", "DEC-028"]
+
+failure_modes_recorded:
+  - ".claude/failures/STALE_CHUNK_DEAD_END.md"
+
+handoff_notes: |
+  ## What happened
+
+  Founder tapped a seat on the Table screen and got the E401 boundary:
+  "Failed to fetch dynamically imported module: .../PlayerFinderView-DyXyQHTf.js".
+  Root cause was four things lining up, not one:
+
+  1. Views are code-split with content-hashed names; the 1:43 PM deploy replaced
+     `dist/` and that filename stopped existing.
+  2. Workbox (`skipWaiting` + `clientsClaim`) had already activated the new
+     worker and deleted the old precache — so the chunk was gone from cache AND
+     from the server, with the page still running the old bundle.
+  3. `firebase.json` rewrites unmatched paths to `/index.html`, so the request
+     returned HTML with a 200 and the import rejected on a MIME mismatch rather
+     than an honest 404.
+  4. `useBuildVersion` seeded `current` from the first `/version.json` poll —
+     comparing the server to itself — so the update banner was structurally
+     incapable of detecting that the page was already stale. It never fired.
+
+  Every exit was closed: "Try Again" re-throws (React.lazy caches the
+  rejection), "Reload Page" is answered from the worker's own precache, and
+  Force Update lives behind `SettingsView`'s lazy chunk — the same failure.
+
+  ## Shipped (PR #3, merged 963f1ec)
+
+  - `src/utils/chunkRecovery.js` — wraps every lazy view import; one
+    `hardRefresh()` on a chunk failure, guarded per-tab in sessionStorage.
+  - Both boundaries classify chunk failures as **E405** with a plain-language
+    "A new version is ready" surface, rendered from the main bundle.
+  - `useBuildVersion` seeds from `BUILD_SHA`; re-checks on
+    visibilitychange/focus/online; `requestSwUpdate()` asks the browser for a
+    newer worker (nothing did before).
+  - `OnlineView` mismatch reload uses `hardRefresh()` — same defect, found by
+    the sweep.
+  - Health pill deep-links into Settings' Error Log (new `settingsFocus` UI
+    state, mirroring `dashboardAnchorDeepLink`); its count badge loads on mount.
+  - Root `ErrorBoundary` now persists to the readable error log; entries stamp
+    `BUILD_SHA` instead of the frozen `'v122'` literal.
+  - Pill counts only errors from the running build (founder hit this: a
+    day-old error kept a red alert up through Force Update).
+
+  ## Shipped (PR #4, merged 57ef88d)
+
+  Closed the two gaps #3 deliberately left open:
+
+  - `src/utils/persistenceHealth.js` + **E307** — the four persistence hooks
+    still degrade-and-continue but no longer silently; `HealthIndicator` shows
+    "Not saving — data at risk" at the top of its fault precedence.
+  - `src/components/ui/ViewLoadingFallback.jsx` — a stalled (not failed) chunk
+    now explains itself at 6s with Back to Home, adds Update App at 18s, and
+    never auto-clears caches.
+
+  ## Verified in production
+
+  Deploy 57ef88d completed 2026-07-27 15:34 UTC, "Verify deployment" step
+  passed. Founder confirmed the phone reached 57ef88d **with no manual Force
+  Update** — the first real-world proof the auto-update path works end to end.
+
+  ## Items completed
+  None from the queue — see `unqueued_work` above.
+
+  ## Items remaining
+  None opened by this session. Pre-existing `in_progress` items (WS-014,
+  WS-022, et al. from the 2026-05-01 migration) were untouched and are NOT
+  claimed by this session.
+
+  ## Next recommended action
+  `/next` — the queue is untouched by this work. Note the two HIGH findings
+  still queued from 2026-07-22 (WS-260 online-segment pooling, WS-261
+  sizingTells circularity) plus WS-262, and the gate blocks below.
+
+context_notes: |
+  ## Gate blocks carried forward (unchanged by this session)
+
+  domain-correctness sweep and launch sweep were already overdue entering this
+  session and still are — they block NEW sprint composition. Run
+  `/pulse run domain-correctness sweep` + `/pulse run launch sweep` before
+  `/next` composes.
+
+  ## Corrections to prior state
+
+  - `system/state.md` claimed `kit/scripts/` "was never installed" (WS-212).
+    It IS present now — `cwos-reconcile.js`, `cwos-gc.js`,
+    `cwos-state-store.js`, `cwos-event.js` all exist and were used this
+    session. The WS-212 note is stale; the kit-version claim (3.5.0 vs 3.8.0)
+    was not re-verified.
+  - Git vital sign said UNCOMMITTED with SPR-145/WS-236 work pending. Founder
+    committed that (c25ac0c and successors) before this session.
+
+  ## New surface area for the next session to know about
+
+  - **E307** (`PERSISTENCE_DEGRADED`) and **E405** (`CHUNK_LOAD_FAILED`) are new
+    error codes; `docs/DEBUGGING.md` documents both, including a rewritten
+    "Data not saving" playbook that checks E307 first.
+  - `settingsFocus` in `uiReducer` + `openSettings(focus)` /
+    `clearSettingsFocus` in UIContext is a general mechanism — any future
+    "take me to THAT part of Settings" affordance should use it rather than
+    `setCurrentScreen(SETTINGS)`.
+  - `HealthIndicator` fault precedence is now: not-saving → sync/version-
+    mismatch → extension-offline → errors-on-this-build. Documented in
+    `docs/design/navigation-ia.md`, which is also the artifact that mandates
+    extending the pill rather than adding per-view health widgets.
+  - The environment's proxy blocks `poker-tracker-68b97.web.app` (403 on
+    CONNECT), so deployed-version checks must go through the deploy workflow's
+    own "Verify deployment" step, not a direct curl.
+
+verification:
+  ran: true
+  suite: "bash scripts/smart-test-runner.sh"
+  result: "12,768 passed / 533 files / 20 skipped — exit 0"
+  build: "npm run build clean (PWA 63 precache entries)"
+  ci: "PR #3 and PR #4 both green on `test` + `Playwright visual regression (PRF)`"
+  visual: >
+    Playwright, phone-sized viewports. Reproduced the missing chunk by serving
+    HTML for the chunk request (self-heal fired, app recovered; E405 surface
+    renders when a refresh doesn't fix it). Reproduced a stalled chunk by never
+    answering the request (both tiers on schedule, no cache clear after 60s).
+    Killed `indexedDB` pre-boot (pill reads "Not saving — data at risk" within
+    ~3s). Drove the health pill to the Error Log (lands expanded, entry on
+    screen).
+  note: >
+    Suite was run against 8abbda1, which is the tree merged as 57ef88d. Not
+    re-run at session-end — the tree is unchanged and CI ran it twice green.
