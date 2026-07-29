@@ -110,7 +110,7 @@ const strengthBand = (pct) => (pct == null ? 'unknown' : pct >= 0.8 ? 'strong' :
  */
 export const runRangeCalibrationProbe = async ({
   files, poolPct = 50, maxPlayers = Infinity, maxHandsPerPlayer = Infinity,
-  tauSweep = null, floorSweep = null,
+  tauSweep = null, floorSweep = null, supportSweep = null,
   log = () => {},
 }) => {
   const { byPlayer, handsRead } = await indexEvalPlayers({
@@ -137,6 +137,21 @@ export const runRangeCalibrationProbe = async ({
   // actually held vs uniform).
   const floorArms = {};
   if (Array.isArray(floorSweep)) for (const f of floorSweep) floorArms[f] = mkStat();
+
+  // WS-302: and sweep the PREFLOP SUPPORT WEIGHT — how much of the population prior's
+  // mass is carried by a smooth equity-ranked grid rather than by the positional chart.
+  //
+  // This is the residual WS-291's floor could not reach. The postflop floor guarantees
+  // every combo positive weight given a preflop range that CONTAINED it; 30-37% of the
+  // chart's cells were zero, and `narrowByBoard` deliberately preserves a caller's
+  // exclusion, so those hands stayed impossible at every street. Same argument as the
+  // floor above applies to picking lambda: coverage is 100% for ANY positive lambda, so
+  // the arm that wins is the one with the best DISCRIMINATION. The cost side is real and
+  // is what the sweep is actually pricing — a 1%-wide 3-bet prior spends its added
+  // bottom-end mass out of its own top, so too large a lambda erodes the "a live 3-bet is
+  // almost always a monster" read (POKER_THEORY 2.3).
+  const supportArms = {};
+  if (Array.isArray(supportSweep)) for (const s of supportSweep) supportArms[s] = mkStat();
 
   let decisions = 0;
   let revealedActing = 0;
@@ -231,6 +246,18 @@ export const runRangeCalibrationProbe = async ({
                   } catch { /* skip arm */ }
                 }
 
+                // ---- 3d. preflop support sweep on the SAME decision (WS-302) ----
+                // The baseline range itself is rebuilt per arm; narrowing is left at its
+                // shipped settings so this arm prices the PREFLOP change alone.
+                for (const s of Object.keys(supportArms)) {
+                  try {
+                    const bs = buildBaselineRange(null, null, vPos, { supportLambda: Number(s) });
+                    const ns = narrowByBoard(bs, vAction, board, []);
+                    const r = scoreRange(ns, board, vHole);
+                    if (r) push(supportArms[s], r);
+                  } catch { /* skip arm */ }
+                }
+
                 // ---- 3. chaining: what gameTreeDepth2 does inside one evaluation ----
                 if (narrowed) {
                   let cur = base;
@@ -269,5 +296,6 @@ export const runRangeCalibrationProbe = async ({
     chained: mapSummary(chained),
     tauSweep: mapSummary(tauArms),
     floorSweep: mapSummary(floorArms),
+    supportSweep: mapSummary(supportArms),
   };
 };

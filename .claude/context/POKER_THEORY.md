@@ -95,6 +95,34 @@ fold-through those specific seats produce. A chart cannot encode that opening 76
 the hijack is a different decision with three loose-passive callers behind than with
 three nits, because no chart knows the table. See §11.4.
 
+**And the prior has SUPPORT EVERYWHERE — no cell is zero (WS-302).** A chart names the
+hands a player *usually* opens. Read literally as a prior it also said the other 30-37%
+of the grid was **impossible**, which is a different and much stronger claim. It is also
+unfalsifiable: `bayesianUpdater` updates ranges as `prior[i] * ratio`, a pure
+multiplication, so a cell that starts at zero can never be moved off zero by any amount
+of frequency evidence. A starting belief of zero is not a prior, it is a permanent
+verdict.
+
+The hands the charts excluded are exactly the ones a live 9-handed player shows up with
+off-chart — a limped 84s from early position, a defended K3o in the blinds. Measured
+against revealed showdown hands, those exclusions were the entire residual gap in range
+coverage once WS-291 fixed the postflop side.
+
+Every position × action prior now carries positive weight on all 169 cells, ranked by
+per-combo preflop equity (`pokerCore/preflopEquityTable.js`) rather than flat, so 22
+outranks K3o outranks 72o. **Range width is unchanged** — the support is blended in at
+equal combo-weighted mean, so a rate derived from observation is not silently rescaled.
+Implementation: `withEquitySupport` in `rangeEngine/populationPriors.js`.
+
+Two boundaries hold this in place:
+- **Structural zeros stay zero.** A grid that is *identically* zero describes a scenario
+  that cannot occur, not a range with holes — BB has no voluntary no-raise action, so it
+  cannot limp (`rangeEngine/CLAUDE.md` §5). Support fills holes in a range; it must never
+  invent a range for an impossible scenario.
+- **Narrow ranges stay narrow.** The floor self-limits to 90% of the grid's own width, so
+  the ~1%-wide 3-bet prior floors near 0.001, not 0.05. §2.3's "a 3-bet from a typical
+  live player is almost always a monster" survives — 72o becomes rare, not plausible.
+
 Typical full-ring ranges (9-handed):
 | Position | Open Range | ~% of hands |
 |----------|-----------|-------------|

@@ -10,6 +10,8 @@
  *   Parameter sweeps (WS-291) — every arm is scored on the SAME decisions:
  *     --tau-sweep   0.08,0.15,0.25     logistic softness
  *     --floor-sweep 0.01,0.02,0.03,0.05,0.08   minimum P(action | combo)
+ *     --support-sweep 0,0.05,0.15,0.40         preflop prior support weight (WS-302);
+ *                                              lambda = 0 is the pre-WS-302 chart
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -72,6 +74,7 @@ const main = async () => {
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
       tauSweep: list(args['tau-sweep'])?.map(Number) ?? null,
       floorSweep: list(args['floor-sweep'])?.map(Number) ?? null,
+      supportSweep: list(args['support-sweep'])?.map(Number) ?? null,
       log: (m) => console.log(`  ${m}`),
     });
 
@@ -98,6 +101,10 @@ const main = async () => {
     if (r.floorSweep && Object.keys(r.floorSweep).length) {
       // Coverage is 100% for every positive floor, so it cannot rank the arms — Δlog does.
       console.log(table('FLOOR SWEEP (villain side) — min P(action|combo); rank by Δlog', r.floorSweep));
+    }
+    if (r.supportSweep && Object.keys(r.supportSweep).length) {
+      // lambda = 0 is the pre-WS-302 prior, so this table contains its own control.
+      console.log(table('PREFLOP SUPPORT SWEEP — prior lambda (0 = shipped chart); rank by Δlog', r.supportSweep));
     }
 
     console.log(`\n  runtime ${((Date.now() - started) / 1000).toFixed(1)}s`);

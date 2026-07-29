@@ -10,7 +10,8 @@ import {
   SUBCLASS_SPLIT,
 } from '../populationPriors';
 import { RANGE_POSITIONS } from '../rangeProfile';
-import { rangeIndex } from '../../pokerCore/rangeMatrix';
+import { rangeIndex, rangeWidth } from '../../pokerCore/rangeMatrix';
+import { HAND_LABELS } from '../../pokerCore/preflopEquityTable';
 
 const GRID_SIZE = 169;
 
@@ -163,5 +164,147 @@ describe('SUBCLASS_SPLIT', () => {
   it('lowers the limp-reraise share as position gets later', () => {
     // It requires having limped first, and limping is an early/middle habit.
     expect(SUBCLASS_SPLIT.threeBet.LATE.limpReraise).toBeLessThan(SUBCLASS_SPLIT.threeBet.EARLY.limpReraise);
+  });
+});
+
+// =============================================================================
+// SUPPORT EVERYWHERE (WS-302)
+// =============================================================================
+
+describe('prior support (WS-302)', () => {
+  // Every prior grid the engine can build, so a new `case` in buildActionPrior that
+  // forgets the guarantee fails here rather than in production.
+  const ALL_ACTIONS = [
+    ...NO_RAISE_ACTIONS, ...FACED_RAISE_ACTIONS,
+    ...NO_RAISE_SUBCLASSES, ...FACED_RAISE_SUBCLASSES,
+  ].filter((a, i, xs) => xs.indexOf(a) === i);
+
+  // A grid that is IDENTICALLY zero describes a scenario that cannot occur, not a range
+  // with holes. BB has no voluntary no-raise action, so it cannot limp (CLAUDE.md §5 —
+  // "do not attempt to 'fix' it").
+  //
+  // BB `limpReraise` is deliberately NOT in this set. Its grid is a SHAPE, and the shape
+  // is non-zero; what makes the BB subclass empty is `SUBCLASS_SPLIT.threeBet.BB
+  // .limpReraise = 0`, applied downstream in `updateSubclassRanges`. Two different
+  // mechanisms, and only the one that zeroes the grid itself belongs here.
+  const STRUCTURAL = new Set(['BB_limp']);
+  const each = (fn) => {
+    for (const pos of RANGE_POSITIONS) {
+      for (const action of ALL_ACTIONS) fn(pos, action, STRUCTURAL.has(`${pos}_${action}`));
+    }
+  };
+
+  it('assigns no live cell exactly zero', () => {
+    each((pos, action, structural) => {
+      const prior = getPopulationPrior(pos, action);
+      let nonZero = 0;
+      for (let i = 0; i < GRID_SIZE; i++) if (prior[i] > 0) nonZero++;
+      // A zero here is a claim that the villain CANNOT hold that hand, and
+      // `bayesianUpdater` multiplies the prior, so no evidence could ever lift it.
+      expect(nonZero, `${pos} ${action}`).toBe(structural ? 0 : GRID_SIZE);
+    });
+  });
+
+  it('preserves range width exactly — support fills holes, it does not widen', () => {
+    each((pos, action) => {
+      const before = getPopulationPrior(pos, action, { supportLambda: 0 });
+      const after = getPopulationPrior(pos, action);
+      expect(rangeWidth(after), `${pos} ${action}`).toBe(rangeWidth(before));
+    });
+  });
+
+  it('leaves the structurally impossible grid identically zero', () => {
+    // Support fills holes in a range. It must not invent a range for a scenario that
+    // cannot happen — BB is never facing "no raise" voluntarily, so it never limps.
+    for (const key of STRUCTURAL) {
+      const [pos, action] = key.split('_');
+      const prior = getPopulationPrior(pos, action);
+      expect(Array.from(prior).reduce((s, v) => s + v, 0), key).toBe(0);
+    }
+  });
+
+  it('reproduces the pre-WS-302 chart at lambda = 0', () => {
+    // The control arm of the sweep. If this drifts, the sweep's lambda = 0 column stops
+    // being a baseline and the whole comparison is unanchored. The counts are the
+    // measured pre-change support of the `open` prior — the numbers WS-302 was filed on.
+    const PRE_WS302_OPEN_CELLS = { EARLY: 106, MIDDLE: 108, LATE: 119, SB: 111, BB: 116 };
+    for (const [pos, expected] of Object.entries(PRE_WS302_OPEN_CELLS)) {
+      const off = getPopulationPrior(pos, 'open', { supportLambda: 0 });
+      let nonZero = 0;
+      for (let i = 0; i < GRID_SIZE; i++) if (off[i] > 0) nonZero++;
+      expect(nonZero, pos).toBe(expected);
+    }
+    // …and the 3-bet prior, which was the worst of them: 5 cells out of 169.
+    expect(
+      Array.from(getPopulationPrior('EARLY', 'threeBet', { supportLambda: 0 }))
+        .filter((v) => v > 0).length,
+    ).toBe(5);
+  });
+
+  it('ranks off-chart support by real equity, not by chart membership', () => {
+    // The founder's decision (WS-302): a live player strays off-chart with a small pair
+    // far more often than with 32o, so the floor must not be flat. 22 beats 72o beats
+    // nothing — and the ordering follows EQUITY_VS_OPEN, not handStrengthTier (which
+    // ranks 22 BELOW K3o).
+    const prior = getPopulationPrior('EARLY', 'open');
+    const at = (label) => prior[HAND_LABELS.indexOf(label)];
+    expect(at('22')).toBeGreaterThan(at('72o'));
+    expect(at('72o')).toBeGreaterThan(0);
+    expect(at('AA')).toBeGreaterThan(at('22'));
+  });
+
+  it('keeps a narrow 3-bet prior narrow — the floor self-limits', () => {
+    // POKER_THEORY §2.3: a 3-bet from a typical live player is almost always a monster.
+    // A flat 0.05 floor on a 1%-wide grid would erase that read; the primitive caps the
+    // floor at 90% of the target mean instead.
+    const prior = getPopulationPrior('EARLY', 'threeBet');
+    const junk = prior[HAND_LABELS.indexOf('72o')];
+    expect(junk).toBeGreaterThan(0);
+    expect(junk).toBeLessThan(0.01);
+    expect(prior[HAND_LABELS.indexOf('AA')]).toBeGreaterThan(50 * junk);
+  });
+});
+
+describe('prior support preserves each action\'s SHAPE (WS-302)', () => {
+  // The support ranks by the grid's own smoothed shape, not by raw equity, because these
+  // three actions run in three different directions. A monotone equity ramp got `open`
+  // right and inverted the other two — caught here.
+  const at = (prior, label) => prior[HAND_LABELS.indexOf(label)];
+
+  it('open rises with hand strength', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const p = getPopulationPrior(pos, 'open');
+      expect(at(p, 'AA'), pos).toBeGreaterThan(at(p, 'T9s'));
+      expect(at(p, 'T9s'), pos).toBeGreaterThan(at(p, '32o'));
+    }
+  });
+
+  it('fold FALLS with hand strength — weak hands fold most', () => {
+    // An ascending ramp here claims the hand most often folded is aces.
+    for (const pos of RANGE_POSITIONS) {
+      const p = getPopulationPrior(pos, 'fold');
+      expect(at(p, '32o'), pos).toBeGreaterThan(at(p, 'T9s'));
+      expect(at(p, 'T9s'), pos).toBeGreaterThan(at(p, 'AA'));
+    }
+  });
+
+  it('limp is HUMPED — speculative hands, not the best and not the worst (§2.2)', () => {
+    // §2.2: limp ranges hold small pairs, suited connectors, weak suited aces. Both a
+    // rising ramp (modal limp = AA) and a falling one (modal limp = 32o) are wrong.
+    for (const pos of RANGE_POSITIONS) {
+      if (pos === 'BB') continue; // BB cannot limp — structural, asserted elsewhere
+      const p = getPopulationPrior(pos, 'limp');
+      const peak = at(p, '54s');
+      expect(peak, `${pos} vs premium`).toBeGreaterThan(at(p, 'AA'));
+      expect(peak, `${pos} vs junk`).toBeGreaterThan(at(p, '32o'));
+    }
+  });
+
+  it('coldCall is HUMPED — medium hands flat, premiums mostly raise', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const p = getPopulationPrior(pos, 'coldCall');
+      expect(at(p, 'AJs'), pos).toBeGreaterThan(at(p, 'AA'));
+      expect(at(p, 'AJs'), pos).toBeGreaterThan(at(p, '32o'));
+    }
   });
 });

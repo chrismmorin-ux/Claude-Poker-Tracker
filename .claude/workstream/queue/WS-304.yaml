@@ -1,0 +1,81 @@
+id: "WS-304"
+title: "The 3-bet prior says AK is a fold — `handStrengthTier` puts AKo below the threshold its own comment calls 'AK heavy'"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found while implementing WS-302; NOT introduced by it. This is a defect in the SHAPE of
+  a prior, not in its support, so WS-302's fix does not touch it.
+
+  MEASURED at lambda = 0 (i.e. the prior exactly as it has shipped for months):
+
+    EARLY threeBet:  AA=1.0000  KK=0.7159  QQ=0.4318  JJ=0.1477  AKs=0.0057  AKo=0.0000
+
+  The code comment on that very branch (`populationPriors.js`, `case 'threeBet'`) reads
+  "Top 3-5%: QQ+, AK heavy". AKo is exactly zero and AKs is 0.006. The prior does not
+  contain AK at all.
+
+  ROOT CAUSE. The branch thresholds on `handStrengthTier`, an ad-hoc score
+  `(rank1 + rank2 + 8*isPair + 2*suited) / 32`. For AKs that is (12+11+2)/32 = 0.781,
+  against an EARLY threshold of 0.78 — it clears by 0.001, so the linear ramp
+  `(strength - threshold) / (1 - threshold)` gives it almost nothing. AKo scores 0.719 and
+  does not clear at all.
+
+  The same score is why 22 (0.25) ranks BELOW K3o (0.375) everywhere it is used: a pair's
+  +8 bonus is worth less than one rank step at the top of the deck. It is not a hand
+  strength ordering, it is a rank sum with two fudge terms.
+
+  WHY IT MATTERS. POKER_THEORY 2.3 names AK as one of the two value 3-bet holdings in the
+  live pool ("most players 3-bet only premiums (QQ+, AK)"). A villain who 3-bets and turns
+  over AK is, per this prior, holding a hand they could not have had. That is the same
+  class of error WS-302 just closed for the missing 30-37% of the grid, except here it is
+  a hand the doctrine explicitly names.
+
+  WS-302 mitigates the SYMPTOM — AKo now carries the support floor rather than zero — but
+  it deliberately preserves each grid's shape, so AK stays near the bottom of the 3-bet
+  range instead of near the top where 2.3 puts it.
+accept_criteria: |
+  - `getPopulationPrior(pos, 'threeBet')` ranks AKs and AKo in the top region alongside
+    QQ+, on every position. Assert it, with the POKER_THEORY 2.3 citation in the test.
+  - The replacement ordering is NOT another hand-rolled score. `EQUITY_VS_OPEN`
+    (pokerCore/preflopEquityTable.js) already gives a measured per-class ranking and is
+    already imported by populationPriors after WS-302 — use it, or state why not.
+  - Audit every other `handStrengthTier` threshold in the file against the shape its own
+    comment claims: `open`, `coldCall`, `limp`, `cold3Bet`, `squeeze`, `limpReraise`,
+    `isoRaise`. At least one more is expected to be off; report what is found either way.
+  - Re-run the WS-293 calibration probe. The WS-302 lambda sweep argmax may move once the
+    underlying shapes are correct — re-measure it, do not assume it holds.
+  - No regression in the WS-302 shape tests (open rises, fold falls, limp/coldCall humped).
+effort: "M"
+files_involved:
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/__tests__/populationPriors.test.js"
+  - "src/utils/pokerCore/preflopEquityTable.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Replace `handStrengthTier` outright with the measured equity table, or keep it for the branches where its ordering is defensible? Replacing it changes every prior shape at once and forces a full re-sweep."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-159"
+created_at: "2026-07-29T12:45:00Z"
+status_note: |
+  Filed 2026-07-29 during SPR-159 (WS-302). Isolated by printing the threeBet prior at
+  lambda = 0 while verifying that WS-302 had not itself damaged the 3-bet read; the top of
+  the range was already missing before the change.

@@ -12,6 +12,17 @@ We use population priors (what typical 1/2 players do) updated by observations. 
 ### 2. Mixing Is Real — Never Zero Out Hands
 A player can play the same hand different ways. AA can be limped (trap), opened, or 3-bet. When we see AA in the open range, we DO NOT set its weight in the limp range to zero. We only increase confidence that it's in the open range. See `RANGE_ENGINE_DESIGN.md` §4.3.
 
+**The priors themselves obey this too (WS-302).** For years the rule was enforced on updates while `populationPriors.js` was violating it at construction — the positional charts zeroed 30-37% of the grid, and the 3-bet prior 97% of it. That is worse than an update-time zero, because §1's update rule is `prior[i] * ratio`: a cell that *starts* at zero can never be lifted by any amount of frequency evidence. `withEquitySupport` now gives every prior positive weight on all 169 cells, ranked by per-combo preflop equity, at unchanged range width.
+
+**Structural zero vs epistemic zero — the distinction that decides whether a zero is a bug.**
+
+| | Means | Example | Treatment |
+|---|---|---|---|
+| **Epistemic** | The hand is *unlikely* in this range | UTG opening 84s | Gets support. A zero here is a bug. |
+| **Structural** | The scenario *cannot occur* | BB limping (§5) | Stays exactly zero. A floor here is a bug. |
+
+The discriminator is mechanical rather than a hand-kept list: a grid that is *identically* zero is structural, and passes through untouched. Note that `BB.limpReraise` is **not** structural by this test — its grid is a non-zero *shape*, and what empties it is `SUBCLASS_SPLIT.threeBet.BB.limpReraise = 0` applied downstream in `updateSubclassRanges`. Two different mechanisms; do not conflate them.
+
 ### 3. Cross-Range Constraint: Per-Scenario Normalization
 The two decision trees are normalized independently:
 - **No raise faced**: `P(limp|h) + P(open|h) ≤ 1.0` per cell (fold is the complement)

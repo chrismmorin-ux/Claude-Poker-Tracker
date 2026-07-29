@@ -349,16 +349,92 @@ alone caused the improvement.
   itself — a continuing range that had been purged of air now carries it at low weight. One
   river node flips to `isWeaklyCapped`, consistent with its nut share falling 5.2% → 2.9%.
 
-## Recommended work
+---
 
-1. **Holding-knowledge primitive** — `{ revealed, range, provenance }` for a seat at a
-   decision point. The missing join.
-2. **Range calibration as a standing metric** — the probe shipped here
-   (`scripts/backtest/rangeCalibrationProbe.mjs`, `run-range-calibration.mjs`) becomes the
-   instrument. Baseline recorded above so the fix has a before/after.
-3. **Replace the quantile cut with a logistic of per-combo equity.** Never zero a combo.
-   Re-measure with (2).
-4. **Then** re-run hero-EV on ranges that are calibrated.
+# WS-302 — the preflop layer, and the metric finally goes positive
 
-Note that (3) changes what the founder sees **at the table**, not just in the backtest:
-`liveAdvisor/computeHelpers.js` narrows through the same function.
+`buildBaselineRange` hard-zeroed 30–37% of the grid, and `narrowByBoard` correctly refuses
+to resurrect a cell its caller excluded. So after WS-291 the *only* thing holding coverage
+below 100% was the preflop assignment. WS-302 applies the same soft support there, reusing
+WS-291's primitive rather than re-deriving it (`pokerCore/softWeights.js`, extracted so
+`rangeEngine` need not import from `exploitEngine`).
+
+Measured on 15,439 decisions / 600 players (`out/ws302-sweep-wide.json`):
+
+| | before WS-291 | after WS-291 | after WS-302 |
+|---|---|---|---|
+| Acting-seat coverage | 74.6% | 94.0% | **100.0%** |
+| Acting-seat Δlog *(unconditional)* | −3.744 | −0.910 | **+0.428** |
+| Villain-seat coverage | 63.8% | 87.4% | **100.0%** |
+| Villain-seat Δlog | −5.272 | −1.800 | **+0.254** |
+| Chained ×1 / ×2 / ×3 Δlog | −8.314 @×3 | −2.168 @×3 | +0.294 / +0.163 / **−0.067** |
+
+**This closes WS-291's stated bar, one layer up.** WS-291 asked for positive unconditional
+Δlog and did not reach it; the diagnosis at the time was that the residual was preflop, not
+narrowing. That diagnosis was right — fixing the preflop layer flipped the metric from
+−0.910 to **+0.428**. The range model now beats "every combo equally likely", which it never
+had before at any point in this investigation.
+
+The preflop support sweep is the cleanest single demonstration in this document. λ is the
+share of each prior's mass carried by a smooth support grid rather than by the positional
+chart; λ = 0 is the shipped chart. Every arm scored on the SAME decisions, per site:
+
+| λ | 0 | 0.40 | 0.60 | **0.80** | 1.00 |
+|---|---|---|---|---|---|
+| coverage | 87.9% | 100% | 100% | 100% | 100% |
+| FTP Δlog (n=2,520) | **−1.545** | +0.391 | +0.438 | **+0.456** | +0.438 |
+| PS Δlog (n=2,426) | **−1.646** | +0.323 | +0.373 | **+0.391** | +0.370 |
+
+Zero → anything positive is worth **1.6 nats**. Every refinement above that is worth a
+fraction of one. The headline finding is *"never say impossible"*, not any particular λ.
+
+**But the argmax is uncomfortable, and it is an argmax.** 0.80 wins on both sites and the
+curve turns over at 1.00 on both, so this is an interior optimum rather than a grid that
+failed to bracket one. At that optimum the hand-built positional charts carry **20%** of
+the prior's shape — and switching them off entirely costs ~0.02 nats. Third time in this
+engine an elaborate hand-built mechanism, once measured, has lost to the trivial
+alternative (WS-285's `HIERARCHY_ORDER`, WS-291's τ). λ = 0.8 is shipped, on the founder's
+explicit call to follow the measurement.
+
+### The first construction was wrong, and the sweep did not notice
+
+The obvious support is "rank every hand by equity, lay a logistic over it". It reproduces
+the table above almost exactly (FTP +0.462, PS +0.402 at λ = 0.8) — and it is **wrong**,
+because not every preflop action rises with hand strength:
+
+| action | shape | ramp fit (r) |
+|---|---|---|
+| `open` | rises with strength | +0.81 |
+| `fold` | **falls** with strength | −0.85 |
+| `limp` | **peaks in the middle** (§2.2) | −0.53 |
+
+An ascending ramp on `fold` claims the hand most often folded is aces. A descending one on
+`limp` claims the modal limp is 32o. The shipped construction instead ranks by the grid's
+**own shape smoothed over equity**, which gets all three right with no orientation flag and
+no per-action table — a hole is filled by what its equity-neighbours do. Cost: under 0.01
+nats. Caught by unit test, not by the sweep: **the probe only ever exercises `open`**, so a
+metric that looks decisive can still be blind to two-thirds of the grids being changed.
+
+**Two caveats kept in view.** Δlog is a log-loss proxy measured over *showdown* hands, and
+at some point "flatter scores better" just means the metric rewards hedging; a range that
+asserts nothing is useless for EV however well it scores. The right bar is decision
+quality — **WS-294**'s hero-EV re-run. And chained depth-3 is still slightly negative
+(−0.067): re-narrowing keeps sharpening past the point of usefulness, which is **WS-303**.
+
+## Recommended work — updated
+
+Items 2 and 3 of the original list are **done** (WS-293's probe shipped; WS-291 replaced the
+cut). What remains, in priority order as filed:
+
+1. **WS-302** — commit it. Implemented and measured, still uncommitted at time of writing.
+2. **WS-300** — inverted test fixtures. `topRange(20)` is the weakest 20%; a large green
+   suite is verifying less than its pass count implies on range-dependent behaviour.
+3. **WS-303** — the check branch scores worse than uniform, and chained narrowing still
+   degrades discrimination with depth.
+4. **WS-301** — 8.5 s for one depth-2 evaluation against a 150 ms whole-evaluation budget.
+5. **WS-292** — the holding-knowledge primitive; the missing join that hid all of this.
+6. **WS-294** — re-run hero-EV on ranges that are now calibrated. This is the one that says
+   whether any of it makes money.
+
+Note the whole chain changes what the founder sees **at the table**, not just in the
+backtest: `liveAdvisor/computeHelpers.js` narrows through the same function.
