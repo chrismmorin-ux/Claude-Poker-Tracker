@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785359175191-bf2490dc81af"
-generated_content_hash: "b868a749c1f742cb493d7bc31b9ce210c338dc03348b9e52221be1936d27c1ae"
-generated_at: "2026-07-29T21:06:15.254Z"
+generated_from_event: "ev-1785359440603-1ea420f1a7db"
+generated_content_hash: "a446506d5f30a2a828fcbd8f5e69efbad8b3315bb7df84ba154e79f18ffd791b"
+generated_at: "2026-07-29T21:10:40.646Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-29.jsonl"]
-event_count: 1099
+event_count: 1102
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 716
-- Events recorded: 1099
+- Commands recorded: 719
+- Events recorded: 1102
 - Source chunks: 14
 
 ## Command `auto:42416:1781030643103`
@@ -7560,3 +7560,33 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-29T21:06:15.191Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:13979:1785359440523`
+
+- Start: 2026-07-29T21:10:40.523Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T21:10:40.523Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:13979:1785359440562`
+
+- Start: 2026-07-29T21:10:40.562Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T21:10:40.562Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:13979:1785359440603`
+
+- Start: 2026-07-29T21:10:40.603Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T21:10:40.603Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

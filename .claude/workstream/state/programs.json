@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-29T21:05:49.588Z",
-  "updated_by_event": "ev-1785359149588-83c04fac1062",
+  "updated_at": "2026-07-29T21:10:40.603Z",
+  "updated_by_event": "ev-1785359440603-1ea420f1a7db",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -1300,5 +1300,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785359149588-83c04fac1062"
+  "last_event_log_head": "ev-1785359440603-1ea420f1a7db"
 }
