@@ -1,0 +1,81 @@
+id: "WS-294"
+title: "Re-run hero-EV on calibrated ranges, and add a cards-known arm"
+legacy_id: ""
+type: task
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-287 shipped a working hero-EV instrument and its first measurement:
+
+    edge +12.04 bb, 95% CI [-7.60, +22.17], n=250, 9 player-clusters  ->  C3 FAILS
+    control (population vs itself) 0.000 bb  ->  estimator is sound
+
+  The number is PROVISIONAL for a reason that is not sample size. `pi_ours` marginalizes
+  the engine's advice over inferred ranges, and WS-291 measured those ranges excluding the
+  hand actually held up to 44% of the time. Buying precision with more compute would buy it
+  on the wrong quantity.
+
+  THIS TICKET, once WS-291 lands:
+
+  1. RE-RUN on calibrated ranges. Same treatment, same guards.
+  2. WIDEN the player-cluster count. The interval is bounded by 9 clusters, not by 250
+     decisions — the cluster bootstrap resamples PLAYERS because that is the level at
+     which the corpus is independent. Three players supplied 73% of decisions. Needs a
+     much wider corpus scan (the smoke read 60 of 1,756 matched files) at a measured
+     ~4.2 s/decision, so it is a batch job.
+  3. ADD A CARDS-KNOWN ARM. 30% of postflop decisions have the acting seat's cards
+     revealed. Score those with the ACTUAL hand instead of the range, on the SAME
+     decisions as the range-marginalized arm. The difference MEASURES the marginalization's
+     bias instead of assuming it. This is the arm that should have existed in v1; it was
+     omitted because showdown-only is a biased subset — a correct argument against making
+     it the headline, and not an argument for never computing it.
+
+  The v1 limitations remain open and are NOT in scope here: postflop-only (the
+  accumulator seam skips preflop), sizing not scored (actions collapse to primitives),
+  villain held at population baseline.
+accept_criteria: |
+  - Hero-EV re-run against post-WS-291 ranges, with the range-calibration figures for the
+    same corpus slice quoted alongside, so the reader can see what the advice was
+    marginalized over.
+  - Cards-known arm reported next to the range-marginalized arm ON THE SAME DECISIONS,
+    with the difference stated as the measured marginalization bias.
+  - Player-cluster count and ESS reported as first-class numbers, not buried — the
+    previous run's interval was driven by 9 clusters and that was the real limit.
+  - Edge and CI recorded to scorecard-history.yaml whether favourable or not.
+  - Every figure carries its treatment, as before.
+  - If the CI still straddles zero, that is reported as the result. C3 failing on a
+    calibrated model is a finding, not a reason to keep running arms until one clears.
+effort: "L"
+files_involved:
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "docs/domain/readiness/scorecard-history.yaml"
+blocked_by:
+  - "WS-291"
+blocked_by_legacy: []
+enables:
+  - "WS-286"
+sprint_id: null
+decision_flags:
+  - "Compute budget for the widened run — cluster count is the binding constraint and cost is ~4.2 s/decision. How many hours is this worth?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T18:33:00Z"
+status_note: |
+  Blocked on WS-291 by design: re-running before the range fix would measure advice
+  averaged over a distribution known to exclude the truth. Filed 2026-07-28 alongside the
+  range-calibration finding.

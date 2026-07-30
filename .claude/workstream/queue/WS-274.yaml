@@ -2,7 +2,7 @@ id: "WS-274"
 title: "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -114,3 +114,4 @@ status_note: |
   §7.2 violation AND unlocks an edge no chart-based tool can have. Verified by
   direct read of preflopAdvisor.js on 2026-07-26 (per feedback_verify_ticket_
   premise_at_composition — the lookup table is real and is at Priority 1).
+closed_by_event: "ev-1785110290283-9cee4780eeb1"

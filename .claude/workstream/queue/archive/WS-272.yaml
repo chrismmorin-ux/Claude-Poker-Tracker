@@ -2,11 +2,11 @@ id: "WS-272"
 title: "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)"
 legacy_id: ""
 type: improvement
-status: claimed
+status: done
 claimed_by: "ses-20260726-1930-dc-lanes"
 claimed_at: "2026-07-26T19:30:28Z"
 started_at: null
-completed_at: null
+completed_at: "2026-07-26T20:55:00Z"
 completion_commit: null
 priority_score: 22.0
 priority_label: "P1"
@@ -95,3 +95,5 @@ status_note: |
   complete or missing something." This item is the answer to that question —
   the system cannot currently tell the difference between complete and
   unquestioned. Parent of the WS-273..WS-280 batch.
+completion_notes: |
+  SHIPPED 2026-07-26. PREMISE CORRECTION: the ticket says 'nothing in the repo ever verifies POKER_THEORY.md against poker' — partially stale, a blind_spot protocol already existed with one outward-facing bullet. But it targets the CODEBASE not the DOC, has no exhaustiveness mechanism and no empirical arm, and the evidence it does not cover this: blind_spot ran 2026-06-20 and did NOT surface the 3.4 protection gap (WS-278), found only when the founder asked by hand. DELIVERED: new `theory_completeness` protocol in prog-domain-correctness.yaml (90-day cadence, distinct entry point, 3 mechanisms cheapest-first) + an explicit TWO-DIRECTIONS header documenting which protocol covers inward (code-vs-doc: baseline/sweep/delta/challenge) vs outward (doc-vs-game: theory_completeness/blind_spot) and the boundary against blind_spot. docs/domain/theory-completeness-protocol.md carries the full exhaustiveness-claim INVENTORY (15 claims, each annotated with its falsifier; 3 flagged as defective: 3.4 reasserts exhaustiveness in the voice that was already wrong, 4.2 bluff-catcher definition has no falsifier, 8 is implicitly exhaustive but explicitly open-ended). FIRST RUN EXECUTED — docs/domain/theory-gaps.draft.md, ranked arbitrable-first: Tier A 3 gaps backed by the 10,147-decision backtest (flat fold-vs-sizing curve, personalization earns nothing facing aggression, texture-order claim still unmeasured), Tier B 4 known gaps, Tier C coaching-taxonomy coverage list, Tier D 3 doc defects. FOUNDER DECISIONS 2026-07-26: sources = HandHQ corpus+backtest AND coaching-content taxonomy; solver/GTO literature EXCLUDED (equilibrium is the wrong yardstick for a deliberately exploitative live-facing engine) and founder's own tagged hands excluded for now (volume too low). Entry path = founder-review DRAFT, which DEVIATES from the written accept criterion ('filed as findings') — founder decision supersedes, recorded in both the protocol doc and the program yaml.

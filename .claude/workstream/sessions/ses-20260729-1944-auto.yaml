@@ -1,0 +1,26 @@
+id: "ses-20260729-1944-auto"
+status: "abandoned"
+started_at: "2026-07-29T19:44:56.878Z"
+ended_at: "2026-07-30T03:25:52Z"
+mode: auto
+last_heartbeat: "2026-07-30T02:17:46.379Z"
+pid: 37952
+
+# Minted by cwos-claims because no valid .current-session pointer existed.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items:
+  - "WS-304"
+
+files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-07-30.
+  Original start: 2026-07-29T19:44:56.878Z.
+  Last heartbeat: 2026-07-30T02:17:46.379Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

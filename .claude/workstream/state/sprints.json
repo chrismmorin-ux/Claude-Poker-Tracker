@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-26T19:01:39.666Z",
-  "updated_by_event": "ev-1785092499666-9849c32de8c3",
+  "updated_at": "2026-07-29T18:09:28.566Z",
+  "updated_by_event": "ev-1785348568566-5551f04b1e5f",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2509,7 +2509,87 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-155": {
+      "id": "SPR-155",
+      "title": "Ship WS-274: Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lo",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-26T22:44:41.299Z",
+      "approved_at": "2026-07-26T22:44:41.299Z",
+      "completed_at": "2026-07-26T23:58:10.260Z",
+      "goal": "Ship WS-274: Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-156": {
+      "id": "SPR-156",
+      "title": "Ship WS-285: The villain-model context hierarchy is OVER-SPECIFIED — pooling by facingAction beats t",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-27T15:39:56.317Z",
+      "approved_at": "2026-07-27T15:39:56.317Z",
+      "completed_at": "2026-07-27T17:29:56.689Z",
+      "goal": "Ship WS-285: The villain-model context hierarchy is OVER-SPECIFIED — pooling by facingAction beats the shipped 6-level ladder by 0.015 log-loss (t=-10.8) and 2.8pp accuracy",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-157": {
+      "id": "SPR-157",
+      "title": "Ship WS-287: Hero-EV instrument — score whether the engine's ADVICE makes money, not just whether it",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-28T15:58:16.388Z",
+      "approved_at": "2026-07-28T15:58:16.388Z",
+      "completed_at": "2026-07-28T23:37:05.861Z",
+      "goal": "Ship WS-287: Hero-EV instrument — score whether the engine's ADVICE makes money, not just whether it predicts villains",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-158": {
+      "id": "SPR-158",
+      "title": "Ship WS-291: Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctri",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-29T02:05:52.883Z",
+      "approved_at": "2026-07-29T02:05:52.883Z",
+      "completed_at": "2026-07-29T03:01:22.411Z",
+      "goal": "Ship WS-291: Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctrine demands a logistic",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-159": {
+      "id": "SPR-159",
+      "title": "Ship WS-302: The PREFLOP range still says 'impossible' — 30-37% of cells are hard zeros, and that is",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-29T03:13:15.475Z",
+      "approved_at": "2026-07-29T03:13:15.475Z",
+      "completed_at": "2026-07-29T18:09:27.308Z",
+      "goal": "Ship WS-302: The PREFLOP range still says 'impossible' — 30-37% of cells are hard zeros, and that is now the only thing keeping coverage off 100%",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785092499666-9849c32de8c3"
+  "last_event_log_head": "ev-1785348568566-5551f04b1e5f"
 }

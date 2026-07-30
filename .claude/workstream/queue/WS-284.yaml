@@ -1,0 +1,93 @@
+id: "WS-284"
+title: "The WS-273 harness's --reference tier is INERT — with and without it the scorecard is bit-identical, so the leakage guard defends a channel that cannot affect the score"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P1"
+category: "seam-integrity"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-07-26. Two backtest runs over the identical 1,756-file corpus,
+  identical player partition, identical everything except the Reference tier:
+
+    with out/pool-reference.json   log-loss 0.7931838891445275  lift 0.0168946037216312
+    with --reference none          log-loss 0.7931838891445275  lift 0.0168946037216312
+
+  Bit-identical to 16 significant figures across n / log-loss / brier / accuracy
+  / lift. That is not "a small effect" — the Reference tier does not reach the
+  path the harness scores at all.
+
+  WHY THIS MATTERS TWICE.
+
+  1. IT INVALIDATES A COMPARISON. The first write-up of the run read the headline
+     move (smoke 2.9% -> 1.7%) as partly attributable to enabling the Reference
+     tier. It is not. The entire move is the corpus change (1,076 -> 10,147
+     decisions, second site added). Any future claim about WS-263's import
+     sourced from this harness is unsupported until this is fixed.
+
+  2. THE LEAKAGE GUARD GUARDS NOTHING MEASURABLE. WS-273 makes `--reference` a
+     MANDATORY explicit decision and defends it with 19 adversarial tests in
+     scripts/__tests__/leakageGuard.test.js, each feeding it a leaking run and
+     asserting refusal. All of that ceremony currently protects a channel that
+     provably cannot influence the score. The guard is not WRONG — it is
+     unfalsifiable in its current wiring, which is worse, because it reads as
+     evidence of rigor that the numbers do not actually have.
+
+  LIKELY BENIGN EXPLANATION, TO BE CONFIRMED NOT ASSUMED. The harness scores
+  POSTFLOP VILLAIN ACTION DISTRIBUTIONS (queryActionDistribution / the fallback
+  ladder). The Reference tier feeds the SIX SCALAR STAT PRIORS (vpip, pfr,
+  threeBet, cbet, foldToCbet, foldTo3Bet) through poolBaseline -> STAT_PRIORS.
+  If those six never enter the scored distribution, inertness is expected and
+  correct — but then the `--reference` flag and its guard belong on a DIFFERENT
+  measurement (one that scores the stats the tier actually feeds), not on this
+  one.
+
+  The alternative — a wiring defect where the loaded table is silently dropped
+  — is the case that would matter most and must be ruled out first.
+accept_criteria: |
+  - Determine which of the two explanations holds, by instrumentation, not
+    argument: assert whether resolveStatPriors / resolveReferenceCounts is
+    invoked at all during a scored run, and with what.
+  - If wiring defect: fix, re-run both arms, report the real delta.
+  - If out-of-scope-by-design: either (a) extend the harness to score a decision
+    class the six scalar priors DO feed, so --reference becomes falsifiable, or
+    (b) scope the flag and its leakage guard explicitly to that future measurement
+    and stop requiring it for runs it cannot affect. Silently keeping mandatory
+    ceremony over an inert channel is not an acceptable outcome.
+  - docs/research/engine-backtest-run-2026-07-26-pool-reference.md Finding 0
+    updated with the resolution.
+  - The 19 leakage-guard tests either continue to guard a live channel or are
+    re-pointed; note in scripts/__tests__/leakageGuard.test.js which it is.
+effort: "M"
+files_involved:
+  - "scripts/backtest/runner.mjs"
+  - "scripts/backtest/leakageGuard.mjs"
+  - "scripts/backtest/run.mjs"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "docs/research/engine-backtest-run-2026-07-26-pool-reference.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-283"
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T21:05:00Z"
+status_note: |
+  Filed 2026-07-26 from the de-confounding control run. Blocks clean
+  interpretation of WS-283's root-cause question (fold curve vs base rate vs
+  reference import) — if the reference tier cannot reach the scored path, it is
+  eliminated as a WS-283 cause by construction, which is useful either way.

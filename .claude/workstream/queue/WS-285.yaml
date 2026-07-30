@@ -1,0 +1,110 @@
+id: "WS-285"
+title: "The villain-model context hierarchy is OVER-SPECIFIED — pooling by facingAction beats the shipped 6-level ladder by 0.015 log-loss (t=-10.8) and 2.8pp accuracy"
+legacy_id: ""
+type: improvement
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-07-26 on 10,147 paired decisions. Every arm below scored the
+  IDENTICAL decisions in the identical order, so the deltas are per-decision
+  paired, not two independent aggregates.
+
+    arm                 logLoss   acc     paired delta vs shipped    t
+    only:isAgg          0.77645   55.7%   -0.01673                  -9.49
+    ctrl:none           0.77830   55.0%   -0.01489                 -10.82
+    only:isIP           0.78506   53.7%   -0.00813                  -5.05
+    texture-last        0.79300   52.2%   -0.00018                  -0.92  (n.s.)
+    shipped             0.79318   52.2%   reference
+    only:street         0.80281   51.5%   +0.00962                  +6.69
+    only:texture        0.80637   50.5%   +0.01318                  +8.09
+    only:posCategory    0.80852   50.1%   +0.01533                  +9.01
+    ctrl:full           0.83895   46.5%   +0.04577                 +22.91
+
+  `ctrl:none` keeps ONLY facingAction and wildcards street / texture /
+  posCategory / isAgg / isIP. It beats the shipped six-level hierarchy
+  decisively. `only:isAgg` (facingAction + who the aggressor is) is better still.
+  Adding street, texture, or position ALONE is worse than pooling.
+
+  THE EFFECT IS ~80x THE TEXTURE-ORDERING EFFECT the program has been arguing
+  about, and points the opposite way from the ladder's own diagnostics.
+
+  WHY THE LADDER'S OWN DIAGNOSTICS SAID THE OPPOSITE. Two comparisons in the
+  existing reporting are across DIFFERENT DECISIONS rather than different
+  methods, and both flatter the hierarchy:
+    1. The fallback-level table (level-1 logLoss 0.737 vs level-6 0.801) is a
+       SELECTION EFFECT. Decisions reaching level-1 are those with many
+       observations, which are inherently more predictable. It compares easy
+       decisions to hard ones.
+    2. The `flat` sweep arm (-3.98% lift) is a single FULLY-SPECIFIC level
+       falling to prior — it shows over-specificity without fallback is bad, not
+       that the ladder beats pooling. The CLI's --sweep has no pooled arm, so
+       the decisive comparison was never run.
+
+  DIAGNOSIS. At this per-villain sample depth the hierarchy is over-specified:
+  the variance of a 3-observation contextual estimate exceeds the bias from
+  pooling. `min-n-1` (-0.07% lift) is the same disease further along. The fix is
+  therefore NOT "keep the ladder and raise MIN_EFFECTIVE_N" — most context
+  dimensions are not earning their place at all.
+
+  CAVEATS THAT BOUND THE CLAIM.
+    - HandHQ online cash, July 2009, 50NL. Live generalisation unproven.
+    - Scores VILLAIN ACTION PREDICTION only, not hero EV.
+    - Every arm still personalises per villain. This is about the CONTEXT
+      hierarchy, not about personalisation.
+    - The founder's live per-villain samples are much SMALLER than the corpus's,
+      which if anything strengthens the case for pooling.
+accept_criteria: |
+  - Reproduce the paired ablation independently before changing anything
+    (scripts/backtest/dump-records.mjs --arms ablation, then analyze_records.py).
+  - Decide the hierarchy's shape from the measurement, not from the current
+    design: candidate is facingAction + isAgg as the primary key with the other
+    dimensions demoted or removed.
+  - Any replacement re-measured on the SAME paired basis; report accuracy AND
+    log-loss AND lift, favourable or not.
+  - Shrinkage alternative evaluated: rather than hard fallback levels, blend the
+    specific-context estimate toward the pooled one by effective-n (this is the
+    same hierarchical-Bayes logic POKER_THEORY 6.5a already applies to the scalar
+    stat priors, and it is the principled fix for a bias-variance problem).
+  - POKER_THEORY 11.1 updated with the measured result; the level-table selection
+    effect documented so it is not cited as evidence again.
+  - Re-check the live path: hero-facing advice consumes this model, so a change
+    here moves recommendations. Guard with the existing exploitEngine suites.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "scripts/backtest/hierarchyVariants.mjs"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-283"
+sprint_id: null
+decision_flags:
+  - "Replace the ladder with a flatter key, or keep it and add effective-n shrinkage toward the pooled estimate? Shrinkage is more principled and matches 6.5a, but is a bigger change."
+  - "The corpus is online 2009 and the founder plays live 1/2 — is a hierarchy refit on corpus evidence admissible given the RATIFIED live/online separation (WS-259)? Same question as WS-283's flag."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T22:30:00Z"
+status_note: |
+  Filed 2026-07-26. Found only by going one layer deeper than the marginal
+  scorecard — the ablation facility existed in hierarchyVariants.mjs since
+  WS-273 but the CLI never exposed it, so the decisive arm had never been run.
+  Evidence: docs/research/engine-backtest-run-2026-07-26-pool-reference.md
+  Finding 3c. NOTE villainDecisionModel.js is in WS-274's declared file set —
+  coordinate before editing.
+closed_by_event: "ev-1785173396713-7d72633c1a44"

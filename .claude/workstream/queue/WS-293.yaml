@@ -1,0 +1,85 @@
+id: "WS-293"
+title: "Range calibration as a standing metric — score inferred ranges against revealed hands, every run"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A read-only probe shipped 2026-07-28 (scripts/backtest/rangeCalibrationProbe.mjs,
+  run-range-calibration.mjs) and immediately found a falsified range model (WS-291). It is
+  currently a one-off. It should be a STANDING metric, for the same reason WS-273's
+  villain-prediction harness is: the instrument is the durable asset, the numbers decay.
+
+  WHAT IT MEASURES. For every decision where a seat's cards were later revealed:
+    coverage      — does the inferred range give the true hand NON-ZERO probability?
+                    (a zero is falsification, not miscalibration)
+    retained      — share of all possible combos kept; the random-elimination baseline,
+                    without which coverage flatters any wide range
+    lift          — coverage / retained; ~1.0 means the eliminations are arbitrary
+    delta-log     — mean log P(true hand) minus uniform; POSITIVE = the range beats
+                    "every combo equally likely"
+
+  Sliced by street, by observed action, by seat role (acting vs the villain range the game
+  tree consumes), by site, and by chained-narrowing depth.
+
+  BASELINE ALREADY RECORDED (docs/research/range-calibration-2026-07-28.md, 321,196 hands
+  / 1,300 players / two sites), so WS-291 has a genuine before/after rather than a
+  post-hoc story.
+
+  WHY IT MUST BE STANDING, NOT A ONE-OFF. Once WS-291 lands, coverage becomes ~100% BY
+  CONSTRUCTION — any positive floor guarantees it. So coverage stops discriminating and
+  DELTA-LOG becomes the metric that matters. Without a standing instrument the fix would
+  look like a total success on the metric it was designed to satisfy, which is exactly the
+  self-certifying trap the readiness gate exists to prevent.
+
+  GATE CANDIDATE. C3 (hero-EV) is only meaningful if the ranges hero's advice is
+  marginalized over are calibrated. Proposing range calibration as a gate criterion is a
+  threshold change and therefore a /decide with a recorded reason, not a silent addition
+  — see MODEL_READINESS_GATE.md.
+accept_criteria: |
+  - The probe is runnable as a normal harness command with the same leakage discipline as
+    the villain-side backtest (explicit partition, no implicit corpus-wide tables).
+  - Reports coverage, retained, lift and delta-log by street / action / seat-role / site /
+    chain-depth, and REFUSES to report coverage without its retained baseline — coverage
+    alone is a number that improves by doing nothing.
+  - Results are appendable to a history file so drift is visible across runs, in the shape
+    scorecard-history.yaml uses.
+  - The 2026-07-28 baseline is recorded as the first row.
+  - Tests: coverage/lift arithmetic on synthetic ranges with known answers; a range
+    containing every combo scores lift 1.0; a range excluding the true hand scores
+    coverage 0 for that decision.
+  - A /decide records whether range calibration becomes a gate criterion, with the
+    threshold and the reason. Not added silently.
+effort: "M"
+files_involved:
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+  - "scripts/backtest/run-range-calibration.mjs"
+  - "docs/domain/readiness/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Does range calibration become a readiness-gate criterion (C7), or stay a program metric? Adding a criterion moves the bar and needs a recorded founder decision."
+  - "The villain-side arm currently uses DEFAULT continuation rates rather than the model-derived rate gameTreeContext passes at runtime. Score against the real model path (slower, exact) or keep the population approximation (fast, directional)?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T18:32:00Z"
+status_note: |
+  Filed 2026-07-28. The probe already exists and has produced its baseline; this ticket is
+  about making it permanent and deciding its gate status. Sequenced BEFORE WS-291 lands so
+  the fix is measured rather than asserted — the WS-285 lesson: re-run the bake-off, do
+  not re-reason it.

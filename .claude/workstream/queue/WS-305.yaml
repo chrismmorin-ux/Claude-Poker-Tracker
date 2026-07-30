@@ -1,0 +1,143 @@
+id: "WS-305"
+title: "Hand-vs-range preflop equity, DECOMPOSED — implement computeEquity's range branch returning per-bucket hitRate/conditionalWin against an arbitrary 169-grid"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  P0 OF THE GUT RANGE CHARTER (.claude/projects/gut-range.md). Every other phase
+  of that project (P1-P5) blocks on this one module. Filed after a code read on
+  2026-07-29, not from an audit inference.
+
+  WHAT IS MISSING. `pokerCore/preflopEquity.js:508` — `computeEquity`'s range
+  branch throws `NotImplementedError`. The only hand-vs-range preflop equity in
+  the repo is (a) the frozen 5 x 169 `EQUITY_VS_OPEN` lookup and (b) the Monte
+  Carlo inside its generator, which runs ~8 minutes per pass at 20k trials
+  against FIXED position charts.
+
+  THREE CONSUMERS, ONE BUILD.
+
+  (1) THE RANKING FUNCTION. Mean equity cannot see domination. KJo carries
+  respectable average equity against a tight range while being crushed by
+  AJ/KQ/AK and comfortable against 22-99; realization is worst precisely in the
+  branch where the hand DOES connect — top pair, money in, drawing to three
+  outs. `pokerCore/equityDecomposition.js` already computes the measure that
+  sees this: per made-hand bucket, `hitRate` and `conditionalWin` ("given I make
+  top pair, how often does it win?"). It is hand-vs-hand only. Lifting it to
+  hand-vs-range is the same build as the equity itself.
+
+  This also sharpens WS-302's uncomfortable result. That sweep ranked prior
+  support by RAW ALL-IN EQUITY and found the hand-built chart shape worth ~0.01
+  nats. Raw equity is blind to domination by construction, so that number bounds
+  what an EQUITY RAMP is worth — it does not bound what a domination-aware
+  ranking is worth. The two have been conflated; this ticket is what lets them
+  be measured apart.
+
+  (2) THE FIXED POINT. The GUT solve iterates all nine seats to convergence, so
+  each pass needs equity against ranges that CHANGED on the previous pass. A
+  frozen lookup cannot serve it and an 8-minute MC pass x 10-30 iterations is
+  not a build, it is an overnight job with no error budget.
+
+  (3) THE DOMINATION COST TERM — the third component of the charter's preflop
+  value 3-vector (fold equity / realized showdown equity / domination cost),
+  which today collapses into one scalar per cell.
+
+  DETERMINISM IS A HARD REQUIREMENT, NOT A PREFERENCE. The existing table
+  generator draws from `Math.random` with no seed hook and is explicitly
+  documented as not byte-reproducible (+/-35bp at 20k trials). A fixed-point
+  iteration built on a stochastic equity function may not converge at all — it
+  jitters, and there is no way to distinguish "the solve is unstable" from
+  "the equity estimator is noisy." The range branch must be deterministic.
+
+  PROPOSED APPROACH (exact, and probably fast). Hand-vs-hand preflop equity is
+  ALREADY exact and cached by canonical matchup (C(48,5) enumeration,
+  `computeHandVsHandExact`). Equity of hand h against range R is then a weighted
+  sum over that matrix — no Monte Carlo anywhere:
+
+      E(h vs R) = SUM_c  w_c * E(h vs c)  /  SUM_c  w_c
+
+  where `w_c` is combo c's weight in R adjusted for card removal against h.
+  ~14,365 unique class pairs, built once, then every subsequent range query is
+  arithmetic. The same weighted sum aggregates `equityDecomposition`'s buckets.
+
+  THE NAMED APPROXIMATION THIS FORCES (decision flag below). The cached
+  hand-vs-hand values are ALL-SUIT-AVERAGED per class pair, so a class-level
+  weighted sum ignores suit-specific interaction between hero's actual suits and
+  the range's suited combos (AhKh against a heart-heavy range is not exactly the
+  all-suit average). The 169-class grid is the representation used everywhere in
+  this engine, so class-level is very likely right — but it must ship as a
+  DECLARED approximation with a measured error bound against the combo-level
+  answer on a sample, never as a silent one.
+
+  ANTI-SCOPE. Do not build the fixed-point solve here (that is GUT P3). Do not
+  add the preflop blocker term (GUT P1 / separate ticket). Do not touch
+  `populationPriors.js` — this ticket adds a capability and changes no shipped
+  behaviour. Do not regenerate `preflopEquityTable.js`; if the exact path proves
+  fast enough to replace that lookup, file it as a follow-up with its own
+  before/after latency measurement against the sub-50ms live budget.
+accept_criteria: |
+  - `computeEquity` accepts `{ type: 'range', range: Float64Array(169) }` on
+    either or both sides and no longer throws NotImplementedError.
+  - Returns mean equity AND the per-bucket decomposition (`hitRate`,
+    `conditionalWin`, `equityShare`) aggregated against the range, matching the
+    shape `equityDecomposition.js` already returns hand-vs-hand.
+  - DETERMINISTIC: identical inputs return identical outputs across processes.
+    No `Math.random` on this path. Asserted by test.
+  - Accuracy: hand-vs-range results cross-check against the existing Monte Carlo
+    generator within its documented sampling error (~+/-35bp at 20k trials) on a
+    sample of at least 20 (hand, range) pairs spanning wide and narrow ranges.
+  - The class-level suit-averaging approximation is documented in the module
+    docblock with a MEASURED error bound against a combo-level reference on a
+    sample — not an assumed one.
+  - Performance: a full 169-hands-vs-one-range sweep completes fast enough that
+    10-30 fixed-point passes are practical. State the measured number; if a
+    one-time matrix build is required, state its cost separately.
+  - Domination behavioural test: against a tight range, KJo shows materially
+    lower `conditionalWin` in the top-pair bucket than AQo does — i.e. the
+    decomposition demonstrably surfaces domination that mean equity hides.
+  - Known-value tests against published equities preserved for the hand-vs-hand
+    path (no regression).
+  - `pokerCore` suite green. No change to any shipped range, prior, or advice —
+    this ticket adds a capability and is behaviour-neutral by design.
+effort: "L"
+files_involved:
+  - "src/utils/pokerCore/preflopEquity.js"
+  - "src/utils/pokerCore/equityDecomposition.js"
+  - "src/utils/pokerCore/combinatorics.js"
+  - "src/utils/pokerCore/__tests__/preflopEquity.test.js"
+  - ".claude/projects/gut-range.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Class-level suit-averaged weighted sum (fast, one named approximation) vs combo-level exact (1326x1326, slower) — recommend class-level WITH a measured error bound"
+  - "Does the exact path replace the frozen EQUITY_VS_OPEN lookup, or sit beside it? Recommend beside, pending a latency measurement against the sub-50ms live budget"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-29"
+created_at: "2026-07-29T00:00:00Z"
+status_note: |
+  Filed 2026-07-29 as P0 of the GUT Range charter. Scored P1 rather than P0
+  deliberately: the live defect it ultimately serves is real and measured (hero
+  over-folds to 3-bets because the 3-bet grid holds 1.0-1.5% of combos while its
+  own declared frequency claims 6-12% — see charter §1), but THIS ticket does
+  not fix that defect, it unblocks the work that does. Scoring an enabler as if
+  it were the fix is how enabler tickets end up over-ranked.
+
+  Premise verified by direct code read on 2026-07-29 per
+  feedback_verify_ticket_premise_at_composition: the NotImplementedError is real
+  and at preflopEquity.js:508; equityDecomposition.js is real and hand-vs-hand
+  only; the MC generator's non-determinism is documented in its own docblock.

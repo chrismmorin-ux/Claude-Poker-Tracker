@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-26T19:31:14.433Z",
-  "updated_by_event": "ev-1785094274433-a8b06a6f58e2",
+  "updated_at": "2026-07-29T19:30:19.840Z",
+  "updated_by_event": "ev-1785353419840-9a02e0cf4cdc",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3833,34 +3833,6 @@
       ],
       "source_class": "untagged"
     },
-    "WS-272": {
-      "id": "WS-272",
-      "title": "Outward-facing theory verification — close the doc-vs-game loop (prog-domain-correctness only checks code vs doc)",
-      "status": "claimed",
-      "priority_score": 22,
-      "category": "domain-correctness",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "governance",
-      "sprint_id": null,
-      "claimed_at": "2026-07-26T19:30:28Z",
-      "completed_at": null,
-      "source": {
-        "type": "founder-request",
-        "created_by": "ai",
-        "finding_id": "",
-        "run_id": "session-2026-07-26"
-      },
-      "blocked_by": [],
-      "enables": [
-        "WS-278"
-      ],
-      "files_involved": [
-        ".claude/context/POKER_THEORY.md",
-        ".claude/workstream/programs/prog-domain-correctness.yaml"
-      ],
-      "source_class": "untagged"
-    },
     "WS-273": {
       "id": "WS-273",
       "title": "Engine backtest + calibration harness — replay HandHQ corpus, score predicted vs actual villain actions",
@@ -3900,7 +3872,7 @@
     "WS-274": {
       "id": "WS-274",
       "title": "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 26,
       "category": "domain-correctness",
       "effort": "L",
@@ -3991,39 +3963,6 @@
       ],
       "source_class": "untagged"
     },
-    "WS-277": {
-      "id": "WS-277",
-      "title": "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway",
-      "status": "claimed",
-      "priority_score": 19,
-      "category": "domain-correctness",
-      "effort": "L",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": "2026-07-26T19:30:28Z",
-      "completed_at": null,
-      "source": {
-        "type": "founder-request",
-        "created_by": "ai",
-        "finding_id": "",
-        "run_id": "session-2026-07-26"
-      },
-      "blocked_by": [],
-      "enables": [
-        "WS-154"
-      ],
-      "files_involved": [
-        "src/utils/exploitEngine/foldEquityCalculator.js",
-        "src/utils/exploitEngine/gameTreeEvaluator.js",
-        "src/utils/exploitEngine/gameTreeDepth2.js",
-        "src/utils/exploitEngine/weaknessDetector.js",
-        "src/utils/exploitEngine/generateExploits.js",
-        "src/utils/exploitEngine/rangeSegmenter.js",
-        ".claude/context/POKER_THEORY.md"
-      ],
-      "source_class": "untagged"
-    },
     "WS-279": {
       "id": "WS-279",
       "title": "Equity realization is still a base lookup keyed on position/SPR/texture — should fall out of the game tree",
@@ -4080,7 +4019,760 @@
         "src/utils/exploitEngine/positionStats.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-281": {
+      "id": "WS-281",
+      "title": "Price the multiway approximations — expected-callers pot vs exact subset enumeration, and card removal between opponent ranges",
+      "status": "backlog",
+      "priority_score": 12,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "follow-up",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/foldEquityCalculator.js",
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "scripts/backtest/evCost.mjs",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-282": {
+      "id": "WS-282",
+      "title": "Bluff-catching with players still to act — the squeeze-from-behind term the heads-up call/fold framework has no slot for",
+      "status": "backlog",
+      "priority_score": 14,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "follow-up",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/foldEquityCalculator.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-283": {
+      "id": "WS-283",
+      "title": "Fold-to-bet is underestimated ~13pp and the error is sizing-dependent — correct the fold curve, not just the base rate",
+      "status": "backlog",
+      "priority_score": 25,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/villainModelData.js",
+        "src/utils/exploitEngine/foldEquityCalculator.js",
+        "src/utils/exploitEngine/bayesianConfidence.js",
+        "src/utils/exploitEngine/handhqReferencePool.js",
+        "scripts/backtest/run.mjs",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-284": {
+      "id": "WS-284",
+      "title": "The WS-273 harness's --reference tier is INERT — with and without it the scorecard is bit-identical, so the leakage guard defends a channel that cannot affect the score",
+      "status": "backlog",
+      "priority_score": 21,
+      "category": "seam-integrity",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-283"
+      ],
+      "files_involved": [
+        "scripts/backtest/runner.mjs",
+        "scripts/backtest/leakageGuard.mjs",
+        "scripts/backtest/run.mjs",
+        "src/utils/exploitEngine/poolBaseline.js",
+        "src/utils/exploitEngine/villainDecisionModel.js",
+        "docs/research/engine-backtest-run-2026-07-26-pool-reference.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-285": {
+      "id": "WS-285",
+      "title": "The villain-model context hierarchy is OVER-SPECIFIED — pooling by facingAction beats the shipped 6-level ladder by 0.015 log-loss (t=-10.8) and 2.8pp accuracy",
+      "status": "done",
+      "priority_score": 28,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-26"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-283"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/villainDecisionModel.js",
+        "src/utils/exploitEngine/villainModelData.js",
+        "src/utils/exploitEngine/decisionAccumulator.js",
+        "scripts/backtest/hierarchyVariants.mjs",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-286": {
+      "id": "WS-286",
+      "title": "🚩 MODEL READINESS GATE — the founder's cue to stop building and start studying",
+      "status": "blocked",
+      "priority_score": 90,
+      "category": "domain-correctness",
+      "effort": "XS",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "founder",
+        "finding_id": "",
+        "run_id": "session-2026-07-27"
+      },
+      "blocked_by": [
+        "WS-287"
+      ],
+      "enables": [
+        "WS-288",
+        "WS-289",
+        "WS-290"
+      ],
+      "files_involved": [
+        "docs/domain/MODEL_READINESS_GATE.md",
+        "docs/domain/readiness/scorecard-history.yaml",
+        "docs/domain/readiness/overturn-ledger.yaml",
+        "scripts/readiness/model-readiness.mjs",
+        ".claude/hooks/readiness-gate.cjs"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-287": {
+      "id": "WS-287",
+      "title": "Hero-EV instrument — score whether the engine's ADVICE makes money, not just whether it predicts villains",
+      "status": "done",
+      "priority_score": 32,
+      "category": "domain-correctness",
+      "effort": "XL",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-27"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-286"
+      ],
+      "files_involved": [
+        "scripts/backtest/runner.mjs",
+        "scripts/backtest/evCost.mjs",
+        "scripts/backtest/partition.mjs",
+        "scripts/backtest/leakageGuard.mjs",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/calibrationMetrics.js",
+        "docs/domain/readiness/scorecard-history.yaml"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-288": {
+      "id": "WS-288",
+      "title": "The Build Report — what we made, everything we tried, why the winner won, and every lever and mapping",
+      "status": "blocked",
+      "priority_score": 45,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "founder",
+        "finding_id": "",
+        "run_id": "session-2026-07-27"
+      },
+      "blocked_by": [
+        "WS-286"
+      ],
+      "enables": [
+        "WS-289"
+      ],
+      "files_involved": [
+        "docs/domain/BUILD_REPORT.md",
+        ".claude/context/POKER_THEORY.md",
+        "docs/research/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-289": {
+      "id": "WS-289",
+      "title": "Learnable theory + curriculum — rewrite the model as something a human can progressively memorize and use at a table",
+      "status": "blocked",
+      "priority_score": 48,
+      "category": "domain-correctness",
+      "effort": "XL",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "founder",
+        "finding_id": "",
+        "run_id": "session-2026-07-27"
+      },
+      "blocked_by": [
+        "WS-286"
+      ],
+      "enables": [
+        "WS-290"
+      ],
+      "files_involved": [
+        "docs/domain/CURRICULUM.md",
+        ".claude/context/POKER_THEORY.md",
+        "docs/domain/BUILD_REPORT.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-290": {
+      "id": "WS-290",
+      "title": "Comprehension + application measurement — can the founder recall the theory, and can they execute it at the table?",
+      "status": "blocked",
+      "priority_score": 40,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "founder",
+        "finding_id": "",
+        "run_id": "session-2026-07-27"
+      },
+      "blocked_by": [
+        "WS-289"
+      ],
+      "enables": [],
+      "files_involved": [
+        "src/utils/skillAssessment/",
+        "src/utils/exploitEngine/calibrationMetrics.js",
+        "docs/domain/CURRICULUM.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-291": {
+      "id": "WS-291",
+      "title": "Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctrine demands a logistic",
+      "status": "done",
+      "priority_score": 34,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-07-28T22:10:03Z",
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-294"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/postflopNarrower.js",
+        "src/utils/exploitEngine/__tests__/postflopNarrower.test.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-292": {
+      "id": "WS-292",
+      "title": "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "architecture",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-293"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/decisionAccumulator.js",
+        "src/utils/exploitEngine/gameTreeContext.js",
+        "src/utils/handAnalysis/replayAnalysis.js",
+        "scripts/backtest/rangeCalibrationProbe.mjs"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-293": {
+      "id": "WS-293",
+      "title": "Range calibration as a standing metric — score inferred ranges against revealed hands, every run",
+      "status": "backlog",
+      "priority_score": 26,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "scripts/backtest/rangeCalibrationProbe.mjs",
+        "scripts/backtest/run-range-calibration.mjs",
+        "docs/domain/readiness/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-294": {
+      "id": "WS-294",
+      "title": "Re-run hero-EV on calibrated ranges, and add a cards-known arm",
+      "status": "blocked",
+      "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [
+        "WS-291"
+      ],
+      "enables": [
+        "WS-286"
+      ],
+      "files_involved": [
+        "scripts/backtest/heroPolicy.mjs",
+        "scripts/backtest/heroEvRunner.mjs",
+        "scripts/backtest/heroEvReport.mjs",
+        "docs/domain/readiness/scorecard-history.yaml"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-295": {
+      "id": "WS-295",
+      "title": "The optimizer's curse — is the engine's stated EV systematically above what its advice actually realizes?",
+      "status": "backlog",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-296"
+      ],
+      "files_involved": [
+        "scripts/backtest/heroEvRunner.mjs",
+        "scripts/backtest/ipsEstimator.mjs",
+        "scripts/backtest/heroEvReport.mjs",
+        "src/utils/exploitEngine/calibrationMetrics.js",
+        ".claude/projects/derisking-and-bankroll.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-296": {
+      "id": "WS-296",
+      "title": "POKER_THEORY §12 — the engine maximizes utility of money, not chips, and ICM becomes its special case",
+      "status": "blocked",
+      "priority_score": 18,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [
+        "WS-295",
+        "WS-286"
+      ],
+      "enables": [
+        "WS-297",
+        "WS-299"
+      ],
+      "files_involved": [
+        ".claude/context/POKER_THEORY.md",
+        "docs/domain/readiness/overturn-ledger.yaml",
+        "src/utils/exploitEngine/CLAUDE.md",
+        "src/utils/icmEngine/CLAUDE.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-297": {
+      "id": "WS-297",
+      "title": "Bankroll utility layer — replace the two invented safer-alternative constants with exact log-utility over the outcome distribution",
+      "status": "blocked",
+      "priority_score": 16,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [
+        "WS-296"
+      ],
+      "enables": [
+        "WS-298"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/riskAnalysis.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/components/views/TableView/LiveAdviceBar.jsx",
+        "src/utils/sessionStats/sessionAnalytics.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-298": {
+      "id": "WS-298",
+      "title": "Compose bankroll utility with the ICM risk premium without double-taxing the same at-risk chips",
+      "status": "blocked",
+      "priority_score": 13,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [
+        "WS-297"
+      ],
+      "enables": [],
+      "files_involved": [
+        "src/utils/icmEngine/riskPremium.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/riskAnalysis.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-299": {
+      "id": "WS-299",
+      "title": "Line-level realization — a line hero misplays is worth less than the game tree says, and hero's own history prices it",
+      "status": "blocked",
+      "priority_score": 12,
+      "category": "domain-correctness",
+      "effort": "XL",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [
+        "WS-296"
+      ],
+      "enables": [],
+      "files_involved": [
+        "scripts/backtest/heroPolicy.mjs",
+        "scripts/backtest/ipsEstimator.mjs",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/skillAssessment/",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-300": {
+      "id": "WS-300",
+      "title": "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
+      "status": "backlog",
+      "priority_score": 30,
+      "category": "testing",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-28"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js",
+        "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js",
+        "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-301": {
+      "id": "WS-301",
+      "title": "A single depth-2 evaluation measured 8.5s in-harness while the whole-evaluation budget is 150ms",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "performance",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-158"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/gameTreeSampling.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-302": {
+      "id": "WS-302",
+      "title": "The PREFLOP range still says 'impossible' — 30-37% of cells are hard zeros, and that is now the only thing keeping coverage off 100%",
+      "status": "done",
+      "priority_score": 31,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-158"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-294"
+      ],
+      "files_involved": [
+        "src/utils/exploitEngine/preflopAdvisor.js",
+        "src/utils/rangeEngine/populationPriors.js",
+        "src/utils/exploitEngine/postflopNarrower.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-303": {
+      "id": "WS-303",
+      "title": "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing",
+      "status": "backlog",
+      "priority_score": 29,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-158"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/postflopNarrower.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "scripts/backtest/rangeCalibrationProbe.mjs"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-304": {
+      "id": "WS-304",
+      "title": "The 3-bet prior says AK is a fold — `handStrengthTier` puts AKo below the threshold its own comment calls 'AK heavy'",
+      "status": "backlog",
+      "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-159"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/rangeEngine/populationPriors.js",
+        "src/utils/rangeEngine/__tests__/populationPriors.test.js",
+        "src/utils/pokerCore/preflopEquityTable.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-305": {
+      "id": "WS-305",
+      "title": "Hand-vs-range preflop equity, DECOMPOSED — implement computeEquity's range branch returning per-bucket hitRate/conditionalWin against an arbitrary 169-grid",
+      "status": "backlog",
+      "priority_score": 22,
+      "category": "domain-correctness",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-29"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/pokerCore/preflopEquity.js",
+        "src/utils/pokerCore/equityDecomposition.js",
+        "src/utils/pokerCore/combinatorics.js",
+        "src/utils/pokerCore/__tests__/preflopEquity.test.js",
+        ".claude/projects/gut-range.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785094274433-a8b06a6f58e2"
+  "last_event_log_head": "ev-1785353419840-9a02e0cf4cdc"
 }

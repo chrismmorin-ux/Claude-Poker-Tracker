@@ -1,0 +1,96 @@
+id: "WS-297"
+title: "Bankroll utility layer — replace the two invented safer-alternative constants with exact log-utility over the outcome distribution"
+legacy_id: ""
+type: improvement
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 16.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WHAT IS WRONG TODAY. `riskAnalysis.js` computes the full per-combo outcome
+  distribution for every hero action, then throws the shape away. Its header
+  states the contract: "Risk is OBSERVATION, not action override — riskScore
+  never changes EV ranking." The one place risk influences anything is
+  `computeRiskComparison`, which offers a safer alternative when it cuts variance
+  by >=30% for <=10% of pot in EV. Both numbers are invented, and they are
+  precisely the quantity bankroll theory determines from a number the founder
+  already knows.
+
+  THE REPLACEMENT. Score actions by E[log(B + X)] integrated over the per-combo
+  outcome distribution the module already builds, where B is a founder-entered
+  bankroll. Two constants with no derivation become one input with a meaning.
+
+  USE THE EXACT INTEGRAL, NOT MEAN-VARIANCE. The familiar `mu - sigma^2/(2B)`
+  shortcut assumes X << B. That fails exactly for a stack-off by an underrolled
+  player, which is the case the whole feature exists for. The distribution is
+  already in hand, so there is no reason to approximate — quote the quadratic in
+  the reasoning string as intuition, compute the exact form.
+
+  MAGNITUDE SANITY CHECK, AND IT IS BINDING. Illustrative at 1/3 NL, choosing a
+  sigma=$400 line over a sigma=$250 one: with a $20k roll the chip-EV edge needed
+  to justify it is about $2.44; with a $5k roll, about $9.75. That is the correct
+  qualitative behaviour — a rounding error when properly rolled, a real strategy
+  shift when not. If the implementation ever produces a large penalty for a
+  well-rolled player, IT IS WRONG. Assert this by test rather than trusting it.
+
+  WHAT THIS MUST NOT BECOME. Not a riskScore multiplier on the ranking (§7.4, the
+  WS-274 posterior corollary). Not a "risk appetite" slider — lambda derives from
+  a bankroll the way beta derives from the payout ladder, and a taste knob makes
+  every result unfalsifiable. Not silent — a de-risked recommendation displays
+  the chip-EV alongside, because a correction the founder cannot see is one they
+  cannot audit.
+
+  THE BANKROLL INPUT IS A UX SURFACE. Adding it triggers the Design Program
+  Guardrail: Gate 1 entry (scope, personas, JTBD, gap analysis) before code, and
+  a surface artifact for the settings change. Small, not exempt.
+accept_criteria: |
+  - Action scoring uses exact E[log(B + X)] over the per-combo outcome
+    distribution; the mean-variance form appears only in explanatory text.
+  - No bankroll configured => the layer is EXACTLY the identity and the ranking
+    is bit-identical to today. Asserted by test, same contract
+    `computeCommittedIcmTax` honours for cash.
+  - MIN_VARIANCE_REDUCTION (0.30) and MAX_EV_SACRIFICE_RATIO (0.10) are DELETED,
+    not re-tuned.
+  - Test asserts the magnitude property: for a well-rolled player the utility
+    penalty is small relative to typical EV differences, and it grows as the roll
+    shrinks. A large penalty at a large bankroll fails the test.
+  - Every de-risked recommendation surfaces chip-EV alongside utility-adjusted
+    EV; the tax is never invisible.
+  - Design Gate 1 completed for the bankroll settings input, with a surface
+    artifact in docs/design/surfaces/.
+  - Re-run the WS-287 hero-EV pass; C6's clean-run counter is knowingly reset and
+    that reset is recorded, not discovered later.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/riskAnalysis.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/utils/sessionStats/sessionAnalytics.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-296"
+blocked_by_legacy: []
+enables:
+  - "WS-298"
+sprint_id: null
+decision_flags:
+  - "Show the utility tax on every recommendation, or only when it flips the answer? Always is noise; only-when-it-flips hides the mechanism."
+  - "Where does the bankroll live — settings, or per-session so it tracks reality without founder upkeep?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T00:00:00Z"
+status_note: |
+  Phase 2 of the de-risking charter (.claude/projects/derisking-and-bankroll.md).
+  This is the first ticket in the project that changes a recommendation, and so
+  the first that resets C6. Post-gate by default.

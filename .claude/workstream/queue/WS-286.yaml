@@ -1,0 +1,90 @@
+id: "WS-286"
+title: "🚩 MODEL READINESS GATE — the founder's cue to stop building and start studying"
+legacy_id: ""
+type: milestone
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 90.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THIS ITEM IS A FLAG, NOT A TASK. It does not get "worked". It opens.
+
+  The founder's purpose for the whole domain-correctness push (stated 2026-07-27):
+
+    "I want to set a stake in the ground somewhere, where the model and engine have
+     adapted enough to be reliable and consistent... Thats my que to study the final
+     product we've built knowing how it was built and all its levers and mappings."
+
+  So the bar was written down FIRST, in numbers, before anyone knew whether it was
+  easy: docs/domain/MODEL_READINESS_GATE.md. Six criteria. When all six pass, the
+  gate opens, sprint composition HOLDS, and the founder is told to sit down and study.
+
+  WHY THE BAR WAS FIXED IN ADVANCE. WS-285 found the engine's context hierarchy had
+  been ordered for months by an unmeasured code comment that turned out to be roughly
+  the inverse of the truth. A readiness bar defined after the fact is the same failure
+  wearing a milestone's clothes — "good enough" gets declared at whatever the numbers
+  happen to be, and it feels earned. Fixing the numbers first is the only defence.
+
+  DO NOT EDIT A THRESHOLD TO OPEN THIS GATE. Moving a bar is a founder decision,
+  recorded via /decide with its reason. Moving one silently voids the whole artifact.
+
+  THE TWO THINGS THE GATE PROTECTS. The founder intends to MEMORIZE this theory and
+  use it at a table. That makes accuracy AND stability load-bearing: an accurate but
+  still-churning theory is a draft you will have to relearn; a stable but wrong one
+  teaches errors. The criteria require both.
+
+  BASELINE AT ESTABLISHMENT (2026-07-27, post-WS-285):
+    accuracy 58.7% · lift 6.03% · worst calibration error 0.058 · hero-EV UNMEASURED
+    Gate status: 0 / 6.
+accept_criteria: |
+  - This item OPENS (does not "complete") when
+    `node scripts/readiness/model-readiness.mjs` exits 0.
+  - The SessionStart hook (.claude/hooks/readiness-gate.cjs) raises the blocking
+    banner and sprint composition is held until the founder acknowledges.
+  - On opening, WS-288 / WS-289 / WS-290 unblock in that order.
+  - The item is CLOSED only after the founder acknowledges the gate — not by the
+    criteria passing. The flag exists to be seen, so seeing it is the completion.
+effort: "XS"
+files_involved:
+  - "docs/domain/MODEL_READINESS_GATE.md"
+  - "docs/domain/readiness/scorecard-history.yaml"
+  - "docs/domain/readiness/overturn-ledger.yaml"
+  - "scripts/readiness/model-readiness.mjs"
+  - ".claude/hooks/readiness-gate.cjs"
+blocked_by:
+  - "WS-287"
+blocked_by_legacy: []
+enables:
+  - "WS-288"
+  - "WS-289"
+  - "WS-290"
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-directive
+  created_by: founder
+  finding_id: ""
+  run_id: "session-2026-07-27"
+created_at: "2026-07-27T18:00:00Z"
+status_note: |
+  Established 2026-07-27 at founder request. Two founder decisions shaped it:
+
+  1. HERO-EV IS REQUIRED (C3). Every metric the repo can currently produce scores
+     VILLAIN ACTION PREDICTION. Nothing measures whether hero's recommendations make
+     money — the §6.1-6.4 value/bluff/MDF spine between a good villain model and a
+     good recommendation has never been scored, and WS-277 already found a gap in its
+     multiway half. The founder would be memorizing the output of that unmeasured
+     layer. Gate blocked on WS-287 building the instrument.
+  2. THE FLAG BLOCKS. Founder chose halt-until-acknowledged over a passive banner.
+
+  Backstop: the SessionStart hook fails open by design, so a silently broken checker
+  looks exactly like a closed gate. Run `node scripts/readiness/model-readiness.mjs`
+  by hand periodically — the /pulse domain-correctness protocol is the natural home.

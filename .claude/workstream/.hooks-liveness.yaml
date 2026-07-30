@@ -1,0 +1,5 @@
+# Auto-maintained by cwos-heartbeat.js and cwos-session-recovery.js.
+# Read by cwos-verify.js INV-026 to detect silently-failing hooks.
+# Stamp is written at the START of each hook run to prove the script
+# entrypoint executed, independent of any business-logic crashes.
+last_session_recovery_hook_at: "2026-07-30T03:25:52Z"

@@ -2,10 +2,10 @@ id: "WS-302"
 title: "The PREFLOP range still says 'impossible' — 30-37% of cells are hard zeros, and that is now the only thing keeping coverage off 100%"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
-started_at: null
+started_at: "2026-07-28T22:46:00Z"
 completed_at: null
 completion_commit: null
 priority_score: 31.0
@@ -91,3 +91,23 @@ status_note: |
   Filed 2026-07-28 during SPR-158 while verifying WS-291. Isolated by elimination: once the
   postflop floor guaranteed non-zero weight, whatever coverage remained missing had to come
   from upstream, and the baseline-range cell counts confirmed it directly.
+
+progress_notes: |
+  DECONFLICTION NOTE (2026-07-28, added by a session that did not author this work).
+  Implementation is present in the WORKING TREE but UNCOMMITTED, so the ticket read
+  `backlog` while the code was already written — a duplication hazard for any other
+  session picking up the queue. Marked in_progress to claim it.
+
+  What is already in the tree:
+    - src/utils/pokerCore/softWeights.js — the mean-pinned logistic extracted from
+      postflopNarrower so rangeEngine can reuse it without importing from exploitEngine.
+      Exports softContinuationWeights / sigmoid / quantile / TAU_FRACTION /
+      MIN_CONTINUATION_WEIGHT.
+    - postflopNarrower.js re-exports it, so every existing import path still resolves.
+    - rangeEngine/populationPriors.js:226 applies it with a PRIOR_SUPPORT_FLOOR.
+  Tests: 384 pass across postflopNarrower + pokerCore.
+
+  STILL OPEN on this ticket: the coverage re-measurement that justifies it. The claim is
+  that preflop zeros are the only thing holding coverage off 100%; that needs the WS-293
+  probe re-run to confirm coverage actually moves ~94% -> ~100%.
+closed_by_event: "ev-1785348567346-8f49218934a6"

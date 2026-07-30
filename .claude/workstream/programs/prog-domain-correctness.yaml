@@ -181,7 +181,80 @@ tier_triggers:
   active: "Engines surface recommendations to user (live or via study modes)"
   critical: "Domain bug found in production OR engine accuracy is product differentiator"
 
+# ============================================================================
+# TWO DIRECTIONS OF VERIFICATION (WS-272, 2026-07-26)
+# ============================================================================
+# This program verifies domain correctness in BOTH directions. Which protocol
+# covers which is load-bearing — conflating them is how WS-278 hid for months.
+#
+#   INWARD  — "does the CODE match the DOC?"
+#             baseline / sweep / delta / challenge.
+#             Ceiling: it can only ever find contradictions with what the
+#             founder has already articulated. A doc that is WRONG or INCOMPLETE
+#             is invisible to every one of these, because the code faithfully
+#             implements it.
+#
+#   OUTWARD — "does the DOC match the GAME?"
+#             theory_completeness (below) + blind_spot.
+#             Output is candidate ADDITIONS to POKER_THEORY.md, not drift.
+#
+# BOUNDARY vs blind_spot, which already existed and partially overlaps:
+#   blind_spot targets the CODEBASE ("what concepts does the code not
+#   implement", "what components are stale"). theory_completeness targets the
+#   DOC ITSELF ("what is absent from POKER_THEORY.md", "which of its
+#   completeness claims are unfalsified").
+#   Evidence the distinction is real: blind_spot ran 2026-06-20 and did NOT
+#   surface the §3.4 betting-motivation gap (WS-278) — an EXHAUSTIVE taxonomy
+#   missing protection / equity denial. It was found only when the founder
+#   asked the open question by hand on 2026-07-26. Six other gaps
+#   (WS-273..WS-280) came from that same manual pass.
+# ============================================================================
+
 protocols:
+  theory_completeness:
+    engine: eng-engine
+    cadence_days: 90
+    focus: "Outward-facing: what is ABSENT from POKER_THEORY.md? Output is candidate doc ADDITIONS, never code-vs-doc drift."
+    min_tier: active
+    output_mode: founder_review_draft   # WS-272 founder decision 2026-07-26
+    output_path: "docs/domain/theory-gaps.draft.md"
+    admissible_sources:                 # WS-272 founder decision 2026-07-26
+      - handhq_corpus_and_backtest      # empirical arbitration — strongest; settles claims with a number
+      - coaching_content_taxonomy       # COVERAGE checklist only — weak authority, strong gap detector
+      # DELIBERATELY EXCLUDED by founder decision:
+      #   solver/GTO literature — equilibrium play; this engine is exploitative
+      #     and live-population-facing, so solver completeness is the wrong
+      #     yardstick for what BELONGS in this doc.
+      #   founder's own tagged hands — highest relevance, but volume is too low
+      #     to arbitrate; revisit once predictionAudit readback accumulates.
+    method: >
+      Three mechanisms, cheapest first. (1) Completeness interrogation: walk
+      POKER_THEORY.md section by section and ask what a strong live-cash coach
+      would say is MISSING, using the coaching-content taxonomy as a coverage
+      checklist. (2) Exhaustiveness audit: re-derive the inventory of
+      completeness claims (docs/domain/theory-completeness-protocol.md) and
+      check each still names a falsifier. (3) Empirical arbitration: where a
+      claim is measurable against the HandHQ corpus, run it through the WS-273
+      harness and settle it with a number rather than an argument.
+    prompt_additions: >
+      THEORY COMPLETENESS protocol. You are NOT checking whether the code
+      matches POKER_THEORY.md — other protocols do that and they cannot find
+      what this one looks for. You are asking whether the DOC matches POKER.
+      - What would a strong live 9-handed cash coach say this document is
+        missing entirely? Not "explained badly" — ABSENT.
+      - Every section asserting completeness ("every", "the four", "all",
+        "always", "never") is a standing liability. For each, name the
+        observation that would falsify it. If none exists, that is the finding.
+      - Prefer claims that the HandHQ corpus or the WS-273 backtest can settle
+        with a number. Rank those first.
+      - Solver/GTO literature is NOT an admissible arbiter here (founder
+        decision): this engine is deliberately exploitative and live-facing.
+        Use coaching-content taxonomy as a COVERAGE checklist only, never as
+        authority for what is correct.
+      - Output candidate ADDITIONS with a claim, a source, and a proposed
+        section. Write to the draft path for founder review. Do NOT auto-file
+        findings and do NOT edit POKER_THEORY.md.
+
   baseline:
     engine: eng-engine
     focus: "Full poker-theory audit. Catalog alignment between engines and POKER_THEORY.md. Enumerate anti-pattern occurrences. Verify Bayesian confidence propagation and game-tree completeness."
@@ -330,10 +403,16 @@ health_breakdown:
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
 findings_open: 11
-work_items_open: 20
+work_items_open: 37
 
 cap_breach:
-  active: false
+  active: true
+  work_items_open: 37
+  findings_open: 11
+  max_open_items: 25
+  priority_floor: 27
+  ratio: 1.48
+  since: "2026-07-28"
 evidence:
   last_audit_report: ".claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-3/synthesis.md"
   protocol_history:

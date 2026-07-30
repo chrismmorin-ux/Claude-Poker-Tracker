@@ -1,0 +1,77 @@
+id: "WS-298"
+title: "Compose bankroll utility with the ICM risk premium without double-taxing the same at-risk chips"
+legacy_id: ""
+type: improvement
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 13.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Once a bankroll utility layer exists (WS-297), tournaments have TWO concave
+  corrections live at once: the ICM risk premium beta (POKER_THEORY §10.3,
+  `computeCommittedIcmTax`) and the bankroll lambda. Applied naively both discount
+  the same at-risk chips and the engine folds everything.
+
+  THE RESOLUTION, ALREADY STATED IN §12. They act on different variables in a
+  chain, not on the same variable twice:
+
+      chips --[ ICM: beta ]--> $EV --[ Kelly: lambda ]--> utility
+
+  beta converts tournament chips into prize equity; lambda prices the risk to
+  that prize equity against the rest of the founder's poker life. In cash the
+  first map is the identity, which is why cash is unaffected by beta today.
+
+  THE SPECIFIC HAZARD. `computeCommittedIcmTax` returns a chip-EV PENALTY, not a
+  transformed $EV. Chaining lambda onto a penalized chip-EV is not the same
+  operation as applying lambda to the $EV distribution, and the difference is not
+  second-order near the bubble. The composition has to be done on the
+  distribution, not on the point estimate — which is also the reason WS-297
+  integrates the utility exactly rather than using mean-variance.
+
+  A SECOND, SMALLER HAZARD. `computeCommittedIcmTax` is gated to committed
+  heads-up stack-offs because its symmetric form is exact only when winChips ~=
+  riskChips. The bankroll utility has no such restriction. So there is a régime —
+  partial-pot tournament bets — where lambda applies and beta does not, and the
+  engine must not silently read that as "no ICM pressure here."
+accept_criteria: |
+  - Composition implemented on the outcome DISTRIBUTION (chips -> $EV -> utility),
+    never as two penalties subtracted from one point estimate.
+  - Cash path provably unchanged: no icmContext => identity, asserted by test.
+  - Tournament path with lambda unset => bit-identical to today's beta-only
+    behaviour, asserted by test.
+  - The partial-pot tournament régime (lambda applies, beta gated off) is handled
+    explicitly and does not present as "no ICM pressure".
+  - A near-bubble fixture shows the composed correction is NOT the sum of the two
+    corrections applied separately, with the divergence quantified.
+  - §12.5 updated with the measured behaviour if it differs from the derivation.
+effort: "M"
+files_involved:
+  - "src/utils/icmEngine/riskPremium.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/riskAnalysis.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-297"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T00:00:00Z"
+status_note: |
+  Phase 2 of the de-risking charter (.claude/projects/derisking-and-bankroll.md).
+  Sequenced after WS-297 deliberately: composing with ICM before the cash utility
+  layer exists would build the tournament case as the base and leave cash as a
+  patch — the WS-277 pattern this repo already paid to stop.

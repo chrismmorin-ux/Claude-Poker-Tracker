@@ -1,0 +1,95 @@
+id: "WS-300"
+title: "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "testing"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  The shared range fixtures in the exploitEngine behavioural tests build the OPPOSITE of
+  what they claim, because grid index 0 is deuces, not aces.
+
+    tightRange()   // "top pairs + big aces (~10%)" / "AA-TT, AK, AQ"
+      indices [0,14,28,42,56,1,13,2,26,3,15]
+      DECODES TO:  22 33 44 55 66 32o 32s 42o 42s 52o 43o
+
+    topRange(pct)  // "Top N% range (fills first N% of 169 cells)"
+      topRange(20) DECODES TO:  22 32o 42o 52o 62o 72o 82o 92o T2o J2o Q2o K2o A2o
+                                32s 33 43o 53o 63o 73o 83o 93o T3o J3o Q3o K3o A3o
+                                42s 43s 44 54o 64o 74o 84o 94o
+
+  Both are the WEAKEST cells in the grid. `topRange(50)` is the bottom half.
+
+  HOW IT SURFACED. WS-291 replaced the hard quantile cut in `narrowByBoard` with a soft
+  logistic. One behavioural test then failed: Scenario 3 asserted hero's 33 has < 0.60
+  equity on Q-J-T against `tightRange()`. It had 0.645.
+
+  The engine was right and the fixture was wrong. Hero's 33 genuinely beats most of
+  22/32o/42o/52o/43o. The assertion had only ever passed because the OLD hard cut
+  discarded the junk before equity was taken — a broken fixture and a broken narrowing
+  cancelling out. Swapping in a real tight range (AA-TT, AKs, AKo, AQs) gives hero equity
+  0.04, which is the poker-correct answer.
+
+  WHY IT MATTERS BEYOND ONE TEST. These fixtures feed the behavioural assertions across
+  advisorAccuracy, gameTreeEvaluator and gameTreeDepth2 — recommendation choice, EV
+  ordering, sizing selection, depth-2/3 refinement. Every threshold in them was tuned
+  against inverted inputs. The suite is large and green, and on RANGE-DEPENDENT
+  behaviour it is verifying much less than its pass count implies.
+
+  Note the shape: this is the same class of error as WS-285 (a code comment asserting an
+  ordering nobody had measured) and WS-291 (a doc claim the data refutes). A label said
+  one thing, the values said another, and nothing checked.
+
+  SCOPE WARNING. Fixing the fixtures will move many assertions, because they were
+  calibrated to the wrong ranges. That churn is the POINT — it measures how much of the
+  suite's behavioural coverage was illusory — but it must not be done blind. Fix the
+  fixtures first, then triage each newly-failing assertion on its own merits: some
+  thresholds will be stale, and some failures will be real engine defects that inverted
+  ranges were masking.
+accept_criteria: |
+  - `topRange(pct)` returns the strongest pct% of the grid; `tightRange()` returns what
+    its comment claims. Asserted by a test that DECODES the fixture and checks the hands
+    by name, so the labels can never silently drift from the values again.
+  - Every currently-passing assertion that depends on these fixtures is re-triaged, and
+    each change is recorded as either "threshold was stale" or "real defect found".
+  - Any real engine defect uncovered is filed separately rather than absorbed by a
+    threshold edit.
+  - A short note in the exploitEngine test README (or CLAUDE.md anti-patterns) on the
+    index convention: index 0 is 22, index 168 is AA.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Fix the fixtures and absorb the churn in one pass, or introduce correctly-named fixtures alongside and migrate tests incrementally? The first is honest and noisy; the second keeps the suite green while the inverted ones linger."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T21:10:00Z"
+status_note: |
+  Found 2026-07-28 while validating WS-291. Scenario 3 in advisorAccuracy was fixed inline
+  (it now builds a real tight range locally) so the WS-291 change could be verified against
+  a correct premise; the shared fixtures were deliberately left alone, because rewriting
+  them mid-ticket would have mixed "did the narrowing change break anything" with "were
+  these tests ever testing what they claimed".
+
+  A separate diagnostic now fires with correct inputs and is worth a look under this or a
+  follow-up ticket: with a real tight range the engine recommends RAISING hero's 33 on
+  QJT at 4% equity (raise EV 40.4 vs fold 0). The test logs it as a warning rather than
+  failing. Against a range that folds rarely, that recommendation looks wrong.

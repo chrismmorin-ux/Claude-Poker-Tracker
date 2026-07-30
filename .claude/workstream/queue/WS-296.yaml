@@ -1,0 +1,87 @@
+id: "WS-296"
+title: "POKER_THEORY §12 — the engine maximizes utility of money, not chips, and ICM becomes its special case"
+legacy_id: ""
+type: improvement
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE SUBSTITUTION. The engine maximizes E[Δchips]. It should maximize
+  E[U(B + Δmoney)] with U concave, the expectation taken over the joint
+  distribution of (outcome | parameters), (parameters | data), and hero's own
+  future actions. Every de-risking concern the founder raised — variance, misread
+  potential, hero's own mistakes — is a term of that one expectation rather than
+  a separate feature.
+
+  THIS IS A GENERALIZATION OF §10, NOT A RIVAL TO IT. §10.1 already establishes
+  that a chip is not a dollar when the payout ladder makes money non-linear.
+  §12 says the same thing about a finite bankroll: being able to lose it makes
+  money non-linear. The composition is a CHAIN, not a sum —
+
+      chips --[ ICM: beta, §10 ]--> $EV --[ Kelly: lambda = 1/B ]--> utility
+
+  In cash the first map is the identity. This is what dissolves the double-count
+  worry, and it must be stated in the doctrine, not left to the implementation.
+
+  WHY DOCTRINE BEFORE CODE. The obvious wrong build is a riskScore multiplier on
+  the EV ranking — a label scaling a posterior, forbidden by §7.4 and the WS-274
+  corollary. Writing §12 first fixes the admissible SHAPE of the correction
+  (a utility function over the outcome distribution) before anyone reaches for a
+  coefficient, and fixes the prohibitions while nobody knows whether they are
+  inconvenient — the WS-285 / readiness-gate discipline.
+
+  C4 DETERMINATION REQUIRED BEFORE THIS LANDS. MODEL_READINESS_GATE.md defines an
+  overturn as a change that invalidates a load-bearing documented claim, "not an
+  addition, not a refinement." The charter argues §12 is an addition that makes
+  §10 a specialization, and so should NOT reset the C4 counter. That call belongs
+  to the domain-correctness protocol and must be made explicitly, not assumed.
+accept_criteria: |
+  - POKER_THEORY §12 authored per the charter outline: objective function, Kelly
+    term, optimizer's curse, line-level realization, ICM composition, session
+    decay (named, UNMEASURED), anti-patterns.
+  - §12 states the exact log-utility form as canonical and the mean-variance
+    quadratic as intuition only, with the reason: the quadratic assumes X << B,
+    which fails exactly for the underrolled stack-off that motivates the feature.
+  - §10 gains a forward reference establishing itself as the tournament
+    specialization; no §10 claim is invalidated or edited away.
+  - Anti-patterns section names, at minimum: the risk-appetite knob; the
+    riskScore multiplier on the ranking; the invented 30%/10% safer-alternative
+    constants; double-taxing the same at-risk chips.
+  - C4 overturn-vs-addition determination recorded in
+    `docs/domain/readiness/overturn-ledger.yaml` with its reasoning, either way.
+  - WS-295's result cited as the empirical basis for §12.3, including a null.
+effort: "M"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/domain/readiness/overturn-ledger.yaml"
+  - "src/utils/exploitEngine/CLAUDE.md"
+  - "src/utils/icmEngine/CLAUDE.md"
+blocked_by:
+  - "WS-295"
+  - "WS-286"
+blocked_by_legacy: []
+enables:
+  - "WS-297"
+  - "WS-299"
+sprint_id: null
+decision_flags:
+  - "Is B the poker bankroll or total liquid wealth? Kelly wants the roll the founder is genuinely willing to lose. This one number sets the entire magnitude of the Kelly term."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T00:00:00Z"
+status_note: |
+  Phase 1 of the de-risking charter (.claude/projects/derisking-and-bankroll.md).
+  Blocked on WS-286 by default: it is doctrine the founder is about to memorize,
+  so it should not churn mid-gate. WS-295 may re-open that sequencing.

@@ -1,0 +1,86 @@
+id: "WS-299"
+title: "Line-level realization — a line hero misplays is worth less than the game tree says, and hero's own history prices it"
+legacy_id: ""
+type: improvement
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 12.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE GAP. `gameTreeEvaluator` prices a line assuming hero plays the remainder
+  optimally. Hero will not. A triple-barrel bluff, a deep-SPR float out of
+  position, a river bluff-catch — each carries downstream decisions hero gets
+  wrong at some rate, and the engine's number for the line is the value of a
+  continuation hero is not going to produce. The recommendation is therefore
+  biased toward lines whose difficulty is invisible to it.
+
+  THIS IS NOT A NEW CONCEPT, IT IS AN EXISTING ONE AT A DIFFERENT SCOPE.
+  POKER_THEORY §1.4 already treats equity realization as first-class: not all
+  equity is captured, and position/suitedness/multiway change how much. §12.4
+  extends the same idea from a HAND's realization to a LINE's — value realized
+  against hero's policy rather than against optimal play.
+
+  THE INSTRUMENT MOSTLY EXISTS. `heroPolicy.mjs` already represents the engine's
+  advice as a distribution over hero's inferred range, and `ipsEstimator.mjs`
+  names this exact bias as its own horizon limitation: it "measures the value of
+  substituting our action at a single node... it does NOT measure the value of
+  playing our whole strategy." That sentence is this ticket's scope statement.
+  Extending the horizon past one decision is the build.
+
+  THE COEFFICIENT IS MEASURED, NOT ASSUMED — AND THAT IS THE HARD PART. The
+  discount for a line family must come from hero's own observed error rate in
+  that family (the skillAssessment core and the predictionAudit capture), not
+  from a difficulty label. A hand-assigned "this line is hard" multiplier is the
+  §7 label anti-pattern and is exactly what this ticket must not become.
+
+  WHY IT IS XL AND LAST. Hero's own sample is small, the effect is conditional on
+  line family, and there is a live circularity to design around: an engine that
+  discounts lines hero plays badly will stop recommending them, hero will stop
+  practising them, and the measured error rate will never improve. That feedback
+  loop needs an explicit answer (exploration floor? separate study surface?)
+  before this ships, not after.
+accept_criteria: |
+  - Line value is evaluated against hero's policy, with the discount derived from
+    hero's observed per-family error rate. No difficulty labels, no hand-assigned
+    multipliers.
+  - Sparse hero data shrinks toward no-discount (optimal-play assumption), the
+    §6.5a / §11.5 construction. A thin family must not produce a confident penalty.
+  - The self-reinforcement loop is addressed explicitly in the design and named in
+    §12.4 — an engine that avoids what hero is bad at also prevents hero improving.
+  - Zero hero history => the layer is exactly the identity, asserted by test.
+  - Measured through the WS-287 hero-EV pass with the horizon extended past one
+    decision; the extension's added bias is stated the way the one-decision
+    horizon already is.
+effort: "XL"
+files_involved:
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/skillAssessment/"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-296"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "How to break the self-reinforcement loop — an exploration floor in the recommendations, or keep the discount out of live advice and confine it to a study/review surface?"
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T00:00:00Z"
+status_note: |
+  Phase 3 of the de-risking charter (.claude/projects/derisking-and-bankroll.md).
+  The largest and least certain of the four channels. Channel 4 (session decay /
+  tilt) has no ticket at all — it needs session-level capture that does not exist,
+  and is recorded in the charter so it is not silently dropped.

@@ -1,0 +1,87 @@
+id: "WS-289"
+title: "Learnable theory + curriculum — rewrite the model as something a human can progressively memorize and use at a table"
+legacy_id: ""
+type: feature
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 48.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder request, 2026-07-27: "a large effort to make our new theory (which the
+  player can understand and progressively memorize in order to manipulate the game)
+  and curriculum better."
+
+  THE TRANSLATION PROBLEM. POKER_THEORY.md is written for an ENGINE and for an AI
+  editing that engine — exhaustive, cross-referenced, ordered by subject. None of
+  that survives contact with a human at a table who has four seconds to act. The
+  curriculum is not a summary of the theory doc; it is a different artifact with a
+  different ordering principle.
+
+  ORDER BY LEVERAGE, NOT BY SUBJECT. The theory doc is organised preflop -> postflop
+  -> math. A curriculum should be organised by how much money the concept moves and
+  how often it comes up. WS-285's own finding is the model for this: WHO THE
+  AGGRESSOR IS carries more information than board texture, street, or position —
+  which is close to the opposite of how most players are taught to read a spot, and
+  it is exactly the kind of ordering the measurements can now settle.
+
+  BINDING CONSTRAINTS (from established project doctrine):
+    - HIGH CONCEPT GRANULARITY. A concept must be a coherent solver-baseline region.
+      Split umbrella concepts; do not teach "c-betting" as one thing.
+    - LEARNING STATE, NOT TIER RANK. Mastery is the truth being tracked; any tier is
+      a derived descriptor and never a user-facing rank.
+    - LABELS ARE OUTPUTS, NEVER INPUTS. The curriculum must teach the founder to
+      reason from equity / pot odds / SPR / who is left to act — the same
+      first-principles rule the engine is held to. Teaching "in EP, fold more" would
+      install in the founder the exact anti-pattern the engine forbids.
+    - Every taught claim must cite the measurement or theory section behind it, so a
+      later overturn can find and correct everything it touched.
+
+  PROGRESSIVE STRUCTURE. Layered so each layer is independently usable at a table:
+  a small memorizable core, then refinements that assume the core, then the rare
+  spots. The founder should be able to stop at any layer and still play better.
+accept_criteria: |
+  - Curriculum exists as a standalone artifact, ordered by leverage x frequency, with
+    each layer independently usable.
+  - Every claim cites its POKER_THEORY section or its measurement, so an overturn can
+    be traced to every lesson it invalidates.
+  - No lesson teaches a label as a decision input. Reviewed against
+    exploitEngine/CLAUDE.md anti-patterns and POKER_THEORY 7 explicitly.
+  - Concept granularity is solver-baseline-region level; umbrella concepts split.
+  - Explicitly states what the model CANNOT tell you and where the founder is on
+    their own — a curriculum that hides its edges teaches false confidence.
+  - Reviewed for the live/online divergences already catalogued in POKER_THEORY 9;
+    where corpus evidence is online and play is live, the lesson says so.
+effort: "XL"
+files_involved:
+  - "docs/domain/CURRICULUM.md"
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/domain/BUILD_REPORT.md"
+blocked_by:
+  - "WS-286"
+blocked_by_legacy: []
+enables:
+  - "WS-290"
+sprint_id: null
+decision_flags:
+  - "Standalone document, or a surface inside the app the founder can drill against? The SCF/self-coach machinery already exists and could host it — but an in-app surface is a Design Program Gate 1 change, not a doc."
+source:
+  type: founder-directive
+  created_by: founder
+  finding_id: ""
+  run_id: "session-2026-07-27"
+created_at: "2026-07-27T18:00:00Z"
+status_note: |
+  Blocked on WS-286 deliberately: this is the artifact the founder intends to
+  memorize, so building it before the theory stops moving guarantees relearning.
+
+  Note the decision flag. If this becomes an in-app surface rather than a document it
+  crosses into the Design Program and needs Gate 1 (scope, personas, JTBD, gap
+  analysis) before any production code — see CLAUDE.md Design Program Guardrail.

@@ -1,15 +1,15 @@
 {
-  "composed_at": "2026-07-26T17:13:19.044Z",
-  "goal": "Ship WS-274: Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
+  "composed_at": "2026-07-29T19:31:12.661Z",
+  "goal": "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-274",
-      "title": "Preflop advice from actual table composition — replace POSITIONAL_FOLD_TO_3BET label lookup with computed fold equity vs the players actually behind",
-      "raw_score": 26,
-      "adjusted_score": 26,
-      "effort": "L",
+      "id": "WS-300",
+      "title": "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
+      "raw_score": 30,
+      "adjusted_score": 30,
+      "effort": "M",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-274 selected (26 × no damping = 26).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-300 selected (30 × no damping = 30).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+19 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 3,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }

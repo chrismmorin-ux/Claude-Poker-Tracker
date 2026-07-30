@@ -1,0 +1,75 @@
+id: "WS-282"
+title: "Bluff-catching with players still to act — the squeeze-from-behind term the heads-up call/fold framework has no slot for"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 14.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-277 restated POKER_THEORY §4.2 (bluff catching) in N-player form and closed
+  ONE of its two multiway gaps — "hero must beat every caller" now falls out of
+  the §6.4 `0.5^(1/k)` threshold. The SECOND gap was explicitly left at the
+  scope ceiling and is this ticket.
+
+  THE GAP. Calling a bet with players still to act behind is not the same
+  decision as calling heads-up. A third player can raise over the top, which:
+    - turns a marginal +EV call into a fold for a larger amount, out of position
+    - means hero's pot odds at the moment of calling are not the odds hero
+      actually gets
+    - makes the bluff-catch threshold depend on the number of live players
+      BEHIND, not just the number who have already called
+
+  This is distinct from WS-277's shipped work. §6.4 handles "how many people do
+  I have to beat"; this handles "what can still happen after I put money in."
+  The heads-up call/fold framework has no term for it at all — not a wrong term,
+  a missing one.
+
+  WHY IT IS NOT COSMETIC. 9-handed live poker is the app's stated purpose, and
+  the spot — facing a bet with players yet to act — is extremely common. The
+  current advice is an UPPER BOUND on how often calling is correct, and
+  POKER_THEORY §4.2 now says so explicitly. Removing that caveat requires this.
+
+  RELATIONSHIP TO WS-277. Sequenced after it deliberately: this term composes
+  ON TOP of the N-player spine and would have been a patch on a heads-up frame
+  if built first — the exact pattern WS-277 existed to stop.
+accept_criteria: |
+  - Bluff-catch EV carries a squeeze-risk term derived from the models of the
+    players still to act (their raise frequency facing a bet-plus-call), NOT
+    from position labels or a flat penalty — §7.1/§7.2.
+  - Term is zero when no players remain to act, so the heads-up and
+    last-to-act cases are provably unchanged (assert by test).
+  - The §4.2 "upper bound" caveat in POKER_THEORY.md is removed or replaced
+    with the measured behavior.
+  - Measured through the WS-273 harness on the BY FACINGACTION = bet slice,
+    which currently shows the model adding ~0 lift over the population prior.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Squeeze risk as a probability-weighted branch in the game tree, or as a threshold adjustment on the call decision? The former is more correct and much more expensive."
+source:
+  type: follow-up
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T20:16:00Z"
+status_note: |
+  Filed 2026-07-26 at WS-277's scope ceiling, founder-approved as a deferral.
+  POKER_THEORY §4.2 references this ticket by name in its known-gap callout —
+  do not close without updating that section.

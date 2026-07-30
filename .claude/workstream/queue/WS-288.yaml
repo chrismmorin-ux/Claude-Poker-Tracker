@@ -1,0 +1,83 @@
+id: "WS-288"
+title: "The Build Report — what we made, everything we tried, why the winner won, and every lever and mapping"
+legacy_id: ""
+type: documentation
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder request, 2026-07-27: "an extremely detailed report of what we do, what
+  we've tried, why one is better... knowing how it was built and all its levers and
+  mappings."
+
+  This is the companion to the curriculum (WS-289) and it answers a DIFFERENT
+  question. The curriculum teaches what to do at a table. This report explains why
+  the engine believes it — so the founder can trust it, argue with it, and know which
+  dials exist and what moving one would cost.
+
+  WHAT MAKES THIS DIFFERENT FROM THE DOCS WE ALREADY HAVE. POKER_THEORY.md states
+  what is true NOW. This states what we BELIEVED, what we TESTED, and what the test
+  said — including every arm that lost. The losing arms are the valuable part: they
+  are the map of which plausible ideas are actually wrong, and without them the
+  reader has no way to judge how hard the winner was won.
+
+  REQUIRED CONTENT:
+    - Every measured comparison with its paired result, t-stat and CI. Losers get
+      equal billing with winners.
+    - Every ABANDONED approach and the number that killed it (e.g. `reordered` alone
+      loses to pooling; `min-n-25` is much worse; texture-first ordering refuted).
+    - Every PREDICTION THAT FAILED, stated as it was made in advance. WS-285 has one
+      already recorded — the reorder-alone prediction. These are the honest core.
+    - The full lever map: every tunable constant, its measured basis, what moving it
+      does, and which measurement would have to be re-run.
+    - The mapping from POKER_THEORY sections -> engine modules -> tests, so a claim
+      can be traced to the code enforcing it and the test guarding it.
+    - Known-unmeasured surface, named plainly. What we still cannot prove.
+accept_criteria: |
+  - Every quantitative claim traces to a reproducible command and a stored evidence
+    file. No number appears without its provenance.
+  - Losing arms and abandoned approaches are documented with the measurement that
+    killed them, not merely mentioned.
+  - Failed predictions are included verbatim as originally stated.
+  - Lever map is complete: every tuned constant in exploitEngine/ + rangeEngine/ has
+    a measured basis or is explicitly flagged as UNMEASURED.
+  - A reader who has never seen the codebase can follow why the model does what it
+    does, per the non-technical-founder communication standard.
+  - Cross-links to POKER_THEORY sections rather than restating them — the report is
+    the WHY, the theory doc is the WHAT.
+effort: "L"
+files_involved:
+  - "docs/domain/BUILD_REPORT.md"
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/research/"
+blocked_by:
+  - "WS-286"
+blocked_by_legacy: []
+enables:
+  - "WS-289"
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-directive
+  created_by: founder
+  finding_id: ""
+  run_id: "session-2026-07-27"
+created_at: "2026-07-27T18:00:00Z"
+status_note: |
+  Blocked on WS-286 by design. Writing it earlier would document a moving target and
+  guarantee a rewrite — the same waste the readiness gate exists to prevent for the
+  founder's study time.
+
+  Material already banked: the WS-285 bake-off (10 arms, paired), the ablation, the
+  W sweep, the level-restricted analysis, the fallback-level selection-effect finding,
+  and one failed prediction. docs/research/engine-backtest-run-2026-07-26-pool-reference.md
+  is the current best template for the tone this report should hold.

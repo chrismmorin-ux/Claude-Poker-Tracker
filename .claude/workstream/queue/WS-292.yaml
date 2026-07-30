@@ -1,0 +1,91 @@
+id: "WS-292"
+title: "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE MISSING JOIN. Showdown reveals what a seat actually held. The engine carries an
+  inferred range for that seat at every decision. Nothing in this repo joins the two.
+
+  `decisionAccumulator` reads `playerShowdown` and uses it for exactly two things:
+  `sizingTells` samples and a `handShown` field on showdown results. It never reconciles
+  the range it is carrying against the hand it just learned the player held. The ground
+  truth and the inference sit two hundred lines apart IN THE SAME FUNCTION and never meet.
+
+  That missing join is why WS-291 — a falsified range model on the live recommendation
+  path — survived unmeasured for the life of the project. It is also why the WS-287
+  hero-EV instrument was designed around the ABSENCE of hole cards while 40% of postflop
+  decisions have a revealed hand available (30% acting seat, 30% villain seat).
+
+  FOUNDER FRAMING, 2026-07-28: "We really should be as internally stable as possible,
+  everything should be easy for us to see, lookup, or calculate. Maybe we're not
+  abstracting the data properly enough?"
+
+  WHAT TO BUILD. One accessor answering "what do we know about this seat's holding at this
+  decision point?" and returning both halves with provenance:
+
+    { revealed: [c1, c2] | null,     // ground truth, when the seat showed
+      range:    Float64Array(169),   // what we infer
+      provenance: { revealedAt, narrowedBy, streetsNarrowed, source } }
+
+  Every consumer reads through it: the game tree, the accumulator, the backtest, the
+  calibration instrument, replay analysis. The point is that "what we believed" and "what
+  was true" become the SAME LOOKUP, so any consumer can be scored against reality without
+  a bespoke join.
+
+  RELATED PRIOR ART IN-REPO: the Hero State Primitive (HSP) established the pattern of
+  naming a primitive rather than passing loose fields around. This is its villain-side
+  counterpart.
+accept_criteria: |
+  - A single documented accessor returns { revealed, range, provenance } for (seat,
+    decision point), usable from both the app and the offline harness.
+  - Revealed cards are available at a decision point WITHOUT leaking forward: a consumer
+    scoring a decision must be able to get the range as it stood at that moment, and must
+    have to ask explicitly for the revealed hand. Reading the future by accident should be
+    hard; the WS-287 seam had exactly this trap (`rangeBefore` vs post-narrowing range).
+  - decisionAccumulator, gameTreeContext, and the backtest harness all read through it —
+    no second derivation of "the range at this point" survives.
+  - The WS-293 calibration instrument is expressible as a thin consumer of this accessor
+    rather than re-deriving the join itself.
+  - Provenance records how many narrowings the range has been through, so a caller can
+    tell a flop range from one cut three times (the WS-291 chaining problem is invisible
+    today).
+  - No behaviour change to shipped recommendations from this ticket alone — it is a
+    refactor plus an accessor. Verified by the exploitEngine suite staying green and the
+    WS-273 harness reproducing its baseline exactly.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-293"
+sprint_id: null
+decision_flags:
+  - "Should revealed cards ever FEED BACK into the inferred range (posterior correction on hands where we later learn the truth), or stay strictly a scoring/validation channel? Feeding back is powerful for retrospective analysis and is leakage if it reaches a live prediction."
+  - "Where does the primitive live — pokerCore (no engine deps), exploitEngine, or a new module? It needs board + range + card parsing but no player modelling."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T18:31:00Z"
+status_note: |
+  Filed 2026-07-28. Founder identified the abstraction gap directly after seeing that the
+  hero-EV instrument had been built around missing hole cards: "maybe our plumbing is off
+  too." The measurement that followed (WS-291) confirmed the gap had been hiding a
+  falsified model.

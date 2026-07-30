@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785094274433-a8b06a6f58e2"
-generated_content_hash: "ba1ea54d2af226142f62b10884f04f722744cb46e9bb307f296b69ade20734d1"
-generated_at: "2026-07-26T19:31:14.822Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl"]
-event_count: 1050
+generated_from_event: "ev-1785353419840-9a02e0cf4cdc"
+generated_content_hash: "b7c3fe729ba772b3117cc83fb7cce19a56602214fb356888d85a5ed4af040977"
+generated_at: "2026-07-29T19:30:20.085Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl"]
+event_count: 1106
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 641
-- Events recorded: 1050
-- Source chunks: 15
+- Commands recorded: 677
+- Events recorded: 1106
+- Source chunks: 18
 
 ## Command `auto:42416:1781030643103`
 
@@ -6836,3 +6836,383 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-26T19:31:14.433Z | T6:workstream | C:/Program Files/Git/workstream | command="/workstream", op="claim", +3 more |
+
+## Command `cmd-itemclosed-ms27yom2ce006c06a0a8`
+
+- Start: 2026-07-26T19:57:03.391Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T19:57:03.391Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-277", +2 more |
+
+## Command `cmd-itemclosed-ms27yovb260e3362ee27`
+
+- Start: 2026-07-26T19:57:03.724Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T19:57:03.724Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-272", +2 more |
+
+## Command `cmd-sprintapprove-ms2dy9fp6a4a8c053f56`
+
+- Start: 2026-07-26T22:44:41.417Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T22:44:41.417Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-155", +8 more |
+
+## Command `cmd-itemclosed-ms2gkrc8c729a9dfbce0`
+
+- Start: 2026-07-26T23:58:10.283Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-26T23:58:10.283Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-274", +3 more |
+| 2 | 2026-07-26T23:58:10.499Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-155", +4 more |
+| 3 | 2026-07-26T23:58:10.966Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-26T23:58:11.032Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-26T23:58:11.104Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-ms3e7vql87d88701545c`
+
+- Start: 2026-07-27T15:39:56.399Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-27T15:39:56.399Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-156", +8 more |
+
+## Command `cmd-itemclosed-ms3i5ckmecacb74bb1ae`
+
+- Start: 2026-07-27T17:29:56.713Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-27T17:29:56.713Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-285", +3 more |
+| 2 | 2026-07-27T17:29:57.050Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-156", +4 more |
+| 3 | 2026-07-27T17:29:57.820Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-27T17:29:57.885Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-27T17:29:58.056Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:37468:1785210831035`
+
+- Start: 2026-07-28T03:53:51.035Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T03:53:51.035Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:37468:1785210831121`
+
+- Start: 2026-07-28T03:53:51.121Z
+- Events: 1
+- Tracks: T6:program-integrity
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T03:53:51.121Z | T6:program-integrity | program_cap_breach | program="domain-correctness", work_items_open=26, +4 more |
+
+## Command `auto:37468:1785210831149`
+
+- Start: 2026-07-28T03:53:51.149Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T03:53:51.149Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:37468:1785210831435`
+
+- Start: 2026-07-28T03:53:51.435Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T03:53:51.435Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-ms4ubbe619407d0403cd`
+
+- Start: 2026-07-28T15:58:16.691Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T15:58:16.691Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-157", +8 more |
+
+## Command `auto:15204:1785281793540`
+
+- Start: 2026-07-28T23:36:33.540Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:36:33.540Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:15204:1785281793645`
+
+- Start: 2026-07-28T23:36:33.645Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:36:33.645Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:15204:1785281793843`
+
+- Start: 2026-07-28T23:36:33.843Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:36:33.843Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-ms5apd2efb1025d8dbdd`
+
+- Start: 2026-07-28T23:37:05.899Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:37:05.899Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-287", +3 more |
+| 2 | 2026-07-28T23:37:06.048Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-157", +4 more |
+| 3 | 2026-07-28T23:37:06.714Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-28T23:37:06.783Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-28T23:37:06.883Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:24392:1785282321317`
+
+- Start: 2026-07-28T23:45:21.317Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:21.317Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:24392:1785282321486`
+
+- Start: 2026-07-28T23:45:21.486Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:21.486Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:24392:1785282321736`
+
+- Start: 2026-07-28T23:45:21.736Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:21.736Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29640:1785282330682`
+
+- Start: 2026-07-28T23:45:30.682Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:30.682Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:29640:1785282330833`
+
+- Start: 2026-07-28T23:45:30.833Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:30.833Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:29640:1785282331027`
+
+- Start: 2026-07-28T23:45:31.027Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:31.027Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-ms5b0ik93ea448eb6040`
+
+- Start: 2026-07-28T23:45:46.247Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-28T23:45:46.247Z | T11:vital-signs | C:/Program Files/Git/audit | command="/audit", type="command_completed", +1 more |
+
+## Command `auto:18936:1785290562581`
+
+- Start: 2026-07-29T02:02:42.581Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:02:42.581Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:18936:1785290562672`
+
+- Start: 2026-07-29T02:02:42.672Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:02:42.672Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:18936:1785290562820`
+
+- Start: 2026-07-29T02:02:42.820Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:02:42.820Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-ms5g0peyd574f1da5d59`
+
+- Start: 2026-07-29T02:05:53.214Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:05:53.214Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-158", +8 more |
+
+## Command `auto:39132:1785293480241`
+
+- Start: 2026-07-29T02:51:20.240Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:51:20.240Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:39132:1785293480499`
+
+- Start: 2026-07-29T02:51:20.499Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:51:20.499Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:39132:1785293480822`
+
+- Start: 2026-07-29T02:51:20.822Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T02:51:20.822Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-ms5i02ag41dd0a4dccb2`
+
+- Start: 2026-07-29T03:01:22.462Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T03:01:22.462Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-291", +3 more |
+| 2 | 2026-07-29T03:01:22.726Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-158", +4 more |
+| 3 | 2026-07-29T03:01:23.663Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-29T03:01:23.743Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-29T03:01:23.980Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-ms5ifckr4ab888714025`
+
+- Start: 2026-07-29T03:13:15.633Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T03:13:15.633Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-159", +8 more |
+
+## Command `auto:23196:1785297493547`
+
+- Start: 2026-07-29T03:58:13.547Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T03:58:13.547Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:23196:1785297493728`
+
+- Start: 2026-07-29T03:58:13.728Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T03:58:13.728Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:23196:1785297494002`
+
+- Start: 2026-07-29T03:58:14.002Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T03:58:14.002Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-ms6efv3hd76773d8835f`
+
+- Start: 2026-07-29T18:09:27.346Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T18:09:27.346Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-302", +3 more |
+| 2 | 2026-07-29T18:09:27.718Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-159", +4 more |
+| 3 | 2026-07-29T18:09:28.502Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-29T18:09:28.566Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-29T18:09:28.697Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-ms6hbvaxb7d6a94cdcc4`
+
+- Start: 2026-07-29T19:30:19.840Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-29T19:30:19.840Z | T6:workstream | C:/Program Files/Git/workstream | command="/workstream", subcommand="create", +3 more |

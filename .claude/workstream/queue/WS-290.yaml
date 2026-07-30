@@ -1,0 +1,87 @@
+id: "WS-290"
+title: "Comprehension + application measurement — can the founder recall the theory, and can they execute it at the table?"
+legacy_id: ""
+type: feature
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder request, 2026-07-27: "we can start measuring my comprehension and ability
+  to implement after learning/referencing the key elements and applying them."
+
+  OWNER-VOLUNTEERED, WHICH IS WHAT MAKES IT PERMISSIBLE. This repo holds a standing
+  refusal on system-imposed grading and mastery ranks. That refusal is not in play
+  here: the founder asked to be measured, and opt-in assessment surfaces are
+  explicitly allowed. The distinction must survive implementation — if this ever
+  becomes something the app does TO the founder rather than something they ask it
+  for, it has crossed back over the line.
+
+  TWO DIFFERENT THINGS, AND THE SECOND IS THE REAL ONE:
+
+  1. COMPREHENSION — can you recall and apply the concept when asked cold? Cheap to
+     measure, and largely measures memorization.
+  2. APPLICATION — do your decisions at a real table match what the model would
+     recommend, and where they diverge, who was right? This is the one that matters,
+     and the app is already positioned to measure it: it records the founder's actual
+     hands, and the engine can evaluate the same spots.
+
+  The gap between the two is the interesting signal. Knowing the concept and using it
+  under time pressure with money live are different skills, and only the second pays.
+
+  BUILD ON WHAT EXISTS. Skill assessment is established as a shared core competency
+  (src/utils/skillAssessment/), not a per-feature one-off. The prediction-ledger and
+  calibration machinery from PMC already scores predictions against outcomes — the
+  same shape as scoring founder decisions against model recommendations. Reuse it.
+
+  MEASURE THE MODEL TOO. When the founder diverges from the recommendation, that is
+  not automatically a founder error. It may be a model error, and it is exactly the
+  kind of live evidence the corpus cannot provide. Divergences should be reviewable
+  in both directions — this is potentially the repo's only source of LIVE data with
+  which to challenge an online-corpus-derived model.
+accept_criteria: |
+  - Comprehension surface is opt-in and founder-initiated. No unprompted assessment,
+    no mastery rank surfaced as a rank.
+  - Application measurement compares recorded founder decisions against engine
+    recommendations on the same spots, using the existing calibration/prediction-ledger
+    machinery rather than a parallel implementation.
+  - Divergences are reviewable in BOTH directions, and a founder-was-right divergence
+    can be promoted into a domain-correctness finding against the model.
+  - Reuses src/utils/skillAssessment/ core.
+  - Learning state is tracked as state, never surfaced as a tier or a rank.
+  - Any in-app surface passes Design Program Gate 1 and Gate 4 before production code.
+effort: "L"
+files_involved:
+  - "src/utils/skillAssessment/"
+  - "src/utils/exploitEngine/calibrationMetrics.js"
+  - "docs/domain/CURRICULUM.md"
+blocked_by:
+  - "WS-289"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Does founder-vs-model divergence feed back into the model as live evidence? It is the only live data source available to challenge an online-corpus-derived model — but a model that learns from the founder's play will drift toward agreeing with them, which is the one bias it must not have."
+source:
+  type: founder-directive
+  created_by: founder
+  finding_id: ""
+  run_id: "session-2026-07-27"
+created_at: "2026-07-27T18:00:00Z"
+status_note: |
+  Blocked on WS-289 (needs a curriculum to measure comprehension OF).
+
+  The decision flag is the sharp one and should not be resolved casually. Feeding
+  founder-vs-model divergences back as training signal risks the model converging on
+  the founder's own habits and then confirming them — a self-licking loop that would
+  read as improving accuracy while actually just learning to agree. If divergences do
+  feed back, they need the same leave-one-out discipline POKER_THEORY 6.5a already
+  requires of pool baselines.

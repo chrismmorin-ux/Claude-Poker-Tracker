@@ -1,0 +1,97 @@
+id: "WS-287"
+title: "Hero-EV instrument — score whether the engine's ADVICE makes money, not just whether it predicts villains"
+legacy_id: ""
+type: feature
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE GAP. Every number this repo can currently produce about model quality scores
+  VILLAIN ACTION PREDICTION — accuracy 58.7%, log-loss 0.758, the calibration curve.
+  That is an INPUT to good advice. It is not evidence of good advice.
+
+  Between a correct villain model and a correct recommendation sits the entire
+  §6.1-6.4 spine — value thresholds, bluff breakeven, MDF, sizing selection, equity
+  realization, multiway adjustment — and NONE of it has ever been scored. The
+  2026-07-26 research doc says so outright (Finding 4): the harness "does not score
+  [hero's decision math] at all". WS-277 already found a real gap in the multiway
+  half of that spine.
+
+  WHY IT MATTERS NOW. WS-286 makes this a gate criterion (C3) because the founder
+  intends to MEMORIZE the resulting theory and apply it at a table. They would be
+  memorizing the output of the one layer nobody has measured.
+
+  WHAT TO BUILD. Replay corpus hands; at each hero decision take the engine's
+  recommended action; score realized EV against stated baselines. The villain-side
+  harness (scripts/backtest/) already solves corpus loading, the POOL/EVAL split, the
+  leakage guard and paired per-decision records — reuse it rather than building a
+  second pipeline that can drift from the first.
+
+  THE HARD PART IS NOT THE PLUMBING, IT IS THE COUNTERFACTUAL. The corpus records
+  what the ACTUAL player did, not what our recommendation would have led to. Once our
+  advice diverges from the observed line, the rest of the hand is off-policy and its
+  realized outcome is not ours to claim. Do not paper over this. Candidate
+  treatments, cheapest first:
+    - Score only the DECISION, against the villain-response distribution the model
+      already produces (honest, narrow, no counterfactual claim).
+    - Truncate at first divergence and score the partial line.
+    - Importance-weight where the observed action is in our recommended mix.
+  Pick one, state its bias, and never report a number without the treatment named.
+accept_criteria: |
+  - Instrument replays corpus hands and scores hero decisions against at least two
+    baselines: always-fold/check, and population-typical play.
+  - The off-policy treatment is chosen EXPLICITLY, its bias documented, and every
+    reported figure carries it. A number without a named treatment is not a result.
+  - Two-level split enforced structurally per WS-259 / the backtest-leakage rule:
+    POOL/EVAL player partition AND walk-forward in time. Corpus-mined priors must not
+    be able to leak into a corpus backtest by construction.
+  - Reuses scripts/backtest/ loading, partitioning, leakage guard and paired-record
+    machinery — one pipeline, not two.
+  - Reports edge with a 95% CI, and reports it whether favourable or not.
+  - Result appended to docs/domain/readiness/scorecard-history.yaml (heroEvEdge,
+    heroEvCiLow), which is what lets WS-286 C3 evaluate.
+  - Rake-inclusive: §11.3 already threads rake through EV, so an edge that vanishes
+    under rake must be reported as vanishing.
+effort: "XL"
+files_involved:
+  - "scripts/backtest/runner.mjs"
+  - "scripts/backtest/evCost.mjs"
+  - "scripts/backtest/partition.mjs"
+  - "scripts/backtest/leakageGuard.mjs"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/calibrationMetrics.js"
+  - "docs/domain/readiness/scorecard-history.yaml"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-286"
+sprint_id: null
+decision_flags:
+  - "Off-policy treatment: decision-only scoring (honest but narrow), truncate-at-divergence, or importance weighting? Changes what the number means and how big the build is."
+  - "Corpus is 2009 online 50NL. Hero-EV is closer to a VALUE claim than the WS-285 structural claim, so the live/online separation may genuinely bind here — does a corpus edge certify a live curriculum?"
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-27"
+created_at: "2026-07-27T18:00:00Z"
+status_note: |
+  Filed 2026-07-27 alongside WS-286. This is the largest single piece of work between
+  today and the readiness gate, and the one that decides whether the curriculum
+  teaches something true or merely something self-consistent.
+
+  Note the second decision flag carefully. WS-285's corpus evidence was admissible
+  because it transferred ESTIMATOR STRUCTURE (a bias-variance fact driven by sample
+  depth). A hero-EV edge is much closer to a VALUE — it depends on how the specific
+  2009 online pool actually played. The live/online separation may bind here where it
+  did not there. Settle it before building, not after measuring.
+closed_by_event: "ev-1785281825898-8d07bddf893e"

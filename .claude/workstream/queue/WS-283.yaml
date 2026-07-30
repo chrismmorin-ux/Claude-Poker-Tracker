@@ -1,0 +1,89 @@
+id: "WS-283"
+title: "Fold-to-bet is underestimated ~13pp and the error is sizing-dependent — correct the fold curve, not just the base rate"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED, THREE INDEPENDENT WAYS, SAME SIGN AND MAGNITUDE. The engine thinks
+  villains fold to bets less often than they actually do.
+
+    - WS-262 corpus mining (2026-07-25): STAT_PRIORS foldToCbet low by 5-10pp.
+    - WS-273 smoke backtest (2026-07-26): -5 to -10pp across four of five SPR
+      zones, 331 applicable nodes.
+    - WS-273 POOL-reference run (2026-07-26): -13.3pp on 2,073 nodes at the
+      33-66% sizing bucket. 45.43 bb/100 hands of regret.
+      (docs/research/engine-backtest-run-2026-07-26-pool-reference.md)
+
+  THE ERROR IS NOT A FLAT OFFSET. The same run shows the sign FLIPPING by bet
+  size:
+
+    bet|0-33     n=1022   predicted 45.5%   actual 41.5%   +4.0pp  (over-estimates)
+    bet|33-66    n=2073   predicted 44.7%   actual 58.0%  -13.3pp  (under-estimates)
+    bet|66-100   n=26     predicted 48.7%   actual 84.6%  -36.0pp  (thin)
+
+  A base-rate correction cannot fix a sign flip. The model predicts a nearly
+  FLAT ~45% fold rate across every sizing bucket while the population's actual
+  fold rate climbs steeply with size (41.5% -> 58.0% -> 84.6%). That is a
+  FOLD CURVE defect: `logisticFoldResponse`'s maxDelta is too small and/or its
+  midpoint sits wrong, so bet sizing barely moves the predicted fold rate.
+
+  CONSEQUENCE, DIRECTIONAL. Under-estimating folds means under-estimating fold
+  equity, which means the engine under-bluffs and under-sizes exactly where
+  bigger bets would print. The regret is realised when the error flips the
+  bluff/no-bluff decision across breakeven (POKER_THEORY 6.3).
+
+  RELATED. WS-263 imported the HandHQ Reference tier; the same corpus run showed
+  overall lift DROPPING 2.9% -> 1.7% once that tier was enabled, though that
+  comparison is confounded with a 10x sample increase. De-confounding it is a
+  cheap prerequisite (one ~8-minute run) and may implicate the reference import
+  rather than the curve.
+accept_criteria: |
+  - Root cause distinguished by evidence: fold-curve shape (maxDelta / midpoint /
+    steepness) vs base rate vs Reference-tier import. Not assumed.
+  - The de-confounding run (`--reference none` on the same 1,756-file corpus)
+    completed and reported before any parameter is changed.
+  - Fold curve refit against the corpus per sizing bucket; predicted fold rate
+    must track the observed 41.5 / 58.0 / 84.6 gradient rather than staying flat.
+  - Re-run WS-273: the bet|33-66 error closes materially and OVERALL lift does
+    not regress. Both numbers reported, not just the favourable one.
+  - Any parameter change carries its measured before/after, per the
+    validation-as-quality-signal rule.
+  - POKER_THEORY 11.1 (personalized fold-curve hierarchy) updated if the fitted
+    shape changes.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "scripts/backtest/run.mjs"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Refit the fold curve globally from the corpus, or keep the founder-estimate shape and correct only the online segments? The corpus is online-only and live/online separation is RATIFIED (WS-259)."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T20:20:00Z"
+status_note: |
+  Filed 2026-07-26 from the first WS-273 run on the shipped configuration. This
+  is the highest-value change the instrument currently points at. NOTE the
+  live/online caveat: the corpus is online cash July 2009 and the founder plays
+  live 1/2 — the live-vs-online separation is ratified doctrine, so a global
+  refit is a decision, not a default.

@@ -1,0 +1,97 @@
+id: "WS-295"
+title: "The optimizer's curse — is the engine's stated EV systematically above what its advice actually realizes?"
+legacy_id: ""
+type: investigation
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE BIAS. The engine picks the action with the highest ESTIMATED EV. Estimates
+  carry error. So the selected action is disproportionately the one whose
+  parameters were most favourably mis-estimated, and its realized value sits
+  systematically BELOW its stated EV:
+
+      E[ max_a EV_hat(a) ]  >=  max_a E[ EV(a) ]
+
+  This is not a modelling error to fix — it is a property of taking a max over
+  noisy estimates, and it is always in the pessimistic direction. Its size grows
+  with posterior width at the node and shrinks with the EV gap between the top
+  two actions.
+
+  WHY NOW, AND WHY THIS IS NOT A BUILD. WS-287 shipped the hero-EV instrument on
+  2026-07-28. It produces an IPS/WIS estimate of what the engine's advice is
+  worth in realized chips. The engine separately produces a stated EV at every
+  scored decision. The curse is the gap between them, and both quantities already
+  exist in the same pass — this ticket reads an instrument, it does not build one.
+
+  WHY IT IS GATE-RELEVANT. C3 asks whether the engine's advice makes money. If
+  stated EV is systematically optimistic, C3 is certifying a number the engine
+  cannot deliver, and the founder would memorize a theory that overstates its own
+  value. That is exactly the failure the readiness project exists to prevent.
+
+  THE UNIT TRAP — DO NOT SKIP. `ipsEstimator.mjs` states plainly that R_d is the
+  whole HAND's realized net and that the estimand is hand value evaluated at the
+  decision level, so "reading edgeBB as a winrate overstates it by roughly the
+  decisions-per-hand factor." Stated EV is a per-decision quantity. A naive
+  predicted-minus-realized difference is therefore unit-mismatched and will
+  produce a confident wrong number.
+
+  So measure the SHAPE, not the level. The scale-free claims are:
+    - does the gap widen with posterior width at the node?
+    - does the gap narrow as the top-two EV margin grows?
+  Both are the curse's signature, both are invariant to the unit mismatch, and
+  either one being FLAT is a refutation.
+
+  THE FIX, IF CONFIRMED, IS NOT NEW MACHINERY. POKER_THEORY §11.5 already
+  replaced a threshold with shrinkage, each context level priming the next. The
+  curse correction is that same construction applied one level up — shrinkage
+  ACROSS ACTIONS rather than across context levels. Scoping that is WS-296/297;
+  this ticket only establishes whether the effect is real and how big.
+accept_criteria: |
+  - Reports the curse as a SHAPE: gap vs posterior width, and gap vs top-two EV
+    margin, each with a cluster-bootstrap CI. A flat relationship is reported as
+    a refutation, not buried.
+  - The hand-net vs per-decision unit mismatch is stated in the output, and no
+    headline figure depends on the two being on the same scale.
+  - Uses the existing WS-287 pass (`heroEvRunner.mjs`, `ipsEstimator.mjs`) and
+    the WS-273 scoring core. No second pipeline, no new corpus read.
+  - ESS and clipped share reported alongside every figure, per the estimator's
+    own standing requirement.
+  - Result recorded as evidence for the §12 charter regardless of sign — a null
+    is a publishable outcome here and closes Channel 2 of the project.
+  - Live/online transfer caveat carried: a magnitude mined from the 2009 corpus
+    is evidence about the estimator's shape, never a live-game constant.
+effort: "M"
+files_involved:
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "src/utils/exploitEngine/calibrationMetrics.js"
+  - ".claude/projects/derisking-and-bankroll.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-296"
+sprint_id: null
+decision_flags:
+  - "If the curse is large relative to the measured hero-EV edge, does that re-open the WS-286 sequencing (Phases 1-3 currently post-gate)? Answer BEFORE the number is known — the WS-285 lesson."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-28"
+created_at: "2026-07-28T00:00:00Z"
+status_note: |
+  Phase 0 of the de-risking charter (.claude/projects/derisking-and-bankroll.md).
+  Deliberately scoped to measurement only: it changes no doctrine and no
+  recommendation, so it touches neither C4 (theory stability) nor C6 (no
+  regression) and can run before the readiness gate opens.

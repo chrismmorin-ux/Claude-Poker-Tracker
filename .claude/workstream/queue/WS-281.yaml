@@ -1,0 +1,77 @@
+id: "WS-281"
+title: "Price the multiway approximations — expected-callers pot vs exact subset enumeration, and card removal between opponent ranges"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 12.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-277 shipped the N-player spine (POKER_THEORY §4.1/§4.2/§6.1-6.4) and
+  deliberately retained TWO named approximations. The ticket's own accept
+  criterion says a retained approximation must carry a MEASURED cost or an
+  explicit unmeasured-estimate label plus a follow-up item. Both are currently
+  labelled UNMEASURED. This is that follow-up.
+
+  APPROXIMATION 1 — expected callers, not exact subsets.
+  `expectedCallers(foldThrough, N)` feeds an EXPECTED caller count into a pot
+  that is nonlinear in the true count, instead of summing EV over every subset
+  of callers. It is correct in expectation for the POT and biased for the
+  EQUITY term (hero's equity vs 1 caller differs from equity vs 2, and the
+  average of those is not the equity at the average). Magnitude unknown.
+
+  APPROXIMATION 2 — card removal between opponents' ranges.
+  Both `multiwayFoldPct` and the §6.4 beat-the-best-of-N threshold assume
+  opponents' holdings are conditionally independent given the shared board.
+  One opponent holding a card shifts the others' distribution. Named in
+  gameTreeEquity.js since FIND-030 and never priced.
+
+  WHY IT MATTERS. These are not cosmetic: the §6.4 threshold moves the
+  value/thin-value/bluff boundary, and that boundary drives sizing advice in
+  opposite directions (§3.4.1 protection sizes UP, thin value sizes DOWN).
+  An approximation that shifts the boundary by a few points changes real
+  recommendations.
+
+  METHOD. The WS-273 harness now scores 10k+ decisions with a BY PLAYERSINPOT
+  slice already broken out (2/3/4/5+). Build the exact-subset EV as a reference
+  implementation, run both against the multiway slices, and report the
+  divergence in bb/100 using the existing evCost bridge.
+accept_criteria: |
+  - Exact subset-enumeration EV implemented as a reference (correctness over
+    speed; it does not need to ship in the live path).
+  - Divergence vs the shipped expected-callers path reported per PLAYERSINPOT
+    bucket, in both log-loss and bb/100 via the WS-273 evCost bridge.
+  - Card-removal effect estimated at least as an upper bound.
+  - POKER_THEORY §6 note updated from UNMEASURED to the measured figure, or the
+    approximation replaced if the cost is material.
+  - If either cost is negligible, that is recorded as a positive result and the
+    approximation is retained with the number attached.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "scripts/backtest/evCost.mjs"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: follow-up
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-26"
+created_at: "2026-07-26T20:15:00Z"
+status_note: |
+  Filed 2026-07-26 as the named follow-up for WS-277's two retained
+  approximations. Referenced by name from POKER_THEORY §6 preamble and from
+  foldEquityCalculator.js — do not close without updating both.

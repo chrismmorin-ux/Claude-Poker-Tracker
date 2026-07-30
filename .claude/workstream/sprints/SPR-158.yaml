@@ -1,0 +1,31 @@
+id: "SPR-158"
+title: "Ship WS-291: Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctri"
+status: done
+approved_at: "2026-07-29T02:05:52.883Z"
+completed_at: "2026-07-29T03:01:22.411Z"
+completed_by_commit: "dbfef75"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-291: Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctrine demands a logistic
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-29T02:05:52.883Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-291 selected (34 × no damping = 34).
+  Program cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+17 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-291"
+    title: "Postflop range narrowing ZEROES the hand actually held — hard quantile cut where doctrine demands a logistic"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-29T03:01:22.411Z"
+
+created_at: "2026-07-29T02:05:52.883Z"

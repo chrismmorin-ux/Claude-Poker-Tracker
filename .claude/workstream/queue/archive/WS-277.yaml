@@ -2,11 +2,11 @@ id: "WS-277"
 title: "Multiway-native decision math — POKER_THEORY §6.1-6.4 spine is heads-up, but 9-handed live pots are mostly multiway"
 legacy_id: ""
 type: improvement
-status: claimed
+status: done
 claimed_by: "ses-20260726-1930-dc-lanes"
 claimed_at: "2026-07-26T19:30:28Z"
 started_at: null
-completed_at: null
+completed_at: "2026-07-26T20:55:00Z"
 completion_commit: null
 priority_score: 19.0
 priority_label: "P1"
@@ -110,3 +110,5 @@ status_note: |
   Filed 2026-07-26. The gap is doctrinal, not merely implementational: multiway
   handling exists as patches on a heads-up frame. Related but distinct from
   WS-154 (hero hand-state multiway) and WS-114 (multiway content corpus).
+completion_notes: |
+  SHIPPED 2026-07-26 (money-consequence slice, founder-approved scope ceiling). PREMISE CORRECTIONS: 2 of 3 decision flags were stale — (a) correlated fold-through already existed and is CORRECT in gameTreeEquity.multiwayFoldPct (exact conditional-independence product; a correlation term was deliberately removed under FIND-030 as texture double-counting), the real gap was that it was not SHARED; (b) WS-154 shipped 2026-06-04, nothing to sequence. DELIVERED: N-player spine in foldEquityCalculator (multiwayValueThreshold / multiwayEquityThreshold target^(1/k) / perDefenderMDF 1-b^(1/N) / expectedCallers inverting F=f^N); calcFoldEquity+calcBluffEV+calcValueBetEV take numCallers so the called pot counts every caller; 4 hardcoded `betSize*2` sites in gameTreeEvaluator routed through expectedCallers; actionClassifier ladder (0.65/0.55/0.50/0.45/0.30) and the duplicate ladder in buildTreeReasoning both scaled by target^(1/k). heroEquity verified PAIRWISE (exactEquityTwoHands vs primary villain) so beat-the-best-of-N is a generalization, not a double-count. POKER_THEORY 4.1/4.2/6.1-6.4 restated N-player with N=1 as the specialization + shared-assumption preamble. NEW __tests__/multiwayDecisionMath.test.js (28 tests) pins every N=1 identity. VERIFIED: exploitEngine 2571/2571 (54 files), rangeEngine+handAnalysis+heroState 791/791, production build clean (63 precache). Consumer audit at docs/domain/multiway-consumer-audit-2026-07-26.md — every HU site fixed or documented HU-only with reason. DEFERRED at ceiling: WS-282 (bluff-catch with players behind), WS-281 (price the 2 retained approximations). NOTE: perDefenderMDF is implemented+tested but has NO production consumer yet — villainObservations MDF thresholds are still hand-tuned constants; routing them is a behavior change beyond this slice. NOTE: classifyAction is imported but never called in production (dead outside tests).
