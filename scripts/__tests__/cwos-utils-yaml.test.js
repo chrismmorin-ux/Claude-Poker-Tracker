@@ -42,8 +42,19 @@ describe('parseYAML inline-comment stripping (WS-213)', () => {
     expect(parsed.key).toBe('a#b');
   });
 
-  it('leaves a leading-# value alone (minimal scope: not promoted to null)', () => {
+  // WS-213 originally left a leading-# value alone and said so in its own test
+  // name ("minimal scope") — a deliberate limit, not a claim about YAML. Kit
+  // 3.8.1 closed it: `key: #fff` is a comment in real YAML, so the value is
+  // null. Adopted here with the rest of upstream cwos-utils.js. Verified no
+  // YAML in this repo carries an unquoted leading-# value; a hex colour that
+  // needs to survive must be quoted, which the case below asserts.
+  it('treats a leading-# value as a comment, per YAML', () => {
     const parsed = parseYAML('key: #fff\n');
+    expect(parsed.key).toBeNull();
+  });
+
+  it('preserves a quoted leading-# value', () => {
+    const parsed = parseYAML('key: "#fff"\n');
     expect(parsed.key).toBe('#fff');
   });
 
