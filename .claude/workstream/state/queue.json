@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T16:10:42.487Z",
-  "updated_by_event": "ev-1785427842487-ac248bf3b9cf",
+  "updated_at": "2026-07-30T16:35:37.735Z",
+  "updated_by_event": "ev-1785429337735-2bdaefd22603",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3933,9 +3933,9 @@
     },
     "WS-276": {
       "id": "WS-276",
-      "title": "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)",
+      "title": "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)",
       "status": "backlog",
-      "priority_score": 18,
+      "priority_score": 32,
       "category": "domain-correctness",
       "effort": "L",
       "program": "domain-correctness",
@@ -3958,6 +3958,7 @@
         "src/utils/exploitEngine/villainDecisionModel.js",
         "src/utils/exploitEngine/weaknessDetector.js",
         "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/heroActionBuilder.js",
         "src/utils/handAnalysis/replayAnalysis.js",
         ".claude/context/POKER_THEORY.md"
       ],
@@ -4887,5 +4888,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785427842487-ac248bf3b9cf"
+  "last_event_log_head": "ev-1785429337735-2bdaefd22603"
 }

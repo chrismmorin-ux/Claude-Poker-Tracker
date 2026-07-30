@@ -1512,9 +1512,9 @@ items:
     capability: core
 
   - id: "WS-276"
-    title: "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)"
+    title: "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)"
     status: backlog
-    priority_score: 18
+    priority_score: 32
     category: domain-correctness
     effort: L
     program: domain-correctness

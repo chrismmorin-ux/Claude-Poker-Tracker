@@ -1,5 +1,5 @@
 id: "WS-276"
-title: "Hero range + perceived range — the engine has no model of hero's strategy, and none of what villain thinks hero holds (level-2 gap)"
+title: "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)"
 legacy_id: ""
 type: feature
 status: backlog
@@ -8,38 +8,68 @@ claimed_at: null
 started_at: null
 completed_at: null
 completion_commit: null
-priority_score: 18.0
-priority_label: "P1"
+priority_score: 32.0
+priority_label: "P0"
 category: "domain-correctness"
 capability: "core"
 program: "domain-correctness"
 finding_id: ""
 description: |
-  TWO HALVES OF ONE OBJECT. Filed as one item because they cannot be built
-  separately: villain's model of hero IS a function of hero's actual range.
+  THREE PARTS OF ONE OBJECT. Filed as one item because they cannot be built
+  separately: the bluff count is a function of hero's range, and villain's model of
+  hero IS a function of hero's actual range.
+
+  RE-SCORED 18 -> 32 on 2026-07-30 (founder session). See status_note for the
+  motivating hand — a play the engine could not have found, and would have scored as
+  a mistake.
 
   HALF A — HERO HAS NO RANGE. The engine answers "what is the best action with
   THIS hand, HERE." It never constructs hero's strategy at a node — the
   partition of hero's whole range into actions. Against a non-adjusting fish,
   node-local max-EV is genuinely correct and this is not a bug; the app is
   exploitative by design (§5.4) and balance is a cost against opponents who do
-  not observe. But three things are lost:
+  not observe. But four things are lost:
     - Hero self-audit is impossible. You cannot ask "am I over-folding AS A
       RANGE in this spot" or "is my c-bet frequency defensible" — the same
       weakness-detection machinery pointed at hero requires a hero range to
       point it at. This is the measurable-strategy surface the founder asked
       about, on the hero side.
     - Half B has no object to operate on.
+    - Half C (below) has no object to count.
     - Against recurring opponents (the same live room every week), maximal
       deviation is not maximal EV forever.
 
-  HALF B — NOTHING MODELS WHAT VILLAIN THINKS HERO HAS. Verified 2026-07-26:
-  perceived-range logic exists ONLY in src/utils/handAnalysis/replayAnalysis.js
-  and hindsightAnalysis.js — post-hoc review. The live decision path has none.
-  Every villain fold/call decision is currently computed against hero's actual
-  holding or a generic range, but a villain's decision derives from their equity
-  vs THEIR PERCEPTION of hero's range. A villain who thinks hero is a nit folds
-  differently from one who thinks hero is a maniac — against the identical hand.
+  HALF C — NO BLUFF:VALUE CONSTRUCTION FROM SIZING (added 2026-07-30, founder).
+  Verified absent: the engine has MDF, the auto-profit threshold, and it estimates
+  VILLAIN's bluff-to-value ratio — but it never constructs HERO's betting range, so
+  it cannot answer the question a player actually asks at the table:
+
+      "At this sizing, how many bluffs does my value count support?"
+
+  The construction is standard and cheap once a hero range exists. For a bet of `s`
+  times pot, villain is indifferent when hero's betting range is
+
+      bluff share  = s / (1 + 2s)          bluff combos = value combos x s / (1 + s)
+
+  so a pot-sized bet supports bluffs equal to half the value combos (2:1 value:bluff),
+  a half-pot bet — the founder's 3:1 pot-odds example — supports a third (3:1), and a
+  2x overbet supports two thirds (1.5:1). With 23 value combos betting a given size,
+  half pot licenses ~8 bluffs and pot licenses ~11.
+
+  That is the BALANCED anchor. The exploitative deliverable is the DEVIATION from it,
+  which is where this repo's edge lives: against a villain who over-folds, hero can
+  carry more bluffs than the ratio permits; against a station, fewer. Same shape as
+  WS-310 — compute the theoretical baseline, then measure and apply the departure from
+  it. Do not ship the ratio as a prescription.
+
+  HALF B — NOTHING MODELS WHAT VILLAIN THINKS HERO HAS. Verified 2026-07-26 and
+  re-verified 2026-07-30: perceived-range logic exists ONLY in
+  src/utils/handAnalysis/replayAnalysis.js and hindsightAnalysis.js — post-hoc review.
+  The live decision path has none. Every villain fold/call decision is currently
+  computed against hero's actual holding or a generic range, but a villain's decision
+  derives from their equity vs THEIR PERCEPTION of hero's range. A villain who thinks
+  hero is a nit folds differently from one who thinks hero is a maniac — against the
+  identical hand.
 
   This is the biggest lever in the batch that the founder was already reaching
   for: WS-264 names "concealment premium → perceived-range factor (founder
@@ -53,6 +83,8 @@ description: |
     - A hero range object at a node, constructed from hero's actual action
       history the same way villain ranges already are (reuse rangeEngine, do not
       rewrite range semantics).
+    - Bluff:value construction over that range: given a sizing, the supported bluff
+      count, and the deviation licensed by this villain's measured fold tendency.
     - Hero self-audit: weaknessDetector pointed at hero's own aggregate play.
       Read-only, non-grading — per feedback_owner_volunteered_grading, an opt-in
       observation surface, never an imposed rank.
@@ -74,6 +106,12 @@ accept_criteria: |
     before implementation — new surface, new persona-facing concept.
   - Hero range constructible at a node from hero's own action history, using
     existing rangeEngine semantics.
+  - BLUFF:VALUE — given a node, a hero range and a sizing, the engine reports the
+    value combos that bet that size, the balanced bluff count from s/(1+s), and the
+    deviation licensed by this villain's measured fold tendency. Asserted by test at
+    three sizings (half pot 3:1, pot 2:1, 2x overbet 1.5:1).
+  - The ratio ships as a BASELINE that exploitative deviation is measured against,
+    never as a prescription — same discipline as WS-310's Layer A.
   - Hero self-audit surface produces range-level observations about hero's own
     play (frequencies, over/under-fold vs the spot's requirement). Opt-in;
     observational, not graded.
@@ -82,18 +120,24 @@ accept_criteria: |
     equity estimate. Test: two villains at the same table with different
     observation histories produce different predicted responses to the identical
     hero action.
+  - REGRESSION TEST FROM THE MOTIVATING HAND: with a hero range containing the
+    straight-completing combo and an observation history showing recent visible
+    aggression, villain's predicted fold rate to a large river bet is materially
+    HIGHER than with an empty observation history — same hero holding, same board,
+    same sizing. This is the effect the engine currently cannot represent at all.
   - Perceived range is derived from observation history, asserted by test — no
     image label used as a rate lookup (§7.1/§7.2).
   - Level-2 recursion boundary documented in POKER_THEORY.md as a deliberate
     stopping point, with what would justify going deeper.
-  - POKER_THEORY.md gains a hero-range / perceived-range section; version +
-    changelog bumped.
+  - POKER_THEORY.md gains a hero-range / perceived-range / bluff:value section;
+    version + changelog bumped.
 effort: "L"
 files_involved:
   - "src/utils/rangeEngine/rangeProfile.js"
   - "src/utils/exploitEngine/villainDecisionModel.js"
   - "src/utils/exploitEngine/weaknessDetector.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
   - "src/utils/handAnalysis/replayAnalysis.js"
   - ".claude/context/POKER_THEORY.md"
 blocked_by: []
@@ -102,8 +146,8 @@ enables:
   - "WS-264"
 sprint_id: null
 decision_flags:
-  - "Does v1 ship Half A (hero range + self-audit) alone, with Half B as a follow-up? Half A is independently valuable and much cheaper."
-  - "What counts as 'plausibly observed' by a villain — showdowns only, or all visible hero aggression? Determines how fast image accumulates."
+  - "Does v1 ship Half A + Half C (hero range, bluff:value, self-audit) alone, with Half B as a follow-up? A+C are independently valuable and much cheaper; B is the bigger lever but needs an observation-history model."
+  - "What counts as 'plausibly observed' by a villain — showdowns only, or all visible hero aggression? Determines how fast image accumulates. The motivating hand turned on NON-showdown observation (hero had been betting draws all night, visible without showdowns), which argues for the wider definition."
   - "Hero self-audit presentation — per feedback_owner_volunteered_grading this must be opt-in and observational; confirm the surface framing."
 source:
   type: founder-request
@@ -112,8 +156,42 @@ source:
   run_id: "session-2026-07-26"
 created_at: "2026-07-26T00:00:00Z"
 status_note: |
-  Filed 2026-07-26. Verified by grep: perceived-range logic exists only in
-  handAnalysis/ (post-hoc), absent from the live exploitEngine path. Directly
-  answers the "perceived-range factor pending founder completion" note carried
+  Filed 2026-07-26. Verified by grep (re-verified 2026-07-30): perceived-range logic
+  exists only in handAnalysis/ (post-hoc), absent from the live exploitEngine path.
+  Directly answers the "perceived-range factor pending founder completion" note carried
   in WS-264 — the finding is that it is a state variable, not a factor.
   Design-first: Gates 1 and 4 required before code.
+
+  RE-SCORED 18 -> 32 on 2026-07-30, above WS-307 (31), making this the top item in the
+  program. The argument is a hand the founder played, which the engine could not have
+  found and would have scored as a mistake:
+
+    QJo on the BTN. HJ opens 15, hero 3-bets to 60, BB cold-calls, HJ calls.
+    Flop Q94 rainbow — hero c-bets just under pot with top pair.
+    Turn J — hero has two pair, bets 250. HJ folds, BB calls.
+    River A — hero shoves 600. BB folds and shows 8Ts: a made straight, second nuts.
+
+  BB folded the second nuts because KT (Broadway on that runout) is credibly in a BTN
+  3-betting range, and hero had been visibly betting draws all night. The fold was
+  driven ENTIRELY by BB's model of hero's range — the one quantity in villain's decision
+  that hero controls, and the one the engine cannot represent.
+
+  Note the structure, which is why this hand is the right motivating case rather than
+  just a nice story: on that river hero's two pair BEATS every one-pair hand (AK, AT,
+  KQ) and LOSES to every two-pair-or-better (AQ, AJ, A9, sets, KT, T8). There is no
+  middle. So the shove folds out only hands hero beats and is called only by hands that
+  beat hero — it is a made hand turned into a bluff, and its entire profit came from
+  folding out T8/KT/AQ. A node-local max-EV engine with no hero range and no perceived
+  range evaluates that shove against villain's range alone and cannot see the mechanism
+  that made it profitable.
+
+  Same theme as WS-307 with the sign flipped: there, zero showdown value made bottom
+  pair a fine bluff CANDIDATE but the uncapped range could not fold. Here the range was
+  capped and the villain over-folds, so a hand WITH showdown value was correctly turned
+  into a bluff. Neither spot is decidable without the hero side of the tree.
+
+  Caveat recorded honestly: the play is read-dependent and not balanced-correct — against
+  an opponent calling correctly it is a losing shove, and the founder's stated read
+  ("more missed draws than value") actually argues for checking. The profit came from a
+  different mechanism than the stated reasoning. That does not weaken the ticket; it
+  sharpens it, since the engine should be able to tell those two mechanisms apart.
