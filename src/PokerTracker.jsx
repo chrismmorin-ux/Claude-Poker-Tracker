@@ -23,6 +23,7 @@ import { NavShell } from './components/ui/NavShell';
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
 import { RotateDeviceHint } from './components/ui/RotateDeviceHint';
+import { ViewLoadingFallback } from './components/ui/ViewLoadingFallback';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state, driven by VIEW_REGISTRY
@@ -94,11 +95,7 @@ const ViewRouter = () => {
 
   // All other views are lazy-loaded (RT-23: route-level code splitting).
   return (
-    <Suspense fallback={
-      <div className="h-dvh bg-gray-900 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<ViewLoadingFallback />}>
       <VEB viewName={viewName} onReturnToTable={onReturnToTable}>{renderView(resolved, scale)}</VEB>
     </Suspense>
   );

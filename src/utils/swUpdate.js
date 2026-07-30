@@ -46,6 +46,36 @@ export const registerUpdateReload = (nav = globalThis.navigator) => {
 };
 
 /**
+ * Ask the browser to re-check sw.js for a newer worker.
+ *
+ * Nothing else in the app does this. Without it the browser re-checks on its
+ * own schedule — on navigation, and at most once a day — which an installed
+ * PWA that gets resumed rather than reloaded may not hit for a long time. The
+ * result is a phone that keeps running an old build even though a new one has
+ * been live for hours.
+ *
+ * Firebase serves sw.js with `Cache-Control: no-cache`, so this is a cheap
+ * revalidation, not a full download, when nothing has changed.
+ *
+ * @returns {Promise<boolean>} true if a registration was found and checked
+ */
+export const requestSwUpdate = async (nav = globalThis.navigator) => {
+  const container = nav?.serviceWorker;
+  if (!container) return false;
+  try {
+    const registration = await container.getRegistration();
+    if (!registration) return false;
+    await registration.update();
+    return true;
+  } catch (err) {
+    // Offline, or the browser declined the check. Not actionable — the version
+    // poll is the independent signal — but don't swallow it silently.
+    logger.warn('swUpdate', 'update check failed:', err?.message || err);
+    return false;
+  }
+};
+
+/**
  * Drop every Workbox cache and worker, then reload.
  *
  * A bare window.location.reload() is not enough to escape a stale build: the

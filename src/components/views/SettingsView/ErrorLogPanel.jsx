@@ -1,15 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown, ChevronRight, Trash2, AlertTriangle, Bug, Copy, Download, Check } from 'lucide-react';
 import { getRecentErrors, clearErrorLog, getErrorCount, exportErrorLog } from '../../../utils/errorLog';
 import { GOLD } from '../../../constants/designTokens';
+import { useUI } from '../../../contexts';
 
 export const ErrorLogPanel = ({ showSuccess }) => {
-  const [errorLogExpanded, setErrorLogExpanded] = useState(false);
+  const { settingsFocus, clearSettingsFocus } = useUI();
+  const arrivedHere = settingsFocus === 'errorLog';
+
+  // Open on arrival when the founder came here specifically to read the log
+  // (health pill). Opening from primary nav still starts collapsed.
+  const [errorLogExpanded, setErrorLogExpanded] = useState(arrivedHere);
   const [expandedErrorId, setExpandedErrorId] = useState(null);
   const [errors, setErrors] = useState([]);
-  const [errorCount, setErrorCount] = useState(0);
+  // Seed from storage, not from 0. The badge next to the collapsed header is
+  // the only hint this panel has anything in it, and loading the count only on
+  // expand meant it read "Error Log" with no badge until you had already found
+  // and opened it — the signal arrived after it was needed.
+  const [errorCount, setErrorCount] = useState(() => getErrorCount());
   const [showClearErrorsConfirm, setShowClearErrorsConfirm] = useState(false);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+  const panelRef = useRef(null);
 
   useEffect(() => {
     if (errorLogExpanded) {
@@ -17,6 +28,15 @@ export const ErrorLogPanel = ({ showSuccess }) => {
       setErrorCount(getErrorCount());
     }
   }, [errorLogExpanded]);
+
+  // Settings is one long scroll; being expanded 11 panels down is not the same
+  // as being visible. Scroll to it, then consume the one-shot intent so a later
+  // trip to Settings doesn't jump here again.
+  useEffect(() => {
+    if (!arrivedHere) return;
+    panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    clearSettingsFocus();
+  }, [arrivedHere, clearSettingsFocus]);
 
   const formatRelativeTime = useCallback((timestamp) => {
     const diff = Date.now() - timestamp;
@@ -75,7 +95,7 @@ export const ErrorLogPanel = ({ showSuccess }) => {
   }, []);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-5">
+    <div className="bg-gray-800 rounded-lg p-5" ref={panelRef}>
       <button
         onClick={() => setErrorLogExpanded(!errorLogExpanded)}
         className="w-full flex items-center justify-between text-left"

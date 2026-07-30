@@ -8,9 +8,11 @@
  */
 
 import React from 'react';
-import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Home, RefreshCw } from 'lucide-react';
 import { logger, AppError, ERROR_CODES } from '../../utils/errorHandler';
 import { logErrorObject } from '../../utils/errorLog';
+import { isChunkLoadError } from '../../utils/chunkRecovery';
+import { hardRefresh } from '../../utils/swUpdate';
 
 /**
  * ViewErrorBoundary - Granular error boundary for individual views
@@ -30,9 +32,17 @@ export class ViewErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    const errorCode = error instanceof AppError
-      ? error.code
-      : ERROR_CODES.RENDER_FAILED;
+    // A view that is lazy-loaded can fail for a reason that has nothing to do
+    // with the view: its chunk is gone because a deploy landed mid-session.
+    // That is a staleness problem, not a render bug, and needs its own exit.
+    let errorCode;
+    if (error instanceof AppError) {
+      errorCode = error.code;
+    } else if (isChunkLoadError(error)) {
+      errorCode = ERROR_CODES.CHUNK_LOAD_FAILED;
+    } else {
+      errorCode = ERROR_CODES.RENDER_FAILED;
+    }
 
     return {
       hasError: true,
@@ -47,7 +57,9 @@ export class ViewErrorBoundary extends React.Component {
     const appError = error instanceof AppError
       ? error
       : new AppError(
-          ERROR_CODES.RENDER_FAILED,
+          isChunkLoadError(error)
+            ? ERROR_CODES.CHUNK_LOAD_FAILED
+            : ERROR_CODES.RENDER_FAILED,
           `${viewName} render failed: ${error.message}`,
           {
             viewName,
@@ -90,11 +102,59 @@ export class ViewErrorBoundary extends React.Component {
     }
   };
 
+  handleHardRefresh = () => {
+    hardRefresh();
+  };
+
   render() {
     const { viewName, children } = this.props;
     const { hasError, error, errorCode } = this.state;
 
     if (hasError) {
+      const isStale = errorCode === ERROR_CODES.CHUNK_LOAD_FAILED;
+
+      // Stale build: the view never loaded, so retrying or navigating home
+      // leaves the app just as broken. The only working exit is a hard refresh.
+      if (isStale) {
+        return (
+          <div className="h-dvh bg-gray-900 flex items-center justify-center p-6">
+            <div className="max-w-md w-full text-center">
+              <div className="flex justify-center mb-4">
+                <RefreshCw className="w-16 h-16 text-blue-400" />
+              </div>
+
+              <h1 className="text-2xl font-bold text-white mb-2">
+                A new version is ready
+              </h1>
+
+              <p className="text-gray-400 mb-6">
+                The app was updated while this page was open, so {viewName} couldn’t
+                load. Tap Update to get the new version — your sessions, hands and
+                players are untouched.
+              </p>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Error Code: <code className="text-yellow-400">{errorCode}</code>
+              </p>
+
+              <div className="flex justify-center">
+                <button
+                  onClick={this.handleHardRefresh}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Update App
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-600 mt-6">
+                If this keeps happening, close the app and reopen it.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="h-dvh bg-gray-900 flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center">

@@ -12,6 +12,9 @@
 
 import React from 'react';
 import { logger, AppError, ERROR_CODES } from '../utils/errorHandler';
+import { logErrorObject } from '../utils/errorLog';
+import { isChunkLoadError } from '../utils/chunkRecovery';
+import { hardRefresh } from '../utils/swUpdate';
 
 /**
  * Error Boundary for catching React render errors
@@ -37,10 +40,16 @@ export class ErrorBoundary extends React.Component {
    * Called during the "render" phase
    */
   static getDerivedStateFromError(error) {
-    // Determine error code
-    const errorCode = error instanceof AppError
-      ? error.code
-      : ERROR_CODES.RENDER_FAILED;
+    // Determine error code. A missing code-split chunk is its own failure —
+    // the app isn't broken, it's stale — and it gets its own recovery UI.
+    let errorCode;
+    if (error instanceof AppError) {
+      errorCode = error.code;
+    } else if (isChunkLoadError(error)) {
+      errorCode = ERROR_CODES.CHUNK_LOAD_FAILED;
+    } else {
+      errorCode = ERROR_CODES.RENDER_FAILED;
+    }
 
     return {
       hasError: true,
@@ -57,7 +66,9 @@ export class ErrorBoundary extends React.Component {
     const appError = error instanceof AppError
       ? error
       : new AppError(
-          ERROR_CODES.RENDER_FAILED,
+          isChunkLoadError(error)
+            ? ERROR_CODES.CHUNK_LOAD_FAILED
+            : ERROR_CODES.RENDER_FAILED,
           error.message || 'Component render failed',
           {
             componentStack: errorInfo.componentStack,
@@ -66,6 +77,17 @@ export class ErrorBoundary extends React.Component {
         );
 
     logger.error('ErrorBoundary', appError);
+
+    // Persist to the error log the founder can actually read (Settings → Error
+    // Log) and export as a bug report. Only ViewErrorBoundary did this, so a
+    // crash caught HERE — the whole-app failures, the most serious kind — left
+    // nothing behind but a console line on a phone with no console. The
+    // 2026-07-25 stale-chunk incident showed both boundaries firing and only
+    // the per-view one appearing in the export.
+    logErrorObject(appError, appError.code, {
+      view: 'app-root',
+      componentStack: errorInfo.componentStack?.substring(0, 500),
+    });
   }
 
   /**
@@ -86,8 +108,22 @@ export class ErrorBoundary extends React.Component {
     window.location.reload();
   };
 
+  /**
+   * Drop the service-worker caches, then reload.
+   *
+   * A plain reload can be answered by the active worker out of its own
+   * precache, so it brings the same stale build straight back. This is the only
+   * control that escapes it — and it has to live here, in the main bundle,
+   * because Settings' Force Update button is itself behind a lazy chunk.
+   */
+  handleHardRefresh = () => {
+    hardRefresh();
+  };
+
   render() {
     if (this.state.hasError) {
+      const isStale = this.state.errorCode === ERROR_CODES.CHUNK_LOAD_FAILED;
+
       return (
         <div
           style={{
@@ -115,7 +151,7 @@ export class ErrorBoundary extends React.Component {
                 marginBottom: '16px',
               }}
             >
-              ⚠️
+              {isStale ? '🔄' : '⚠️'}
             </div>
 
             {/* Title */}
@@ -124,11 +160,28 @@ export class ErrorBoundary extends React.Component {
                 fontSize: '24px',
                 fontWeight: '600',
                 marginBottom: '8px',
-                color: '#ff6b6b',
+                color: isStale ? '#4dabf7' : '#ff6b6b',
               }}
             >
-              Something went wrong
+              {isStale ? 'A new version is ready' : 'Something went wrong'}
             </h1>
+
+            {/* Plain-language explanation for the stale-build case — the founder
+                did nothing wrong and nothing is lost, so say so before the code. */}
+            {isStale && (
+              <p
+                style={{
+                  fontSize: '14px',
+                  color: '#ccc',
+                  marginBottom: '16px',
+                  lineHeight: '1.5',
+                }}
+              >
+                The app was updated while this page was open, so part of it
+                couldn’t load. Tap Update to get the new version — your sessions,
+                hands and players are untouched.
+              </p>
+            )}
 
             {/* Error Code */}
             <p
@@ -141,8 +194,10 @@ export class ErrorBoundary extends React.Component {
               Error Code: <code style={{ color: '#ffd93d' }}>{this.state.errorCode}</code>
             </p>
 
-            {/* Error Message (in debug mode) */}
-            <pre
+            {/* Error Message (in debug mode) — suppressed for the stale-build
+                case, where the raw chunk URL tells the founder nothing the
+                explanation above hasn't already said. */}
+            {!isStale && <pre
               style={{
                 backgroundColor: '#0d0d1a',
                 padding: '12px',
@@ -156,7 +211,7 @@ export class ErrorBoundary extends React.Component {
               }}
             >
               {this.state.error?.message || 'Unknown error'}
-            </pre>
+            </pre>}
 
             {/* Action Buttons */}
             <div
@@ -166,35 +221,57 @@ export class ErrorBoundary extends React.Component {
                 justifyContent: 'center',
               }}
             >
+              {/* "Try Again" only helps when the failure was transient. A
+                  missing chunk isn't: React.lazy caches the rejection, so
+                  resetting the boundary re-throws the same error immediately. */}
+              {!isStale && (
+                <button
+                  onClick={this.handleReset}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    backgroundColor: '#2d2d44',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Try Again
+                </button>
+              )}
+              {!isStale && (
+                <button
+                  onClick={this.handleReload}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    backgroundColor: '#4dabf7',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Reload Page
+                </button>
+              )}
               <button
-                onClick={this.handleReset}
+                onClick={this.handleHardRefresh}
                 style={{
                   padding: '10px 20px',
                   fontSize: '14px',
                   fontWeight: '500',
-                  backgroundColor: '#2d2d44',
+                  backgroundColor: isStale ? '#37b24d' : '#2d2d44',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '6px',
                   cursor: 'pointer',
                 }}
               >
-                Try Again
-              </button>
-              <button
-                onClick={this.handleReload}
-                style={{
-                  padding: '10px 20px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  backgroundColor: '#4dabf7',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                }}
-              >
-                Reload Page
+                {isStale ? 'Update App' : 'Update & Reload'}
               </button>
             </div>
 
@@ -206,9 +283,17 @@ export class ErrorBoundary extends React.Component {
                 marginTop: '24px',
               }}
             >
-              If this error persists, check the browser console for details.
-              <br />
-              Search for error code <code style={{ color: '#ffd93d' }}>{this.state.errorCode}</code> in the codebase.
+              {isStale ? (
+                <>
+                  If this keeps happening, close the app and reopen it.
+                </>
+              ) : (
+                <>
+                  If this error persists, check the browser console for details.
+                  <br />
+                  Search for error code <code style={{ color: '#ffd93d' }}>{this.state.errorCode}</code> in the codebase.
+                </>
+              )}
             </p>
           </div>
         </div>

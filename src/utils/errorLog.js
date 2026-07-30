@@ -8,9 +8,16 @@
  * Limit: 50 entries (FIFO - oldest removed when limit exceeded)
  */
 
+import { BUILD_SHA } from './buildInfo';
+
 const STORAGE_KEY = 'poker-tracker-error-log';
 const MAX_ENTRIES = 50;
-const APP_VERSION = 'v122';
+// The build the error actually happened on. This was a hand-maintained string
+// ('v122') that stopped being updated at v123, so every entry — and every bug
+// report exported from one — carried a version that was simply wrong, which is
+// worse than carrying none. BUILD_SHA is stamped in at build time and cannot
+// drift.
+const APP_VERSION = BUILD_SHA;
 
 /**
  * Error log entry shape
@@ -158,6 +165,33 @@ export const clearErrorLog = () => {
  */
 export const getErrorCount = () => {
   return getErrorLog().length;
+};
+
+/**
+ * How many logged errors happened on the build that is running right now.
+ *
+ * The health pill counted every error ever logged, with no aging, so a single
+ * crash kept a red "N errors logged" alert on screen indefinitely — through
+ * reloads, through Force Update, through a new deploy — until the founder found
+ * the log and cleared it by hand. That contradicts the pill's own contract
+ * (silent-until-broken, "only... a genuinely actionable fault") and trains you
+ * to ignore it.
+ *
+ * Scoping by build is the airtight cut: an error recorded under a DIFFERENT
+ * build tells you nothing about the one you are running. Deliberately not
+ * time-based — aging an error out on a clock would hide a fault the founder
+ * hasn't seen yet. The full history stays in the log panel either way; this
+ * only governs whether the pill claims something is wrong NOW.
+ *
+ * Entries from before appVersion was stamped from the build (the frozen 'v122'
+ * literal) never match, which is correct — they are by definition not from this
+ * build.
+ *
+ * @param {string} [build] - build id to match; defaults to the running one
+ * @returns {number}
+ */
+export const getErrorCountForBuild = (build = BUILD_SHA) => {
+  return getErrorLog().filter((entry) => entry.appVersion === build).length;
 };
 
 /**

@@ -57,12 +57,18 @@ export const ERROR_CODES = {
   DELETE_FAILED: 'E304',
   MIGRATION_FAILED: 'E305',
   QUOTA_EXCEEDED: 'E306',
+  // A persistence subsystem failed to initialise and the app is running
+  // without it — nothing is being saved. See src/utils/persistenceHealth.js.
+  PERSISTENCE_DEGRADED: 'E307',
 
   // Component errors (4xx)
   RENDER_FAILED: 'E401',
   HANDLER_FAILED: 'E402',
   HOOK_FAILED: 'E403',
   PROP_INVALID: 'E404',
+  // A code-split view's chunk could not be fetched — almost always a deploy
+  // that landed while this page was open. See src/utils/chunkRecovery.js.
+  CHUNK_LOAD_FAILED: 'E405',
 };
 
 // =============================================================================
@@ -115,7 +121,9 @@ export class AppError extends Error {
       E302: 'Failed to save. Please try again.',
       E303: 'Failed to load data. Please refresh the page.',
       E306: 'Storage is full. Please clear some old hands.',
+      E307: 'Your hands are not being saved. Finish this hand, then restart the app.',
       E401: 'Something went wrong. Please refresh the page.',
+      E405: 'The app was updated. Refresh to load the new version.',
     };
     return userMessages[this.code] || 'An error occurred. Please try again.';
   }

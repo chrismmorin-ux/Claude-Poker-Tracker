@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { registerUpdateReload, hardRefresh, __resetReloadGuard } from '../swUpdate';
+import { registerUpdateReload, hardRefresh, requestSwUpdate, __resetReloadGuard } from '../swUpdate';
 
-vi.mock('../errorHandler', () => ({ logger: { error: vi.fn() } }));
+vi.mock('../errorHandler', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
 
 // Minimal ServiceWorkerContainer stand-in — jsdom ships no service worker.
 const makeContainer = ({ controller = null } = {}) => {
@@ -124,5 +124,42 @@ describe('hardRefresh', () => {
   it('reloads even with no caches and no service worker', async () => {
     await hardRefresh({});
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Nothing else in the app asks the browser to re-check sw.js. Left to its own
+// schedule the browser may not look for days on an installed PWA that gets
+// resumed rather than reloaded — so the app can know a new build exists while
+// the new worker has never been fetched.
+describe('requestSwUpdate', () => {
+  const makeRegistration = () => ({ update: vi.fn(async () => {}) });
+
+  it('calls update() on the active registration', async () => {
+    const registration = makeRegistration();
+    const container = makeContainer();
+    container.getRegistration = vi.fn(async () => registration);
+
+    await expect(requestSwUpdate({ serviceWorker: container })).resolves.toBe(true);
+    expect(registration.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports false when there is no registration yet', async () => {
+    const container = makeContainer();
+    container.getRegistration = vi.fn(async () => undefined);
+
+    await expect(requestSwUpdate({ serviceWorker: container })).resolves.toBe(false);
+  });
+
+  it('reports false when service workers are unavailable', async () => {
+    await expect(requestSwUpdate({})).resolves.toBe(false);
+    await expect(requestSwUpdate(undefined)).resolves.toBe(false);
+  });
+
+  it('swallows an update() failure — offline is not actionable', async () => {
+    const registration = { update: vi.fn(async () => { throw new Error('offline'); }) };
+    const container = makeContainer();
+    container.getRegistration = vi.fn(async () => registration);
+
+    await expect(requestSwUpdate({ serviceWorker: container })).resolves.toBe(false);
   });
 });

@@ -23,6 +23,7 @@ import {
   GUEST_USER_ID,
   createPersistenceLogger,
 } from '../utils/persistence/index';
+import { reportPersistenceFailure, reportPersistenceHealthy } from '../utils/persistenceHealth';
 import { SESSION_ACTIONS } from '../constants/sessionConstants';
 import { AppError, ERROR_CODES } from '../utils/errorHandler';
 
@@ -102,10 +103,13 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
 
         isInitializedRef.current = true;
         setIsReady(true);
+        reportPersistenceHealthy('sessions');
         log('Session persistence ready');
       } catch (error) {
+        // Continue without session persistence, but not silently — see
+        // persistenceHealth.js. HealthIndicator surfaces this.
+        reportPersistenceFailure('sessions', error);
         logError('Initialization failed:', error);
-        // Continue without session persistence
         isInitializedRef.current = true;
         setIsReady(true);
       }

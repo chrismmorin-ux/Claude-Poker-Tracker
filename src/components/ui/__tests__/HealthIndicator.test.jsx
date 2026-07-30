@@ -11,23 +11,31 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { SCREEN } from '../../../constants/uiConstants';
 
 let mockSetCurrentScreen;
+let mockOpenSettings;
 let mockSync;
 let mockErrorCount;
+let mockSaveFailures;
 
 vi.mock('../../../contexts', () => ({
-  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen }),
+  useUI: () => ({ setCurrentScreen: mockSetCurrentScreen, openSettings: mockOpenSettings }),
   useSyncBridge: () => mockSync,
 }));
 
 vi.mock('../../../utils/errorLog', () => ({
-  getErrorCount: () => mockErrorCount,
+  getErrorCountForBuild: () => mockErrorCount,
+}));
+
+vi.mock('../../../utils/persistenceHealth', () => ({
+  getPersistenceFailureCount: () => mockSaveFailures,
 }));
 
 import { HealthIndicator } from '../HealthIndicator';
 
 beforeEach(() => {
   mockSetCurrentScreen = vi.fn();
+  mockOpenSettings = vi.fn();
   mockErrorCount = 0;
+  mockSaveFailures = 0;
   mockSync = { isExtensionConnected: true, syncError: null, versionMismatch: false, lastSyncTime: null };
 });
 afterEach(() => cleanup());
@@ -73,12 +81,62 @@ describe('HealthIndicator', () => {
     render(<HealthIndicator />);
     expect(screen.getByTestId('health-indicator').textContent).toMatch(/3 errors logged/);
     fireEvent.click(screen.getByTestId('health-indicator'));
-    expect(mockSetCurrentScreen).toHaveBeenCalledWith(SCREEN.SETTINGS);
+    // Not setCurrentScreen(SETTINGS): the Error Log is the 11th panel down a
+    // single long scroll and starts collapsed, so landing at the top of
+    // Settings reads as though the tap did nothing.
+    expect(mockOpenSettings).toHaveBeenCalledWith('errorLog');
+    expect(mockSetCurrentScreen).not.toHaveBeenCalled();
   });
 
   it('singularizes a single error', () => {
     mockErrorCount = 1;
     render(<HealthIndicator />);
     expect(screen.getByTestId('health-indicator').textContent).toMatch(/1 error logged/);
+  });
+});
+
+// Persistence failures used to be entirely silent: the four hooks caught init
+// errors, continued, and the app looked completely normal while saving nothing.
+// At a live table that surfaces when the session is already gone.
+describe('HealthIndicator — save failures', () => {
+  it('warns that nothing is being saved', () => {
+    mockSaveFailures = 1;
+    render(<HealthIndicator />);
+
+    expect(screen.getByTestId('health-indicator').textContent).toMatch(/not saving/i);
+  });
+
+  it('outranks a sync fault — losing the live session beats re-importable hands', () => {
+    mockSaveFailures = 1;
+    Object.assign(mockSync, { versionMismatch: true, syncError: 'boom' });
+
+    render(<HealthIndicator />);
+
+    const text = screen.getByTestId('health-indicator').textContent;
+    expect(text).toMatch(/not saving/i);
+    expect(text).not.toMatch(/mismatch/i);
+  });
+
+  it('outranks logged errors', () => {
+    mockSaveFailures = 1;
+    mockErrorCount = 4;
+
+    render(<HealthIndicator />);
+
+    expect(screen.getByTestId('health-indicator').textContent).toMatch(/not saving/i);
+  });
+
+  it('routes to the error log, where the E307 detail is', () => {
+    mockSaveFailures = 1;
+    render(<HealthIndicator />);
+
+    fireEvent.click(screen.getByTestId('health-indicator'));
+    expect(mockOpenSettings).toHaveBeenCalledWith('errorLog');
+  });
+
+  it('stays silent when persistence is healthy', () => {
+    mockSaveFailures = 0;
+    const { container } = render(<HealthIndicator />);
+    expect(container.firstChild).toBeNull();
   });
 });
