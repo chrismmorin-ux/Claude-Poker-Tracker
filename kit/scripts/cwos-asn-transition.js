@@ -24,7 +24,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { findRepoRoot, makeEventEmitter } = require('./lib/cwos-utils');
+const {
+  findRepoRoot, makeEventEmitter, todayISO, escapeYamlString
+} = require('./lib/cwos-utils');
 
 const emitEvent = makeEventEmitter();
 
@@ -50,14 +52,10 @@ const FIRE_STATES = new Set(['at_risk', 'contradicted']);
 const ASN_ID_RE = /^AS-\d+$/;
 const ADR_ID_RE = /^ADR-\d+$/;
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function escapeYamlString(s) {
-  // Double-quote and escape embedded double quotes + backslashes.
-  return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
+// WS-485: todayISO and escapeYamlString were re-defined locally here despite
+// this file already requiring cwos-utils. The local escaper did not handle
+// newlines, so a --reason containing one wrote malformed YAML. Both now come
+// from cwos-utils (see the require above).
 
 function main() {
   const args = parseArgs();

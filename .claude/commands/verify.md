@@ -63,6 +63,18 @@ Read `system/invariants.md`. For each invariant with a `check_command`:
 - Record pass/fail
 - If fail: flag with the invariant name and expected behavior
 
+**Mode selection (WS-429 / FIND-296).** `cwos-verify.js` supports incremental
+selection so it stays cheap enough to run often:
+- `/verify` and `/audit` run **full mode** (`node kit/scripts/cwos-verify.js`) —
+  every invariant, the authoritative pass.
+- **Session start** runs **fast mode** (`--fast-mode --since-git-commit --quiet`)
+  via a SessionStart hook — the curated `fast: true` subset plus any invariant
+  whose `watched_paths` overlap files changed this session. Silent unless a
+  check FAILs. An invariant with no `watched_paths` is always-run, so
+  incremental mode never silently skips an unclassified check.
+- `--since-git-commit [ref]` alone scopes a full-rigor run to just the
+  invariants guarding changed paths — useful before a commit on a large repo.
+
 ### 5. Layer 3 — Visual Verification (UI repos only)
 
 If the project has UI components and UI files changed:

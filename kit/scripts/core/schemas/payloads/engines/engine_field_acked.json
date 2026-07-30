@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/engines/engine_field_acked.json",
+  "title": "engines.engine_field_acked",
+  "description": "WS-433 / FIND-305 — fired by `cwos-frame.js ack-field` once per low-confidence contract field the founder individually acknowledges during /engine pre-flight. The confirm gate refuses an engine_intent_recorded whose prompted fields lack a matching ack (scoped to acks emitted after the last recorded intent for the engine). Single-field-per-event is enforced at emit time — a batched multi-field ack is rejected — making the prose-forbidden 4-question form structurally unconfirmable (DEC-029 / feedback_airtight_via_hooks).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "engine", "field"],
+  "properties": {
+    "type":        { "type": "string", "const": "engine_field_acked" },
+    "engine":      { "type": "string", "minLength": 1, "description": "Specialized engine name the pre-flight is for (eng-engine, design-audit, etc.)" },
+    "field":       { "type": "string", "enum": ["mode", "readiness", "success_shape", "scope_ceiling", "stretch"], "description": "The single contract field this ack covers. Exactly one per event — batching is rejected at emit." },
+    "acked_at":    { "type": ["string", "null"], "format": "date-time" },
+    "composed_by": { "type": "string", "const": "cli-deterministic", "description": "ALTERATION-5 provenance — the gate is deterministic, not AI-narrated" }
+  }
+}

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-30T14:21:10.049Z",
-  "updated_by_event": "ev-1785421270049-02b0e11d8855",
+  "updated_at": "2026-07-30T15:00:34.648Z",
+  "updated_by_event": "ev-1785423634648-f8136529a304",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -196,9 +196,11 @@
     "claims-policy": {
       "id": "claims-policy",
       "name": "Claims Policy & Evidence Standards",
-      "tier": "dormant",
       "status": "NEW",
+      "tier": "dormant",
       "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 1,
       "health_ceiling": 0,
       "findings_open": 0,
       "work_items_open": 0,
@@ -290,9 +292,11 @@
     "compliance": {
       "id": "compliance",
       "name": "Regulatory Compliance",
-      "tier": "dormant",
       "status": "NEW",
+      "tier": "dormant",
       "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 2,
       "health_ceiling": 0,
       "findings_open": 0,
       "work_items_open": 0,
@@ -382,9 +386,11 @@
     "data-quality": {
       "id": "data-quality",
       "name": "Data Quality & Integrity",
-      "tier": "dormant",
       "status": "NEW",
+      "tier": "dormant",
       "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 1,
       "health_ceiling": 0,
       "findings_open": 1,
       "work_items_open": 3,
@@ -487,7 +493,7 @@
       "status": "ACTIVE",
       "tier": "active",
       "health_score": 0,
-      "last_run_date": "2026-04-21",
+      "last_run_date": null,
       "founder_priority": 2,
       "health_ceiling": 0,
       "findings_open": 0,
@@ -612,7 +618,7 @@
       "status": "ACTIVE",
       "tier": "critical",
       "health_score": 2,
-      "last_run_date": "2026-05-19",
+      "last_run_date": null,
       "founder_priority": 1,
       "health_ceiling": 9,
       "health_updated_at": "2026-07-22T00:00:00Z",
@@ -863,9 +869,11 @@
     "infrastructure": {
       "id": "infrastructure",
       "name": "Infrastructure & Operations",
-      "tier": "dormant",
       "status": "NEW",
+      "tier": "dormant",
       "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 4,
       "health_ceiling": 0,
       "findings_open": 0,
       "work_items_open": 0,
@@ -962,7 +970,7 @@
       "tier": "active",
       "health_score": 1,
       "last_run_date": null,
-      "founder_priority": 4,
+      "founder_priority": 2,
       "health_ceiling": 7,
       "findings_open": 0,
       "work_items_open": 1,
@@ -1042,7 +1050,7 @@
       "tier": "active",
       "health_score": 0,
       "last_run_date": null,
-      "founder_priority": 1,
+      "founder_priority": 2,
       "health_ceiling": 0,
       "findings_open": 0,
       "work_items_open": 0,
@@ -1134,9 +1142,11 @@
     "security": {
       "id": "security",
       "name": "Security",
-      "tier": "dormant",
       "status": "NEW",
+      "tier": "dormant",
       "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 2,
       "health_ceiling": 0,
       "findings_open": 0,
       "work_items_open": 0,
@@ -1238,9 +1248,11 @@
     "self-compliance": {
       "id": "self-compliance",
       "name": "Self-Compliance",
-      "tier": "critical",
       "status": "NEW",
+      "tier": "critical",
       "health_score": 2,
+      "last_run_date": null,
+      "founder_priority": 3,
       "health_ceiling": 7,
       "findings_open": 0,
       "work_items_open": 0,
@@ -1317,5 +1329,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785421270049-02b0e11d8855"
+  "last_event_log_head": "ev-1785423634648-f8136529a304"
 }

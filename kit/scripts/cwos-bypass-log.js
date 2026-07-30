@@ -18,7 +18,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { findRepoRoot, makeEventEmitter } = require('./lib/cwos-utils');
+const { findRepoRoot, makeEventEmitter, todayISO } = require('./lib/cwos-utils');
 
 const emitEvent = makeEventEmitter();
 
@@ -33,9 +33,8 @@ function parseArgs() {
   return out;
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+// WS-485: local todayISO removed — this file already required cwos-utils,
+// which exports it. Now destructured from the require above.
 
 function main() {
   const args = parseArgs();

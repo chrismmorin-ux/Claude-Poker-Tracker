@@ -89,3 +89,7 @@ __pycache__/
 
 # Backtest harness output artifacts (scripts/backtest/run.mjs --out, mined tables)
 out/
+
+# /kit-upgrade sidecars — upstream's version of a file we've customized, written
+# alongside it for hand review. Working artifacts, never part of the tree.
+*.kit-update

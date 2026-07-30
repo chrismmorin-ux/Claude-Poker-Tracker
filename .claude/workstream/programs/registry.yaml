@@ -72,97 +72,96 @@
 #   5. Set tier based on current repo state
 
 schema_version: 3
-# founder_priority: controls sort order in /pulse and /status
-#   1 = Domain & money (core correctness, financial accuracy)
-#   2 = User-facing & safety (security, UX, compliance)
-#   3 = Code quality & accuracy (engineering, anti-hallucination)
-#   4 = Process & knowledge (change-mgmt, growth, vendor-risk)
-#   5 = Tool infrastructure (optimization — never competes with product work)
-
-# tier_order: dormant < watch < active < critical
-# Programs at higher tiers get more protocol depth and shorter cadences.
 
 programs:
-  - id: engineering
-    name: "Engineering Health"
-    status: NEW
-    tier: watch
-    health_score: null
-    last_run_date: null
-    founder_priority: 3
-    blocks: []
-
   - id: anti-hallucination
-    name: "Anti-Hallucination"
+    name: "Anti-Hallucination & AI Accuracy"
     status: NEW
     tier: watch
-    health_score: null
+    health_score: 0
     last_run_date: null
     founder_priority: 3
-    blocks: []
-
   - id: change-management
-    name: "Change Management"
+    name: "Knowledge & Decision Integrity"
     status: NEW
     tier: active
-    health_score: null
+    health_score: 0
     last_run_date: null
     founder_priority: 4
-    blocks: []
-
+  - id: claims-policy
+    name: "Claims Policy & Evidence Standards"
+    status: NEW
+    tier: dormant
+    health_score: 0
+    last_run_date: null
+    founder_priority: 1
+  - id: compliance
+    name: Regulatory Compliance
+    status: NEW
+    tier: dormant
+    health_score: 0
+    last_run_date: null
+    founder_priority: 2
+  - id: data-quality
+    name: "Data Quality & Integrity"
+    status: NEW
+    tier: dormant
+    health_score: 0
+    last_run_date: null
+    founder_priority: 1
   - id: design
-    name: "Design Program (5-Gate UX Framework)"
+    name: Design Program (5-Gate UX Framework)
     status: ACTIVE
     tier: active
-    health_score: null
-    last_run_date: "2026-04-21"
+    health_score: 0
+    last_run_date: null
     founder_priority: 2
-    blocks: []
-
   - id: domain-correctness
-    name: "Poker Theory Integrity"
+    name: Poker Theory Integrity
     status: ACTIVE
     tier: critical
-    health_score: 5
-    last_run_date: "2026-05-19"
-    founder_priority: 1
-    blocks: [launch]
-
-  - id: methodology-integrity
-    name: "Methodology Integrity"
-    status: NEW
-    tier: active
-    health_score: null
+    health_score: 2
     last_run_date: null
     founder_priority: 1
-    blocks: []
-
-  - id: launch
-    name: "Launch Readiness"
+  - id: engineering
+    name: Engineering Health
     status: NEW
-    tier: active
-    health_score: null
+    tier: watch
+    health_score: 0
+    last_run_date: null
+    founder_priority: 3
+  - id: infrastructure
+    name: "Infrastructure & Operations"
+    status: NEW
+    tier: dormant
+    health_score: 0
     last_run_date: null
     founder_priority: 4
-    blocks: []
-
-# /adopt populates with entries like:
-#  - id: domain-correctness
-#    name: "BLS Integrity"     # Customized during /adopt
-#    status: NEW
-#    tier: active              # Based on detected repo state
-#    health_score: null
-#    last_run_date: null
-#    founder_priority: 1
-#    blocks: [launch]
-#
-# System programs (installed for every repo, rendered separately):
-#  - id: optimization
-#    name: "Optimization Monitor"
-#    install_group: system
-#    monitor_only: true
-#    status: NEW
-#    tier: dormant
-#    health_score: null
-#    last_run_date: null
-#    founder_priority: 5
+  - id: launch
+    name: Launch Readiness
+    status: NEW
+    tier: active
+    health_score: 3
+    last_run_date: null
+    founder_priority: 2
+  - id: methodology-integrity
+    name: Methodology Integrity
+    status: NEW
+    tier: active
+    health_score: 0
+    last_run_date: null
+    founder_priority: 2
+  - id: security
+    name: Security
+    status: NEW
+    tier: dormant
+    health_score: 0
+    last_run_date: null
+    founder_priority: 2
+  - id: self-compliance
+    name: Self-Compliance
+    status: NEW
+    tier: critical
+    health_score: 4
+    last_run_date: null
+    founder_priority: 3

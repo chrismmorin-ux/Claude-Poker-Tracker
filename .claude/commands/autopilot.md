@@ -176,7 +176,7 @@ Use the `/schedule` skill (or `ToolSearch select:RemoteTrigger` followed by a di
 - Name: `autopilot <run_id>` (run_id in the name so the founder can disable the right one later)
 - Cron expression: `0 */1 * * *` (hourly heartbeat; happy-path cycles also schedule themselves)
 - Environment: founder's default cloud environment
-- Model: `claude-sonnet-4-6`
+- Model: `claude-sonnet-5`
 - Repo: `git remote get-url origin` (normalized, strip `.git`)
 - Allowed tools: `Bash, Read, Write, Edit, Glob, Grep`
 - Prompt: the complete text from **Scheduled Task Prompt** below, with `<<RUN_ID>>` and `<<DURATION_HOURS>>` substituted with the actual values.

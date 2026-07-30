@@ -147,7 +147,7 @@ function readInstalledEngines(commandsDir) {
 // preparation, briefing (per the kit template's docstring). Use the
 // engine id as the primary signal; fall back to procedure.
 function inferCategory(fm, id) {
-  if (id.endsWith('-enhance') || id === 'context-curator' || id === 'design-critique' || id === 'corrective-plan') return 'enhancement';
+  if (id.endsWith('-enhance') || id === 'context-curator' || id === 'design-critique') return 'enhancement';
   if (id.endsWith('-prep')) return 'preparation';
   if (id.endsWith('-briefing') || id === 'engine-briefing') return 'briefing';
   if (id === 'goal-progress' || id === 'milestone-briefing') return 'briefing';

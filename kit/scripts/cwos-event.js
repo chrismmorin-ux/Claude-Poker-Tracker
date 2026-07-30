@@ -52,6 +52,25 @@ function parseFlag(args, name) {
   return args[i + 1];
 }
 
+/**
+ * Undo MSYS/Git Bash path conversion on `--tag` values. A literal `--tag /next`
+ * arrives here as `C:/Program Files/Git/next` when the caller runs under Git
+ * Bash, because MSYS rewrites leading-slash arguments into Windows paths
+ * before Node sees argv. Tags are never legitimate absolute Windows paths, so
+ * any drive-letter-prefixed tag is mangled: recover the original by taking the
+ * final path segment and restoring the leading slash. (Root cause of the
+ * `track_tag: "C:/Program Files/Git/next"` corruption that blinded INV-043
+ * and every envelope consumer, 2026-04 → 2026-07.)
+ */
+function normalizeTag(tag) {
+  if (!tag) return tag;
+  if (/^[A-Za-z]:[\\/]/.test(tag)) {
+    const last = tag.split(/[\\/]/).filter(Boolean).pop();
+    if (last) return `/${last}`;
+  }
+  return tag;
+}
+
 function parsePayload(raw) {
   if (!raw) return {};
   try {
@@ -74,7 +93,7 @@ function main() {
     if (sub === 'append') {
       const type = args[1] || 'command_completed';
       const track = parseFlag(args, 'track') || 'T0:envelope';
-      const tag = parseFlag(args, 'tag') || type;
+      const tag = normalizeTag(parseFlag(args, 'tag')) || type;
       const payloadRaw = parseFlag(args, 'payload');
       const causation = parseFlag(args, 'causation') || null;
       const sourceTier = parseFlag(args, 'tier') || 'founder-prompt';
@@ -132,3 +151,5 @@ function main() {
 }
 
 if (require.main === module) main();
+
+module.exports = { normalizeTag };

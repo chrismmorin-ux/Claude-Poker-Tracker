@@ -1,6 +1,6 @@
 id: claims-policy
 name: "Claims Policy & Evidence Standards"  # Renamed during /adopt to reflect claim domains (e.g., "Clinical Claims Policy", "Financial Accuracy Claims")
-schema_version: 3
+schema_version: 4
 status: NEW
 
 # This program exists for repos that make DOMAIN CLAIMS about their output —

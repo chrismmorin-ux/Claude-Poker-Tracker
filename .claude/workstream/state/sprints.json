@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-30T14:21:09.933Z",
-  "updated_by_event": "ev-1785421269933-9c326f82b35c",
+  "updated_at": "2026-07-30T14:53:46.913Z",
+  "updated_by_event": "ev-1785423226913-98508b9b3618",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -1744,7 +1744,7 @@
       "created_at": "2026-06-05T00:00:00Z",
       "approved_at": "2026-06-05T00:00:00Z",
       "completed_at": "2026-06-05T00:00:00Z",
-      "goal": "You can flag a hand for review with one tap mid-session, then find all your\nflagged hands later in a Review Queue — turning \"I should think about that\nhand\" into a durable, studyable list instead of relying on memory.",
+      "goal": "You can flag a hand for review with one tap mid-session, then find all your flagged hands later in a Review Queue — turning \"I should think about that hand\" into a durable, studyable list instead of relying on memory.",
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
@@ -1760,7 +1760,7 @@
       "created_at": "2026-06-06T00:00:00Z",
       "approved_at": "2026-06-06T00:00:00Z",
       "completed_at": null,
-      "goal": "The self-coach catches two more real mistakes at the table — including its\nfirst multiway-specific leak (over-bluffing in 3+ way pots) — so it covers a\nwider slice of the spots that actually cost you money.",
+      "goal": "The self-coach catches two more real mistakes at the table — including its first multiway-specific leak (over-bluffing in 3+ way pots) — so it covers a wider slice of the spots that actually cost you money.",
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
@@ -1776,7 +1776,7 @@
       "created_at": "2026-06-06T00:00:00Z",
       "approved_at": "2026-06-06T00:00:00Z",
       "completed_at": "2026-06-08T00:00:00Z",
-      "goal": "The self-coach catches two more real mistakes — barreling the turn too often,\nand opening too tight preflop — by reusing the aggression-frequency machinery\nwe built last sprint, with no new plumbing.",
+      "goal": "The self-coach catches two more real mistakes — barreling the turn too often, and opening too tight preflop — by reusing the aggression-frequency machinery we built last sprint, with no new plumbing.",
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
@@ -1792,7 +1792,7 @@
       "created_at": "2026-06-09T00:00:00Z",
       "approved_at": "2026-06-09T00:00:00Z",
       "completed_at": "2026-06-09T00:00:00Z",
-      "goal": "Looking up a known player by their physical features returns a ranked,\nconfidence-scored shortlist — so recognition at the table is fast and the\ntop match is trustworthy.",
+      "goal": "Looking up a known player by their physical features returns a ranked, confidence-scored shortlist — so recognition at the table is fast and the top match is trustworthy.",
       "item_count": 1,
       "items_done": 1,
       "last_anchor_source_classes": [
@@ -2607,5 +2607,5 @@
       "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785421269933-9c326f82b35c"
+  "last_event_log_head": "ev-1785423226913-98508b9b3618"
 }

@@ -26,6 +26,35 @@ const path = require('path');
 const fs = require('fs');
 const { findWorkstreamDir, patchYAMLFile, writeFileAtomic, withFileLock, loadEventDeps } = require('./lib/cwos-utils');
 
+/**
+ * This process's own session id, via the harness `session_id` on stdin matched
+ * against `agent_session_id` in the registry. Returns null when stdin carries no
+ * payload (manual invocation) or no record matches — callers fall back to the
+ * pointer. Never throws: a heartbeat must not be able to break a turn.
+ */
+function resolveOwnSessionId(wsDir) {
+  let agentId = null;
+  try {
+    const raw = fs.readFileSync(0, 'utf8');
+    if (raw && raw.trim()) agentId = JSON.parse(raw).session_id || null;
+  } catch { return null; }
+  if (!agentId) return null;
+
+  try {
+    const sessDir = path.join(wsDir, 'sessions');
+    for (const f of fs.readdirSync(sessDir)) {
+      if (!f.endsWith('.yaml')) continue;
+      const txt = fs.readFileSync(path.join(sessDir, f), 'utf8');
+      const m = txt.match(/^agent_session_id:\s*"?([^"\n]*)"?\s*$/m);
+      if (m && m[1].trim() === String(agentId)) {
+        const idm = txt.match(/^id:\s*"?([^"\n]+?)"?\s*$/m);
+        return idm ? idm[1].trim() : f.replace(/\.yaml$/, '');
+      }
+    }
+  } catch { /* fall through to pointer */ }
+  return null;
+}
+
 // NOTE: heartbeat fires on every Stop hook — potentially hundreds of times
 // per session. We deliberately do NOT call appendEvent here. A per-heartbeat
 // event would dominate the log with noise (the "only on actual mutation"
@@ -121,16 +150,33 @@ function main() {
     if (verbose) process.stderr.write(`heartbeat: stamp lock contention — ${err.message}\n`);
   }
 
-  const currentSessionPath = path.join(wsDir, '.current-session');
-  if (!fs.existsSync(currentSessionPath)) {
-    // No active session pointer. Silent exit.
-    if (verbose) process.stderr.write('heartbeat: no .current-session file\n');
-    return 0;
+  // WS-533: resolve WHICH session is beating, preferring this process's own
+  // identity over the shared pointer.
+  //
+  // `.current-session` holds ONE id, but there can be N concurrent sessions in a
+  // repo. Pointer-based heartbeating therefore refreshes only whichever session
+  // registered last, and every other live session's heartbeat goes stale until it
+  // crosses the staleness window and reads as DEAD while still working. That is the
+  // dangerous direction of error: a false-dead session has its claims released,
+  // re-enabling exactly the concurrent clobbering the registry exists to prevent.
+  //
+  // Claude Code passes `session_id` on stdin, so each Stop hook can beat its own
+  // record. The pointer remains the fallback for manual invocation and for older
+  // records that predate `agent_session_id`.
+  let sessionId = resolveOwnSessionId(wsDir);
+
+  if (!sessionId) {
+    const currentSessionPath = path.join(wsDir, '.current-session');
+    if (!fs.existsSync(currentSessionPath)) {
+      // No active session pointer. Silent exit.
+      if (verbose) process.stderr.write('heartbeat: no .current-session file\n');
+      return 0;
+    }
+    sessionId = fs.readFileSync(currentSessionPath, 'utf8').trim();
   }
 
-  const sessionId = fs.readFileSync(currentSessionPath, 'utf8').trim();
   if (!sessionId) {
-    if (verbose) process.stderr.write('heartbeat: .current-session is empty\n');
+    if (verbose) process.stderr.write('heartbeat: no session id from stdin or .current-session\n');
     return 0;
   }
 

@@ -1,0 +1,105 @@
+# Health contract — what this repo says about itself.
+#
+# The fleet measures a repo against the repo's OWN declared intent, not against
+# a global norm (ADR-060). This file is that declaration. Delete it and the repo
+# is read against fleet defaults — that is a supported state, not a failure.
+#
+# Revisit this when `concerning_after` fires. It states current intent, not a
+# permanent fact.
+#
+# Validate:  node kit/scripts/cwos-health-contract.js validate
+# Check:     node kit/scripts/cwos-health-contract.js check
+
+schema_version: 1
+
+# ── Stage ───────────────────────────────────────────────────────────────────
+# building — growth; capability still landing. Health = are vital signs good
+#            and is work progressing.
+# steady   — does what it needs; wants maintenance, not growth. Health = is it
+#            being used, and is maintenance current. A steady repo that is used
+#            is GREEN WITH ZERO COMMITS.
+# quiet    — at rest, banked. Health = could work restart in one prompt.
+#
+# DECLARED, never inferred. Whether a repo is finished is a judgment about
+# intent that no activity metric can make. "Commits dropped" is not evidence of
+# `steady` — that inference is the exact error ADR-060 exists to remove.
+stage: building
+
+# ── Utilization ─────────────────────────────────────────────────────────────
+# Only meaningful for `steady` repos, optional elsewhere.
+#
+# NOT a rate. The signal is expectation met or missed. One use every six months
+# can be worth as much as daily use of something else, so a repo meeting its own
+# declared cadence is green whether that cadence is daily or biennial.
+utilization:
+  # What counts as a "use" HERE, in this repo's own terms. Prose, not an enum —
+  # there is no fleet-wide taxonomy and none is wanted.
+  # e.g. "a physics session that consults the verification tree"
+  #      "a locked prediction checked against new data"
+  #      "the CLI invoked against a real invoice"
+  #      "someone reads the published site"
+  what_counts: []
+
+  # Roughly how often you expect that to happen. Free text.
+  # e.g. "daily" | "a few times a month" | "2-3 times per year"
+  expected_cadence: ""
+
+  # ── THE LOAD-BEARING FIELD ────────────────────────────────────────────────
+  # How long silence can run before it means something. This is what makes the
+  # contract falsifiable: a standard you cannot MISS is not a standard, and a
+  # fleet where every repo set a cadence loose enough to always satisfy would be
+  # exactly as uninformative as one that flags every quiet repo as abandoned.
+  #
+  # The question is not "how often is this used" — it is:
+  #     what would make this repo's silence concerning?
+  #
+  # Answer honestly. If nothing would, say so with `concerning_after: never`
+  # and mean it; that is a legitimate answer for some repos and is better than
+  # a number you do not believe.
+  concerning_after: ""
+
+# ── What would unlock it ────────────────────────────────────────────────────
+# For quiet repos. A fact recorded, not a judgment made — and never a step
+# toward retirement, which is a last resort under the portfolio doctrine.
+#
+# Oriented around the UNLOCK, not the obstacle. "money-blocked" tells you
+# nothing you can act on; "a clinician review panel, ~$2k" is a decision you can
+# price, compare, and schedule. And because every quiet repo names its unlock in
+# the same field, the fleet can aggregate them — if three repos are waiting on
+# the same purchase, that purchase is worth three times what it looks like from
+# inside any one of them. That accounting is the point (see WS-530).
+blocked_by:
+  # money      — capped until a purchase, a lawyer, a clinician panel, etc.
+  # dependency — waiting on something external (a tool, a dataset, another repo)
+  # hours      — nothing is missing but allocated time
+  # choice     — deliberately parked; the unlock is a decision to resume
+  class: null
+
+  # REQUIRED whenever `class` is set. The specific thing that would unlock this.
+  # A blocker with no named unlock is a complaint, not a plan — the same reason
+  # `concerning_after` is required above.
+  #
+  # Name it the SAME WAY across repos when it is the same thing, so the fleet can
+  # group them. e.g. "Fable API budget", "a lawyer consult", "clinician panel"
+  unlocked_by: ""
+
+  # Optional. What it would take, in whatever unit fits: "$2k", "8 hours",
+  # "one afternoon with a domain expert".
+  estimated_cost: ""
+
+  # Optional. A work item anywhere in the fleet that WOULD unlock this, if one
+  # exists. This is what lets "what should I do next" account for consequence
+  # beyond the repo the item lives in.
+  unlock_ref: ""
+
+  note: ""
+
+# ── Engagement window (optional) ────────────────────────────────────────────
+# How far back to look when deciding engaged vs quiet. Fleet default: 30 days.
+# Set it only if this repo's natural rhythm genuinely differs — most will not.
+engagement_window_days: null
+
+# ── Resumability aids (optional) ────────────────────────────────────────────
+# Where a returning session should start. Re-entry is often one prompt when the
+# state is intact and something points at it; this is that pointer.
+continuation_prompt: ""   # e.g. "CONTINUATION_PROMPT.md"

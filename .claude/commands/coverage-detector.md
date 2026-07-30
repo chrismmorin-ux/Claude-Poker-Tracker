@@ -5,6 +5,10 @@ procedure: agent-dispatch
 extends: context-gather
 user-invocable: false
 default_mode: decide
+model_tiers:
+  expert: sonnet        # Phase 1 parallel research scans — detection parity with Opus (BM-004)
+  cross_critic: opus    # Phase 2 — highest-leverage phase (floor: sonnet)
+  synthesis: opus       # Phase 3 facilitator/briefing (floor: sonnet, never haiku)
 ---
 
 ## Intent Contract (ADR-038)

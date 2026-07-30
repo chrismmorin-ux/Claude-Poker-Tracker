@@ -1,6 +1,6 @@
 id: security
 name: Security
-schema_version: 3
+schema_version: 4
 status: NEW
 
 contract: >

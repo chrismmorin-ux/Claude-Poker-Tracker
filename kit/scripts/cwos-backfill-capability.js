@@ -3,8 +3,11 @@
  * cwos-backfill-capability — one-shot ADR-016 backfill.
  *
  * Adds `capability:` to every WS-*.yaml that lacks it. Uses the same
- * deriveCapability() rules cwos-index.js applies at index time; here it
+ * deriveCapability() rules cwos-reconcile applies at index time (the canonical
+ * copy lives in kit/scripts/lib/cwos-reconcile-core.js); here it
  * persists onto the item file so capability is authoritative on the item.
+ * NOTE: this file carries its own private copy of those rules — see WS-484 /
+ * WS-483 on the split-brain-helper pattern.
  * Inserts as a new line after `category:` to preserve YAML formatting.
  * Reports un-derivable items for hand-assignment review.
  *

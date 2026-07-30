@@ -13,17 +13,10 @@
  * a single session ran for 12 days through 11 sprint completions and a
  * /checkpoint init run without ever being closed. See DEC-029.
  *
- * Usage:
- *   node cwos-session-recovery.js               # report abandoned sessions
- *   node cwos-session-recovery.js --auto        # recover automatically (used by session-start)
- *   node cwos-session-recovery.js --quiet       # silent unless recovery happened
- *   node cwos-session-recovery.js --dry-run     # compute but don't write
- *   node cwos-session-recovery.js --force       # recover even if within timeout
- *   node cwos-session-recovery.js --workstream-dir <p>
- *
- * Exit codes:
- *   0 — no recovery needed, or recovery succeeded
- *   1 — abandoned sessions detected in --report mode (for CI-style gates)
+ * Usage: run with --help. The flag set is declared once in CLI below and
+ * rendered from there, so this header cannot drift out of sync with reality
+ * the way the old hand-maintained list did (it advertised a --report flag
+ * that never existed).
  */
 
 'use strict';
@@ -33,6 +26,7 @@ require('./lib/preflight');
 const path = require('path');
 const fs = require('fs');
 const { runGit } = require('./lib/shell-safe');
+const { cliGate } = require('./lib/cli');
 const {
   findWorkstreamDir,
   globFiles,
@@ -89,17 +83,37 @@ function stampHookLiveness(wsDir, fieldName, verbose) {
   }
 }
 
+// ADR-063 / WS-542: the uniform CLI contract. Declared explicitly rather than
+// derived, because `--help` used to fall through to the default action — this
+// script would RUN recovery when asked to explain itself.
+const CLI = {
+  name: 'cwos-session-recovery',
+  summary: 'detect and recover abandoned sessions',
+  flags: {
+    auto: { type: 'boolean', describe: 'recover automatically (used by the SessionStart hook)' },
+    quiet: { type: 'boolean', describe: 'silent unless recovery actually happened' },
+    'dry-run': { type: 'boolean', describe: 'compute and report, but write nothing' },
+    force: { type: 'boolean', describe: 'recover even if still within the abandon timeout' },
+    verbose: { type: 'boolean', describe: 'print stack traces on failure' },
+    'workstream-dir': { type: 'string', placeholder: 'path', describe: 'override workstream dir discovery' },
+  },
+  notes: [
+    'exit 0 — no recovery needed, or recovery succeeded',
+    'exit 1 — abandoned sessions detected in report mode (no --auto)',
+    'exit 2 — bad command line (nothing was done)',
+  ].join('\n'),
+};
+
 function main() {
-  const args = process.argv.slice(2);
-  const auto = args.includes('--auto');
-  const quiet = args.includes('--quiet');
-  const dryRun = args.includes('--dry-run');
-  const force = args.includes('--force');
+  const { values } = cliGate(process.argv.slice(2), CLI);
+  const auto = values.auto;
+  const quiet = values.quiet;
+  const dryRun = values['dry-run'];
+  const force = values.force;
 
   let wsDir;
-  const dirIdx = args.indexOf('--workstream-dir');
-  if (dirIdx !== -1 && args[dirIdx + 1]) {
-    wsDir = path.resolve(args[dirIdx + 1]);
+  if (values['workstream-dir']) {
+    wsDir = path.resolve(values['workstream-dir']);
   } else {
     try { wsDir = findWorkstreamDir(process.cwd()); }
     catch {

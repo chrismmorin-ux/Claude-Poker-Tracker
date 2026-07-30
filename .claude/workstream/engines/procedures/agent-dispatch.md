@@ -14,17 +14,20 @@ This procedure expects the domain engine to define these named sections:
 
 ---
 
-## MODEL TIER DEFAULTS
+## MODEL TIER DEFAULTS — BINDING
 
-These defaults are derived from benchmark experiments (Series 1, 9 experiments, ~50 agent runs). They apply to all engines using this procedure unless explicitly overridden.
+These defaults are derived from benchmark experiments (Series 1, 9 experiments, ~50 agent runs). Model tier is the **weakest** quality lever (structure > diversity > model), so scan phases drop a tier while the high-leverage phases stay on Opus. **This table is binding, not advisory:** every Agent-tool dispatch below MUST pass an explicit `model` parameter resolved from it. Omitting `model` (and thereby running the agent at the session's model) is a configuration drift — the failure mode WS-390 exists to close.
 
 | Role | Default Model | Floor | Rationale |
 |------|--------------|-------|-----------|
 | Expert agents (Phase 1) | sonnet | haiku | Sonnet achieves detection parity with Opus on known patterns (BM-004). Haiku is acceptable but not recommended. |
 | Cross-critic (Phase 2) | opus | sonnet | Cross-critique is the highest-value phase — model capability matters here. |
 | Synthesis/facilitator (Phase 3) | opus | sonnet | Haiku synthesis overcalibrates and introduces errors (BM-007). **Never use Haiku for synthesis.** |
+| Any role — opt-up only | fable (valid, not a default) | n/a | Fable (Mythos-class) ranks **above** opus — a valid declared opt-up for highest-stakes cross-critique/synthesis. Not a default: the benchmark evidence behind this table is N=1 on 4.x models; changing defaults is gated on the WS-475 re-benchmark. |
 
-If a domain engine specifies `model` overrides, they must respect the floor constraints above. A synthesis agent configured below its floor is a configuration error — warn and use the floor model instead.
+**Fast mode is orthogonal to capability rank:** a model's fast mode (e.g. Opus 4.8 fast mode) is a latency/cost point within the same capability class, not a tier — it never changes where a model sits in the rank or whether a floor is satisfied.
+
+**Resolution rule (apply per dispatch):** the model for a role is `frontmatter.model_tiers.<role>` if the domain engine declares it, else the Default Model above. Then **clamp to the Floor**: if the declared/resolved model ranks below the role's floor (rank order haiku < sonnet < opus < fable), it is a configuration error — warn and use the floor model instead. The `model_tiers` keys are `expert` (Phase 1), `cross_critic` (Phase 2), `synthesis` (Phase 3). The declarations themselves are checked at commit time by **INV-060** (`cwos-verify.js` — presence on agent-dispatch engines, valid tiers, floors honored, no dead `model:` scalar).
 
 ---
 
@@ -72,7 +75,7 @@ If `persona_overrides` is missing or empty, dispatch all agents as normal.
 For each remaining agent:
 
 1. Record `started_at` before dispatch
-2. Launch the agent in parallel using the Agent tool. Each agent's persona is in `.claude/agents/`. Pass the agent's prompt template from the domain engine, including the focus area.
+2. Launch the agent in parallel using the Agent tool. Each agent's persona is in `.claude/agents/`. Pass the agent's prompt template from the domain engine, including the focus area. **Pass `model:` resolved for the `expert` role** per the binding Resolution rule above (default sonnet, floor haiku).
 3. **Artifact path on re-fires (WS-311 AC e).** The default Phase-1 artifact path is `<run_workspace>/phase-1/<agent-name>.yaml`. If the agent is being **re-fired** (e.g., the original dispatch returned empty / wrong subagent_type and a replacement is being run), do NOT overwrite the original artifact. Compute the next free generation suffix and write to `<run_workspace>/phase-1/<agent-name>.r<n>.yaml` (where `n` is the lowest integer ≥ 1 such that the path does not yet exist). Run-017 demonstrated the failure live: a `general-purpose` re-fire silently overwrote the native `security-engineer.md` from four minutes earlier. The suffix preserves both. The same convention applies to any companion `.md` exported via `--artifact-path`.
 4. When the agent returns, write to the resolved path (per step 3) using the artifact schema:
    ```yaml
@@ -129,7 +132,7 @@ Launch ALL agents in parallel — do not wait for one before starting another.
 
 For panels with fewer than 3 complete agents, cross-critique is recommended but optional. Proceed to Phase 3 if skipped.
 
-Launch the **cross-critic** agent (from `.claude/agents/cross-critic.md`). Build input by reading Phase 1 artifacts FROM DISK:
+Launch the **cross-critic** agent (from `.claude/agents/cross-critic.md`), **passing `model:` resolved for the `cross_critic` role** per the binding Resolution rule above (default opus, floor sonnet). Build input by reading Phase 1 artifacts FROM DISK:
 
 1. List all `.yaml` files in `<run_workspace>/phase-1/`
 2. For each file with `status: complete`: read the `output.raw_text` field
@@ -166,7 +169,7 @@ node kit/scripts/cwos-engine-manifest.js update \
 
 Read the domain engine's `## Synthesis` section for the synthesis prompt.
 
-Launch the synthesis/facilitator agent. Build input by reading artifacts FROM DISK:
+Launch the synthesis/facilitator agent, **passing `model:` resolved for the `synthesis` role** per the binding Resolution rule above (default opus, floor sonnet — never haiku). Build input by reading artifacts FROM DISK:
 
 1. Read all `status: complete` artifacts from `<run_workspace>/phase-1/` — extract `output.raw_text`
 2. Read `<run_workspace>/phase-2/cross-critic.yaml` — extract `output.raw_text` (if `status: complete`)

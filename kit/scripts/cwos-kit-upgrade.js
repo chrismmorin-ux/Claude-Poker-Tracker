@@ -38,6 +38,9 @@ const path = require('path');
 const fs = require('fs');
 const { spawnSync } = require('child_process');
 const { readYAMLFile, withFileLock } = require('./lib/cwos-utils');
+// WS-503: the snapshot/rollback mechanism this file pioneered now lives in a
+// shared lib so /adopt can reuse it rather than grow a second implementation.
+const repoSnapshot = require('./lib/repo-snapshot');
 
 const SNAPSHOT_PREFIX = 'kit-pre-upgrade-';
 // Authored surfaces we snapshot for rollback (those an upgrade overwrites).
@@ -48,8 +51,16 @@ const SNAPSHOT_DIRS = [
   '.claude/skills',
   '.claude/workstream/programs',
   '.claude/workstream/engines',
+  // WS-502 / ADR-058: state cache snapshotted so a failed apply after the 3d
+  // state-schema migration (or the 3g untrack migration) restores cleanly —
+  // "never a half-upgrade" now covers state. Post-ADR-058 the cache is also
+  // rebuildable via cwos-reconcile --refresh-state, so this is belt-and-braces.
+  '.claude/workstream/state',
 ];
-const SNAPSHOT_FILES = ['.cwos-version'];
+// .gitignore included since 3g (ADR-058) appends the CWOS block — rollback
+// restores the pre-upgrade file content (index changes from `git rm --cached`
+// are left as-is; state is rebuildable either way).
+const SNAPSHOT_FILES = ['.cwos-version', '.gitignore'];
 
 // ─── small fs helpers (Node floor is v14 — no fs.cpSync) ────────────────────
 
@@ -60,21 +71,7 @@ function isFile(p) { try { return fs.statSync(p).isFile(); } catch { return fals
 function isDir(p) { try { return fs.statSync(p).isDirectory(); } catch { return false; } }
 function ensureDir(p) { if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }
 
-function copyTree(srcDir, dstDir) {
-  ensureDir(dstDir);
-  for (const ent of fs.readdirSync(srcDir, { withFileTypes: true })) {
-    const s = path.join(srcDir, ent.name);
-    const d = path.join(dstDir, ent.name);
-    if (ent.isDirectory()) {
-      // never recurse into snapshot storage or VCS internals
-      if (ent.name === '.cwos-snapshots' || ent.name === '.git' || ent.name === 'node_modules') continue;
-      copyTree(s, d);
-    } else if (ent.isFile()) {
-      ensureDir(path.dirname(d));
-      fs.copyFileSync(s, d);
-    }
-  }
-}
+const copyTree = repoSnapshot.copyTree;
 
 // ─── HomeBase / version resolution ──────────────────────────────────────────
 
@@ -200,67 +197,69 @@ function detectLocalMods(homebase, repoPath, manifestFiles, baseline) {
 
 // ─── snapshot / rollback (req 8) ────────────────────────────────────────────
 
-function snapshotDirsRoot(repoPath) { return path.join(repoPath, '.cwos-snapshots'); }
+function snapshotDirsRoot(repoPath) { return repoSnapshot.snapshotRoot(repoPath); }
 
+// Thin wrappers over lib/repo-snapshot.js (WS-503). The lib keeps the ordering
+// WS-502 established — ignore snapshot storage BEFORE capturing .gitignore, so
+// the ignore line survives a rollback that retains the snapshot dir.
 function createPreUpgradeSnapshot(repoPath, createdFiles, fromV, toV) {
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const root = path.join(snapshotDirsRoot(repoPath), `${SNAPSHOT_PREFIX}${ts}`);
-  ensureDir(root);
-  for (const rel of SNAPSHOT_DIRS) {
-    const src = path.join(repoPath, rel);
-    if (isDir(src)) copyTree(src, path.join(root, rel));
-  }
-  for (const rel of SNAPSHOT_FILES) {
-    const src = path.join(repoPath, rel);
-    if (isFile(src)) { ensureDir(path.join(root, path.dirname(rel))); fs.copyFileSync(src, path.join(root, rel)); }
-  }
-  const manifest = {
-    created_at: new Date().toISOString(),
-    from_version: fromV,
-    to_version: toV,
-    snapshot_dirs: SNAPSHOT_DIRS,
-    snapshot_files: SNAPSHOT_FILES,
-    created_files: createdFiles, // files that did not exist pre-upgrade → delete on rollback
-  };
-  fs.writeFileSync(path.join(root, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  ensureGitignore(repoPath);
-  return root;
+  return repoSnapshot.createSnapshot(repoPath, {
+    dirs: SNAPSHOT_DIRS,
+    files: SNAPSHOT_FILES,
+    createdFiles,                 // did not exist pre-upgrade → delete on rollback
+    prefix: SNAPSHOT_PREFIX,
+    meta: { from_version: fromV, to_version: toV },
+  });
 }
 
-function ensureGitignore(repoPath) {
-  const gi = path.join(repoPath, '.gitignore');
+// ADR-058 (WS-504): state/*.json is a per-node rebuildable cache. During
+// upgrade, ship the gitignore block and untrack any previously git-tracked
+// domain JSONs so multi-node clones stop conflicting on derived state.
+// Idempotent; every step is non-fatal (repos without git, or already
+// migrated, fall through silently).
+const STATE_DOMAIN_FILES = ['config', 'engines', 'envelope', 'findings', 'programs', 'queue', 'sessions', 'sprints']
+  .map(d => `.claude/workstream/state/${d}.json`);
+
+function migrateStateCacheTracking(homebase, repoPath) {
   try {
-    const cur = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
-    if (!cur.includes('.cwos-snapshots')) fs.appendFileSync(gi, (cur.endsWith('\n') || !cur ? '' : '\n') + '.cwos-snapshots/\n');
+    const tpl = path.join(homebase, 'kit', 'templates', 'gitignore-cwos.txt');
+    const gi = path.join(repoPath, '.gitignore');
+    if (isFile(tpl)) {
+      const block = fs.readFileSync(tpl, 'utf8');
+      const cur = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
+      if (!cur.includes('.claude/workstream/state/*.json')) {
+        fs.appendFileSync(gi, (cur.endsWith('\n') || !cur ? '' : '\n') + '\n' + block);
+      }
+    }
+  } catch { /* non-fatal */ }
+  try {
+    const ls = spawnSync('git', ['ls-files', '.claude/workstream/state'], { cwd: repoPath, encoding: 'utf8', timeout: 10000 });
+    if (ls.status === 0) {
+      const tracked = ls.stdout.split('\n').map(s => s.trim().replace(/\\/g, '/')).filter(Boolean)
+        .filter(f => STATE_DOMAIN_FILES.includes(f));
+      if (tracked.length > 0) {
+        spawnSync('git', ['rm', '--cached', '--quiet', ...tracked], { cwd: repoPath, encoding: 'utf8', timeout: 10000 });
+      }
+    }
   } catch { /* non-fatal */ }
 }
 
+const ensureGitignore = repoSnapshot.ensureGitignore;
+
 function latestSnapshot(repoPath) {
-  const root = snapshotDirsRoot(repoPath);
-  if (!isDir(root)) return null;
-  const dirs = fs.readdirSync(root).filter(d => d.startsWith(SNAPSHOT_PREFIX) && isDir(path.join(root, d))).sort();
-  return dirs.length ? path.join(root, dirs[dirs.length - 1]) : null;
+  return repoSnapshot.latestSnapshot(repoPath, SNAPSHOT_PREFIX);
 }
 
+// `overlay` preserves this file's original semantics: copy the snapshot back
+// over the current tree. Files ADDED inside a snapshotted dir survive, because
+// the upgrade's own created_files list is what deletes them. (/adopt uses
+// `replace` instead — it has no reliable created-file record after a crash.)
 function restoreSnapshot(repoPath, snapDir) {
-  const manPath = path.join(snapDir, 'manifest.json');
-  let manifest = {};
-  try { manifest = JSON.parse(fs.readFileSync(manPath, 'utf8')); } catch { /* best effort */ }
-  // 1. delete files created during the (failed) upgrade
-  for (const rel of (manifest.created_files || [])) {
-    const p = path.join(repoPath, rel);
-    try { if (isFile(p)) fs.unlinkSync(p); } catch { /* ignore */ }
-  }
-  // 2. restore snapshotted dirs (overwrite current with pre-upgrade state)
-  for (const rel of (manifest.snapshot_dirs || SNAPSHOT_DIRS)) {
-    const src = path.join(snapDir, rel);
-    if (isDir(src)) copyTree(src, path.join(repoPath, rel));
-  }
-  for (const rel of (manifest.snapshot_files || SNAPSHOT_FILES)) {
-    const src = path.join(snapDir, rel);
-    if (isFile(src)) { ensureDir(path.join(repoPath, path.dirname(rel))); fs.copyFileSync(src, path.join(repoPath, rel)); }
-  }
-  return manifest;
+  return repoSnapshot.restoreSnapshot(repoPath, snapDir, {
+    mode: 'overlay',
+    defaultDirs: SNAPSHOT_DIRS,
+    defaultFiles: SNAPSHOT_FILES,
+  });
 }
 
 // ─── spawning composed tools + validation gate ──────────────────────────────
@@ -279,11 +278,18 @@ function run(homebase, repoPath, scriptRel, args, opts = {}) {
 // `preUnresolved` is the set of registry paths already broken BEFORE the upgrade;
 // the gate fails the registry check only on paths the upgrade newly broke, so a
 // pre-existing drift doesn't block (and silently roll back) an otherwise-clean upgrade.
-function runValidationGate(homebase, repoPath, targetVersion, validateRegistryPaths, preUnresolved = new Set()) {
+function runValidationGate(homebase, repoPath, targetVersion, validateRegistryPaths, preUnresolved = new Set(), opts = {}) {
   const checks = [];
 
-  const reconcile = run(homebase, repoPath, 'kit/scripts/cwos-reconcile.js', ['--quiet'], { preferRepo: true });
-  checks.push({ name: 'reconcile --quiet', pass: reconcile.code === 0, detail: reconcile.code === 0 ? 'clean' : (reconcile.stderr || reconcile.stdout || `exit ${reconcile.code}`).trim().slice(0, 200) });
+  // verifyOnly: the no-op "already current" path runs this gate purely to REPORT
+  // health — it must not mutate the founder's live workstream. Use --dry-run so
+  // reconcile computes drift without auto-promoting items / rewriting indexes.
+  // The post-apply path (verifyOnly falsy) keeps write-mode reconcile to finalize
+  // state consistency after the upgrade.
+  const verifyOnly = opts.verifyOnly === true;
+  const reconcileArgs = verifyOnly ? ['--quiet', '--dry-run'] : ['--quiet'];
+  const reconcile = run(homebase, repoPath, 'kit/scripts/cwos-reconcile.js', reconcileArgs, { preferRepo: true });
+  checks.push({ name: `reconcile ${reconcileArgs.join(' ')}`, pass: reconcile.code === 0, detail: reconcile.code === 0 ? 'clean' : (reconcile.stderr || reconcile.stdout || `exit ${reconcile.code}`).trim().slice(0, 200) });
 
   // gate: exit 0 (clear) or 1 (legit gate-block, e.g. token budget) both mean "ran"; 2/crash = fail
   const gate = run(homebase, repoPath, 'kit/scripts/cwos-next.js', ['gate'], { preferRepo: true });
@@ -433,7 +439,8 @@ function main() {
 
   // ── Phase 0: idempotent no-op ──
   if (installedVersion === targetVersion) {
-    const gate = runValidationGate(homebase, repoPath, targetVersion, validateRegistryPaths);
+    // verifyOnly: a "gap check" on an already-current repo must not mutate live state.
+    const gate = runValidationGate(homebase, repoPath, targetVersion, validateRegistryPaths, undefined, { verifyOnly: true });
     emit(opts,
       `Already current: kit v${installedVersion} == HomeBase v${targetVersion}. No changes.\n` +
       `Health: ${gate.ok ? 'all checks pass ✓' : 'WARNINGS — ' + gate.checks.filter(c => !c.pass).map(c => c.name).join(', ')}`,
@@ -566,6 +573,12 @@ function applyUpgrade(ctx) {
     ensureDir(path.join(repoPath, 'kit'));
     fs.copyFileSync(hbHashes, path.join(repoPath, 'kit', `hashes-${targetVersion}.yaml`));
   }
+
+  // 3g. ADR-058 state-cache migration: gitignore block + untrack domain JSONs.
+  // Runs after 3d's state-schema migration and before the gate; the snapshot
+  // from 3a now includes .claude/workstream/state, so rollback restores the
+  // pre-migration tracking state cleanly.
+  migrateStateCacheTracking(homebase, repoPath);
 
   // ── Phase 4: validation gate ──
   const gate = runValidationGate(homebase, repoPath, targetVersion, validateRegistryPaths, preUnresolved);

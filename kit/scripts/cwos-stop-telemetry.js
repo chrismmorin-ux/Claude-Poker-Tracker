@@ -102,6 +102,44 @@ function findCommandBoundary(lines) {
 }
 
 /**
+ * Extract the command tag and start timestamp from the boundary line.
+ * Returns { tag: '/next', ts: epochMs } or null when either is unrecoverable.
+ * (Sensor-repair 2026-07-25: needed by the envelope backfill below.)
+ */
+function extractCommandInfo(lines, boundaryIdx) {
+  const line = lines[boundaryIdx];
+  if (!line) return null;
+  let ev;
+  try { ev = JSON.parse(line); } catch { return null; }
+  const msg = ev.message || {};
+  let text = '';
+  const c = msg.content;
+  if (typeof c === 'string') text = c;
+  else if (Array.isArray(c)) {
+    for (const block of c) {
+      if (block && typeof block === 'object' && block.type === 'text' && typeof block.text === 'string') {
+        text += block.text;
+      }
+    }
+  }
+  const m = text.match(/<command-name>\s*\/?([\w-]+)\s*<\/command-name>/);
+  if (!m) return null;
+  const ts = ev.timestamp ? Date.parse(ev.timestamp) : NaN;
+  if (!Number.isFinite(ts)) return null;
+  return { tag: `/${m[1]}`, ts };
+}
+
+/**
+ * True when `/name` is a CWOS command installed in this repo — the gate that
+ * keeps backfill from emitting envelopes for non-CWOS slash commands.
+ */
+function isCwosCommand(tag, workstreamDir) {
+  if (!tag || !tag.startsWith('/')) return false;
+  const commandsDir = path.join(workstreamDir, '..', 'commands');
+  return fs.existsSync(path.join(commandsDir, `${tag.slice(1)}.md`));
+}
+
+/**
  * Given the transcript line array and the boundary index, count tool rounds
  * and total characters from boundary forward.
  *
@@ -221,6 +259,60 @@ function findMostRecentUnstamped(workstreamDir) {
   return null;
 }
 
+/**
+ * True when any command_completed event exists with timestamp >= sinceMs
+ * (today + yesterday chunks). Used to decide whether the envelope for the
+ * current command boundary is missing and needs backfill.
+ */
+function hasCompletedSince(workstreamDir, sinceMs) {
+  const today = eventChunkPath(workstreamDir);
+  const yest = eventChunkPath(workstreamDir, new Date(Date.now() - 86_400_000));
+  for (const chunkPath of [yest, today]) {
+    if (!fs.existsSync(chunkPath)) continue;
+    const raw = fs.readFileSync(chunkPath, 'utf8');
+    for (const line of raw.split('\n')) {
+      if (!line) continue;
+      let ev;
+      try { ev = JSON.parse(line); } catch { continue; }
+      if (ev.source_track !== 'T0:envelope') continue;
+      if (!(ev.payload && ev.payload.type === 'command_completed')) continue;
+      const ts = Date.parse(ev.timestamp);
+      if (Number.isFinite(ts) && ts >= sinceMs) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Emit the command_completed envelope the AI failed to emit (FIND-273 /
+ * WS-414 lesson generalized, sensor-repair 2026-07-25: prose-driven emission
+ * fails silently, so the Stop hook — a deterministic script — owns it).
+ * Returns true on success.
+ */
+function emitBackfillCompleted(cmd) {
+  const { spawnSync } = require('child_process');
+  const eventScript = path.join(__dirname, 'cwos-event.js');
+  const commandId = `cmd-stopbackfill-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const payload = JSON.stringify({
+    type: 'command_completed',
+    command: cmd.tag,
+    emitted_by: 'stop-hook-backfill',
+  });
+  const env = Object.assign({}, process.env, { CWOS_COMMAND_ID: commandId });
+  const result = spawnSync('node', [
+    eventScript, 'append', 'command_completed',
+    '--track', 'T0:envelope',
+    '--tag', cmd.tag,
+    '--payload', payload,
+  ], { stdio: VERBOSE ? 'inherit' : 'pipe', env });
+  if (result.status !== 0) {
+    debug(`backfill append failed (status=${result.status})`);
+    return false;
+  }
+  debug(`backfilled command_completed for ${cmd.tag}`);
+  return true;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────
 
 function main() {
@@ -236,12 +328,9 @@ function main() {
   if (!transcriptPath) { debug('no transcript_path on stdin'); return; }
   if (!fs.existsSync(transcriptPath)) { debug(`transcript not found: ${transcriptPath}`); return; }
 
-  // Find the unstamped command_completed event first — cheap exit if there
-  // is none, avoids transcript parsing on most Stop hook fires.
-  const targetEvent = findMostRecentUnstamped(workstreamDir);
-  if (!targetEvent) { debug('no recent unstamped command_completed'); return; }
-
-  // Parse transcript
+  // Parse transcript first — the backfill decision needs the command boundary
+  // before we know whether an envelope exists. (Pre-2026-07-25 this parsed
+  // lazily after the event-log check; backfill inverts the order.)
   let transcriptRaw;
   try { transcriptRaw = fs.readFileSync(transcriptPath, 'utf8'); }
   catch (err) { debug(`transcript read failed: ${err.message}`); return; }
@@ -249,6 +338,24 @@ function main() {
   const lines = transcriptRaw.split('\n');
   const boundary = findCommandBoundary(lines);
   if (boundary === null) { debug('no command boundary found in transcript'); return; }
+
+  // Envelope backfill (sensor-repair 2026-07-25): if the transcript shows a
+  // CWOS command ran but no command_completed event landed since its start,
+  // emit it here. Deterministic script emission replaces the prose step at
+  // the bottom of each command file, which the AI skipped often enough to
+  // decay envelope telemetry to ~2 events/month.
+  // 24h freshness guard: hasCompletedSince only scans today+yesterday chunks,
+  // so an older boundary (long-lived resumed session) could false-negative and
+  // double-emit. Skip backfill for boundaries older than the scan horizon.
+  const cmd = extractCommandInfo(lines, boundary);
+  const fresh = cmd && (Date.now() - cmd.ts) < 86_400_000;
+  if (cmd && fresh && isCwosCommand(cmd.tag, workstreamDir) && !hasCompletedSince(workstreamDir, cmd.ts)) {
+    emitBackfillCompleted(cmd);
+  }
+
+  // Find the unstamped command_completed event (includes one just backfilled).
+  const targetEvent = findMostRecentUnstamped(workstreamDir);
+  if (!targetEvent) { debug('no recent unstamped command_completed'); return; }
 
   const { toolRounds, chars, scanned, roundsByType } = scanFromBoundary(lines, boundary);
   const tokensDerived = Math.round(chars * TOKENS_PER_CHAR);
@@ -299,4 +406,8 @@ module.exports = {
   scanFromBoundary,
   findCommandBoundary,
   findMostRecentUnstamped,
+  extractCommandInfo,
+  isCwosCommand,
+  hasCompletedSince,
+  emitBackfillCompleted,
 };

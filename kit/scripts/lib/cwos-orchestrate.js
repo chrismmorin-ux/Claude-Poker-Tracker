@@ -258,7 +258,11 @@ function gatherFindings(wsDir, errors) {
 function gatherActiveSessions(wsDir, errors) {
   try {
     const sessionsDir = path.join(wsDir, 'sessions');
-    if (!fs.existsSync(sessionsDir)) return { active: [] };
+    if (!fs.existsSync(sessionsDir)) {
+      // No directory at all is itself a finding: nothing has ever registered, so
+      // "no sessions" must not be rendered as reassurance (WS-533).
+      return { active: [], live: [], registry: { ok: false, reason: 'no sessions/ directory — nothing has ever registered' } };
+    }
 
     const files = globFiles(sessionsDir, '*.yaml');
     const active = [];
@@ -275,10 +279,27 @@ function gatherActiveSessions(wsDir, errors) {
       }
     }
 
-    return { active };
+    // WS-533: `active` is only what the FILES claim. A record left behind by a
+    // crashed session still says active until recovery runs, so status must not
+    // present it as somebody currently working. `live` applies the liveness test
+    // (heartbeat vs last boot, then the staleness window), and `registry` says
+    // whether the registry can be believed at all — a registry that stopped
+    // recording reports "no other session" when it means "no data".
+    let live = [];
+    let registry = { ok: true, reason: null };
+    try {
+      const claims = require('./cwos-claims');
+      live = claims.listLiveSessions(wsDir);
+      registry = claims.registryHealth(wsDir);
+    } catch (err) {
+      registry = { ok: false, reason: `liveness unavailable — ${err.message}` };
+    }
+
+    return { active, live, registry };
   } catch (err) {
     errors.push(`sessions: ${err.message}`);
-    return { active: [] };
+    // Degrade to unknown, never to "all clear".
+    return { active: [], live: [], registry: { ok: false, reason: `sessions unreadable — ${err.message}` } };
   }
 }
 

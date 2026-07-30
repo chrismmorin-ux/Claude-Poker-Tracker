@@ -42,9 +42,144 @@
 
 engines:
 
-  # ============================================================
-  # STANDARD ENGINES — Analysis (installed in every repo at L3+)
-  # ============================================================
+  business-engine:
+    skill_path: .claude/commands/business-engine.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Business analysis engine — market positioning, feature ROI, competitive analysis, and strategic improvement recommendations"
+
+  claims-audit:
+    skill_path: .claude/commands/claims-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit a repo's domain claims (clinical / legal / financial / scientific). On first baseline, drafts claims-register.draft.md + evidence-standards-matrix.draft.md from product copy + UI strings + AI outputs + README + marketing copy. Conditionally drafts evaluator-validation-plan.draft.md when an AI-evaluator pattern is detected (rubric / grader / sim / judge files or LLM-output scoring code). Subsequent runs catch drift, ungrounded claims, scope leaks, and evaluator-truth divergence. Findings auto-promote to prog-claims-policy queue."
+
+  compliance-audit:
+    skill_path: .claude/commands/compliance-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit a repo's compliance posture. On first baseline, drafts privacy-policy / consent-flows / applicable-regulations from repo content + dependencies + user-facing copy + founder-named jurisdictions into docs/compliance/*.draft.md (founder reviews and promotes). Subsequent runs catch drift, blindspots, and unenforced regulatory checkpoints. Findings auto-promote to prog-compliance queue. Coexists with legal-safety (the deep-audit engine) — compliance-audit drafts and tracks; legal-safety reviews findings with veto authority."
+
+  component-alignment:
+    skill_path: engines/standard/component-alignment.md
+    category: briefing
+    impact: informational
+    trigger: manual
+    inputs:
+      - component_units
+      - onboarding_state
+    outputs:
+      - understanding
+    chains:
+    description: "Scores installed/planned components against repo_goal — surfaces prune candidates (enforces P3, prevents tool-shaped hammer)"
+
+  constitutional-audit:
+    skill_path: .claude/commands/constitutional-audit.md
+    procedure: suite-check
+    extends: context-gather
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit the repo against its own constitution (intention.md) — score principles, founder invariants, and failed states for coverage and compliance. Trend-tracked in .claude/workstream/compliance-trends.yaml."
+
+  context-curator:
+    skill_path: .claude/commands/context-curator.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit and optimize the context repository for a specific persona, making future engine runs more effective"
+
+  corrective-plan:
+    skill_path: .claude/commands/corrective-plan.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Corrective pass over an implementation plan / feature spec / sprint composition. Five-persona parallel redundancy applying T-6 pattern-match, T-3 inversion, T-5 elevation; cross-critic surfaces T-1 redundancy effect on ambiguous passages; facilitator produces ship | amend | reframe | reject verdict with a forced Strongest Objection callout."
+
+  coverage-detector:
+    skill_path: .claude/commands/coverage-detector.md
+    procedure: agent-dispatch
+    extends: context-gather
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Detects blind spots in CWOS coverage — flags missing engines, personas, programs, and unmonitored code areas as the project evolves"
+
+  decision-enhance:
+    skill_path: .claude/commands/decision-enhance.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Enrich a decision with scenarios, tradeoffs, risk profiles, and reversibility assessment"
+
+  design-audit:
+    skill_path: .claude/commands/design-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Score a repo on four UX surfaces independently (end-user, operator, builder, AI-conversation). Emits per-surface maturity, gap list, and convergence path. Findings auto-promote."
+
+  design-critique:
+    skill_path: .claude/commands/design-critique.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: Pressure-test an architectural design BEFORE implementation. Per-primitive worksheet (load-bearing assumption / ceiling / alternative / rationale / falsification test). Tiered depth. Greenlight or amendment list.
+
+  domain-audit:
+    skill_path: .claude/commands/domain-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit load-bearing domain logic against declared rules. On first baseline, drafts the spec from repo content into docs/domain-spec.draft.md (founder reviews and promotes). Subsequent runs catch rule-vs-code drift, missing edge cases, and unenforced domain constraints. Findings auto-promote to prog-domain-correctness queue."
+
+  drift-detector:
+    skill_path: .claude/commands/drift-detector.md
+    procedure: agent-dispatch
+    extends: context-gather
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Staleness and drift detection — checks for divergence between documented state and actual state, stale assumptions, and missing analysis"
 
   eng-engine:
     skill_path: engines/standard/eng-engine.md
@@ -62,13 +197,48 @@ engines:
       - work-item
       - report
     chains:
-      on_complete: []
     finding_severities:
       CRITICAL: critical
       HIGH: high
       MEDIUM: medium
       LOW: low
-    description: "6-persona adversarial engineering roundtable with cross-critique"
+    description: 6-persona adversarial engineering roundtable with cross-critique
+
+  engine-briefing:
+    skill_path: engines/standard/engine-briefing.md
+    category: briefing
+    impact: informational
+    trigger: automatic
+    inputs:
+      - system_model
+      - codebase
+      - git_history
+    outputs:
+      - understanding
+    description: "Explains why a specific engine matters for this repo at this moment — relevance, not generic description"
+
+  financial-audit:
+    skill_path: .claude/commands/financial-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Financial integrity audit — 7 verification suites covering calculation precision, reconciliation, payment flows, allocation logic, concurrency, immutability, and compliance"
+
+  goal-progress:
+    skill_path: engines/standard/goal-progress.md
+    category: briefing
+    impact: informational
+    trigger: manual
+    inputs:
+      - findings
+      - onboarding_state
+    outputs:
+      - understanding
+    chains:
+    description: Scores findings against repo_goal — advances-goal vs maintenance ratio (enforces P1)
 
   health-check:
     skill_path: engines/standard/health-check.md
@@ -85,75 +255,50 @@ engines:
       - report
       - fix
     chains:
-      on_finding: []
     finding_severities:
       FAIL: critical
       WARN: medium
-    description: "System health diagnosis with auto-remediation"
+    description: System health diagnosis with auto-remediation
 
-  # drift-detector: NOT YET IMPLEMENTED — no command file exists in kit
-  #   Uncomment when .claude/commands/drift-detector.md is created
-  #   skill_path: .claude/commands/drift-detector.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, codebase, git_history]
-  #   outputs: [finding, work-item]
-  #   description: "Staleness and drift detection with introspective questioning"
-
-  preflight:
-    skill_path: engines/standard/preflight.md
+  incident-response:
+    skill_path: .claude/commands/incident-response.md
     category: analysis
-    impact: changes-code
+    impact: changes-state
     trigger: manual
-    inputs:
-      - git_diff
     outputs:
       - finding
       - report
-    chains: {}
-    finding_severities:
-      FAIL: high
-      WARN: medium
-    description: "Pre-commit verification across 9 check suites"
+    description: "Incident response engine — production issue diagnosis, auto-recovery, escalation paths, and post-incident learning"
 
-  # coverage-detector: NOT YET IMPLEMENTED — engine skill exists at
-  #   engines/standard/coverage-detector.md but no command file exists in
-  #   kit/commands/ and engines/INDEX.md marks it as "planned but not yet
-  #   available". Uncomment when kit/commands/coverage-detector.md is created
-  #   or when the engine is wired to dispatch via /engine reliably.
-  #   skill_path: engines/standard/coverage-detector.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model, git_history]
-  #   outputs: [finding, work-item, report]
-  #   description: "Detects blind spots in engine/persona/program coverage as the project evolves"
+  item-enhance:
+    skill_path: .claude/commands/item-enhance.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Sharpen a work item — refine scope, enrich acceptance criteria, validate effort estimate, map file impact"
 
-  persona-validator:
-    skill_path: engines/standard/persona-validator.md
+  legal-safety:
+    skill_path: .claude/commands/legal-safety.md
     category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Legal and compliance safety review — privacy assessment, regulatory compliance, data protection, terms of service adherence, and intervention risk evaluation"
+
+  migration-prep:
+    skill_path: .claude/commands/migration-prep.md
+    category: preparation
     impact: zero-impact
     trigger: manual
-    inputs: [persona_files, engine_files]
-    outputs: [finding, report]
-    description: "Validates persona files — checks coverage, relevance, consistency with engine requirements"
-
-  # convergence: HOMEBASE-ONLY — engine skill exists at
-  #   engines/homebase-only/convergence.md (post-WS-145 filesystem boundary).
-  #   This is HomeBase-only by design and never distributes to adopted repos —
-  #   keep this entry permanently commented in the template.
-  #   skill_path: engines/homebase-only/convergence.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [usage_telemetry, system_model, codebase, git_history]
-  #   outputs: [finding, work-item, report, recommendation]
-  #   description: "Self-improvement engine — analyzes usage and recommends deeper embedding or friction reduction"
-
-  # ============================================================
-  # STANDARD ENGINES — Briefing (installed in every repo at L3+)
-  # ============================================================
+    outputs:
+      - finding
+      - report
+    description: "Map queries, callers, and rollback paths before a database or data migration — zero impact guaranteed"
 
   milestone-briefing:
     skill_path: engines/standard/milestone-briefing.md
@@ -165,309 +310,102 @@ engines:
       - onboarding_state
     outputs:
       - understanding
-    chains: {}
     description: "Explains what a milestone changes, enables, and preserves — builds acceptance before action"
 
-  engine-briefing:
-    skill_path: engines/standard/engine-briefing.md
-    category: briefing
-    impact: informational
-    trigger: automatic
-    inputs:
-      - system_model
-      - codebase
-      - git_history
-    outputs:
-      - understanding
-    chains: {}
-    description: "Explains why a specific engine matters for this repo at this moment — relevance, not generic description"
-
-  goal-progress:
-    skill_path: engines/standard/goal-progress.md
-    category: briefing
-    impact: informational
+  persona-validator:
+    skill_path: engines/standard/persona-validator.md
+    category: analysis
+    impact: zero-impact
     trigger: manual
     inputs:
-      - findings
-      - onboarding_state
+      - persona_files
+      - engine_files
     outputs:
-      - understanding
-    chains:
-      on_complete: []
-    description: "Scores findings against repo_goal — advances-goal vs maintenance ratio (enforces P1)"
+      - finding
+      - report
+    description: "Validates persona files — checks coverage, relevance, consistency with engine requirements"
 
-  component-alignment:
-    skill_path: engines/standard/component-alignment.md
-    category: briefing
-    impact: informational
+  plan-enhance:
+    skill_path: .claude/commands/plan-enhance.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Enrich a rough plan with risk annotations, dependency mapping, effort estimates, and gap detection"
+
+  preflight:
+    skill_path: engines/standard/preflight.md
+    category: analysis
+    impact: changes-code
     trigger: manual
     inputs:
-      - component_units
-      - onboarding_state
+      - git_diff
     outputs:
-      - understanding
-    chains:
-      on_complete: []
-    description: "Scores installed/planned components against repo_goal — surfaces prune candidates (enforces P3, prevents tool-shaped hammer)"
+      - finding
+      - report
+    finding_severities:
+      FAIL: high
+      WARN: medium
+    description: Pre-commit verification across 9 check suites
 
-  # --- Commands excluded from engine registry ---
-  # /verify and /plan are structured commands, not engines. They don't follow the
-  # 6-phase engine protocol (Setup → Research → Cross-Critique → Synthesis → Backlog → Briefing),
-  # don't produce findings via the finding pipeline, and don't chain to other engines.
-  # They are invoked directly as user commands, not via `/engine <name>`.
+  provenance-audit:
+    skill_path: .claude/commands/provenance-audit.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Audit a repo's data provenance. On first baseline, drafts data-source-registry.draft.md + provenance-chain-map.draft.md from migrations + ORM schemas + SDK dependencies + URL/HTTP-client patterns + fixtures + config blocks. Founder reviews and promotes via rename. Subsequent runs catch drift, undocumented sources, trust-tier upgrades through the chain, broken chains, stale source authorities, orphan sources. Findings auto-promote to prog-data-provenance queue. Honors no-silent-install."
 
-  # ============================================================
-  # LIBRARY ENGINES — Analysis (uncomment based on repo type)
-  # ============================================================
-  # Installed by /adopt based on repo archetype. See engines/INDEX.md for details.
+  refactor-prep:
+    skill_path: .claude/commands/refactor-prep.md
+    category: preparation
+    impact: zero-impact
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Map dependency graph, test coverage gaps, and shared interfaces before refactoring — zero impact guaranteed"
 
-  # traction:
-  #   skill_path: .claude/commands/traction.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model, git_history]
-  #   outputs: [report, work-item]
-  #   chains:
-  #     on_complete: []
-  #   finding_severities:
-  #     BOTTLENECK: high
-  #     GAP: medium
-  #     OPPORTUNITY: low
-  #   description: "RICE-scored strategic prioritization with phase multipliers"
+  research-review:
+    skill_path: .claude/commands/research-review.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Adversarial research review — falsifiability analysis, load-bearing assumption scoring, credibility assessment, and portfolio balance check"
 
-  # financial-audit:
-  #   skill_path: .claude/commands/financial-audit.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [finding, report]
-  #   chains:
-  #     on_finding: [traction]
-  #   finding_severities:
-  #     MONETARY_LOSS: critical
-  #     RECONCILIATION: critical
-  #     PRECISION: high
-  #     COMPLIANCE: medium
-  #   description: "7-suite financial integrity audit"
+  sprint-enhance:
+    skill_path: .claude/commands/sprint-enhance.md
+    category: enhancement
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Refine a composed sprint — tighten sequencing, flag risks, rebalance effort, improve coherence"
 
-  # ux-audit:
-  #   skill_path: .claude/commands/ux-audit.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, running_app]
-  #   outputs: [finding, report]
-  #   chains:
-  #     on_finding: [traction]
-  #   finding_severities:
-  #     BLOCKER: critical
-  #     MAJOR: high
-  #     MINOR: medium
-  #     ENHANCEMENT: low
-  #   description: "Persona-driven UX audit with heuristics and accessibility"
+  traction:
+    skill_path: .claude/commands/traction.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Strategic priority engine — RICE-scored prioritization with phase multipliers, bottleneck detection, and parallel work stream identification"
 
-  # legal-safety:
-  #   skill_path: .claude/commands/legal-safety.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [finding, report]
-  #   chains:
-  #     on_finding: []
-  #   finding_severities:
-  #     VIOLATION: critical
-  #     EXPOSURE: high
-  #     GAP: medium
-  #     DOCUMENTATION: low
-  #   description: "Legal and compliance safety review with veto authority"
-
-  # research-review:
-  #   skill_path: .claude/commands/research-review.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [finding, work-item, report]
-  #   chains:
-  #     on_complete: []
-  #   finding_severities:
-  #     CONTRADICTION: critical
-  #     LOAD_BEARING: high
-  #     INCOMPLETENESS: high
-  #     AMBIGUITY: medium
-  #     PRESENTATION: low
-  #   description: "Adversarial research review with falsifiability and credibility scoring"
-
-  # business-engine:
-  #   skill_path: .claude/commands/business-engine.md
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [finding, work-item, report]
-  #   chains:
-  #     on_complete: [traction]
-  #   finding_severities:
-  #     STRATEGIC: high
-  #     FEATURE_GAP: medium
-  #     QUICK_WIN: medium
-  #     POLISH: low
-  #   description: "Business analysis with market positioning and ROI assessment"
-
-  # incident-response:
-  #   skill_path: .claude/commands/incident-response.md
-  #   category: analysis
-  #   impact: changes-code
-  #   trigger: manual
-  #   inputs: [codebase, system_model, running_app]
-  #   outputs: [finding, report, fix]
-  #   chains:
-  #     on_complete: [health-check]
-  #   finding_severities:
-  #     SEV1: critical
-  #     SEV2: high
-  #     SEV3: medium
-  #     SEV4: low
-  #   description: "Production incident diagnosis with 3-layer recovery tree"
-
-  # ============================================================
-  # LIBRARY ENGINES — Enhancement (uncomment based on need)
-  # ============================================================
-
-  # decision-enhance:
-  #   skill_path: .claude/commands/decision-enhance.md
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, codebase]
-  #   outputs: [enhancement, report]
-  #   chains: {}
-  #   description: "Enrich a decision with scenarios, tradeoffs, risk profiles, and reversibility assessment"
-
-  # design-critique:
-  #   skill_path: .claude/commands/design-critique.md
-  #   procedure: agent-dispatch
-  #   extends: context-gather
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [design_doc, system_model]
-  #   outputs: [report, finding, enhancement]
-  #   chains:
-  #     on_complete: null
-  #     on_finding: create_work_item
-  #   finding_severities:
-  #     CRITICAL: critical
-  #     HIGH: high
-  #     MEDIUM: medium
-  #     LOW: low
-  #     INFO: info
-  #   description: "Pressure-test an architectural design before implementation — per-primitive load-bearing assumption / ceiling / alternative / falsification test, greenlight or amendment list"
-
-  # plan-enhance:
-  #   skill_path: .claude/commands/plan-enhance.md
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, codebase]
-  #   outputs: [enhancement, report]
-  #   chains: {}
-  #   description: "Enrich a plan with risk annotations, dependency mapping, effort estimates, and gap detection"
-
-  # context-curator:
-  #   skill_path: .claude/commands/context-curator.md
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, codebase, persona_definitions]
-  #   outputs: [enhancement, report]
-  #   chains: {}
-  #   description: "Audit and optimize the context repository for a specific persona"
-
-  # sprint-enhance:
-  #   skill_path: .claude/commands/sprint-enhance.md
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, workstream]
-  #   outputs: [enhancement, report]
-  #   chains: {}
-  #   description: "Enrich a sprint with risk annotations, dependency checks, and load-balancing analysis"
-
-  # item-enhance:
-  #   skill_path: .claude/commands/item-enhance.md
-  #   category: enhancement
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs: [system_model, workstream]
-  #   outputs: [enhancement, report]
-  #   chains: {}
-  #   description: "Enrich a work item with acceptance criteria, effort estimates, and dependency mapping"
-
-  # ============================================================
-  # LIBRARY ENGINES — Preparation (uncomment based on need)
-  # ============================================================
-
-  # refactor-prep:
-  #   skill_path: .claude/commands/refactor-prep.md
-  #   category: preparation
-  #   impact: zero-impact
-  #   safety_guarantee: "This engine reads your codebase and documents what it finds. It makes NO code changes and NO state changes."
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [readiness-report, report]
-  #   chains: {}
-  #   description: "Map dependency graph, test coverage gaps, and shared interfaces before refactoring"
-
-  # migration-prep:
-  #   skill_path: .claude/commands/migration-prep.md
-  #   category: preparation
-  #   impact: zero-impact
-  #   safety_guarantee: "This engine reads your codebase and documents what it finds. It makes NO code changes, NO database changes, and NO state changes."
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [readiness-report, report]
-  #   chains: {}
-  #   description: "Map queries, callers, and rollback paths before a database or data migration"
-
-  # upgrade-prep:
-  #   skill_path: .claude/commands/upgrade-prep.md
-  #   category: preparation
-  #   impact: zero-impact
-  #   safety_guarantee: "This engine reads your codebase and documents what it finds. It makes NO code changes and NO dependency changes."
-  #   trigger: manual
-  #   inputs: [codebase, system_model]
-  #   outputs: [readiness-report, report]
-  #   chains: {}
-  #   description: "Scan for breaking changes, compatibility issues, and affected code paths before upgrading a dependency"
-
-  # ============================================================
-  # LIBRARY ENGINES — Fleet Intelligence (HomeBase only)
-  # ============================================================
-  # These engines run exclusively in HomeBase for fleet-level analysis.
-  # They are NOT installed to adopted repos via /adopt.
-
-  # cross-repo-insight:
-  #   skill_path: .claude/commands/cross-repo-insight.md
-  #   procedure: agent-dispatch
-  #   category: analysis
-  #   impact: changes-state
-  #   trigger: manual
-  #   inputs:
-  #     - fleet_registry
-  #     - fleet_findings
-  #   outputs:
-  #     - finding
-  #     - work-item
-  #     - report
-  #   chains:
-  #     on_complete: [traction]
-  #   finding_severities:
-  #     FLEET_CRITICAL: critical
-  #     FLEET_HIGH: high
-  #     FLEET_MEDIUM: medium
-  #     FLEET_LOW: low
-  #   description: "Cross-repo pattern detection — aggregates findings across fleet to surface systemic issues"
+  upgrade-prep:
+    skill_path: .claude/commands/upgrade-prep.md
+    category: preparation
+    impact: zero-impact
+    trigger: manual
+    outputs:
+      - finding
+      - report
+    description: "Scan for breaking changes, compatibility issues, and affected code paths before upgrading a dependency — zero impact guaranteed"

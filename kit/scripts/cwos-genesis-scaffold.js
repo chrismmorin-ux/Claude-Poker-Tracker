@@ -36,7 +36,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const { writeFileAtomic } = require('./lib/cwos-utils');
+const { writeFileAtomic, parseYAML, verifyHardlink } = require('./lib/cwos-utils');
+const { hostedOnStamp } = require('./lib/fleet-nodes');
 const { validateTargetDir } = require('./lib/shell-safe');
 
 // HomeBase root — derived from this script's location. kit/scripts/cwos-genesis-scaffold.js → ../..
@@ -240,6 +241,12 @@ function installAsset(srcRel, targetAbs, errors) {
   try {
     if (fs.existsSync(dst)) fs.rmSync(dst, { force: true });
     fs.linkSync(src, dst);
+    // WS-382: linkSync not throwing is not proof of a hardlink. Confirm the
+    // inode before claiming one, or the caller records a link that isn't there.
+    if (!verifyHardlink(src, dst)) {
+      errors.push(`${srcRel}: linkSync succeeded but inode check failed — treating as copy. Edits will NOT propagate; re-run cwos-node-bootstrap.js after install.`);
+      return { ok: true, mode: 'copy', link_unverified: true };
+    }
     return { ok: true, mode: 'hardlink' };
   } catch (e) {
     try {
@@ -307,6 +314,14 @@ function hardlinkCommand(name, targetCommandsDir, errors) {
   try {
     if (fs.existsSync(dst)) fs.rmSync(dst, { force: true });
     fs.linkSync(src, dst);
+    // WS-382: verify the inode rather than trusting that linkSync returned.
+    // A silent copy here is the SYN /next-disappeared root cause — the command
+    // markdown stops tracking the kit and the founder sees stale behaviour with
+    // no error anywhere.
+    if (!verifyHardlink(src, dst)) {
+      errors.push(`${name}: linkSync succeeded but inode check failed — treating as copy. Edits will NOT propagate; run /fleet-update to relink.`);
+      return { ok: true, hardlink: false, link_unverified: true };
+    }
     return { ok: true, hardlink: true };
   } catch (e) {
     // Cross-filesystem or permission failure — fall back to copy with a warning.
@@ -400,6 +415,13 @@ function appendToFleetRegistry(targetDir, repoName, kitVersion, now, errors) {
     // kit_version is written here for backstop visibility, but per WS-406 it is
     // a DEPRECATED CACHE — `cwos-fleet-scan` reads `.cwos-version` from each
     // repo directly. New consumers should not treat this field as authoritative.
+    // WS-496 / ADR-057: multi-node registries get hosted_on: [<current node id>]
+    // resolved via lib/fleet-nodes.js. Unknown host → warn, stamp nothing (the
+    // legacy default_host fallback applies). Single-node registries: no change.
+    let registryData = {};
+    try { registryData = parseYAML(raw) || {}; } catch (_) { /* text-append still works */ }
+    const stamp = hostedOnStamp(registryData);
+    if (stamp.warning) errors.push(stamp.warning);
     const entry = [
       '',
       `  - name: "${repoName}"`,
@@ -411,6 +433,7 @@ function appendToFleetRegistry(targetDir, repoName, kitVersion, now, errors) {
       `    adopted_at: "${now}"`,
       `    kit_version: "${kitVersion}"`,
       '    status: dormant      # WS-321 — awaiting /intend to ignite',
+      ...(stamp.id ? [`    hosted_on: [${stamp.id}]`] : []),
       '',
     ].join('\n');
     // Append at end. The registry is a list under top-level `repos:`.

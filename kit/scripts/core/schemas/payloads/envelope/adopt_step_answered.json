@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cwos.local/schemas/payloads/envelope/adopt_step_answered.json",
+  "title": "envelope.adopt_step_answered",
+  "description": "WS-433 / FIND-305 — fired by `cwos-adopt-install.js step-gate --emit` when a founder answers a /adopt Step 4b-* prompt. The next step's `step-gate --requires` refuses to render until the prior step's event exists, enforcing the single-question 4b ordering that prose alone failed to hold (DEC-029 / feedback_airtight_via_hooks). One step per event — a batched multi-step emit is rejected.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["type", "step"],
+  "properties": {
+    "type":        { "type": "string", "const": "adopt_step_answered" },
+    "step":        { "type": "string", "minLength": 1, "description": "Step id — e.g. 4b-goal, 4b-archetype, 4b-stage, 4b-bundle" },
+    "answered_at": { "type": ["string", "null"], "format": "date-time" },
+    "composed_by": { "type": "string", "const": "cli-deterministic" }
+  }
+}

@@ -27,6 +27,7 @@
 
 require('./lib/preflight');
 
+const { cliGate } = require('./lib/cli');
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -106,7 +107,26 @@ function render(redVitals, redProgs) {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 
+// ADR-063 / WS-542. `--quiet` was passed by the SessionStart hook in
+// settings.local.json but never read — main() did not look at argv at all. It is
+// declared here rather than silently ignored, but deliberately NOT given new
+// behavior: this script is already silent unless there is a RED condition, which
+// is what --quiet means on its sibling hook scripts. The RED banner is the whole
+// point of the hook, so suppressing it would defeat the caller's intent.
+const CLI = {
+  name: 'cwos-session-vitals',
+  summary: 'print a session-start banner when vitals or programs are RED',
+  flags: {
+    quiet: {
+      type: 'boolean',
+      describe: 'accepted for hook compatibility; already the default (silent when nothing is RED)',
+    },
+  },
+  notes: 'Always exits 0 — a session start must never be blocked by this check.',
+};
+
 function main() {
+  cliGate(process.argv.slice(2), CLI);
   const root = repoRoot();
   const redVitals = loadRedVitals(root);
   const programs = loadPrograms(root);

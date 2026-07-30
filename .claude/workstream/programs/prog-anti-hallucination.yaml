@@ -1,6 +1,6 @@
 id: anti-hallucination
 name: Anti-Hallucination & AI Accuracy
-schema_version: 3
+schema_version: 4
 status: NEW
 
 # Per ADR-034 (2026-04-29), this program piggybacks on design-audit's FDB drafts

@@ -233,7 +233,7 @@ function extractFindingCounts(runDir, manifest) {
 
 // ─── Main writer ───────────────────────────────────────────────────────────
 
-function writeRunSummary({ runId, runDir, wsDir, dryRun = false }) {
+function writeRunSummary({ runId, runDir, wsDir, dryRun = false, promotion = null }) {
   const manifestPath = path.join(runDir, 'manifest.yaml');
   let manifest = null;
   let manifestParsed = false;
@@ -292,6 +292,19 @@ function writeRunSummary({ runId, runDir, wsDir, dryRun = false }) {
     finding_counts: extractFindingCounts(runDir, manifest),
     _provenance: provenance,
   };
+
+  // WS-489: conversion-bridge result. Optional — absent param keeps output
+  // identical for callers that don't run the bridge (reconcile backfill).
+  if (promotion && promotion.counts) {
+    summary.promotion = {
+      promoted_count: promotion.counts.promoted,
+      already_linked: promotion.counts.already_linked,
+      total_run_findings: promotion.counts.total_run_findings,
+      conversion_rate: promotion.counts.conversion_rate,
+      medium_surfaced: Array.isArray(promotion.medium) ? promotion.medium.length : 0,
+      ws_ids: (promotion.promoted || []).map(p => p.ws_id).filter(Boolean),
+    };
+  }
 
   const summaryPath = path.join(runDir, 'summary.yaml');
   if (!dryRun) {

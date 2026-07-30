@@ -57,6 +57,10 @@ try {
 // ─── Constants + defaults (per ADR-038 + WS-277 decision_flags) ────────────
 
 const VALID_MODES = ['decide', 'build-best', 'mockup', 'explore'];
+// WS-433: the contract fields that, when low-confidence, become founder prompts
+// requiring an individual ack. Warning-style prompts_needed entries (e.g.
+// "scope_ceiling_overage_warning: ...") are informational and excluded.
+const KNOWN_PROMPT_FIELDS = ['mode', 'readiness', 'success_shape', 'scope_ceiling', 'stretch'];
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.7;
 const DEFAULT_STALENESS_WINDOW = 50; // unused for now; reserved for context inference
 const DEFAULT_SCOPE_CEILING = 'token:80k';
@@ -713,6 +717,7 @@ function runConfirm(args) {
   const aiAutonomous = hasFlag(args, 'ai-autonomous');
   const noEmit = hasFlag(args, 'no-emit');
   const clock = readFlag(args, 'clock');
+  const forcePreflight = readFlag(args, 'force-preflight'); // WS-433 escape valve
   if (!contractFile) {
     process.stderr.write('confirm: --contract-file <path> is required\n');
     process.exit(2);
@@ -734,6 +739,40 @@ function runConfirm(args) {
   if (!VALID_MODES.includes(contract.mode)) {
     process.stderr.write(`confirm: invalid mode '${contract.mode}'. Valid: ${VALID_MODES.join(', ')}\n`);
     process.exit(2);
+  }
+
+  // ── WS-433: single-question pre-flight gate ──────────────────────────────
+  // Each low-confidence field that compose surfaced as a prompt must carry its
+  // own engine_field_acked event (emitted one-at-a-time via `ack-field`). A
+  // contract whose prompted fields weren't individually acked is REFUSED here —
+  // making the prose-forbidden 4-question form structurally unconfirmable.
+  // Warning-style prompts (e.g. "scope_ceiling_overage_warning: ...") are
+  // informational and never require an ack. The gate is skipped under --no-emit
+  // (dry runs don't touch the log) and via the --force-preflight escape valve.
+  let preflightForced = null;
+  const fieldPrompts = Array.isArray(composeOutput.prompts_needed)
+    ? composeOutput.prompts_needed.filter((p) => KNOWN_PROMPT_FIELDS.includes(p))
+    : [];
+  if (fieldPrompts.length > 0 && !noEmit) {
+    if (forcePreflight != null) {
+      if (String(forcePreflight).trim().length < 20) {
+        process.stderr.write('confirm: --force-preflight requires a rationale of at least 20 characters\n');
+        process.exit(2);
+      }
+      preflightForced = { reason: String(forcePreflight).trim() };
+    } else {
+      const eventsDir = path.join(repoRoot(), '.claude', 'workstream', 'events');
+      const recent = readEventLogTail(eventsDir, 300);
+      const missing = unackedFields(recent, contract.engine, fieldPrompts);
+      if (missing.length > 0) {
+        process.stderr.write(
+          `confirm: pre-flight gate — field(s) [${missing.join(', ')}] were not individually acknowledged.\n` +
+          `  Ask the founder ONE field at a time; after each answer run:\n` +
+          `    node kit/scripts/cwos-frame.js ack-field --engine ${contract.engine} --field <name>\n` +
+          `  Do NOT batch fields into a single prompt or ack. To override: --force-preflight "<reason ≥20 chars>".\n`);
+        process.exit(2);
+      }
+    }
   }
 
   // Compute revisions array — what fields differ from the compose defaults.
@@ -770,6 +809,10 @@ function runConfirm(args) {
   };
   // WS-299: pre-fill provenance — flows from compose.catch_state_prefill if present
   if (payload.catch_state_prefill) eventPayload.catch_state_prefill = payload.catch_state_prefill;
+  // WS-433: record the pre-flight gate outcome on the contract event so the
+  // advisory INV-preflight-gate-not-bypassed can audit it post-hoc.
+  if (preflightForced) eventPayload.preflight_forced = preflightForced;
+  else if (fieldPrompts.length > 0) eventPayload.preflight_acked_fields = fieldPrompts;
 
   let eventId = null;
   if (!noEmit && appendEvent && ensureCommandId) {
@@ -835,6 +878,76 @@ function runConfirm(args) {
   });
 }
 
+// ─── WS-433: single-field ack + gate helpers ─────────────────────────────────
+
+// Which of `fields` lack an engine_field_acked event for `engine`, scoped to
+// acks emitted AFTER the most recent engine_intent_recorded for that engine
+// (i.e. belonging to the current, not-yet-confirmed pre-flight cycle). Acks
+// from a prior confirmed run never satisfy a fresh gate.
+function unackedFields(events, engine, fields) {
+  let cutoff = -1;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    if (e && e.payload && e.payload.type === 'engine_intent_recorded' && e.payload.engine === engine) { cutoff = i; break; }
+  }
+  const acked = new Set();
+  for (let i = cutoff + 1; i < events.length; i++) {
+    const e = events[i];
+    if (e && e.payload && e.payload.type === 'engine_field_acked' && e.payload.engine === engine && e.payload.field) {
+      acked.add(e.payload.field);
+    }
+  }
+  return fields.filter((f) => !acked.has(f));
+}
+
+// `ack-field` subcommand — emit one engine_field_acked per founder answer.
+// TRIPWIRE: exactly one --field per call; a repeated flag or a comma-list value
+// is rejected, so the AI cannot batch a 4-question form into one event.
+function runAckField(args) {
+  const engine = readFlag(args, 'engine');
+  const clock = readFlag(args, 'clock');
+  const noEmit = hasFlag(args, 'no-emit');
+  const fieldVals = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--field' && i + 1 < args.length) fieldVals.push(args[i + 1]);
+  }
+  if (!engine) { process.stderr.write('ack-field: --engine <id> is required\n'); process.exit(2); }
+  if (fieldVals.length === 0) { process.stderr.write('ack-field: --field <name> is required\n'); process.exit(2); }
+  if (fieldVals.length > 1) {
+    process.stderr.write(`ack-field: batching rejected — pass exactly one --field per call (got ${fieldVals.length}). Ack each field one at a time.\n`);
+    process.exit(2);
+  }
+  const field = fieldVals[0];
+  if (!field || field.includes(',')) {
+    process.stderr.write('ack-field: batching rejected — --field takes a single field name, not a comma-list. Ack each field one at a time.\n');
+    process.exit(2);
+  }
+  if (!KNOWN_PROMPT_FIELDS.includes(field)) {
+    process.stderr.write(`ack-field: unknown field '${field}'. Valid: ${KNOWN_PROMPT_FIELDS.join(', ')}\n`);
+    process.exit(2);
+  }
+
+  const ackAt = clock || new Date().toISOString();
+  const eventPayload = { type: 'engine_field_acked', engine, field, acked_at: ackAt, composed_by: 'cli-deterministic' };
+  let eventId = null;
+  if (!noEmit && appendEvent && ensureCommandId) {
+    const commandId = ensureCommandId('frame-ack-field');
+    const r = appendEvent({
+      source_track: 'T7:engines',
+      source_tier: 'founder-prompt',
+      track_tag: '/engine',
+      command_id: commandId,
+      payload: eventPayload,
+    });
+    if (r && r.ok && r.event) eventId = r.event.id;
+    else if (r && !r.ok) {
+      process.stderr.write(`ack-field: event validation failed: ${(r.errors || []).join('; ')}\n`);
+      process.exit(2);
+    }
+  }
+  writeJson({ ok: true, engine, field, event_id: eventId, note: noEmit ? 'no-emit mode — event was NOT written to log' : undefined });
+}
+
 // ─── Dispatch ──────────────────────────────────────────────────────────────
 
 // WS-303 / FIND-RUN016-4: subcommands whose primary job is to emit a contract
@@ -842,19 +955,20 @@ function runConfirm(args) {
 // for shadow instrumentation, not for the contract-emission boundary itself —
 // silencing here hides the failure of the very thing the subcommand exists
 // to do. Subcommands NOT in this set retain AS-23's exit-0 fallback.
-const CONTRACT_EMITTING_SUBCOMMANDS = new Set(['compose', 'confirm']);
+const CONTRACT_EMITTING_SUBCOMMANDS = new Set(['compose', 'confirm', 'ack-field']);
 
 function main() {
   const args = process.argv.slice(2);
   const sub = args[0];
   if (!sub || sub === '--help' || sub === '-h') {
-    process.stdout.write('usage: cwos-frame <compose|confirm> [options]\n');
+    process.stdout.write('usage: cwos-frame <compose|confirm|ack-field> [options]\n');
     process.exit(sub ? 0 : 1);
   }
   try {
     switch (sub) {
       case 'compose': return runCompose(args.slice(1));
       case 'confirm': return runConfirm(args.slice(1));
+      case 'ack-field': return runAckField(args.slice(1));
       default:
         process.stderr.write(`cwos-frame: unknown subcommand: ${sub}\n`);
         process.exit(2);
@@ -869,7 +983,7 @@ function main() {
 if (require.main === module) main();
 
 module.exports = {
-  runCompose, runConfirm,
+  runCompose, runConfirm, runAckField, unackedFields, KNOWN_PROMPT_FIELDS,
   inferMode, inferReadiness, inferSuccessShape, inferScopeCeiling,
   inferFailedStatesSeed, extractFailedStates, // WS-296
   loadFrameConfig, loadReadinessRegistry, evaluateReadinessRule,

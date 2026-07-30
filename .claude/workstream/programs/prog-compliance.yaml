@@ -1,6 +1,6 @@
 id: compliance
 name: Regulatory Compliance
-schema_version: 3
+schema_version: 4
 status: NEW
 
 contract: >

@@ -1,6 +1,6 @@
 id: methodology-integrity
 name: "Methodology Integrity"  # Renamed during /adopt (e.g., "Bayesian Model Validity", "Scoring Objectivity", "Evidence Classification")
-schema_version: 3
+schema_version: 4
 status: NEW
 
 # This program checks WHETHER THE METHOD IS SOUND, not whether the answers are right.
@@ -210,3 +210,27 @@ maturity:
 
 created_at: "2026-05-01"
 updated_at: "2026-05-01"
+
+# --- Load-Bearing Assumptions (AS-N) — REQUIRED at tier active|critical (schema v4) ---
+# Migrated from v3: this program is active/critical but shipped no assumptions.
+# Fill in >=1 falsifiable AS-N. Validator: node kit/scripts/cwos-asn-validate.js --program <this-file>
+# assumptions:
+#   - id: AS-NN                  # integer, HomeBase-wide unique
+#     type: strategic            # empirical | strategic | methodological
+#     claim: >
+#       One sentence. Subject + specific claim. No hedging. >=20 chars.
+#     falsifies_if:
+#       watch_surfaces: ["https://example.com/surface"]
+#       trigger_event: "Specific observable event that falsifies the claim. >=20 chars."
+#     revisit: <ISO-date or trigger string>
+#     status: proposed
+#
+# --- Market Dynamics Assessment — REQUIRED at tier active|critical (schema v4) ---
+# market_dynamics:
+#   subsumption_risk: insufficient-data   # low | medium | high | insufficient-data
+#   self_preference: insufficient-data    # ours | would_switch_to:<tool> | insufficient-data
+#   durable_ground: >
+#     One sentence on what remains defensible and why. >=20 chars.
+#   watch_surfaces: ["https://docs.anthropic.com/en/docs/claude-code"]
+#   trigger_event: "Specific observable that would flip the assessment. >=20 chars."
+#   last_reviewed: 2026-07-30

@@ -13,15 +13,20 @@
 const fs = require('fs');
 const path = require('path');
 const {
-  readYAMLFile, globFiles, writeFileAtomic, patchYAMLFile, withFileLock
+  readYAMLFile, globFiles, writeFileAtomic, patchYAMLFile, withFileLock,
+  escapeYamlString
 } = require('./cwos-utils');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function escapeYAMLString(str) {
-  if (!str) return '';
-  return String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ');
-}
+// WS-485: was a local copy; now the canonical implementation from cwos-utils.
+// Alias retained so the ~40 existing call sites in this file keep their casing.
+const escapeYAMLString = escapeYamlString;
+
+// Statuses from which an item could plausibly be drawn into a sprint. Anything
+// else is already parked, so a dead gate on it is not costing a WIP slot.
+// WS-539.
+const ACTIONABLE_STATUSES = new Set(['backlog', 'blocked', 'claimed', 'in_progress']);
 
 function extractMaxId(items, prefix) {
   return items.reduce((max, item) => {
@@ -106,6 +111,43 @@ function rebuildQueueIndex(wsDir, opts = {}) {
     items.push(entry);
     byStatus[entry.status] = (byStatus[entry.status] || 0) + 1;
     if (entry.category) byCategory[entry.category] = (byCategory[entry.category] || 0) + 1;
+  }
+
+  // WS-539: dead-gate detection. An item can be blocked on something that will
+  // never arrive — a gating item that is itself deferred or dismissed, or one
+  // that does not exist at all. Such an item is not backlog: no sprint can ever
+  // draw it, but it occupies a WIP slot and counts against the sponsoring
+  // program's cap. On 2026-07-26, WS-375 and WS-382 were both gated on WS-357,
+  // which had been deferred four days earlier. WS-375's own accept_criteria #1
+  // forbade it leaving backlog until that gate cleared. Nothing detected this;
+  // it surfaced only because a human read the two items side by side.
+  //
+  // Reported as warnings rather than mutated. Whether a dead gate means "defer
+  // this too", "split the ungated half out", or "the gate is wrong" is a
+  // judgment call — WS-382 turned out to be the middle case. The detector's job
+  // is to make the condition impossible to miss, not to decide it.
+  for (const item of items) {
+    if (!ACTIONABLE_STATUSES.has(item.status)) continue;
+    const gates = Array.isArray(item.blocked_by) ? item.blocked_by : [];
+    for (const gate of gates) {
+      const gateId = String(gate || '').trim();
+      if (!gateId || !/^WS-[A-Za-z0-9-]+$/.test(gateId)) continue; // e.g. "founder-action"
+      const gating = items.find(x => x.id === gateId);
+      if (!gating) {
+        warnings.push(
+          `dead-gate: ${item.id} is blocked_by ${gateId}, which does not exist. ` +
+          `The gate can never clear — correct the pointer or release the item.`
+        );
+        continue;
+      }
+      if (gating.status === 'deferred' || gating.status === 'dismissed') {
+        warnings.push(
+          `dead-gate: ${item.id} (${item.status}) is blocked_by ${gateId}, which is ${gating.status}. ` +
+          `No sprint can draw ${item.id} while it holds a WIP slot against its program cap. ` +
+          `Resolve via: cwos-item defer ${item.id} --reason "..." --until "...", or split out any ungated half.`
+        );
+      }
+    }
   }
 
   if (!opts.dryRun) {

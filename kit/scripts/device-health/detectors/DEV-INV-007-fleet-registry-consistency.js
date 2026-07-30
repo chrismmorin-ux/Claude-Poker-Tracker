@@ -12,11 +12,13 @@ const fs = require('fs');
 const path = require('path');
 const { ok, violate, unknown } = require('../lib/detector-base');
 const { readYAMLFile } = require('../../lib/cwos-utils');
+const { resolveNodeContext, isRepoHostedHere } = require('../../lib/fleet-nodes');
 
 const KNOWN_REPO_ROOTS_RELATIVE_TO_USER = [
   '',                  // C:\Users\chris\
-  'OneDrive\\Desktop', // C:\Users\chris\OneDrive\Desktop\
-  'AI Repos',          // C:\Users\chris\AI Repos\
+  'repos',             // C:\Users\chris\repos\ — fleet convention since 2026-07 migration
+  'OneDrive\\Desktop', // C:\Users\chris\OneDrive\Desktop\ (legacy)
+  'AI Repos',          // C:\Users\chris\AI Repos\ (legacy)
 ];
 
 function resolveUserHome() {
@@ -60,10 +62,15 @@ module.exports = {
     const entries = Array.isArray(registry && registry.repos) ? registry.repos : [];
     const realEntries = entries.filter(e => e && e.type !== 'simulated');
 
-    // Side A: every active entry resolves to an existing dir with .git/
+    // Node awareness (ADR-057): entries hosted on other machines are not
+    // expected on this disk; both sides of the check skip them.
+    const nodeCtx = resolveNodeContext(registry);
+    const hostedHere = realEntries.filter(e => isRepoHostedHere(e, nodeCtx));
+
+    // Side A: every entry hosted here resolves to an existing dir with .git/
     const missingPaths = [];
     const notGit = [];
-    for (const e of realEntries) {
+    for (const e of hostedHere) {
       if (!e.path) continue;
       const exists = fs.existsSync(e.path);
       if (!exists) {

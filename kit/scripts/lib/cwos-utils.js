@@ -91,9 +91,6 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
     if (colonIdx === -1) { i++; continue; } // not a key-value line
 
     const key = trimmed.substring(0, colonIdx).trim();
-    // WS-213: strip trailing inline comments before branch dispatch so
-    // `key: [a, b]  # note` reaches parseInlineArray with a clean `]` tail
-    // (parseScalar strips again for its own call sites — idempotent).
     const afterColon = stripInlineComment(trimmed.substring(colonIdx + 1).trim());
 
     // WS-295: detect duplicate keys within the same mapping. Last-wins
@@ -109,7 +106,15 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
       });
     }
 
-    if (afterColon === '' || afterColon === '|' || afterColon === '>') {
+    // WS-538: block-scalar headers carry optional chomping (-/+) and explicit
+    // indentation indicators. The old test compared afterColon to the bare
+    // strings '|' and '>', so `foo: >-` — extremely common in hand-written
+    // queue YAML — fell through to parseScalar and bound the LITERAL TWO
+    // CHARACTERS ">-" as the value. 22 such fields existed across 20 state
+    // files when this was found, all silently empty to every reader.
+    const blockHeader = /^([|>])([-+]?)(\d*)$/.exec(afterColon);
+
+    if (afterColon === '' || blockHeader) {
       // Check what follows: nested mapping, block sequence, or block scalar
       const nextNonEmpty = peekNextNonEmpty(lines, i + 1);
       if (nextNonEmpty === null) {
@@ -125,9 +130,11 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
         continue;
       }
 
-      if (afterColon === '|' || afterColon === '>') {
-        // Block scalar
-        const { value, nextLine } = readBlockScalar(lines, i + 1, nextIndent);
+      if (blockHeader) {
+        // Block scalar. style '|' keeps line breaks, '>' folds them to spaces.
+        const { value, nextLine } = readBlockScalar(
+          lines, i + 1, nextIndent, blockHeader[1], blockHeader[2]
+        );
         target[key] = value;
         i = nextLine;
       } else if (lines[nextNonEmpty].trim().startsWith('- ')) {
@@ -154,24 +161,75 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
   return i;
 }
 
-function readBlockScalar(lines, start, scalarIndent) {
-  const parts = [];
+/**
+ * Read a block scalar body.
+ *
+ * @param style '|' (literal — keep line breaks) or '>' (folded — line breaks
+ *              become spaces; a blank line is a paragraph break and survives as
+ *              a newline; a line that is MORE indented than the block is a
+ *              "more-indented" line and is not folded, per YAML).
+ * @param chomp '-' strip trailing newlines, '+' keep them, '' clip.
+ *
+ * Deliberate deviation from the YAML spec on clip: '' behaves as strip rather
+ * than keeping one trailing newline. Every CWOS consumer treats these fields as
+ * prose values and none want a trailing "\n"; matching the spec here would
+ * append one to essentially every description and accept_criteria in the fleet.
+ * Only '+' opts into retained trailing blank lines. WS-538.
+ */
+function readBlockScalar(lines, start, scalarIndent, style, chomp) {
+  const raw = [];
   let i = start;
   while (i < lines.length) {
     const line = lines[i];
     if (line.trim() === '') {
-      parts.push('');
+      raw.push('');
       i++;
       continue;
     }
     const indent = lineIndent(line);
     if (indent < scalarIndent) break;
-    parts.push(line.substring(scalarIndent));
+    raw.push(line.substring(scalarIndent));
     i++;
   }
-  // Trim trailing empty lines
-  while (parts.length > 0 && parts[parts.length - 1] === '') parts.pop();
-  return { value: parts.join('\n'), nextLine: i };
+
+  // Chomping applies to trailing blank lines only.
+  const body = raw.slice();
+  if (chomp !== '+') {
+    while (body.length > 0 && body[body.length - 1] === '') body.pop();
+  }
+
+  if (style !== '>') {
+    return { value: body.join('\n'), nextLine: i };
+  }
+
+  // Folded: join runs of equally-indented non-empty lines with a single space.
+  // Blank lines separate paragraphs and emit a newline. More-indented lines are
+  // preserved verbatim so embedded snippets/lists inside a folded block survive.
+  const out = [];
+  let buf = null;
+  for (const line of body) {
+    if (line === '') {
+      if (buf !== null) { out.push(buf); buf = null; }
+      out.push('');
+      continue;
+    }
+    if (/^\s/.test(line)) {
+      // more-indented than the block: not folded
+      if (buf !== null) { out.push(buf); buf = null; }
+      out.push(line);
+      continue;
+    }
+    buf = buf === null ? line : `${buf} ${line}`;
+  }
+  if (buf !== null) out.push(buf);
+
+  // Collapse the paragraph markers: consecutive blanks fold to one newline
+  // boundary, matching how these fields render today.
+  const value = out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  return { value, nextLine: i };
 }
 
 function readBlockSequence(lines, start, seqIndent, warnings) {
@@ -185,7 +243,7 @@ function readBlockSequence(lines, start, seqIndent, warnings) {
     const trimmed = line.trim();
     if (!trimmed.startsWith('- ')) break;
 
-    const itemText = trimmed.substring(2).trim();
+    const itemText = stripInlineComment(trimmed.substring(2).trim());
 
     // Check if this sequence item starts a nested mapping
     const nextLine = i + 1;
@@ -219,25 +277,32 @@ function parseInlineArray(text) {
   return inner.split(',').map(s => parseScalar(s.trim()));
 }
 
+// Strip a trailing inline comment from a scalar/flow line. YAML rules:
+// a `#` starts a comment only when it is at the start of the (already-trimmed)
+// content or preceded by whitespace, and only outside quoted strings. This
+// preserves `#` inside quotes ("#ff0000") and mid-token (a#b, http://x/#frag)
+// while removing ` # comment` tails. WS-497: without this, values like
+// `kit_version: "3.7.1"  # WS-406` parsed as the whole string incl. the
+// comment, poisoning fleet-scan numbers (NaN health) and version compares.
 function stripInlineComment(text) {
-  // Cut at the first '#' that is preceded by whitespace and not inside a
-  // quoted span (YAML: '#' starts a comment only after whitespace).
-  // Leading-'#' values (i === 0) are deliberately left alone — minimal scope
-  // (WS-213: changing `key: #fff` from string to null is out of scope).
-  let quote = null;
+  // Quote-state opens only at position 0, mirroring parseScalar: a YAML value
+  // is quoted iff it STARTS with a quote. A bare apostrophe in unquoted prose
+  // ("don't ship") must not open a string, else the # guard below never fires
+  // and the comment leaks back into the value (FIND-327 regression on WS-497).
+  let inSingle = false;
+  let inDouble = false;
   for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (quote) { if (ch === quote) quote = null; continue; }
-    if (ch === '"' || ch === "'") { quote = ch; continue; }
-    if (ch === '#' && i > 0 && /\s/.test(text[i - 1])) {
-      return text.slice(0, i).trimEnd();
+    const c = text[i];
+    if (c === '"' && !inSingle && (inDouble || i === 0)) inDouble = !inDouble;
+    else if (c === "'" && !inDouble && (inSingle || i === 0)) inSingle = !inSingle;
+    else if (c === '#' && !inSingle && !inDouble && (i === 0 || /\s/.test(text[i - 1]))) {
+      return text.slice(0, i).replace(/\s+$/, '');
     }
   }
   return text;
 }
 
 function parseScalar(text) {
-  text = stripInlineComment(text);
   if (text === '' || text === 'null' || text === '~') return null;
   if (text === 'true') return true;
   if (text === 'false') return false;
@@ -323,6 +388,72 @@ function serializeYAML(obj, indent = 0) {
   }
 
   return lines.join('\n');
+}
+
+/**
+ * escapeYamlString — canonical escaper for the INTERIOR of a double-quoted
+ * YAML scalar. Returns the escaped body only; the caller supplies the quotes.
+ *
+ * Canonicalised by WS-485. Three incompatible copies previously existed:
+ *   - cwos-asn-transition.js  escaped \ and " but NOT newlines, so a --reason
+ *     containing one wrote malformed YAML that the hand-rolled parser (INV-022)
+ *     then choked on. That was the live bug.
+ *   - lib/cwos-reconcile-core.js  escaped \ and " and collapsed \n to a space.
+ *   - formatScalar (below)  takes a different route entirely, switching to a
+ *     block scalar for multiline values.
+ *
+ * Newlines collapse to a single space rather than becoming a literal \n escape.
+ * The hand-rolled reader in this file does not process escape sequences inside
+ * quoted scalars, so emitting "\\n" would round-trip as the two characters
+ * backslash-n rather than a newline. Collapsing loses line structure but always
+ * produces parseable YAML; the previous behaviour produced neither. Callers
+ * that must preserve line structure should use formatScalar/serializeYAML,
+ * which emit a block scalar instead.
+ *
+ * Escape order matters: backslashes first, or the backslashes introduced when
+ * escaping quotes get double-escaped.
+ */
+function escapeYamlString(str) {
+  if (str === null || str === undefined || str === '') return '';
+  return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r\n/g, ' ')
+    .replace(/[\n\r]/g, ' ');
+}
+
+/**
+ * verifyHardlink — do these two paths actually share one inode?
+ *
+ * WS-382. fs.linkSync() resolving without throwing is NOT proof a hardlink
+ * exists. The install paths in cwos-genesis-scaffold.js reported
+ * `mode: 'hardlink'` purely because linkSync did not throw, and reported
+ * `ok: true` on the copy fallback as well, so no caller could tell a real link
+ * from a copy. When the "link" is silently a copy, edits stop propagating and
+ * the two files drift — the documented root cause of the SYN /next-disappeared
+ * family (OneDrive severs hardlinks during sync).
+ *
+ * Windows-aware, per the item's title:
+ *   - Node populates st.ino on NTFS from the file index, so the comparison is
+ *     meaningful there. Some filesystems (and some network mounts) report 0.
+ *   - ino === 0 means "cannot verify", NOT "verified different". Returning
+ *     false there is deliberate: callers must treat unverifiable as unproven
+ *     and degrade to the copy-with-warning path rather than claim a hardlink.
+ *   - st.dev is compared too — inode numbers are only unique within a volume,
+ *     and the cross-volume case is exactly when linkSync falls back to a copy.
+ *
+ * @returns {boolean} true only when both paths provably share one inode.
+ */
+function verifyHardlink(a, b) {
+  try {
+    const sa = fs.statSync(a);
+    const sb = fs.statSync(b);
+    return sa.ino !== 0 &&
+      String(sa.ino) === String(sb.ino) &&
+      String(sa.dev) === String(sb.dev);
+  } catch {
+    return false;
+  }
 }
 
 function formatScalar(value) {
@@ -999,6 +1130,8 @@ module.exports = {
   loadEventDeps,
   formatScalar,
   formatInlineArray,
+  escapeYamlString,
+  verifyHardlink,
   tokenize,
   tokenJaccard,
   loadCorpus,

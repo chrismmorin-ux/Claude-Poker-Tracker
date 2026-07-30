@@ -7,7 +7,8 @@
  *   DISAMBIGUATING — active engine context; suggest a better-fit alternative
  *
  * Architecture (ADR-040 Decision #1): rule-tier (R1–R6) → LLM fallback.
- * Confidence gate at 0.6 (Decision #8); below-threshold suggestions are
+ * Confidence gate per Decision #8 (see CONFIDENCE_THRESHOLD below for the
+ * current value + escalation history); below-threshold suggestions are
  * recorded as `engine_candidate_suppressed` for tuning, never surfaced.
  *
  * v1 scope (WS-298): rules + stub LLM interface + 3 event schemas + AS-CATCH-1
@@ -18,7 +19,11 @@
 
 'use strict';
 
-const CONFIDENCE_THRESHOLD = 0.6;
+// 0.6 → 0.7 on 2026-07-25: AS-CATCH-2 FALSIFIED at 36% accept-rate (139
+// suggestions, 89 dismissed). First escalation step per ADR-040's written
+// falsification action (0.6 → 0.7 → 0.8, then opt-in). Re-measure via
+// cwos-as-catch-2.js after ~4 weeks at this gate.
+const CONFIDENCE_THRESHOLD = 0.7;
 const ENGINE_RELEVANCE_TURNS = 5;
 const PRE_FILL_WINDOW_TURNS = 10;
 

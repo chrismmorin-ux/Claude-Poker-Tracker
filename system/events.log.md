@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785421270049-02b0e11d8855"
-generated_content_hash: "d6fb2171467a912fd83ec0eade0d968a6e63a949a8ce1c27349537d1c1cbd7ff"
-generated_at: "2026-07-30T14:21:10.100Z"
+generated_from_event: "ev-1785423634648-f8136529a304"
+generated_content_hash: "d570edf5133ffb1a0936a21635a23cfcc5826e7c569d2ddd18d3e32e7241c30c"
+generated_at: "2026-07-30T15:00:34.690Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl"]
-event_count: 1115
+event_count: 1153
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 682
-- Events recorded: 1115
+- Commands recorded: 720
+- Events recorded: 1153
 - Source chunks: 19
 
 ## Command `auto:42416:1781030643103`
@@ -7270,3 +7270,383 @@ path, not direct markdown edits.
 | 3 | 2026-07-30T14:21:09.869Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
 | 4 | 2026-07-30T14:21:09.933Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 5 | 2026-07-30T14:21:10.049Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:30288:1785423226913`
+
+- Start: 2026-07-30T14:53:46.913Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:46.913Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:35020:1785423227222`
+
+- Start: 2026-07-30T14:53:47.222Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.222Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227259`
+
+- Start: 2026-07-30T14:53:47.258Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.258Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227278`
+
+- Start: 2026-07-30T14:53:47.278Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.278Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227297`
+
+- Start: 2026-07-30T14:53:47.297Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.297Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227318`
+
+- Start: 2026-07-30T14:53:47.318Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.318Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227338`
+
+- Start: 2026-07-30T14:53:47.338Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.338Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227357`
+
+- Start: 2026-07-30T14:53:47.357Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.357Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227376`
+
+- Start: 2026-07-30T14:53:47.376Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.376Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227395`
+
+- Start: 2026-07-30T14:53:47.395Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.395Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227414`
+
+- Start: 2026-07-30T14:53:47.414Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.414Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227432`
+
+- Start: 2026-07-30T14:53:47.432Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.432Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35020:1785423227448`
+
+- Start: 2026-07-30T14:53:47.448Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.448Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:35832:1785423227585`
+
+- Start: 2026-07-30T14:53:47.585Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.585Z | T12:program-management | program-registry-synced | programs_dir=".claude/workstream/programs", programs_count=13 |
+
+## Command `auto:31952:1785423227685`
+
+- Start: 2026-07-30T14:53:47.685Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:53:47.685Z | T12:program-management | engines-registry-synced | workstream_dir="C:/Users/chris/repos/claude-p"..., engines_count=32, +1 more |
+
+## Command `auto:35168:1785423436214`
+
+- Start: 2026-07-30T14:57:16.214Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.214Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:14736:1785423436483`
+
+- Start: 2026-07-30T14:57:16.483Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.483Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436515`
+
+- Start: 2026-07-30T14:57:16.515Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.515Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436533`
+
+- Start: 2026-07-30T14:57:16.533Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.533Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436550`
+
+- Start: 2026-07-30T14:57:16.550Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.550Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436568`
+
+- Start: 2026-07-30T14:57:16.568Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.568Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436587`
+
+- Start: 2026-07-30T14:57:16.587Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.587Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436608`
+
+- Start: 2026-07-30T14:57:16.608Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.608Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436627`
+
+- Start: 2026-07-30T14:57:16.627Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.627Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436644`
+
+- Start: 2026-07-30T14:57:16.644Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.644Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436662`
+
+- Start: 2026-07-30T14:57:16.662Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.662Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436679`
+
+- Start: 2026-07-30T14:57:16.679Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.679Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:14736:1785423436695`
+
+- Start: 2026-07-30T14:57:16.695Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.695Z | T12:program-management | program-schema-migrated | phase="schema-migrate", path=".claude/workstream/programs/p"..., +2 more |
+
+## Command `auto:19080:1785423436834`
+
+- Start: 2026-07-30T14:57:16.834Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.834Z | T12:program-management | program-registry-synced | programs_dir=".claude/workstream/programs", programs_count=13 |
+
+## Command `auto:37588:1785423436945`
+
+- Start: 2026-07-30T14:57:16.945Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:16.945Z | T12:program-management | engines-registry-synced | workstream_dir="C:/Users/chris/repos/claude-p"..., engines_count=32, +1 more |
+
+## Command `auto:9512:1785423437219`
+
+- Start: 2026-07-30T14:57:17.219Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:17.219Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:9512:1785423437534`
+
+- Start: 2026-07-30T14:57:17.534Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:17.534Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:9512:1785423437578`
+
+- Start: 2026-07-30T14:57:17.578Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:17.578Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:9512:1785423437703`
+
+- Start: 2026-07-30T14:57:17.703Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:57:17.703Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:28032:1785423634182`
+
+- Start: 2026-07-30T15:00:34.182Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T15:00:34.182Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:28032:1785423634498`
+
+- Start: 2026-07-30T15:00:34.498Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T15:00:34.498Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:28032:1785423634542`
+
+- Start: 2026-07-30T15:00:34.542Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T15:00:34.542Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:28032:1785423634648`
+
+- Start: 2026-07-30T15:00:34.648Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T15:00:34.648Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

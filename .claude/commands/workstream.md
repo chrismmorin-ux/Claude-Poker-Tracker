@@ -112,6 +112,9 @@ Parse `$ARGUMENTS` to determine which subcommand to run. If no subcommand given,
 | `start <id>` | Move claimed item to in_progress |
 | `done <id> [notes]` | Mark item complete |
 | `block <id> <reason>` | Mark item blocked |
+| `defer <id> --reason <text> --until <condition>` | Park an item with a resume trigger |
+| `dismiss <id> --reason <text> [--superseded-by <id>]` | Take an item off the queue for good |
+| `restore <id> --reason <text>` | Bring a deferred/dismissed item back to backlog |
 | `next` | Auto-pick and claim highest priority unclaimed item |
 | `resume [session-id]` | Resume a previous session's work |
 | `end [notes]` | End current session with handoff notes |
@@ -296,6 +299,52 @@ Update the session's `last_heartbeat` in its YAML file on every invocation.
 2. Update: `status: blocked`, `blocked_reason: <reason>`, `blocked_at: <timestamp>`
 3. Remove from session's `claimed_items` (but keep record)
 4. Output: confirmation, suggest alternatives
+
+---
+
+## Subcommands: `defer` / `dismiss` / `restore`
+
+Backed by `kit/scripts/cwos-item.js`. Invoke the CLI — do NOT hand-edit queue
+YAMLs. A hand edit skips event emission, so the transition never reaches the
+event log and the reducers never see it.
+
+```bash
+node kit/scripts/cwos-item.js defer   <id> --reason "<text>" --until "<resume condition>"
+node kit/scripts/cwos-item.js dismiss <id> --reason "<text>" [--superseded-by <id>]
+node kit/scripts/cwos-item.js restore <id> --reason "<text>"
+node kit/scripts/cwos-item.js show    <id>
+```
+
+Then run `node kit/scripts/cwos-reconcile.js` to re-derive `queue-index.yaml`
+and program caps.
+
+**`--reason` is mandatory on every transition** (min 20 chars) and **`defer`
+additionally requires `--until`**. These are not ceremony. A deferral with no
+resume trigger is a silent dismissal in softer clothing: on 2026-07-26, WS-375
+and WS-382 sat in `backlog` gated on WS-357, which had itself been deferred —
+two of kit-quality's twelve capped slots that no sprint could ever draw from.
+
+Choosing between them:
+
+| Situation | Use |
+|---|---|
+| Real work, wrong moment; a condition will bring it back | `defer` with the condition in `--until` |
+| Duplicate of another item | `dismiss --superseded-by <survivor>` — **fold any unique scope into the survivor first** |
+| Overtaken by events (version-pinned, premise no longer holds) | `dismiss`, and say in `--reason` where the live residue now lives |
+| Conditional on something that has not happened | `defer` with the trigger as `--until` |
+| The gate cleared / you were wrong | `restore` |
+
+Nothing is deleted — every transition reverses and item history is preserved.
+This is deliberate and matches the portfolio doctrine: dormancy is a state, not
+an ending. Do not reach for `dismiss` as tidying.
+
+`done` is NOT here. Completion flows through `/next` → `cwos-next.js done` so
+sprint closure and item closure stay atomic.
+
+**Dead gates.** `cwos-reconcile` warns when an actionable item is `blocked_by`
+something deferred, dismissed, or nonexistent. Treat those warnings as work:
+either defer the blocked item too, or split out the half that was never really
+gated (WS-382 turned out to be the latter).
 
 ---
 
@@ -532,7 +581,8 @@ priority_score: 24.0  # RICE score
 category: architecture | security | performance | ux | data-integrity | testing | infrastructure | documentation
 program: ""  # program ID — links to parent program (e.g., "engineering", "security")
 capability: ""  # capability dimension (ADR-016): core | workstream | engines | governance | autonomous
-                # Derived from program + category by cwos-index.deriveCapability() if absent.
+                # Derived from program + category by deriveCapability() in
+                # kit/scripts/lib/cwos-reconcile-core.js if absent.
                 # Drives /next scoring against .cwos-onboarding.yaml capabilities block.
 description: |
   Detailed description of what needs to be done

@@ -12,29 +12,9 @@ const fs = require('fs');
 const path = require('path');
 const { ok, violate, unknown } = require('../lib/detector-base');
 const { readYAMLFile } = require('../../lib/cwos-utils');
-
-const SYNC_PREFIXES = [
-  // case-insensitive substring match against normalized path
-  'onedrive\\',
-  'onedrive/',
-  '\\dropbox\\',
-  '/dropbox/',
-  '\\icloud',
-  '/icloud',
-  'google drive',
-];
-
-function normalize(p) {
-  return (p || '').toLowerCase();
-}
-
-function matchesSync(p) {
-  const n = normalize(p);
-  for (const prefix of SYNC_PREFIXES) {
-    if (n.includes(prefix)) return prefix;
-  }
-  return null;
-}
+// WS-503: shared with cwos-adopt-install.js (which refuses to adopt INTO a
+// synced path) so the two cannot drift apart on what counts as cloud-synced.
+const { SYNC_PREFIXES, matchesSyncPath: matchesSync } = require('../../lib/sync-paths');
 
 module.exports = {
   id: 'DEV-INV-002',
