@@ -1,0 +1,161 @@
+id: "WS-310"
+title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER CONCEPT, 2026-07-30. A runout is a collapsing window of the hands that can
+  still be made, fixed at the river. Model the window, and model what players do while
+  it is still open.
+
+  TWO LAYERS. The split is the design, and it is what makes the thing tractable.
+
+  LAYER A — BOARD CONVERGENCE (deterministic).
+  Given a board and a range, which terminal hand classes are still reachable, with what
+  probability, and how does that distribution move on each possible next card. Pure
+  combinatorics: no player data, no censoring, no sampling error, and it does not age.
+  A wet connected board has high convergence variety (straights, flushes, trips, boats,
+  two pair all live); a dry rainbow board has little. The river is the degenerate case —
+  the window is closed and the answer is villain's range vs hero's hand, which is
+  already ratified doctrine (river equity is a showdown-outcome distribution, never
+  runout variance).
+
+  LAYER B — BEHAVIOURAL RESPONSE (measured, censored, era-fragile).
+  Conditional on Layer A, what do players actually do as the window closes:
+    - Do they get STICKY with a hand that was strong before the nuts changed?
+    - Which runouts kill aggression?
+    - Which runouts produce fast-play vs slow-play?
+
+  WHY THE SPLIT EARNS ITS KEEP. It isolates every epistemic weakness into Layer B:
+
+    | layer | censoring | era-drift |
+    |-------|-----------|-----------|
+    | A     | none (card math)      | none — combinatorics do not age |
+    | B     | yes (folds never shown) | yes (2009 pool != 2026 live)  |
+
+  Layer A is permanently true, which is rare here and is what makes it usable as an
+  ANCHOR in the founder's sense. Note the refinement that makes the concept sound: the
+  anchor attaches to the BOARD, not to the villain. An earlier framing in this
+  conversation rejected "anchoring" outright; that objection holds only for a
+  PER-VILLAIN terminal-strength projection, which Finding 14 rules out (exactly one
+  player in 59,700 has 30+ shown flop check-raises). Board-anchored is deterministic and
+  fully observable, so it carries none of that problem.
+
+  LAYER A ALSO SUPPLIES LAYER B's DENOMINATOR. This is not a nice-to-have; it is why
+  the two cannot be built separately. Per the standing rule (memory:
+  feedback_numbers_carry_their_conditional), a behavioural number conditioned on a
+  runout is meaningless as a raw frequency: "villains fold 71% on flush-completing
+  rivers" is a read if their range holds the flush 12% of the time and is close to
+  correct play if it holds it 40%. The deliverable is therefore a DEVIATION from what
+  the combinatorics support, never a frequency.
+
+  WHAT ALREADY EXISTS (verified by code read 2026-07-30, not assumed).
+  `gameTreeDepth2.computeCallDepth2EV` already walks the runout card by card — builds
+  each new board, recaches texture, evaluates bet vs check per card, weights the result,
+  and emits `nextStreetPlan { scaryCards, scaryCardRanks, improveCards }`. The
+  enumeration machinery is there. What it asks of each card is the gap:
+
+      const isScary = suitFreq[nextCard & 3] >= 2 || boardRanks.has(nextCard >> 2);
+      if (isScary && heroScore <= heroScoreBefore) scaryCardCount++;
+
+  That is HERO-CENTRIC and BINARY. It conflates "the board got more dangerous" with
+  "hero fell behind", and it never asks what the card did to the space of hands VILLAIN
+  can hold. There is no nut-change concept: a 9 on J-T-x moves the nuts from a set to a
+  straight, and this test sees a card that neither paired the board nor brought a third
+  suit.
+
+  THE CORPUS GAP. No mining script conditions on board texture or runout class at all —
+  zero texture references across mine-intent-splits.py, mine-sizing-and-lines.py,
+  mine-behavioral-features.py. We hold 21.6M hands with complete runouts and have never
+  asked what players do when the flush completes. Every question above is answerable
+  from data already on disk.
+accept_criteria: |
+  GATE (do this first; the rest does not start until it reports).
+
+  - Mine turn continuation rate split by whether the turn card CHANGED THE NUT IDENTITY
+    (straight completing / flush completing / board pairing) vs blank turns, over the
+    HandHQ corpus. Report k/n per cell, never bare percentages.
+  - Compute the Layer-A combinatorial expectation for each cell: given the range implied
+    by the preflop+flop line, how much did that runout actually move the range's strength?
+  - STATED PREDICTION: on nut-changing turns, continuation drops MORE than the
+    combinatorial change in range strength justifies — villains over-fold to the scare
+    card relative to what their own range supports.
+  - Report the deviation with its sign and magnitude, and the censoring direction.
+
+  GATE OUTCOMES, both acceptable:
+  - Confirmed → the behavioural layer has a measured effect with a sign; proceed to
+    design Layer A + B together in a follow-up with its own scope.
+  - Flat → the behavioural layer is thinner than it looks; Layer A alone may carry the
+    value, which is a cheaper build and a useful answer. Record it and stop.
+
+  THEN, only if the gate confirms:
+  - A design note covering: the Layer-A representation (per-combo distribution over
+    terminal classes, and how it is conditioned by each next card), where it attaches in
+    the existing runout walk, and what replaces the hero-centric `isScary` test.
+  - An explicit statement of whether this SUPERSEDES WS-303 or sits beneath it — see
+    decision flag.
+
+  BINDING ON ANY LATER BUILD:
+  - Layer A must be derived from board combinatorics against a DECLARED range, never
+    from the engine's own narrowed estimate. Taking the base rate from the model makes
+    the model validate itself — that is FIND-038, where sizing tells measured
+    self-consistency with the engine's prior while the UI claimed showdown confirmation.
+  - Terminal-strength distributions are POOL/ARCHETYPE level, never per-villain
+    (Finding 14, confirmed by three independent routes).
+  - Must not be persisted or boosted like a showdown anchor. Showdown evidence is
+    per-villain observation; this is a projection. Conflating them manufactures reads
+    the data says do not exist.
+effort: "M"
+files_involved:
+  - "scripts/backtest/mine-intent-splits.py"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/pokerCore/boardTexture.js"
+  - "docs/research/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Does this SUPERSEDE WS-303 or sit beneath it? Hypothesis (unmeasured): WS-303's finding that re-narrowing sharpens the range until depth 3 is worse than not narrowing is the SAME root cause — re-narrowing a hole-card grid street by street treats streets as independent filters and compounds error, where conditioning one terminal window does not. Test this cheaply before building either."
+  - "Does Layer A ship as a new primitive, or as a replacement for the existing bucket taxonomy (nuts/strong/marginal/draw/air)? The data argues 'draw' is not a hand class but an UNRESOLVED STATE — the draw column runs 16.0% flop -> 24.2% turn -> 0.0% river by construction. A bucket label cannot express '9 outs to the nuts, 38 outs to nothing'."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-30"
+created_at: "2026-07-30T15:10:00Z"
+status_note: |
+  Filed at founder request 2026-07-30 after a design conversation during SPR-160.
+
+  EMPIRICAL GROUNDING (already measured, docs/research/player-archetypes-empirical-2026-07-26.md):
+  Finding 12 is a terminal-strength distribution by street over shown hands —
+
+    action        n shown   air    draw    one pair   strong(2P+)
+    c-bet flop    43,294    14.9%  16.0%   52.2%      16.9%
+    barrel turn   71,154     4.1%  24.2%   31.7%      40.0%
+    barrel river  60,047     6.1%   0.0%   27.7%      66.3%
+
+  The draw column IS the window, and it empties by construction at the river. The mass
+  redistributes rather than vanishing (pair 52.2 -> 31.7 while strong 16.9 -> 40.0), so
+  the window's collapse and the betting line are coupled — which is the whole point.
+  Finding 13 sizes the payoff: 52.2% of shown flop c-bets are exactly one pair, the
+  category WS-278 identified as ambiguous between thin value and protection, and
+  protection is DEFINED by terminal spread.
+
+  All of the above are shown-hand conditionals and inherit that censoring: a bluff that
+  works is never shown, and a folded draw is never shown, so both numerator and
+  denominator are censored. Read as shape and bound, not level.
+
+  NOT A CHARTER YET. If the gate confirms and the follow-up design is large, this should
+  become a project file in .claude/projects/ rather than growing further as a ticket.

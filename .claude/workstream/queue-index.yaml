@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 185
+total_items: 186
 by_status:
   decomposed: 1
   done: 77
   in_progress: 3
   deferred: 43
-  backlog: 42
+  backlog: 43
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 56
+  domain-correctness: 57
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1795,6 +1795,15 @@ items:
     status: backlog
     priority_score: 26
     category: testing
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-310"
+    title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
     effort: M
     program: domain-correctness
     capability: core

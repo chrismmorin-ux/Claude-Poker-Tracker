@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T15:36:39.095Z",
-  "updated_by_event": "ev-1785425799094-6b71148424c2",
+  "updated_at": "2026-07-30T15:56:17.648Z",
+  "updated_by_event": "ev-1785426977648-6dbb83f9fb6e",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4856,7 +4856,35 @@
         "src/utils/exploitEngine/__tests__/fixtures/ranges.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-310": {
+      "id": "WS-310",
+      "title": "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes",
+      "status": "backlog",
+      "priority_score": 29,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-30"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "scripts/backtest/mine-intent-splits.py",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/pokerCore/boardTexture.js",
+        "docs/research/"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785425799094-6b71148424c2"
+  "last_event_log_head": "ev-1785426977648-6dbb83f9fb6e"
 }
