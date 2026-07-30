@@ -60,7 +60,11 @@ export const bootstrapMeanCI = (values, { resamples = 2000, alpha = 0.05, seed =
   let state = seed >>> 0;
   const nextIdx = () => {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state % n;
+    // High bits, not `state % n`. An LCG with a power-of-two modulus has very short
+    // periods in its low bits, so `% n` degenerates toward a fixed cycle whenever `n`
+    // is (or shares large power-of-two factors with) a power of two — narrowing the
+    // interval for a reason that has nothing to do with the data. (WS-287.)
+    return Math.floor((state / 0x100000000) * n);
   };
 
   const means = new Array(resamples);

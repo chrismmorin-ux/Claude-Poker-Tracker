@@ -1,0 +1,556 @@
+<title>How the Engine Decides — Atlas 01</title>
+<style>
+  :root{
+    --paper:#FCFCFB; --ink:#14181B; --ink-2:#41484E; --ink-3:#6E777E;
+    --rule:#DDE0DE; --rule-2:#EBEDEB; --panel:#F4F5F3;
+    --model:#2E6DB4;      /* what the engine predicts */
+    --measured:#C2611C;   /* what actually happened */
+    --neutral:#8A8F94;    /* no detectable difference */
+    --good:#2E7D5B; --bad:#A13228;
+    --serif: Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+    --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --mono: ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --measure: 68ch;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#141514; --ink:#EDEEEA; --ink-2:#B4BAB6; --ink-3:#868D89;
+      --rule:#2E312F; --rule-2:#232624; --panel:#1C1E1C;
+      --model:#5A90D6; --measured:#D4762E; --neutral:#7E8481;
+      --good:#5BAF88; --bad:#D4736A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#141514; --ink:#EDEEEA; --ink-2:#B4BAB6; --ink-3:#868D89;
+    --rule:#2E312F; --rule-2:#232624; --panel:#1C1E1C;
+    --model:#5A90D6; --measured:#D4762E; --neutral:#7E8481;
+    --good:#5BAF88; --bad:#D4736A;
+  }
+  :root[data-theme="light"]{
+    --paper:#FCFCFB; --ink:#14181B; --ink-2:#41484E; --ink-3:#6E777E;
+    --rule:#DDE0DE; --rule-2:#EBEDEB; --panel:#F4F5F3;
+    --model:#2E6DB4; --measured:#C2611C; --neutral:#8A8F94;
+    --good:#2E7D5B; --bad:#A13228;
+  }
+
+  body{background:var(--paper); color:var(--ink); font-family:var(--sans);
+       font-size:17px; line-height:1.65; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px 96px;}
+  .col{max-width:var(--measure);}
+
+  /* ---- masthead ---- */
+  .mast{padding:56px 0 28px; border-bottom:2px solid var(--ink); margin-bottom:8px;}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+           text-transform:uppercase; color:var(--ink-3); margin:0 0 18px;}
+  h1{font-family:var(--serif); font-weight:400; font-size:clamp(34px,5.2vw,54px);
+     line-height:1.08; letter-spacing:-.015em; margin:0 0 18px; text-wrap:balance;}
+  .standfirst{font-size:19px; line-height:1.6; color:var(--ink-2); margin:0; max-width:60ch;}
+  .stamp{display:flex; flex-wrap:wrap; gap:8px 28px; margin-top:26px;
+         font-family:var(--mono); font-size:11.5px; color:var(--ink-3);
+         letter-spacing:.04em; text-transform:uppercase;}
+
+  h2{font-family:var(--serif); font-weight:400; font-size:clamp(25px,3.4vw,34px);
+     line-height:1.18; letter-spacing:-.01em; margin:64px 0 6px; text-wrap:balance;}
+  h3{font-family:var(--sans); font-weight:650; font-size:16.5px; letter-spacing:-.005em;
+     margin:38px 0 8px; text-wrap:balance;}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+          text-transform:uppercase; color:var(--measured); margin:0 0 4px;}
+  p{margin:0 0 16px;}
+  strong{font-weight:650;}
+  em{font-style:italic;}
+  code{font-family:var(--mono); font-size:.88em; background:var(--panel);
+       padding:.12em .38em; border-radius:3px; color:var(--ink-2);}
+  a{color:var(--model);}
+
+  /* ---- the pipeline: genuinely sequential, so numbered ---- */
+  .steps{list-style:none; padding:0; margin:28px 0 0; display:grid; gap:2px;}
+  .step{display:grid; grid-template-columns:52px 1fr; gap:20px;
+        padding:20px 0; border-top:1px solid var(--rule);}
+  .step:last-child{border-bottom:1px solid var(--rule);}
+  .step-n{font-family:var(--serif); font-size:30px; line-height:1; color:var(--ink-3);
+          font-variant-numeric:tabular-nums;}
+  .step h3{margin:0 0 4px;}
+  .step p{margin:0; color:var(--ink-2); font-size:16px;}
+  .step .flag{display:inline-block; margin-top:10px; font-family:var(--mono);
+              font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+              color:var(--measured); border:1px solid var(--measured);
+              border-radius:2px; padding:2px 7px;}
+
+  /* ---- figures ---- */
+  figure{margin:36px 0 8px; max-width:100%;}
+  .figbox{border:1px solid var(--rule); border-radius:4px; background:var(--panel);
+          padding:20px 20px 12px; overflow-x:auto;}
+  figcaption{font-size:14.5px; line-height:1.55; color:var(--ink-2);
+             margin-top:14px; max-width:66ch;}
+  figcaption b{color:var(--ink); font-weight:650;}
+  .figtitle{font-family:var(--sans); font-weight:650; font-size:15px; margin:0 0 2px;}
+  .figsub{font-family:var(--mono); font-size:11px; letter-spacing:.06em;
+          text-transform:uppercase; color:var(--ink-3); margin:0 0 16px;}
+  svg{display:block; max-width:100%; height:auto;}
+  .tick{font-family:var(--mono); font-size:11px; fill:var(--ink-3);}
+  .lab{font-family:var(--sans); font-size:12.5px; fill:var(--ink-2);}
+  .lab-b{font-family:var(--sans); font-size:12.5px; fill:var(--ink); font-weight:650;}
+  .val{font-family:var(--mono); font-size:11.5px; fill:var(--ink-2);}
+  .grid{stroke:var(--rule-2); stroke-width:1;}
+  .axis{stroke:var(--rule); stroke-width:1;}
+  .refline{stroke:var(--ink-3); stroke-width:1.5; stroke-dasharray:4 3;}
+
+  .legend{display:flex; flex-wrap:wrap; gap:18px; margin:0 0 14px;
+          font-size:13px; color:var(--ink-2);}
+  .legend span{display:inline-flex; align-items:center; gap:7px;}
+  .sw{width:12px; height:12px; border-radius:2px; display:inline-block;}
+
+  /* ---- tables ---- */
+  .tablewrap{overflow-x:auto; margin:24px 0;}
+  table{border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px;}
+  th,td{text-align:right; padding:9px 12px; border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+           text-transform:uppercase; color:var(--ink-3); border-bottom:1px solid var(--rule);
+           font-weight:400;}
+  td{font-variant-numeric:tabular-nums;}
+  tr.hilite td{background:var(--panel); font-weight:650; color:var(--ink);}
+  .mono{font-family:var(--mono);}
+
+  .chip{display:inline-block; font-family:var(--mono); font-size:10.5px;
+        letter-spacing:.06em; text-transform:uppercase; padding:2px 7px;
+        border-radius:2px; border:1px solid currentColor;}
+  .chip.sig{color:var(--measured);}
+  .chip.ns{color:var(--ink-3);}
+
+  /* ---- callouts ---- */
+  .note{border-left:3px solid var(--measured); padding:4px 0 4px 20px;
+        margin:28px 0; max-width:var(--measure);}
+  .note p:last-child{margin-bottom:0;}
+  .note .h{font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+           text-transform:uppercase; color:var(--measured); margin:0 0 6px;}
+
+  .plainbox{border:1px solid var(--rule); border-radius:4px; padding:22px 24px;
+            margin:28px 0; max-width:var(--measure); background:var(--panel);}
+  .plainbox p:last-child{margin-bottom:0;}
+
+  hr{border:0; border-top:1px solid var(--rule); margin:56px 0 0;}
+  .foot{font-size:13.5px; color:var(--ink-3); margin-top:20px; max-width:var(--measure);}
+
+  @media (max-width:640px){
+    body{font-size:16px;}
+    .step{grid-template-columns:38px 1fr; gap:14px;}
+    .step-n{font-size:24px;}
+    .figbox{padding:14px 12px 8px;}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .step{transition:border-color .2s ease;}
+  }
+  :focus-visible{outline:2px solid var(--model); outline-offset:3px;}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Engine Atlas · 01 · measured 26 Jul 2026</p>
+  <h1>How the engine decides — and what 10,147 real decisions say about it</h1>
+  <p class="standfirst">A plain-language model of the machinery that turns "what has this player done before" into "what should you do now" — followed by the first honest measurement of whether it works.</p>
+  <div class="stamp">
+    <span>Corpus · HandHQ 50NL · Jul 2009</span>
+    <span>10,147 scored decisions</span>
+    <span>230 players</span>
+    <span>Online cash — live 1/2 unproven</span>
+  </div>
+</header>
+
+<div class="col">
+<h2>Part one — the mechanism</h2>
+<p>The engine answers one question over and over: <em>this villain is about to act — what will they do, and what is that worth to you?</em></p>
+<p>It does that in five steps. Everything else in the codebase is detail hanging off these five.</p>
+</div>
+
+<ol class="steps">
+  <li class="step">
+    <div class="step-n">1</div>
+    <div>
+      <h3>Record every action</h3>
+      <p>Every time a player folds, calls, bets or raises, that decision is stored along with the situation it happened in.</p>
+    </div>
+  </li>
+  <li class="step">
+    <div class="step-n">2</div>
+    <div>
+      <h3>File it in a drawer</h3>
+      <p>Each decision goes into a labelled drawer. The label has six parts: which street, how wet the board was, their position, whether they were the aggressor, whether they were in position, and what they were facing. Six parts means a very large number of possible drawers.</p>
+    </div>
+  </li>
+  <li class="step">
+    <div class="step-n">3</div>
+    <div>
+      <h3>Look up the drawer — and widen if it's thin</h3>
+      <p>To predict, the engine opens the drawer matching right now. If there are fewer than three hands in it, it drops one part of the label and opens a broader drawer. It keeps widening — six times — until it finds enough evidence, or falls back to "how the average player behaves."</p>
+      <span class="flag">This step is where the problem is</span>
+    </div>
+  </li>
+  <li class="step">
+    <div class="step-n">4</div>
+    <div>
+      <h3>Blend with the crowd</h3>
+      <p>The villain's own numbers are mixed with the population average, weighted by how much you've actually seen. Three hands barely move the needle; three hundred hands mostly override it.</p>
+    </div>
+  </li>
+  <li class="step">
+    <div class="step-n">5</div>
+    <div>
+      <h3>Turn it into money</h3>
+      <p>The predicted fold / call / raise percentages feed the EV maths, which prices each of your options and recommends the best one. <strong>A wrong prediction in step 3 becomes a wrong recommendation here.</strong></p>
+    </div>
+  </li>
+</ol>
+
+<div class="col">
+<h2>Part two — where the decisions actually land</h2>
+<p>Step 3 widens the drawer until it finds evidence. So the first honest question is: how often does it get to use a specific drawer, and how often does it end up guessing from the crowd?</p>
+</div>
+
+<figure>
+  <div class="figbox">
+    <p class="figtitle">Where the 10,147 decisions came to rest</p>
+    <p class="figsub">Drawer width · level 1 is most specific, "crowd average" is no villain data at all</p>
+    <svg viewBox="0 0 720 300" role="img" aria-label="Bar chart of how many decisions resolved at each fallback level. Level 5 holds 4,095, level 6 holds 3,035, crowd average holds 1,716, level 4 holds 930, and levels 1 to 3 hold 157, 79 and 135 respectively.">
+      <line class="axis" x1="190" y1="24" x2="190" y2="272"/>
+      <g>
+        <text class="lab" x="182" y="42" text-anchor="end">1 · full detail</text>
+        <rect x="190" y="30" width="20" height="18" rx="3" fill="var(--model)" opacity=".95"/>
+        <text class="val" x="218" y="43">157</text>
+
+        <text class="lab" x="182" y="76" text-anchor="end">2 · drop aggressor</text>
+        <rect x="190" y="64" width="10" height="18" rx="3" fill="var(--model)" opacity=".88"/>
+        <text class="val" x="208" y="77">79</text>
+
+        <text class="lab" x="182" y="110" text-anchor="end">3 · drop position-rel.</text>
+        <rect x="190" y="98" width="17" height="18" rx="3" fill="var(--model)" opacity=".81"/>
+        <text class="val" x="215" y="111">135</text>
+
+        <text class="lab" x="182" y="144" text-anchor="end">4 · drop texture</text>
+        <rect x="190" y="132" width="118" height="18" rx="3" fill="var(--model)" opacity=".74"/>
+        <text class="val" x="316" y="145">930</text>
+
+        <text class="lab" x="182" y="178" text-anchor="end">5 · drop position</text>
+        <rect x="190" y="166" width="520" height="18" rx="3" fill="var(--model)" opacity=".67"/>
+        <text class="val" x="662" y="179" text-anchor="end" fill="var(--paper)">4,095</text>
+
+        <text class="lab" x="182" y="212" text-anchor="end">6 · drop street</text>
+        <rect x="190" y="200" width="385" height="18" rx="3" fill="var(--model)" opacity=".60"/>
+        <text class="val" x="583" y="213">3,035</text>
+
+        <text class="lab-b" x="182" y="246" text-anchor="end">crowd average</text>
+        <rect x="190" y="234" width="218" height="18" rx="3" fill="var(--neutral)"/>
+        <text class="val" x="416" y="247">1,716</text>
+      </g>
+      <text class="tick" x="190" y="288">0</text>
+      <text class="tick" x="710" y="288" text-anchor="end">4,095 decisions</text>
+    </svg>
+  </div>
+  <figcaption><b>Only 371 decisions out of 10,147 — 3.7% — ever used the three most specific drawers.</b> Seven in ten resolved at level 5 or worse, where street and "what they're facing" are nearly all that's left. One in six had no usable villain history at all.</figcaption>
+</figure>
+
+<div class="col">
+<h2>Part three — the finding that changed our minds</h2>
+<p>The obvious reading of that chart is "we need more data so the specific drawers fill up." We tested the opposite idea instead: what if we ignored most of the label and just pooled everything together?</p>
+<p>To test it properly, every version scored <em>the exact same 10,147 decisions</em>, so the comparison is like-for-like rather than two separate averages.</p>
+</div>
+
+<figure>
+  <div class="figbox">
+    <p class="figtitle">Simpler versions of the engine, scored against today's engine</p>
+    <p class="figsub">Prediction error — further left is better · dot plot, axis does not start at zero</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--model)"></span>beats today's engine</span>
+      <span><span class="sw" style="background:var(--measured)"></span>worse than today's engine</span>
+      <span><span class="sw" style="background:var(--neutral)"></span>no detectable difference</span>
+    </div>
+    <svg viewBox="0 0 720 400" role="img" aria-label="Dot plot comparing nine engine variants by prediction error. Pooling by what the villain is facing scores 0.778 and keeping only who the aggressor is scores 0.776, both better than today's engine at 0.793. Using all six label parts at once scores 0.839, much worse.">
+      <line class="refline" x1="352" y1="30" x2="352" y2="352"/>
+      <text class="tick" x="352" y="24" text-anchor="middle" fill="var(--ink-2)">today's engine</text>
+
+      <!-- rows -->
+      <g>
+        <line class="grid" x1="352" y1="48" x2="255" y2="48"/>
+        <circle cx="255" cy="48" r="5.5" fill="var(--model)"/>
+        <text class="lab-b" x="244" y="52" text-anchor="end">only "who was the aggressor"</text>
+        <text class="val" x="366" y="52">0.776 · 55.7% right</text>
+
+        <line class="grid" x1="352" y1="82" x2="266" y2="82"/>
+        <circle cx="266" cy="82" r="5.5" fill="var(--model)"/>
+        <text class="lab-b" x="244" y="86" text-anchor="end">pool everything (facing only)</text>
+        <text class="val" x="366" y="86">0.778 · 55.0% right</text>
+
+        <line class="grid" x1="352" y1="116" x2="305" y2="116"/>
+        <circle cx="305" cy="116" r="5.5" fill="var(--model)"/>
+        <text class="lab" x="244" y="120" text-anchor="end">only "in position or not"</text>
+        <text class="val" x="366" y="120">0.785 · 53.7% right</text>
+
+        <line class="grid" x1="352" y1="150" x2="351" y2="150"/>
+        <circle cx="351" cy="150" r="5.5" fill="var(--neutral)"/>
+        <text class="lab" x="244" y="154" text-anchor="end">drop board texture first</text>
+        <text class="val" x="366" y="154">0.793 · 52.2% right</text>
+
+        <circle cx="352" cy="184" r="5.5" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        <text class="lab-b" x="244" y="188" text-anchor="end">today's engine (6 drawers)</text>
+        <text class="val" x="366" y="188" fill="var(--ink)">0.793 · 52.2% right</text>
+
+        <line class="grid" x1="352" y1="218" x2="407" y2="218"/>
+        <circle cx="407" cy="218" r="5.5" fill="var(--measured)"/>
+        <text class="lab" x="244" y="222" text-anchor="end">only street</text>
+        <text class="val" x="421" y="222">0.803 · 51.5% right</text>
+
+        <line class="grid" x1="352" y1="252" x2="428" y2="252"/>
+        <circle cx="428" cy="252" r="5.5" fill="var(--measured)"/>
+        <text class="lab" x="244" y="256" text-anchor="end">only board texture</text>
+        <text class="val" x="442" y="256">0.806 · 50.5% right</text>
+
+        <line class="grid" x1="352" y1="286" x2="440" y2="286"/>
+        <circle cx="440" cy="286" r="5.5" fill="var(--measured)"/>
+        <text class="lab" x="244" y="290" text-anchor="end">only position</text>
+        <text class="val" x="454" y="290">0.809 · 50.1% right</text>
+
+        <line class="grid" x1="352" y1="320" x2="616" y2="320"/>
+        <circle cx="616" cy="320" r="5.5" fill="var(--measured)"/>
+        <text class="lab-b" x="244" y="324" text-anchor="end">all 6 parts, no widening</text>
+        <text class="val" x="630" y="324" text-anchor="end" dx="66">0.839 · 46.5%</text>
+      </g>
+
+      <line class="axis" x1="190" y1="352" x2="700" y2="352"/>
+      <text class="tick" x="255" y="370" text-anchor="middle">0.78</text>
+      <text class="tick" x="352" y="370" text-anchor="middle">0.79</text>
+      <text class="tick" x="468" y="370" text-anchor="middle">0.81</text>
+      <text class="tick" x="616" y="370" text-anchor="middle">0.84</text>
+      <text class="tick" x="445" y="390" text-anchor="middle" fill="var(--ink-3)">prediction error (lower is better)</text>
+    </svg>
+  </div>
+  <figcaption><b>Throwing away five of the six label parts makes the engine better, not worse.</b> Pooling on nothing but "what are they facing" beats today's six-drawer system, and getting 55.0% of predictions right instead of 52.2%. Keeping one extra part — who the aggressor was — is better still at 55.7%.</figcaption>
+</figure>
+
+<div class="col">
+<div class="note">
+  <p class="h">Why this wasn't obvious before</p>
+  <p>The engine's own diagnostics said the opposite, because they compared <em>different decisions</em> rather than different methods.</p>
+  <p>The drawer chart shows level 1 having much lower error than level 6, which looks like specificity paying off. But a decision only <em>reaches</em> level 1 when there's lots of history on it — and those are the easy ones. It was comparing easy decisions to hard ones and crediting the difference to the method.</p>
+  <p>The test above avoids that trap by running every version over the identical decision set.</p>
+</div>
+
+<h3>Is it a real difference or just noise?</h3>
+<p>Each version was compared decision-by-decision against today's engine, so we can put a confidence interval on it rather than eyeballing two averages.</p>
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead>
+    <tr><th>Version</th><th>Error</th><th>Right</th><th>Gap vs today</th><th>Verdict</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Only "who was the aggressor"</td><td>0.776</td><td>55.7%</td><td>−0.0167</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>Pool everything</td><td>0.778</td><td>55.0%</td><td>−0.0149</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>Only "in position"</td><td>0.785</td><td>53.7%</td><td>−0.0081</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>Drop texture first</td><td>0.793</td><td>52.2%</td><td>−0.0002</td><td><span class="chip ns">noise</span></td></tr>
+    <tr class="hilite"><td>Today's engine</td><td>0.793</td><td>52.2%</td><td>—</td><td>reference</td></tr>
+    <tr><td>Only street</td><td>0.803</td><td>51.5%</td><td>+0.0096</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>Only board texture</td><td>0.806</td><td>50.5%</td><td>+0.0132</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>Only position</td><td>0.809</td><td>50.1%</td><td>+0.0153</td><td><span class="chip sig">real</span></td></tr>
+    <tr><td>All 6 parts, no widening</td><td>0.839</td><td>46.5%</td><td>+0.0458</td><td><span class="chip sig">real</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="col">
+<p class="foot">"Real" means the 95% confidence interval excludes zero. The pooling result is about eleven standard errors from zero — it is not a close call. "Drop texture first" is the one comparison that genuinely lands on noise, which settles a question that had been argued from a code comment for months.</p>
+
+<div class="plainbox">
+  <p><strong>What this means in one sentence.</strong> The engine is currently slicing your opponents' histories too finely — three observations in a very specific spot is a worse guide than three hundred observations in a broad one, and right now it prefers the three.</p>
+</div>
+
+<h2>Part four — the second measurable error</h2>
+<p>Separately: when the engine predicts how often someone folds to a bet, it predicts roughly the same number no matter how big the bet is. Real players do not behave that way.</p>
+</div>
+
+<figure>
+  <div class="figbox">
+    <p class="figtitle">Fold rate versus bet size</p>
+    <p class="figsub">What the engine expects, against what the population actually did</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--model)"></span>engine predicts</span>
+      <span><span class="sw" style="background:var(--measured)"></span>actually happened</span>
+    </div>
+    <svg viewBox="0 0 720 320" role="img" aria-label="Grouped bar chart of fold rates by bet size. For small bets the engine predicts 45.5 percent and 41.5 percent happened. For medium bets it predicts 44.7 percent and 58.0 percent happened. For large bets it predicts 48.7 percent and 84.6 percent happened.">
+      <g class="grid">
+        <line x1="100" y1="240" x2="690" y2="240"/>
+        <line x1="100" y1="190" x2="690" y2="190"/>
+        <line x1="100" y1="140" x2="690" y2="140"/>
+        <line x1="100" y1="90"  x2="690" y2="90"/>
+        <line x1="100" y1="40"  x2="690" y2="40"/>
+      </g>
+      <text class="tick" x="92" y="244" text-anchor="end">0%</text>
+      <text class="tick" x="92" y="194" text-anchor="end">25%</text>
+      <text class="tick" x="92" y="144" text-anchor="end">50%</text>
+      <text class="tick" x="92" y="94"  text-anchor="end">75%</text>
+      <text class="tick" x="92" y="44"  text-anchor="end">100%</text>
+
+      <!-- small -->
+      <rect x="148" y="149" width="46" height="91"  rx="4" fill="var(--model)"/>
+      <rect x="198" y="157" width="46" height="83"  rx="4" fill="var(--measured)"/>
+      <text class="val" x="171" y="143" text-anchor="middle">45.5</text>
+      <text class="val" x="221" y="151" text-anchor="middle">41.5</text>
+      <text class="lab-b" x="196" y="262" text-anchor="middle">small bet</text>
+      <text class="tick" x="196" y="278" text-anchor="middle">under ⅓ pot · n=1,022</text>
+
+      <!-- medium -->
+      <rect x="338" y="151" width="46" height="89"  rx="4" fill="var(--model)"/>
+      <rect x="388" y="124" width="46" height="116" rx="4" fill="var(--measured)"/>
+      <text class="val" x="361" y="145" text-anchor="middle">44.7</text>
+      <text class="val" x="411" y="118" text-anchor="middle">58.0</text>
+      <text class="lab-b" x="386" y="262" text-anchor="middle">medium bet</text>
+      <text class="tick" x="386" y="278" text-anchor="middle">⅓–⅔ pot · n=2,073</text>
+
+      <!-- large -->
+      <rect x="528" y="143" width="46" height="97"  rx="4" fill="var(--model)"/>
+      <rect x="578" y="71"  width="46" height="169" rx="4" fill="var(--measured)"/>
+      <text class="val" x="551" y="137" text-anchor="middle">48.7</text>
+      <text class="val" x="601" y="65"  text-anchor="middle">84.6</text>
+      <text class="lab-b" x="576" y="262" text-anchor="middle">large bet</text>
+      <text class="tick" x="576" y="278" text-anchor="middle">⅔–full pot · n=26</text>
+
+      <line class="axis" x1="100" y1="240" x2="690" y2="240"/>
+    </svg>
+  </div>
+  <figcaption>The engine's line is nearly flat at about 45%. The real line climbs steeply. <b>At the most common bet size it is wrong by 13.3 points, on 2,073 decisions</b> — and it is wrong in the direction that makes you bluff too little. The large-bet bar rests on only 26 hands, so treat that one as a hint, not a result.</figcaption>
+</figure>
+
+<div class="col">
+<div class="note">
+  <p class="h">Why the shape matters more than the size</p>
+  <p>Notice the error changes <em>direction</em>: on small bets the engine over-estimates folding, on medium and large bets it under-estimates. A single correction applied everywhere cannot fix a sign flip.</p>
+  <p>That rules out "the base number is a bit low" and points at the curve that maps bet size to fold rate. It is a different repair, and we would have made the wrong one from the average alone.</p>
+</div>
+
+<h2>Part five — where the engine helps you, and where it doesn't</h2>
+<p>Averages hide this completely. Split by what the villain is facing and how many players are in the pot, and the model has one strong region and one region where it is actively worse than assuming nothing.</p>
+</div>
+
+<figure>
+  <div class="figbox">
+    <p class="figtitle">How much the villain model beats a blind guess</p>
+    <p class="figsub">By situation · positive means the model added value</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--model)"></span>model helps</span>
+      <span><span class="sw" style="background:var(--measured)"></span>model hurts</span>
+    </div>
+    <svg viewBox="0 0 720 320" role="img" aria-label="Diverging bar chart of model value by situation. Nobody has acted yet with four players gives plus 5.63 percent, with three players plus 4.76, with two players plus 2.09. Facing a raise heads up plus 1.12. Facing a bet with four players plus 0.63, three players plus 0.27, heads up minus 0.49.">
+      <line class="axis" x1="269" y1="30" x2="269" y2="268"/>
+      <text class="tick" x="269" y="290" text-anchor="middle">0</text>
+      <text class="tick" x="200" y="290" text-anchor="middle">−1%</text>
+      <text class="tick" x="475" y="290" text-anchor="middle">+3%</text>
+      <text class="tick" x="681" y="290" text-anchor="middle">+6%</text>
+
+      <g>
+        <text class="lab-b" x="258" y="52" text-anchor="end">unopened · 4 players</text>
+        <rect x="269" y="40" width="386" height="18" rx="3" fill="var(--model)" opacity=".95"/>
+        <text class="val" x="663" y="53">+5.63%</text>
+
+        <text class="lab-b" x="258" y="86" text-anchor="end">unopened · 3 players</text>
+        <rect x="269" y="74" width="326" height="18" rx="3" fill="var(--model)" opacity=".88"/>
+        <text class="val" x="603" y="87">+4.76%</text>
+
+        <text class="lab" x="258" y="120" text-anchor="end">unopened · heads up</text>
+        <rect x="269" y="108" width="143" height="18" rx="3" fill="var(--model)" opacity=".80"/>
+        <text class="val" x="420" y="121">+2.09%</text>
+
+        <text class="lab" x="258" y="154" text-anchor="end">facing a raise · heads up</text>
+        <rect x="269" y="142" width="77" height="18" rx="3" fill="var(--model)" opacity=".72"/>
+        <text class="val" x="354" y="155">+1.12%</text>
+
+        <text class="lab" x="258" y="188" text-anchor="end">facing a bet · 4 players</text>
+        <rect x="269" y="176" width="43" height="18" rx="3" fill="var(--model)" opacity=".64"/>
+        <text class="val" x="320" y="189">+0.63%</text>
+
+        <text class="lab" x="258" y="222" text-anchor="end">facing a bet · 3 players</text>
+        <rect x="269" y="210" width="19" height="18" rx="3" fill="var(--model)" opacity=".56"/>
+        <text class="val" x="296" y="223">+0.27%</text>
+
+        <text class="lab-b" x="258" y="256" text-anchor="end">facing a bet · heads up</text>
+        <rect x="235" y="244" width="34" height="18" rx="3" fill="var(--measured)"/>
+        <text class="val" x="227" y="257" text-anchor="end">−0.49%</text>
+      </g>
+    </svg>
+  </div>
+  <figcaption><b>Everything the villain model is worth, it is worth before anyone has acted.</b> The moment someone bets into you — the moment you most need it — it is no better than assuming nothing, and heads-up it is slightly worse. That block covers 2,239 decisions, so it is not a corner case.</figcaption>
+</figure>
+
+<div class="col">
+<h2>Part six — what changed in the engine today</h2>
+<p>Separate from the measurements above, the decision maths was rewritten to handle multiway pots properly. Previously every formula assumed exactly one opponent, which is the wrong game: your table is nine-handed and a large share of pots are multiway.</p>
+<p>The most consequential piece: the rule for whether a bet is a value bet.</p>
+</div>
+
+<figure>
+  <div class="figbox">
+    <p class="figtitle">How strong your hand must be to value bet</p>
+    <p class="figsub">Equity needed against each caller · you must beat all of them, not an average one</p>
+    <svg viewBox="0 0 720 280" role="img" aria-label="Line chart showing the equity needed to value bet rises with the number of callers: 50 percent against one caller, 70.7 against two, 79.4 against three, 84.1 against four, 87.1 against five.">
+      <g class="grid">
+        <line x1="110" y1="210" x2="680" y2="210"/>
+        <line x1="110" y1="164" x2="680" y2="164"/>
+        <line x1="110" y1="117" x2="680" y2="117"/>
+        <line x1="110" y1="71"  x2="680" y2="71"/>
+      </g>
+      <text class="tick" x="102" y="214" text-anchor="end">40%</text>
+      <text class="tick" x="102" y="168" text-anchor="end">55%</text>
+      <text class="tick" x="102" y="121" text-anchor="end">70%</text>
+      <text class="tick" x="102" y="75"  text-anchor="end">85%</text>
+
+      <polyline fill="none" stroke="var(--measured)" stroke-width="2.5"
+        stroke-linejoin="round" stroke-linecap="round"
+        points="110,179 247,115 385,88 522,74 660,65"/>
+
+      <circle cx="110" cy="179" r="5.5" fill="var(--measured)" stroke="var(--panel)" stroke-width="2"/>
+      <circle cx="247" cy="115" r="5.5" fill="var(--measured)" stroke="var(--panel)" stroke-width="2"/>
+      <circle cx="385" cy="88"  r="5.5" fill="var(--measured)" stroke="var(--panel)" stroke-width="2"/>
+      <circle cx="522" cy="74"  r="5.5" fill="var(--measured)" stroke="var(--panel)" stroke-width="2"/>
+      <circle cx="660" cy="65"  r="5.5" fill="var(--measured)" stroke="var(--panel)" stroke-width="2"/>
+
+      <text class="val" x="110" y="199" text-anchor="middle" fill="var(--ink)">50.0%</text>
+      <text class="val" x="247" y="105" text-anchor="middle" fill="var(--ink)">70.7%</text>
+      <text class="val" x="385" y="78"  text-anchor="middle" fill="var(--ink)">79.4%</text>
+      <text class="val" x="522" y="64"  text-anchor="middle" fill="var(--ink)">84.1%</text>
+      <text class="val" x="660" y="55"  text-anchor="middle" fill="var(--ink)">87.1%</text>
+
+      <line class="axis" x1="110" y1="240" x2="680" y2="240"/>
+      <text class="lab" x="110" y="258" text-anchor="middle">1 caller</text>
+      <text class="lab" x="247" y="258" text-anchor="middle">2</text>
+      <text class="lab" x="385" y="258" text-anchor="middle">3</text>
+      <text class="lab" x="522" y="258" text-anchor="middle">4</text>
+      <text class="lab" x="660" y="258" text-anchor="middle">5</text>
+    </svg>
+  </div>
+  <figcaption>Heads-up, a bet is a value bet when you win more than half the time — the familiar rule. <b>Against three callers you need 79%.</b> The old code applied the 50% rule regardless of how many players were in, which quietly labelled thin bets as value bets in exactly the multiway spots you face most often at a nine-handed table. The thin-value band, 45% heads-up, becomes 77% against three.</figcaption>
+</figure>
+
+<div class="col">
+<div class="plainbox">
+  <p><strong>Also fixed:</strong> defence frequency now divides across the field. Facing a ¾-pot bet, one defender must continue 57% of the time — but each of three defenders only needs 25%, because the bettor only needs <em>everyone</em> to fold. Applying the heads-up number per player made the engine expect far too much defence multiway.</p>
+</div>
+
+<h2>What to do with all this</h2>
+<p>Three repairs are queued, in the order the evidence ranks them:</p>
+<ol>
+  <li><strong>Stop over-slicing the histories</strong> — the finding in part three. Largest measured effect by a wide margin.</li>
+  <li><strong>Fix the fold-versus-bet-size curve</strong> — part four. Second largest, and it converts directly into money through the bluffing maths.</li>
+  <li><strong>Work out why the model dies against aggression</strong> — part five. Least understood, arguably most important, because it is the situation where you most need help.</li>
+</ol>
+
+<div class="note">
+  <p class="h">The caveat that bounds everything above</p>
+  <p>Every number on this page comes from one corpus: online cash games, 50NL, July 2009. It measures whether the engine predicts <em>that</em> population. Your live 1/2 game is a different population, and the transfer is an assumption, not a result — nothing here is evidence about your actual game until the app has scored enough of your own recorded hands.</p>
+  <p>One nuance worth holding: your per-opponent samples at a live table are far <em>smaller</em> than this corpus's. If anything, that makes the over-slicing problem worse for you, not better.</p>
+</div>
+
+<hr>
+<p class="foot">Engine Atlas 01 · generated from <code>out/records.json</code> (14 engine variants × 10,147 paired decisions) and <code>out/backtest-shipped.json</code>. Reproduce with <code>scripts/backtest/dump-records.mjs</code> then <code>scripts/backtest/analyze_records.py</code>. Full technical write-ups: <code>docs/research/engine-backtest-run-2026-07-26-pool-reference.md</code>.</p>
+</div>
+
+</div>

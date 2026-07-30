@@ -437,6 +437,20 @@ export const toAppHand = (raw, meta = {}) => {
         potBeforeByOrder,
         stackBeforeByOrder,
         streetByOrder,
+        // Total chips each seat put in across the whole hand, INCLUDING its ante
+        // (WS-287). This is the debit side of the realized-outcome ledger that
+        // `handOutcome.mjs` completes; the credit side is the pot award, which it
+        // derives from the action sequence and showdown cards.
+        //
+        // Deliberately a separate tally from `totalCommitted`, which feeds
+        // `stackBeforeByOrder` and excludes antes. Folding the ante into that one
+        // would shift every existing SPR-zone number for no gain here.
+        committedBySeat: Object.fromEntries(
+          Array.from({ length: n }, (_, i) => [
+            seatOf(i),
+            Number((totalCommitted[i] + (antes[i] > 0 ? antes[i] : 0)).toFixed(2)),
+          ]),
+        ),
       },
     },
   };

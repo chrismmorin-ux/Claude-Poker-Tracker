@@ -167,7 +167,7 @@ const potAndBetBB = (hand, order, street) => {
  * by a factor of three, then charges one group-average fold rate against every
  * pot in the group — which manufactures cost rather than measuring it.
  */
-const sizeBucketFor = (betBB, potBB) => {
+export const sizeBucketFor = (betBB, potBB) => {
   if (!Number.isFinite(betBB) || !Number.isFinite(potBB) || potBB <= 0) return 'unknown';
   const frac = betBB / potBB;
   if (frac < 0.33) return '0-33';
@@ -376,11 +376,17 @@ export const scorePlayer = ({
 // =============================================================================
 
 /**
- * Stream corpus files and index hands by EVAL player.
+ * Stream corpus files and index hands by player, keeping one partition group.
  *
- * POOL players are dropped at ingest — they are never scored, so holding their
- * hands would only cost memory. Caps are first-class because the per-player cost
- * is quadratic: every checkpoint rebuilds the profile over the whole prefix.
+ * Defaults to EVAL — the scored half. The other half is dropped at ingest, because
+ * holding hands that will never be used only costs memory. Caps are first-class
+ * because the per-player cost is quadratic: every checkpoint rebuilds the profile
+ * over the whole prefix.
+ *
+ * `group` exists for WS-287: the hero-EV instrument needs a behaviour policy
+ * (what the field actually does at a node) mined from the POOL half, so that the
+ * propensities in its importance weights are never fitted on the players it scores.
+ * Same partition function, opposite side.
  */
 export const indexEvalPlayers = async ({
   files,
@@ -388,6 +394,7 @@ export const indexEvalPlayers = async ({
   maxPlayers = Infinity,
   maxHandsPerPlayer = Infinity,
   onProgress = null,
+  group = GROUPS.EVAL,
 }) => {
   const byPlayer = new Map();
   const skipStats = {};
@@ -397,7 +404,7 @@ export const indexEvalPlayers = async ({
     for await (const hand of iterAppHands(file.path, { site: file.site, stakeLabel: file.stakeLabel }, skipStats)) {
       handsRead++;
       for (const pid of Object.values(hand.seatPlayers)) {
-        if (partitionOf(pid, poolPct) !== GROUPS.EVAL) continue;
+        if (partitionOf(pid, poolPct) !== group) continue;
         let bucket = byPlayer.get(pid);
         if (!bucket) {
           if (byPlayer.size >= maxPlayers) continue;
