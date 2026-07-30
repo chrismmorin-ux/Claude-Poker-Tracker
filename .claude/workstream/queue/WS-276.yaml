@@ -2,7 +2,7 @@ id: "WS-276"
 title: "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -156,6 +156,55 @@ source:
   run_id: "session-2026-07-26"
 created_at: "2026-07-26T00:00:00Z"
 status_note: |
+  ── SPR-161 EXECUTION (2026-07-30) ────────────────────────────────────────────
+  GATE 1 (Entry): GREEN — engine-internal. v1 as scoped introduces NO user-facing
+  surface, so Gate 4 does not bind. The Gate 1/2/4 obligation travelled to WS-311
+  (hero self-audit surface), split out by explicit founder decision.
+
+  Founder decisions taken at composition:
+    1. Scope — all three ENGINE halves ship; the self-audit SCREEN defers. Half A
+       is a prerequisite for Half B, not an alternative to it (A alone is a library
+       with no consumer), and Half C is nearly free once A exists.
+    2. Observation — perceived range defaults to the population prior for hero's
+       LINE with zero history, then refines by all visible aggression, not
+       showdowns only.
+    3. Cost — bounded + cached (score-once-per-runout, capped hero sample).
+
+  WHAT THE DEFECT ACTUALLY WAS. Sharper than the ticket's framing. Villain
+  decisions were priced from `1 - combo.heroEquity` — villain's equity against
+  hero's EXACT TWO CARDS. On the river that quantity is DEGENERATE (exactly 0,
+  0.5 or 1), so the model gave every opponent perfect knowledge of whether they
+  were beaten, erring in BOTH directions. Measured against a perceived range:
+  AT top pair 0.000 → 0.393; A9 two pair 1.000 → 0.583. Every weakness inferred
+  from those predictions inherited the bias. That is a far larger and more general
+  result than the single anecdote, and it is what §12.2 now records.
+
+  REGRESSION-CRITERION CORRECTION (honest, deliberate). The accept criterion below
+  asks for villain's fold rate to rise with an observation history showing recent
+  aggression. As written that attributes the effect to the wrong mechanism, and the
+  ticket's own caveat paragraph half-concedes it: what makes the shove profitable is
+  hero's range COMPOSITION (it contains KT), not hero's image — and a wider observed
+  bluffing frequency argues for villain CALLING more, not folding more. Implementing
+  the criterion literally would have required tuning the model until it agreed that
+  folding a straight is correct, which §5.2 forbids. Shipped instead: the perceived
+  range is asserted to strictly reduce villain's decision equity vs the omniscient
+  quantity (1.000 → 0.923 on the T8 straight), with a >0.8 floor asserted so the
+  number cannot be quietly overfitted later. POKER_THEORY §12.7 records that the
+  shove was read-dependent and NOT balanced-correct.
+
+  SCOPE BOUNDARY SHIPPED, NOT SILENT. v1 corrects the CURRENT decision node.
+  gameTreeDepth2's future-street branches still use actual equity — a perceived
+  range at a future node needs hero's strategy there, a strictly larger object, and
+  building it per sampled runout is what WS-301's breached budget cannot absorb.
+  River decisions are fully corrected; flop/turn retain a residual bias. Marked in
+  code at `computePerComboEV` and in POKER_THEORY §12.6.
+
+  TIMING GATE PASSED. Per-combo distribution cost: flop 1.67x, turn 1.94x,
+  river 1.03x — all inside the <=2x budget the plan set as a hard stop.
+
+  Full suite: 549 files, 13,157 passed, 20 skipped, 0 failed.
+
+  ── ORIGINAL FILING ───────────────────────────────────────────────────────────
   Filed 2026-07-26. Verified by grep (re-verified 2026-07-30): perceived-range logic
   exists only in handAnalysis/ (post-hoc), absent from the live exploitEngine path.
   Directly answers the "perceived-range factor pending founder completion" note carried
@@ -195,3 +244,4 @@ status_note: |
   ("more missed draws than value") actually argues for checking. The profit came from a
   different mechanism than the stated reasoning. That does not weaken the ticket; it
   sharpens it, since the engine should be able to tell those two mechanisms apart.
+closed_by_event: "ev-1785432392478-f703bc6c4f89"

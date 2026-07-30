@@ -1,0 +1,31 @@
+id: "SPR-161"
+title: "Ship WS-276: Hero has no range — no strategy at a node, no bluff:value construction from sizing, and"
+status: done
+approved_at: "2026-07-30T16:44:48.034Z"
+completed_at: "2026-07-30T17:26:32.452Z"
+completed_by_commit: "6742d42"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-276: Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-30T16:44:48.034Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-276 selected (32 × no damping = 32).
+  Program cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+20 more).
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-276"
+    title: "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-07-30T17:26:32.452Z"
+
+created_at: "2026-07-30T16:44:48.034Z"

@@ -23,8 +23,14 @@ description: |
 
   - Per-spot pot sizes → money-weighted maxim/study ranking (founder
     factor for the data-derived doctrine).
-  - Concealment premium → perceived-range factor (founder factor,
-    pending founder completion of the factor definition).
+  - Concealment premium → perceived hero range. RESOLVED 2026-07-30 by WS-276
+    (SPR-161): it is NOT a factor. It is a state variable — hero's range as a
+    specific villain perceives it, built by exploitEngine/heroRangeBuilder.js and
+    consumed as `villainEquityVsPerceived` (POKER_THEORY §12). The mining shape
+    this line was waiting on is therefore: per-spot observed CONTINUATION RATES
+    for the observing player, which is the evidence channel §12.3 shrinks toward
+    the population prior by n/(n+PRIOR_WEIGHT). No founder factor definition is
+    outstanding.
   - Position-level open/fold trees.
   - Board-texture c-bet splits.
 accept_criteria: |
@@ -41,8 +47,7 @@ blocked_by_legacy: []
 blocked_reason: ""
 enables: []
 sprint_id: null
-decision_flags:
-  - "Concealment-premium mining shape depends on the founder's perceived-range factor definition (in progress)"
+decision_flags: []
 source:
   type: followup
   created_by: ai

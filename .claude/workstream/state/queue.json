@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T16:35:37.735Z",
-  "updated_by_event": "ev-1785429337735-2bdaefd22603",
+  "updated_at": "2026-07-30T17:26:33.154Z",
+  "updated_by_event": "ev-1785432393154-611057faa803",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -3934,7 +3934,7 @@
     "WS-276": {
       "id": "WS-276",
       "title": "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 32,
       "category": "domain-correctness",
       "effort": "L",
@@ -4886,7 +4886,35 @@
         "docs/research/"
       ],
       "source_class": "untagged"
+    },
+    "WS-311": {
+      "id": "WS-311",
+      "title": "Hero self-audit surface — read hero's own range-level play back to the founder (deferred Gate 1/2/4 half of WS-276)",
+      "status": "backlog",
+      "priority_score": 18,
+      "category": "design",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "followup",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-161"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/design/surfaces/",
+        "src/utils/exploitEngine/heroSelfObservation.js",
+        "src/utils/exploitEngine/bluffValueConstruction.js",
+        "src/utils/exploitEngine/liveGameContext.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785429337735-2bdaefd22603"
+  "last_event_log_head": "ev-1785432393154-611057faa803"
 }

@@ -28,7 +28,7 @@ Read this before any multi-file change. Update after any architectural shift.
 | 40 UI Components | Reusable visual elements | Stateless or locally stateful; no context access |
 | `pokerCore/` (5 modules) | Shared poker primitives (cards, ranges, hand eval, board texture, exact preflop equity) | Imported by both engines; imports from neither |
 | `rangeEngine/` (10 modules) | Bayesian range estimation | Reads player stats; writes range profiles to IndexedDB. `lineTaxonomy.js` (WS-256) is the single source of truth for deriving preflop line classes from sequence state |
-| `exploitEngine/` (41 modules) | Exploit generation, weakness detection, game tree EV, villain modeling | Reads ranges + stats; produces recommendations |
+| `exploitEngine/` (47 modules) | Exploit generation, weakness detection, game tree EV, villain modeling, hero range + perceived range (WS-276) | Reads ranges + stats; produces recommendations |
 | `icmEngine/` (3 modules) | Tournament ICM: Malmuth-Harville $EV per stack + risk premium / bubble factor (chips→dollars). Governed by POKER_THEORY §10 / its own CLAUDE.md under prog-domain-correctness | Pure; stacks + payout ladder → $EV. Consumed by TournamentContext (2026-06-19) |
 | `handAnalysis/` (7 modules) | Post-hand review, replay, hero analysis | Reads completed hand data; produces analysis objects |
 | `tournamentEngine/` (4 modules) | Blind levels, blind-out calc, dropout prediction | Reads tournament config; produces scheduling/projection data |

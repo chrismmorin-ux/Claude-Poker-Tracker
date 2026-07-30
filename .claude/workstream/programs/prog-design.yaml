@@ -211,17 +211,16 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "Baseline complete on player-selection (2026-04-21). No CWOS-format /pulse run yet — score will populate on first run."
 findings_open: 0
-work_items_open: 18
+work_items_open: 19
 
 cap_breach:
   active: true
-  work_items_open: 18
+  work_items_open: 19
   findings_open: 0
   max_open_items: 8
   priority_floor: 22
-  ratio: 2.25
+  ratio: 2.38
   since: "2026-07-26"
-
 evidence:
   last_audit_report: "docs/design/audits/"
   protocol_history: []

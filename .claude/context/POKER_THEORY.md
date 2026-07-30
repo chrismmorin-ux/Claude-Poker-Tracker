@@ -1,5 +1,5 @@
 ---
-version: 1.9
+version: '2.0'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-07-30
+    version: '2.0'
+    change: "WS-276 (SPR-161): added §12 — HERO'S RANGE, AND WHAT VILLAIN THINKS IT IS. The engine priced every villain fold/call decision from `1 - combo.heroEquity`, i.e. that villain combo's equity against hero's EXACT TWO CARDS, so villains were modelled as able to see hero's hand. The anecdote that motivated the ticket (a villain folding a made straight to a BTN 3-bettor's river shove) understates the defect: measured on a river board, equity against a known holding is DEGENERATE — exactly 0, 0.5 or 1 — so the model gave every opponent flawless knowledge of whether they were beaten, erring in BOTH directions (AT top pair 0.000 → 0.393 vs a perceived range; A9 two pair 1.000 → 0.583). Any weakness inferred from those predictions inherited the bias. Fix: a parallel per-combo field `villainEquityVsPerceived` computed against hero's perceived range, with `heroEquity` retained for hero's own EV; one builder (heroRangeBuilder.js) seeded from the §2.5 population prior for hero's line and narrowed by the same `narrowByBoard` villain ranges use, so §3.6.1's never-zero guarantee applies for free. Evidence enters as an observed frequency shrunk by n/(n+PRIOR_WEIGHT) per §6.5 — never as an image label (§7.1/§7.2) — and is per-villain. ZERO observation history is the load-bearing case, not a degraded one: a typical BTN 3-bet + three barrels contains the Broadway combos regardless of what anyone watched. Also adds §12.4 bluff:value construction from sizing (s/(1+2s); half pot 3:1, pot 2:1, 2x overbet 1.5:1) shipped as a BASELINE the exploitative deviation is measured against, never a prescription (WS-310 Layer A discipline). Records two boundaries honestly: §12.5 recursion stops at level 2 deliberately, and §12.6 v1 corrects the CURRENT node only — depth-2/3 future-street branches retain a residual omniscience bias because a perceived range at a future node needs hero's strategy there, which WS-301's breached timing budget cannot absorb. River decisions are fully corrected. Measured cost: flop 1.67x, turn 1.94x, river 1.03x. §12.7 records that the motivating shove was read-dependent and NOT balanced-correct, and forbids tuning the model until it agrees folding a straight was right."
   - date: 2026-07-28
     version: 1.9
     change: "WS-291 (SPR-158): added §3.6.1 — A RANGE NEVER ASSIGNS ZERO, binding. `narrowByBoard` implemented the §6.5 likelihood P(action|hand) as a hard 1/0 quantile cut (keep the top `continuationRate` by equity, zero the rest), re-applied every street and again inside each depth-2/3 evaluation. Measured against revealed showdown hands on two independent sites: coverage of the hand actually held decayed 89% → 71% → 56% flop-to-river and 72% → 58% → 47% under chaining; facing a RAISE it retained 10.8% of combos and missed the true hand 45% of the time, so the engine could not represent a bluff-raise at all and hero systematically OVER-FOLDED to raises (§4.2 makes bluff-catching depend on exactly that frequency). Replaced by a logistic of per-combo equity whose mean is pinned to the observed continuation rate — severity unchanged in aggregate, but 'unlikely' replaces 'impossible'. After: coverage ~94% flat by street, 94% facing a raise, ~89% flat under chaining. Floor (0.05) and softness were SWEPT against the discrimination metric, not chosen. Third instance of the same threshold-instead-of-posterior shape after §11.5 (WS-285) and §7.6/AP-RL-01. Records two open residuals honestly: preflop ranges still hard-zero 30–37% of the grid (WS-302), and the check branch plus deep chaining remain close to information-free (WS-303)."
@@ -1307,3 +1310,123 @@ sweep showed the equity ordering earns only **~0.05 nats over not narrowing at a
 every setting sharper than ~0.30 loses to switching narrowing off. Same shape as §11.5: an
 elaborate mechanism, never measured, barely beating the trivial alternative. Treat the
 narrowing's *value* as small and provisional; treat "never zero" as settled.
+
+---
+
+## 12. Hero's Range, and What Villain Thinks It Is (WS-276)
+
+### 12.1 Two different equity questions wore one number
+
+The engine answers "what is the best action with THIS hand, HERE." It never constructed
+hero's range at a node — and, sharper, it priced **every villain fold/call decision from
+`1 - combo.heroEquity`**: that villain combo's equity against hero's *exact two cards*.
+
+Villains were modelled as if they could see hero's hand.
+
+Two distinct quantities had collapsed into one:
+
+| Quantity | Means | Correct consumer |
+|---|---|---|
+| `heroEquity` | hero's actual cards vs this villain combo | **hero's own EV** — hero knows their cards |
+| `villainEquityVsPerceived` | this villain combo vs hero's *perceived range* | **villain's decision** — villain does not |
+
+A villain's decision derives from their equity against their **perception** of hero's
+range (§7.1 — every decision derives from game state, and what villain can observe *is*
+their game state). Hero's actual holding is not available to them and must not enter.
+
+### 12.2 The defect's true shape: it made every opponent play perfectly
+
+The anecdote that motivated this (a villain folding a made straight) understates it.
+Measured on a river board, villain equity computed against hero's known cards is
+**degenerate — exactly 0, 0.5, or 1**. There is no uncertainty left on the river once the
+opponent's cards are fixed. So the model handed every villain flawless knowledge of
+whether they were beaten:
+
+| Villain holding | Omniscient | Vs perceived range |
+|---|---|---|
+| AT — top pair, does not know it is beaten | 0.000 | 0.393 |
+| A9 — two pair, does not know it is good | 1.000 | 0.583 |
+| T8 — straight | 1.000 | 0.923 |
+
+The error runs in **both directions**: villains folded too readily with losing hands and
+called too readily with winning ones. Any weakness inferred from those predictions
+inherited the bias.
+
+### 12.3 Constructing the perceived range
+
+One builder (`exploitEngine/heroRangeBuilder.js`), seeded from the population prior for
+hero's preflop line (§2.5 vocabulary) and narrowed street by street through hero's visible
+actions with the **same `narrowByBoard`** villain ranges use. Reusing it is what makes
+§3.6.1's never-zero guarantee apply to hero's range for free.
+
+**Evidence is a shrunk frequency, never a label.** A villain's read on hero enters as an
+observed continuation rate with a count, shrunk toward the population rate by
+`n / (n + PRIOR_WEIGHT)` — §6.5's update rule, unchanged. There is deliberately no branch
+anywhere in the module that reads a style, image or archetype string. "Hero is a nit" is a
+*derived output* of the observation history, never an input to it (§7.1, §7.2).
+
+**Per-villain, because observation is.** A player who sat down twenty minutes ago has seen
+almost nothing; crediting them with a session of reads is wrong in the direction that
+matters.
+
+**Zero history is the load-bearing case, not a degraded one.** With no observations the
+perceived range is the population baseline for hero's line — and a typical BTN 3-bet
+followed by three barrels contains the Broadway combos regardless of what anyone has
+watched. That baseline alone is what gives a river shove fold equity where the omniscient
+model gave it exactly none.
+
+### 12.4 Bluff:value construction from sizing
+
+Once hero has a range, the question a player actually asks becomes answerable: *at this
+sizing, how many bluffs does my value count support?* For a bet of `s` times pot, villain
+is indifferent when hero's betting range is
+
+```
+bluff share  = s / (1 + 2s)          bluff combos = value combos x s / (1 + s)
+```
+
+so half pot supports 3:1 value:bluff, pot 2:1, and a 2x overbet 1.5:1. Bigger bets support
+*more* bluffs, because villain is priced into a tighter calling range.
+
+**This is a baseline, not a prescription** — the same discipline as WS-310's Layer A. The
+deliverable is the **deviation**: against a villain who over-folds hero carries more bluffs
+than balance permits, against a station fewer. Balance is a cost against opponents who do
+not observe (§5.4). The balanced figure must never be rendered without the deviated one
+beside it.
+
+### 12.5 The recursion boundary — level 2, deliberately
+
+Hero models villain modelling hero. **We stop there.** There is no "villain models hero
+modelling villain" and no fixed point.
+
+Why: against the live-pool opponents this app targets, level-3 reasoning is not present in
+the opponent, so modelling it adds cost and error for no signal.
+
+What would justify going deeper: evidence from the prediction ledger that a recurring
+opponent's responses are better explained by them adjusting to hero's adjustments than by
+their base tendencies.
+
+### 12.6 Scope boundary — current node only, in v1
+
+The perceived range corrects villain decisions **at the decision node**. The depth-2/3
+refinement evaluates villain decisions on hypothetical future boards and still drives them
+from equity against hero's actual cards.
+
+This is knowingly left in place, not overlooked. A perceived range at a future node
+requires hero's *strategy* at that node — what hero would do with each hand on a card not
+yet dealt — which is a strictly larger object, and building it per sampled runout inside
+the depth-2 loop is the multiplication WS-301's breached timing budget cannot absorb.
+
+Consequence, stated plainly: **flop and turn decisions retain a residual bias** toward
+villain knowing hero's hand on future streets. **River decisions — no future street — are
+fully corrected.** Measured cost of the correction: flop 1.67x, turn 1.94x, river 1.03x on
+the per-combo distribution.
+
+### 12.7 What this does NOT license
+
+The motivating hand's shove was **read-dependent and not balanced-correct**. Against an
+opponent calling correctly it is a losing shove. The model now represents the mechanism —
+hero's range contains straight-beating hands where it previously contained none — but at
+~92% equity the villain is still calling on any sane pot odds, and the engine should keep
+saying so. Do not tune the perceived range until it agrees that folding a straight was
+right; that would be fitting one anecdote and discarding §5.2.

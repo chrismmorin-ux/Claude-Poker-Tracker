@@ -1,0 +1,15 @@
+id: "ses-20260730-1644-ea774b80"
+status: active
+started_at: "2026-07-30T16:44:01.832Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-07-30T16:44:48.105Z"
+pid: 10776
+agent_session_id: "ea774b80-0fa3-4d8c-a9d8-40a39aa5a24f"
+
+# Minted by cwos-claims because no registered session matched this process.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items:
+  - "WS-276"
+
+files_locked: []

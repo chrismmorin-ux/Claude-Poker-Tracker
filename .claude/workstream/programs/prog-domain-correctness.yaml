@@ -403,15 +403,15 @@ health_breakdown:
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
 findings_open: 11
-work_items_open: 41
+work_items_open: 40
 
 cap_breach:
   active: true
-  work_items_open: 41
+  work_items_open: 40
   findings_open: 11
   max_open_items: 25
   priority_floor: 27
-  ratio: 1.64
+  ratio: 1.6
   since: "2026-07-28"
 evidence:
   last_audit_report: ".claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-3/synthesis.md"

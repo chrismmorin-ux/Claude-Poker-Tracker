@@ -1450,3 +1450,12 @@ sprints:
     created_at: "2026-07-30T13:57:38.943Z"
     completed_at: "2026-07-30T14:21:09.104Z"
 
+  - id: "SPR-161"
+    title: "Ship WS-276: Hero has no range — no strategy at a node, no bluff:value construction from sizing, and"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-07-30T16:44:48.034Z"
+    completed_at: "2026-07-30T17:26:32.452Z"
+
