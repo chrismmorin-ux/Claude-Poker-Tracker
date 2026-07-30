@@ -1,0 +1,46 @@
+# Model readiness scorecard history — append-only.
+#
+# One entry per readiness run. C6 (no-regression) reads the last three entries, so
+# ORDER MATTERS and entries are never edited in place. Appended by
+# `scripts/readiness/model-readiness.mjs --record`.
+#
+# `source` names the evidence file the metrics were read from, so any row can be
+# recomputed. A row without a source is not admissible evidence.
+
+runs:
+  - date: "2026-07-27"
+    label: "WS-285 — shrinkage + measured hierarchy order"
+    source: "out/records-candidates.json"
+    arm: "shrinkage:W10+reordered"
+    decisions: 10147
+    corpus: "HandHQ online cash, July 2009, 50NL"
+    metrics:
+      accuracy: 0.587
+      logLoss: 0.75819
+      lift: 0.0603
+      worstCalibrationError: 0.058
+      worstCalibrationBucket: "80-100%"
+      heroEvEdge: null        # no instrument yet — WS-287
+      heroEvCiLow: null
+    notes: >
+      Baseline for the gate. Previous engine (six-level gate, street-first order)
+      scored accuracy 0.522, logLoss 0.79318, lift 0.0169, worst calibration error
+      0.109. Both the accuracy and the calibration improvements come from the same
+      change; neither was tuned for.
+
+  - date: "2026-07-28"
+    label: "WS-287 — hero-EV instrument, SMOKE run (250 decisions, 9 player-clusters)"
+    source: "out/hero-ev-smoke.json"
+    arm: "hero-ev smoke"
+    decisions: 250
+    corpus: "HandHQ online cash, July 2009, 50NL"
+    metrics:
+      accuracy: 0.587
+      logLoss: 0.75819
+      lift: 0.0603
+      worstCalibrationError: 0.058
+      heroEvEdge: 12.042
+      heroEvCiLow: -7.5973
+    notes: >
+      Treatment: per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy.
+      Carried forward unchanged from 2026-07-27: accuracy, logLoss, lift, worstCalibrationError — inherited, not re-measured.

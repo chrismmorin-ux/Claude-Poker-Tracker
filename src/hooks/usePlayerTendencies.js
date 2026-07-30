@@ -141,6 +141,7 @@ export const usePlayerTendencies = (allPlayers, userId = GUEST_USER_ID) => {
           return [player.playerId, {
             ...result.pct,
             rawStats: result.rawStats,
+            statPriors: result.statPriors,
             positionStats: result.positionStats,
             limpData: result.limpData,
             style: result.style,

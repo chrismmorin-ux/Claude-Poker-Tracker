@@ -188,7 +188,7 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
           liveHandState, heroSeat, targetSeat, dealerSeat,
           villainRange, encodedHero, adjustedPot,
           detectedSituation, playerStats, villainData, villainModel, rakeConfig,
-          equityFn,
+          tendencyMap, equityFn,
         });
 
         // Store preflop ranges for persistence

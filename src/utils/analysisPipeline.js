@@ -198,6 +198,10 @@ export const runAnalysisPipeline = (playerId, hands, userId, cachedRangeProfile 
   return {
     rawStats,
     pct,
+    // The segment-resolved §6.5a prior this villain's stats shrink toward (null when no
+    // pool is available → static founder estimate). Returned so the LIVE advisor path can
+    // reach the same hierarchy the offline exploit path already uses (WS-274).
+    statPriors,
     style,
     positionStats,
     limpData,

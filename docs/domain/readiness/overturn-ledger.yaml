@@ -1,0 +1,53 @@
+# Overturn ledger — load-bearing POKER_THEORY claims that turned out to be WRONG.
+#
+# C4 (theory stability) counts entries here. An OVERTURN invalidates a claim the doc
+# already made and the engine already acted on. An ADDITION or a REFINEMENT is not an
+# overturn and does not belong here — the distinction is whether someone could have
+# learned the old version and been misled.
+#
+# `attested` blocks record the human judgment the readiness script cannot make. A stale
+# attestation FAILS C4 rather than passing it: an unverifiable criterion is never assumed met.
+
+attestation:
+  # Must be refreshed by a domain-correctness protocol run. Older than
+  # stale_after_days => C4 fails regardless of the entries below.
+  last_reviewed: "2026-07-27"
+  reviewed_by: "WS-285 execution"
+  stale_after_days: 45
+
+  # C5 reads THIS, not last_reviewed. The distinction is load-bearing: the field
+  # above is what a reviewer says they did, this one is when the domain-correctness
+  # protocol actually last ran according to the EVENT LOG — the record that cannot
+  # be written by asserting it.
+  #
+  # These diverge right now, which is the whole point. The program YAML claims
+  # 2026-07-22; the event log says 2026-06-20. A self-attestation would have passed
+  # C5 on the strength of someone writing today's date next to their own name.
+  # WS-268 heals the drift.
+  domain_protocol_last_run_per_event_log: "2026-06-20"
+  domain_protocol_yaml_claims: "2026-07-22"
+  domain_protocol_drift_days: 32
+  domain_protocol_stale_after_days: 21
+  open_findings_that_could_overturn: 1
+  open_findings_note: >
+    WS-283 (fold-to-bet underestimated ~13pp, sizing-dependent). POKER_THEORY 6.3
+    treats the breakeven threshold as sizing-dependent while the fold rate meeting it
+    is effectively flat. If the measured gradient holds, that is an overturn of a
+    documented relationship, not an addition. Counted until WS-283 closes.
+
+overturns:
+  - date: "2026-07-27"
+    ticket: "WS-285"
+    section: "POKER_THEORY 11 / villainDecisionModel context hierarchy"
+    claim_overturned: >
+      "Texture preserved through L3 because wet vs dry boards have the largest impact
+      on villain action distribution after street context." Documented as engine
+      behaviour and relied on for months.
+    what_was_true_instead: >
+      Board texture, street and position are each WORSE THAN POOLING as a single
+      context dimension. The ladder's order was close to the exact inverse of measured
+      information content, and the threshold mechanism itself was the larger defect.
+    how_found: "Paired ablation, 10,147 decisions — the decisive pooled arm had never been run."
+    cost_if_learned: >
+      HIGH. A student would have memorized 'read the board texture first' as the
+      primary read-narrowing heuristic. The data says who the aggressor is dominates it.

@@ -29,9 +29,10 @@ import { buildBaselineRange, computePreflopAdvice } from '../exploitEngine/prefl
 import { getSPRZone, SPR_ZONES } from '../exploitEngine/gameTreeConstants';
 import {
   buildOpponentModels,
+  buildPlayerStats,
   buildPostflopContextHints,
+  buildSeatsToAct,
   computeEffectiveStack,
-  countPlayersToAct,
 } from '../exploitEngine/liveGameContext';
 
 /**
@@ -146,12 +147,32 @@ export const buildPreflopAdvice = async ({
   liveHandState, heroSeat, targetSeat, dealerSeat,
   villainRange, encodedHero, adjustedPot,
   detectedSituation, playerStats, villainData, villainModel, rakeConfig,
-  equityFn,
+  tendencyMap, equityFn,
 }) => {
   const { situation, villainAction, villainBet } = detectedSituation;
   const heroPosition = getRangePositionCategory(heroSeat, dealerSeat || 1);
   const villainPosition = getRangePositionCategory(targetSeat, dealerSeat || 1);
-  const playersToAct = countPlayersToAct(liveHandState, heroSeat, dealerSeat);
+
+  // WS-274: WHO is behind hero, not just how many. Each entry carries that seat's own
+  // stats, decision model and §6.5a pool priors so the advisor can price it
+  // individually instead of applying one invented constant to every seat.
+  const seatsToAct = buildSeatsToAct(liveHandState, heroSeat, dealerSeat, tendencyMap);
+
+  // Seats that already put money in and will have to respond again to a squeeze or
+  // an iso-raise. Resolved through the same helper shape as the seats behind.
+  const seatEntry = (seat) => {
+    const d = tendencyMap?.[String(seat)] || {};
+    const position = getRangePositionCategory(seat, dealerSeat || 1);
+    return {
+      seat,
+      position,
+      playerStats: buildPlayerStats(d, position),
+      villainModel: d.villainModel || null,
+      statPriors: d.statPriors || null,
+    };
+  };
+  const callerSeatEntries = (detectedSituation.callerSeats || []).map(seatEntry);
+  const limperSeatEntries = (detectedSituation.limperSeats || []).map(seatEntry);
 
   const posCtx = {
     heroPosition, villainPosition,
@@ -159,11 +180,15 @@ export const buildPreflopAdvice = async ({
     limperCount: detectedSituation.limperCount || 0,
     callerCount: detectedSituation.callerCount || 0,
     deadMoney: detectedSituation.deadMoney || 0,
+    seatsToAct,
+    callerSeatEntries,
+    limperSeatEntries,
+    villainStatPriors: villainData.statPriors || null,
     // trapsPreflop is a detection object — bare truthiness flagged EVERY
     // profiled villain as a trapper. Warn on confirmed or likely (>0.5) only.
     trapWarning: villainData.traits?.trapsPreflop?.confirmed === true
       || (villainData.traits?.trapsPreflop?.posterior ?? 0) > 0.5,
-    playersToAct,
+    playersToAct: seatsToAct.length,
     heroSeat,
     villainSeat: targetSeat,
     dealerSeat: dealerSeat || 1,
