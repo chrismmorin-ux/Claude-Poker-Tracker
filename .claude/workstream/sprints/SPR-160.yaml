@@ -1,0 +1,31 @@
+id: "SPR-160"
+title: "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRang"
+status: done
+approved_at: "2026-07-30T13:57:38.943Z"
+completed_at: "2026-07-30T14:21:09.104Z"
+completed_by_commit: "292e56f"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-30T13:57:38.943Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-300 selected (30 × no damping = 30).
+  Program cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+19 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-300"
+    title: "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-30T14:21:09.104Z"
+
+created_at: "2026-07-30T13:57:38.943Z"

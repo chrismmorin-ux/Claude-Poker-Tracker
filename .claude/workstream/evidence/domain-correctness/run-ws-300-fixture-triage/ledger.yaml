@@ -1,0 +1,125 @@
+run_id: "run-ws-300-fixture-triage"
+item: WS-300
+sprint: SPR-160
+date: "2026-07-30"
+
+what_changed:
+  - "New src/utils/exploitEngine/__tests__/fixtures/ranges.js — one shared source for fullRange / tightRange / topRange, built from NAMED HANDS via parseRangeString."
+  - "Five local inverted copies deleted (advisorAccuracy, gameTreeEvaluator, gameTreeDepth2, item24Improvements, item27Improvements)."
+  - "New fixtures/ranges.test.js — 12 assertions that decode each fixture and check hands BY NAME."
+  - "advisorAccuracy Scenario 3's inline workaround removed; it now uses the shared fixture."
+  - "Grid index convention + the general failure shape recorded in exploitEngine/CLAUDE.md."
+
+# =========================================================================
+# THE HEADLINE RESULT — and it is NOT "nothing was broken"
+# =========================================================================
+assertions_moved: 0
+assertions_total_in_affected_files: 339
+
+headline: >
+  All 339 assertions across the five affected files pass with correct fixtures, and none
+  needed a threshold edit. That is not a clean bill of health — it is the measurement the
+  ticket asked for, and it says something worse than "some thresholds were stale".
+
+  The fixtures were materially wrong: correcting them moved measured hero equity by up to
+  0.578 in a single scenario. Yet only ONE assertion in the entire range-dependent set was
+  tight enough to notice, and that one had already been found and worked around inline
+  during WS-291. The rest pass whether villain holds a premium range or literal junk.
+
+  So the suite's range-dependent behavioural coverage was not "wrong but lucky" — much of
+  it was never range-dependent at all. The thresholds are directionally correct and far too
+  loose to discriminate.
+
+# Measured with 20,000 MC trials per cell, old fixture vs new, on the exact
+# scenarios advisorAccuracy asserts. Script: scratchpad/measure-impact.mjs.
+measured_impact:
+  - scenario: "Sc.2 — weak hand (7c2d) on A83 vs tightRange"
+    assertion: "heroEquity < 0.55"
+    old_fixture_value: 0.307
+    new_fixture_value: 0.024
+    shift: -0.283
+    verdict: pass_to_pass
+    note: "Measured quantity moved 28 equity points; the assertion could not tell."
+
+  - scenario: "Sc.3 — 33 on QJT vs tightRange"
+    assertion: "heroEquity < 0.60"
+    old_fixture_value: 0.634
+    new_fixture_value: 0.056
+    shift: -0.578
+    verdict: FAIL_to_pass
+    note: >
+      The one assertion sharp enough to catch the inversion, and the reason WS-300 exists.
+      It was failing on the true premise and passing only because the pre-WS-291 hard
+      quantile cut discarded the junk before equity was taken — a broken fixture and a
+      broken narrowing cancelling out.
+
+  - scenario: "Sc.4 — AcKd on A83 vs topRange(50)"
+    assertion: "heroEquity > 0.60"
+    old_fixture_value: 0.882
+    new_fixture_value: 0.884
+    shift: +0.002
+    verdict: pass_to_pass
+    note: >
+      Insensitive BY CONSTRUCTION, not by loose threshold: top pair top kicker on an
+      A-high board dominates the top half and the bottom half alike. This scenario cannot
+      test a range claim no matter what number the threshold carries.
+
+  - scenario: "Sc.5 — overpair on T83 vs topRange(35)"
+    assertion: "heroEquity > 0.60"
+    old_fixture_value: 0.872
+    new_fixture_value: 0.801
+    shift: -0.071
+    verdict: pass_to_pass
+
+# =========================================================================
+# REAL ENGINE DEFECTS — filed, not fixed (founder decision, this session)
+# =========================================================================
+defects_found:
+  - id: WS-307
+    severity: HIGH
+    title: "The engine raises bottom pair with 6% equity into a range that folds ~never"
+    evidence: >
+      advisorAccuracy Scenario 3 with the corrected tight range: hero 3s3d on QhJhTs facing
+      a 75-into-100 bet. Engine ranks RAISE first at EV 40.7 against fold EV 0, with hero
+      equity 0.056. Villain's range is AA-TT/AKs/AKo/AQs/AQo — on QJT that range is almost
+      entirely overpairs, sets and strong draws, so the fold equity the raise is priced on
+      does not exist. Reproduces every run; currently logged as a console.warn while the
+      test passes.
+    status: filed_not_fixed
+    reason: "Founder decision — WS-300 repairs the instrument; engine behaviour changes get their own item."
+
+  - id: WS-308
+    severity: MEDIUM
+    title: "The engine prefers CHECKING the nut flush to betting it (check EV 112 vs bet 77)"
+    evidence: >
+      advisorAccuracy Scenario 1, hero holding the nut flush on a dry board vs fullRange.
+      PRE-EXISTING and unrelated to WS-300 — Scenario 1 uses fullRange, which was never
+      inverted (all 169 cells at 1.0 before and after). Surfaced here only because this
+      pass read the warnings nobody was reading.
+    status: filed_not_fixed
+
+  - id: WS-309
+    severity: MEDIUM
+    title: "Behavioural thresholds in advisorAccuracy do not discriminate — tighten them to values that would fail"
+    evidence: >
+      See measured_impact above: three of four range-dependent scenarios pass under both a
+      premium range and a junk range, one of them insensitive by construction. Proposed fix:
+      re-baseline each threshold to the measured value plus a tolerance, so it would fail if
+      the range were swapped; and replace Sc.4's board with one where the range actually
+      matters. Also convert the two console.warn diagnostics into real assertions or delete
+      them (see the CLAUDE.md corollary added by this ticket).
+    status: filed_not_fixed
+
+thresholds_adjusted: []   # none required
+
+out_of_scope_confirmed:
+  - file: "src/utils/exploitEngine/__tests__/gameTreeEquity.test.js"
+    detail: >
+      Uses [14, 28, 42, 56] under the comment "several pocket pairs below AA". That decodes
+      to 33/44/55/66 — the comment is accurate and the fixture is fine. Left untouched.
+
+verification:
+  - "npx vitest run .../fixtures/ranges.test.js — 12/12 pass."
+  - "Five affected suites — 339/339 pass."
+  - "Full suite via scripts/smart-test-runner.sh — see run log."
+  - "git diff --stat shows no non-test changes under src/utils/exploitEngine/*.js (engine behaviour unchanged, per founder decision)."

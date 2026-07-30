@@ -1,0 +1,94 @@
+id: "WS-309"
+title: "The behavioural thresholds don't discriminate — correcting the fixtures moved equity 0.58 and only ONE assertion noticed"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "testing"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THIS IS WS-300's ACTUAL FINDING. WS-300 corrected the inverted range fixtures and all 339
+  assertions in the five affected files still passed, with zero threshold edits needed. That
+  is not a clean bill of health — it is the measurement, and it says the range-dependent
+  assertions were never range-dependent.
+
+  MEASURED (20k MC trials per cell, old fixture vs new, on the exact scenarios asserted):
+
+    Sc.2  weak hand vs tightRange   0.307 -> 0.024   shift -0.283   pass -> pass
+    Sc.3  33 on QJT vs tightRange   0.634 -> 0.056   shift -0.578   FAIL -> pass
+    Sc.4  AcKd on A83 vs top 50%    0.882 -> 0.884   shift +0.002   pass -> pass
+    Sc.5  overpair vs top 35%       0.872 -> 0.801   shift -0.071   pass -> pass
+
+  Only Sc.3 was sharp enough to detect a 58-point equity swing, and it had already been
+  found and worked around inline during WS-291. The others pass whether villain holds
+  AA-TT/AK/AQ or 22-66 plus 32o.
+
+  TWO DISTINCT PROBLEMS, DO NOT CONFLATE:
+
+  (1) LOOSE THRESHOLDS. `heroEquity < 0.55` for a weak hand is satisfied at 0.024 and at
+      0.307 alike. The assertion is directionally right and numerically inert. Fix:
+      re-baseline each threshold to the measured value plus a stated tolerance, so the
+      assertion would FAIL if the range were swapped for its opposite.
+
+  (2) SCENARIOS INSENSITIVE BY CONSTRUCTION. Sc.4 gives hero A-K on an A-high board: top
+      pair top kicker dominates the top half and the bottom half of the grid equally, so
+      no threshold on that board can test a range claim. Fix: change the BOARD to one where
+      villain's range composition actually moves hero's equity (a middling connected board
+      where the range's broadway weighting matters), or drop the range claim from that
+      scenario and assert what it can actually test.
+
+  A test whose value does not move when its input is replaced by the input's opposite is
+  not testing that input. The tolerance-setting exercise is the deliverable.
+
+  RELATED: the two `console.warn` accuracy diagnostics in this file have been firing in
+  passing tests indefinitely (now filed as WS-307 and WS-308). Whatever this ticket does
+  about thresholds should also settle the policy: a diagnostic either fails the test or
+  becomes a filed item. See the corollary added to `exploitEngine/CLAUDE.md` by WS-300.
+accept_criteria: |
+  - Every range-dependent assertion in `advisorAccuracy.test.js` is re-baselined to a
+    threshold that would FAIL if its villain range were swapped for a range of the opposite
+    strength. Demonstrated: a temporary swap makes the suite red, then is reverted.
+  - Sc.4 either moves to a board where range composition matters, or its range-dependent
+    claim is removed and replaced with what the scenario can genuinely assert.
+  - Each new threshold carries a one-line comment stating the measured value it derives
+    from, so a future reader can tell a calibrated number from a guessed one.
+  - No `console.warn`-only diagnostics remain in the file: each is an assertion or a
+    filed item.
+  - Apply the same discriminating-threshold check to the `tightRange`/`topRange` call sites
+    in `gameTreeEvaluator`, `gameTreeDepth2`, `item24Improvements`, `item27Improvements` —
+    27 call sites total; report which were already discriminating.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/fixtures/ranges.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Re-baseline thresholds to measured values (locks in current engine behaviour as correct, including any live defects) vs derive them from poker first principles (slower, but does not enshrine a bug). Recommend measured-plus-tolerance for the range-INSENSITIVITY guard, and first-principles for any assertion that WS-307/WS-308 will move."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ws-300-fixture-triage"
+created_at: "2026-07-30T14:20:00Z"
+status_note: |
+  Filed under WS-300 (SPR-160). Evidence:
+  .claude/workstream/evidence/domain-correctness/run-ws-300-fixture-triage/ledger.yaml
+
+  SEQUENCING CAUTION: this ticket re-baselines thresholds, and WS-307/WS-308 will change
+  the EV values those thresholds measure. Doing this one FIRST risks enshrining the two
+  known defects as the expected values. Recommend WS-307 and WS-308 land before the
+  re-baselining pass, or that the affected scenarios are explicitly excluded from
+  re-baselining until they do — see the decision flag.

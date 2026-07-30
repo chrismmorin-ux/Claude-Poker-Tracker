@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-29T19:30:19.840Z",
-  "updated_by_event": "ev-1785353419840-9a02e0cf4cdc",
+  "updated_at": "2026-07-30T14:21:09.933Z",
+  "updated_by_event": "ev-1785421269933-9c326f82b35c",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4608,7 +4608,7 @@
     "WS-300": {
       "id": "WS-300",
       "title": "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 30,
       "category": "testing",
       "effort": "M",
@@ -4772,7 +4772,91 @@
         ".claude/projects/gut-range.md"
       ],
       "source_class": "untagged"
+    },
+    "WS-307": {
+      "id": "WS-307",
+      "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+      "status": "backlog",
+      "priority_score": 31,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ws-300-fixture-triage"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEquity.js",
+        "src/utils/exploitEngine/foldEquityCalculator.js",
+        "src/utils/exploitEngine/heroActionBuilder.js",
+        "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-308": {
+      "id": "WS-308",
+      "title": "The engine prefers CHECKING the nut flush to betting it — check EV 112 vs bet EV 77",
+      "status": "backlog",
+      "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ws-300-fixture-triage"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/heroActionBuilder.js",
+        "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-309": {
+      "id": "WS-309",
+      "title": "The behavioural thresholds don't discriminate — correcting the fixtures moved equity 0.58 and only ONE assertion noticed",
+      "status": "backlog",
+      "priority_score": 26,
+      "category": "testing",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ws-300-fixture-triage"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js",
+        "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js",
+        "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js",
+        "src/utils/exploitEngine/__tests__/fixtures/ranges.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785353419840-9a02e0cf4cdc"
+  "last_event_log_head": "ev-1785421269933-9c326f82b35c"
 }

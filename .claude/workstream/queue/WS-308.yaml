@@ -1,0 +1,78 @@
+id: "WS-308"
+title: "The engine prefers CHECKING the nut flush to betting it — check EV 112 vs bet EV 77"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED. Surfaced while executing WS-300 (SPR-160), by reading the accuracy warnings
+  that nothing was reading.
+
+  THE SPOT. `advisorAccuracy` Scenario 1 — hero holds the nut flush on a dry board against
+  `fullRange()`, pot 100. Engine reports check EV 112.0 vs bet EV 77.0 and ranks CHECK
+  first with the effective nuts.
+
+  PRE-EXISTING AND UNRELATED TO WS-300. Scenario 1 uses `fullRange()` — all 169 cells at
+  1.0 — which was NOT part of the fixture inversion and is byte-identical before and after.
+  So this defect is not caused by, or newly exposed by, the fixture fix; it has simply been
+  logging as a `console.warn` in a passing test for as long as the scenario has existed.
+
+  WHY IT LOOKS WRONG. With the nuts there is no protection motive and no reverse implied
+  odds; the only question is how to extract maximum value. Checking can be correct as a
+  trap on a specific street against a specific villain, but a 35-EV-point preference for
+  checking the nuts against an unmodelled full range suggests the bet branch is losing
+  value somewhere rather than the check branch finding it. Candidates:
+    - The check branch's assumed future street value is being credited too generously
+      (checking behind vs checking to induce are different, and a river check has no
+      future street at all).
+    - The bet branch is charging the full bet as cost while under-crediting the called
+      branch's equity — the shape the exploitEngine anti-pattern
+      "DO NOT simplify fold equity to foldPct * potSize" warns about, in reverse: with the
+      nuts, EVERY call is a win, so `heroEquity * totalPot` should dominate.
+    - Sizing candidates for a nutted hand may all be too small to express value.
+
+  Worth checking whether this is street-dependent (flop/turn/river) before assuming one
+  root cause.
+accept_criteria: |
+  - Diagnosis recorded before any fix: state which branch is mispriced and why, with the
+    EV terms broken out (fold branch / call branch / future street).
+  - With the effective nuts and no villain model, betting is ranked at or above checking,
+    or the check preference is justified by a stated mechanism that survives review.
+  - Behavioural test asserting the above that FAILS against the pre-fix engine.
+  - Scenario 1's `console.warn` becomes a real assertion or is removed.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ws-300-fixture-triage"
+created_at: "2026-07-30T14:20:00Z"
+status_note: |
+  Filed under WS-300 (SPR-160). Evidence:
+  .claude/workstream/evidence/domain-correctness/run-ws-300-fixture-triage/ledger.yaml
+
+  Scored below WS-307 because the spot is less common in practice (holding the effective
+  nuts) and because the check/bet gap may partly reflect a legitimate trap line — WS-307
+  is an unambiguously wrong action, this one needs diagnosis first. Deliberately NOT
+  bundled with WS-307: different branch of the tree, and bundling would let one diagnosis
+  stand in for two.

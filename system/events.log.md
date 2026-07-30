@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785353419840-9a02e0cf4cdc"
-generated_content_hash: "b7c3fe729ba772b3117cc83fb7cce19a56602214fb356888d85a5ed4af040977"
-generated_at: "2026-07-29T19:30:20.085Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl"]
-event_count: 1106
+generated_from_event: "ev-1785421270049-02b0e11d8855"
+generated_content_hash: "d6fb2171467a912fd83ec0eade0d968a6e63a949a8ce1c27349537d1c1cbd7ff"
+generated_at: "2026-07-30T14:21:10.100Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl"]
+event_count: 1115
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 677
-- Events recorded: 1106
-- Source chunks: 18
+- Commands recorded: 682
+- Events recorded: 1115
+- Source chunks: 19
 
 ## Command `auto:42416:1781030643103`
 
@@ -7216,3 +7216,57 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-29T19:30:19.840Z | T6:workstream | C:/Program Files/Git/workstream | command="/workstream", subcommand="create", +3 more |
+
+## Command `auto:9800:1785381952139`
+
+- Start: 2026-07-30T03:25:52.139Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T03:25:52.139Z | T15:session-end | session-abandoned | session_id="ses-20260729-1944-auto", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `cmd-pulserun-ms734oxy858334a40349`
+
+- Start: 2026-07-30T05:40:36.553Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T05:40:36.553Z | T11:vital-signs | /pulse | type="protocol_run_intent", program="domain-correctness", +4 more |
+
+## Command `auto:3720:1785390046486`
+
+- Start: 2026-07-30T05:40:46.486Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T05:40:46.486Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `cmd-sprintapprove-ms7kvw5ua31f9eaa1dfc`
+
+- Start: 2026-07-30T13:57:39.094Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T13:57:39.094Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-160", +8 more |
+
+## Command `cmd-itemclosed-ms7lq45i08b4145627d8`
+
+- Start: 2026-07-30T14:21:09.128Z
+- Events: 5
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-30T14:21:09.128Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-300", +3 more |
+| 2 | 2026-07-30T14:21:09.342Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-160", +4 more |
+| 3 | 2026-07-30T14:21:09.869Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-07-30T14:21:09.933Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-07-30T14:21:10.049Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 182
+total_items: 185
 by_status:
   decomposed: 1
-  done: 76
+  done: 77
   in_progress: 3
   deferred: 43
-  backlog: 40
+  backlog: 42
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 54
+  domain-correctness: 56
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -50,7 +50,7 @@ by_category:
   sidebar-recurrence: 6
   table-view: 1
   test-reliability: 2
-  testing: 1
+  testing: 2
   ux: 3
 
 items:
@@ -1720,7 +1720,7 @@ items:
 
   - id: "WS-300"
     title: "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk"
-    status: backlog
+    status: done
     priority_score: 30
     category: testing
     effort: M
@@ -1762,12 +1762,40 @@ items:
     effort: M
     program: domain-correctness
     capability: core
+
   - id: "WS-305"
     title: "Hand-vs-range preflop equity, DECOMPOSED — implement computeEquity's range branch returning per-bucket hitRate/conditionalWin against an arbitrary 169-grid"
     status: backlog
     priority_score: 22
     category: domain-correctness
     effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-307"
+    title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-308"
+    title: "The engine prefers CHECKING the nut flush to betting it — check EV 112 vs bet EV 77"
+    status: backlog
+    priority_score: 24
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-309"
+    title: "The behavioural thresholds don't discriminate — correcting the fixtures moved equity 0.58 and only ONE assertion noticed"
+    status: backlog
+    priority_score: 26
+    category: testing
+    effort: M
     program: domain-correctness
     capability: core
 

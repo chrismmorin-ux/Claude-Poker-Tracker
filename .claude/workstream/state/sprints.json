@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-29T18:09:28.566Z",
-  "updated_by_event": "ev-1785348568566-5551f04b1e5f",
+  "updated_at": "2026-07-30T14:21:09.933Z",
+  "updated_by_event": "ev-1785421269933-9c326f82b35c",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2589,7 +2589,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-160": {
+      "id": "SPR-160",
+      "title": "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRang",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-30T13:57:38.943Z",
+      "approved_at": "2026-07-30T13:57:38.943Z",
+      "completed_at": "2026-07-30T14:21:09.104Z",
+      "goal": "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785348568566-5551f04b1e5f"
+  "last_event_log_head": "ev-1785421269933-9c326f82b35c"
 }

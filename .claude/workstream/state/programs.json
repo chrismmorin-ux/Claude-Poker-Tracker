@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-29T18:09:28.697Z",
-  "updated_by_event": "ev-1785348568697-8b85b1c4e39c",
+  "updated_at": "2026-07-30T14:21:10.049Z",
+  "updated_by_event": "ev-1785421270049-02b0e11d8855",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -617,7 +617,7 @@
       "health_ceiling": 9,
       "health_updated_at": "2026-07-22T00:00:00Z",
       "findings_open": 11,
-      "work_items_open": 37,
+      "work_items_open": 40,
       "problem_classes": [
         {
           "name": "First-principles decision modeling",
@@ -736,11 +736,11 @@
       },
       "cap_breach": {
         "active": true,
-        "work_items_open": 37,
+        "work_items_open": 40,
         "findings_open": 11,
         "max_open_items": 25,
         "priority_floor": 27,
-        "ratio": 1.48,
+        "ratio": 1.6,
         "since": "2026-07-28"
       },
       "health_breakdown": {
@@ -1030,7 +1030,7 @@
         "maturity_progress": 0.25,
         "hard_caps_applied": [
           "block_sprint + stale -> max 2",
-          "staleness decay -5"
+          "staleness decay -6"
         ]
       },
       "engine_history_count": 0
@@ -1317,5 +1317,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785348568697-8b85b1c4e39c"
+  "last_event_log_head": "ev-1785421270049-02b0e11d8855"
 }

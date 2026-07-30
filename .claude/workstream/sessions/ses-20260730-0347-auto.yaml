@@ -1,0 +1,14 @@
+id: "ses-20260730-0347-auto"
+status: active
+started_at: "2026-07-30T03:47:51.121Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-07-30T13:57:39.125Z"
+pid: 22372
+
+# Minted by cwos-claims because no valid .current-session pointer existed.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items:
+  - "WS-300"
+
+files_locked: []

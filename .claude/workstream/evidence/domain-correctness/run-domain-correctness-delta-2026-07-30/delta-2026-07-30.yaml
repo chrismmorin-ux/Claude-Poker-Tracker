@@ -1,0 +1,193 @@
+run_id: "run-domain-correctness-delta-2026-07-30"
+protocol: delta
+engine: preflight
+date: "2026-07-30"
+window:
+  from_commit: "5aa1419"
+  to_commit: "292e56f"
+  from_date: "2026-07-22"
+  note: >
+    8 days since last delta (cadence 3) — window is 4.7x the intended size.
+    Scope-filtered diff: 51 files, +7671/-732. Reviewed file-by-file against the
+    9 anti-patterns in exploitEngine/CLAUDE.md + rangeEngine/CLAUDE.md, plus the
+    WS-285 threshold doctrine (POKER_THEORY §11.4/§11.5) that landed mid-window.
+
+verdict: SOUND-WITH-MINOR-ISSUES
+
+verified_compliant:
+  - claim: "WS-302 support floor — no prior assigns exactly zero"
+    evidence: >
+      populationPriors.js:305-323 withEquitySupport, applied at the single
+      construction point (:484) so a new `case` cannot bypass it. The
+      structural-vs-epistemic discriminator the doctrine names IS implemented
+      mechanically: `comboWeightedMean(grid) === 0` returns the grid untouched
+      (:309), so BB.limp stays exactly zero while UTG 84s gets support. Ranked
+      by the grid's OWN smoothed shape, not raw equity (:312-313).
+    result: COMPLIANT
+
+  - claim: "WS-274 — labels confined to one tier-4 lookup in the preflop path"
+    evidence: >
+      preflopFoldResolver.resolveFoldPrior:183-194 is the only site consulting
+      POSITIONAL_FOLD_TO_3BET / _TO_4BET, and only after the §6.5a pool prior
+      (tier 3) declines. Style/PFR adjustment is confined to tier 4 (:208-221)
+      with an explicit `styleApplied` guard, so it cannot stack on observed data.
+      `behindCount * 0.04` and the flat `callerFoldPct = 0.70` are gone — seats
+      behind hero now resolve per-seat via liveGameContext.buildSeatsToAct.
+      applySizingResponse takes pot odds (the §7.1 decision input), not a raw
+      sizing multiplier, and it is the CURVE that is style-conditioned, never the
+      base rate.
+    result: COMPLIANT
+
+  - claim: "FIND-038 sizing-tell circularity (HIGH, filed 2026-07-22)"
+    evidence: >
+      FIXED in-window by WS-261. decisionAccumulator.js:515-562 now samples the
+      ACTUAL shown hand — comboStrengthPercentile(c1, c2, streetBoard) against
+      the real board at the bet's street — and drops unparseable or
+      board-colliding shown cards with no fallback estimate. The old path read
+      bucket.avgSegmentation (the model's own estimate), which measured
+      self-consistency. Pearson r is now a showdown-grounded tell, so the UI
+      claim "confirmed by showdowns" is true as of this window.
+    result: RESOLVED
+
+  - claim: "§7.4 style/stat/model mutual exclusivity in postflop narrowing"
+    evidence: >
+      postflopNarrower.adaptMultipliers:585-616 — style block gated by
+      `!hasModel && !hasObservedAdjustments`. Trait modifiers (:618+) are not
+      stat-derived and correctly always apply.
+    result: COMPLIANT
+
+  - claim: "lineTaxonomy classifies from sequence state only"
+    evidence: "No position, hole-card, or showdown reads. Only reference to a position label is a comment ruling it out (:11)."
+    result: COMPLIANT
+
+findings:
+  - id: FIND-040
+    severity: MEDIUM
+    title: >
+      preflopFoldResolver tier 1 keeps the hard confidence gate WS-285 removed
+      everywhere else — and returns early, discarding the villain's observed
+      fold counts
+    file: src/utils/exploitEngine/preflopFoldResolver.js
+    lines: "258-275"
+    detail: >
+      `if (dist.confidence >= MODEL_CONFIDENCE_THRESHOLD)` selects the model
+      estimate and RETURNS, bypassing the Beta posterior at :277-301 entirely.
+      Two consequences. (1) A villain just under the threshold has their model
+      information discarded outright rather than shrunk — the exact
+      `if (n >= K) use the specific estimate` construction that
+      POKER_THEORY §11.5 generalizes from the WS-285 fix, and that §11.4 had
+      already recorded against a minimum-N gate on preflop fold rates
+      specifically: "a threshold label, the same anti-pattern in another
+      costume." (2) When the gate DOES fire, `facedRaisePreflop` / `foldTo3Bet`
+      are never read, so a villain with a thin model and 200 observed
+      faced-raise hands is priced off the thin model and the 200 hands are
+      thrown away. `priorWeight: 0` is returned, which reports full confidence
+      for that branch.
+      The same function's own comment at :288-290 states "NO hard observation
+      cutoff. The Beta posterior self-weights... A threshold would reintroduce
+      the label anti-pattern in another guise." That is true of tiers 2-4 and
+      false of tier 1, eight lines above it.
+    root_cause: >
+      WS-274 (2026-07-26) lifted the pre-existing priority chain into the
+      resolver verbatim, including its threshold. WS-285 (2026-07-27) then
+      established shrinkage-not-thresholds and fixed queryActionDistribution's
+      internals, but did not revisit its caller. Drift between two commits in
+      this same window.
+    fix: >
+      Treat the model distribution as another level in the ladder: use its
+      estimate to prime the Beta prior (strength = dist.effectiveN) and let the
+      observed faced-raise counts update it, instead of early-returning. No
+      cutoff. Report priorWeight honestly.
+
+  - id: FIND-041
+    severity: MEDIUM
+    title: >
+      The sizing-tell adjustment has two hard cliffs with divergent constants in
+      two modules, and both multiply a finished estimate
+    files:
+      - "src/utils/exploitEngine/foldEquityCalculator.js:552-563"
+      - "src/utils/exploitEngine/gameTreeDepth2.js:210-220"
+    detail: >
+      foldEquityCalculator gates on `|corr| > 0.3 && n >= 8`; gameTreeDepth2
+      gates the same signal on `|corr| > 0.2 && n >= 5`. A villain at r=0.25
+      with 6 samples gets a depth-2 adjustment and no aggregate adjustment; the
+      two layers of the same evaluation disagree about whether the tell exists.
+      Both are step functions on a continuous quantity — r=0.299/n=7 yields
+      exactly zero, r=0.301/n=8 yields the full confidence-ramped effect. The
+      aggregate site also applies its multiplier to `estimate` AFTER the
+      observed-data blend, which is the "a label may shape a PRIOR, never scale a
+      POSTERIOR" corollary in numeric costume.
+      Note this is now a REAL signal (FIND-038 fixed in-window), which raises
+      rather than lowers the value of pricing it continuously.
+    fix: >
+      One shared helper, one set of constants, effect scaled continuously by
+      correlation magnitude x sample confidence with no entry cliff. Fold it
+      into the prior for the aggregate path.
+
+  - id: FIND-042
+    severity: LOW
+    title: >
+      The bucket-keyed narrowing machinery AP-RL-01 forbids survives as
+      test-only dead exports after WS-291
+    file: src/utils/exploitEngine/postflopNarrower.js
+    lines: "458-497, 510-616"
+    detail: >
+      `comboMultiplier` (bucket-keyed: `multipliers[bucket] ?? 0`) and
+      `adaptMultipliers` have no callers anywhere in src/, scripts/, or the
+      extension — only postflopNarrower.test.js. WS-291 replaced the narrowing
+      path with DEFAULT_CONTINUATION_RATES + soft weights. The section header
+      claims they are "kept for villainDecisionModel Dirichlet priors", but
+      villainDecisionModel imports only the ACTION_MULTIPLIERS *constant*
+      (:24, :597, :647) — never either function. So the header is true of the
+      constant and false of the two functions beneath it, and 100 lines of
+      bucket-label narrowing sit in the file the doctrine names as the
+      AP-RL-01 hazard, passing tests, ready to be wired back in.
+    fix: >
+      Delete both functions and their tests; keep ACTION_MULTIPLIERS with a
+      header naming its one real consumer.
+
+  - id: null
+    severity: LOW
+    title: "gameTreeEvaluator river texture: two binary flags under a comment claiming continuity"
+    file: src/utils/exploitEngine/gameTreeEvaluator.js
+    lines: "456-468"
+    detail: >
+      The wetScore term IS continuous as the comment says (:462). But
+      `if (bt.isPaired) pFold *= 0.90` and the flush-complete branch are binary
+      step multipliers on the posterior, and the flush line's own comment reads
+      "continuous, not binary". Board texture is legitimate game state (not a
+      player label), so this is not the position-label anti-pattern — it is a
+      doc-vs-code contradiction within a single line, plus a discrete jump where
+      boardTexture already exposes continuous scores. Folded into FIND-041's fix
+      as the same shape of defect.
+
+confirmed_backlog_premise:
+  - item: WS-304
+    status: CONFIRMED-REAL
+    detail: >
+      Verified arithmetically rather than by reading the ticket. handStrengthTier
+      (populationPriors.js:329-334) is an ADDITIVE rank sum:
+      raw = rank1 + rank2 + 8*isPair + 2*suited, normalized by 32.
+      AKo = 12+11 = 23/32 = 0.719. AKs = 25/32 = 0.781. The 3-bet chart
+      threshold (:399) is 0.73 for LATE and 0.81 otherwise. So AKo is excluded
+      from the 3-bet prior at EVERY position, and AKs is excluded from every
+      position except LATE — leaving the EARLY/MIDDLE 3-bet prior as JJ+ only
+      (JJ = 0.8125), with TT (0.75) ranked ABOVE AKs. The ticket's framing is
+      right and its title understates it.
+      Root cause is the additive form, not the threshold value: a sum of two
+      ranks plus a pair bonus cannot express dominance, so no single cutoff on
+      it will order AK correctly against middling pairs. Fixing the threshold
+      alone would move the boundary and keep the wrong ordering. WS-305
+      (per-bucket hand-vs-range equity) is the substrate that makes a real
+      ordering available; note preflopEquityTable.js already landed in-window.
+      Post-WS-302 these cells are no longer literally zero — the support floor
+      lifted them — so the symptom is now a wrong SHAPE rather than an
+      impossible hand, which is why it survived the WS-302 fix.
+
+program_state_note: >
+  domain-correctness is at 37/25 open items (1.48x cap) with 11 open findings and
+  FIND-039 still ungoverned since 2026-07-22. These three new findings are
+  recorded here and NOT auto-promoted to queue items, to avoid widening a cap
+  breach the founder has already been asked to resolve. FIND-040 is the one worth
+  promoting on its own merits; FIND-041/042 are cleanup that can ride along with
+  any future touch of those files.

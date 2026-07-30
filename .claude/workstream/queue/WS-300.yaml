@@ -2,7 +2,7 @@ id: "WS-300"
 title: "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -93,3 +93,4 @@ status_note: |
   follow-up ticket: with a real tight range the engine recommends RAISING hero's 33 on
   QJT at 4% equity (raise EV 40.4 vs fold 0). The test logs it as a warning rather than
   failing. Against a range that folds rarely, that recommendation looks wrong.
+closed_by_event: "ev-1785421269128-42145be76d7c"

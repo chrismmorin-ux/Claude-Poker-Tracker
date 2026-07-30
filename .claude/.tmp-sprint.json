@@ -1,5 +1,5 @@
 {
-  "composed_at": "2026-07-29T19:31:12.661Z",
+  "composed_at": "2026-07-30T13:57:38.755Z",
   "goal": "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
   "program_focus": "domain-correctness",
   "override_class": null,
