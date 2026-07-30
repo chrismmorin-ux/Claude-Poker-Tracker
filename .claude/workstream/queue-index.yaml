@@ -1773,7 +1773,7 @@ items:
     capability: core
 
   - id: "WS-307"
-    title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+    title: "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts"
     status: backlog
     priority_score: 31
     category: domain-correctness

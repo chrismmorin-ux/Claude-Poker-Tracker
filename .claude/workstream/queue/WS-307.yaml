@@ -1,5 +1,5 @@
 id: "WS-307"
-title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+title: "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts"
 legacy_id: ""
 type: bug
 status: backlog
@@ -18,50 +18,101 @@ description: |
   MEASURED, NOT INFERRED. Found while executing WS-300 (SPR-160) once the test fixtures
   were corrected. Reproduces on every run.
 
-  THE SPOT. Hero 3s3d on QhJhTs, facing a 75-into-100 bet. Villain's range is
-  AA,KK,QQ,JJ,TT,AKs,AKo,AQs,AQo. The engine ranks RAISE first at EV 40.7 against
-  fold EV 0, with hero equity 0.056.
+  RETITLED AND RE-DIAGNOSED 2026-07-30 after founder challenge. The first version of this
+  ticket called the raise itself wrong. That framing was incorrect and would have led an
+  implementer to the wrong fix — see "WHY RAISING IS A LEGITIMATE CANDIDATE" below. The
+  defect is real but it is in the FOLD ESTIMATE, not in the decision to consider a raise.
 
-  WHY IT IS WRONG. On QJT that range is essentially all overpairs, sets, two pair and
-  strong draws — QQ/JJ/TT are sets, AKs/AKo have the nut straight draw or better, AQ has
-  top pair plus a gutshot. There is almost nothing in it that folds to a raise. The raise
-  is being priced on fold equity that does not exist against THIS range, and hero holds
-  the second-worst possible pair with 6% equity and no meaningful redraw.
+  THE SPOT. Hero 3♠3♦ on Q♥J♥T♠, facing a 75-into-100 bet. Villain's range is
+  AA,KK,QQ,JJ,TT,AKs,AKo,AQs,AQo. The engine ranks RAISE first at EV 40.7 against fold
+  EV 0, with hero equity 0.056.
 
-  WHERE TO LOOK FIRST. The raise branch's fold-equity term. Two candidates, both cheap
-  to distinguish:
-    (1) The fold estimate is being taken from a population/style prior rather than from
-        the actual narrowed range's composition — i.e. "villains fold to raises ~X%" is
-        being applied to a range that structurally cannot fold. Note FIND-029 (fixed by
-        WS-247) removed a heroEquity >= 0.65 gate on raiseEV specifically so that
-        +EV bluff-raises vs over-folders would surface; the gate removal is correct, but
-        it means nothing downstream now suppresses a raise when fold equity is absent.
-    (2) `bestResponseToAggression` / the raise EV path is not conditioning fold% on the
-        range it was handed.
+  WHY RAISING IS A LEGITIMATE CANDIDATE (founder, 2026-07-30 — and the measurement agrees).
+  Hero's showdown value against this range is EXACTLY ZERO — 0 of 49 combos, verified by
+  enumeration:
 
-  This is the second defect in this family: an EV term computed from a prior instead of
-  from the game state in front of it. Compare FIND-040 (preflopFoldResolver tier 1
-  discarding observed counts) from the 2026-07-30 delta run.
+      villain hand   combos   hero beats
+      AA                  6            0     overpair
+      KK                  6            0     overpair
+      QQ / JJ / TT        9            0     sets
+      AKs / AKo          16            0     BROADWAY — the nuts
+      AQs / AQo          12            0     top pair + gutshot
+      TOTAL              49            0
 
-  DO NOT fix this by reinstating an equity gate on raises. That was FIND-029 and it
-  suppressed genuinely profitable bluff-raises. The fold estimate itself is what must
-  respond to the range.
+  A hand that wins 0% at showdown sacrifices NOTHING by bluffing: there are no worse
+  hands to fold out, because there are no worse hands. This is the classic
+  bluff-candidate criterion, and it is the founder's point — a made hand with no
+  showdown value is often a BETTER bluff than a drawing hand, because the draw still has
+  equity to realise and the made hand has none. Bottom pair here is pure air wearing a
+  pair, and treating it as "a made hand, therefore not a bluff" is the error the engine
+  must not make.
+
+  So the engine is RIGHT to rank a raise as a candidate. What it is wrong about is the
+  price.
+
+  WHY THIS PARTICULAR RANGE DEFEATS IT. A bluff needs a range that CAN fold. This one
+  largely cannot:
+
+      never folds   AK (16) + sets (9)   = 25 / 49  = 51%   (AK is the nuts and re-raises)
+      may fold      AA, KK (12)          = 24%             (but hold gutshots/backdoors)
+      may fold      AQ (12)              = 24%             (top pair + gutshot, often calls)
+
+  More than half the range never folds and a third of it is the STONE NUTS. The "better
+  pairs that would otherwise have just shown down" — the fold-out target the bluff is
+  priced on — are only AA/KK, 12 of 49 combos, and they are not obviously folding to a
+  raise on a board where they hold an overpair plus backdoors.
+
+  This is a textbook case of the CAPPED-VS-UNCAPPED rule already in
+  exploitEngine/CLAUDE.md §5: this range is definitively uncapped — it contains the nuts
+  at 33% frequency. Bluff-raising into it is not a marginal error, and an EV of 40.7
+  implies a fold rate the composition cannot produce.
+
+  THE DEFECT, PRECISELY. The raise branch's fold estimate is not conditioned on the
+  composition of the range in front of it. Two candidates, cheap to distinguish:
+    (1) the fold rate comes from a population/style prior rather than from the narrowed
+        range's actual composition — "villains fold to raises ~X%" applied to a range
+        that structurally cannot;
+    (2) `bestResponseToAggression` / the raise-EV path never asks the range how much of
+        it is nutted.
+
+  Same family as FIND-040 from the 2026-07-30 delta run: an EV term computed from a
+  prior instead of from the game state in front of it.
+
+  DO NOT FIX WITH AN EQUITY GATE. Two independent reasons, and the second is the
+  founder's:
+    - FIND-029: a `heroEquity >= 0.65` gate on raiseEV was REMOVED by WS-247 precisely
+      because it suppressed all +EV bluff-raises against over-folders.
+    - A gate on hero equity would suppress exactly the hands that make the BEST bluffs —
+      zero-showdown-value made hands. It would encode the inverse of the correct
+      principle.
+  The fold estimate is what must respond to the range.
 accept_criteria: |
-  - Against the tight range above on QhJhTs, hero 3s3d: RAISE is no longer ranked first,
-    and the raise EV reflects a fold rate consistent with a range that cannot fold.
-  - The fix changes the FOLD ESTIMATE's dependence on the narrowed range, not a
-    hero-equity gate on whether raises are considered (FIND-029 regression guard).
-  - Behavioural test asserting the above, using the shared `__tests__/fixtures/ranges.js`
-    fixtures — and it must FAIL against the pre-fix engine.
-  - Verify the converse still holds: against a genuinely over-folding villain, a +EV
-    bluff-raise with low equity IS still recommended (do not re-break FIND-029).
-  - `advisorAccuracy` Scenario 3's `console.warn` diagnostic is converted into a real
-    assertion, or removed — a warning in a passing test enforces nothing.
+  - Against this range on Q♥J♥T♠ with hero 3♠3♦: the raise is no longer ranked first, and
+    its EV reflects a fold rate consistent with a range that is 51% never-folding and 33%
+    nuts.
+  - The change is to how the FOLD ESTIMATE reads range composition — NOT a hero-equity
+    gate on whether raises are generated (FIND-029 regression guard, and the
+    bluff-selection principle below).
+  - CONVERSE MUST STILL HOLD, asserted by test: against a genuinely over-folding villain
+    with a CAPPED range, hero's zero-showdown-value bottom pair IS still raised. This is
+    the founder's case and the fix must not break it. A fix that suppresses both spots
+    has encoded "don't bluff with made hands", which is wrong.
+  - Behavioural test for both directions, using the shared `__tests__/fixtures/ranges.js`
+    fixtures, failing against the pre-fix engine.
+  - DOCTRINE GAP (verified absent 2026-07-30): POKER_THEORY.md documents fold equity,
+    MDF and the auto-profit threshold but says nothing about WHICH hands to select as
+    bluffs. Add it — a hand's bluff suitability falls as its showdown value rises, so a
+    zero-showdown-value made hand is a premium bluff candidate while a marginal made hand
+    that beats part of the range is a poor one (bluffing it folds out the hands it beats).
+    Note the interaction with capped/uncapped: the candidate's suitability is hero-side,
+    the bluff's PROFITABILITY is villain-range-side, and both must clear.
+  - `advisorAccuracy` Scenario 3's `console.warn` becomes a real assertion or is removed.
 effort: "M"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEquity.js"
   - "src/utils/exploitEngine/foldEquityCalculator.js"
   - "src/utils/exploitEngine/heroActionBuilder.js"
+  - ".claude/context/POKER_THEORY.md"
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
 blocked_by: []
 blocked_by_legacy: []
@@ -79,8 +130,9 @@ status_note: |
   instrument and engine behaviour changes get their own item. Evidence:
   .claude/workstream/evidence/domain-correctness/run-ws-300-fixture-triage/ledger.yaml
 
-  Scored above WS-300's own 30 because it is a confirmed wrong recommendation on a live
-  advice path, reproduced with a number, not an audit inference.
+  Combo enumeration verifying the 0/49 showdown value and the 51%/33% composition:
+  scratchpad ws307-check.mjs, 2026-07-30 (re-derivable from bestFiveFromSeven against the
+  range spec — no Monte Carlo, exact).
 
   ID note: WS-306 is skipped — that number is used by the session-claims work already
   shipped in commit 292e56f (see kit/scripts/cwos-next.js Step 0b) which never got a

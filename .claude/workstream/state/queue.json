@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T15:56:17.648Z",
-  "updated_by_event": "ev-1785426977648-6dbb83f9fb6e",
+  "updated_at": "2026-07-30T16:10:42.487Z",
+  "updated_by_event": "ev-1785427842487-ac248bf3b9cf",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4775,7 +4775,7 @@
     },
     "WS-307": {
       "id": "WS-307",
-      "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+      "title": "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts",
       "status": "backlog",
       "priority_score": 31,
       "category": "domain-correctness",
@@ -4797,6 +4797,7 @@
         "src/utils/exploitEngine/gameTreeEquity.js",
         "src/utils/exploitEngine/foldEquityCalculator.js",
         "src/utils/exploitEngine/heroActionBuilder.js",
+        ".claude/context/POKER_THEORY.md",
         "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
       ],
       "source_class": "untagged"
@@ -4886,5 +4887,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785426977648-6dbb83f9fb6e"
+  "last_event_log_head": "ev-1785427842487-ac248bf3b9cf"
 }
