@@ -19,6 +19,7 @@
 | `07-rotate-gate-persists-landscape.jpg` | **The same gate still painted in a landscape (2340×1080) frame** |
 | `08-local-repro-1600x720-nexthand-below-fold.png` | **Local repro at exactly 1600×720** — Next Hand is entirely below the fold |
 | `09-local-repro-rotate-gate-portrait.png` | Local repro of the rotate gate at a 720×1600 viewport |
+| `10-card-selector-device-scale-1170x540.png` | Card selector at device-equivalent scale (0.695) — grid cells measure 79×92 rendered px |
 
 ---
 
@@ -95,6 +96,23 @@ A pure viewport change re-evaluates the `portrait:` variant and dismisses the ov
 
 Remaining candidates are all device-specific: OS-level rotation lock (auto-rotate off, in which case the copy "turn your phone sideways" is actively wrong); `screen.orientation.lock()` interacting with physical orientation in an installed PWA; Android Chrome not re-evaluating on `orientationchange` the way a desktop resize does; or the gate clearing while the *scale* fails to recover. **Reproduction on the founder's device is step 1 of the ticket, not an assumption in it.** Ticket: `WS-315`.
 
+## EVID-6 — The card grid is NOT undersized; its risk is homogeneity *(measured 2026-07-31)*
+
+Measured in response to the founder's press-hold-to-zoom proposal:
+
+| Viewport | scale | card-grid cell, rendered | header BOARD/HOLE slot |
+|---|---|---|---|
+| 1600 × 720 (design canvas) | 0.950 | **108 × 126 px** | ~38 × 55 px |
+| 1170 × 540 (≈ device, DPR 2) | 0.695 | **79 × 92 px** | **~28 × 40 px** |
+
+The grid cells are roughly **twice the 44px floor** — `CardSelectorPanel` is a full-screen overlay whose cells use `flex-1` in both axes, so it already claims maximum area. **A target-size argument for the card grid is not supported.**
+
+The sub-floor targets in that surface are the header `CardSlot`s (~28×40 at device scale), but they are largely bypassed: entry from the felt pre-sets the slot index and `useCardSelection` auto-advances then auto-closes, so a flop costs ~4 taps (1 open + 3 cards) and only the opening tap lands small.
+
+**The real risk in the card grid is homogeneity, not size** — 52 near-identical cells where a perfectly accurate tap can still hit the wrong card, and confirmation arrives only after the write. That is a feedback-timing defect, and it is what `WS-317` (confirm-before-commit) addresses. See [Gate 1 entry](../../audits/2026-07-31-entry-confirm-before-commit.md).
+
+**Also confirms EVID-2's device estimate:** measured scale at a 1170×540 CSS viewport is **0.695**, matching the DPR-2 prediction. A declared 44px target therefore renders at **~30.6px** on the founder's device — now measured rather than inferred.
+
 ## EVID-4 — Floating voice button overlaps the card grid *(NEW, minor)*
 
 `04-card-selector-mic-overlap.jpg`: the circular BOARD/mic control sits above the card-selector overlay and covers the A♣ and K♣ cells of the clubs row. Both are selectable cards. Also visible in `02`/`03`, where it overlaps the felt's lower-left. Folded into `WS-313` (Gate 4) as a z-order / placement item rather than filed separately.
@@ -111,4 +129,5 @@ Remaining candidates are all device-specific: OS-level rotation lock (auto-rotat
 ## Change log
 
 - 2026-07-31 — Created from founder device screenshots during TVR kickoff. 2 predictions confirmed, 3 new findings.
+- 2026-07-31 — EVID-6 added: card-grid and header-slot sizes measured at two viewports in response to the founder's press-hold proposal. Confirms the device scale factor at 0.695 (44px → ~30.6px rendered).
 - 2026-07-31 — Local reproduction added (`scripts/devshot.mjs`). EVID-1 reproduced at the design resolution (stronger than the device finding); EVID-2 measured at DPR 1 (scale 0.95, 44px → 41.8px); EVID-3 narrowed — the CSS media query is confirmed NOT to be the cause.

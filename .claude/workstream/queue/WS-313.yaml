@@ -89,7 +89,8 @@ sprint_id: null
 decision_flags:
   - "WS-186 (table flip) MUST be resolved here — designed into the same transform layer or explicitly deferred. It cannot proceed in parallel."
   - "WS-187 (photo-primary avatars) should land before or with the rail; rail legibility depends on recognising a player from a small chip."
-  - "If WS-312 R7 shows postflop time is dominated by CARD entry, CardSelectorPanel enters Gate 4 scope and this item grows."
+  - "If WS-312 R7 shows postflop time is dominated by CARD entry, CardSelectorPanel enters Gate 4 scope and this item grows. NOTE 2026-07-31: card entry measures ~4 taps for a flop (auto-advance + auto-close), so it is less likely to dominate than the Gate 2 draft assumed."
+  - "WS-317 (confirm-before-commit) must be designed inside this artifact. Its gesture-vocabulary resolution touches three shipped decisions including AUDIT-2026-04-21-TV F9."
 source:
   type: founder-request
   created_by: ai
@@ -111,6 +112,19 @@ status_note: |
   - Founder's framing, load-bearing on every tie-break: "I am the single source of
     persistent, non-human memory." Data integrity beats entry speed; rare events
     outrank common ones for capture priority.
+
+  NEW INPUT 2026-07-31 — WS-317 CONFIRM-BEFORE-COMMIT (founder proposal). Must be
+  designed WITH this artifact, not bolted on after: it interacts with the touch floor
+  (WS-316), the pre-arm direction (HE-22) and the roster rail. Key points to carry:
+    - The principle is FEEDBACK TIMING, not target size. Card-grid cells measure
+      79x92 rendered px at device scale — they are ~2x the floor. The risk there is
+      HOMOGENEITY (52 near-identical cells, confirmation arrives after the write).
+    - The long-press vocabulary is ALREADY SPENT on "open a different control"
+      (sizing editor, seat context menu, PotDisplay edit). Resolve the collision here.
+    - Never on the primary action buttons: taxes HE-23, they are not confusable, and
+      it would stack a confirmation on top of HE-22's pre-arm.
+    - Tap must keep working (tap commits, hold magnifies). Cancellation is
+      non-negotiable.
 
   CARRIED RISK: R7 timing unmeasured. Treat "the speed problem is postflop entry,
   player entry and legibility" as a stated assumption; validate before Gate 5.

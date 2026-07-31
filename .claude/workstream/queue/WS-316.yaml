@@ -44,6 +44,11 @@ description: |
       DPR 2.0  ->  CSS viewport ~1059 wide  ->  s ~= 0.63  ->  a "44px" target is ~28px
       DPR 1.5  ->  CSS viewport ~1412 wide  ->  s ~= 0.84  ->  a "44px" target is ~37px
 
+  CONFIRMED BY DIRECT MEASUREMENT 2026-07-31. Driving the app at a 1170x540 CSS
+  viewport (2340x1080 physical at DPR 2, i.e. the founder's device) measures
+  s = 0.695 exactly as the DPR-2 row predicts. So a declared 44px target renders at
+  ~30.6 px on his phone. This is now measured, not inferred.
+
   Either way the H-ML06 44px minimum IS NOT MET ANYWHERE IN THE APP on the founder's
   own phone. The 100px "can't-miss" action buttons render at 63-84px. The 36px orbit
   strip buttons render at 23-30px.
@@ -111,6 +116,7 @@ sprint_id: null
 decision_flags:
   - "Option (b) — un-scaling the command column — changes the visual proportions of the surface and is a Gate 4 decision, not a bug fix. It should be decided INSIDE the redesign, not ahead of it. Only step 1 (measure) and step 3 (guard) are safe to do standalone."
   - "This finding invalidates the Gate 2 pre-commitment 'all action targets stay >=44px and equal-area' as literally written. Gate 4 must restate it in terms of RENDERED size."
+  - "WS-317 (confirm-before-commit) is a THIRD strategy for this problem: it does not raise target size, it removes the need for precision by decoupling the commit point from the initial touch. For dense homogeneous grids that may beat both (a) and (b). Evaluate all three together at Gate 4 — not separately."
 source:
   type: ai-finding
   created_by: ai

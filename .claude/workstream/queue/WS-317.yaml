@@ -1,0 +1,169 @@
+id: "WS-317"
+title: "Confirm-before-commit — press-hold-preview-release selection for dense/homogeneous targets, and the long-press vocabulary collision it exposes"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  FOUNDER PROPOSAL, 2026-07-31:
+  "I think we should have the card selector as a click and hold to zoom, and release
+  to lock in the selected card. We gain some misclick defense and not having to find
+  the place to hover with a finger then precise touch and visual confirmation after.
+  This sort of thing needs to be looked at all over the interface."
+
+  THE CONCLUSION IS RIGHT. THE STATED PREMISE IS NOT, AND THE CORRECTION MAKES IT
+  GENERALISE BETTER.
+
+  MEASURED (npm run devshot, two viewports):
+
+      viewport 1600x720  scale 0.950  card-grid cell = 108 x 126 rendered px
+      viewport 1170x540  scale 0.695  card-grid cell =  79 x  92 rendered px
+
+  A 79x92 target is ~2x the 44px floor. The card grid is one of the few surfaces in
+  this app that is NOT undersized — CardSelectorPanel is a full-screen overlay whose
+  cells use flex-1 in both axes, so it already claims maximum area. So "misclick
+  defense" as a TARGET-SIZE argument is not supported for the card grid.
+
+  (The sub-floor targets in that surface are the BOARD/HOLE CardSlots in the header,
+  ~28x40 at device scale. But they are mostly bypassed: entry from the felt pre-sets
+  the slot index and useCardSelection auto-advances and auto-closes, so a flop costs
+  ~4 taps — 1 to open + 3 cards — and only the opening tap hits a small target.)
+
+  WHAT IS SUPPORTED IS THE SECOND HALF OF THE FOUNDER'S SENTENCE, and it is the real
+  finding. It is not about size, it is about WHEN FEEDBACK ARRIVES RELATIVE TO
+  COMMITMENT.
+
+  Every selection in this app today is AIM -> COMMIT -> VERIFY. In a 13x4 grid of 52
+  near-identical cells that is a defect independent of target size: A-spades and
+  A-hearts are adjacent, similar, and equally large, so a perfectly accurate tap can
+  still land on the wrong card and nothing says so until it is written.
+
+  THE PRINCIPLE, stated for the design language:
+
+    CONFIRM-BEFORE-COMMIT. Where a target is DENSE, HOMOGENEOUS or CONSEQUENTIAL, the
+    interface must show what will happen before it happens, with the commit point
+    decoupled from the initial touch point.
+
+  Press-hold-magnify-release is ONE IMPLEMENTATION of that principle, not the
+  principle. Framing it as the principle is what makes it auditable across surfaces —
+  which is what the founder asked for when he said "all over the interface".
+
+  THE BLOCKING RISK: THE LONG-PRESS VOCABULARY IS ALREADY SPENT.
+
+  Hold already has a meaning in this app, in three places, and that meaning is
+  "OPEN A DIFFERENT CONTROL" — not "refine this one":
+
+    SizingPresetsPanel.jsx:63-67 + CommandStrip.jsx:607-620
+        500ms hold on a sizing preset -> opens the sizing EDITOR
+    SeatComponent.jsx:100
+        native long-press (onContextMenu) -> opens the seat CONTEXT MENU
+    PotDisplay.jsx:21-31
+        long-press on the pot -> enters pot EDIT mode (shipped as AUDIT-2026-04-21-TV F9)
+
+  If hold means "magnify and commit this" on the card grid and "open a separate
+  editor" on the sizing presets two inches away, the vocabulary is incoherent — and
+  incoherent gesture vocabularies get learned as "hold does something unpredictable",
+  which is worse than either meaning alone. This must be resolved BEFORE the pattern
+  spreads, not after.
+accept_criteria: |
+  GATE 2 (blind-spot roundtable) is required — new interaction primitive,
+  cross-surface design-language change, founder asked for interface-wide review.
+
+  1. RESOLVE THE GESTURE VOCABULARY. Pick and justify:
+     (a) Reserve HOLD for confirm-before-commit; migrate the three existing
+         "open a thing" holds to an explicit control. Cleanest; costs three
+         migrations and re-opens settled UX (incl. shipped F9).
+     (b) Distinguish by target class — hold-on-a-value-in-a-set = refine,
+         hold-on-a-single-control = open. Defensible but subtle, and subtle gesture
+         rules fail under time pressure.
+     (c) Scope confirm-before-commit to DENSE GRIDS ONLY (card selector, orbit strip,
+         recents) where no competing hold meaning exists.
+     RECOMMEND EVALUATING (c) FIRST: delivers the founder's actual example, avoids
+     re-litigating three shipped decisions, generates usage evidence before
+     committing the whole vocabulary.
+
+  2. APPLY THE SCREEN, don't apply the pattern everywhere. Qualifying properties are
+     dense + homogeneous + consequential:
+       card grid (52 cells)        STRONG   — homogeneity is the risk, not size
+       orbit strip (9 positions)   STRONGEST— dense, homogeneous, ~25px (below floor),
+                                              AND already destructive (tap-ahead folds)
+       recent-players list         GOOD     — homogeneous rows; wrong-player assignment
+                                              is the worst silent data error (PM-16)
+       seats on felt               WEAK     — position disambiguates
+       sizing presets              BLOCKED  — hold already taken
+       action buttons              NO       — see must-not below
+       Next Hand                   NO
+
+  3. MUST-NOT, binding: no hold gesture on the primary action buttons.
+     - It taxes the fast path, paid dozens of times per orbit, directly against HE-23.
+       Preflop is already near-optimal at ~4 taps; a hold would make the one thing
+       that works worse.
+     - Fold/Call/Raise are not confusable (distinct colour, label, position).
+       Confirm-before-commit solves RECOGNITION failures; there is none here.
+     - It conflicts with HE-22: a pre-armed action IS already a confirm-before-commit
+       mechanism. Stacking a hold would mean confirming a confirmation.
+
+  4. SPECIFY CANCELLATION — NON-NEGOTIABLE. "Release to commit" means once you press
+     you WILL commit something, which is WORSE misclick defence for an accidental
+     press. Requires drag-outside-to-cancel with the preview showing the cancelled
+     state unambiguously. The proposal is unsafe without it.
+
+  5. KEEP TAP WORKING. Hold-only taxes every confident selection. Recommend the
+     iOS-keyboard model: TAP commits immediately, HOLD engages the magnifier. Two
+     paths, no mode, no delay for users who know where they are aiming. Preserves
+     HE-23.
+
+  6. HANDLE THE INTERRUPTED HOLD. glance-return-chris's defining trait is intermittent
+     attention; a held gesture needs sustained attention for its whole duration. A
+     hold interrupted by a look-away must fail safe — probably persist indefinitely
+     until release or cancel, never auto-commit and never silently time out.
+
+  7. SOLVE OCCLUSION. The finger covers the target; the magnifier must render offset
+     (conventionally above). The canvas is 720px tall — verify there is room above a
+     bottom-row card at every supported scale. Measure with `npm run devshot`.
+
+  8. DECIDE JTBD HOME. Nothing currently covers "see what I'm about to commit before
+     I commit it" as a job. Given HE-22 was just authored for the adjacent case (the
+     app proposing an input), this may fold into HE-22's success criteria rather than
+     needing its own ID. Do not mint an ID without checking the ID space first — see
+     the HE-19/HE-20 collision recorded in ATLAS.md.
+
+  9. SUCCESS SIGNAL: a measurable reduction in HE-12 (undo/repair) traffic on the
+     surfaces where it ships. Confirm-before-commit is prevention; if undos do not
+     fall, it did not work.
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/table-view.md"
+  - "src/components/views/TableView/CardSelectorPanel.jsx"
+  - "src/components/views/TableView/SizingPresetsPanel.jsx"
+  - "src/components/views/TableView/SeatComponent.jsx"
+  - "src/components/ui/PotDisplay.jsx"
+  - "docs/design/heuristics/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "OVERLAPS WS-316. Confirm-before-commit is a THIRD strategy for the touch-floor problem, alongside scale-aware floors and un-scaling the command column. It does not raise target size — it removes the need for precision. For dense grids that may be the better answer. The three must be evaluated TOGETHER at Gate 4, not separately."
+  - "Sequence INTO Gate 4 (WS-313), which is already open. This interacts with the touch floor, the pre-arm direction, and the roster rail — designing it after the surface artifact is written would mean rewriting the artifact."
+  - "Option (a) would re-open AUDIT-2026-04-21-TV F9 (PotDisplay long-press), a shipped and owner-approved decision. Do not do that without an explicit founder call."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Gate 1 entry: docs/design/audits/2026-07-31-entry-confirm-before-commit.md (YELLOW)
+  Evidence: docs/design/evidence/2026-07-31-tvr-device-baseline/ file 10 + measurements.
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

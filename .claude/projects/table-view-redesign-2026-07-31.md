@@ -80,6 +80,7 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
 | **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **done** |
 | **WS-313** | TVR Gate 4 — surface artifact for Table View v2 | 4 | **unblocked — NEXT** |
+| **WS-317** | Confirm-before-commit — press-hold-preview-release for dense targets | 1 done (YELLOW) → 2 | backlog — **design inside WS-313** |
 | **WS-314** | TVR Gate 5 — implementation (decomposes at Gate 4) | 5 | blocked by WS-313 |
 
 **The three P0s are deliberately not gated behind the redesign.** They degrade — and in two cases outright block — the surface *today*. They should ship on their own merits whether or not the redesign proceeds. Recommended order: **WS-315** (blocks entry) → **WS-311** (blocks hand advance) → **WS-316** (measure first; the fix strategy is a Gate 4 decision).
@@ -117,6 +118,24 @@ He is not the ringmaster — he is the memory. That is a stronger design princip
 
 ---
 
+## Founder proposal — confirm-before-commit (2026-07-31)
+
+> "I think we should have the card selector as a click and hold to zoom, and release to lock in the selected card… this sort of thing needs to be looked at all over the interface."
+
+Gate 1 entry authored ([`2026-07-31-entry-confirm-before-commit.md`](../../docs/design/audits/2026-07-31-entry-confirm-before-commit.md)), verdict **YELLOW**. The conclusion holds; the stated premise needed correcting, and the correction makes it generalise better.
+
+**Measured:** card-grid cells render at **108×126px** at the design canvas and **79×92px** at device scale — roughly **twice** the 44px floor. The card grid is one of the few surfaces here that is *not* undersized. So "misclick defence" as a size argument is not supported for that surface.
+
+**What is supported** is the second half of the sentence. Every selection in this app today is **aim → commit → verify**. In a grid of 52 near-identical cells, a perfectly accurate tap can still hit the wrong card, and nothing says so until it is written. The founder is asking for **aim → verify → commit** — a *feedback-timing* fix, not a *size* fix. That reframing is what makes it auditable across every surface instead of being a one-off zoom feature.
+
+**The blocking risk is a gesture collision, and it is exactly the interface-wide work he asked for.** Long-press already has a meaning in three places — sizing-preset editor, seat context menu, PotDisplay edit — and that meaning is *"open a different control"*, not *"refine this one"*. Two meanings for one gesture gets learned as "hold does something unpredictable."
+
+**Must-not:** never on the primary action buttons. It would tax `HE-23` dozens of times per orbit, Fold/Call/Raise are not confusable in the first place, and it would stack a confirmation on top of `HE-22`'s pre-arm.
+
+**This is a Gate 4 input, not a follow-on.** It overlaps `WS-316` as a *third* strategy for the touch-floor problem — it doesn't enlarge targets, it removes the need for precision. The three strategies must be evaluated together in the surface artifact.
+
+---
+
 ## Sequencing constraints (binding)
 
 1. **WS-186 (table flip) cannot proceed in parallel.** Rotation and narrowing are two independent spatial transforms over the same coordinate system; specified separately they will conflict. Gate 4 either designs a single transform layer covering both, or WS-186 is explicitly deferred behind TVR.
@@ -140,5 +159,6 @@ He is not the ringmaster — he is the memory. That is a stronger design princip
 ## Change log
 
 - 2026-07-31 — Project opened. Gates 1 + 2 complete in kickoff session. Four work items filed. Zero `src/` changes.
+- 2026-07-31 — **Founder proposal: confirm-before-commit** (`WS-317`). Gate 1 YELLOW. Measurement corrected the premise (card grid is ~2× the floor, so the fix is feedback timing not target size) and surfaced a long-press vocabulary collision across three shipped surfaces. Routed into Gate 4 as a co-design input rather than a follow-on.
 - 2026-07-31 — **Gates 3 + Gate-2-re-run complete.** R1–R6 closed; `glance-return-chris` + HE-22 + HE-23 + PM-16 authored; `ringmaster-in-hand` REFUTED; handedness closed (two-handed). Re-run GREEN → Gate 4 open. Local dev/verification harness added (`npm run env:local` / `npm run devshot`), which reproduced WS-311 at the design resolution and ruled the CSS media query out of WS-315. Still zero `src/` changes.
 - 2026-07-31 — **Device evidence added mid-session** (founder screenshots). Compression prediction confirmed; two new P0 findings (scale-nullifies-touch-floor, orientation gate blocks entry). `WS-315` + `WS-316` filed, `WS-311` upgraded to P0. Still zero `src/` changes.

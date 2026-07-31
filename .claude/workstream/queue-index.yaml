@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 192
+total_items: 193
 by_status:
   decomposed: 1
   done: 78
   in_progress: 3
   deferred: 43
-  backlog: 48
+  backlog: 49
   dismissed: 1
   completed: 7
   review: 1
@@ -48,7 +48,7 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 6
-  table-view: 7
+  table-view: 8
   test-reliability: 2
   testing: 2
   ux: 3
@@ -1859,6 +1859,15 @@ items:
     title: "The uniform scale transform nullifies the 44px touch floor — every H-ML06 target renders at ~28-37px on the founder's own device"
     status: backlog
     priority_score: 26
+    category: table-view
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-317"
+    title: "Confirm-before-commit — press-hold-preview-release selection for dense/homogeneous targets, and the long-press vocabulary collision it exposes"
+    status: backlog
+    priority_score: 21
     category: table-view
     effort: M
     program: design
