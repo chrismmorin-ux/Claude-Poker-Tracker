@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785426977717-dd4a18ea6a66"
-generated_content_hash: "cb25672b969a26600fc5f7e9d9d26d4ef2c54d22df10f183e88f9dfd593ad597"
-generated_at: "2026-07-30T15:56:17.770Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl"]
-event_count: 1161
+generated_from_event: "ev-1785538052885-835a022faa21"
+generated_content_hash: "9df9622ae1fdc4d00cb1afccd8186f4e9f2737db90ac0f10722efe9be83556b4"
+generated_at: "2026-07-31T22:47:33.071Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
+event_count: 1168
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 728
-- Events recorded: 1161
-- Source chunks: 19
+- Commands recorded: 735
+- Events recorded: 1168
+- Source chunks: 20
 
 ## Command `auto:42416:1781030643103`
 
@@ -7730,3 +7730,73 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-30T15:56:17.717Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemcreated-ms9j95bi0e6e59fb52a6`
+
+- Start: 2026-07-31T22:47:30.610Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:30.610Z | T6:workstream | /next | item_id="WS-311", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j95qmc034dd7af4d5`
+
+- Start: 2026-07-31T22:47:31.152Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:31.152Z | T6:workstream | /next | item_id="WS-312", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j96534fd45e6fc3d7`
+
+- Start: 2026-07-31T22:47:31.673Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:31.673Z | T6:workstream | /next | item_id="WS-313", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j96eod5a015f119ed`
+
+- Start: 2026-07-31T22:47:32.019Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:32.019Z | T6:workstream | /next | item_id="WS-314", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j96lzb9636571a9b2`
+
+- Start: 2026-07-31T22:47:32.281Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:32.281Z | T6:workstream | /next | item_id="WS-315", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j96tfe6543dc74f3a`
+
+- Start: 2026-07-31T22:47:32.550Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:32.550Z | T6:workstream | /next | item_id="WS-316", program="design", +5 more |
+
+## Command `cmd-itemcreated-ms9j972q820222efd3ad`
+
+- Start: 2026-07-31T22:47:32.885Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T22:47:32.885Z | T6:workstream | /next | item_id="WS-317", program="design", +5 more |

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T15:56:17.648Z",
-  "updated_by_event": "ev-1785426977648-6dbb83f9fb6e",
+  "updated_at": "2026-07-31T22:47:32.885Z",
+  "updated_by_event": "ev-1785538052885-835a022faa21",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4884,7 +4884,217 @@
         "docs/research/"
       ],
       "source_class": "untagged"
+    },
+    "WS-311": {
+      "id": "WS-311",
+      "title": "CommandStrip compresses instead of scrolling — 720px column over-subscribed by ~100-140px in common states, shrinking the 100px action buttons first",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "table-view",
+      "effort": "S",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "ai-finding",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/views/TableView/CommandStrip.jsx",
+        "src/components/views/TableView/ControlZone.jsx",
+        "src/components/views/TableView/__tests__/ControlZone.test.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-312": {
+      "id": "WS-312",
+      "title": "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input",
+      "status": "done",
+      "priority_score": 22,
+      "category": "table-view",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": "2026-07-31T00:00:00Z",
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-313"
+      ],
+      "files_involved": [
+        "docs/design/personas/situational/glance-return-chris.md",
+        "docs/design/jtbd/domains/hand-entry.md",
+        "docs/design/jtbd/domains/player-management.md",
+        "docs/design/personas/situational/ringmaster-in-hand.md",
+        "docs/design/evidence/LEDGER.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-313": {
+      "id": "WS-313",
+      "title": "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)",
+      "status": "backlog",
+      "priority_score": 20,
+      "category": "table-view",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-314"
+      ],
+      "files_involved": [
+        "docs/design/surfaces/table-view.md",
+        "docs/design/surfaces/seat-context-menu.md",
+        "docs/design/surfaces/player-picker.md",
+        "docs/design/journeys/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-314": {
+      "id": "WS-314",
+      "title": "TVR Gate 5 — Table View v2 implementation (umbrella; decomposes at Gate 4)",
+      "status": "backlog",
+      "priority_score": 16,
+      "category": "table-view",
+      "effort": "XL",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [
+        "WS-313"
+      ],
+      "enables": [],
+      "files_involved": [
+        "src/constants/gameConstants.js",
+        "src/components/views/TableView/TableView.jsx",
+        "src/components/views/TableView/CommandStrip.jsx",
+        "src/components/views/TableView/SeatContextMenu.jsx",
+        "src/components/views/TableView/SeatComponent.jsx",
+        "src/components/views/TableView/ControlZone.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-315": {
+      "id": "WS-315",
+      "title": "Orientation gate hard-blocks app entry and does not visibly recover on rotate — founder must load the app in landscape or it is unusable",
+      "status": "backlog",
+      "priority_score": 30,
+      "category": "table-view",
+      "effort": "S",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/ui/RotateDeviceHint.jsx",
+        "src/hooks/useScreenOrientationLock.js",
+        "src/hooks/useScale.js",
+        "src/constants/viewRegistry.jsx",
+        "src/PokerTracker.jsx"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-316": {
+      "id": "WS-316",
+      "title": "The uniform scale transform nullifies the 44px touch floor — every H-ML06 target renders at ~28-37px on the founder's own device",
+      "status": "backlog",
+      "priority_score": 26,
+      "category": "table-view",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "ai-finding",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-313"
+      ],
+      "files_involved": [
+        "src/hooks/useScale.js",
+        "src/components/ui/ScaledContainer.jsx",
+        "src/components/views/TableView/CommandStrip.jsx",
+        "src/components/views/TableView/SeatContextMenu.jsx",
+        "docs/design/heuristics/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-317": {
+      "id": "WS-317",
+      "title": "Confirm-before-commit — press-hold-preview-release selection for dense/homogeneous targets, and the long-press vocabulary collision it exposes",
+      "status": "backlog",
+      "priority_score": 21,
+      "category": "table-view",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "docs/design/surfaces/table-view.md",
+        "src/components/views/TableView/CardSelectorPanel.jsx",
+        "src/components/views/TableView/SizingPresetsPanel.jsx",
+        "src/components/views/TableView/SeatComponent.jsx",
+        "src/components/ui/PotDisplay.jsx",
+        "docs/design/heuristics/"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785426977648-6dbb83f9fb6e"
+  "last_event_log_head": "ev-1785538052885-835a022faa21"
 }
