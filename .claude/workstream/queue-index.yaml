@@ -2,10 +2,10 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 186
+total_items: 187
 by_status:
   decomposed: 1
-  done: 77
+  done: 78
   in_progress: 3
   deferred: 43
   backlog: 43
@@ -22,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 57
+  domain-correctness: 58
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1774,7 +1774,7 @@ items:
 
   - id: "WS-307"
     title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: M
@@ -1805,6 +1805,15 @@ items:
     priority_score: 29
     category: domain-correctness
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-311"
+    title: "The fold estimator prices villain's decision against hero's ACTUAL hand, not hero's range — an omniscient-villain model"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: L
     program: domain-correctness
     capability: core
 

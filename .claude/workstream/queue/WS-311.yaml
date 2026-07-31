@@ -1,0 +1,103 @@
+id: "WS-311"
+title: "The fold estimator prices villain's decision against hero's ACTUAL hand, not hero's range — an omniscient-villain model"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED, NOT INFERRED. Found while fixing WS-307 (SPR-161), which removed the two
+  masks that were hiding it. Reproduces on every run.
+
+  THE DEFECT. `rangeConditionedFoldPct` (foldEquityCalculator.js) derives villain's
+  continue probability from `1 - combo.heroEquity` — villain's equity against HERO'S
+  EXACT HOLDING. Villains decide against hero's RANGE, which they cannot see. Every
+  per-combo action filter in the engine shares this input, including `comboCallFilter`
+  in gameTreeEquity.js.
+
+  WHY IT IS WRONG. A villain holding top pair on A72 does not fold because hero happens
+  to have trips — they cannot see hero's cards. They call, because top pair is strong
+  against the range hero could be betting. The engine models them as folding.
+
+  THE BIAS IS ONE-DIRECTIONAL. It inflates folds exactly when hero's actual hand is much
+  stronger than hero's range. Measured: hero AA (trips) on A72 against a full range, the
+  estimator reports villain folding 98%. The truth is nearer 60-65%.
+
+  WHY IT MATTERS MORE THAN THE NUMBER SUGGESTS. When fold% saturates near 1, bet EV
+  collapses to (pot x foldPct) for EVERY sizing, so all sizings converge to the same EV
+  and the engine loses the ability to say how much to bet with a strong hand. Observed
+  directly: five bet sizings landed within 1 EV of each other (100.4 / 99.8 / 99.6 /
+  99.5 / 99.5), caught by gameTreeEvaluator.test.js's mixed-strategy test. Sizing advice
+  with value hands is the highest-frequency thing this app does.
+
+  WHY IT IS OPEN. `evaluateGameTree` takes `heroCards`, not a hero range, so there is no
+  hero-range representation to price against. This is an architectural gap, not a local
+  bug — which is why WS-307 bounded its fix to the raise path rather than absorbing this.
+
+  DO NOT fix this with `comboStrengthPercentile` (villain's absolute board-strength
+  percentile). It is the obvious cheap proxy and it is wrong in a different direction:
+  percentile is showdown-strength-now and ignores draw equity, so it would fold draws far
+  too often on exactly the wet boards where the fold estimate matters most. A flush draw
+  has a low percentile and a high call frequency.
+
+  Note the shape: this is the SAME family as WS-307 and FIND-040 — a decision input taken
+  from something other than the game state the decider can actually observe. POKER_THEORY
+  §7.4a records it as an open residual.
+accept_criteria: |
+  - Villain's continue probability is computed against a representation of hero's RANGE,
+    not hero's exact holding. The hero-range representation is the substantive part of
+    this item and should be designed before coding (§7.1: derive from what the decider
+    can know).
+  - Measured: hero AA with trips on A72 against a full range yields a fold estimate in a
+    defensible band (~55-70%), not 98%.
+  - Measured: the WS-307 spot does NOT regress — a range of pure nuts-and-strong still
+    reports a near-zero fold rate facing a raise.
+  - Bet sizings are once again distinguishable in EV with a strong hand (the
+    mixed-strategy test's dominance case holds without the range-conditioning being
+    switched off).
+  - `RANGE_CONDITIONED_ACTIONS` in foldEquityCalculator.js is widened to include 'bet',
+    and the guard test `the BET path is deliberately still on the old population blend`
+    is replaced rather than deleted.
+  - SEG_REFERENCE is re-measured against the corrected input and its locking test updated.
+  - POKER_THEORY §7.4a's "Known open residual" paragraph is rewritten to record the
+    resolution, with a version bump and changelog entry.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/rangeConditionedFoldEstimate.test.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "How should hero's range be represented? evaluateGameTree takes heroCards today; a hero range is a new input with callers to thread and a default to choose for the live path."
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ws-307-spr-161"
+created_at: "2026-07-31T03:10:00Z"
+status_note: |
+  Filed from WS-307 (SPR-161) as the explicitly deferred half of that fix. WS-307
+  bounded its change to the raise path precisely because closing this one requires a
+  hero-range representation the engine does not have; see RANGE_CONDITIONED_ACTIONS in
+  foldEquityCalculator.js, which carries the full reasoning and fails a test if widened
+  without this work.
+
+  Scored at 30 — just above WS-307's 31-ranked sibling tier because it is a confirmed
+  wrong estimate on the highest-frequency advice path (value bet sizing), reproduced
+  with numbers rather than inferred. Effort L rather than M because the hero-range
+  representation is a design question, not a patch.
