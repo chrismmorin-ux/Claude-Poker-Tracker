@@ -154,51 +154,100 @@ describe('suggestOptimalPlay', () => {
 
 // ─── matchHeroWeakness ──────────────────────────────────────────────────────
 
+// FIXTURES CORRECTED 2026-07-31 (WS-317). These previously used FOUR-axis keys —
+// 'flop:dry:EP:call' — and a real situation key has SEVEN axes (villain) or EIGHT (hero):
+//
+//     street : texture : posCategory : isAgg : isIP : facingAction : contextAction [: pfa]
+//
+// In a 4-axis string, index 3 happens to be an action ('call'), which is what the old
+// positional destructure `[street, , , actionType]` was written to read. In a REAL key,
+// index 3 is `isAgg` ('agg'/'def'). So these tests were asserting the INTENDED semantic
+// against inputs that never occur in production, while production silently matched on
+// aggressor-status instead. The unrepresentative fixture is precisely why the defect
+// survived — the suite agreed with the author rather than with the data.
+//
+// The fixtures below are real 7-axis keys and assert what the code ACTUALLY does today.
+// Whether that behaviour is right is WS-318's question, deliberately not settled here:
+// WS-317's acceptance is bit-identical behaviour, so a semantic fix belongs in its own
+// change with its own measurement.
+const KEY = ({ street = 'flop', texture = 'dry', pos = 'LATE', isAgg = 'def',
+  isIP = 'ip', facing = 'bet', ctx = 'vsBet' } = {}) =>
+  `${street}:${texture}:${pos}:${isAgg}:${isIP}:${facing}:${ctx}`;
+
 describe('matchHeroWeakness', () => {
   it('returns null for null/empty inputs', () => {
     expect(matchHeroWeakness(null, [])).toBeNull();
-    expect(matchHeroWeakness('flop:dry:EP:call', null)).toBeNull();
-    expect(matchHeroWeakness('flop:dry:EP:call', [])).toBeNull();
+    expect(matchHeroWeakness(KEY(), null)).toBeNull();
+    expect(matchHeroWeakness(KEY(), [])).toBeNull();
   });
 
-  it('matches weakness by street + action type', () => {
+  it('returns null for a malformed key rather than throwing', () => {
+    // The pre-WS-317 code never threw; a display helper must not crash its callers.
+    expect(matchHeroWeakness('flop:dry:EP:call', [
+      { label: 'x', situationKeys: [KEY()], sampleSize: 1 },
+    ])).toBeNull();
+  });
+
+  it('matches weakness on street + aggressor-status, across differing texture/position', () => {
     const weaknesses = [{
       label: 'Calling station on flop',
-      situationKeys: ['flop:wet:MP:call', 'flop:dry:EP:call'],
+      situationKeys: [KEY({ texture: 'wet', pos: 'MIDDLE' }), KEY({ pos: 'EARLY' })],
       sampleSize: 5,
     }];
-    const result = matchHeroWeakness('flop:unknown:EP:call', weaknesses);
+    const result = matchHeroWeakness(KEY({ texture: 'unknown', pos: 'EARLY' }), weaknesses);
     expect(result).not.toBeNull();
     expect(result.weakness.label).toBe('Calling station on flop');
     expect(result.matchCount).toBe(5);
     expect(result.message).toContain('flop');
   });
 
-  it('returns null when no weakness matches', () => {
+  it('returns null when the street differs', () => {
     const weaknesses = [{
       label: 'River bluff',
-      situationKeys: ['river:dry:LP:bet'],
+      situationKeys: [KEY({ street: 'river', isAgg: 'agg', facing: 'check', ctx: 'bet' })],
       sampleSize: 3,
     }];
-    const result = matchHeroWeakness('flop:dry:EP:call', weaknesses);
-    expect(result).toBeNull();
+    expect(matchHeroWeakness(KEY(), weaknesses)).toBeNull();
+  });
+
+  it('returns null when aggressor-status differs on the same street', () => {
+    const weaknesses = [{
+      label: 'Aggressor leak',
+      situationKeys: [KEY({ isAgg: 'agg' })],
+      sampleSize: 3,
+    }];
+    expect(matchHeroWeakness(KEY({ isAgg: 'def' }), weaknesses)).toBeNull();
+  });
+
+  it('MATCHES even when the action differs — the WS-318 case, pinned as current behaviour', () => {
+    // Same street, same isAgg, DIFFERENT contextAction. This matches today because the
+    // comparison is on isAgg. If WS-318 moves the semantic to contextAction, THIS is the
+    // assertion that must flip — it is the entire difference between the two readings.
+    const weaknesses = [{
+      label: 'Different action, same role',
+      situationKeys: [KEY({ ctx: 'vsRaise', facing: 'raise' })],
+      sampleSize: 7,
+    }];
+    const result = matchHeroWeakness(KEY({ ctx: 'vsBet', facing: 'bet' }), weaknesses);
+    expect(result).not.toBeNull();
+    expect(result.weakness.label).toBe('Different action, same role');
   });
 
   it('skips weaknesses with no situationKeys', () => {
     const weaknesses = [
       { label: 'No keys', situationKeys: [], sampleSize: 1 },
-      { label: 'Has keys', situationKeys: ['turn:wet:LP:raise'], sampleSize: 2 },
+      { label: 'Has keys', situationKeys: [KEY({ street: 'turn', texture: 'wet' })], sampleSize: 2 },
     ];
-    const result = matchHeroWeakness('turn:dry:LP:raise', weaknesses);
+    const result = matchHeroWeakness(KEY({ street: 'turn' }), weaknesses);
     expect(result.weakness.label).toBe('Has keys');
   });
 
   it('returns first matching weakness (priority order)', () => {
     const weaknesses = [
-      { label: 'First', situationKeys: ['flop:dry:EP:bet'], sampleSize: 4 },
-      { label: 'Second', situationKeys: ['flop:wet:EP:bet'], sampleSize: 2 },
+      { label: 'First', situationKeys: [KEY()], sampleSize: 4 },
+      { label: 'Second', situationKeys: [KEY({ texture: 'wet' })], sampleSize: 2 },
     ];
-    const result = matchHeroWeakness('flop:unknown:EP:bet', weaknesses);
+    const result = matchHeroWeakness(KEY({ texture: 'unknown' }), weaknesses);
     expect(result.weakness.label).toBe('First');
   });
 });

@@ -442,7 +442,9 @@ const main = async () => {
       street: STREETS[s],
       bins: POT_BINS.slice(0, -1).map((lo, i) => ({ lo, hi: POT_BINS[i + 1] })),
       cells: [...mp.entries()].map(([k, v]) => {
-        const [pb, live] = k.split(':').map(Number);
+        // A numeric "{potBin}:{liveOpponents}" pair local to the manifold miner, not a
+        // canonical spot identifier (WS-317 guard opt-out).
+        const [pb, live] = k.split(':').map(Number); // not-a-situation-key
         return { potBin: pb, live, n: v };
       }),
     })),

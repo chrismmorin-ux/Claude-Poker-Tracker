@@ -34,6 +34,8 @@
  *   - No 3bettor-style adjustment (TAGs underbluff; fish overbluff)
  */
 
+import { tryParseSituationKey, formatSituationKey } from '../../pokerCore/situationKey.js';
+
 export const rule = {
   id: 'hero-pf-3bet-overfold',
   label: 'Folding to preflop 3bets too often (post-open)',
@@ -57,10 +59,11 @@ export const rule = {
    * a later seat or BTN) are valid bucket configurations.
    */
   matchesBucket(situationKey) {
-    if (!situationKey) return false;
-    const parts = situationKey.split(':');
-    if (parts.length !== 8) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
+    const k = tryParseSituationKey(situationKey);
+    // Hero rules are defined on the 8-axis hero key; a 7-axis villain key is not this
+    // rule's spot, so arity is a real guard rather than a length check (WS-317).
+    if (!k || k.arity !== 8) return false;
+    const { street, posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor } = k;
     return (
       street === 'preflop'
       && (posCategory === 'EARLY' || posCategory === 'MIDDLE'
@@ -80,11 +83,13 @@ export const rule = {
    * compared to baseline variance).
    */
   solverBaselineKey(situationKey) {
-    if (!situationKey) return situationKey;
-    const parts = situationKey.split(':');
-    if (parts.length !== 8) return situationKey;
-    parts[4] = 'ip'; // isIP axis (5th of 8, 0-indexed → 4)
-    return parts.join(':');
+    const k = tryParseSituationKey(situationKey);
+    if (!k || k.arity !== 8) return situationKey;
+    // Was a positional WRITE — `parts[4] = 'ip'` — which is the same defect as a positional
+    // read but louder: it silently rewrites whatever axis happens to sit at index 4. The
+    // baseline is defined for the IP variant of this spot, so override the axis BY NAME and
+    // let the canonical formatter re-serialize it (WS-317).
+    return formatSituationKey({ ...k, isIP: 'ip' });
   },
 
   detect(bucket, baseline) {

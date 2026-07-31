@@ -17,6 +17,8 @@
  * defense uses `pfa` (hero raised preflop). Preflop streets use `na`.
  */
 
+import { tryParseSituationKey } from '../pokerCore/situationKey.js';
+
 const BASELINES = {
   // ─── hero-ip-cbet-overfold rule (SHIPPED v1, SPR-030 / WS-145; 8-axis SPR-040) ────
   // IP cbet defense fold-to-cbet rates by board texture × hero position.
@@ -165,7 +167,11 @@ export const listCoveredSituationKeys = () => Object.keys(BASELINES).sort();
 export const baselineCoverageByPrefix = () => {
   const counts = {};
   for (const key of Object.keys(BASELINES)) {
-    const prefix = key.split(':').slice(0, 3).join(':'); // street:texture:posCategory
+    // Named axes rather than slice(0,3) — the grouping is "street/texture/position",
+    // which is a statement about WHICH axes, not about where they sit (WS-317).
+    const k = tryParseSituationKey(key);
+    if (!k) continue;
+    const prefix = [k.street, k.texture, k.posCategory].join(':');
     counts[prefix] = (counts[prefix] || 0) + 1;
   }
   return counts;

@@ -34,6 +34,8 @@
  *   - No squeezer-stack-depth / squeezer-style adjustment
  */
 
+import { tryParseSituationKey } from '../../pokerCore/situationKey.js';
+
 export const rule = {
   id: 'hero-oop-3bet-underfold',
   label: 'OOP 3bet defense width (calling too wide post-flat)',
@@ -54,10 +56,11 @@ export const rule = {
    * facingAction='raise' + contextAction='vs3bet' captures this.
    */
   matchesBucket(situationKey) {
-    if (!situationKey) return false;
-    const parts = situationKey.split(':');
-    if (parts.length !== 8) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
+    const k = tryParseSituationKey(situationKey);
+    // Hero rules are defined on the 8-axis hero key; a 7-axis villain key is not this
+    // rule's spot, so arity is a real guard rather than a length check (WS-317).
+    if (!k || k.arity !== 8) return false;
+    const { street, posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor } = k;
     return (
       street === 'preflop'
       && (posCategory === 'SMALL_BLIND' || posCategory === 'BIG_BLIND')

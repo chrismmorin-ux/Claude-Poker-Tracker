@@ -63,6 +63,38 @@ description: |
 
   NOT A REFACTOR FOR TIDINESS. Nothing in FSA — no divergence, no volume, no live-vs-online
   transfer answer — is computable until two surfaces can be expressed on one grid.
+
+  ── SCOPE CORRECTION, 2026-07-31 (found while executing; the filed premise was wrong) ──
+
+  The description above says FOUR modules. It is SIXTEEN parse sites across ELEVEN files, and
+  there are TWO key formats, not one:
+
+    VILLAIN  7 axes   decisionAccumulator.buildSituationKey
+    HERO     8 axes   skillAssessment/deriveSituationKey.buildHeroSituationKey
+                      (adds preflopAggressor; WS-146 / SPR-040)
+
+  The hero key is the villain key plus one field — a superset, which is good news for
+  unification but a trap for positional readers: a 7-axis reader pointed at an 8-axis key
+  returns correct-looking values for axes 0-6 and silently ignores the rest.
+
+  Sites: decisionAccumulator (x2), villainDecisionModel (x2), modelAudit, villainProfileBuilder,
+  thoughtSignatureEvaluators, heroAnalysis, handSignificance (x4), solverBaselines, and five
+  leakRules/ files sharing one identical matchesBucket pattern, one of which
+  (heroPf3betOverfold.solverBaselineKey) performs a positional WRITE — `parts[4] = 'ip'`.
+
+  ALSO: the key is PERSISTED. heroLeaks uses `keyPath: ['playerId', 'situationKey']` (IDB
+  v22), so the string is part of a composite PRIMARY KEY. The wire format therefore cannot
+  move without orphaning stored leaks — which settles decision flag 2: keep the serialized
+  format byte-identical, change only who parses it. No migration required.
+
+  AND: two of the sixteen were found by the guard test, not by grep — handSignificance.js
+  used `hk`/`vk` rather than a variable named for the key. The guard is written on the SHAPE
+  of a positional read, not on naming, for exactly that reason.
+
+  A SEPARATE DEFECT SURFACED AND WAS NOT FIXED HERE: three sites destructure axis 3 (`isAgg`)
+  while calling it the action type, producing a too-loose match and the user-visible string
+  "in flop agg spots". Behaviour preserved under this ticket's bit-identity criterion; filed
+  as WS-318.
 accept_criteria: |
   - One structured key (an object with named fields), one builder, one parser. No module
     parses a situation key by split(), index position, or prefix match. Assert it: a test

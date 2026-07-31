@@ -28,6 +28,8 @@
  *   - Board-class precision beyond dry/medium/wet
  */
 
+import { tryParseSituationKey } from '../../pokerCore/situationKey.js';
+
 export const rule = {
   id: 'hero-oop-cbet-overfold',
   label: 'OOP cbet defense — fold-to-cbet rate',
@@ -47,10 +49,11 @@ export const rule = {
    * contextAction=vsBet) on the flop, AND was a preflop CALLER (pfc).
    */
   matchesBucket(situationKey) {
-    if (!situationKey) return false;
-    const parts = situationKey.split(':');
-    if (parts.length !== 8) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
+    const k = tryParseSituationKey(situationKey);
+    // Hero rules are defined on the 8-axis hero key; a 7-axis villain key is not this
+    // rule's spot, so arity is a real guard rather than a length check (WS-317).
+    if (!k || k.arity !== 8) return false;
+    const { street, posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor } = k;
     return (
       street === 'flop'
       && (posCategory === 'SMALL_BLIND' || posCategory === 'BIG_BLIND')

@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 193
+total_items: 194
 by_status:
   decomposed: 1
   done: 80
   in_progress: 3
   deferred: 44
-  backlog: 46
+  backlog: 47
   dismissed: 1
   completed: 7
   review: 1
@@ -23,7 +23,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 63
+  domain-correctness: 64
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1869,6 +1869,15 @@ items:
     priority_score: 31
     category: domain-correctness
     effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-318"
+    title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
+    status: backlog
+    priority_score: 26
+    category: domain-correctness
+    effort: S
     program: domain-correctness
     capability: core
 

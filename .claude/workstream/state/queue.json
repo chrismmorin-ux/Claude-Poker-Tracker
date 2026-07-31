@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-31T08:40:25.507Z",
-  "updated_by_event": "ev-1785487225507-004b0be6e1b4",
+  "updated_at": "2026-07-31T17:40:10.876Z",
+  "updated_by_event": "ev-1785519610876-0f0e3d45b6d2",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5083,7 +5083,33 @@
         "scripts/backtest/decisionGeometry.mjs"
       ],
       "source_class": "untagged"
+    },
+    "WS-318": {
+      "id": "WS-318",
+      "title": "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended",
+      "status": "backlog",
+      "priority_score": 26,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "bug-found-during-work",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "WS-317"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/handAnalysis/heroAnalysis.js",
+        "src/utils/handAnalysis/handSignificance.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785487225507-004b0be6e1b4"
+  "last_event_log_head": "ev-1785519610876-0f0e3d45b6d2"
 }

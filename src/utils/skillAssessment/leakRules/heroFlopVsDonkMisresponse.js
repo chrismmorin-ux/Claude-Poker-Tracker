@@ -30,6 +30,8 @@
  * lands in the bucket.
  */
 
+import { tryParseSituationKey } from '../../pokerCore/situationKey.js';
+
 export const rule = {
   id: 'hero-flop-vs-donk-misresponse',
   label: 'Flop vs donk lead — fold-to-donk rate',
@@ -52,10 +54,11 @@ export const rule = {
    * so they never overlap.
    */
   matchesBucket(situationKey) {
-    if (!situationKey) return false;
-    const parts = situationKey.split(':');
-    if (parts.length !== 8) return false;
-    const [street, , posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor] = parts;
+    const k = tryParseSituationKey(situationKey);
+    // Hero rules are defined on the 8-axis hero key; a 7-axis villain key is not this
+    // rule's spot, so arity is a real guard rather than a length check (WS-317).
+    if (!k || k.arity !== 8) return false;
+    const { street, posCategory, isAgg, isIP, facingAction, contextAction, preflopAggressor } = k;
     return (
       street === 'flop'
       && (posCategory === 'LATE' || posCategory === 'BUTTON')

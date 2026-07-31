@@ -1,0 +1,96 @@
+id: "WS-318"
+title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found during WS-317 (situation-key unification) and DELIBERATELY NOT FIXED THERE — WS-317's
+  acceptance is bit-identical behaviour, and folding a semantic change into it would have made
+  neither verifiable. The migration renamed the variables to what they actually hold, so the
+  defect is now visible in the code instead of hidden by a skipped-slot destructure.
+
+  THE DEFECT. Three functions destructured the situation key positionally:
+
+      const [actionStreet, , , actionType] = situationKey.split(':');
+
+  Axis 3 is `isAgg`, whose values are 'agg' / 'def'. It is NOT an action type — the action is
+  `contextAction` at axis 6. The name was wrong at every site, and `[a, , , b]` is unreadable
+  enough that nothing caught it.
+
+  SITES (all now named `isAgg`, behaviour preserved):
+    - handAnalysis/heroAnalysis.js       matchHeroWeakness
+    - handAnalysis/handSignificance.js   hero-weakness branch   (2 destructures)
+    - handAnalysis/handSignificance.js   villain-weakness branch (2 destructures)
+
+  TWO CONSEQUENCES, BOTH LIVE.
+
+  1. THE MATCH IS FAR LOOSER THAN INTENDED. `isAgg` is effectively binary, so a weakness
+     matches whenever street and aggressor-status agree — where the naming (and the comment
+     "same street + action") implies it should match on the action hero/villain actually took.
+     Practically: a weakness recorded on a river check can match a river bet. Every consumer
+     of `matchHeroWeakness` / `handSignificance` inherits this.
+
+  2. THE COPY IS USER-VISIBLE AND WRONG. heroAnalysis emits:
+
+       `Pattern: ${label} — occurrence #${n} in ${actionStreet} ${isAgg} spots`
+
+     which renders as "in flop agg spots" rather than naming the action ("in flop cbet
+     spots"). That is shown to the founder.
+
+  WHY IT SURVIVED. This is the fourth instance of one failure mode in this engine — a
+  structure asserting something nothing checks (WS-285 an unmeasured ordering in a comment,
+  WS-291 a doc the data refuted, WS-300 an index list naming the wrong hands, and now a
+  destructure naming the wrong axis). The WS-317 guard test now fails on any positional
+  colon-split, which closes the class; this ticket closes the instance.
+accept_criteria: |
+  - Decide the INTENDED semantic and record why. The three candidates are not equivalent:
+      (a) contextAction (axis 6) — matches the action taken; almost certainly what the
+          naming and the "same street + action" comment intended.
+      (b) isAgg (axis 3) — current behaviour; defensible as "same street, same role" but
+          then the variables, comment and user copy must all say so.
+      (c) both — narrower still.
+    This is a founder-facing product decision about what "a matching weakness" means, not a
+    tidy-up. State the choice in the ticket before coding.
+  - All three sites agree. They are copies of one idea and must not diverge again; prefer
+    extracting the predicate into ONE shared function rather than fixing it three times.
+  - The user-visible string names something a poker player recognises. "in flop agg spots"
+    is not a phrase; if the match stays on isAgg, the copy must be rewritten to describe the
+    role ("as the aggressor on the flop"), not print the raw axis value.
+  - Quantify the change before shipping it. Match rate WILL move — (a) is strictly narrower
+    than (b) — so report how many matches are gained/lost over a real hand set. A weakness
+    that stops matching is a behaviour change the founder should see measured, not discover.
+  - Tests cover the near-miss: a weakness on the same street with the same isAgg but a
+    DIFFERENT contextAction must match under (b) and not under (a). That single case is the
+    whole difference and pins whichever is chosen.
+effort: "S"
+files_involved:
+  - "src/utils/handAnalysis/heroAnalysis.js"
+  - "src/utils/handAnalysis/handSignificance.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision."
+source:
+  type: bug-found-during-work
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-317"
+created_at: "2026-07-31T07:10:00Z"
+status_note: |
+  Filed 2026-07-31 from WS-317. Behaviour is preserved in the migration commit; the variables
+  now carry the honest name (`isAgg`, `heroIsAgg`) and each site has a comment pointing here.
+  Priority is P1 rather than P0 because it degrades a secondary matching feature rather than
+  the engine's EV path — but the wrong string is on screen today.

@@ -20,6 +20,7 @@
  */
 
 import { analyzeBoardTexture } from '../pokerCore/boardTexture.js';
+import { formatSituationKey } from '../pokerCore/situationKey.js';
 
 const TEXTURE_LABELS = ['dry', 'medium', 'wet'];
 
@@ -185,8 +186,15 @@ export const buildHeroSituationKey = ({
   contextAction,
   preflopAggressor,
 }) => {
+  // The `??` default is hero-side domain logic and stays here; the AXIS LIST and wire order
+  // live in pokerCore/situationKey (WS-317) so this cannot drift from the villain-side
+  // builder. Output is byte-identical to the template literal it replaced — the format is
+  // persisted inside the heroLeaks composite primary key (IDB v22) and must not move.
   const pfa = preflopAggressor ?? (street === 'preflop' ? 'na' : 'pfc');
-  return `${street}:${texture}:${posCategory}:${isAgg}:${isIP}:${facingAction}:${contextAction}:${pfa}`;
+  return formatSituationKey({
+    street, texture, posCategory, isAgg, isIP, facingAction, contextAction,
+    preflopAggressor: pfa,
+  });
 };
 
 /**
