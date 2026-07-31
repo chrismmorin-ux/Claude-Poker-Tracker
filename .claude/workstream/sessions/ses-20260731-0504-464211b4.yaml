@@ -1,15 +1,110 @@
 id: "ses-20260731-0504-464211b4"
-status: active
+status: completed
 started_at: "2026-07-31T05:04:53.589Z"
-ended_at: null
+ended_at: "2026-07-31T20:35:00Z"
 mode: auto
 last_heartbeat: "2026-07-31T19:39:37.722Z"
 pid: 20448
 agent_session_id: "464211b4-8b73-42dd-8a72-b08410b85434"
 
-# Minted by cwos-claims because no registered session matched this process.
-# A session that never ran /session-start still needs an identity to claim under.
-claimed_items:
-  - "WS-317"
-
+claimed_items: []
 files_locked: []
+
+handoff_notes: |
+  Nine commits; tree left CLEAN for the first time in weeks.
+
+  ITEMS COMPLETED
+    WS-303 (SPR-163)  per-action narrowing softness + the chaining off-by-one
+    WS-317 (SPR-164)  situation-key unification — the FSA keystone
+
+  ITEMS FILED
+    WS-316  IP check-back vs OOP check pooled into one 'check' (10.3% vs 34.3% strong).
+            §11.8 rates this above any further tuning of ACTION_TAU_FRACTION.
+    WS-318  weakness matching compares isAgg while calling it the action; the string
+            "in flop agg spots" is on screen today. Behaviour PRESERVED in WS-317 on
+            purpose — a semantic fix inside a bit-identity migration verifies neither.
+    WS-319  the EV-by-percentile curve (POKER_THEORY §15 build half)
+    WS-320  study-ladder separability test — scored above WS-319 deliberately
+
+  KEY FINDINGS
+    1. THE HERO-EV EDGE COLLAPSED WITH PLAYER COUNT. +16.7 bb at 3 contributing
+       players, +1.37 at 28. The 3-player figure had a CI of [7.52, 23.42] and read
+       c3Passes: TRUE. It was player-bias, and the admissibility guard built this
+       session is the only reason it did not reach the scorecard. Treat any hero-EV
+       number below ~30 players as noise regardless of how tight its interval looks.
+    2. THE RUN CONFIG COULD NOT REACH A DEFENSIBLE ANSWER. It burned ~200 decisions
+       per player, so even an 8-hour run ended in single-digit clusters. With
+       --max-hands-per-player 60 it is ~13 per player (~85-95 players at 1200).
+       The lever was never decision count.
+    3. THE PROVENANCE APPARATUS HAD ROTTED WHILE INERT. Drafted 2026-06-19, never
+       promoted, so nothing enforced it. Verification found 3 dead evidence pointers,
+       one finding recorded open that was closed, and one recorded as a plan that had
+       shipped. Promotion is what turns on drift detection.
+    4. TEST FIXTURES CAN HIDE A DEFECT INDEFINITELY. heroAnalysis passed FOUR-axis
+       situation keys where index 3 genuinely IS an action; production keys have seven,
+       where index 3 is isAgg. The suite validated the intended semantic against inputs
+       that never occur. Fixtures now real; the exact difference is pinned by one test.
+    5. A GUARD KEYED ON NAMING AGREES WITH YOU. The first situation-key guard matched
+       `situationKey|sk|key` and missed two live sites using `hk`/`vk`. Rewritten to
+       match the SHAPE of a positional read, with a greppable opt-out marker.
+
+  DECISIONS MADE (light, recorded here rather than decisions.md)
+    - In-place migration for WS-317 rather than introducing a parallel key — adding a
+      second key notion to fix "two key notions" is self-defeating.
+    - Wire format frozen: heroLeaks persists the key inside a composite PRIMARY KEY
+      (IDB v22), so no migration was needed and none was taken.
+    - Carrying is not keying: SPR/players-remaining/source/pool are CARRIED axes that
+      deliberately do not enter bucket identity, because widening identity re-partitions
+      every historical measurement. Promotion of any axis must be measured.
+    - MIN_CLUSTERS_FOR_CI = 30, stamped into every report as minClustersForCI so the
+      bar applied is visible in old artifacts. Moving it is a /decide.
+    - `--record --from` refuses an inadmissible report outright, not overridably.
+
+  NEXT RECOMMENDED ACTION
+    Read the finished hero-EV run (out/hero-ev-scaled.json) FIRST — it was still
+    running at session end (~350/1200, 28 players, edge +1.37, CI low -8.48). If it
+    completes with 30+ players it is the first admissible C3 measurement; on the current
+    trajectory it will read a SMALL, NOT-SIGNIFICANT edge, which is a real result and
+    should be recorded via:
+      node scripts/readiness/model-readiness.mjs --record --from out/hero-ev-scaled.json \
+        --label "..." --source out/hero-ev-scaled.json
+    (that command self-refuses if the run is inadmissible).
+
+    Then WS-320 (study-ladder separability) — it is a MEASUREMENT that could redirect
+    several builds, and cheap because §11.8's method already exists.
+
+  AUTOPILOT ELIGIBLE
+    Not assessed this session. WS-318 is S-effort but carries a decision_flag (what
+    "a matching weakness" means), so it is not autonomous work.
+
+context_notes: |
+  BACKGROUND JOB STILL RUNNING AT SESSION END
+    scripts/backtest/run-hero-ev.mjs — 400 files, 300 players,
+    --max-hands-per-player 60, 1200 decisions, out/hero-ev-scaled.json.
+    ~5s per scored decision. It writes out/hero-ev-scaled.json.partial every 25
+    decisions, stamped complete:false with contributingPlayers and a caveat; the
+    completed run deletes the partial. If it was killed again, the partial is readable
+    and honest about itself.
+
+  DO NOT QUOTE
+    out/hero-ev-KILLED-3players-inadmissible.json — the archived 3-player run reporting
+    c3Passes:true. Its README.md sibling explains why the "pass" is not real. It is NOT
+    admissible evidence and must never be appended to scorecard-history.yaml.
+
+  STATE HYGIENE
+    - WS-317 closed via SPR-164 but completion_commit came back null; the work is in
+      7eee07a and the commit message names the ticket. Queue YAMLs were not hand-edited.
+    - Two MC-flaky tests (miniRolloutEquity; one in advisorAccuracy) fail ~25% of runs
+      independent of any change. Unticketed. A gate that fails randomly is not a gate.
+    - `withCarriedContext` / CARRIED_AXES have NO production caller — scaffolding with a
+      proven contract, labelled as such in both module and test. Wiring one is FSA
+      Phase 2's first task, and until then it is the shipped-but-inert pattern.
+    - docs/claims/ is still templates and April drafts. The provenance half is promoted;
+      the CLAIMS half — "what a number is NOT" — has no home yet.
+
+  OPEN FOUNDER THREADS
+    - Exploitability proposed as a SEVENTH readiness criterion (max-exploit is
+      max-exploitable; nothing in C1-C6 measures hero's own exposure). Needs a /decide.
+    - FSA charter carries 3 open questions: whether P(situation) needs hero's strategy
+      held fixed; what the divergence function should be (KL is not in EV units);
+      whether live 1/3 is one pool or several.
