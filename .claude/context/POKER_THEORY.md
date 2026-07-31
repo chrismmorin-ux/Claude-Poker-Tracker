@@ -1,5 +1,5 @@
 ---
-version: 1.9
+version: 2.0
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-07-31
+    version: 2.0
+    change: "WS-307 (SPR-161): added §7.4a — A POPULATION RATE SETS A LEVEL, IT NEVER REPLACES CONDITIONING, binding. §7.4 governs which source wins when several describe the same quantity; §7.4a governs the different case where one estimate REFINES another. `estimateFoldPct` combined P(fold | this narrowed range), computed per combo from equity vs pot odds, with the population marginal P(fold) as `(seg·1 + 0.45·10)/11` — giving the game-state computation 9% of the weight and a flat constant 91%. That is averaging a conditional against its own marginal, which discards the conditioning it was computed to obtain; §6.5's PRIOR_WEIGHT=10 shrinks estimates built from n OBSERVATIONS, and a deterministic function of range composition has no n, so n=1 was arbitrary. Measured: on QhJhTs against AA,KK,QQ,JJ,TT,AKs,AKo,AQs,AQo (51% nuts / 49% strong / 0% air) the engine reported a 43% fold rate and ranked RAISE first at +40 EV holding 3s3d at 0.057 equity — the entire EV was fold equity against a range that cannot fold. Replaced by log-odds anchoring, prior sets the level and range supplies the deviation, the same construction as §6.5a, §11.4 and §3.6.1; the reference value is measured and asserted by test per WS-300. After: fold 12.8%, raise −86.7, fold first. Records two corollaries found in the fixing — a clamp that decides the answer is a hidden prior (scaledLogistic's default [0.10, 0.80] on call probability imposed an unremovable 20% fold floor), and a saturating probability destroys the signal underneath it (fold%→1 collapses bet EV to pot×foldPct for every sizing, erasing sizing advice). Records one open residual honestly: the estimator prices villain's decision against hero's ACTUAL hand rather than hero's range — an omniscient-villain model biased one-directionally toward folds — so it is applied to the raise path only until that input is fixed. Fourth instance of prior/threshold-instead-of-posterior after §11.5 (WS-285), §7.6/AP-RL-01 and §3.6.1 (WS-291)."
   - date: 2026-07-28
     version: 1.9
     change: "WS-291 (SPR-158): added §3.6.1 — A RANGE NEVER ASSIGNS ZERO, binding. `narrowByBoard` implemented the §6.5 likelihood P(action|hand) as a hard 1/0 quantile cut (keep the top `continuationRate` by equity, zero the rest), re-applied every street and again inside each depth-2/3 evaluation. Measured against revealed showdown hands on two independent sites: coverage of the hand actually held decayed 89% → 71% → 56% flop-to-river and 72% → 58% → 47% under chaining; facing a RAISE it retained 10.8% of combos and missed the true hand 45% of the time, so the engine could not represent a bluff-raise at all and hero systematically OVER-FOLDED to raises (§4.2 makes bluff-catching depend on exactly that frequency). Replaced by a logistic of per-combo equity whose mean is pinned to the observed continuation rate — severity unchanged in aggregate, but 'unlikely' replaces 'impossible'. After: coverage ~94% flat by street, 94% facing a raise, ~89% flat under chaining. Floor (0.05) and softness were SWEPT against the discrimination metric, not chosen. Third instance of the same threshold-instead-of-posterior shape after §11.5 (WS-285) and §7.6/AP-RL-01. Records two open residuals honestly: preflop ranges still hard-zero 30–37% of the grid (WS-302), and the check branch plus deep chaining remain close to information-free (WS-303)."
@@ -771,6 +774,69 @@ When a higher-fidelity source is present, lower-fidelity redundant adjustments M
 - Villain model present with confidence ≥ 0.3? Use model. Skip style/AF/VPIP adjustments.
 - No model but observed foldToCbet with N ≥ 5? Use observed stat. Skip style.
 - No observed data? Use style-conditioned logistic. Skip AF/VPIP (they're the inputs to the style).
+
+### 7.4a A Population Rate Sets a LEVEL — It Never Replaces CONDITIONING (WS-307, binding)
+
+§7.4 governs which source to use when several describe the same quantity. This governs
+what happens when one estimate **refines** another rather than competing with it.
+
+**The rule.** When a quantity has been computed *conditional* on game state, a population
+average of that same quantity is its **marginal** — the identical thing with the
+conditioning integrated out. The two are not two noisy readings to be averaged. Combining
+them by weighted average, in either direction, discards exactly the information the
+conditional computation was performed to obtain.
+
+A population rate is legitimately used to set the conditional's **level** — its
+calibration against a pool that deviates from theoretical play. It is never used to
+replace the conditional's **response to game state**.
+
+**The pseudocount is not a licence.** §6.5's `PRIOR_WEIGHT = 10` shrinks an estimate built
+from **n observations** toward a prior; at n=1 the prior properly dominates. A quantity
+computed deterministically from game state has **no n at all**. Assigning it n=1 to reuse
+the machinery is a category error, and it silently sets the game state's weight to 1/11.
+
+**Before / after, on the defect that produced this rule:**
+
+```
+estimate = (segEstimate·1 + POP·10) / 11              range carries 9%
+estimate = σ( logit(segEstimate) + logit(POP) − logit(REF) )   range carries the deviation
+```
+
+`REF` is the conditional's value for a *typical* input, so the second form reproduces the
+population rate exactly when game state is typical, and departs from it as far as the
+evidence warrants when it is not. Log-odds because the result stays in (0,1) without
+clamping and both tails move symmetrically. This is the construction §6.5a already uses
+for pool baselines, §11.4 for preflop fold rates, and §3.6.1 for continuation weights.
+
+**What it cost, measured (2026-07-31).** Facing a 75-into-100 bet on `QhJhTs` with `3s3d`,
+against `AA,KK,QQ,JJ,TT,AKs,AKo,AQs,AQo` — segmented at 51% nuts / 49% strong / 0% air, a
+range with no folding hands in it — the engine reported a **43% fold rate** and ranked
+**RAISE first at +40 EV** with hero equity 0.057. The entire EV was fold equity against a
+range that cannot fold. After: fold rate 12.8%, raise −86.7, fold correctly first.
+
+**Corollary — a clamp can be a hidden prior.** The per-combo estimator inherited
+`scaledLogistic`'s default bounds on call probability, `[0.10, 0.80]`, which imposed a
+**floor of 0.20 on every fold estimate derived from it**. No range, however strong, could
+report below 20% folds. A bound that decides the answer is not a sanity guard; it is the
+model, and it must be justified and swept like one.
+
+**Corollary — check what saturation destroys.** Freeing a probability to approach its
+bounds can erase a signal computed underneath it. When fold% nears 1, bet EV collapses to
+`pot × foldPct` for *every* sizing, so all sizings converge and sizing advice becomes
+noise. A fix that makes one number right can flatten another.
+
+**Known open residual, stated rather than implied.** The per-combo estimator prices
+villain's decision from their equity against **hero's actual hand**, not hero's range —
+an omniscient-villain model, since villains cannot see hero's cards. The bias is
+one-directional: it inflates folds whenever hero's holding is much stronger than hero's
+range (measured at 98% folds for AA with trips on `A72` against a full range, versus a
+~60-65% truth). The engine has no hero-range representation to substitute. The
+range-conditioned estimate is therefore applied to the **raise** path only, where the
+range has already acted and its strength is real information rather than an artifact of
+hero's own holding. Widening it to the bet path requires fixing that input first. The
+obvious cheap proxy — villain's absolute board-strength percentile — is also wrong: it
+ignores draw equity, so it would fold draws far too often on exactly the wet boards where
+this matters most.
 
 ### 7.5 Computed vs Lookup — Decision Framework
 
