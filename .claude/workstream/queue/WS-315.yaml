@@ -1,0 +1,109 @@
+id: "WS-315"
+title: "Orientation gate hard-blocks app entry and does not visibly recover on rotate — founder must load the app in landscape or it is unusable"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  FOUNDER REPORT, 2026-07-31, with device screenshots:
+  "In order to launch correctly, the app has to be loaded in landscape. This is a
+  ridiculous way to try to solve a design problem — the user needs to enter the
+  system and not worry about this."
+
+  He is right, and the objection is bigger than the bug.
+
+  WHAT IS THERE. `src/components/ui/RotateDeviceHint.jsx` renders
+  `hidden portrait:flex fixed inset-0 z-[200]` — a full-screen, opaque, undismissable
+  overlay shown whenever the active view is landscape-classified (which is the default
+  for anything not explicitly flagged, see VIEW_TO_ORIENTATION) and the device media
+  query reports portrait. There is no dismiss control, no "continue anyway", nothing
+  rendered behind it. It is a hard block on entering the app at all.
+
+  It was added as a FALLBACK for `screen.orientation.lock('landscape')`
+  (useScreenOrientationLock.js), which only works in an installed standalone PWA and
+  silently no-ops in a browser tab. So the population that hits the block is exactly
+  the population that has not installed the PWA — i.e. every first-time entry.
+
+  THE OBSERVED FAILURE. Evidence 07 shows the gate still painted inside a LANDSCAPE
+  2340x1080 frame, with the icon positioned as though its layout box were still
+  portrait (lower-left, not centred). Founder's experience is that rotating after load
+  does not recover — the app must be RELOADED in landscape.
+
+  MECHANISM NOT ESTABLISHED. Candidates: a stale paint across the OS rotation; an
+  OS-level rotation lock; an interaction with the PWA orientation lock; or a
+  `100dvh`/visualViewport settling issue. Screenshot 07 on its own is also consistent
+  with a mid-rotation composite frame. DO NOT GUESS — reproduce first.
+
+  THE DESIGN OBJECTION (the part that outlives the bug). Gating entry on device
+  orientation is solving a LAYOUT problem with a USER INSTRUCTION. Portrait is not
+  unsupported by decision — it is unimplemented, because the app has exactly one
+  layout (a 1600x720 canvas uniformly scaled by useScale). The overlay is a sign
+  apologising for that. Any real answer belongs in the Table View Redesign, where
+  "what does this surface do in portrait" is a first-class question rather than an
+  afterthought.
+accept_criteria: |
+  PHASE 1 — REPRODUCE (do this before writing any fix)
+   - On the founder's device, in a browser tab (NOT installed PWA): load in portrait,
+     confirm the gate, rotate to landscape, and record whether the gate clears.
+   - Repeat with OS auto-rotate ON and OFF — an OS rotation lock would explain the
+     symptom entirely and would change the fix.
+   - Repeat as an installed PWA.
+   - Record `window.innerWidth/Height`, `visualViewport.width/height`,
+     `screen.orientation.type` and the computed `useScale` value at each step.
+   - Write the result into docs/design/evidence/2026-07-31-tvr-device-baseline/.
+
+  PHASE 2 — UNBLOCK (small, ships independently of the redesign)
+   Whatever the mechanism, the gate must stop being a dead end:
+   - It must not be the only thing on screen. At minimum it needs a "Continue anyway"
+     affordance — a scaled-down landscape canvas in a portrait viewport is degraded,
+     not broken, and degraded-but-usable beats blocked.
+   - It must re-evaluate on `orientationchange` and on `visualViewport` resize, not
+     rely solely on a CSS media variant that may be evaluated against a stale layout.
+   - If reproduction shows an OS rotation lock is the cause, the copy is actively
+     wrong ("turn your phone sideways" does nothing when auto-rotate is off) and must
+     say so.
+
+  PHASE 3 — DESIGN ANSWER (folds into WS-313, Gate 4)
+   - State explicitly what the Table View does in portrait: a genuine portrait layout,
+     a deliberate degraded landscape-scaled view, or a documented unsupported state
+     with a non-blocking notice. Any of the three is defensible; the current
+     "undismissable overlay" is none of them.
+
+  NON-GOALS
+   - Do not change the per-view orientation LOCK policy (owner contract 2026-05-05,
+     useScreenOrientationLock.js header). This ticket is about the fallback overlay,
+     not the lock.
+effort: "S"
+files_involved:
+  - "src/components/ui/RotateDeviceHint.jsx"
+  - "src/hooks/useScreenOrientationLock.js"
+  - "src/hooks/useScale.js"
+  - "src/constants/viewRegistry.jsx"
+  - "src/PokerTracker.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Phase 2 'Continue anyway' is a UX change and technically needs a Gate 1 entry note. Recommend treating it as a surface-bound defect fix (the overlay is a fallback, not a designed surface) and logging the Gate 2 skip — but the founder decides."
+  - "If reproduction shows the gate DOES clear correctly on rotate and the real symptom is something else (e.g. scale not recovering, or a white flash), re-title this ticket rather than fixing the wrong thing."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Evidence: docs/design/evidence/2026-07-31-tvr-device-baseline/ (EVID-3, files 06 + 07).
+  Project: .claude/projects/table-view-redesign-2026-07-31.md
+  P0 because it blocks entry to the app entirely, for the uninstalled-PWA population.

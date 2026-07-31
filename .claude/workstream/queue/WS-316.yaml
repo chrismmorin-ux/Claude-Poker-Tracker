@@ -1,0 +1,113 @@
+id: "WS-316"
+title: "The uniform scale transform nullifies the 44px touch floor — every H-ML06 target renders at ~28-37px on the founder's own device"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P0"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Found 2026-07-31 by measuring the founder's device screenshots against useScale's
+  formula. The code read alone could not reach this — it needs an observed render.
+
+  THE MECHANISM. `useScale.js` computes
+
+      s = min(vw * 0.95 / 1600, vh * 0.95 / 720, 1)
+
+  and `ScaledContainer` applies it as ONE CSS `transform: scale(s)` over the entire
+  1600x720 canvas. Every px value written anywhere inside that canvas — every button
+  height, every `min-h-[44px]`, every font size — is therefore multiplied by `s`
+  before it reaches a thumb.
+
+  THE MEASUREMENT. In the supplied screenshots the 1600-design-px canvas spans
+  ~2118 physical px, so `s x DPR ~= 1.26`. The width term binds, which means
+  `s = viewport_CSS_width * 0.95 / 1600`. The consequence does not depend on knowing
+  the exact DPR:
+
+      DPR 2.0  ->  CSS viewport ~1059 wide  ->  s ~= 0.63  ->  a "44px" target is ~28px
+      DPR 1.5  ->  CSS viewport ~1412 wide  ->  s ~= 0.84  ->  a "44px" target is ~37px
+
+  Either way the H-ML06 44px minimum IS NOT MET ANYWHERE IN THE APP on the founder's
+  own phone. The 100px "can't-miss" action buttons render at 63-84px. The 36px orbit
+  strip buttons render at 23-30px.
+
+  WHY THIS MATTERS MORE THAN A NUMBER. It nullifies a class of prior work.
+  AUDIT-2026-04-21-TV F8 raised `RecentPlayersSection` rows from 40px to 44px and
+  established MENU_ROW_CLASS as "single source of truth for menu-row touch height"
+  (SeatContextMenu.jsx:16-23). That fix raised a number inside a canvas that is then
+  uniformly shrunk — so it moved the rendered target from ~25px to ~28px and never
+  reached the floor it was written to enforce.
+
+  The 2026-04-21 audit ANTICIPATED the mechanism ("at scale <1.0, 40 DOM-px becomes
+  <40 visual; at scale 0.5, ~20px — below reliability") but recorded it as a
+  hypothetical risk. It is the actual, everyday operating condition.
+
+  TOUCH-TARGET DISCIPLINE CANNOT BE ENFORCED BY EDITING PX VALUES INSIDE A UNIFORMLY
+  SCALED CANVAS. That is the finding. Any redesign that specifies target sizes in
+  design px without addressing the transform is specifying numbers that do not survive
+  to the device — including the Gate 2 pre-commitment that all action targets stay
+  >=44px, which is currently unsatisfiable as written.
+accept_criteria: |
+  1. MEASURE FIRST, on the founder's device: record DPR, `visualViewport.width/height`,
+     the computed `s`, and the true rendered size (in CSS px and mm if possible) of:
+     a primary action button, an orbit-strip button, a SeatContextMenu row, and a
+     sizing preset. Write into docs/design/evidence/2026-07-31-tvr-device-baseline/.
+     If the measured targets turn out to clear 44px after all, close with the
+     measurement recorded — that is a valid outcome and the cheapest one.
+
+  2. If confirmed, decide the strategy — this is an architectural choice, not a tweak,
+     and it belongs to WS-313 (Gate 4). Options to evaluate, not a menu to pick from
+     blind:
+       (a) Scale-aware floor: derive minimum target sizes from `s` at render time so
+           the RENDERED size clears 44px, letting design-px values grow as `s` falls.
+           Keeps the single-canvas model; makes every floor a function, not a constant.
+       (b) Drop the uniform transform for the interactive bands: let the felt scale
+           (it is spatial and information-dense) while the command column and any
+           roster rail lay out in real CSS px at real device size. Mixed model; the
+           command column stops being a picture of a control panel and becomes one.
+       (c) Raise the design-px floor to `44 / s_min` for the supported device range.
+           Crude, but a one-line policy and immediately verifiable.
+     Recommendation to evaluate first: (b). The command column is where every
+     recording tap lands, it does not need to be spatially proportional to the felt,
+     and un-scaling it fixes the floor and the WS-311 compression defect in the same
+     move (real CSS px in a real 720-CSS-px column can scroll honestly).
+
+  3. Add a regression guard: a test that asserts the RENDERED size of the primary
+     recording controls at the supported viewport range, not their declared size.
+     A test that asserts `min-h-[44px]` is present in a class string is exactly the
+     test that let this through.
+
+  4. Update the design heuristic H-ML06 in the framework to state that the floor is on
+     RENDERED size, so future audits cannot repeat the F8 mistake.
+effort: "M"
+files_involved:
+  - "src/hooks/useScale.js"
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/SeatContextMenu.jsx"
+  - "docs/design/heuristics/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-313"
+sprint_id: null
+decision_flags:
+  - "Option (b) — un-scaling the command column — changes the visual proportions of the surface and is a Gate 4 decision, not a bug fix. It should be decided INSIDE the redesign, not ahead of it. Only step 1 (measure) and step 3 (guard) are safe to do standalone."
+  - "This finding invalidates the Gate 2 pre-commitment 'all action targets stay >=44px and equal-area' as literally written. Gate 4 must restate it in terms of RENDERED size."
+source:
+  type: ai-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Evidence: docs/design/evidence/2026-07-31-tvr-device-baseline/ (EVID-2).
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

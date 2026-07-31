@@ -1,0 +1,101 @@
+id: "WS-314"
+title: "TVR Gate 5 — Table View v2 implementation (umbrella; decomposes at Gate 4)"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 16.0
+priority_label: "P2"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Gate 5 of the Table View Redesign (TVR). UMBRELLA ITEM — deliberately not scoped
+  in detail, because scoping it before Gate 4 produces the surface artifact is exactly
+  the anti-pattern the design program exists to prevent ("feature X went to dev, design
+  phase was skipped, and we assumed existing personas covered it").
+
+  This item decomposes into implementable children when WS-313 completes.
+
+  WHAT IS ALREADY KNOWN ABOUT THE IMPLEMENTATION SHAPE (from the Gate 1 code read —
+  recorded so it is not re-derived, NOT as a substitute for the Gate 4 spec):
+
+  - SEATS REFLOW FOR FREE. SEAT_POSITIONS (gameConstants.js:57-67) are percentage
+    based, so making felt dimensions state-derived reflows all nine seats, chip
+    stacks, action badges and position badges with no per-element work. This is the
+    fact that makes the dynamic direction cheap.
+
+  - THE NARROWING TRIGGER NEEDS NO NEW DERIVATION. `activeSeatCount` and
+    `hasSeatFolded` already exist in useSeatUtils and are already consumed by
+    CommandStrip (:144, :451).
+
+  - THE RAIL NEEDS NO NEW QUERY. `getRecentPlayers(20, true)` already feeds the
+    context menu (TableView.jsx:698); the bounded rail is a slice of the same call.
+
+  - PRE-ARMING NEEDS NO NEW ENGINE WORK. `actionAdvice` (CommandStrip.jsx:653-665)
+    and `engineOptimal` sizing (SizingPresetsPanel.jsx:26-37) are already computed
+    and already rendered; pre-arming consumes existing output.
+
+  - THE HARD PART IS NOT THE RENDER. It is that LAYOUT is a module-scope constant
+    object consumed by at least TableView, CommandStrip, SeatComponent and
+    PotDisplay. Making proportions state-derived means threading them through a
+    context or hook, which touches every consumer. Expect this to dominate the work,
+    not the visual change.
+accept_criteria: |
+  DECOMPOSITION GATE — this item does not execute directly. On WS-313 completion,
+  decompose into children scoped by the surface artifact, then close this umbrella
+  as `decomposed`.
+
+  BINDING ON EVERY CHILD, regardless of how the decomposition falls:
+
+   1. NO AUTO-RECORDING. This is a tracker: for villains it records what happened.
+      A default may adjust prominence and ordering only. Founder-ratified 2026-07-31
+      (chose "weighted + pre-armed", explicitly rejected confirm-to-advance).
+
+   2. PERSISTED-HAND SCHEMA UNCHANGED. Assert by test that the actionSequence written
+      under pre-armed entry is byte-identical to the same actions entered manually.
+      contracts/persisted-hand-schema.md and the HandReplay reader must not notice.
+
+   3. 44px FLOOR HOLDS EVERYWHERE (H-ML06), including under the WS-311 compression
+      condition and at every narrowing state.
+
+   4. F10 MOTOR SEPARATION SURVIVES. Reset Hand must not become adjacent to Next Hand
+      in any layout state.
+
+   5. VISUAL VERIFICATION IS MANDATORY at 1600x720 across every narrowing state and
+      both rail states. Requires .env.local (see WS-312 R7).
+
+   6. NO REGRESSION of the closed 2026-04-21 audit findings F1-F12 — in particular
+      F2 (orbit fold-preview badges), F5/F1 (12s unified undo), F7 (no silent
+      off-screen seats), F8 (44px recent rows), F10 (motor separation).
+
+   7. Commits reference the Gate 4 surface-id per the Design Program Guardrail.
+effort: "XL"
+files_involved:
+  - "src/constants/gameConstants.js"
+  - "src/components/views/TableView/TableView.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/SeatContextMenu.jsx"
+  - "src/components/views/TableView/SeatComponent.jsx"
+  - "src/components/views/TableView/ControlZone.jsx"
+blocked_by:
+  - "WS-313"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Making LAYOUT state-derived is the largest single change and touches every consumer. Decide at Gate 4 whether it ships as a standalone refactor (behaviour-preserving, current proportions as the only state) BEFORE any visual change lands — strongly recommended, since it de-risks the visual work and is independently verifiable."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Umbrella. Decomposes at Gate 4 (WS-313).
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

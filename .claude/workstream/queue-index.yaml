@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 186
+total_items: 192
 by_status:
   decomposed: 1
   done: 77
   in_progress: 3
   deferred: 43
-  backlog: 43
+  backlog: 49
   dismissed: 1
   completed: 7
   review: 1
@@ -48,7 +48,7 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 6
-  table-view: 1
+  table-view: 7
   test-reliability: 2
   testing: 2
   ux: 3
@@ -1808,3 +1808,59 @@ items:
     program: domain-correctness
     capability: core
 
+
+  - id: "WS-311"
+    title: "CommandStrip compresses instead of scrolling — 720px column over-subscribed by ~100-140px in common states, shrinking the 100px action buttons first"
+    status: backlog
+    priority_score: 28
+    category: table-view
+    effort: S
+    program: design
+    capability: core
+
+  - id: "WS-312"
+    title: "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input"
+    status: backlog
+    priority_score: 22
+    category: table-view
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-313"
+    title: "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)"
+    status: backlog
+    priority_score: 20
+    category: table-view
+    effort: L
+    blocked_by: ["WS-312"]
+    program: design
+    capability: core
+
+  - id: "WS-314"
+    title: "TVR Gate 5 — Table View v2 implementation (umbrella; decomposes at Gate 4)"
+    status: backlog
+    priority_score: 16
+    category: table-view
+    effort: XL
+    blocked_by: ["WS-313"]
+    program: design
+    capability: core
+
+  - id: "WS-315"
+    title: "Orientation gate hard-blocks app entry and does not visibly recover on rotate — founder must load the app in landscape or it is unusable"
+    status: backlog
+    priority_score: 30
+    category: table-view
+    effort: S
+    program: design
+    capability: core
+
+  - id: "WS-316"
+    title: "The uniform scale transform nullifies the 44px touch floor — every H-ML06 target renders at ~28-37px on the founder's own device"
+    status: backlog
+    priority_score: 26
+    category: table-view
+    effort: M
+    program: design
+    capability: core

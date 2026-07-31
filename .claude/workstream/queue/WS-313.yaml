@@ -1,0 +1,103 @@
+id: "WS-313"
+title: "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Gate 4 of the Table View Redesign (TVR). Produces the surface artifact that Gate 5
+  implements against. Per LIFECYCLE.md, Gate 4 is NOT bypassable and no production
+  code may be written before it completes.
+
+  Reworks `docs/design/surfaces/table-view.md` from the ground up rather than
+  amending it — the change is to the surface's ALLOCATION, not its contents, and
+  every prior change has been a surface-bound fix inside proportions that were never
+  in question.
+
+  Designs against the three founder-ratified directions AS AMENDED by Gate 2. The
+  amendments are not scope reductions; both preserve founder intent in full:
+
+    D-1 defaults    — prominence weighting, NOT hit-target weighting
+    D-2 narrowing   — live-players-remaining driver, street-boundary transitions
+    D-3 player entry— bounded rail, overflow to PlayerFinderView
+accept_criteria: |
+  Reworked `docs/design/surfaces/table-view.md` carrying all eleven Gate 2
+  pre-commitments:
+
+   1. Narrowing driver = live players remaining; transitions QUANTIZED TO STREET
+      BOUNDARIES ONLY, never mid-street (C1-A). Settled-on-resume after backgrounding
+      — present the new shape already arrived at, never animate into it on unlock
+      (C1-B, H-PLT05).
+   2. Defaults weight VISUAL PROMINENCE (colour, contrast, label weight, position),
+      never hit-target area. All action targets stay >=44px and equal-area (C2-A,
+      H-ML06). Rationale is load-bearing: in a read-building tracker the RARE action
+      is the high-information one, so frequency-weighted targets would make the app
+      fastest at recording what tells you least.
+   3. Pre-armed state gets a treatment vocabulary that exists nowhere else on the
+      surface and cannot be confused with the recorded-action vocabulary
+      (ActionSequence badges, getActionSeatStyle). Outline/dashed/pulse, not fill
+      (C3-A, H-N01).
+   4. Roster rail is BOUNDED (proposal 6-8, ranked by this session's seating and
+      recency); overflow routes to PlayerFinderView. No horizontal scroll (C6-A,
+      H-ML05) — this is the same defect class as orbit-strip F7, closed 2026-04-21.
+   5. One-sentence written ownership boundary: rail owns known/recently-seen players;
+      PlayerFinderView owns search, create, identify, edit. Without it this regresses
+      the deliberate "+ Create New Player" removal documented at
+      SeatContextMenu.jsx:11-13 (D1).
+   6. Rail claims the sub-felt band explicitly; the TABLE label (TableView.jsx:669-683,
+      300x60, pure decoration) and the F12 reopen-range affordance (:733-741, fixed
+      bottom-4 left-4) are re-homed or removed (C5).
+   7. Explicit statement on sidebar parity: main-app-only by decision, or a tracked
+      gap against surfaces/sidebar-shell-spec.md (D2).
+   8. A SINGLE spatial-transform layer covering both narrowing and WS-186 rotation —
+      or WS-186 explicitly deferred behind TVR. Two independent transforms over the
+      same coordinate system, specified separately, will conflict (D3).
+   9. Persisted-hand schema stated as a NON-GOAL: D-1 changes how an action is
+      proposed, never what is written. contracts/persisted-hand-schema.md output must
+      be byte-identical (D5).
+  10. Re-verify F10 motor separation (Reset Hand vs Next Hand) survives the re-layout.
+  11. Reordered SeatContextMenu specified: rare seat-config ops only, player ops
+      re-homed to the rail.
+
+  ALSO REQUIRED:
+   - Walk TournamentView overlay behaviour under a narrowed felt (Gate 2 D6, unwalked).
+   - Answer founder open question: is narrowing defeatable in Settings? (H-N03)
+   - Scope Gate 5 into implementable items and decompose WS-314.
+
+  GATE 4 EXIT: surface artifact exists and is linked from WS-314.
+effort: "L"
+files_involved:
+  - "docs/design/surfaces/table-view.md"
+  - "docs/design/surfaces/seat-context-menu.md"
+  - "docs/design/surfaces/player-picker.md"
+  - "docs/design/journeys/"
+blocked_by:
+  - "WS-312"
+blocked_by_legacy: []
+enables:
+  - "WS-314"
+sprint_id: null
+decision_flags:
+  - "WS-186 (table flip) MUST be resolved here — designed into the same transform layer or explicitly deferred. It cannot proceed in parallel."
+  - "WS-187 (photo-primary avatars) should land before or with the rail; rail legibility depends on recognising a player from a small chip."
+  - "If WS-312 R7 shows postflop time is dominated by CARD entry, CardSelectorPanel enters Gate 4 scope and this item grows."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Blocked by WS-312 (Gate 3). Gate 2 must re-run GREEN against the updated framework
+  before this opens.
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

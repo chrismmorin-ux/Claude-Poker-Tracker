@@ -1,0 +1,120 @@
+id: "WS-311"
+title: "CommandStrip compresses instead of scrolling — 720px column over-subscribed by ~100-140px in common states, shrinking the 100px action buttons first"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Found during the Table View redesign kickoff (2026-07-31) by code read. Filed as a
+  STANDALONE defect, deliberately NOT gated behind the redesign — it degrades the
+  current surface today and should ship on its own merits.
+
+  THE DEFECT. The CommandStrip root is `absolute flex flex-col` with `top:0; bottom:0`
+  on a 720px canvas (CommandStrip.jsx:684-693). It has no `overflow-y`. Its children
+  carry `height` (not `min-height`) and inherit the flex default `flex-shrink: 1`.
+
+  Summing the children in a common state — seat selected, preflop, sizing panel open,
+  all-in row present, batch row present, control zone:
+
+      street tabs        40   (:705)
+      advice bar        ~80
+      seat indicator    ~64   (:766)
+      orbit strip     40-80   (:856 — flex-wrap gives 2 rows at 9-handed)
+      action buttons    100   (:943)
+      sizing panel     ~130   (68 presets + 48 custom + padding)
+      all-in            56    (:1010)
+      batch row         68    (:1023)
+      control zone     ~240   (48 + 48 + 48 + 68 + padding)
+                       ----
+                       ~818-858  into 720px
+
+  Because there is no scroll container, the column does not scroll — it COMPRESSES.
+  Flexbox shrinks every child proportionally, and the 100px "can't-miss thumb hit"
+  action buttons (the comment at :924 states the intent explicitly) are among the
+  largest children, so they lose the most absolute height. The buttons shrink hardest
+  in exactly the states where the most is on screen and the user is most rushed.
+
+  WHY IT HAS GONE UNNOTICED. Every state that triggers it is conditional — the all-in
+  row (:976), the batch row (:1018), the sizing panel (:951) and the 2-row orbit wrap
+  (:856, added by AUDIT-2026-04-21-TV F7) each render only under specific conditions.
+  Milder states fit fine. The `<div className="flex-1" />` spacer at :1051 also masks
+  the problem in light states by absorbing the slack.
+
+  VISUALLY CONFIRMED 2026-07-31 by founder device screenshots. Upgraded P1 -> P0.
+
+  `docs/design/evidence/2026-07-31-tvr-device-baseline/02-table-preflop-nexthand-clipped.jpg`
+  shows the table at PREFLOP with UTG to act: street tabs, seat indicator, orbit strip,
+  Call/Fold, sizing presets, custom+GO, ALL IN, Rest Fold, Tag for Review, then the
+  Deselect/Absent/Reset Street/Reset Hand row — and the gold NEXT HAND CTA IS CUT OFF
+  BY THE BOTTOM EDGE OF THE SCREEN.
+
+  The companion flop screenshot (03-table-flop.jpg) shows Next Hand fully visible with
+  margin, because the orbit strip does not render postflop. That is the predicted
+  mechanism, observed: the conditional rows push the column past its height and the
+  bottom of the stack is lost.
+
+  SEVERITY IS HIGHER THAN THE ORIGINAL FILING ASSUMED. This is not merely "buttons get
+  squashed" — the PRIMARY CTA OF THE SURFACE IS UNREACHABLE in the single most common
+  state of the app (preflop, seat selected, 9-handed). The user cannot advance the hand
+  from the table without first changing state to make the row reappear.
+
+  RELATED, AND LIKELY THE SAME ROOT: WS-316 (the uniform scale transform). Un-scaling
+  the command column would let it lay out in real CSS px in a real 720-CSS-px column
+  and scroll honestly — fixing both defects in one move. Sequence with WS-316 before
+  choosing an approach below.
+accept_criteria: |
+  1. Next Hand must be reachable in EVERY state of the surface, including 9-handed
+     preflop with a seat selected. This is the acceptance test — verified on device,
+     not in jsdom.
+
+  2. Primary action buttons must not render below their specified height. Candidate
+     approaches, to be chosen with evidence (see WS-316 first — un-scaling the column
+     may subsume this):
+       (a) `flex-shrink: 0` + `min-height` on the action-button row and the control
+           zone, with an `overflow-y: auto` scroll region around the middle band.
+           Preserves target size; introduces scroll on a primary path (H-ML05 —
+           vertical scroll is permitted, horizontal is not).
+       (b) Make the conditional rows mutually exclusive (all-in and batch never
+           co-render) — smaller change, but removes a currently-reachable control.
+       (c) Collapse the `flex-1` spacer under pressure before any control shrinks.
+     Prefer (c) + (a) in combination: spend the slack first, then scroll, never shrink.
+
+  3. Assert the floor with a test: in the worst-case state, every recording control
+     satisfies the H-ML06 44px minimum AS RENDERED (see WS-316 — asserting the declared
+     class value is exactly the test that let this through) and the action buttons hold
+     their 100px spec.
+
+  4. Re-verify the F10 motor-separation invariant (Reset Hand vs Next Hand gap) still
+     holds in whatever layout the fix produces.
+effort: "S"
+files_involved:
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/ControlZone.jsx"
+  - "src/components/views/TableView/__tests__/ControlZone.test.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "If the fix introduces vertical scroll on the command panel, that is a new interaction on a primary path — confirm it does not violate the mid-hand-chris no-interruption contract before shipping."
+source:
+  type: ai-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Evidence: docs/design/audits/2026-07-31-entry-table-view-redesign.md §E2 (predicted)
+  + docs/design/evidence/2026-07-31-tvr-device-baseline/ EVID-1 (observed, founder device).
+  Project: .claude/projects/table-view-redesign-2026-07-31.md
+  Upgraded P1 -> P0 on 2026-07-31 when the screenshots showed the primary CTA clipped.

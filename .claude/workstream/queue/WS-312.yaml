@@ -1,0 +1,107 @@
+id: "WS-312"
+title: "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Gate 3 of the Table View Redesign (TVR). Triggered by Gate 2's YELLOW verdict.
+  Scoped deliberately — Gate 3 exists to close named gaps, not to re-open the design.
+
+  The two RED gaps are the reason the framework could not evaluate the founder's
+  directions on its own:
+
+  R1 — NO PERSONA MODELS SPATIAL RE-ORIENTATION. `stepped-away-from-hand` and
+  `returning-after-break` model STATE recovery ("what happened while I was gone").
+  Neither models SPATIAL recovery ("the table is a different shape than when I last
+  looked"). That is not an edge case for the dynamic-layout direction — it is its
+  normal operation, because a live player's eyes are mostly on the felt and the
+  dealer, so a reflow will usually happen while they are not watching the screen.
+
+  R2 — NO JTBD COVERS "THE APP PROPOSES MY NEXT INPUT". The atlas covers entering
+  (HE-11), correcting (HE-12) and being advised (MH domain). Advice is INERT — it
+  never touches the input. Pre-arming is a third category and its success criteria
+  are not derivable from the other two.
+
+  R7 IS THE ONE THAT MATTERS MOST. Every speed claim in this redesign is currently
+  derived from reading code, never from observation. Without a measured baseline
+  there is no way to tell whether the redesign worked. The app needs Firebase
+  credentials to boot and none are in the repo, so this is blocked on the founder.
+accept_criteria: |
+  R1 — Author `docs/design/personas/situational/glance-return-chris.md`: returns eyes
+       to the screen mid-hand after tracking the physical table for 2-15 seconds,
+       needing to resume entry without re-reading the surface. Must state its surface
+       contract (what the layout may and may not do while unwatched) — that contract
+       is what Gate 4 designs against. Distinct from stepped-away-from-hand (minutes,
+       whole-hand loss) and mid-hand-chris (continuous attention).
+
+  R2 — Author `HE-19 — Accept or override a proposed action` in
+       docs/design/jtbd/domains/hand-entry.md. Failure mode must be stated explicitly:
+       "the proposal was committed without being read." Success criteria must make the
+       load-bearing question measurable: does a pre-armed wrong default get committed
+       more often than an un-armed one?
+
+  R3 — Author `HE-20 — Record a full orbit without falling behind the dealer`, with
+       the ORBIT as the unit of success. Rationale: HE-11 is per-seat-action; the
+       existing batch controls and orbit tap-ahead already operate on runs of seats
+       with no job of their own. Optimising a per-seat metric against a per-orbit goal
+       ships a faster button and a slower hand.
+
+  R4 — Extend the player-management domain with the roster-maintenance job: "keep the
+       app's picture of this table matching reality, cheaply, all session." PM-02 is a
+       discrete act and does not cover the continuous case.
+
+  R5 — Resolve `ringmaster-in-hand` PROTO status (open since 2026-04-21, question #4).
+       Validate against founder observation or retire it. Two of the three redesign
+       directions currently cite it as a beneficiary; designing surface area for an
+       unvalidated persona is how features get built for nobody. FOUNDER INPUT.
+
+  R6 — Record founder handedness + grip in one-handed landscape. Blocks the H-PLT02
+       reachability evaluation of roster-rail placement. One question.
+
+  R7 — MEASURE THE BASELINE at 1600x720, before any redesign work:
+         - tap count AND wall-clock seconds to record one postflop street
+           (including card entry — suspected a large share of postflop time, currently
+           unmeasured)
+         - tap count AND seconds to seat a known recent player
+         - tap count AND seconds to seat a brand-new player
+         - rendered heights of the action buttons in the WS-311 worst-case state
+       BLOCKED ON: founder supplying .env.local (src/config/firebase.js).
+       Record in docs/design/evidence/LEDGER.md.
+
+  GATE 3 EXIT: Gate 2 is re-run against the updated framework and must return GREEN
+  before Gate 4 opens.
+effort: "M"
+files_involved:
+  - "docs/design/personas/situational/glance-return-chris.md"
+  - "docs/design/jtbd/domains/hand-entry.md"
+  - "docs/design/jtbd/domains/player-management.md"
+  - "docs/design/personas/situational/ringmaster-in-hand.md"
+  - "docs/design/evidence/LEDGER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-313"
+sprint_id: null
+decision_flags:
+  - "R5 and R6 need founder input and R7 needs founder credentials. R1-R4 can proceed without any of them — do not let the blocked items stall the unblocked ones."
+  - "If R7 measurement shows postflop entry is dominated by CARD entry rather than action entry, the redesign's centre of gravity moves to CardSelectorPanel and Gate 4 scope changes materially."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Gate 2 output: docs/design/audits/2026-07-31-blindspot-table-view-redesign.md
+  Project: .claude/projects/table-view-redesign-2026-07-31.md
