@@ -17,7 +17,7 @@
  * weight, so an implicit one would silently decide the result.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
@@ -100,11 +100,40 @@ const main = async () => {
       files = files.slice(0, maxFiles);
     }
 
+    const reportOpts = {
+      foldShiftPp: num(args['fold-shift-pp'], 13),
+      weightCap: num(args['weight-cap'], 20),
+    };
+
+    // Partial-snapshot writer. A full pass runs for hours; before this, the artifact was
+    // written only on return, so an interrupted run yielded nothing at all regardless of
+    // how far it got (observed 2026-07-31: killed at 275/3000, zero output).
+    //
+    // The partial file is written to a SEPARATE path and stamped `complete: false`, never
+    // over `--out`. A half-finished estimate that lands at the filename a finished one
+    // would use is exactly the confusion the provenance registry exists to prevent —
+    // SRC-015 already records that a smoke figure must not be quotable as a validated one.
+    const partialPath = typeof args.out === 'string' ? `${args.out}.partial` : null;
+    let partialWrites = 0;
+    const writePartial = (run) => {
+      if (!partialPath) return;
+      try {
+        const report = buildHeroEvReport(run, reportOpts);
+        mkdirSync(dirname(partialPath), { recursive: true });
+        writeFileSync(partialPath, JSON.stringify({ report, run }, null, 2));
+        partialWrites++;
+      } catch (err) {
+        // Never let snapshot bookkeeping kill a multi-hour run.
+        console.log(`  (partial write skipped: ${err?.message || err})`);
+      }
+    };
+
     const started = Date.now();
     const run = await runHeroEv({
       files,
       reference,
       behaviorPolicy,
+      onPartial: writePartial,
       poolPct: int(args['pool-pct'], 50),
       maxPlayers: int(args['max-players'], Infinity),
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
@@ -118,16 +147,21 @@ const main = async () => {
     });
     run.runtimeMs = Date.now() - started;
 
-    const report = buildHeroEvReport(run, {
-      foldShiftPp: num(args['fold-shift-pp'], 13),
-      weightCap: num(args['weight-cap'], 20),
-    });
+    const report = buildHeroEvReport(run, reportOpts);
     console.log(renderHeroEvReport(report));
 
     if (typeof args.out === 'string') {
       mkdirSync(dirname(args.out), { recursive: true });
       writeFileSync(args.out, JSON.stringify({ report, run }, null, 2));
       console.log(`\nWrote ${args.out}`);
+      if (partialWrites > 0) {
+        // The completed artifact supersedes every snapshot; leaving the last partial on
+        // disk beside it invites someone to read the wrong one.
+        try {
+          rmSync(partialPath, { force: true });
+          console.log(`Removed ${partialPath} (${partialWrites} snapshot(s) written during the run)`);
+        } catch { /* the completed file is what matters; a stale partial is not fatal */ }
+      }
     }
   } finally {
     await loader.close();

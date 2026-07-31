@@ -55,6 +55,9 @@ export const runHeroEv = async ({
   trials = DEFAULT_TRIALS,
   rakeConfig = DEFAULT_RAKE_CONFIG,
   log = () => {},
+  // Called with a PARTIAL snapshot (`complete: false`) every 25 scored decisions. Default
+  // no-op, so nothing changes for callers that do not want it.
+  onPartial = () => {},
 }) => {
   // Both guards run at construction, before any work: a run that could leak must not
   // be able to start, let alone produce a number someone might quote.
@@ -181,28 +184,45 @@ export const runHeroEv = async ({
           },
         });
 
-        if (decisions.length % 25 === 0) log(`scored ${decisions.length} decisions`);
+        if (decisions.length % 25 === 0) {
+          log(`scored ${decisions.length} decisions`);
+          // A full pass is measured in HOURS and used to write nothing until it returned,
+          // so an interrupted run — however far it got — produced exactly as much as one
+          // killed on the first decision. Emit a snapshot at the same cadence as the
+          // progress line so a kill costs precision, not the whole run.
+          onPartial(snapshot(false));
+        }
         if (decisions.length >= maxDecisions) { stop = true; break; }
       }
     }
   }
 
-  return {
-    decisions,
-    integrity: {
-      ...guard.summary(),
-      behaviorPolicy: {
-        partition: policy.provenance.partition,
-        poolPct: policy.provenance.poolPct,
-        observations: policy.provenance.observations,
-        players: policy.provenance.players,
-        hierarchy: policy.provenance.hierarchy,
+  return snapshot(true);
+
+  // Declared after the loop it serves (hoisted): partial and final snapshots MUST be built
+  // by the same code. Two constructions would be two chances to disagree about what a run
+  // contains, and the partial one is the copy nobody checks — same argument as
+  // decisionGeometry.mjs makes for the pot convention.
+  function snapshot(complete) {
+    return {
+      complete,
+      decisionsScored: decisions.length,
+      decisions,
+      integrity: {
+        ...guard.summary(),
+        behaviorPolicy: {
+          partition: policy.provenance.partition,
+          poolPct: policy.provenance.poolPct,
+          observations: policy.provenance.observations,
+          players: policy.provenance.players,
+          hierarchy: policy.provenance.hierarchy,
+        },
       },
-    },
-    counters: { ...counters, handsRead, evalPlayers: byPlayer.size, adapterSkips: skipStats },
-    config: {
-      poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
-      rakeConfig, rakeIsModelled: true, maxDecisions,
-    },
-  };
+      counters: { ...counters, handsRead, evalPlayers: byPlayer.size, adapterSkips: skipStats },
+      config: {
+        poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
+        rakeConfig, rakeIsModelled: true, maxDecisions,
+      },
+    };
+  }
 };
