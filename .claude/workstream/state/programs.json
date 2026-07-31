@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-31T05:14:03.568Z",
-  "updated_by_event": "ev-1785474843568-dad5a5695780",
+  "updated_at": "2026-07-31T06:17:28.344Z",
+  "updated_by_event": "ev-1785478648344-b6fc181dcaa8",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -623,7 +623,7 @@
       "health_ceiling": 9,
       "health_updated_at": "2026-07-22T00:00:00Z",
       "findings_open": 11,
-      "work_items_open": 43,
+      "work_items_open": 42,
       "problem_classes": [
         {
           "name": "First-principles decision modeling",
@@ -1323,5 +1323,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785474843568-dad5a5695780"
+  "last_event_log_head": "ev-1785478648344-b6fc181dcaa8"
 }

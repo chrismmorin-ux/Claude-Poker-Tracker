@@ -102,6 +102,13 @@ programs:
     health_score: 0
     last_run_date: null
     founder_priority: 2
+  - id: data-provenance
+    name: "Data Provenance & Source Accountability"
+    status: NEW
+    tier: active
+    health_score: 0
+    last_run_date: null
+    founder_priority: 1
   - id: data-quality
     name: "Data Quality & Integrity"
     status: NEW

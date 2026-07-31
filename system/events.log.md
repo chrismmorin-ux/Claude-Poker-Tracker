@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785474843568-dad5a5695780"
-generated_content_hash: "e03aacc2ff900e6489433859b9fd837c089904fad5c9eaac4e64f2fb2ffe49cb"
-generated_at: "2026-07-31T05:14:03.598Z"
+generated_from_event: "ev-1785478648344-b6fc181dcaa8"
+generated_content_hash: "ffd9e35cebd08a7ab177524c8de86c062b25c2a259ed9f632fa7e46021156874"
+generated_at: "2026-07-31T06:17:28.379Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1203
+event_count: 1209
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 760
-- Events recorded: 1203
+- Commands recorded: 761
+- Events recorded: 1209
 - Source chunks: 20
 
 ## Command `auto:42416:1781030643103`
@@ -8060,3 +8060,18 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T05:14:03.568Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-ms8jvxno1c451d6ca749`
+
+- Start: 2026-07-31T06:17:27.590Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T06:17:27.590Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-303", +3 more |
+| 2 | 2026-07-31T06:17:27.797Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-163", +4 more |
+| 3 | 2026-07-31T06:17:27.939Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 4 | 2026-07-31T06:17:28.245Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-07-31T06:17:28.278Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-07-31T06:17:28.344Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

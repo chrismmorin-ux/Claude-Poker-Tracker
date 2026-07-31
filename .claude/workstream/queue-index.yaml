@@ -5,10 +5,10 @@
 total_items: 192
 by_status:
   decomposed: 1
-  done: 79
+  done: 80
   in_progress: 3
   deferred: 44
-  backlog: 46
+  backlog: 45
   dismissed: 1
   completed: 7
   review: 1
@@ -1748,7 +1748,7 @@ items:
 
   - id: "WS-303"
     title: "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing"
-    status: backlog
+    status: done
     priority_score: 29
     category: domain-correctness
     effort: L

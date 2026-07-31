@@ -35,7 +35,7 @@ earned. So the numbers were written down while nobody knew whether they were eas
 **Thresholds are not editable to open the gate.** Moving one is a `/decide` with a
 recorded reason.
 
-## Current state (2026-07-27)
+## Current state (2026-07-31)
 
 **Gate: 0 / 6.**
 
@@ -43,13 +43,36 @@ recorded reason.
 |---|---|---|---|
 | C1 | Villain prediction | ≥60.0% acc, ≥8.0% lift | 58.7%, 6.03% |
 | C2 | Calibration | worst bucket ≤0.050 | 0.058 |
-| C3 | Hero-EV | edge CI excludes 0 | **no instrument** |
-| C4 | Theory stability | 0 overturns / 3 runs | 1 overturn, 1 run |
+| C3 | Hero-EV | edge CI excludes 0 | **instrument SHIPPED** (WS-287); edge positive, CI spans 0 |
+| C4 | Theory stability | 0 overturns / 3 runs | 1 overturn, 2 runs |
 | C5 | Doctrine currency | protocol current | 32d YAML/event drift |
-| C6 | No regression | 3 clean runs | 1 run recorded |
+| C6 | No regression | 3 clean runs | 2 runs recorded |
 
 Nearest to falling: **C5** (WS-268 reconciles the drift) and **C1/C2** (WS-283's fold
-curve is the obvious next lever). Furthest: **C3**, which is a build, not a tune.
+curve is the obvious next lever).
+
+**C3 is no longer a build — it is a measurement problem, and a specific one.** WS-287
+shipped and the instrument is sound: the control arm (population-typical scored against
+itself) returns exactly 0.000 bb, which is the check that matters. Two runs so far, both at
+250 decisions:
+
+| run | players | edge | CI low |
+|---|---|---|---|
+| 2026-07-28 smoke | 9 clusters | +12.042 | −7.597 |
+| 2026-07-31 calibration | 6 | +9.673 | −14.395 |
+
+Both positive, neither significant, and **the estimate moved while n stayed the same** —
+so the binding constraint is not decisions. The weight diagnostics name it: **effective
+sample 35.7 from 250 decisions (14.3% of n)**, concentrated in a handful of players.
+Importance weighting plus player-level clustering means the CI is driven by how many
+*players* are behind the number, not how many decisions. Scaling `--max-decisions` alone
+would buy far less than it appears to.
+
+Cost to know: ~5 s/decision, so a run large enough to matter is measured in hours, not
+minutes. That is cheap relative to the alternative — a realized bb/hr answer to the same
+question needs roughly 66,000 hands (~2,400 live hours) at a 7 bb/100 win rate against a
+~90 bb/100 SD, which is why decision-level scoring is the instrument and realized results
+are only slow confirmation.
 
 ## The thing this project exists to prevent
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-31T03:33:15.430Z",
-  "updated_by_event": "ev-1785468795430-8f4365ad5dd4",
+  "updated_at": "2026-07-31T06:17:28.278Z",
+  "updated_by_event": "ev-1785478648278-2d576654f571",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2641,18 +2641,19 @@
     "SPR-163": {
       "id": "SPR-163",
       "title": "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-n",
-      "status": "approved",
+      "status": "done",
       "program_focus": "domain-correctness",
       "created_at": "2026-07-31T02:50:43.703Z",
       "approved_at": "2026-07-31T02:50:43.703Z",
+      "completed_at": "2026-07-31T06:17:27.560Z",
       "goal": "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing",
       "item_count": 1,
-      "items_done": 0,
+      "items_done": 1,
       "last_anchor_source_classes": [
         "untagged"
       ],
       "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785468795430-8f4365ad5dd4"
+  "last_event_log_head": "ev-1785478648278-2d576654f571"
 }

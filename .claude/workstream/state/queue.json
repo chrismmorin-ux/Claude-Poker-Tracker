@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-31T05:14:03.508Z",
-  "updated_by_event": "ev-1785474843508-ca3852f00826",
+  "updated_at": "2026-07-31T06:17:28.278Z",
+  "updated_by_event": "ev-1785478648278-2d576654f571",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4693,14 +4693,14 @@
     "WS-303": {
       "id": "WS-303",
       "title": "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 29,
       "category": "domain-correctness",
       "effort": "L",
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": null,
-      "claimed_at": "2026-07-31T02:50:43.703Z",
+      "claimed_at": null,
       "completed_at": null,
       "source": {
         "type": "measurement",
@@ -5053,5 +5053,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785474843508-ca3852f00826"
+  "last_event_log_head": "ev-1785478648278-2d576654f571"
 }

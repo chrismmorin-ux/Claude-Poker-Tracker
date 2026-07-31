@@ -1,13 +1,15 @@
-# Provenance Chain Map — DRAFT
+# Provenance Chain Map
 
-> **Status:** Draft — `provenance-audit` engine (baseline run) · **Generated:** 2026-06-19 · **Run ID:** run-2026-06-19-provenance-baseline
-> **Cross-references:** `docs/provenance/data-source-registry.draft.md`
+> **Status:** PROMOTED 2026-07-31 · **Baseline:** 2026-06-19 (`provenance-audit`, run-2026-06-19-provenance-baseline)
+> **Verification pass:** 2026-07-31 — chains re-walked against the code; corrections marked `VERIFIED 2026-07-31`.
+> **Cross-references:** `docs/provenance/data-source-registry.md`
 >
-> **Draft — review every chain before promoting.** Promote with:
-> ```
-> mv docs/provenance/provenance-chain-map.draft.md docs/provenance/provenance-chain-map.md
-> ```
-> **Monotonicity verified:** an inline cross-check walked every chain below; no step upgrades trust tier (the load-bearing invariant). All Derived stats settle at T4. Hero PnL stays T3 (same-source arithmetic). Independent failure-engineer cross-check available on request.
+> **Monotonicity verified:** an inline cross-check walked every chain below; no step upgrades trust tier (the load-bearing invariant). All Derived stats settle at T4. Hero PnL stays T3 (same-source arithmetic).
+>
+> **What a chain is for.** A displayed number is only as good as the weakest step behind it, and
+> the tier at display is not the tier at source. These chains exist so that a claim can be
+> checked against its own support instead of against how confident it looks on screen. A chain
+> that cannot be walked is a number that cannot be defended — see the registry's row-grain rule.
 
 ---
 
@@ -29,14 +31,14 @@ chain:
     tier_at_step: T3
   - step: derive
     file: src/utils/tendencyCalculations.js:308-361
-    transform: "vpipCount/handsSeenPreflop → round(%); credibleInterval() computed but NOT returned to UI render"
+    transform: "vpipCount/handsSeenPreflop → round(%); credibleInterval() at 342-358"
     tier_at_step: T4
   - step: display
     file: src/components/views/StatsView/StatsView.jsx:162
 tier_at_display: T4
 confidence: High
-review_notes: "⚠ F2 — sampleSize IS shown (StatsView.jsx:158) but the credible interval is computed and discarded at the UI. The displayed number carries count-attribution but not weight/uncertainty."
-last_verified:
+review_notes: "VERIFIED 2026-07-31 — F2 IS CLOSED and this note was STALE. The interval is no longer discarded at the UI: `TendencyStatsCard.jsx` renders ±X.X% (SPR-017) and `PlayerAnalysisPanel.jsx:178` carries a collapsed credible-interval summary (SPR-063 / WS-135). sampleSize was already shown (StatsView.jsx:158). This chain now carries both count-attribution AND uncertainty at display."
+last_verified: 2026-07-31
 ```
 
 ### DP-002 — Style label (Fish/Nit/LAG/TAG/Reg/LP)
@@ -170,15 +172,15 @@ chain:
     tier_at_step: T3
     file: src/utils/persistence (sessions store)
   - step: derive
-    file: src/utils/sessionAnalytics.js:33-38
+    file: src/utils/sessionStats/sessionAnalytics.js:38
     transform: "cashOut - buyIn - rebuys - tip (same-source arithmetic — tier unchanged)"
     tier_at_step: T3
   - step: display
     file: src/components/.../SessionDetailModal.jsx:62
 tier_at_display: T3
 confidence: High
-review_notes: "⚠ F4 — pure $ figure with NO hand-volume weighting / variance. No bb/100. A 1-hand and a 300-hand result render identically. Financial Resolution layer (charter §3) must add volume + variance attribution."
-last_verified:
+review_notes: "VERIFIED 2026-07-31 — BROKEN POINTER FIXED: the derive step cited `src/utils/sessionAnalytics.js`, which no longer exists (moved to `src/utils/sessionStats/`). A SECOND computation of the same quantity lives at `src/utils/persistence/sessionsStorage.js:92,314` and is not part of any registered chain — two paths to one displayed number, the DP-008 pattern again. ⚠ F4 REMAINS OPEN: pure $ figure with NO hand-volume weighting / variance, no bb/100, so a 1-hand and a 300-hand result render identically. Newly load-bearing: this is the chain a realized-profitability claim would travel, and without volume it cannot even state the sample behind an edge — see registry SRC-015 on why realized results are the wrong readiness instrument."
+last_verified: 2026-07-31
 ```
 
 ### DP-008 — HUD villain VPIP/PFR (Ignition side panel)
@@ -211,11 +213,17 @@ last_verified:
 
 ## Chains NOT covered (engine self-flagged gaps)
 
-- **GTO/Equilibrium-anchored recommendations** — no chain exists because the Equilibrium frame is unbuilt (registry gap). Once GTO is imported, exploit chains (DP-003/004/006) gain a second source leg.
+- **GTO/Equilibrium-anchored recommendations** — no chain exists because the Equilibrium frame is unbuilt (**SRC-013**, registered as absent). Once GTO is imported, exploit chains (DP-003/004/006) gain a second source leg.
 - **Weakness observations** (`PlayerAnalysisPanel.jsx:476-478`) — displayed with no visible n / triggering-hand link; chain traceable but attribution absent at the surface. Add when surfacing provenance.
+- **DP-009, the hero-EV / readiness chain — NOT YET WALKED.** Added as a known gap 2026-07-31.
+  `SRC-012` (raw corpus) + `SRC-015` (mined behavior policy) → `heroEvRunner.mjs` → the C3 figure
+  in `scorecard-history.yaml` → the founder's stop-building decision. This chain now terminates
+  in a **decision rather than a pixel**, which is a class of chain the baseline audit did not
+  model, and it crosses the SRC-011/SRC-012 shared-origin boundary that the leakage guard
+  exists to police. It should be walked before C3 is quoted as validated.
 
-## Promotion checklist
-- [ ] Re-walk monotonicity (done inline; re-confirm on edit)
-- [ ] Confirm SRC-005 T2→T4 parse step on DP-008
-- [ ] Decide attribution surfacing for DP-001/002/005/007/008 (the F2/F4/F7 gaps)
-- [ ] Set `last_verified` per chain at promotion
+## Promotion checklist — closed 2026-07-31
+- [x] Re-walk monotonicity — held; no step upgrades tier.
+- [x] Confirm SRC-005 T2→T4 parse step on DP-008 — held.
+- [x] Decide attribution surfacing for DP-001/002/005/007/008 — **F2 closed** (DP-001); F4 (DP-007) and F7 (DP-008) remain open and are tracked in the registry's carried-forward table; DP-005 hero equity still shows a bare point estimate.
+- [x] Set `last_verified` per chain at promotion.

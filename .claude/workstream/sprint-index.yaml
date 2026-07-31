@@ -1470,10 +1470,10 @@ sprints:
 
   - id: "SPR-163"
     title: "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-n"
-    status: approved
+    status: done
     item_count: 1
-    items_done: 0
+    items_done: 1
     program_focus: "domain-correctness"
     created_at: "2026-07-31T02:50:43.703Z"
-    completed_at: null
+    completed_at: "2026-07-31T06:17:27.560Z"
 

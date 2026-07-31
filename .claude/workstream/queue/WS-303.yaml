@@ -2,9 +2,9 @@ id: "WS-303"
 title: "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260731-0244-8e4c3ee6
-claimed_at: "2026-07-31T02:50:43.703Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
 completed_at: null
 completion_commit: null
@@ -138,3 +138,4 @@ status_note: |
   criteria demanded positive discrimination at every street; it is met at flop and turn and
   fails at the river, and these two effects are why. Splitting them out rather than
   quietly widening WS-291 keeps the measurement attached to the claim it refutes.
+closed_by_event: "ev-1785478647590-d5b81847daa7"

@@ -428,7 +428,7 @@ health_breakdown:
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
 findings_open: 11
-work_items_open: 43
+work_items_open: 42
 
 cap_breach:
   active: false

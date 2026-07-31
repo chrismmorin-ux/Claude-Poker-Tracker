@@ -1,7 +1,9 @@
 id: "SPR-163"
 title: "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-n"
-status: approved
+status: done
 approved_at: "2026-07-31T02:50:43.703Z"
+completed_at: "2026-07-31T06:17:27.560Z"
+completed_by_commit: "f650531"
 program_focus: "domain-correctness"
 
 goal: |
@@ -23,6 +25,7 @@ items:
     title: "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing"
     mode: plan-first
     effort: L
-    status: pending
+    status: done
+    completed_at: "2026-07-31T06:17:27.560Z"
 
 created_at: "2026-07-31T02:50:43.703Z"
