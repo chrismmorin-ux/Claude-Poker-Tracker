@@ -5,10 +5,10 @@
 total_items: 192
 by_status:
   decomposed: 1
-  done: 77
+  done: 78
   in_progress: 3
   deferred: 43
-  backlog: 49
+  backlog: 48
   dismissed: 1
   completed: 7
   review: 1
@@ -1820,7 +1820,7 @@ items:
 
   - id: "WS-312"
     title: "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input"
-    status: backlog
+    status: done
     priority_score: 22
     category: table-view
     effort: M
@@ -1833,7 +1833,6 @@ items:
     priority_score: 20
     category: table-view
     effort: L
-    blocked_by: ["WS-312"]
     program: design
     capability: core
 

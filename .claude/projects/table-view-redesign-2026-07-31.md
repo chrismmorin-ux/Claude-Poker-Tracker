@@ -2,7 +2,7 @@
 
 **Opened:** 2026-07-31 (founder request)
 **Program:** design (5-Gate UX Framework)
-**Status:** Gate 2 COMPLETE (YELLOW) → **Gate 3 IN PROGRESS** (R1–R4 done; R5/R6 need founder input, R7 needs table observation)
+**Status:** Gates 1–3 COMPLETE. **Gate 2 re-run GREEN 2026-07-31 → Gate 4 (`WS-313`) is OPEN.**
 **Branch:** `claude/poker-table-redesign-z0h4rc`
 
 ---
@@ -64,8 +64,9 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 |---|---|---|
 | 1 — Entry | ✅ **RED** | [`audits/2026-07-31-entry-table-view-redesign.md`](../../docs/design/audits/2026-07-31-entry-table-view-redesign.md) |
 | 2 — Blind-Spot | ✅ **YELLOW** | [`audits/2026-07-31-blindspot-table-view-redesign.md`](../../docs/design/audits/2026-07-31-blindspot-table-view-redesign.md) |
-| 3 — Research | 🟡 **IN PROGRESS** — R1–R4 done, R5–R7 open | WS-312 |
-| 4 — Design | ⬜ blocked on Gate 3 | WS-313 |
+| 3 — Research | ✅ **COMPLETE** — R1–R6 closed; R7 timing carried as a risk | WS-312 |
+| 2 — Re-run | ✅ **GREEN** | all seven persona/JTBD findings closed |
+| 4 — Design | 🟢 **OPEN — NEXT** | WS-313 |
 | 5 — Implementation | ⬜ blocked on Gate 4 | WS-314+ |
 
 ---
@@ -77,8 +78,8 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-315** | **P0** — Orientation gate hard-blocks app entry, no recovery on rotate | — (standalone bug) | backlog |
 | **WS-311** | **P0** — CommandStrip clips the Next Hand CTA at preflop (confirmed on device) | — (standalone bug) | backlog |
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
-| **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **in progress** — R1–R4 done |
-| **WS-313** | TVR Gate 4 — surface artifact for Table View v2 | 4 | blocked by WS-312 |
+| **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **done** |
+| **WS-313** | TVR Gate 4 — surface artifact for Table View v2 | 4 | **unblocked — NEXT** |
 | **WS-314** | TVR Gate 5 — implementation (decomposes at Gate 4) | 5 | blocked by WS-313 |
 
 **The three P0s are deliberately not gated behind the redesign.** They degrade — and in two cases outright block — the surface *today*. They should ship on their own merits whether or not the redesign proceeds. Recommended order: **WS-315** (blocks entry) → **WS-311** (blocks hand advance) → **WS-316** (measure first; the fix strategy is a Gate 4 decision).
@@ -98,7 +99,21 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 
 **ID collision caught and corrected.** Gate 2 proposed `HE-19` and `HE-20`; both were already allocated to the all-in / side-pot family (`audits/2026-06-19-blindspot-allin-side-pots.md`) and `HE-19` is referenced in `CommandStrip.jsx`. Reassigned to HE-22/HE-23. Root cause: those IDs live only in an audit and were never written into the domain file, so the ID space is not self-describing — flagged in `ATLAS.md` as outstanding hygiene work.
 
-**Gate 3 is not complete.** Its exit condition is re-running Gate 2 to GREEN, which needs R5 (is `ringmaster-in-hand` real?) and R6 (handedness) — both founder input. Gate 4 (`WS-313`) stays blocked.
+| R5 | `ringmaster-in-hand` **REFUTED** | Founder never deals — a house dealer always handles cards. All D-1/D-2 justifications citing it are struck. |
+| R6 | Handedness closed | **Two hands / varies** → H-PLT02 one-handed reachability is not binding. Rail placement is freed, but target **size** now carries all the accuracy weight — which *raises* WS-316's importance. |
+
+### The founder's reframing (2026-07-31) — load-bearing on every tie-break
+
+> "There is always a dealer who handles the cards. **I am the single source of persistent, non-human memory, data beyond a hand.**"
+
+He is not the ringmaster — he is the memory. That is a stronger design principle than the persona it replaced, and it independently confirms two constraints this project had already reached on other grounds:
+
+- **Rare events outrank common ones for capture priority.** Memory's value is disproportionately in the unusual. (Confirms Gate 2 amendment C2-A.)
+- **Data integrity beats entry speed at every tie.** A fast path that records the wrong thing doesn't lose time — it corrupts the one thing he is at the table to provide. (Confirms the never-auto-commit constraint.)
+
+**Gate 3 is complete and the Gate 2 re-run returned GREEN. Gate 4 (`WS-313`) is open.**
+
+**One carried risk, stated not closed:** R7's *timing* half is still unmeasured — nobody has clocked where the seconds actually go in a postflop street, and card entry is the prime suspect. Gate 4 proceeds treating "the speed problem is postflop entry, player entry and legibility" as a **stated assumption**; the measurement must land before Gate 5 commits. If card entry dominates, the centre of gravity moves to `CardSelectorPanel`.
 
 ---
 
@@ -125,4 +140,5 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 ## Change log
 
 - 2026-07-31 — Project opened. Gates 1 + 2 complete in kickoff session. Four work items filed. Zero `src/` changes.
+- 2026-07-31 — **Gates 3 + Gate-2-re-run complete.** R1–R6 closed; `glance-return-chris` + HE-22 + HE-23 + PM-16 authored; `ringmaster-in-hand` REFUTED; handedness closed (two-handed). Re-run GREEN → Gate 4 open. Local dev/verification harness added (`npm run env:local` / `npm run devshot`), which reproduced WS-311 at the design resolution and ruled the CSS media query out of WS-315. Still zero `src/` changes.
 - 2026-07-31 — **Device evidence added mid-session** (founder screenshots). Compression prediction confirmed; two new P0 findings (scale-nullifies-touch-floor, orientation gate blocks entry). `WS-315` + `WS-316` filed, `WS-311` upgraded to P0. Still zero `src/` changes.

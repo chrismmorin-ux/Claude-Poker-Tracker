@@ -2,11 +2,11 @@ id: "WS-312"
 title: "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input"
 legacy_id: ""
 type: design
-status: in_progress
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-07-31T00:00:00Z"
 completion_commit: null
 priority_score: 22.0
 priority_label: "P1"
@@ -127,14 +127,30 @@ status_note: |
   collision. Writing them up is outstanding framework-hygiene work, flagged in
   ATLAS.md and in hand-entry.md's change log.
 
-  STILL OUTSTANDING:
-    R5 ringmaster-in-hand PROTO resolution   — FOUNDER INPUT
-    R6 handedness / grip                     — FOUNDER INPUT (one question)
-    R7 baseline measurement                  — PARTIALLY UNBLOCKED. The app now runs
+  R5 DONE 2026-07-31 — REFUTED. Founder: "There is always a dealer who handles the
+     cards. I am the single source of persistent, non-human memory, data beyond a
+     hand." The persona does not describe his play; all D-1/D-2 justifications citing
+     it are struck. Persona retained but barred from justifying surface area until
+     someone is observed in it. The reframing ("I am the memory") is the more valuable
+     output — it independently confirms C2-A (rare events outrank common ones) and the
+     never-auto-commit constraint.
+  R6 DONE 2026-07-31 — two hands / varies. H-PLT02 one-handed reachability is NOT
+     binding on this redesign. Note the consequence: with reach neutralised, accuracy
+     rests entirely on target SIZE and spacing, which raises WS-316's importance
+     rather than lowering it.
+
+  GATE 2 RE-RUN: GREEN (2026-07-31). All seven persona/JTBD findings closed.
+  Gate 4 (WS-313) is UNBLOCKED.
+
+  STILL OUTSTANDING (does not block Gate 4):
+    R7 timing baseline                       — PARTIALLY DONE. The app now runs
        locally (`npm run env:local` + `npm run devshot`), so rendered-size and
        clipping measurements are done and recorded in the evidence folder. The
        TIMING half (seconds per orbit, seconds to seat a player) still needs a human
        at the table, not a harness.
 
-  GATE 3 IS NOT COMPLETE and Gate 4 (WS-313) stays blocked: the exit condition is
-  re-running Gate 2 to GREEN, which cannot happen while R5/R6 are open.
+  CARRIED RISK INTO GATE 4: R7's timing half is unmeasured. Gate 4 must treat "the
+  speed problem is postflop entry, player entry and legibility" as a STATED ASSUMPTION,
+  and the measurement must land before Gate 5 commits to a direction. If card entry
+  dominates postflop time, the centre of gravity moves to CardSelectorPanel and the
+  Gate 4 scope changes materially.

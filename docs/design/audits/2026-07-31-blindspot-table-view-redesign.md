@@ -29,17 +29,25 @@ This is not an edge case for D-2 — it is D-2's normal operation. A live player
 
 **Proposal:** new situational persona `glance-return-chris` — *returns eyes to the screen mid-hand, having tracked the physical table for 2–15 seconds, needing to resume entry without re-reading the whole surface.* Distinct from `stepped-away-from-hand` (minutes, whole-hand loss) and from `mid-hand-chris` (continuous attention). This persona is the one D-2 must be designed for, and its absence is why the framework would otherwise green-light a moving layout.
 
-### A2 — `ringmaster-in-hand` still PROTO *(carried forward, YELLOW)*
+### A2 — `ringmaster-in-hand` still PROTO *(carried forward, YELLOW)* — **RESOLVED 2026-07-31: REFUTED**
 
 Flagged 2026-04-21 open question #4. Fourteen weeks later, still no founder observation backing it. D-1 and D-2 both cite it as a beneficiary. **Designing surface area for an unvalidated persona is how features get built for nobody.** Either validate it in Gate 3 or stop citing it as justification.
+
+> **Gate 3 resolution (R5).** Founder: *"There is always a dealer who handles the cards. I am the single source of persistent, non-human memory, data beyond a hand."* The persona does not describe his play — a house dealer always handles cards in his venues. **All D-1 and D-2 justifications citing it are struck.** The persona is retained (the core home-host may be a real market persona) but flagged PROTO-with-no-observation and barred from justifying surface area.
+>
+> **The founder's reframing is the more valuable output.** He is not the ringmaster — *he is the memory.* That independently confirms two things this roundtable had already argued on other grounds: rare events outrank common ones for capture priority (C2-A), and data integrity beats entry speed at every tie. See [`ringmaster-in-hand.md`](../personas/situational/ringmaster-in-hand.md) §Owner ruling.
 
 ### A3 — Table composition churn is under-modeled for D-3 *(YELLOW)*
 
 `seat-swap-chris` models *hero* changing seats. The roster rail's actual load is *villains* arriving, busting, and being seated by the floor — continuous in live cash, and nobody's modeled job. This is the volume driver for D-3 and the cast covers it only obliquely.
 
-### A4 — Handedness is unmodeled *(YELLOW)*
+### A4 — Handedness is unmodeled *(YELLOW)* — **RESOLVED 2026-07-31**
 
 D-3 places a persistent interactive rail in the felt's bottom band. Which thumb reaches it in one-handed landscape depends on grip, and no persona declares handedness. H-PLT02 (one-handed reachability) cannot be evaluated against an unstated assumption. Cheap to close — ask the founder.
+
+> **Gate 3 resolution (R6).** Founder uses **two hands / varies** — there is no single reach arc. **H-PLT02 is therefore NOT a binding constraint on this redesign**, and rail placement is freed from the handedness argument entirely.
+>
+> **But the weight it was carrying moves rather than disappears.** With reach neutralised, accuracy rests entirely on **target size and spacing** — which is precisely what `WS-316` shows is currently broken app-wide (nothing renders at its declared size). Closing A4 therefore *raises* WS-316's importance rather than lowering it: size is now the only lever left.
 
 ---
 
@@ -166,7 +174,29 @@ Unwalked this session. Flag for Gate 4.
 
 ---
 
-## Overall verdict
+## Verdict update — 2026-07-31 (post-Gate-3)
+
+Gate 3 (`WS-312`) closed R1–R6. Re-running this roundtable against the updated framework:
+
+| Finding | Was | Now |
+|---|---|---|
+| A1 no spatial-re-orientation persona | **RED** | closed — [`glance-return-chris`](../personas/situational/glance-return-chris.md) authored, surface contract in place |
+| A2 ringmaster PROTO | YELLOW | closed — **REFUTED**, justifications struck |
+| A3 table-composition churn | YELLOW | closed — `PM-16` authored |
+| A4 handedness | YELLOW | closed — two-handed, H-PLT02 not binding |
+| B1 no job for app-proposed input | **RED** | closed — `HE-22` authored |
+| B2 no orbit-level job | YELLOW | closed — `HE-23` authored |
+| B3 no roster-maintenance job | YELLOW | closed — `PM-16` authored |
+
+**Re-run verdict: GREEN.** Gate 4 (`WS-313`) may open.
+
+**One carried risk, stated rather than closed.** R7's *timing* half is still unmeasured — nobody has clocked where the seconds actually go in a postflop street, and card entry is the prime suspect. Gate 4 may proceed, but it must treat "the speed problem is postflop entry, player entry and legibility" as a **stated assumption**, and the measurement must land before Gate 5 commits to a direction. If card entry turns out to dominate, the redesign's centre of gravity moves to `CardSelectorPanel` and the Gate 4 scope changes materially.
+
+Two amendments from the original run remain binding and are unaffected: **C1-A** (street-boundary transitions) and **C2-A** (prominence not target area) — the latter now independently reinforced by the founder's "I am the memory" framing.
+
+---
+
+## Overall verdict (original run, 2026-07-31)
 
 **YELLOW.** No direction is rejected. All three are sound in intent and **all three are unsafe as literally stated.** Two conflicts are severe enough that shipping the direction verbatim would make the surface worse for its primary persona:
 
@@ -231,4 +261,5 @@ Binding on the surface artifact, carried from this roundtable:
 ## Change log
 
 - 2026-07-31 — Drafted. YELLOW verdict; 2 critical amendments (C1, C2); Gate 3 required, scoped to R1–R7.
+- 2026-07-31 — **Gate 3 re-run: GREEN.** R1–R6 closed all seven persona/JTBD findings. A2 REFUTED (founder never deals — "I am the single source of persistent, non-human memory"); A4 closed (two-handed, H-PLT02 not binding, which moves the weight onto target size and raises WS-316's importance). Gate 4 may open, carrying R7-timing as a stated assumption to be validated before Gate 5.
 - 2026-07-31 — **ID correction during Gate 3 execution.** This audit proposed `HE-19` and `HE-20`; both are already allocated to the all-in / side-pot family by [`2026-06-19-blindspot-allin-side-pots.md`](./2026-06-19-blindspot-allin-side-pots.md) (HE-19 all-in recording, HE-20a/20b showdown attribution, HE-21 stack entry) and are referenced in `CommandStrip.jsx`. Reassigned to **HE-22** and **HE-23**. The clash exists because HE-19/20/21 were allocated in an audit and never written into `jtbd/domains/hand-entry.md` — flagged as a framework hygiene gap, see WS-312 note.

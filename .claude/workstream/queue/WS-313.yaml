@@ -81,8 +81,7 @@ files_involved:
   - "docs/design/surfaces/seat-context-menu.md"
   - "docs/design/surfaces/player-picker.md"
   - "docs/design/journeys/"
-blocked_by:
-  - "WS-312"
+blocked_by: []
 blocked_by_legacy: []
 enables:
   - "WS-314"
@@ -98,6 +97,21 @@ source:
   run_id: "session-2026-07-31-tvr-kickoff"
 created_at: "2026-07-31T00:00:00Z"
 status_note: |
-  Blocked by WS-312 (Gate 3). Gate 2 must re-run GREEN against the updated framework
-  before this opens.
+  UNBLOCKED 2026-07-31 — WS-312 (Gate 3) complete, Gate 2 re-run returned GREEN.
+
+  BINDING INPUTS FROM GATE 3:
+  - Design against `glance-return-chris`'s surface contract (positional stability
+    within a street; change only at witnessed moments; settled on return).
+  - Serve HE-22 (accept/override a proposal), HE-23 (orbit as unit of success),
+    PM-16 (roster maintenance as a continuous job).
+  - `ringmaster-in-hand` is REFUTED for the founder — do NOT cite it.
+  - H-PLT02 one-handed reachability is NOT binding (founder uses two hands). Rail
+    placement is free of the handedness argument, but target SIZE now carries all the
+    accuracy weight — restate every size floor in RENDERED terms (WS-316).
+  - Founder's framing, load-bearing on every tie-break: "I am the single source of
+    persistent, non-human memory." Data integrity beats entry speed; rare events
+    outrank common ones for capture priority.
+
+  CARRIED RISK: R7 timing unmeasured. Treat "the speed problem is postflop entry,
+  player entry and legibility" as a stated assumption; validate before Gate 5.
   Project: .claude/projects/table-view-redesign-2026-07-31.md
