@@ -21,6 +21,105 @@ const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
   'population. Live 1/2 generalisation is an assumption, not a result.';
 
+/**
+ * Schema version of the emitted report. Bump on any breaking change to the shape.
+ * Consumers should refuse a version they do not understand rather than duck-type it.
+ */
+export const HERO_EV_SCHEMA_VERSION = 1;
+
+/**
+ * Minimum contributing PLAYERS before a confidence interval may be believed.
+ *
+ * The CI is a cluster bootstrap over players (`ipsEstimator.clusterBootstrapCI`), which is
+ * the right design — decisions inside one player are not independent. But a bootstrap can
+ * only resample the clusters it has. With k=3, 2000 resamples explore about ten distinct
+ * multisets, so the bootstrap distribution is severely under-dispersed and the interval
+ * comes out narrow because the sample is small, not because the estimate is precise.
+ *
+ * Observed live 2026-07-31: an interrupted run with THREE contributing players reported
+ * edge +16.72 bb, CI [7.52, 23.42], and `c3Passes: true` — on a gate that decides whether
+ * the founder stops building and starts studying. Nothing was wrong with the arithmetic;
+ * the sample simply could not support the claim, and nothing in the artifact said so.
+ *
+ * 30 follows the ordinary convention for cluster-robust inference (below roughly 30-50
+ * clusters, asymptotic and naive-bootstrap intervals under-cover and corrections are
+ * expected). It is a JUDGEMENT CALL, deliberately named, exported, and stamped into every
+ * report as `minClustersForCI` so a consumer can see which bar was applied. Moving it is a
+ * `/decide`, not an edit.
+ */
+export const MIN_CLUSTERS_FOR_CI = 30;
+
+/** The control is scored against itself; anything but zero means manufactured signal. */
+const CONTROL_TOLERANCE_BB = 1e-6;
+
+/**
+ * Decide whether this report may be QUOTED, and say why not when it may not.
+ *
+ * Computed once here so that every consumer — the readiness gate, a dashboard, a future
+ * FSA surface — inherits one verdict instead of each re-deriving the rules and one of them
+ * getting it wrong. This is the same principle the promoted data-source registry applies to
+ * every other number in the repo: an artifact states its own scope and limits.
+ */
+const assessAdmissibility = (run, arms) => {
+  const clusters = arms.engineRaked.players ?? 0;
+  const blockers = [];
+  const warnings = [];
+
+  if (run.complete === false) {
+    blockers.push({
+      code: 'INCOMPLETE_RUN',
+      detail: `Run did not finish (${run.decisionsScored ?? arms.engineRaked.n} decisions scored). `
+        + 'EVAL players are processed sequentially, so a partial is a biased subsample of the '
+        + 'first players, not a random one.',
+    });
+  }
+
+  if (!arms.engineRaked.n) {
+    blockers.push({ code: 'NO_DECISIONS', detail: 'No decisions were scored; every figure is vacuous.' });
+  }
+
+  if (clusters < 2) {
+    blockers.push({
+      code: 'NO_CI_POSSIBLE',
+      detail: `Only ${clusters} contributing player(s). A cluster bootstrap needs at least 2 and returns null below that.`,
+    });
+  } else if (clusters < MIN_CLUSTERS_FOR_CI) {
+    blockers.push({
+      code: 'TOO_FEW_CLUSTERS',
+      detail: `${clusters} contributing players is below the ${MIN_CLUSTERS_FOR_CI}-cluster bar. `
+        + 'The bootstrap cannot represent between-player variance at this k, so a narrow CI '
+        + 'reflects sample size rather than precision. Between-player variance is the dominant '
+        + 'term in this estimate — it is what moved the edge across earlier runs at fixed n.',
+    });
+  }
+
+  const ctrl = arms.populationControl;
+  if (ctrl.n && (ctrl.edgeBB === null || Math.abs(ctrl.edgeBB) >= CONTROL_TOLERANCE_BB)) {
+    blockers.push({
+      code: 'CONTROL_DRIFT',
+      detail: `Control scored ${ctrl.edgeBB} bb against itself; it must be 0. The estimator is `
+        + 'manufacturing signal and no figure in this report means anything.',
+    });
+  }
+
+  if (arms.engineRaked.n && arms.engineRaked.essShare !== null && arms.engineRaked.essShare < 0.2) {
+    warnings.push({
+      code: 'LOW_ESS',
+      detail: `Effective sample is ${arms.engineRaked.ess} (${(arms.engineRaked.essShare * 100).toFixed(1)}% of n). `
+        + 'Importance weights are concentrated; the interval is wider than n suggests.',
+    });
+  }
+
+  return {
+    admissible: blockers.length === 0,
+    blockers,
+    warnings,
+    clusters,
+    minClustersForCI: MIN_CLUSTERS_FOR_CI,
+    complete: run.complete !== false,
+  };
+};
+
 /** Deterministic always-fold/check policy — one of the two required baselines. */
 const passivePolicy = (piOurs) => {
   const out = {};
@@ -69,6 +168,8 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
   };
 
   const headline = arms.engineRaked;
+  const admissibility = assessAdmissibility(run, arms);
+
   const gate = {
     // C3 bar: edge positive with a 95% CI excluding zero, in BOTH the corpus arm and
     // the live-shifted arm (founder decision 2026-07-28).
@@ -77,11 +178,36 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
     corpusArmPasses: headline.edgeCiLowBB !== null && headline.edgeCiLowBB > 0,
     liveShiftedArmPasses: arms.liveShifted.edgeCiLowBB !== null && arms.liveShifted.edgeCiLowBB > 0,
   };
-  gate.c3Passes = gate.corpusArmPasses && gate.liveShiftedArmPasses;
+
+  // ADMISSIBILITY GATES THE VERDICT, not just the commentary. Before this, `c3Passes` was
+  // computed purely from the two CI signs, so an interrupted 3-player run reported PASS on
+  // the criterion that decides whether the founder stops building. A consumer reading
+  // `c3Passes` must never have to ALSO know to check the player count — that is precisely
+  // the knowledge that fails to travel.
+  gate.c3Passes = admissibility.admissible && gate.corpusArmPasses && gate.liveShiftedArmPasses;
+  gate.admissible = admissibility.admissible;
+  gate.blockedBy = admissibility.blockers.map((b) => b.code);
+  // Preserved so the underlying arithmetic is still visible when admissibility blocks it —
+  // suppressing the number entirely would hide a trend that is worth watching across runs.
+  gate.armsWouldPass = gate.corpusArmPasses && gate.liveShiftedArmPasses;
 
   return {
+    schemaVersion: HERO_EV_SCHEMA_VERSION,
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
+    admissibility,
+    // Provenance, stamped so a downstream consumer can trace this artifact without
+    // re-deriving it. Source ids are the promoted registry's (docs/provenance/).
+    provenance: {
+      sources: ['SRC-012', 'SRC-015'],
+      corpus: 'HandHQ online cash, July 2009, numeric stakes',
+      reference: run.integrity?.reference ?? null,
+      partition: run.integrity?.behaviorPolicy?.partition ?? null,
+      behaviorPolicyObservations: run.integrity?.behaviorPolicy?.observations ?? null,
+      behaviorPolicyPlayers: run.integrity?.behaviorPolicy?.players ?? null,
+      rakeModelled: run.config?.rakeIsModelled ?? null,
+      complete: run.complete !== false,
+    },
     generatedFrom: {
       config: run.config,
       counters: run.counters,
@@ -162,7 +288,23 @@ export const renderHeroEvReport = (r) => {
   L.push('  ' + '─'.repeat(90));
   L.push(`    corpus arm        edge ${bb(r.gate.heroEvEdge)} bb, CI low ${bb(r.gate.heroEvCiLow)}  →  ${r.gate.corpusArmPasses ? 'PASS' : 'FAIL'}`);
   L.push(`    live-shifted arm  CI low ${bb(r.arms.liveShifted.edgeCiLowBB)}  →  ${r.gate.liveShiftedArmPasses ? 'PASS' : 'FAIL'}`);
-  L.push(`    C3: ${r.gate.c3Passes ? 'PASS' : 'FAIL'}`);
+
+  const adm = r.admissibility;
+  if (adm && !adm.admissible) {
+    // The arithmetic verdict is shown, then explicitly overruled. Printing a bare FAIL
+    // would hide a positive trend; printing a bare PASS would licence quoting a number the
+    // sample cannot support. Say both, in that order.
+    L.push('');
+    L.push(`    *** NOT ADMISSIBLE — C3 CANNOT PASS FROM THIS RUN ***`);
+    L.push(`    (the two arms above would${adm && r.gate.armsWouldPass ? '' : ' not'} pass on CI sign alone; that is not sufficient)`);
+    for (const b of adm.blockers) L.push(`      - ${b.code}: ${b.detail}`);
+    L.push(`    contributing players ${adm.clusters} (bar: ${adm.minClustersForCI})`);
+    L.push(`    C3: FAIL (inadmissible)`);
+  } else {
+    L.push(`    contributing players ${adm ? adm.clusters : '—'} (bar: ${adm ? adm.minClustersForCI : '—'})`);
+    L.push(`    C3: ${r.gate.c3Passes ? 'PASS' : 'FAIL'}`);
+  }
+  for (const w of (adm?.warnings ?? [])) L.push(`      ! ${w.code}: ${w.detail}`);
   L.push('');
 
   const c = r.generatedFrom.counters;

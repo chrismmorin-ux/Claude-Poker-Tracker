@@ -42,6 +42,12 @@ const BAR = {
   calibration: 0.050,
   stableRuns: 3,
   noRegressionRuns: 3,
+  // Contributing PLAYERS required behind the hero-EV interval. Mirrors
+  // MIN_CLUSTERS_FOR_CI in scripts/backtest/heroEvReport.mjs — duplicated rather than
+  // imported because this checker deliberately depends on nothing but the scorecard files
+  // (it must run when the backtest cannot). Kept honest by heroEvAdmissibility.test.js,
+  // which asserts the two constants agree.
+  heroEvClusters: 30,
 };
 
 // ---------------------------------------------------------------------------
@@ -79,6 +85,10 @@ const parseHistory = (text) => {
       worstCalibrationError: num(readScalar(body, 'worstCalibrationError')),
       heroEvEdge: num(readScalar(body, 'heroEvEdge')),
       heroEvCiLow: num(readScalar(body, 'heroEvCiLow')),
+      // Contributing PLAYERS behind the hero-EV interval. Absent on rows recorded before
+      // 2026-07-31, which is why `null` is treated as "unknown, therefore not certifiable"
+      // below rather than as "fine" — see C3.
+      heroEvClusters: num(readScalar(body, 'heroEvClusters')),
     };
   });
 };
@@ -120,12 +130,37 @@ const evaluate = () => {
 
   // ---- C3 hero EV ---------------------------------------------------------
   // Absent instrument => null => FAIL. Never treat "not measured" as "fine".
-  const c3 = latest.heroEvEdge !== null && latest.heroEvCiLow !== null && latest.heroEvCiLow > 0;
-  criteria.push(check('C3', 'Hero-EV validated',
-    c3,
-    latest.heroEvEdge === null
-      ? 'NO INSTRUMENT — hero decisions have never been scored (WS-287)'
-      : `edge ${fmt3(latest.heroEvEdge)}, CI low ${fmt3(latest.heroEvCiLow)} (must exceed 0)`));
+  //
+  // CLUSTER COUNT IS PART OF THE BAR (2026-07-31). The hero-EV CI is a cluster bootstrap
+  // over PLAYERS, and below ~30 clusters it under-covers: the interval comes out narrow
+  // because the sample is small, not because the estimate is precise. An interrupted run
+  // with THREE players produced edge +16.72 with CI [7.52, 23.42] — which the old test
+  // (`ciLow > 0`) would have certified. This checker reads the scorecard rather than the
+  // report object, so the guard added in heroEvReport does not reach it; the bar has to be
+  // restated here, against the recorded cluster count.
+  //
+  // A row with no `heroEvClusters` is UNKNOWN, and unknown is not certifiable. Rows written
+  // before this field existed therefore cannot open the gate — which is correct: nobody
+  // knows how many players backed them.
+  const clusterBar = BAR.heroEvClusters;
+  const c3HasNumbers = latest.heroEvEdge !== null && latest.heroEvCiLow !== null;
+  const c3Positive = c3HasNumbers && latest.heroEvCiLow > 0;
+  const c3Clusters = latest.heroEvClusters !== null && latest.heroEvClusters >= clusterBar;
+  const c3 = c3Positive && c3Clusters;
+
+  let c3Detail;
+  if (latest.heroEvEdge === null) {
+    c3Detail = 'NO INSTRUMENT — hero decisions have never been scored (WS-287)';
+  } else if (!c3Positive) {
+    c3Detail = `edge ${fmt3(latest.heroEvEdge)}, CI low ${fmt3(latest.heroEvCiLow)} (must exceed 0)`;
+  } else if (latest.heroEvClusters === null) {
+    c3Detail = `edge ${fmt3(latest.heroEvEdge)}, CI low ${fmt3(latest.heroEvCiLow)} — but the row `
+      + `records no heroEvClusters, so the interval cannot be trusted (bar: ${clusterBar} players)`;
+  } else {
+    c3Detail = `edge ${fmt3(latest.heroEvEdge)}, CI low ${fmt3(latest.heroEvCiLow)} over `
+      + `${latest.heroEvClusters} players (bar: ${clusterBar})`;
+  }
+  criteria.push(check('C3', 'Hero-EV validated', c3, c3Detail));
 
   // ---- C4 theory stability (ATTESTED) -------------------------------------
   let c4 = false, c4detail = 'overturn ledger missing';
@@ -266,6 +301,7 @@ const recordRun = (args) => {
 
   let heroEvEdge = flag('hero-ev');
   let heroEvCiLow = flag('hero-ev-ci-low');
+  let heroEvClusters = flag('hero-ev-clusters');
   let decisions = flag('decisions');
   let treatment = flag('treatment');
   let source = flag('source');
@@ -284,8 +320,34 @@ const recordRun = (args) => {
       console.error(`--from: ${from} does not look like a hero-EV report (no report.gate / report.arms.engineRaked)`);
       process.exit(2);
     }
+    // AN INADMISSIBLE REPORT MUST NOT REACH THE SCORECARD. The scorecard is the evidence
+    // the readiness gate reads; letting a partial or an under-clustered run in makes every
+    // downstream check argue with a number that was never certifiable. The report says of
+    // itself whether it may be quoted, so honour that here rather than re-deriving it.
+    //
+    // Deliberately NOT overridable by a flag. If a run is worth recording, it is worth
+    // finishing — and the one escape hatch that would get used in a hurry is the one that
+    // would put an untrustworthy row in front of a decision to stop building and study.
+    const adm = payload?.report?.admissibility;
+    if (adm && adm.admissible === false) {
+      console.error(`--from: refusing to record an INADMISSIBLE report (${from}).`);
+      for (const b of adm.blockers ?? []) console.error(`    ${b.code}: ${b.detail}`);
+      console.error(`    contributing players ${adm.clusters} (bar: ${adm.minClustersForCI})`);
+      console.error('  Re-run to completion with enough players, then record.');
+      process.exit(2);
+    }
+    if (!adm) {
+      // Pre-2026-07-31 reports have no admissibility block. Warn rather than refuse: the
+      // row will simply carry no cluster count and therefore cannot open C3.
+      console.error(`--from: WARNING — ${from} predates the admissibility block; `
+        + 'heroEvClusters will be unknown and C3 cannot pass from this row.');
+    }
+
     heroEvEdge ??= gate.heroEvEdge === null ? 'null' : String(gate.heroEvEdge);
     heroEvCiLow ??= gate.heroEvCiLow === null ? 'null' : String(gate.heroEvCiLow);
+    // The cluster count IS the interval's credibility, so it travels with it.
+    heroEvClusters ??= head.players === null || head.players === undefined
+      ? 'null' : String(head.players);
     decisions ??= String(head.n);
     treatment ??= payload.report.treatment;
     source ??= from;
@@ -331,6 +393,9 @@ const recordRun = (args) => {
     `      worstCalibrationError: ${v(calib)}`,
     `      heroEvEdge: ${v(heroEvEdge)}`,
     `      heroEvCiLow: ${v(heroEvCiLow)}`,
+    // The interval is a cluster bootstrap over players; without this number the row cannot
+    // say whether its own CI is believable, so C3 treats its absence as unknown.
+    `      heroEvClusters: ${v(heroEvClusters)}`,
     '    notes: >',
     `      ${treatment ? `Treatment: ${treatment}.` : 'Treatment: UNSTATED.'}`,
     carried.length

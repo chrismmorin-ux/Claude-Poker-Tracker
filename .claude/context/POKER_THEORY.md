@@ -1527,6 +1527,67 @@ SAME decisions, difference per decision (§11.5) — and it is the test to run b
 any archetype channel, including this one. A positive answer justifies the channel even where
 the overdispersion test was underpowered.
 
+### 11.9 A Fifteen-Number Rule Recovers ~56% of the Engine (WS-303, measured)
+
+Founder doctrine: the **teachable** model may differ from the **engine** model, provided it is
+run against the population corpus and scored on the same metric on the same decisions. A
+teaching rule that cannot be scored is prose. So candidate rules were scored as arms.
+
+**Leakage control (load-bearing).** A3/A4 have parameters estimated from this corpus, so
+scoring them on the decisions they were fit to would make them win by construction. Players
+are split POOL/EVAL by FNV-1a hash, independently per site; likelihood tables are mined
+**only** from POOL; every arm is scored **only** on EVAL, and all five arms must produce a
+valid score before any decision counts — so every arm's mean is over one identical decision
+set. PS 3,762 mined / 3,703 scored; FTP 5,732 / 5,403.
+
+| arm | numbers to memorise | FTP | PS |
+|---|---|---|---|
+| A0 no narrowing | 0 | — | — |
+| A2 legacy 20-number bucket table | 20 | 46.4% | 40.2% |
+| A3 measured likelihood ratios | 12 | 54.9% | 53.3% |
+| **A4 = A3 + check-back/check-OOP split** | **15** | **57.3%** | **55.7%** |
+| A1 engine as shipped | — | 100% | 100% |
+
+(share of the engine's edge over not narrowing). Ordering replicates on both sites. **A rule a
+human can hold in their head recovers just over half the engine's narrowing edge on players it
+was never fitted to.** The remaining ~44% is per-combo enumeration, texture and equity
+quantiles — implementation, not teachable content.
+
+**The table (ratio to base rate). Only quote cells that replicate:**
+
+| action | FTP strong / med / weak | PS strong / med / weak | replicates? |
+|---|---|---|---|
+| bet | 1.24 / 0.85 / 0.69 | 1.26 / 0.82 / 0.68 | **near-identical** |
+| check-back | **0.61** / 1.26 / 1.48 | **0.60** / 1.36 / 1.23 | strong cell rock-solid; med/weak ordering INVERTS |
+| check-OOP | **0.79** / 1.07 / 1.44 | **0.76** / 1.07 / 1.55 | rock-solid |
+| call | 1.18 / 0.96 / 0.56 | 1.13 / 1.04 / 0.53 | weak cell solid |
+| raise | 1.48 / 0.73 / 0.30 | 1.76 / 0.46 / 0.15 | direction only — magnitude differs, weak cell n=18/6 |
+
+What survives replication: **a bet barely moves the read** (1.25 / 0.83 / 0.68 across 1,400+
+observations); **a call mostly rules out air**; **a check-back roughly halves strong hands
+(0.60) while an OOP check barely dents them (0.78)**; a raise is the strongest signal but
+teach its direction, not its digit.
+
+**A LARGE CONDITIONAL EFFECT CAN PRODUCE A SMALL AGGREGATE GAIN.** §11.8's headline —
+P(check|strong) 10.3% IP vs 34.3% OOP — is a 3.3× difference, yet adding the split (A4 vs A3)
+buys only **2–3 points**. No contradiction: the 10.3/34.3 figure conditions on *strong hands*,
+which are a minority of the class mix, while Δlog averages over everything. Do not read a big
+conditional as a big edge without computing the aggregate. This is a general caution and it
+applies to every "huge tell" claim in poker.
+
+**NOT COMPARABLE TO §11.7 / §11.8.** This probe models each player's OWN decision (symmetric
+"acting seat" across all corpus players). §11.7/§11.8 used an asymmetric hero-vs-villain
+construction that, by design, could never observe a street-CLOSING check — a check-back leaves
+no subsequent decision to hang the observation on, which is why an earlier run reported
+check-back n=0 across every class. Same `narrowByBoard`, same defaults, **different decision
+population**. Do not mix the two tables' numbers.
+
+**Limitations:** single-street likelihoods only — §11.7 shows chaining the same likelihood
+destroys information, so nothing here licenses multiplying these across streets; thin cells as
+marked; showdown selection inflates P(check|strong) population-wide.
+
+---
+
 **The finding that IS large, and needs no new data.**
 
 | | P(check \| strong made hand) | n |
