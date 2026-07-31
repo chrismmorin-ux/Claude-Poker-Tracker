@@ -17,6 +17,26 @@
 | `05-showdown.jpg` | Showdown view — 9 seats × 2 card slots + Muck/Won per seat |
 | `06-rotate-gate-portrait.jpg` | `RotateDeviceHint` blocking the app in portrait |
 | `07-rotate-gate-persists-landscape.jpg` | **The same gate still painted in a landscape (2340×1080) frame** |
+| `08-local-repro-1600x720-nexthand-below-fold.png` | **Local repro at exactly 1600×720** — Next Hand is entirely below the fold |
+| `09-local-repro-rotate-gate-portrait.png` | Local repro of the rotate gate at a 720×1600 viewport |
+
+---
+
+## How to reproduce all of this locally
+
+The app was believed unrunnable in this environment. It is not. It is IndexedDB-first
+with an existing guest mode, so no Firebase project is needed — the only blocker was
+that `initializeApp()` throws at module scope on absent config.
+
+```bash
+npm run env:local     # once — gitignored placeholder config
+npm run dev           # terminal 1
+npm run devshot       # terminal 2 — screenshots + rendered-size measurements
+npm run devshot:portrait
+```
+
+`scripts/devshot.mjs` reports the `ScaledContainer` scale factor and the **rendered**
+size of controls, and asserts whether the Next Hand CTA is inside the viewport.
 
 ---
 
@@ -27,6 +47,17 @@
 Compare `03-table-flop.jpg` (flop): no orbit strip renders, and Next Hand sits fully visible with margin.
 
 This is exactly the failure predicted in [entry audit §E2](../../audits/2026-07-31-entry-table-view-redesign.md) — the column has no `overflow-y`, children use `height` with default `flex-shrink: 1`, and the sum exceeds 720. **The primary CTA of the surface is unreachable in the single most common state of the app.** Ticket: `WS-311` (upgraded from "not visually confirmed" to CONFIRMED, P1 → P0).
+
+**Reproduced locally at the design resolution** (`08-local-repro-1600x720-nexthand-below-fold.png`), which makes the finding stronger than the device screenshots alone:
+
+```
+viewport:                       1600 × 720   (the app's own design canvas)
+ScaledContainer scale factor:   0.95
+Next Hand CTA:                  411 × 65 rendered px
+Next Hand bottom edge:          807px  vs viewport 720px  → CLIPPED by 87px
+```
+
+This is **not** a small-screen edge case and **not** device-specific — the command column does not fit at the resolution the entire app is designed against, in the *default* state of a new hand (one seat selected, preflop, 9-handed, no all-in row, no sizing editor).
 
 ## EVID-2 — The uniform scale transform nullifies the 44px touch floor *(NEW — code read could not reach this)*
 
@@ -43,6 +74,8 @@ The consequence is independent of the exact DPR:
 
 Either way the H-ML06 44px minimum **is not met anywhere in the app on the founder's own device**, and the 100px action buttons render at 63–84px.
 
+**Measured locally at 1600×720, DPR 1:** scale factor **0.95** → a declared 44px target renders at **~41.8px**. The `0.95` margin in `useScale` is unconditional, so **nothing in this app is ever at its declared size** — not even at the exact design resolution on a desktop. The device case only makes it worse.
+
 This nullifies a whole class of prior work: `AUDIT-2026-04-21-TV F8` "bump recent-player rows to 44px" raised a number inside a canvas that is then uniformly shrunk. The 2026-04-21 audit anticipated the mechanism ("at scale <1.0, 40 DOM-px becomes <40 visual") but treated it as hypothetical; it is the actual operating condition. **Touch-target discipline cannot be enforced by editing px values inside a uniformly scaled canvas.** Ticket: `WS-316`.
 
 ## EVID-3 — Orientation gate blocks entry and does not visibly recover *(NEW)*
@@ -51,7 +84,16 @@ This nullifies a whole class of prior work: `AUDIT-2026-04-21-TV F8` "bump recen
 
 `07` shows the same gate still painted inside a **landscape** 2340×1080 frame, with the icon positioned as though the layout box were still portrait (lower-left rather than centred). Founder report: *"in order to launch correctly, the app has to be loaded in landscape."*
 
-**Mechanism not yet established** — candidates include a stale paint across the rotation, an OS-level rotation lock, or an interaction with `screen.orientation.lock()` in `useScreenOrientationLock`. `07` alone is consistent with a mid-rotation composite and must not be over-read. **Reproduction is step 1 of the ticket, not an assumption in it.** Ticket: `WS-315`.
+**Mechanism not established — but the search space is now narrower.** Tested locally with `npm run devshot:portrait` (Chromium, 720×1600 → resized to 1600×720):
+
+```
+rotate gate visible in portrait:   true
+gate still visible after resize:   FALSE   ← cleared correctly
+```
+
+A pure viewport change re-evaluates the `portrait:` variant and dismisses the overlay exactly as designed. **The CSS media query is not the bug** — anyone who "fixes" it will be fixing something that works.
+
+Remaining candidates are all device-specific: OS-level rotation lock (auto-rotate off, in which case the copy "turn your phone sideways" is actively wrong); `screen.orientation.lock()` interacting with physical orientation in an installed PWA; Android Chrome not re-evaluating on `orientationchange` the way a desktop resize does; or the gate clearing while the *scale* fails to recover. **Reproduction on the founder's device is step 1 of the ticket, not an assumption in it.** Ticket: `WS-315`.
 
 ## EVID-4 — Floating voice button overlaps the card grid *(NEW, minor)*
 
@@ -69,3 +111,4 @@ This nullifies a whole class of prior work: `AUDIT-2026-04-21-TV F8` "bump recen
 ## Change log
 
 - 2026-07-31 — Created from founder device screenshots during TVR kickoff. 2 predictions confirmed, 3 new findings.
+- 2026-07-31 — Local reproduction added (`scripts/devshot.mjs`). EVID-1 reproduced at the design resolution (stronger than the device finding); EVID-2 measured at DPR 1 (scale 0.95, 44px → 41.8px); EVID-3 narrowed — the CSS media query is confirmed NOT to be the cause.

@@ -60,6 +60,7 @@ screenshots/
 !public/*.png
 # Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
 !docs/design/audits/**/*.png
+!docs/design/evidence/**/*.png
 # Playwright snapshot baselines ARE tracked (visual regression source-of-truth)
 !tests/playwright/**/*.png
 audit-*.png
@@ -93,3 +94,6 @@ out/
 # /kit-upgrade sidecars — upstream's version of a file we've customized, written
 # alongside it for hand review. Working artifacts, never part of the tree.
 *.kit-update
+
+# devshot output (scripts/devshot.mjs)
+.devshots/

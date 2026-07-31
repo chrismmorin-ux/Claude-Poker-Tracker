@@ -39,10 +39,27 @@ description: |
   portrait (lower-left, not centred). Founder's experience is that rotating after load
   does not recover — the app must be RELOADED in landscape.
 
-  MECHANISM NOT ESTABLISHED. Candidates: a stale paint across the OS rotation; an
-  OS-level rotation lock; an interaction with the PWA orientation lock; or a
-  `100dvh`/visualViewport settling issue. Screenshot 07 on its own is also consistent
-  with a mid-rotation composite frame. DO NOT GUESS — reproduce first.
+  MECHANISM NOT ESTABLISHED — BUT THE SEARCH SPACE IS NARROWER NOW.
+
+  Tested 2026-07-31 with `npm run devshot:portrait` (Chromium, viewport 720x1600,
+  then resized to 1600x720 to simulate rotation):
+
+      rotate gate visible in portrait:        true
+      gate still visible after resize:        FALSE  <- it cleared correctly
+
+  So a pure VIEWPORT change re-evaluates the `portrait:` media variant and dismisses
+  the overlay exactly as designed. THE CSS MEDIA QUERY IS NOT THE BUG. Anyone who
+  "fixes" RotateDeviceHint's media query will be fixing something that works.
+
+  Remaining candidates, all device-specific: an OS-level rotation lock (auto-rotate
+  off — rotating the phone then changes nothing, and the copy "turn your phone
+  sideways" is actively wrong); `screen.orientation.lock()` interacting with the
+  physical orientation in an installed PWA; Android Chrome not re-evaluating the
+  media query on `orientationchange` as a desktop resize does; or a
+  `100dvh`/visualViewport settling issue where the gate clears but the SCALE does
+  not recover, making the app look broken for a different reason.
+
+  DO NOT GUESS — reproduce on the founder's device first.
 
   THE DESIGN OBJECTION (the part that outlives the bug). Gating entry on device
   orientation is solving a LAYOUT problem with a USER INSTRUCTION. Portrait is not

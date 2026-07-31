@@ -68,6 +68,19 @@ description: |
   state of the app (preflop, seat selected, 9-handed). The user cannot advance the hand
   from the table without first changing state to make the row reappear.
 
+  REPRODUCED LOCALLY 2026-07-31 via `npm run devshot` at EXACTLY 1600x720 — the
+  app's own design resolution:
+
+      ScaledContainer scale factor: 0.95
+      Next Hand CTA: 411x65 rendered px
+      Next Hand bottom edge: 807px vs viewport 720px -> CLIPPED
+
+  THIS IS STRONGER THAN THE ORIGINAL FILING. The defect is NOT device-specific and
+  NOT a small-screen edge case: the command column does not fit at the resolution the
+  entire app is designed against. It overflows by 87px with a single seat selected at
+  preflop, 9-handed, with no all-in row open and no sizing editor expanded — i.e. the
+  DEFAULT state of a new hand, not a worst case. Screenshot in the evidence folder.
+
   RELATED, AND LIKELY THE SAME ROOT: WS-316 (the uniform scale transform). Un-scaling
   the command column would let it lay out in real CSS px in a real 720-CSS-px column
   and scroll honestly — fixing both defects in one move. Sequence with WS-316 before

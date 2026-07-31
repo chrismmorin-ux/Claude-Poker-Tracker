@@ -27,7 +27,16 @@ description: |
   height, every `min-h-[44px]`, every font size — is therefore multiplied by `s`
   before it reaches a thumb.
 
-  THE MEASUREMENT. In the supplied screenshots the 1600-design-px canvas spans
+  MEASURED LOCALLY 2026-07-31 (`npm run devshot`, viewport exactly 1600x720):
+
+      ScaledContainer scale factor: 0.95
+      a declared 44px target renders at ~41.8 CSS px
+
+  Note what that means: the 0.95 safety margin in useScale is unconditional, so
+  NOTHING IN THIS APP IS EVER AT ITS DECLARED SIZE — not even at the exact design
+  resolution, on a desktop, at DPR 1. The device case just makes it worse.
+
+  THE MEASUREMENT ON DEVICE. In the founder's screenshots the 1600-design-px canvas spans
   ~2118 physical px, so `s x DPR ~= 1.26`. The width term binds, which means
   `s = viewport_CSS_width * 0.95 / 1600`. The consequence does not depend on knowing
   the exact DPR:
