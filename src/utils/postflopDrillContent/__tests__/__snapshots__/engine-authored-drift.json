@@ -39,15 +39,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 79,
-      "totalWeight": 54.45,
-      "isCapped": false,
+      "totalWeight": 52.79,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 2.9288,
-        "strong": 6.0717,
+        "nuts": 1.7825,
+        "strong": 19.2268,
         "marginal": 0,
         "draw": 0,
-        "air": 90.9995
+        "air": 78.9907
       }
     },
     {
@@ -88,15 +88,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 79,
-      "totalWeight": 50.52,
-      "isCapped": false,
+      "totalWeight": 44.65,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 3.4275,
-        "strong": 44.0927,
+        "nuts": 1.6891,
+        "strong": 22.1939,
         "marginal": 0,
-        "draw": 3.6705,
-        "air": 48.8093
+        "draw": 5.6829,
+        "air": 70.4341
       }
     },
     {
@@ -135,15 +135,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 28,
-      "totalWeight": 16.83,
+      "totalWeight": 14.3,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
         "nuts": 0,
-        "strong": 33.5388,
-        "marginal": 20.7628,
-        "draw": 20.2967,
-        "air": 25.4017
+        "strong": 17.339,
+        "marginal": 20.5341,
+        "draw": 12.4249,
+        "air": 49.7019
       }
     },
     {
@@ -160,15 +160,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 28,
-      "totalWeight": 15.9,
+      "totalWeight": 17.05,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 11.3489,
-        "strong": 4.856,
-        "marginal": 11.801,
+        "nuts": 6.8238,
+        "strong": 16.4805,
+        "marginal": 19.9078,
         "draw": 0,
-        "air": 71.994
+        "air": 56.7879
       }
     },
     {
@@ -184,15 +184,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 28,
-      "totalWeight": 15.29,
+      "totalWeight": 16.75,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
         "nuts": 0,
-        "strong": 22.735,
-        "marginal": 9.0033,
-        "draw": 11.1881,
-        "air": 57.0737
+        "strong": 15.653,
+        "marginal": 18.8705,
+        "draw": 14.9676,
+        "air": 50.5088
       }
     },
     {
@@ -231,15 +231,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 442,
-      "totalWeight": 274.41,
-      "isCapped": false,
+      "totalWeight": 278.08,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 3.0813,
-        "strong": 4.1261,
-        "marginal": 19.9565,
+        "nuts": 1.0443,
+        "strong": 1.7537,
+        "marginal": 27.8915,
         "draw": 0,
-        "air": 72.8361
+        "air": 69.3105
       }
     },
     {
@@ -256,15 +256,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 410,
-      "totalWeight": 250.4,
+      "totalWeight": 265.69,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.9401,
-        "strong": 4.9676,
-        "marginal": 28.3544,
+        "nuts": 1.1947,
+        "strong": 4.641,
+        "marginal": 44.3558,
         "draw": 0,
-        "air": 64.7379
+        "air": 49.8085
       }
     },
     {
@@ -281,15 +281,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 410,
-      "totalWeight": 250.4,
+      "totalWeight": 265.69,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.9401,
-        "strong": 4.9676,
-        "marginal": 28.3544,
+        "nuts": 1.1947,
+        "strong": 4.641,
+        "marginal": 44.3558,
         "draw": 0,
-        "air": 64.7379
+        "air": 49.8085
       }
     },
     {
@@ -330,15 +330,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 437,
-      "totalWeight": 307.45,
-      "isCapped": false,
+      "totalWeight": 289.26,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 2.4842,
-        "strong": 4.0334,
-        "marginal": 21.211,
-        "draw": 0.5517,
-        "air": 71.7197
+        "nuts": 0.9963,
+        "strong": 1.9716,
+        "marginal": 30.2151,
+        "draw": 0.9096,
+        "air": 65.9074
       }
     },
     {
@@ -377,15 +377,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 304,
-      "totalWeight": 227.33,
+      "totalWeight": 202.9,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
         "nuts": 0,
-        "strong": 5.6031,
-        "marginal": 14.5319,
-        "draw": 1.1893,
-        "air": 78.6757
+        "strong": 2.8297,
+        "marginal": 15.784,
+        "draw": 0.9121,
+        "air": 80.4742
       }
     },
     {
@@ -401,15 +401,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 280,
-      "totalWeight": 177.99,
-      "isCapped": false,
+      "totalWeight": 175.12,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 4.6431,
-        "strong": 7.3899,
-        "marginal": 28.6212,
-        "draw": 2.0452,
-        "air": 57.3006
+        "nuts": 1.6041,
+        "strong": 3.2271,
+        "marginal": 35.9993,
+        "draw": 3.0219,
+        "air": 56.1476
       }
     },
     {
@@ -424,13 +424,13 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 504,
-      "totalWeight": 280.37,
+      "totalWeight": 311.3,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.3203,
-        "strong": 12.4953,
-        "marginal": 87.1843,
+        "nuts": 0.714,
+        "strong": 26.8691,
+        "marginal": 72.4169,
         "draw": 0,
         "air": 0
       }
@@ -449,13 +449,13 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 487,
-      "totalWeight": 329.83,
+      "totalWeight": 319.93,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.4012,
-        "strong": 20.7683,
-        "marginal": 78.8305,
+        "nuts": 0.9774,
+        "strong": 32.5569,
+        "marginal": 66.4657,
         "draw": 0,
         "air": 0
       }
@@ -473,13 +473,13 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 497,
-      "totalWeight": 314.77,
+      "totalWeight": 318.9,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.2941,
-        "strong": 14.3428,
-        "marginal": 85.3631,
+        "nuts": 0.7098,
+        "strong": 28.8745,
+        "marginal": 70.4157,
         "draw": 0,
         "air": 0
       }
@@ -496,15 +496,15 @@
       "villainAction": "check",
       "narrowAction": "check",
       "totalCombos": 91,
-      "totalWeight": 45.33,
+      "totalWeight": 50.06,
       "isCapped": false,
-      "isWeaklyCapped": false,
+      "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 6.3103,
-        "strong": 39.7471,
+        "nuts": 2.0486,
+        "strong": 22.158,
         "marginal": 0,
-        "draw": 16.1768,
-        "air": 37.7658
+        "draw": 20.2504,
+        "air": 55.543
       }
     },
     {

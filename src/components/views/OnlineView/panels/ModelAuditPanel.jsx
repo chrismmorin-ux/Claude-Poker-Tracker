@@ -20,6 +20,9 @@ const SOURCE_COLORS = {
   'observed': GREEN,
   'model': YELLOW,
   'style': YELLOW,
+  // Computed from this range's actual composition rather than a population average.
+  // No per-villain history behind it, but it IS conditioned on the spot (WS-307).
+  'composition': YELLOW,
   'population': TEXT.faint,
   'personalized': GREEN,
 };

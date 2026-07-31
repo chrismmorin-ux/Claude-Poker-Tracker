@@ -3,8 +3,8 @@ title: "A check tells the engine nothing — the check branch scores WORSE than 
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: null
-claimed_at: null
+claimed_by: ses-20260731-0244-8e4c3ee6
+claimed_at: "2026-07-31T02:50:43.703Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -80,6 +80,41 @@ accept_criteria: |
     across arms, and re-scored through the WS-273 villain harness for regression.
   - The trap component keeps a testable meaning: a villain who slowplays must still be
     representable (see the TRAP_LIFT guard in postflopNarrower.js).
+    NOT MET, AND DEFERRED RATHER THAN REFUTED, 2026-07-31 — recorded here, not dropped.
+    This criterion assumed the slowplayer is a DISTINGUISHABLE villain type. Before building
+    a per-villain trap channel we asked what evidence there is: 347,580 hands, FTP + PS,
+    700 player-site rows, 14,595 flop decisions. P(check | strong) gives chi2/df = 1.005
+    (z = +0.06) — indistinguishable from one population — against 1.859 (z = +15.5) on flop
+    bet frequency, a control axis where the same method finds large real heterogeneity.
+    So the channel would fit noise AT THIS OBSERVATION DENSITY.
+    READ NARROWLY. This is one axis at one sample size. It is NOT a finding that player
+    archetypes do not exist — the control axis proves the opposite, and is the answer to
+    anyone quoting this line that way. What separates the two axes is OBSERVATIONS PER
+    PLAYER, not whether the trait is real: aggression is seen every flop; a revealed strong
+    hand is seen a MEDIAN OF 2 TIMES per player against the ~30 needed to move off
+    population. An axis that thin returns chi2/df ~ 1 either way. The cross-axis correlation
+    (0.036) does not shore it up: at 2 observations per player the rate is nearly noise, and
+    noise correlates ~0 with everything by construction — attenuation predicts that number
+    whether or not the trait is real.
+    ALSO BLIND TO STATE. A corpus average cannot see tilt, drunkenness, or a villain
+    adapting to having just been bluffed twice at this table — those switch WITHIN a
+    session. Founder observation of such players is not in conflict with this; it is outside
+    what the instrument can see, and needs a within-session instrument instead.
+    THE RIGHT NEXT TEST is incremental value, not existence: does conditioning on an
+    archetype predict better GIVEN the axes that already work, scored on the same decisions
+    (POKER_THEORY 11.5)? A real type that is largely a blend of aggression frequency and
+    texture adds nothing; that is the question worth answering before building a channel.
+    So the shipped behaviour is CAPPING (a check monotonically lowers strong holdings),
+    which is what the quintile data wants and what fast-play dominance predicts
+    (P(strong | showdown) 33.8% > P(check | strong) 24.0%).
+    The mechanism is retained DORMANT, not deleted: below the critical softness
+    tauFraction < 0.1875 * (span/iqr) ~ 0.6, TRAP_LIFT still yields a representable
+    slowplay. postflopNarrower.test.js test 4 asserts both regimes AND the boundary, and
+    fails if TRAP_LIFT is removed — so the channel stays buildable the day an axis is found
+    that actually separates.
+    Honest limit, per POKER_THEORY 11.8: median per-player evidence is 2 strong-hand spots
+    and the corpus is showdown-selected, so this is a weak-power null, not proof of absence.
+    See POKER_THEORY 11.8.
 effort: "L"
 files_involved:
   - "src/utils/exploitEngine/postflopNarrower.js"

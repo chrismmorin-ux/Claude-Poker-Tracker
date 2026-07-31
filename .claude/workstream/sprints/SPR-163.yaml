@@ -1,0 +1,28 @@
+id: "SPR-163"
+title: "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-n"
+status: approved
+approved_at: "2026-07-31T02:50:43.703Z"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-31T02:50:43.703Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-303 selected (29 × no damping = 29).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-303"
+    title: "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing"
+    mode: plan-first
+    effort: L
+    status: pending
+
+created_at: "2026-07-31T02:50:43.703Z"

@@ -1311,6 +1311,257 @@ every setting sharper than ~0.30 loses to switching narrowing off. Same shape as
 elaborate mechanism, never measured, barely beating the trivial alternative. Treat the
 narrowing's *value* as small and provisional; treat "never zero" as settled.
 
+### 11.7 How Much a Range Narrows Should Equal How Much the Action Says (WS-303)
+
+§11.6 measured the narrowing's value **in aggregate** and found it small. Splitting that
+aggregate by action shows why it looked small: it is an average over four numbers that do
+not share a sign.
+
+One global `TAU_FRACTION` controlled softness for every villain action. Swept 0.3 → 20
+through the WS-293 probe, every arm scored on the SAME decisions, two independent sites,
+250 files / 350 players each (FTP n=1,667 · PS n=1,253 check decisions). Read **tau = 20 as
+narrowing switched OFF** — at that softness every combo takes the target mean, so the
+posterior is just the prior. Mean log P of the hand villain actually held, vs uniform:
+
+| tau | bet (FTP/PS) | check | raise | call |
+|---|---|---|---|---|
+| 0.3 | +.710 / +.666 | **+.134 / +.218** | +1.176 / +1.118 | +.647 / +.772 |
+| 1.0 | +.697 / +.637 | +.260 / +.321 | +.970 / +.857 | +.575 / +.718 |
+| 20 (off) | +.578 / +.512 | **+.324 / +.367** | +.639 / +.523 | +.469 / +.601 |
+
+What narrowing is **worth** per action — on minus off, consistent on both sites:
+
+| action | value of narrowing | reading |
+|---|---|---|
+| raise | **+0.54 / +0.60** | by far the most informative thing a villain does |
+| call | +0.18 / +0.17 | informative |
+| bet | +0.15 / +0.16 | mildly informative |
+| **check** | **−0.19 / −0.15** | **narrowing a check SUBTRACTS information** |
+
+**The poker fact underneath.** A raise is tightly coupled to the holding: villain needs a
+reason. A check is the *default* when nothing suggests otherwise — villain checks with air,
+with medium hands controlling the pot, with monsters trapping, and mostly because it was
+their turn and nothing recommended betting. Equity is close to independent of checking. So
+an equity-shaped read of a check is not merely weak, it is **confidently wrong**, and
+"reads it worse than not reading it at all" is the measurable form of that.
+
+**A sharper mechanism, founder-supplied, UNDER TEST — do not treat as settled.** "Checks are
+low-information" predicts no particular shape and so cannot be falsified. The founder's
+account does better: a player afraid of getting stacked makes game-time errors that push
+**middling made hands** into the checking and calling parts of his range — hands he would
+otherwise bet, checked because betting opens a raise he cannot face. Those hands are neither
+air nor traps. They land exactly where the U-shape assigns the LOWEST check probability.
+
+Two consequences worth carrying beyond this branch:
+
+1. **Frequency right, composition wrong.** *"You still get 100% of the checks from this
+   guy."* The action's marginal rate is fine — which is why mean-pinning to the observed
+   `continuationRate` measures correctly while discrimination goes negative. When a
+   likelihood is calibrated on frequency and still scores badly, suspect **shape**, not rate.
+2. **Fear is game state, not a label.** "Afraid of getting stacked" is a statement about how
+   much of the stack is at risk — SPR and effective depth. Drift into passive lines should
+   therefore scale with commitment threat and is **computable**. A correction keyed on SPR is
+   first-principles; one keyed on a "scared player" tag is §7.1 in a new costume.
+
+**Falsifiable prediction:** the check branch's deficit should CONCENTRATE in the middle
+quintiles of the range's equity distribution, with the tails roughly right. If it is spread
+evenly, or sits at a tail, the mechanism is refuted and flattening remains the honest fix.
+Measured by quintile-slicing villain check decisions, both sites — record the result here
+before promoting any of this from hypothesis to finding. If confirmed, the correct fix is to
+**reshape** the middle (keyed on commitment threat), not to flatten the whole curve; the
+shipped tau of 1.0 is a blunt proxy that raises the middle by raising everything.
+
+This is the same lesson as §11.5 and §13.3 in a new costume: **a mechanism applied at one
+strength everywhere, where the right strength is a property of the situation.** Softness is
+now per action (`ACTION_TAU_FRACTION`), check at 1.0 and the rest at 0.3.
+
+**Why 1.0, and a correction that matters.** 1.0 recovers about two thirds of the gain. An
+earlier draft of this section claimed it did so "while leaving usable amplitude in the U",
+on the reasoning that the U keeps its ordering at any tau and only loses amplitude. **That
+is false**, and the arithmetic says so. The trap term's steepest slope is
+`TRAP_LIFT · 0.25 · span / (iqr · tauFraction)`; the weak term `−equity` has constant slope
+−1. A local rise at the top — which is what trapping *is* — survives only while
+
+    tauFraction  <  0.1875 · (span / iqr)
+
+Measured flop equity distributions give span/iqr ≈ 3.0–3.5, so the critical value is ≈
+0.55–0.65. §11.6 recorded the same boundary from the other direction ("at 0.60 the U-shape
+collapses"). **At 1.0 the check score is monotonically non-increasing in equity.** On
+A♠7♥2♦, AA takes check-weight 0.183 while KQo takes 0.721.
+
+So the choice was never "how much U to keep" — it is **U or no U**, and what ships is
+*capping*: a check monotonically lowers strong holdings.
+
+That leaves WS-303's fourth accept criterion — "a villain who slowplays must still be
+representable" — unmet at the shipped setting, and no tau satisfies both it and the q4
+repair. **The criterion was refuted rather than tuned against**: §11.8 went and measured
+whether the slowplayer exists before deciding whether to build a channel for one, and the
+archetype does not separate from noise. The mechanism is kept **dormant, not deleted** —
+below the critical softness `TRAP_LIFT`/`TRAP_SHARE` still produce a representable slowplay,
+so the channel remains buildable the day a separating axis is found. The boundary derived
+above is now **asserted rather than described** (`postflopNarrower.test.js` test 4 computes
+`0.1875 · span/iqr` from a real board's equity mix — it measures 0.597, inside the predicted
+0.55–0.65 — then checks capping above it and trapping below it). That test is green and
+fails if `TRAP_LIFT` is removed. Do not restore the rise by default without an axis that
+clears its control.
+
+**Where the damage actually is — quintile-sliced, both sites.** Bucketing each decision by
+where villain's true hand sat in the equity distribution of their range, value of narrowing
+(sharp minus off):
+
+| | q1 weak | q2 | q3 | q4 | q5 strong |
+|---|---|---|---|---|---|
+| FTP | +0.36 | +0.20 | −0.22 | **−0.58** | −0.32 |
+| PS | +0.36 | +0.18 | −0.26 | **−0.53** | −0.27 |
+
+The model reads "villain checks weak hands" *well* (q1, q2 gain). It loses from the middle
+up, worst at **q4** — the 60–80th percentile, the only quintile that goes worse-than-uniform
+at the sharp setting, on both sites. q3, the literal middle, is one of the better-read
+buckets. That locus is not arbitrary: the U's minimum sits just below the `TRAP_SHARE = 0.10`
+boundary, i.e. the top of q4. **The model's most confident claim about checking is "hands
+this strong don't check", and that is exactly where players check most.** Flattening to 1.0
+fixes it (−0.393 → +0.069 FTP, −0.202 → +0.233 PS) but leaves q5 short of not-narrowing —
+the residual is the trap bump itself.
+
+**The bet branch is the mirror image, and the bigger number.** `scoreCombosForAction` scores
+bet/call/raise as pure equity, monotone increasing, with no bluff term at all — so the
+narrower drives P(bet | air) to the floor while villains bluff anyway. Value of narrowing at
+q1: **−1.19 (FTP) / −1.24 (PS)**, the largest error in the table. The check branch carries a
+trap bump it should not have; the bet branch is missing a bluff bump it should. (q1 bet n =
+88 / 55 — the thinnest cells; re-measure before acting.)
+
+**The structural answer, not yet built.** Trappiness and bluffiness are **per-villain
+measurables, not global constants**. `traits.trapsPreflop` already exists and already bumps
+`check.nuts` in `adaptMultipliers` — but that is the legacy multiplier path; this soft-weight
+path has no per-villain channel at all. Default monotone (fast-play dominates) and restore
+the rise only on evidence for that villain. Whether that is buildable depends on whether the
+slowplay archetype is separable from noise at realistic per-player sample — which requires
+`P(check | strong)`, NOT `P(strong | showdown)`; a nit produces the latter without ever
+slowplaying, and showdown selection inflates the former for everyone.
+
+### 11.8 The Slowplayer Is Not Separable — But the Check-Back Is (WS-303, measured)
+
+Before building a per-villain trap channel, we asked whether the archetype exists. 347,580
+hands, FTP + PS, 700 player-site rows, 14,595 flop decisions, 2,942 with a revealed holding.
+Per-player rates shrunk Beta-Binomial with leave-one-out population priors, pseudocount 10.
+
+**Two independent analyses, same answer: no.**
+
+1. **Overdispersion.** Under one common rate, Pearson χ² over players has E[χ²] = df. Excess
+   variance is the only non-circular evidence that distinct player types exist.
+
+   | axis | χ²/df | verdict |
+   |---|---|---|
+   | P(check \| strong) | **1.005** (z = +0.06) | indistinguishable from one population |
+   | P(bet \| air) | 1.129 (z = +1.42) | not significant |
+   | P(bet \| marginal) | 1.136 (z = +1.74) | not significant |
+   | flop bet frequency — **control** | **1.859** (z = +15.5) | **large real heterogeneity** |
+
+   The control is what makes this credible: the method detects player differences easily —
+   between-player SD is ≈ 9pp on bet frequency against roughly ≈ 2pp on the slowplay
+   conditional. **Players differ enormously in how often they bet and not detectably in
+   whether they slowplay strong hands specifically.**
+
+2. **Cross-axis correlation.** If "slowplays strong hands" and "never bluffs" were one trait,
+   they would co-vary. Across players with evidence on both axes the correlation is **0.036**.
+   Margin sweep for clearing population on both axes at once: margin 0.10 → **0 players**;
+   0.05 → 2 of 700. Single-axis counts are far larger (54 and 33). The *joint* requirement is
+   what evaporates — exactly what a zero correlation predicts.
+
+Selecting the tail and reporting its mean looks convincing (37.7% vs 17.8%) and is circular.
+The tail is sampling noise. The closest empirical matches also contradict the other half of
+the description — they show up with **fewer** nuts and **more** air, i.e. calling down light
+rather than trapping monsters.
+
+**Do not build a per-villain trap channel *on this evidence*.** At the observation density
+available it would fit noise. This is a claim about ONE axis at ONE sample size — it is not a
+claim that player types do not exist, and must not be quoted as one. **The control axis in
+the table above is the refutation of that broader reading**: aggression frequency separates
+decisively. The method finds real archetypes easily when the axis carries enough
+observations. Build archetypes there.
+
+**What actually predicts whether an axis separates: observations per player, not whether the
+trait is real.** Aggression frequency is observed on every flop a player sees. `P(check |
+strong)` requires a showdown that reveals a strong hand — **median 2 spots per player**,
+against the ~30 a shrunk estimate needs before it can move off population. An axis with 2
+observations per player will return χ²/df ≈ 1 whether or not the underlying type exists. So
+this is a **weak-power null, not proof of absence**, and the ordering of the table is at
+least as much a ranking of *measurability* as of reality.
+
+**The cross-axis correlation cannot carry the weight put on it.** At ~2 observations per
+player the measured per-player slowplay rate is nearly pure noise, and noise correlates ≈ 0
+with everything — **attenuation predicts 0.036 whether the trait is real or not**. The
+correlation is consistent with the null; it is not evidence for it.
+
+**Showdown selection, and it runs one way.** Players who bet and take it down never reveal,
+so the corpus over-represents passive lines and inflates `P(check | strong)` **for everyone**
+— a population-wide artifact, not an individual's tell.
+
+**This instrument is blind to STATE, and much of what a live player sees is state.** A corpus
+study measures a *stable rate averaged over months*. A player who is drunk, on tilt, or who
+has just been bluffed twice by hero and is now looking you up, is a **state that switches
+within a session** — averaging him across a corpus deletes exactly that signal, and would do
+so even if the effect were enormous. Live observation of such players is therefore **not in
+conflict with this table**; it is outside what the table can see. Detecting state needs a
+different instrument: within-session, change-point-shaped, keyed on recent history at this
+table — not a per-player rate mined from a corpus. Do not cite §11.8 against it.
+
+**Independent corroboration, from a source that is not the corpus.** The RT-108 drift CI
+snapshots `narrowByBoard` output for every authored drill node. WS-303 moved **15 of 15
+check nodes and 0 of 8 bet nodes** — confirming `ACTION_TAU_FRACTION` is the only cause and
+that bet/call are bit-identical — and flipped **5 nodes from `isCapped: false` to `true`**.
+Those drill lessons were written from poker reasoning, months earlier, with no sight of the
+HandHQ mining; one of them states outright that after villain checks, *"villain's range is
+capped and weak"*. The engine had been computing the opposite, because the trap bump kept nut
+weight in the checking range. So the corpus measurement and the hand-authored teaching text
+converge on the same claim from independent directions. Note the drift test is doing its job
+here, not complaining: an authored lesson that contradicts the engine is a real defect, and
+this one resolved in the lesson's favour.
+
+**And "does the type exist" is the wrong question anyway — ask what it ADDS.** Overdispersion
+tests whether a type is distinguishable *in isolation*. What actually matters is whether
+conditioning on it predicts better **given the axes that already work**: a type that is
+largely a blend of aggression frequency and board texture may be perfectly real and still add
+nothing. That is an **incremental-value** test — score with and without the archetype, on the
+SAME decisions, difference per decision (§11.5) — and it is the test to run before building
+any archetype channel, including this one. A positive answer justifies the channel even where
+the overdispersion test was underpowered.
+
+**The finding that IS large, and needs no new data.**
+
+| | P(check \| strong made hand) | n |
+|---|---|---|
+| **IP — check-back (closes the action)** | **10.3%** | 428 |
+| **OOP — check first to act** | **34.3%** | 565 |
+
+A check-back caps hard: barely one in ten comes from a strong made hand. An OOP check is three
+times weaker evidence — it can be a check-raise setup or a plan to lead later. `narrowByBoard`
+takes only an action string and **pools these into one `'check'`**, so its likelihood is a
+compromise between 10% and 34%. Splitting on position is almost certainly worth more than any
+tuning of `ACTION_TAU_FRACTION.check`, and costs only threading position into the narrower.
+Also note `P(strong | showdown) = 33.8%` exceeds `P(check | strong) = 24.0%`: most strong hands
+at showdown were **bet**, not checked — fast-play is dominant, as §11.7 assumed.
+
+**Chaining — the answer was an off-by-one, not a tempering constant.** Successive
+re-narrowings degrade badly: depth 1/2/3 = +.524/+.404/+.179 (FTP), +.472/+.314/+.051 (PS).
+Softening each successive application (tau × κ^(k−1)) repairs it almost completely — at
+κ=5, +.524/+.508/+.500 and +.472/+.446/+.435. **That tempering was deliberately NOT shipped.**
+The probe's chain re-applies the *identical* likelihood to the *identical* board, which is
+pure double-counting, and `gameTreeDepth2` contained exactly one instance of that: down the
+flop→turn→river line villain takes **two** actions (calls the flop bet, calls the turn bet)
+and the code applied **three** narrowings, the extra one firing when the turn card was
+dealt. Dealing a card is not an action. Removing it is the correct fix; tempering would have
+been a constant tuned to hide a miscount, and would also have damped the *legitimate*
+distinct-street evidence that remains. Depth-2 already had this right — it narrows once and
+carries the range across runouts unchanged. **The invariant: one narrowing per villain
+action, never one per street transition.** A test counts them.
+
+**Honest caveat on the ticket's own numbers.** WS-303 reported the check branch at −0.082
+(FTP) / −0.095 (PS) and coverage at 84–86%. Neither reproduced: coverage is 100% everywhere
+post-§11.6 (the floor guarantees it) and check measures positive against a uniform grid. The
+*qualitative* claim — narrowing a check is harmful — reproduced on both sites at 5× sample.
+The figures did not. Re-measure before quoting any of the older numbers.
+
 ---
 
 ## 12. Hero's Range, and What Villain Thinks It Is (WS-276)
@@ -1430,3 +1681,137 @@ hero's range contains straight-beating hands where it previously contained none 
 ~92% equity the villain is still calling on any sane pot odds, and the engine should keep
 saying so. Do not tune the perceived range until it agrees that folding a straight was
 right; that would be fitting one anecdote and discarding §5.2.
+
+---
+
+## 13. Bluff Candidate Selection, and the Price of a Bluff (WS-307)
+
+§6.1–6.3 give the fold-equity formula, MDF and the auto-profit threshold — everything
+about *whether a bluff at this price shows a profit*. None of it says **which hand to
+bluff with**. That gap produced a real defect, so it is closed here.
+
+### 13.1 Suitability falls as showdown value rises
+
+A bluff's cost is the showdown equity it throws away. So the ranking of bluff candidates
+runs opposite to hand strength:
+
+| Hero's hand | Showdown value | Bluff suitability |
+|---|---|---|
+| Air with no draw | none | **premium** — nothing is surrendered |
+| A made hand that beats **nothing** in villain's range | none | **premium** |
+| A weak draw | some (its outs) | good — but it can win by hitting |
+| A marginal made hand that beats *part* of the range | real | **poor** — bluffing folds out the hands it beats |
+| A strong made hand | high | not a bluff; bet it for value (§4.1) |
+
+The row that surprises people is the second. **A made hand with zero showdown value is a
+BETTER bluff than a draw**, because the draw still has equity to realise and the made hand
+has none. Bottom pair on a board where every hand in villain's range beats it is not "a
+made hand, therefore not a bluff" — it is air wearing a pair, and treating the pair as a
+reason not to bluff is exactly backwards.
+
+The corollary that has bitten this codebase: **never gate bluff generation on hero equity.**
+A `heroEquity >= X` pre-gate suppresses precisely the zero-showdown-value hands that make
+the best bluffs. FIND-029 removed one such gate for this reason; do not reintroduce it in
+another costume.
+
+### 13.2 Suitability is hero-side; profitability is villain-range-side. Both must clear.
+
+These are two independent gates and the engine must apply both:
+
+- **Suitability (hero-side)** — does this hand give up little by bluffing? §13.1.
+- **Profitability (villain-range-side)** — *can this range fold?* A bluff needs a fold-out
+  target. Against a range containing the nuts at high frequency (definitively uncapped,
+  §5.5) the fold-out target may not exist at any sizing.
+
+A hand can be a perfect bluff candidate and still be a losing bluff, because the range in
+front of it cannot fold. That is not a contradiction; it is the two gates doing their jobs.
+
+Worked, from the defect that motivated this section — hero 3♠3♦ on Q♥J♥T♠ facing 75 into
+100, villain holding `AA,KK,QQ,JJ,TT,AKs,AKo,AQs,AQo`:
+
+```
+villain hand   combos   hero beats        can it fold to a raise?
+AA, KK             12          0          maybe — overpair + backdoors
+QQ / JJ / TT        9          0          no — a set
+AKs / AKo          16          0          no — BROADWAY, the nuts
+AQs / AQo          12          0          rarely — top pair + gutshot
+TOTAL              49          0
+```
+
+Suitability: perfect — 0 of 49, hero surrenders nothing. Profitability: absent — 25 of 49
+(51%) never fold and 33% is the stone nuts, so the fold rate a raise needs cannot be
+produced. **The raise is a legitimate candidate at the wrong price.** Any diagnosis that
+calls the raise itself wrong will send an implementer to the wrong fix.
+
+### 13.3 A population marginal must not outweigh the conditional in front of you
+
+The defect was never in the decision to consider a raise. It was in the fold estimate,
+three ways, and all three are the same error — **a constant standing where game state
+belongs** (the FIND-040 family, §7.1):
+
+1. The EV path priced bet/raise branches from `queryActionDistribution`, which is indexed
+   on street/texture/position and **never sees range composition**. With no villain model
+   it returned `POPULATION_PRIORS[facing]` verbatim, so the answer to "how often does a
+   33%-nuts range fold?" was the constant `0.55`.
+2. `estimateFoldPct` blended its per-combo enumeration `(seg×1 + 0.45×10)/11`. A
+   *structural* computation over every combo has no sample size and can never accumulate,
+   so the prior outvoted it 10:1 **forever**. Measured over nine spots, a genuine
+   0.220–0.817 signal was compressed to 0.429–0.595 — the range read survived as ~9% of
+   the answer, and the engine's fold estimate was very nearly constant everywhere.
+3. Villain's required equity used `s/(1+s)` where `s/(1+2s)` belongs — see §13.4.
+
+**The rule.** A prior is for when you cannot compute. When the state in front of you
+*determines* the answer, compute it. Shrinkage toward a prior is correct for an observed
+frequency, which accumulates evidence and eventually outvotes its prior; it is wrong for a
+structural computation, which never can. This is §11.5's "let the posterior self-weight"
+applied to a quantity that has no `n`.
+
+### 13.4 Two formulas that look alike and are not
+
+```
+s / (1 + s)      BLUFFER's breakeven fold frequency   (§6.3)
+s / (1 + 2 s)    CALLER's required equity — pot odds  (§1.5, §6.2)
+```
+
+They differ because **the caller's own call is part of the pot they win**. At a pot-sized
+bet the first says 50% and the second says 33%.
+
+Facing a raise, the money villain has *already bet* is in the pot and is not part of what
+they must call. With pot `P`, villain's bet `B`, hero raising **to** `R`:
+
+```
+villain calls  R - B   to win   P + B + R      ->   required equity = (R - B) / (P + 2R)
+
+P=100, B=75, R=225  ->  150 / 550 = 0.273        (the old constant: 0.500)
+```
+
+Using the bluffer's formula for the caller's decision demanded roughly **double** the
+equity, which pushed hands that are comfortably priced in — sets on a coordinated board —
+into the folding group. That **inflates** hero's fold equity, which is what makes a bad
+bluff look good. Correcting it reproduces the combinatorics above: sets and AK fold ~20%,
+AA/KK ~66%, AQ ~75%.
+
+Note the direction of the error. An over-tight required-equity number does not make the
+engine timid — it makes it *reckless*, because every villain hand it wrongly folds is a
+hand hero's bluff gets paid by.
+
+### 13.5 The fold estimate is priced against hero's REPRESENTED range
+
+Villain folding to hero's raise is a villain decision, so §12 governs it: it derives from
+villain's equity against the range **hero's action represents**, never against hero's
+actual cards.
+
+This matters most in exactly the spot §13.1 describes. When hero bluffs with a
+zero-showdown-value hand, every combo in villain's range beats hero's actual cards — so an
+`1 - heroEquity` model concludes **nobody folds**, and the better the bluff candidate the
+more hopeless the bluff appears. The model inverts the rule.
+
+Measured, holding hero's 3♠3♦ and the board fixed and changing only the villain range:
+
+| villain range | priced vs hero's cards | priced vs represented range |
+|---|---|---|
+| uncapped, nutted | 0.22 fold — *raise still ranked first* | **0.44 fold — fold ranked first** ✓ |
+| capped, weak | 0.32 fold — *raise wrongly killed* | **0.70 fold — raise ranked first** ✓ |
+
+Both directions are load-bearing. **A fix that suppresses both spots has encoded "don't
+bluff with made hands", which is §13.1 backwards.** Assert the converse, always.

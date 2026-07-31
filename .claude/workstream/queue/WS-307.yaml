@@ -2,7 +2,7 @@ id: "WS-307"
 title: "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -137,3 +137,4 @@ status_note: |
   ID note: WS-306 is skipped — that number is used by the session-claims work already
   shipped in commit 292e56f (see kit/scripts/cwos-next.js Step 0b) which never got a
   queue file.
+closed_by_event: "ev-1785443389637-d8d909bb830a"

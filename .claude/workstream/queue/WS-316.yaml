@@ -1,0 +1,93 @@
+id: "WS-316"
+title: "A check-back and a check are pooled into one 'check' — 10.3% strong vs 34.3%, and the likelihood is the average of two numbers that differ threefold"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Measured during WS-303 and recorded in POKER_THEORY §11.8. Not acted on there because
+  WS-303's own criteria were satisfiable without it, and because it deserves its own
+  measurement rather than riding along inside a finished one.
+
+  `narrowByBoard(range, action, board, ...)` takes an ACTION STRING. Every check is the
+  same token to it. But a check made when villain closes the action is not the same
+  evidence as a check made first to act:
+
+      situation                             P(check | strong made hand)     n
+      IP — check-back, closes the action              10.3%                428
+      OOP — check first to act                        34.3%                565
+
+  A check-back CAPS HARD: barely one in ten comes from a strong made hand, because
+  villain who is last to act and holds a strong hand has no reason left to be passive —
+  the hand ends. An OOP check is three times weaker evidence, because it is compatible
+  with a check-raise setup or a plan to lead a later street; the hand is not over.
+
+  The narrower currently pools these, so its check likelihood is a compromise between
+  10% and 34% and is wrong in BOTH directions — too weak a read after a check-back, too
+  strong a read after an OOP check.
+
+  Note the size of this against the alternative. WS-303 moved `ACTION_TAU_FRACTION.check`
+  from 0.3 to 1.0 and bought +0.126 / +0.103 (FTP / PS) of discrimination. That was tuning
+  a softness constant. This is a threefold difference in the underlying conditional, and
+  §11.8's read is that splitting it is "almost certainly worth more than any tuning of
+  ACTION_TAU_FRACTION.check, and costs only threading position into the narrower."
+
+  WHY IT IS CHEAP. The information already exists at every call site — `gameTreeContext`
+  and `gameTreeDepth2` both know whether villain is in position. Nothing needs to be
+  inferred or stored; it needs to be passed.
+
+  WHAT THIS IS NOT. This is not a position-label decision input (engine CLAUDE.md
+  anti-pattern, POKER_THEORY §7.1). "Closes the action" vs "does not close the action" is
+  a structural fact about the decision node — whether the hand can continue on this
+  street — in the same way SPR is. It is not `if (posCategory === 'EARLY') foldPct *= 1.05`.
+  Prefer expressing it as CLOSES-THE-ACTION rather than IP/OOP where the two diverge
+  (multiway, where an IP villain may still have players behind).
+accept_criteria: |
+  - `narrowByBoard` distinguishes a check that closes the action from one that does not,
+    and every production call site passes the distinction. A capability that ships behind
+    a parameter no caller passes is inert — assert the two paths DIVERGE, per the WS-276
+    perceivedHeroRange precedent.
+  - The split is chosen by sweep against the WS-293 probe, on the SAME decisions across
+    arms, both sites, and beats the pooled single-'check' baseline on Δlog|cov. If it does
+    NOT beat it, that is a publishable result too — record it in POKER_THEORY §11.8 and
+    close rather than shipping a change that measured flat.
+  - Report the two branches' discrimination SEPARATELY, not just the pooled figure. The
+    whole point is that an aggregate over two different numbers hid this; an aggregate
+    verdict would hide whether one branch improved while the other regressed.
+  - Re-scored through the WS-273 villain harness for regression.
+  - Existing WS-303 guards stay green: the capping/dormant-trap regimes in
+    `postflopNarrower.test.js` test 4, and the narrowing COUNT in
+    `gameTreeDepth2.narrowingCount.test.js` — a positional split must not become an
+    excuse to narrow more times.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-163"
+created_at: "2026-07-31T05:20:00Z"
+status_note: |
+  Filed 2026-07-31 at WS-303's close, from the §11.8 measurement. WS-303 fixed HOW HARD a
+  check narrows; this fixes WHAT A CHECK MEANS. The founder chose to file rather than fold
+  it into WS-303 so it gets its own two-site probe sweep instead of riding along on a
+  finished measurement.

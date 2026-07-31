@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T17:26:33.154Z",
-  "updated_by_event": "ev-1785432393154-611057faa803",
+  "updated_at": "2026-07-31T05:14:03.508Z",
+  "updated_by_event": "ev-1785474843508-ca3852f00826",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4700,7 +4700,7 @@
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": null,
-      "claimed_at": null,
+      "claimed_at": "2026-07-31T02:50:43.703Z",
       "completed_at": null,
       "source": {
         "type": "measurement",
@@ -4777,7 +4777,7 @@
     "WS-307": {
       "id": "WS-307",
       "title": "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 31,
       "category": "domain-correctness",
       "effort": "M",
@@ -4914,7 +4914,144 @@
         "src/utils/exploitEngine/liveGameContext.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-312": {
+      "id": "WS-312",
+      "title": "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value",
+      "status": "backlog",
+      "priority_score": 29,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ak6-bluff-selection-probe"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/actionClassifier.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-313": {
+      "id": "WS-313",
+      "title": "'How many bluffs does my value support?' is computed and unreachable — bluffValueConstruction has no consumer",
+      "status": "deferred",
+      "priority_score": 28,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ak6-bluff-selection-probe"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/bluffValueConstruction.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/gameTreeContext.js",
+        "src/utils/exploitEngine/heroRangeBuilder.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-314": {
+      "id": "WS-314",
+      "title": "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ak6-bluff-selection-probe"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEvaluator.js",
+        "src/utils/exploitEngine/heroActionBuilder.js",
+        "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-315": {
+      "id": "WS-315",
+      "title": "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair",
+      "status": "backlog",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "run-ak6-bluff-selection-probe"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/heroActionBuilder.js",
+        "src/utils/exploitEngine/rangeSegmenter.js",
+        "src/utils/exploitEngine/gameTreeEvaluator.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-316": {
+      "id": "WS-316",
+      "title": "A check-back and a check are pooled into one 'check' — 10.3% strong vs 34.3%, and the likelihood is the average of two numbers that differ threefold",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "SPR-163"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/postflopNarrower.js",
+        "src/utils/exploitEngine/gameTreeContext.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "scripts/backtest/rangeCalibrationProbe.mjs"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785432393154-611057faa803"
+  "last_event_log_head": "ev-1785474843508-ca3852f00826"
 }

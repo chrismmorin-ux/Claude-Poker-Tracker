@@ -29,12 +29,15 @@
 
 import { buildRangeProfile } from '../../src/utils/rangeEngine/index.js';
 import { accumulateDecisions } from '../../src/utils/exploitEngine/decisionAccumulator.js';
-import { narrowByBoard } from '../../src/utils/exploitEngine/postflopNarrower.js';
+import {
+  narrowByBoard, classifyComboFull, computeComboEquity,
+} from '../../src/utils/exploitEngine/postflopNarrower.js';
 import { buildBaselineRange } from '../../src/utils/exploitEngine/preflopAdvisor.js';
-import { enumerateCombos } from '../../src/utils/pokerCore/rangeMatrix.js';
-import { parseAndEncode } from '../../src/utils/pokerCore/cardParser.js';
+import { enumerateCombos, decodeIndex } from '../../src/utils/pokerCore/rangeMatrix.js';
+import { parseAndEncode, encodeCard, cardRank } from '../../src/utils/pokerCore/cardParser.js';
 import { comboStrengthPercentile } from '../../src/utils/pokerCore/handEvaluator.js';
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
+import { TAU_FRACTION } from '../../src/utils/pokerCore/softWeights.js';
 import { indexEvalPlayers } from './runner.mjs';
 
 const USER_ID = 'backtest';
@@ -103,6 +106,74 @@ const scoreRange = (range, board, hole, dead = []) => {
 
 const strengthBand = (pct) => (pct == null ? 'unknown' : pct >= 0.8 ? 'strong' : pct >= 0.5 ? 'medium' : 'weak');
 
+// ─── WS-303: strength-quintile probe ─────────────────────────────────────────
+//
+// Where does the hand villain ACTUALLY held sit in the equity distribution of
+// villain's PRE-NARROWING range on this board? Mirrors narrowByBoard's `allCombos`
+// construction exactly (classifyComboFull -> computeComboEquity, same per-cell suit
+// enumeration) — see postflopNarrower.js:788-824 — but restricted to the cells the
+// baseline range actually holds (`baseRange[idx] > 0`), because the question here is
+// about villain's OWN range, not the board-only reference population narrowByBoard's
+// likelihood needs. Do not invent a different equity function.
+const RQ_GRID_SIZE = 169;
+const QUINTILES = ['q1', 'q2', 'q3', 'q4', 'q5'];
+
+/**
+ * Weighted percentile (0-1, midpoint-of-ties) of `hole`'s equity within the live combos
+ * of `baseRange` on `board`. Returns null when the hole isn't a live combo of the range
+ * on this board (dead-card collision, or the cell carries zero weight).
+ */
+const rangeEquityPercentile = (baseRange, board, deadCards, hole) => {
+  if (!baseRange || !board || board.length < 3 || !hole) return null;
+  const [c1, c2] = hole;
+  const dead = new Set([...deadCards, ...board]);
+  const boardRanks = board.map(cardRank).sort((a, b) => b - a);
+  const street = board.length >= 5 ? 'river' : board.length >= 4 ? 'turn' : 'flop';
+
+  let targetEquity = null;
+  const combos = []; // { equity, weight }
+
+  for (let idx = 0; idx < RQ_GRID_SIZE; idx++) {
+    if (baseRange[idx] <= 0) continue;
+    const { rank1, rank2, suited, isPair } = decodeIndex(idx);
+
+    const enumSuits = isPair
+      ? (() => { const out = []; for (let s1 = 0; s1 < 4; s1++) for (let s2 = s1 + 1; s2 < 4; s2++) out.push([s1, s2]); return out; })()
+      : suited
+        ? [[0, 0], [1, 1], [2, 2], [3, 3]]
+        : (() => { const out = []; for (let s1 = 0; s1 < 4; s1++) for (let s2 = 0; s2 < 4; s2++) { if (s1 !== s2) out.push([s1, s2]); } return out; })();
+
+    for (const [s1, s2] of enumSuits) {
+      const cc1 = encodeCard(rank1, s1);
+      const cc2 = encodeCard(rank2, s2);
+      if (dead.has(cc1) || dead.has(cc2)) continue;
+
+      const info = classifyComboFull(cc1, cc2, board);
+      const holeRanks = [rank1, rank2].sort((a, b) => b - a);
+      const equity = computeComboEquity(
+        info.category, holeRanks, boardRanks, info.totalEquityOuts, street,
+      );
+
+      combos.push({ equity, weight: baseRange[idx] });
+      if ((cc1 === c1 && cc2 === c2) || (cc1 === c2 && cc2 === c1)) targetEquity = equity;
+    }
+  }
+
+  if (targetEquity == null || combos.length === 0) return null;
+  const totalWeight = combos.reduce((s, c) => s + c.weight, 0);
+  if (!(totalWeight > 0)) return null;
+
+  let below = 0;
+  let atEquity = 0;
+  for (const c of combos) {
+    if (c.equity < targetEquity) below += c.weight;
+    else if (c.equity === targetEquity) atEquity += c.weight;
+  }
+  return (below + atEquity / 2) / totalWeight;
+};
+
+const quintileOf = (pct) => QUINTILES[Math.min(4, Math.max(0, Math.floor(pct * 5)))];
+
 /**
  * Run the probe.
  *
@@ -111,6 +182,7 @@ const strengthBand = (pct) => (pct == null ? 'unknown' : pct >= 0.8 ? 'strong' :
 export const runRangeCalibrationProbe = async ({
   files, poolPct = 50, maxPlayers = Infinity, maxHandsPerPlayer = Infinity,
   tauSweep = null, floorSweep = null, supportSweep = null,
+  actionTauSweep = null, depthTauSweep = null, strengthQuintiles = false,
   log = () => {},
 }) => {
   const { byPlayer, handsRead } = await indexEvalPlayers({
@@ -153,11 +225,43 @@ export const runRangeCalibrationProbe = async ({
   const supportArms = {};
   if (Array.isArray(supportSweep)) for (const s of supportSweep) supportArms[s] = mkStat();
 
+  // per-action tau sweep — bucketed by the villain's observed action, so the discrimination
+  // (strongly positive for raise/call/bet, negative for check) can be read per action rather
+  // than blended into one global number.
+  const actionTauArms = {};
+  if (Array.isArray(actionTauSweep)) {
+    for (const t of actionTauSweep) actionTauArms[t] = {};
+  }
+
+  // depth-tempered chaining sweep — KAPPA=1.0 must reproduce `chained` exactly (correctness
+  // check on the plumbing); other kappas temper the softness with depth.
+  const depthTauArms = {};
+  if (Array.isArray(depthTauSweep)) {
+    for (const kappa of depthTauSweep) {
+      depthTauArms[kappa] = { 1: mkStat(), 2: mkStat(), 3: mkStat() };
+    }
+  }
+
+  // WS-303: strength-quintile sweep — where does the ACTUAL hand villain held sit in the
+  // equity distribution of villain's PRE-NARROWING range, split by observed action?
+  // Founder hypothesis under test: the check branch's U-shape discrimination deficit
+  // (POKER_THEORY / postflopNarrower.js ACTION_TAU_FRACTION note) CONCENTRATES in the
+  // middle quintiles — a fear-driven check with a middling made hand — rather than
+  // spreading evenly or sitting at a tail. Fixed at three softness settings so the shape
+  // is visible: 0.3 (sharp), 1.0 (shipped check default), 20 (narrowing effectively off,
+  // the reference). tau -> action -> quintile -> stat.
+  const STRENGTH_QUINTILE_TAUS = [0.3, 1.0, 20];
+  const strengthQuintileArms = {};
+  if (strengthQuintiles) {
+    for (const t of STRENGTH_QUINTILE_TAUS) strengthQuintileArms[t] = {};
+  }
+
   let decisions = 0;
   let revealedActing = 0;
   let revealedVillain = 0;
 
   const at = (bucket, key) => (bucket[key] || (bucket[key] = mkStat()));
+  const atMap = (bucket, key) => (bucket[key] || (bucket[key] = {}));
 
   for (const [pid, hands] of byPlayer) {
     let profile;
@@ -234,6 +338,19 @@ export const runRangeCalibrationProbe = async ({
                   } catch { /* skip arm */ }
                 }
 
+                // ---- 3a2. per-action softness sweep on the SAME decision ----
+                // Bucketed by vAction: every arm for a given action is scored on the same
+                // set of decisions as every other arm for that action (the whole point of
+                // the instrument), but arms for different actions are naturally scored on
+                // different decision sets, since they're keyed by the action itself.
+                for (const t of Object.keys(actionTauArms)) {
+                  try {
+                    const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
+                    const r = scoreRange(nt, board, vHole);
+                    if (r) push(at(actionTauArms[t], vAction), r);
+                  } catch { /* skip arm */ }
+                }
+
                 // ---- 3c. floor sweep on the SAME decision ----
                 // Same decisions for every arm, so the arms are differenced per decision
                 // rather than each being scored on its own set — the selection effect
@@ -267,6 +384,39 @@ export const runRangeCalibrationProbe = async ({
                     if (r) push(chained[depth], r);
                   }
                 }
+
+                // ---- 3e. depth-tempered chaining sweep on the SAME decision ----
+                // At depth k (1-indexed), softness = TAU_FRACTION * kappa^(k-1). kappa=1.0
+                // reproduces the `chained` block above exactly — the correctness check on
+                // the plumbing.
+                for (const kappa of Object.keys(depthTauArms)) {
+                  const kappaNum = Number(kappa);
+                  let curD = base;
+                  for (let depth = 1; depth <= 3; depth++) {
+                    const tauFraction = TAU_FRACTION * Math.pow(kappaNum, depth - 1);
+                    try { curD = narrowByBoard(curD, 'call', board, [], { tauFraction }); } catch { break; }
+                    const r = scoreRange(curD, board, vHole);
+                    if (r) push(depthTauArms[kappa][depth], r);
+                  }
+                }
+
+                // ---- 3f. strength-quintile sweep on the SAME decision (WS-303) ----
+                // quintile is computed once per decision (it depends on the true hand and
+                // the PRE-narrowing range, not on tau); every tau arm for this decision is
+                // scored into the SAME quintile bucket, so arms differ only in narrowing.
+                if (Object.keys(strengthQuintileArms).length) {
+                  const pct = rangeEquityPercentile(base, board, [], vHole);
+                  if (pct != null) {
+                    const quintile = quintileOf(pct);
+                    for (const t of Object.keys(strengthQuintileArms)) {
+                      try {
+                        const nq = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
+                        const r = scoreRange(nq, board, vHole);
+                        if (r) push(at(atMap(strengthQuintileArms[t], vAction), quintile), r);
+                      } catch { /* skip arm */ }
+                    }
+                  }
+                }
               }
             }
           }
@@ -297,5 +447,22 @@ export const runRangeCalibrationProbe = async ({
     tauSweep: mapSummary(tauArms),
     floorSweep: mapSummary(floorArms),
     supportSweep: mapSummary(supportArms),
+    // action -> tau -> summary (per-action optimum readable per action, per tau)
+    actionTauSweep: Object.fromEntries(
+      Object.entries(actionTauArms).map(([t, byAction]) => [t, mapSummary(byAction)]),
+    ),
+    // tau -> action -> quintile -> summary (WS-303)
+    strengthQuintileSweep: Object.fromEntries(
+      Object.entries(strengthQuintileArms).map(([t, byAction]) => [
+        t,
+        Object.fromEntries(
+          Object.entries(byAction).map(([act, byQuintile]) => [act, mapSummary(byQuintile)]),
+        ),
+      ]),
+    ),
+    // kappa -> depth -> summary
+    depthTauSweep: Object.fromEntries(
+      Object.entries(depthTauArms).map(([kappa, byDepth]) => [kappa, mapSummary(byDepth)]),
+    ),
   };
 };

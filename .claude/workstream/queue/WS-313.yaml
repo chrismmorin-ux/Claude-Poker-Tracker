@@ -1,0 +1,94 @@
+id: "WS-313"
+title: "'How many bluffs does my value support?' is computed and unreachable — bluffValueConstruction has no consumer"
+legacy_id: ""
+type: improvement
+status: deferred
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  VERIFIED INERT 2026-07-30 (grep: only `bluffValueConstruction.test.js` imports it).
+
+  `bluffValueConstruction.js` (WS-276) already computes the whole construction the founder
+  described: value combos at a sizing, `balancedBluffShare = s/(1+2s)`, `balancedBluffCombos
+  = value x s/(1+s)`, the `bluffDeviationMultiplier` a villain's measured fold rate licenses,
+  and `bluffSurplus`. It has NO production consumer. The engine therefore never answers the
+  range-level question, only the per-hand one.
+
+  FOUNDER'S FRAMING (2026-07-30), which is the spec:
+    "There are only so many combos in this range. Bluffs can mimic the same cards by
+     mirroring the action. On a pot sized bet, we get our value through every time they
+     call, and if they start folding, we can incorporate bluffs at an appropriate ratio.
+     These bluffs come from somewhere in our range."
+
+  So the missing output is: at THIS sizing, hero's value count supports N bluff combos;
+  this villain's folding licenses M (M > N against an over-folder, M < N against a station);
+  hero's candidate hand either fits inside that budget or does not.
+
+  THIS IS THE SAME INERT-CAPABILITY PATTERN AS WS-307. `perceivedHeroRange` shipped correct
+  and unreachable for months because no call site passed it; the fallback ran in production
+  the whole time and every test passed. `constructBluffValue` is the same shape. Wiring it is
+  most of the value; do not treat this as a new-feature build.
+
+  BALANCE IS THE ANCHOR, NOT THE ADVICE (POKER_THEORY §5.4, and the module's own docblock).
+  This repo's edge is the DEVIATION. `licensedBluffCombos` is the figure to lead with and
+  `balancedBluffCombos` is the reference it departed from; the module returns both and marks
+  itself `isBaseline: true` precisely so no consumer can render the balanced number as an
+  instruction. A surface that shows only the balanced ratio has shipped a GTO trainer into an
+  exploitative tool.
+
+  INPUT IT NEEDS. `constructBluffValue` wants hero combos carrying `equityVsCallingRange`.
+  Hero's range at the node is now available — `buildRepresentedHeroRange` (WS-307) produces
+  the range hero's action represents from board + action alone, and `computeFilteredEquity` /
+  `comboCallFilter` already compute equity against the calling range. Check whether those
+  compose before designing anything new.
+accept_criteria: |
+  - `constructBluffValue` is called on a real evaluation path and its output reaches the
+    recommendation object (not only `treeMetadata`), so a consumer can render it.
+  - Output carries BOTH `licensedBluffCombos` and `balancedBluffCombos`, and the surface
+    leads with the licensed (deviated) figure. Asserted by test that the balanced number is
+    never presented alone.
+  - Against an over-folding villain the licensed count EXCEEDS balanced; against a station it
+    falls below. Both directions asserted.
+  - Sizing sensitivity holds end-to-end: a larger bet supports proportionally more bluffs
+    (half pot -> 1/3 of value combos, pot -> 1/2, 2x -> 2/3).
+  - The value/bluff split uses equity vs the CALLING range, never raw hero equity and never a
+    bucket label (§7.3). Coordinate with WS-312, which fixes the same confusion in the
+    classifier — landing WS-312 first is likely to make this cheaper.
+  - An inert-capability guard: a test asserting the production path actually populates the
+    field, so this cannot silently revert to unreachable.
+  - Gate 1 design entry required before any new UI surface (docs/design/LIFECYCLE.md).
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/bluffValueConstruction.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/heroRangeBuilder.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Surface: where does the bluff budget render — LiveAdviceBar, sidebar panel, or metadata only for now?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ak6-bluff-selection-probe"
+created_at: "2026-07-30T16:06:00Z"
+status_note: |
+  Founder-raised alongside WS-312/314/315 while reviewing WS-307. See
+  [[feedback_shipped_but_inert_capability]] for the recurring pattern this instance belongs
+  to (WS-276 perceivedHeroRange, WS-284 --reference tier, predictionAudit capture).
+deferred_at: "2026-07-31"
+defer_reason: "Blocked on absent data, not effort: constructBluffValue needs per-combo hero equity vs villain's CALLING range, and production only ever builds villain-side combo distributions (heroEquity per villain combo). The hero-side combo list with equityVsCallingRange exists solely in test fixtures. Wiring a consumer without that structure would ship another inert capability."
+resume_condition: "A hero-side per-combo distribution carrying equityVsCallingRange exists on a production path — most likely as a byproduct of WS-305 (hand-vs-range decomposed equity) or of the WS-315 blocker rework, both of which need the same hero-combo-vs-calling-range quantity."
+transitioned_by_event: "ev-1785468795430-8f4365ad5dd4"

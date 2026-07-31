@@ -1,0 +1,87 @@
+id: "WS-314"
+title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-07-30 on A♠K♦6♠ (two-tone), villain top-25%, hero OOP, checked to hero:
+
+      hero            heroEq   TOP action     topEV   betEV   checkEV
+      J♦T♦ gutshot     0.243   check-raise     33.7    12.2      8.3
+      8♦8♣ small pair  0.264   check-raise     32.8    16.6      8.8
+      5♦4♦ pure air    0.124   check-raise     23.6    12.8      4.1
+
+  Every weak hand gets CHECK-RAISE as the top recommendation, and check-raise EV is 2-3x the
+  best bet EV in each case.
+
+  PARTLY DEFENSIBLE, PARTLY NOT. Check-raising J♦T♦ is real poker — a gutshot to Broadway on
+  A-K-6 is a standard check-raise bluff with a nut redraw. Check-raising 5♦4♦ — no pair, no
+  draw, no blocker, 12% equity — as the single best action is not credible. The EV does scale
+  with equity (33.7 / 32.8 / 23.6), so the branch is not returning a constant; the problem is
+  that it OUTRANKS betting and checking for the entire weak half of the range regardless of
+  whether the hand has any business check-raising.
+
+  WHAT TO MEASURE FIRST, BEFORE FIXING. The suspected error is in how the branch is weighted,
+  not in the check-raise EV itself. A check-raise only happens if villain BETS after hero
+  checks. If that branch is not being weighted by P(villain bets) — or if the "villain checks
+  behind" branch is not being valued as hero simply realising equity — the option is being
+  credited with a payoff it only sometimes gets to attempt. Confirm which before touching it;
+  do not tune the number.
+
+  Note the direction: this over-credits a line hero cannot always take, which inflates the
+  apparent value of checking with air. That is the mirror image of WS-307's inflated fold
+  equity, and it sits in the same family as WS-308 (the engine prefers CHECKING the nut
+  flush to betting it — check EV 112 vs bet EV 77). WS-308 and this item may share a root
+  cause in how check-line EVs are assembled; check WS-308 before starting, and if the root is
+  shared, say so rather than fixing it twice.
+
+  DO NOT FIX WITH AN EQUITY GATE on check-raise generation. FIND-029 removed exactly that
+  shape of pre-gate from raiseEV because it suppressed all +EV bluff-raises, and POKER_THEORY
+  §13.1 is explicit that low showdown value is what makes a GOOD bluff candidate. The
+  weighting of the branch is what must be correct.
+accept_criteria: |
+  - The cause is identified and stated before the fix: specifically, whether the check-raise
+    branch is weighted by P(villain bets) and whether the villain-checks-behind branch is
+    valued as equity realisation. Evidence recorded in the ticket or run evidence dir.
+  - 5♦4♦ (no pair, no draw, no blocker) on A♠K♦6♠ no longer ranks check-raise first.
+  - CONVERSE MUST HOLD, asserted by test: J♦T♦ (gutshot to the nuts) MAY still check-raise —
+    a fix that removes check-raise from the whole weak range has destroyed a real play and
+    encoded "never bluff without equity", which is §13.1 backwards.
+  - No hero-equity pre-gate is added to check-raise candidate generation (FIND-029 guard).
+  - Behavioural test covering both directions, failing against the pre-fix engine.
+  - If the root cause is shared with WS-308, note it in both items and fix once.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ak6-bluff-selection-probe"
+created_at: "2026-07-30T16:07:00Z"
+status_note: |
+  Surfaced while answering the founder's question "is this hand a good bluff here, or is
+  checking / check-calling to realize equity cheap the best play?" — the engine's current
+  answer for weak hands is almost always "check-raise", which does not discriminate and is
+  therefore not an answer.
+
+  Related: WS-308 (prefers checking the nut flush to betting it) — likely shared root cause
+  in check-line EV assembly.

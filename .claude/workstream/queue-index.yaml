@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 187
+total_items: 192
 by_status:
   decomposed: 1
-  done: 78
+  done: 79
   in_progress: 3
-  deferred: 43
-  backlog: 43
+  deferred: 44
+  backlog: 46
   dismissed: 1
   completed: 7
   review: 1
@@ -23,7 +23,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 57
+  domain-correctness: 62
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1775,7 +1775,7 @@ items:
 
   - id: "WS-307"
     title: "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: M
@@ -1816,5 +1816,50 @@ items:
     category: design
     effort: M
     program: design
+    capability: core
+
+  - id: "WS-312"
+    title: "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-313"
+    title: "'How many bluffs does my value support?' is computed and unreachable — bluffValueConstruction has no consumer"
+    status: deferred
+    priority_score: 28
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-314"
+    title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-315"
+    title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-316"
+    title: "A check-back and a check are pooled into one 'check' — 10.3% strong vs 34.3%, and the likelihood is the average of two numbers that differ threefold"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
     capability: core
 

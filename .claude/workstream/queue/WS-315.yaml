@@ -1,0 +1,91 @@
+id: "WS-315"
+title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-07-30 on A♠K♦6♠, villain top-25%, checked to hero:
+
+      hero            heroEq   blockers: % of villain's NUTS removed
+      Q♠J♠  flush draw 0.510   0.0
+      J♠T♠  flush draw 0.471   0.0
+      J♦T♦  gutshot     0.243   0.0
+      8♦8♣  small pair  0.264   0.0
+      5♦4♦  pure air    0.124   0.0
+      A♦Q♦  TOP PAIR    0.753   27.8   <-- the only hand that blocks anything
+
+  THE STRUCTURAL PROBLEM. `heroActionBuilder` generates a blocker-motivated bluff only when
+
+      blockerEffects.nuts.pctRemoved > 15  AND  heroEquity < 0.35
+
+  On an ace-high board the hands that remove villain's nuts (AA, AK) are hands containing an
+  ace or a king — and those give hero top pair, i.e. equity well above 0.35. The two
+  conditions are close to mutually exclusive on exactly the board texture where blocker
+  reasoning matters most. Measured here, the gate fired for zero of the five bluff candidates
+  and only for the one hand that was already a value bet.
+
+  WHY THIS IS NOT MERELY A THRESHOLD TWEAK. Two deeper faults, and raising 0.35 fixes
+  neither:
+
+  1. It GENERATES a candidate rather than RANKING candidates. The founder's question is
+     comparative — "these bluffs come from somewhere in our range... they may be bottom of
+     our range, or have the best re-draw, or have blocker properties that help the bluff go
+     through." Selecting WHICH combos bluff needs blocker quality as a per-combo score
+     across candidates, not a boolean that adds one more bet size to the list.
+
+  2. It only counts blockers to villain's NUTS. On A-K-6 the bluff that gets through is
+     usually the one blocking villain's CONTINUING range (top pair, the flush draw), not the
+     small set of nutted combos. Blocking the hands that CALL is what raises fold equity;
+     blocking the nuts mainly matters for whether hero gets raised. `computeBlockerEffects`
+     already returns per-bucket removal (nuts / strong / air), so the finer signal exists and
+     is being narrowed to one bucket.
+
+  Note the interaction with §13.1: blocker quality is a HERO-SIDE suitability input, and it
+  must not be allowed to override the villain-range-side profitability gate WS-307 installed.
+  A hand with perfect blockers is still a losing bluff against a range that cannot fold.
+accept_criteria: |
+  - Blocker quality is available as a per-combo/per-candidate SCORE usable for ranking bluff
+    candidates, not only as a boolean that spawns an extra bet size.
+  - The signal accounts for removal from villain's CONTINUING range (the hands that call),
+    not solely from the nuts bucket. `computeBlockerEffects` per-bucket output is used rather
+    than re-derived.
+  - On A♠K♦6♠ the ranking distinguishes candidates that block villain's calling range from
+    ones that block nothing, holding equity roughly constant.
+  - No hero-equity pre-gate is reintroduced as the mechanism (FIND-029 / §13.1 guard): a
+    zero-showdown-value hand must remain eligible.
+  - Blocker score does NOT override the WS-307 profitability gate — assert that against an
+    uncapped, nutted villain range a perfectly-blocking hand still does not rank a bluff
+    first.
+  - Behavioural test using shared `__tests__/fixtures/ranges.js` fixtures.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ak6-bluff-selection-probe"
+created_at: "2026-07-30T16:08:00Z"
+status_note: |
+  Third of four items from the founder's 2026-07-30 bluff-selection review (WS-312 classifier,
+  WS-313 bluff:value budget, WS-314 check-raise dominance, WS-315 blockers). WS-313 and this
+  item together are the "which combos should bluff" half; WS-307 already fixed the "can this
+  range fold" half.

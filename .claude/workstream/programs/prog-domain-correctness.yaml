@@ -337,7 +337,32 @@ accountability:
     # (2) 5 was untenable for the program its own header calls the most important
     #     in the repo — `engineering` carries 15. Narrowing the count to
     #     finding_id-bearing items remains the more faithful fix; see the kit item.
-    max_open_items: 25
+    #
+    # Raised 25 → 60 on 2026-07-30 (founder decision). THIRD time this cap has bitten,
+    # so the ruling is now explicit rather than incremental:
+    #
+    #   "Our engine is putting out bad info if we can't trust it to be correct, which
+    #    means these ALL need to be done and more in order to trust our outputs. There
+    #    are 43 open, great. That might be it, or there might be 100 more that pop up
+    #    along the way. That is okay, as long as we are converging on precision and
+    #    accuracy."
+    #
+    # The open-item COUNT is a measurement of correctness debt, not a governance
+    # failure, and this program is the repo's purpose — an engine whose numbers cannot
+    # be trusted has no value however tidy its backlog.
+    #
+    # The harm the breach actually caused was mechanical, and it is the reason for the
+    # raise: over cap, `priority_floor` pulls every item UP to 27, so 30+ items with
+    # genuine scores from 5 to 26 collapse onto one plateau and /next loses the ability
+    # to rank within the program. The cap was destroying the prioritisation signal for
+    # the work it was supposedly protecting. A cap above the open count stops the floor
+    # firing at all and restores true scores.
+    #
+    # 60 is headroom, not a target. If the count passes it again, do NOT close real work
+    # to fit — raise it again, or land the structural fix named above (count only
+    # finding_id-bearing items) so founder-directed roadmap work stops being policed by
+    # a limit written for audit sprawl.
+    max_open_items: 60
     priority_floor: 27
     escalation:
       stale_days: 7
@@ -403,16 +428,10 @@ health_breakdown:
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
 findings_open: 11
-work_items_open: 40
+work_items_open: 43
 
 cap_breach:
-  active: true
-  work_items_open: 40
-  findings_open: 11
-  max_open_items: 25
-  priority_floor: 27
-  ratio: 1.6
-  since: "2026-07-28"
+  active: false
 evidence:
   last_audit_report: ".claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-3/synthesis.md"
   protocol_history:

@@ -12,6 +12,13 @@
  *     --floor-sweep 0.01,0.02,0.03,0.05,0.08   minimum P(action | combo)
  *     --support-sweep 0,0.05,0.15,0.40         preflop prior support weight (WS-302);
  *                                              lambda = 0 is the pre-WS-302 chart
+ *     --action-tau-sweep 0.3,0.6,1.0,2.0,5.0,20   per-action softness (bucketed by vAction)
+ *     --depth-tau-sweep  1.0,1.5,2.0,3.0           depth-tempered chaining; kappa=1.0
+ *                                                  reproduces the `chained` numbers exactly
+ *     --strength-quintiles                        (WS-303) bucket villain decisions by
+ *                                                  where the true hand sits in villain's
+ *                                                  pre-narrowing range equity distribution,
+ *                                                  split by action, at tau 0.3/1.0/20
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -75,6 +82,9 @@ const main = async () => {
       tauSweep: list(args['tau-sweep'])?.map(Number) ?? null,
       floorSweep: list(args['floor-sweep'])?.map(Number) ?? null,
       supportSweep: list(args['support-sweep'])?.map(Number) ?? null,
+      actionTauSweep: list(args['action-tau-sweep'])?.map(Number) ?? null,
+      depthTauSweep: list(args['depth-tau-sweep'])?.map(Number) ?? null,
+      strengthQuintiles: Boolean(args['strength-quintiles']),
       log: (m) => console.log(`  ${m}`),
     });
 
@@ -105,6 +115,16 @@ const main = async () => {
     if (r.supportSweep && Object.keys(r.supportSweep).length) {
       // lambda = 0 is the pre-WS-302 prior, so this table contains its own control.
       console.log(table('PREFLOP SUPPORT SWEEP — prior lambda (0 = shipped chart); rank by Δlog', r.supportSweep));
+    }
+    if (r.strengthQuintileSweep && Object.keys(r.strengthQuintileSweep).length) {
+      // WS-303: does the check branch's discrimination deficit concentrate in the middle
+      // quintiles (q2-q4), or spread evenly / sit at a tail?
+      for (const [t, byAction] of Object.entries(r.strengthQuintileSweep)) {
+        for (const [act, byQuintile] of Object.entries(byAction)) {
+          if (!Object.keys(byQuintile).length) continue;
+          console.log(table(`STRENGTH QUINTILE (WS-303) — tau=${t} action=${act}`, byQuintile));
+        }
+      }
     }
 
     console.log(`\n  runtime ${((Date.now() - started) / 1000).toFixed(1)}s`);

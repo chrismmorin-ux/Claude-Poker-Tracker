@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-07-30T16:44:07.935Z",
-  "goal": "Ship WS-276: Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)",
+  "composed_at": "2026-07-31T02:50:43.545Z",
+  "goal": "Ship WS-303: A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-276",
-      "title": "Hero has no range — no strategy at a node, no bluff:value construction from sizing, and no model of what villain thinks hero holds (level-2 gap)",
-      "raw_score": 32,
-      "adjusted_score": 32,
+      "id": "WS-303",
+      "title": "A check tells the engine nothing — the check branch scores WORSE than uniform, and re-narrowing sharpens the range until depth 3 is worse than not narrowing",
+      "raw_score": 29,
+      "adjusted_score": 29,
       "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-276 selected (32 × no damping = 32).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+20 more).\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-303 selected (29 × no damping = 29).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-311 18→22.\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 3,

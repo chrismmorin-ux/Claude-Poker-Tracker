@@ -1,0 +1,92 @@
+id: "WS-312"
+title: "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-07-30, founder-raised. Reproduces on every run.
+
+  THE SPOT. Board A♠K♦6♠ (two-tone), villain range top-25%, checked to hero. Hero holds
+  Q♠J♠ — second-nut flush draw plus a backdoor straight draw, and ZERO showdown value: it
+  beats nothing in villain's range right now. The engine correctly recommends BET (EV 47.0
+  vs check 25.6). Its stated reason is wrong:
+
+      "Thin value bet — 49% equity, marginally +EV when called,
+       38% folds add safety (removes 6/36 top pair combos)"
+
+  THE DEFECT. `classifyAction` / `buildTreeReasoning` read `heroEquity` — an ALL-IN-BY-THE-
+  RIVER equity — and compare it to a made-hand value ladder. For a draw that number is
+  mostly unrealised: it is the probability of IMPROVING, not the probability of being ahead
+  of a calling range now. Q♠J♠ at 0.51 raw equity has ~0 equity against the hands that
+  actually call a flop bet, because everything that calls has at least a pair.
+
+  So the two clauses contradict each other. "Thin value" claims villain calls with worse;
+  "marginally +EV when called" then concedes the call branch is barely profitable. A hand
+  that profits from folds and from improving is a SEMI-BLUFF (POKER_THEORY §3.4 motive 3 /
+  §13.1), and the four-motive table in exploitEngine/CLAUDE.md already says a missing
+  category does not produce a blank — it produces a MISFILE.
+
+  WHY IT MATTERS BEYOND WORDING. Per the reasoning-quality rule, a value hand cites the
+  CALLING range and a bluff cites FOLD EQUITY. This output cites both, so the founder cannot
+  tell which lever the recommendation rests on — and they are opposite levers:
+    - if it is thin value, sizing goes DOWN to keep worse hands in (§4.1);
+    - if it is a semi-bluff, sizing goes UP to charge the draw and maximise fold equity.
+  Misclassification therefore inverts the sizing advice, exactly as the protection-vs-thin-
+  value misfile does (exploitEngine/CLAUDE.md).
+
+  It also corrupts the downstream weakness model: the same classifier labels HERO's action
+  class, and a semi-bluff logged as thin value teaches the wrong lesson back.
+
+  NOT A SCOPE QUESTION ABOUT EV. The EV number (47.0) is not being challenged here — only
+  the class and the narrative attached to it. Do not "fix" this by changing the bet EV.
+accept_criteria: |
+  - Q♠J♠ on A♠K♦6♠ facing a check is classified as a SEMI-BLUFF (or the codebase's
+    equivalent draw-with-fold-equity class), not thin value, and its reasoning cites fold
+    equity + draw completion rather than "+EV when called".
+  - The discriminator is equity-vs-CALLING-RANGE (already computed as `eqVsCallRange` in
+    gameTreeEvaluator) and/or the combo's draw status — NOT raw `heroEquity`. Per §7.3 use
+    the per-combo quantity, never a bucket label.
+  - CONVERSE MUST HOLD, asserted by test: a genuine thin-value hand (a real made hand that
+    beats part of the calling range, e.g. A♦9♦ top pair weak kicker on the same board) is
+    STILL classified as thin value. A change that reclassifies every bet as a semi-bluff has
+    just moved the misfile.
+  - A hand with a draw AND real showdown value (e.g. A♠5♠ — top pair + nut flush draw) is
+    not forced into the bluff class; it is value with a redraw.
+  - Behavioural test using shared `__tests__/fixtures/ranges.js` fixtures, failing against
+    the pre-fix engine.
+  - No sizing change ships in this item — sizing follows the class and is WS-314's concern.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "run-ak6-bluff-selection-probe"
+created_at: "2026-07-30T16:05:00Z"
+status_note: |
+  Founder-raised while reviewing WS-307: "Often I will ask myself if a particular set of
+  hole cards is a good bluff in this scenario, or if checking or check-calling and trying to
+  realize equity cheap through free cards is the best play. This is a question our model
+  needs to answer for us." Founder nominated this item as the one to start with.
+
+  Measured table (A♠K♦6♠, top-25% villain, checked to hero) recorded in the session
+  transcript; re-derivable by evaluating the listed hands through evaluateGameTree.

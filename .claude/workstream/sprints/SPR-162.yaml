@@ -1,0 +1,31 @@
+id: "SPR-162"
+title: "Ship WS-307: The raise EV assumes fold equity this range cannot supply — half of it never folds and "
+status: done
+approved_at: "2026-07-30T18:11:50.382Z"
+completed_at: "2026-07-30T20:29:49.611Z"
+completed_by_commit: "eb47723"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-307: The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-07-30T18:11:50.382Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-307 selected (31 × no damping = 31).
+  Program cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+21 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-307"
+    title: "The raise EV assumes fold equity this range cannot supply — half of it never folds and a third is the nuts"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-07-30T20:29:49.611Z"
+
+created_at: "2026-07-30T18:11:50.382Z"
