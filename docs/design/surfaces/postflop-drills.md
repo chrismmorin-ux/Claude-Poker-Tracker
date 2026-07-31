@@ -179,6 +179,75 @@ Tab placement rationale (Pre-Session first, founder ratification 2026-05-19): Pr
 
 ---
 
+## §PD-LESSON-BENCHMARK — the `benchmark` lesson section kind (Gate 4 extension, 2026-07-31)
+
+**Entry audit:** [`audits/2026-07-31-entry-multiway-field-size-lesson.md`](../audits/2026-07-31-entry-multiway-field-size-lesson.md) (GREEN).
+**Code path:** `src/components/views/PostflopDrillsView/LessonsMode.jsx` → `BenchmarkSection`.
+**Content path:** `src/utils/postflopDrillContent/lessons.js` — sections with `kind: 'benchmark'`.
+
+### What it is
+
+A fourth lesson section kind, alongside `prose` / `formula` / `example`. Renders a
+compact table with a pinned **anchor** (the reference line every row is read against),
+an optional intro, an optional takeaway, and a **mandatory source attribution**.
+
+Introduced for `mw-field-size`, whose subject is a monotone ordering over field size.
+`prose` cannot render an ordering; `formula` renders one line; `example` computes a
+*villain-range* decomposition, which is a different object. The table is the minimum
+faithful rendering of the thing being taught.
+
+### Anatomy
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ BENCHMARK                          6-way fair share=16.7%│ ← anchor, right-aligned
+│ {heading}                                                 │
+│                                                           │
+│ {intro}                                                   │
+│                                                           │
+│ Holding on the flop      6-way equity    × fair share      │ ← columns[]
+│ ────────────────────────────────────────────────────────  │
+│ Top set                          79%            4.8×      │ ← emphasis row (teal)
+│ Two pair                         57%            3.4×      │
+│ …                                                         │
+│                                                           │
+│ {takeaway}                                     (italic)   │
+│ Source: {source}                               (11px)     │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Schema
+
+| Field | Required | Notes |
+|---|---|---|
+| `kind` | yes | `'benchmark'` |
+| `heading` | yes | names the decision the table serves |
+| `anchor` | yes | the reference line, e.g. `6-way fair share = 16.7%` |
+| `columns` | yes | ≥2; first is the label column, rest are numeric |
+| `rows` | yes | `{ label, values[], emphasis? }`; `values.length === columns.length - 1` |
+| `source` | yes | provenance for the measured figures |
+| `intro` | no | prose above the table |
+| `takeaway` | no | italic prose below the table |
+
+Pinned by `__tests__/lessons.test.js`: valid-kind set, rectangularity, anchor + source
+presence, and row-label uniqueness (React key integrity).
+
+### Binding constraints
+
+- **STRICTLY NON-INTERACTIVE.** No slider, no field-size selector, no calculator. The
+  lesson's success criterion is that hero runs the ladder at the table *without* the
+  app; an interactive widget teaches dependence on the device and inverts the goal.
+  Recorded in the entry audit §Scope so a future reviewer does not "improve" it.
+- **Attribution is mandatory**, not decorative — `source` is the Gate 1 number-drift
+  mitigation and is test-enforced.
+- **Density cap:** ~8 rows × 3 numeric columns. Lessons scroll, so a table is
+  affordable, but a full research dump is not readable at 1600×720. Use several small
+  tables at their point of use rather than one large one up front.
+- Prefer **multiples of an anchor** over raw absolute figures where both are available —
+  multiples survive changes in the underlying field-width assumption; absolutes do not.
+
+---
+
 ## Opt-in-test mode (SCF Gate 4 extension, 2026-05-02)
 
 **Added by:** SCF Gate 4 (WS-012 / SPR-020). See `audits/2026-05-02-gate4-design-self-coach-foundation.md` §SCF-G4-S4 + `surfaces/skill-assessment-test.md` for the full spec.
@@ -570,4 +639,5 @@ DS-67 (validate authored content) rests on the parity contract: equity computed 
 - 2026-05-02 — SCF Gate 4 extension: opt-in-test mode subsection added. 3-delta description; entry from lesson card `Test myself` button; result-display surface with cd5_exempt manifest. Implementation deferred to SCF Gate 5 multi-PR.
 - 2026-05-20 — **Range Lab Gate 4 extension** (WS-055 / SPR-098): Range Lab capability section added (Explorer expansion — Custom range-source toggle, NOT a new tab/view per Gate 1 + Drills Consolidation hold). Covers paint UX (ADR-007 tap-toggle + long-press-weight; **partial-fill-height** weight rendering per founder ratification SPR-098), per-stroke undo + Clear-all confirmation (ADR-008), state-aware primary action (E-A4), surface elements E-A5/E-A6/E-A7/E-A10, sub-capabilities table (DS-64 paint + DS-65 compare = Phase 1-2; DS-66 evolution + DS-67 validate = Phase 3+ surface-contracted), **AP-RL-01 binding** (E-A11 — per-combo narrowing, no bucket-label heuristics; CI-lint forbidden surfaces) + **INV-LSW-RL-EQUITY-PARITY binding**, Phase-5 cross-link contract (LSW + HandReplay `Inspect in Range Lab` + E-A8 unsaved-paint guard), mobile decision (landscape v1; portrait → WS-208), Gate-5 test-coverage expectations, adjacent-surface dependency table. JTBD list extended (DS-64..67). Explorer Anatomy updated with range-source toggle. Inherits Gate 2 verdict YELLOW (6 conditions all cleared) + Gate 3 JTBDs (SPR-097) + ADR-007/008 (SPR-094) + WS-205 cache + WS-206 parity (SPR-095). Cross-link affordances on LSW/HandReplay surfaces deferred to Phase 5 (not authored this gate). Mobile-portrait variant tracked as WS-208.
 - 2026-06-15 — WS-231 (WS-229 roundtable corrective): **Explorer** tab renamed **Range Explorer** (F-DRILL-03 — range-vs-board breakdown + Range Lab; resolves the cross-view false-friend with preflop's hand-vs-hand "Equity Lookup"). Pre-Session over-claim corrected to a gate-pending/feature-flagged-off banner + tab count fixed to 6 shipped (F-DRILL-01 / C-1). `returning-after-break` added to Personas Served as currently-unserved (A-3). Product-line clarified main-app-only / sidebar-N/A (D-3). Tab-switch state-loss protection added (F-DRILL-02). Internal tab `id` unchanged (`explorer`).
+- 2026-07-31 — **Lesson benchmark Gate 4 extension** (entry audit `2026-07-31-entry-multiway-field-size-lesson.md`, GREEN): §PD-LESSON-BENCHMARK added — fourth lesson section kind `benchmark` (anchored ladder table, strictly non-interactive, mandatory source attribution, ~8-row density cap). Introduced for the new `mw-field-size` lesson, which teaches field-size scaling as the relationship the other six `mw-*` lessons are consequences of. Companion content: SCF overlay `lessons/multiway-field-size-scaling.md` (`exposition_source` → `mw-field-size`, `leakTagIds: [hero-multiway-bluff-frequency]`). Companion correction: `multiwayFrameworks.js` `perPlayerFold` 0.65 → measured `POP_FOLD_TO_CBET` 0.555 (SRC-011, 1.06M full-ring decisions), and `mw-bluff-death` narration realigned to the same figure so sibling lessons do not disagree. No new surface, route, or interaction primitive; Gate 2 not triggered.
 - 2026-05-19 — **PSD Gate 4 extension** (WS-199 / SPR-092): Pre-Session mode section added (this section). Mode-bar updated to 7 tabs with `[Pre-Session]` in leftmost slot per founder ratification 2026-05-19. JTBD list extended (SE-01/02/03 + DS-62/DS-63). Personas extended with `presession-preparer` (sibling of `post-session-chris` per Gate 3 A-R1). State block extended with `drillType='presession'` writes — explicitly no streak/mastery/tier-label persistence (E-A5 + A-AP1 binding). Inherits ADR-005 (flip-card pattern) + ADR-006 (in-app anchor-trace bundle) + Gate 2 verdict YELLOW + Gate 3 research. Companion edits: `sessions-view.md` (inline `Pre-Session Drill` button in action row) + `hand-replay-view.md` (`Queue for tomorrow's PSD` overflow-menu item per decision). Mobile-portrait variant tracked separately as WS-200.

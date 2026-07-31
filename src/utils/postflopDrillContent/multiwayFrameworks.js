@@ -29,6 +29,23 @@ const isMultiway = (s) => {
 
 const n = (s) => (typeof s?.numVillains === 'number' ? s.numVillains : 2);
 
+/**
+ * Population fold-to-c-bet, MEASURED — not an estimate.
+ *
+ * 55.5% pooled over 1,057,194 full-ring c-bet decisions in the imported HandHQ
+ * reference pool (SRC-011), and flat to within ~2 points across a 40x stake
+ * range. Previously this module hard-coded 0.65, which was invented; the repo's
+ * own founder live prior is 45% (`bayesianConfidence.STAT_PRIORS.foldToCbet`),
+ * so 65% overstated folding in both directions of the available evidence.
+ *
+ * Kept as a teaching constant local to this module: these frameworks narrate a
+ * population baseline, not a specific villain. Per-villain fold rates resolve
+ * through the §6.5a hierarchy in the live engines and must NOT read this value.
+ *
+ * Source: docs/research/multiway-flop-strategy-2026-07-31.md §5.
+ */
+export const POP_FOLD_TO_CBET = 0.555;
+
 // ---------- 1. Fold equity compression ---------- //
 
 export const FOLD_EQUITY_COMPRESSION = {
@@ -46,11 +63,12 @@ export const FOLD_EQUITY_COMPRESSION = {
   },
   narrate: (s, match) => {
     const villains = match.details.numVillains;
-    const perPlayerFold = 0.65;
-    const compressed = Math.pow(perPlayerFold, villains);
+    const compressed = Math.pow(POP_FOLD_TO_CBET, villains);
     return (
-      `With ${villains} villains, if each folds ${Math.round(perPlayerFold * 100)}% of the time vs your `
-      + `bluff, all-folds drops to ${(compressed * 100).toFixed(1)}%. `
+      `With ${villains} villains, each folding the measured ${(POP_FOLD_TO_CBET * 100).toFixed(1)}% `
+      + `vs a c-bet, all-folds drops to ${(compressed * 100).toFixed(1)}%. `
+      + `A half-pot bluff needs 33.3% fold-through to break even, so it is already losing `
+      + `${villains >= 2 ? 'here' : 'by three villains'}. `
       + `Required bluff-frequency compression: even one more villain makes any bluff-heavy line structurally -EV. `
       + `Value betting can still be right; pure bluffs rarely are.`
     );

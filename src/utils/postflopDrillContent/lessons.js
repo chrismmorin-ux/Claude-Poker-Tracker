@@ -279,7 +279,7 @@ export const LESSONS = [
         kind: 'prose',
         heading: 'The Core Math',
         body:
-          'Heads-up, a bluff needs the villain to fold some % of the time. Multiway, it needs ALL villains to fold — their fold rates multiply. If each villain independently folds 60% of the time to your cbet, all-folds happens 60% × 60% = 36% HU vs the combined two villains. With three villains it drops to 21.6%. The pure-bluff EV curve collapses rapidly as N grows.',
+          'Heads-up, a bluff needs the villain to fold some % of the time. Multiway, it needs ALL villains to fold — their fold rates multiply. Population fold-to-cbet measures 55.5% (1.06M full-ring decisions, HandHQ SRC-011), so two independent villains both fold 55.5% × 55.5% = 30.8% of the time, and three only 17.1%. The pure-bluff EV curve collapses rapidly as N grows. See "Field Size" for the full table and the required-fold-rate side of it.',
       },
       {
         kind: 'formula',
@@ -289,7 +289,7 @@ export const LESSONS = [
         kind: 'prose',
         heading: 'Practical implication',
         body:
-          'At a 3-way flop on a board where each villain would call ~50% of the time HU, a pure bluff succeeds 25% of the time when you assume independence. Required fold equity for break-even at 33% pot is ~25% — you are at the razor edge of breakeven with a typical call rate. Add in the fact that combined ranges dominate more hands, and pure bluffs are structurally -EV almost everywhere multiway.',
+          'At a 3-way flop on a board where each villain would call ~50% of the time HU, a pure bluff succeeds 25% of the time when you assume independence. Required fold equity for break-even at 33% pot is ~25% — you are at the razor edge of breakeven with a typical call rate. At half pot the requirement is 33.3% and you are already losing. Add in the fact that combined ranges dominate more hands, and pure bluffs are structurally -EV almost everywhere multiway.\n\nThe counterweight, so this does not turn you into an over-folder: defense DIVIDES across the field. Against a half-pot bet five-way you personally owe only ~20% continuation, not the 66.7% the heads-up rule demands.',
       },
       {
         kind: 'prose',
@@ -448,6 +448,132 @@ export const LESSONS = [
           + '2. Small pairs set-mining, if stacks are deep enough (SPR > 6) to realize the set-mine.\n'
           + '3. Clear dominance hands (TPTK on a dry board, overpair vs flop lead).\n'
           + '\nDon\'t overcall with middling weak hands like KJo on JT7tt — two villains likely have you beat or drawing dead, and you can\'t stand a turn bet.',
+      },
+    ],
+  },
+
+  {
+    id: 'mw-field-size',
+    title: 'Field Size — What Your Hand Is Actually Worth',
+    frameworkId: 'hand_class_shift',
+    summary: 'One anchor number reorders every hand you hold. Draws climb, one-pair hands fall, and the ordering inverts five-way.',
+    sections: [
+      {
+        kind: 'prose',
+        heading: 'Start here: the ordering inverts',
+        body:
+          'Heads-up on 9♥8♥2♠, top pair with a weak kicker is worth 73% and a bare nut flush draw is worth 57%. Top pair is the better hand by 16 points and it is not close. Six-way on that same board, the nut flush draw is worth 37% and top pair with a weak kicker is worth 31% — the draw is now the better hand. Nothing about either holding changed. The field changed, and the field is what decides which one you would rather have.\n\nThis is the concept: field size is not a modifier you apply after you evaluate your hand. It is part of what your hand IS. Every other multiway lesson here — why bluffs die, why thin value dies, why you check back air three-way — is a consequence of this one relationship.',
+      },
+      {
+        kind: 'prose',
+        heading: 'The one number you carry to the table',
+        body:
+          'Your fair share of the pot is 1 divided by the number of players in it. Six-way that is 16.7%. Five-way 20%, four-way 25%, three-way 33%, heads-up 50%.\n\nThat number is not the price of a call — pot odds usually let you continue for less. It is the reference line that tells you whether a holding is an asset or a liability. Everything below is stated as a MULTIPLE of fair share, because multiples are what stay stable when the field gets looser or tighter. The raw equities move; the ordering and the multiples hold.',
+      },
+      {
+        kind: 'formula',
+        body: 'fair share = 1 / (players in pot)     →     6-way = 16.7%     ·     continue at ~2×     ·     fold below 1×',
+      },
+      {
+        kind: 'benchmark',
+        heading: 'Decision 1 — continue or fold',
+        anchor: '6-way fair share = 16.7%',
+        intro:
+          'Where your holding sits on the ladder six-way. Read the multiple, not the percentage — the multiple is what survives a looser or tighter table.',
+        columns: ['Holding on the flop', '6-way equity', '× fair share'],
+        rows: [
+          { label: 'Top set',                       values: ['79%', '4.8×'], emphasis: true },
+          { label: 'Two pair',                      values: ['57%', '3.4×'] },
+          { label: 'Top pair, big kicker',          values: ['51%', '3.1×'] },
+          { label: 'Combo draw (flush + straight)', values: ['43%', '2.6×'], emphasis: true },
+          { label: 'Nut flush draw',                values: ['37%', '2.2×'], emphasis: true },
+          { label: 'Top pair, weak kicker',         values: ['31%', '1.8×'] },
+          { label: 'Bare open-ender',               values: ['22%', '1.3×'] },
+          { label: 'Second pair',                   values: ['15%', '0.9×'] },
+          { label: 'Bare gutshot',                  values: ['13%', '0.8×'] },
+          { label: 'Air (two overcards)',           values: ['10%', '0.6×'] },
+        ],
+        takeaway:
+          'The rule is continue at roughly 2× fair share, fold below 1×. Notice what that does to second pair and to two overcards — they are below the line six-way, which is why "hit or fold" is a real strategy multiway and not a simplification.',
+        source: 'docs/research/multiway-flop-strategy-2026-07-31.md §3 (raised field, engine-computed)',
+      },
+      {
+        kind: 'prose',
+        heading: 'Why draws climb and pairs fall',
+        body:
+          'A draw\'s equity is a count of cards. Nine hearts are still nine hearts whether one player or five is looking at the board — the field cannot take those outs away. A one-pair hand\'s equity is the probability that nobody else connected, and that probability decays geometrically with every extra player.\n\nMeasured as retention — what fraction of its heads-up equity a holding still has six-way — nutted hands and nut-ish draws keep 64-84%. One-pair hands keep 27-59%. That gap is the entire strategy. It is also why the crossover happens where it does: the nut flush draw passes top-pair-weak-kicker at four opponents, and passes second pair at only two.',
+      },
+      {
+        kind: 'benchmark',
+        heading: 'Where the crossover happens',
+        anchor: 'nut flush draw vs one-pair hands',
+        intro:
+          'The same two holdings on the same board, as players are added. Watch the columns cross.',
+        columns: ['Opponents', 'Top pair, weak kicker', 'Nut flush draw'],
+        rows: [
+          { label: '1 (heads-up)', values: ['73%', '57%'] },
+          { label: '2',            values: ['58%', '45%'] },
+          { label: '3',            values: ['47%', '41%'] },
+          { label: '4 (5-way)',    values: ['38%', '38%'], emphasis: true },
+          { label: '5 (6-way)',    values: ['31%', '37%'], emphasis: true },
+        ],
+        takeaway:
+          'Five-way is the switch. In a pot that size or bigger, a nut draw outranks any single-pair hand you hold — play them in that order, and stop treating "I have a pair" as the stronger position.',
+        source: 'docs/research/multiway-flop-strategy-2026-07-31.md §3',
+      },
+      {
+        kind: 'prose',
+        heading: 'Decision 2 — bet or check',
+        body:
+          'Assume no fold equity, which is close to true multiway. Then betting beats checking whenever your equity exceeds your fair share — exactly the anchor number. The bar FALLS as the field grows, and it falls faster than a nut draw\'s equity does. That is why more callers is genuinely better with a nutted draw, and it is not a feel, it is one line of algebra.\n\nA bare nut flush draw at 37% six-way clears the 16.7% bar by more than double. The same 37% heads-up would be a losing bet. Put fold equity back in and the practical threshold settles in the high 20s once four or more players are in: a draw worth about 28% or better against the field is a bet, and below that you check and take the free card.',
+      },
+      {
+        kind: 'formula',
+        body: 'EV(bet) − EV(check) = bet × ( equity × (callers + 1) − 1 )   →   bet when equity > 1 / (callers + 1)',
+      },
+      {
+        kind: 'prose',
+        heading: 'One caveat on "nut"',
+        body:
+          'A bare nut flush draw is worth 36.6% six-way; a bare second-nut flush draw is worth 36.3%. Three tenths of a point. The nut card is barely doing anything for your EQUITY — its value is almost entirely on later streets, where it lets you stack off without reverse implied odds. Treat nuttedness as permission to build the pot, not as an equity bonus. It is why you bet BIGGER with the nut draw, not why you bet more often.',
+      },
+      {
+        kind: 'benchmark',
+        heading: 'Decision 3 — believe them, or call',
+        anchor: 'a half-pot bluff needs 33% fold-through',
+        intro:
+          'What every opponent must fold for a half-pot bluff to break even, versus what players actually fold. Measured fold-to-c-bet across 1.06M full-ring decisions is 55.5%.',
+        columns: ['Opponents', 'Each must fold', 'Actually folds through'],
+        rows: [
+          { label: '1', values: ['33%', '55.5%'] },
+          { label: '2', values: ['58%', '30.8%'] },
+          { label: '3', values: ['69%', '17.1%'] },
+          { label: '4', values: ['76%', '9.5%'], emphasis: true },
+          { label: '5', values: ['80%', '5.3%'], emphasis: true },
+        ],
+        takeaway:
+          'Into five players a half-pot bluff needs 33% and gets 5.3% — short by more than six times. This is not a read about a particular opponent; it is a constraint on which bets can be profitable at all. A player betting into four or five is representing value because value is the only thing that shows a profit there. Weight their range accordingly — and do not be that player yourself.',
+        source: 'docs/research/multiway-flop-strategy-2026-07-31.md §5; HandHQ reference pool SRC-011',
+      },
+      {
+        kind: 'prose',
+        heading: 'The counterweight — do not over-fold',
+        body:
+          'The same compounding cuts the other way, and this half is the one people miss. Minimum defense frequency DIVIDES across the field. Against a half-pot bet heads-up you must continue 66.7% of your range. Five-way you personally need to continue only 19.7% — the field collectively meets the bar and you contribute a fifth of it.\n\nApplying the heads-up defense number per player multiway is a large and expensive error in the opposite direction. Both facts point the same way in practice: fold your weak holdings, and defend with the top fifth of your range, which multiway means nutted hands and nut-ish draws, not one-pair bluff-catchers.',
+      },
+      {
+        kind: 'example',
+        context: { position: 'BTN', action: 'open' },
+        opposingContext: { position: 'BB', action: 'call', vs: 'BTN' },
+        board: '9h 8h 2s',
+        takeaway:
+          'The board every number in this lesson was measured on. Reveal the breakdown and read it through the anchor: six-way, fair share is 16.7%, so ask which slices of this range clear 2× and which sit under 1×. The nut-region and strong-draw slices are the ones that survive a five-opponent field; the one-pair slices are the ones that quietly stop being worth money.',
+      },
+      {
+        kind: 'prose',
+        heading: 'What these numbers are NOT',
+        body:
+          'Every figure here is one-street showdown equity — what the hand is worth if the board simply ran out with no more betting. Implied odds, reverse implied odds, position, and stack depth are not in it. That biases the numbers AGAINST nut draws and IN FAVOR of weak one-pair hands, so the conclusions are conservative — the real edge for draws is larger than shown. But it also means these are not stack-off thresholds. Use them to order your holdings and to set your continue/fold line, not to justify getting it all in on the flop.',
       },
     ],
   },
