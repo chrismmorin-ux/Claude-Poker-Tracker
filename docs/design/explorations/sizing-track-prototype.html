@@ -1,0 +1,849 @@
+<title>Bet Sizing — Non-Linear Track Prototype</title>
+
+<style>
+  /* ------------------------------------------------------------------
+     Deliberate single-theme commit: this prototypes a dark, felt-and-gold
+     surface used at a card table. A light variant would misrepresent the
+     thing being tested, so the palette is fixed.
+     ------------------------------------------------------------------ */
+  :root {
+    --ground:   #0d0f13;
+    --panel:    #16191f;
+    --panel-2:  #1d2128;
+    --rule:     #2a2f38;
+    --felt:     #1a6b3c;
+    --gold:     #d4a847;
+    --gold-dim: #8a6d2b;
+    --ink:      #e8e6e1;
+    --ink-dim:  #9aa0a8;
+    --ink-faint:#646b75;
+    --commit:   #35c46a;
+    --armed:    #f0a92e;
+    --danger:   #d9484b;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header h1 {
+    font-size: clamp(21px, 4.4vw, 30px);
+    margin: 0 0 6px;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    font-weight: 650;
+  }
+  header p {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 14.5px;
+    max-width: 62ch;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+
+  .stage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  /* --- the true-size command column ------------------------------- */
+  .column {
+    width: 313px;
+    flex: 0 0 313px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .column-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+  }
+
+  .readout {
+    background: var(--panel-2);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color .12s, background .12s;
+  }
+  .readout.is-armed   { border-color: var(--armed); }
+  .readout.is-refine  { border-color: var(--gold); background: #24211a; }
+  .readout.is-cancel  { border-color: var(--danger); }
+
+  .readout-value {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--gold);
+  }
+  .readout.is-cancel .readout-value { color: var(--danger); }
+  .readout-label {
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* --- the track --------------------------------------------------- */
+  .track-host {
+    position: relative;
+    height: 88px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+  .track-rail {
+    position: absolute;
+    left: 0; right: 0; top: 44px;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #232830, #2f3540);
+    border: 1px solid var(--rule);
+  }
+  .track-fill {
+    position: absolute;
+    left: 0; top: 44px;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    pointer-events: none;
+  }
+  .node {
+    position: absolute;
+    top: 34px;
+    width: 26px; height: 26px;
+    margin-left: -13px;
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 2px solid var(--rule);
+    pointer-events: none;
+    transition: transform .12s, border-color .12s, background .12s;
+  }
+  .node.is-near { border-color: var(--gold); background: #2c2721; transform: scale(1.12); }
+  .node.is-predominant { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,168,71,.16); }
+  .node-label {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--ink-dim);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .node-amt {
+    position: absolute;
+    top: 66px;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .thumb {
+    position: absolute;
+    top: 30px;
+    width: 34px; height: 34px;
+    margin-left: -17px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid #f2d99a;
+    box-shadow: 0 2px 10px rgba(0,0,0,.55);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .1s;
+  }
+  .thumb.is-live { opacity: 1; }
+
+  .hint {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    text-align: center;
+    min-height: 1.4em;
+    font-family: var(--mono);
+  }
+
+  .cancel-zone {
+    margin-top: -2px;
+    border: 1px dashed var(--rule);
+    border-radius: 8px;
+    padding: 7px;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    transition: border-color .12s, color .12s;
+  }
+  .cancel-zone.is-hot { border-color: var(--danger); color: var(--danger); }
+
+  /* --- side panels -------------------------------------------------- */
+  .side {
+    flex: 1 1 340px;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 16px 16px 18px;
+  }
+  .card h2 {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin: 0 0 12px;
+    font-weight: 700;
+  }
+
+  .seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .seg:last-child { margin-bottom: 0; }
+  .seg > span {
+    font-size: 11px;
+    color: var(--ink-faint);
+    align-self: center;
+    margin-right: 4px;
+    min-width: 52px;
+    font-family: var(--mono);
+  }
+  button.opt {
+    background: var(--panel-2);
+    color: var(--ink-dim);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 7px 11px;
+    font-size: 12.5px;
+    font-family: var(--mono);
+    cursor: pointer;
+    min-height: 34px;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  button.opt:hover { border-color: var(--gold-dim); color: var(--ink); }
+  button.opt[aria-pressed="true"] {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #1a1200;
+    font-weight: 700;
+  }
+  button.opt:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  table.metrics {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  table.metrics th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink-faint);
+    padding: 5px 0;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  table.metrics td {
+    padding: 5px 0;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink);
+  }
+  table.metrics td.lbl {
+    text-align: left;
+    font-family: var(--sans);
+    color: var(--ink-dim);
+  }
+  table.metrics tr + tr td, table.metrics tr + tr th { border-top: 1px solid var(--rule); }
+  .good { color: var(--commit); }
+  .bad  { color: var(--danger); }
+  .warn { color: var(--armed); }
+
+  #log {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 190px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  #log li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 8px;
+    background: var(--panel-2);
+    border-left: 3px solid var(--rule);
+    border-radius: 3px;
+  }
+  #log li.via-tap    { border-left-color: var(--commit); }
+  #log li.via-refine { border-left-color: var(--gold); }
+  #log li.via-cancel { border-left-color: var(--danger); color: var(--ink-faint); }
+  #log .via { color: var(--ink-faint); font-size: 11px; }
+  .empty { color: var(--ink-faint); font-size: 12px; font-style: italic; }
+
+  footer {
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+    max-width: 68ch;
+  }
+  footer p { margin: 0 0 8px; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    background: var(--panel-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--gold);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Table View Redesign · interaction prototype</p>
+    <h1>Non-linear bet track</h1>
+    <p>
+      The column below is rendered at <strong>313 × 500 px</strong> — the true size of the
+      command panel on your phone. Tap a node to commit. Press and hold anywhere on the
+      track to refine, then drag; move slowly for fine control. Lift early and it commits
+      the nearest node.
+    </p>
+  </header>
+
+  <div class="stage">
+
+    <!-- true-size column -->
+    <div class="column" id="column">
+      <div class="column-tag">
+        <span>COMMAND COLUMN</span><span>313 × 500</span>
+      </div>
+
+      <div class="readout" id="readout">
+        <span class="readout-value" id="value">$50</span>
+        <span class="readout-label" id="vlabel">1/2 POT<br>ARMED</span>
+      </div>
+
+      <div class="track-host" id="track">
+        <div class="track-rail"></div>
+        <div class="track-fill" id="fill"></div>
+        <div id="nodes"></div>
+        <div class="thumb" id="thumb"></div>
+      </div>
+
+      <div class="hint" id="hint">tap · or hold to refine</div>
+
+      <div class="cancel-zone" id="cancelzone">drag here to cancel</div>
+    </div>
+
+    <!-- controls + telemetry -->
+    <div class="side">
+
+      <div class="card">
+        <h2>Context</h2>
+        <div class="seg" id="ctxseg">
+          <span>spot</span>
+          <button class="opt" data-ctx="postflop" aria-pressed="true">postflop bet</button>
+          <button class="opt" data-ctx="preflop" aria-pressed="false">preflop open</button>
+        </div>
+        <div class="seg" id="potseg">
+          <span>pot</span>
+          <button class="opt" data-pot="40"   aria-pressed="false">$40</button>
+          <button class="opt" data-pot="100"  aria-pressed="true">$100</button>
+          <button class="opt" data-pot="600"  aria-pressed="false">$600</button>
+          <button class="opt" data-pot="2000" aria-pressed="false">$2000</button>
+        </div>
+        <div class="seg" id="modeseg">
+          <span>track</span>
+          <button class="opt" data-mode="nonlinear" aria-pressed="true">non-linear</button>
+          <button class="opt" data-mode="linear"    aria-pressed="false">linear (to scale)</button>
+        </div>
+        <div class="seg" id="gainseg">
+          <span>gain</span>
+          <button class="opt" data-gain="on"  aria-pressed="true">velocity-adaptive</button>
+          <button class="opt" data-gain="off" aria-pressed="false">fixed</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Resolution — live</h2>
+        <table class="metrics">
+          <tbody>
+            <tr><th>Track travel</th><td id="m-travel">288 px</td></tr>
+            <tr><td class="lbl">Value range on track</td><td id="m-range">—</td></tr>
+            <tr><td class="lbl">Coarse resolution</td><td id="m-coarse">—</td></tr>
+            <tr><td class="lbl">At 5px finger precision</td><td id="m-finger">—</td></tr>
+            <tr><td class="lbl">Fine (slow drag)</td><td id="m-fine">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Committed this session</h2>
+        <ul id="log"><li class="empty" style="background:none;border:none;padding:0">nothing yet — try the track</li></ul>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      <strong>What this is testing.</strong> Nodes sit at equal spacing regardless of their
+      dollar value, so the track spends its pixels where bets actually cluster instead of
+      covering a range you rarely use. Switch <code>track</code> to <em>linear</em> at a
+      <code>$2000</code> pot to feel the difference the warping makes.
+    </p>
+    <p>
+      <strong>Velocity replaces the wiggle.</strong> A wiggle is a low-velocity movement, so
+      gain is driven by drag speed — no mode to enter, nothing to trigger by accident.
+      Turn it off to feel what a fixed-gain slider gives you at a big pot.
+    </p>
+    <p>
+      Committed values are logged with how they were entered. Nothing here writes to the app —
+      it is a feel test for a Gate 4 decision.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var TRAVEL = 288;               // measured preset-row span, device scale
+  var HOLD_MS = 180;              // press duration that engages refine
+  var MOVE_TOL = 8;               // px of movement still counted as a tap
+  var CANCEL_DY = 62;             // drag below the track to cancel
+
+  var CONTEXTS = {
+    postflop: {
+      nodes: [
+        { label: '1/4',  frac: 0.25 },
+        { label: '1/2',  frac: 0.50, predominant: true },
+        { label: '3/4',  frac: 0.75 },
+        { label: 'pot',  frac: 1.00 }
+      ],
+      // what a to-scale track would have to cover
+      linearMin: 0.25, linearMax: 2.0,
+      unit: function (pot) { return pot; },
+      fmtNode: function (n, pot) { return '$' + Math.round(n.frac * pot); }
+    },
+    preflop: {
+      nodes: [
+        { label: '2.5x', frac: 2.5 },
+        { label: '4x',   frac: 4, predominant: true },
+        { label: '5x',   frac: 5 },
+        { label: '10x',  frac: 10 }
+      ],
+      linearMin: 2, linearMax: 20,
+      unit: function () { return 3; },   // $3 BB
+      fmtNode: function (n) { return '$' + Math.round(n.frac * 3); }
+    }
+  };
+
+  var state = {
+    ctx: 'postflop',
+    pot: 100,
+    mode: 'nonlinear',
+    gain: 'on',
+    value: 50,
+    armedIndex: 1,
+    phase: 'idle'        // idle | armed | refine | cancel
+  };
+
+  var el = {
+    track:    document.getElementById('track'),
+    nodes:    document.getElementById('nodes'),
+    fill:     document.getElementById('fill'),
+    thumb:    document.getElementById('thumb'),
+    value:    document.getElementById('value'),
+    vlabel:   document.getElementById('vlabel'),
+    readout:  document.getElementById('readout'),
+    hint:     document.getElementById('hint'),
+    cancel:   document.getElementById('cancelzone'),
+    log:      document.getElementById('log'),
+    mTravel:  document.getElementById('m-travel'),
+    mRange:   document.getElementById('m-range'),
+    mCoarse:  document.getElementById('m-coarse'),
+    mFinger:  document.getElementById('m-finger'),
+    mFine:    document.getElementById('m-fine')
+  };
+
+  function cfg() { return CONTEXTS[state.ctx]; }
+  function base() { return state.ctx === 'postflop' ? state.pot : 3; }
+  function nodeValue(n) { return n.frac * base(); }
+
+  function money(v) {
+    var r = v >= 100 ? Math.round(v) : Math.round(v * 10) / 10;
+    return '$' + r.toLocaleString('en-US');
+  }
+
+  // ---- position <-> value mapping ---------------------------------
+  function trackWidth() {
+    return el.track.getBoundingClientRect().width;
+  }
+
+  function nodePositions() {
+    var c = cfg(), w = trackWidth(), out = [];
+    if (state.mode === 'nonlinear') {
+      for (var i = 0; i < c.nodes.length; i++) {
+        out.push(c.nodes.length === 1 ? w / 2 : (i / (c.nodes.length - 1)) * w);
+      }
+    } else {
+      for (var j = 0; j < c.nodes.length; j++) {
+        var t = (c.nodes[j].frac - c.linearMin) / (c.linearMax - c.linearMin);
+        out.push(Math.max(0, Math.min(1, t)) * w);
+      }
+    }
+    return out;
+  }
+
+  function posToValue(x) {
+    var c = cfg(), w = trackWidth(), pos = nodePositions(), b = base();
+    x = Math.max(0, Math.min(w, x));
+    if (state.mode === 'linear') {
+      var t = x / w;
+      return (c.linearMin + t * (c.linearMax - c.linearMin)) * b;
+    }
+    for (var i = 0; i < pos.length - 1; i++) {
+      if (x <= pos[i + 1]) {
+        var span = pos[i + 1] - pos[i] || 1;
+        var f = (x - pos[i]) / span;
+        return (c.nodes[i].frac + f * (c.nodes[i + 1].frac - c.nodes[i].frac)) * b;
+      }
+    }
+    return c.nodes[c.nodes.length - 1].frac * b;
+  }
+
+  function valueToPos(v) {
+    var c = cfg(), w = trackWidth(), pos = nodePositions(), b = base();
+    var frac = v / b;
+    if (state.mode === 'linear') {
+      var t = (frac - c.linearMin) / (c.linearMax - c.linearMin);
+      return Math.max(0, Math.min(1, t)) * w;
+    }
+    if (frac <= c.nodes[0].frac) return pos[0];
+    for (var i = 0; i < c.nodes.length - 1; i++) {
+      if (frac <= c.nodes[i + 1].frac) {
+        var d = c.nodes[i + 1].frac - c.nodes[i].frac || 1;
+        var f = (frac - c.nodes[i].frac) / d;
+        return pos[i] + f * (pos[i + 1] - pos[i]);
+      }
+    }
+    return pos[pos.length - 1];
+  }
+
+  function nearestNode(x) {
+    var pos = nodePositions(), best = 0, bd = Infinity;
+    for (var i = 0; i < pos.length; i++) {
+      var d = Math.abs(pos[i] - x);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+
+  // ---- rendering ---------------------------------------------------
+  function renderNodes() {
+    var c = cfg(), pos = nodePositions();
+    var html = '';
+    for (var i = 0; i < c.nodes.length; i++) {
+      var n = c.nodes[i];
+      var cls = 'node' + (i === state.armedIndex ? ' is-near' : '') +
+                (n.predominant ? ' is-predominant' : '');
+      html += '<div class="' + cls + '" style="left:' + pos[i] + 'px"></div>';
+      html += '<div class="node-label" style="left:' + pos[i] + 'px">' + n.label + '</div>';
+      html += '<div class="node-amt" style="left:' + pos[i] + 'px">' + c.fmtNode(n, base()) + '</div>';
+    }
+    el.nodes.innerHTML = html;
+  }
+
+  function renderValue() {
+    var c = cfg(), b = base();
+    el.value.textContent = money(state.value);
+    var frac = state.value / b;
+    var unit = state.ctx === 'postflop'
+      ? (Math.round(frac * 100) / 100) + '× pot'
+      : (Math.round(frac * 10) / 10) + '× bb';
+
+    var phaseWord = state.phase === 'refine' ? 'REFINING'
+                  : state.phase === 'cancel' ? 'CANCEL'
+                  : state.phase === 'armed'  ? 'ARMED' : 'ARMED';
+    el.vlabel.innerHTML = unit.toUpperCase() + '<br>' + phaseWord;
+
+    el.readout.className = 'readout' +
+      (state.phase === 'refine' ? ' is-refine' :
+       state.phase === 'cancel' ? ' is-cancel' :
+       state.phase === 'armed'  ? ' is-armed' : '');
+
+    var x = valueToPos(state.value);
+    el.fill.style.width = x + 'px';
+    el.thumb.style.left = x + 'px';
+    el.thumb.classList.toggle('is-live', state.phase === 'refine' || state.phase === 'cancel');
+  }
+
+  function renderMetrics() {
+    var c = cfg(), b = base(), w = trackWidth();
+    var lo, hi;
+    if (state.mode === 'nonlinear') {
+      lo = c.nodes[0].frac * b;
+      hi = c.nodes[c.nodes.length - 1].frac * b;
+    } else {
+      lo = c.linearMin * b;
+      hi = c.linearMax * b;
+    }
+    var perPx = (hi - lo) / w;
+    var finger = perPx * 5;
+    var fine = state.gain === 'on' ? perPx * 0.15 * 5 : finger;
+
+    el.mTravel.textContent = Math.round(w) + ' px';
+    el.mRange.textContent = money(lo) + ' – ' + money(hi);
+    el.mCoarse.textContent = '$' + (Math.round(perPx * 100) / 100) + ' / px';
+
+    var fCls = finger > 25 ? 'bad' : finger > 8 ? 'warn' : 'good';
+    el.mFinger.className = fCls;
+    el.mFinger.textContent = '± ' + money(finger);
+
+    var fnCls = fine > 25 ? 'bad' : fine > 8 ? 'warn' : 'good';
+    el.mFine.className = fnCls;
+    el.mFine.textContent = state.gain === 'on' ? '± ' + money(fine) : 'n/a (fixed gain)';
+  }
+
+  function renderAll() { renderNodes(); renderValue(); renderMetrics(); }
+
+  // ---- commit log --------------------------------------------------
+  var logged = 0;
+  function commit(v, via) {
+    logged++;
+    var empty = el.log.querySelector('.empty');
+    if (empty) el.log.innerHTML = '';
+    var li = document.createElement('li');
+    li.className = 'via-' + via;
+    var b = base();
+    var unit = state.ctx === 'postflop'
+      ? (Math.round((v / b) * 100) / 100) + '× pot'
+      : (Math.round((v / b) * 10) / 10) + '× bb';
+    li.innerHTML = '<span>' + (via === 'cancel' ? '—' : money(v)) + '</span>' +
+                   '<span class="via">' + (via === 'cancel' ? 'cancelled' : unit + ' · ' + via) + '</span>';
+    el.log.insertBefore(li, el.log.firstChild);
+    while (el.log.children.length > 12) el.log.removeChild(el.log.lastChild);
+  }
+
+  // ---- gesture -----------------------------------------------------
+  var g = null;
+
+  function localX(e) {
+    var r = el.track.getBoundingClientRect();
+    return e.clientX - r.left;
+  }
+  function localY(e) {
+    var r = el.track.getBoundingClientRect();
+    return e.clientY - r.top;
+  }
+
+  el.track.addEventListener('pointerdown', function (e) {
+    el.track.setPointerCapture(e.pointerId);
+    var x = localX(e);
+    var idx = nearestNode(x);
+    g = {
+      id: e.pointerId,
+      startX: x,
+      startT: performance.now(),
+      lastX: x,
+      lastT: performance.now(),
+      moved: 0,
+      refine: false,
+      idx: idx,
+      startValue: nodeValue(cfg().nodes[idx])
+    };
+    state.armedIndex = idx;
+    state.value = g.startValue;
+    state.phase = 'armed';
+    el.hint.textContent = 'hold to refine…';
+    renderAll();
+
+    g.holdTimer = setTimeout(function () {
+      if (!g) return;
+      g.refine = true;
+      state.phase = 'refine';
+      el.hint.textContent = 'drag — slower = finer';
+      renderValue();
+    }, HOLD_MS);
+  });
+
+  el.track.addEventListener('pointermove', function (e) {
+    if (!g || e.pointerId !== g.id) return;
+    var x = localX(e), y = localY(e);
+    var now = performance.now();
+    g.moved = Math.max(g.moved, Math.abs(x - g.startX));
+
+    // cancel zone
+    if (y > CANCEL_DY + 44) {
+      state.phase = 'cancel';
+      el.cancel.classList.add('is-hot');
+      el.hint.textContent = 'release to cancel';
+      renderValue();
+      g.lastX = x; g.lastT = now;
+      return;
+    }
+    el.cancel.classList.remove('is-hot');
+
+    if (!g.refine) {
+      // still in tap window — track the nearest node for feedback
+      var idx = nearestNode(x);
+      if (idx !== state.armedIndex) {
+        state.armedIndex = idx;
+        state.value = nodeValue(cfg().nodes[idx]);
+        renderAll();
+      }
+      g.lastX = x; g.lastT = now;
+      return;
+    }
+
+    state.phase = 'refine';
+
+    var dx = x - g.lastX;
+    var dt = Math.max(1, now - g.lastT);
+    var speed = Math.abs(dx) / dt;          // px per ms
+
+    // velocity-adaptive gain: slow drag -> fine. This is what a "wiggle" is.
+    var k = 1;
+    if (state.gain === 'on') {
+      // 0.15x at rest, approaching 1x at ~1.2 px/ms
+      k = 0.15 + 0.85 * Math.min(1, speed / 1.2);
+    }
+
+    // base sensitivity = value-per-px of the current track segment
+    var vpp = (posToValue(x + 1) - posToValue(x - 1)) / 2;
+    state.value = Math.max(0, state.value + dx * vpp * k);
+
+    state.armedIndex = nearestNode(valueToPos(state.value));
+    g.lastX = x; g.lastT = now;
+    renderAll();
+  });
+
+  function endGesture(e) {
+    if (!g || e.pointerId !== g.id) return;
+    clearTimeout(g.holdTimer);
+    el.cancel.classList.remove('is-hot');
+
+    if (state.phase === 'cancel') {
+      commit(null, 'cancel');
+      el.hint.textContent = 'cancelled — nothing recorded';
+    } else if (!g.refine || g.moved <= MOVE_TOL) {
+      // early lift => nearest node. The graceful-degradation rule.
+      var v = nodeValue(cfg().nodes[state.armedIndex]);
+      state.value = v;
+      commit(v, 'tap');
+      el.hint.textContent = 'committed at node';
+    } else {
+      commit(state.value, 'refine');
+      el.hint.textContent = 'committed refined value';
+    }
+
+    state.phase = 'idle';
+    g = null;
+    renderAll();
+    setTimeout(function () {
+      if (state.phase === 'idle') el.hint.textContent = 'tap · or hold to refine';
+    }, 1400);
+  }
+
+  el.track.addEventListener('pointerup', endGesture);
+  el.track.addEventListener('pointercancel', endGesture);
+
+  // ---- option buttons ----------------------------------------------
+  function wireSeg(id, attr, apply) {
+    var host = document.getElementById(id);
+    host.addEventListener('click', function (e) {
+      var b = e.target.closest('button.opt');
+      if (!b) return;
+      var btns = host.querySelectorAll('button.opt');
+      for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', 'false');
+      b.setAttribute('aria-pressed', 'true');
+      apply(b.getAttribute(attr));
+      // re-arm on the predominant node of the new context
+      var c = cfg(), pi = 0;
+      for (var j = 0; j < c.nodes.length; j++) if (c.nodes[j].predominant) pi = j;
+      state.armedIndex = pi;
+      state.value = nodeValue(c.nodes[pi]);
+      state.phase = 'idle';
+      renderAll();
+    });
+  }
+
+  wireSeg('ctxseg',  'data-ctx',  function (v) { state.ctx = v; });
+  wireSeg('potseg',  'data-pot',  function (v) { state.pot = Number(v); });
+  wireSeg('modeseg', 'data-mode', function (v) { state.mode = v; });
+  wireSeg('gainseg', 'data-gain', function (v) { state.gain = v; });
+
+  window.addEventListener('resize', renderAll);
+  renderAll();
+})();
+</script>

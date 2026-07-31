@@ -170,6 +170,83 @@ That convergence is the argument for deciding all of them inside one Gate 4 arti
 
 ---
 
+---
+
+## 8 — Amendment: the non-linear track *(founder, 2026-07-31)*
+
+> "It could be a not-too-scale slider. The 4 most common bet sizes spread equally. If a predominant one is there, it's preselected. User can one-click the most common ones and long-press-drag to anything non-standard, being quickly oriented by the existing slider as to where he should long-press to get the specific dial-in he needs."
+
+**This is better than Option C as I wrote it, and the arithmetic says so.**
+
+### Why it works: the track stops paying for range it never uses
+
+A to-scale slider must cover the whole plausible span (postflop, ~0.25× to 2.0× pot) because any point on it must be reachable. A track with **equally spaced nodes** only has to span node-first to node-last — 0.25× to 1.0× — and everything above the top node moves off the track entirely. The pixels get spent where the bets actually are.
+
+| Postflop bet, 288px of travel | To-scale | **Equal-spaced nodes** | Gain |
+|---|---|---|---|
+| Range the track must cover | 0.25 – 2.0× pot | **0.25 – 1.0× pot** | — |
+| $100 pot | $0.61 /px → ±$3 | **$0.26 /px → ±$1.3** | 2.3× |
+| $600 pot | $3.65 /px → ±$18 | **$1.56 /px → ±$8** | 2.3× |
+| $2000 pot | $12.15 /px → ±$61 | **$5.21 /px → ±$26** | 2.3× |
+| $2000 pot **+ velocity gain** | — | **±$3.9** | 15× |
+
+**2.3× finer everywhere, for free**, purely from refusing to render the axis to scale. Combined with velocity-adaptive gain it turns the worst case ($2000 pot) from unusable into precise. §1 concluded a plain slider breaks down at large pots — this is the fix.
+
+### It is not a competitor to velocity gain — the two are different layers
+
+- **Non-linear track = macro allocation.** Decides which pixels represent which values, by frequency.
+- **Velocity gain = micro resolution.** Decides how much value one pixel of movement buys, by intent.
+
+They compose. Neither alone gets a $2000 pot to sub-$5 precision; together they do.
+
+### The part I did not anticipate: it makes spatial memory *stronger*, not weaker
+
+My worry about an adaptive control was that learned/adapting values would break `glance-return-chris`'s positional-stability contract. Equal spacing inverts that:
+
+> **Node *k* is always at pixel position *k* × 96, forever.** What changes with context is the *value* at that position — and it always changes to "the size I'd most likely want in slot *k*."
+
+Muscle memory attaches to position, and position never moves. This is the rare case where the adaptive design is *more* stable than the fixed one — a to-scale track moves its nodes every time the pot changes.
+
+### It also resolves the `WS-317` long-press collision — correctly
+
+"Long-press-drag to anything non-standard" lands directly on the gesture that currently opens the **sizing editor** (`SizingPresetsPanel.jsx:63-67`). Something has to give, and the founder's proposal picks the right winner: *refining the value you are recording* is far more frequent than *editing your preset configuration*. The editor moves to an explicit control; the gesture goes to the frequent job.
+
+That is one of the three collisions `WS-317` has to settle, settled — on this surface, on merit.
+
+### Open questions this raises
+
+1. **Above the top node.** Overbets (1.5×, 2×, all-in) are now off-track by construction. Options: a compressed tail past the last node, an explicit overbet node, or routing to the numeric path. **Must be specified — it is currently undefined.**
+2. **Below min-raise.** `getMinRaise` must clamp or grey the invalid region; the track can currently express illegal raises.
+3. **Gain discontinuity at node boundaries.** Value-per-px differs per segment, so a constant-speed drag changes value at different rates across the track. May feel sticky or loose. **Only a prototype can answer this.**
+4. **Hero vs villain nodes.** Unchanged from §3 Option E — "my common sizes" is the right prior only when recording hero.
+
+### Verdict
+
+**This supersedes Option C's track design.** The recommendation becomes:
+
+> **Non-linear equal-spaced track (founder) + velocity-adaptive gain (amendment) + snap-to-node on early lift + learned hero-scoped nodes, with the sub-floor numeric path fixed underneath.**
+
+---
+
+## 9 — Interactive prototype
+
+Built 2026-07-31 so §8's open question 3 can be answered by feel rather than argument.
+
+**→ [Bet Sizing — Non-Linear Track Prototype](https://claude.ai/code/artifact/fa2e9344-c7a6-4e91-8c82-20cc5b97706b)**
+
+Renders the command column at its true **313 × 500** device size. Tap a node to commit; press and hold to refine; drag slowly for fine control; lift early to snap to the nearest node; drag down to cancel. Toggles for **non-linear vs to-scale** and **velocity gain on/off** make the comparisons in §8 directly feelable, and a live panel reports value-per-px and achieved precision as you drag.
+
+What to check:
+- Switch to **to-scale** at a **$2000** pot — the failure §1 predicted.
+- Switch back to **non-linear**, then toggle **fixed gain** — isolates what each layer contributes.
+- Whether node-boundary gain changes feel sticky (open question 3).
+- Whether `HOLD_MS = 180` is right, or whether it fires when you meant to tap.
+
+Nothing here writes to the app. It is a feel test for a Gate 4 decision.
+
+---
+
 ## Change log
 
 - 2026-07-31 — Created from founder proposal. Physical budget measured; five options; C+E+A recommended.
+- 2026-07-31 — **§8 amendment: non-linear equal-spaced track (founder).** Supersedes Option C's track design — 2.3× finer resolution everywhere by not rendering the axis to scale, composes with velocity gain as a separate layer, strengthens rather than weakens positional stability, and resolves one of WS-317's three long-press collisions on merit. §9 interactive prototype published to answer the gain-discontinuity question by feel.
