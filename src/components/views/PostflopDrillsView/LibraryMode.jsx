@@ -1,5 +1,6 @@
 /**
- * LibraryMode — browse curated scenarios grouped by framework.
+ * LibraryMode — "Scenario Library" tab. Browse curated scenarios grouped by
+ * framework.
  * Phase 3 ships a functional read-only browser; Phase 5 will expand content.
  */
 
@@ -31,7 +32,7 @@ export const LibraryMode = () => {
   return (
     <div className="grid grid-cols-[320px_1fr] gap-6 h-full overflow-hidden">
       <div className="bg-gray-800/50 border border-gray-800 rounded-lg overflow-y-auto">
-        <div className="px-4 py-3 border-b border-gray-800 text-xs uppercase tracking-wide text-gray-500">Library</div>
+        <div className="px-4 py-3 border-b border-gray-800 text-xs uppercase tracking-wide text-gray-500">Scenario Library</div>
         {Object.entries(grouped).map(([fwId, entries]) => (
           <div key={fwId} className="border-b border-gray-800/60">
             <div className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${FRAMEWORK_COLOR[fwId] || 'bg-gray-700 text-gray-200'}`}>

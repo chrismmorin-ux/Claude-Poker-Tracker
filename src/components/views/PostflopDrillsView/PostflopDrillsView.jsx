@@ -22,12 +22,19 @@ import { LibraryMode } from './LibraryMode';
 import { LessonsMode } from './LessonsMode';
 import { LineMode } from './LineMode';
 
+// Labels name the OBJECT the tab operates on; the street comes from the view.
+// Renamed 2026-07-31 (audits/2026-07-31-entry-drill-tab-label-collision.md) to
+// resolve verbatim collisions with PreflopDrillsView — this view estimates RANGE
+// composition on a board and browses SCENARIOS, where preflop estimates MATCHUP
+// equity and browses MATCHUPS. `Lessons` stays colliding on purpose: same object,
+// street differs. Internal `id`s are unchanged — they key persistence and the
+// openDrills deep-link contract (same discipline as WS-231 F-DRILL-03).
 const TABS = [
   { id: 'line',      label: 'Line' },
   { id: 'explorer',  label: 'Range Explorer' },
-  { id: 'estimate',  label: 'Estimate Drill' },
-  { id: 'framework', label: 'Framework Drill' },
-  { id: 'library',   label: 'Library' },
+  { id: 'estimate',  label: 'Range Estimate' },
+  { id: 'framework', label: 'Board Frameworks' },
+  { id: 'library',   label: 'Scenario Library' },
   { id: 'lessons',   label: 'Lessons' },
 ];
 

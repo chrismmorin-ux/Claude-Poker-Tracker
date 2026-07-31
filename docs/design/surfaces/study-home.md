@@ -68,7 +68,7 @@ Secondary:
 | **Practice** | I want to test myself | Line Study · Postflop Drills · Preflop Drills |
 | **Review** | I want to check my own work | Hand Review · Refresher · Calibration |
 
-Each entry carries a **one-line "when to use this"**, which is what lets a user choose without decoding the four tab labels duplicated across the two drill views (`Lessons`, `Library`, `Estimate Drill`, `Framework Drill` — see §Known issues).
+Each entry carries a **one-line "when to use this"**, which is what lets a user choose without decoding tab names. (At v1 authoring, four tab labels were duplicated verbatim across the two drill views; three were resolved later the same day — see §Known issues.)
 
 ### What v1 defers, and why
 
@@ -204,7 +204,7 @@ Red lines #2, #7, #8, #9 (per SLS Gate 2 audit + autonomy red lines ladder) bind
 
 ## Known issues
 
-- **Duplicated tab labels across the two drill views (v2 candidate).** `Lessons`, `Library`, `Estimate Drill`, and `Framework Drill` each appear with identical labels in both `PreflopDrillsView` and `PostflopDrillsView`. v1 *mitigates* this — each hub card names its street and carries a when-to-use line — but does not *fix* it: a user who lands inside Postflop Drills still sees an ambiguous tab strip. Founder declined the rename in the 2026-07-31 round; recorded as a residual rather than absorbed silently. Raised at Gate 2 Stage E.
+- **Duplicated tab labels across the two drill views — RESOLVED 2026-07-31** (`audits/2026-07-31-entry-drill-tab-label-collision.md`). Raised at Gate 2 Stage E; founder called it in the same session. Three of the four were names withholding information and were renamed to their object: `Estimate Drill` → `Equity Estimate` / `Range Estimate`, `Framework Drill` → `Matchup Frameworks` / `Board Frameworks`, `Library` → `Matchup Library` / `Scenario Library`. `Lessons` still collides **deliberately** — same object, street supplied by the view, so a prefix would only restate the page header. Hub card `meta` copy updated to match and is now test-pinned against the real labels (`views/__tests__/drillTabLabels.test.js`), so hub copy cannot drift from tab labels again.
 - **Intent router unbuilt.** Deferred by §SH-V1 until the first embed needs it. Until then the surface has no reducer and no persisted state.
 - **Third path to Self Coach.** Self Coach now has four entry points (nav, Homebase tile, Homebase study-queue card, hub). Accepted at Gate 2 Stage D; not resolved in v1.
 

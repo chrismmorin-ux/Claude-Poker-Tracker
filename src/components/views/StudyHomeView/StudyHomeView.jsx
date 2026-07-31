@@ -159,14 +159,14 @@ export const StudyHomeView = ({ scale }) => {
                 testid="study-card-postflop-drills"
                 title="Postflop Drills"
                 when="Guess villain's range on a flop, then check yourself against the engine."
-                meta="Range Explorer · Estimate · Framework"
+                meta="Range Explorer · Range Estimate · Board Frameworks"
                 onOpen={drill(SCREEN.POSTFLOP_DRILLS, 'explorer')}
               />
               <StudyCard
                 testid="study-card-preflop-drills"
                 title="Preflop Drills"
                 when="Drill opening ranges, hand shapes, and the math until they're automatic."
-                meta="Shape · Recipe · Equity · Math"
+                meta="Shape · Recipe Drill · Equity Estimate · Math"
                 onOpen={drill(SCREEN.PREFLOP_DRILLS, 'shape')}
               />
             </StudyGroup>
