@@ -1,0 +1,94 @@
+id: "WS-320"
+title: "Does the study ladder separate? Run the slowplay test again on limp / 3bet / cbet rates — the axes that failed for lack of power should pass here"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder hypothesis 2026-07-31 (POKER_THEORY §15.3): the pool is strung out along a STUDY
+  LADDER rather than clustered near equilibrium. The rungs, in the founder's order:
+
+      never deviating from a preflop range
+      open-limps eliminated from the game
+      learning to 3bet
+      learning to cbet as a range
+      learning to cbet as a range EXCEPT the positional boards studied
+
+  The mechanism claimed: solvers define optimal play, so approaching it is most of the fight
+  for a studying player — but most recs and regs never study directly. They learn at the
+  table, absorb fragments from short-form content, and adapt only where they have been
+  visibly exploited. That predicts a population spread along a measurable axis, not a blob.
+
+  WHY THIS IS THE BEST ARCHETYPE CANDIDATE SO FAR, and why it deserves the test rather than
+  a channel. §11.8 refused a per-villain trap channel because P(check | strong) did not
+  separate: chi2/df = 1.005 against 1.859 on a control axis. But the honest limits paragraph
+  named the reason — MEDIAN TWO strong-hand spots per player, against the ~30 a shrunk
+  estimate needs. That was a weak-power null, not proof of absence.
+
+  Every rung above is a HIGH-FREQUENCY OBSERVABLE. Limp rate, 3bet rate and cbet rate are
+  observed every orbit, not only when a showdown reveals a monster. They are the same family
+  as the control axis that separated decisively (flop bet frequency, z = +15.5, between-player
+  SD ~9pp). So this axis should have the power that slowplay lacked — and if it does NOT
+  separate even here, that is a strong and surprising result about the pool worth recording.
+
+  DO NOT SKIP TO BUILDING THE CHANNEL. The standing rule (memory: prove an archetype separates
+  before building its channel) is what stopped the trap channel from shipping a number that was
+  noise. It applies to a founder hypothesis exactly as it applied to an AI one.
+accept_criteria: |
+  - Same method as §11.8, so the results are comparable to the slowplay null rather than a
+    fresh analysis with its own conventions: per-player rates shrunk Beta-Binomial with
+    leave-one-out population priors; Pearson chi2 over players; report chi2/df with z.
+  - A CONTROL AXIS is included in the same run. §11.8's credibility came from the control
+    proving the method can detect real heterogeneity when it exists. A separability claim
+    without a control is unfalsifiable.
+  - CROSS-AXIS CORRELATION between the rungs is reported. The ladder hypothesis makes a
+    specific prediction the single-axis test cannot: rungs should CO-VARY, because they are
+    supposed to be stages of one underlying trait. If limp rate and cbet rate are uncorrelated,
+    there is no ladder — there are independent habits, which is a different (and still useful)
+    finding. §11.8's 0.036 correlation is the worked example of this check mattering.
+  - Attenuation is addressed head-on. §11.8 recorded that at ~2 observations per player a
+    measured rate is nearly noise and noise correlates ~0 with everything, so a null
+    correlation there was uninformative. State observations-per-player for EACH rung here; a
+    correlation is only interpretable once that count is high enough to carry it.
+  - ORDERING IS TESTED, NOT ASSUMED. The founder states the rungs in a sequence. If it is a
+    ladder, players should acquire them in order — a player who cbets as a range but still
+    open-limps should be rare. Report the co-occurrence matrix. A ladder that is not ordered
+    is a set of independent skills wearing a ladder's name, which changes what can be built.
+  - Report against the LIVE pool separately if sample allows (SRC-014), not only the 2009
+    online corpus (SRC-012). The study ladder is a claim about the population the founder
+    actually plays, and online 2009 is a different era and game type — the live/online
+    separation is unresolved and must not be assumed away here.
+  - Result recorded in POKER_THEORY §15.3 whichever way it falls. A refuted founder hypothesis
+    is as valuable as a confirmed one and gets the same treatment §11.8 gave the slowplayer.
+effort: "M"
+files_involved:
+  - "scripts/backtest/"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "If the ladder separates, does it become a per-villain channel, a population segmentation, or both? A channel adjusts one villain's model; a segmentation changes which prior a thin villain shrinks toward. They are different builds with different risks."
+source:
+  type: founder-hypothesis
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31"
+created_at: "2026-07-31T20:12:00Z"
+status_note: |
+  Filed 2026-07-31. Scored above WS-319 because it is a MEASUREMENT that could redirect
+  several builds: if the ladder separates it is the first archetype axis with earned
+  justification, and it would change what the Five-Surface Atlas treats as a Field surface
+  (one pool, or several strata within it). Cheap relative to that leverage — the method
+  already exists from §11.8 and only the axes change.

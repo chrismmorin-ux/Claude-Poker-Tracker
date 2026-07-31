@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-31T06:17:28.278Z",
-  "updated_by_event": "ev-1785478648278-2d576654f571",
+  "updated_at": "2026-07-31T19:39:54.767Z",
+  "updated_by_event": "ev-1785526794767-c9b47b7b9564",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2653,7 +2653,23 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-164": {
+      "id": "SPR-164",
+      "title": "Ship WS-317: The situation key is a positional string parsed by split(':') in four modules, and it i",
+      "status": "done",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-07-31T19:39:37.541Z",
+      "approved_at": "2026-07-31T19:39:37.541Z",
+      "completed_at": "2026-07-31T19:39:53.116Z",
+      "goal": "Ship WS-317: The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without",
+      "item_count": 1,
+      "items_done": 1,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785478648278-2d576654f571"
+  "last_event_log_head": "ev-1785526794767-c9b47b7b9564"
 }

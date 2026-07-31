@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 194
+total_items: 196
 by_status:
   decomposed: 1
-  done: 80
+  done: 81
   in_progress: 3
   deferred: 44
-  backlog: 47
+  backlog: 48
   dismissed: 1
   completed: 7
   review: 1
@@ -23,7 +23,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 64
+  domain-correctness: 66
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1865,7 +1865,7 @@ items:
 
   - id: "WS-317"
     title: "The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: L
@@ -1878,6 +1878,24 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-319"
+    title: "The EV-by-percentile curve — join two functions that already exist and the neutral showdown zone stops being asserted and starts being measured"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-320"
+    title: "Does the study ladder separate? Run the slowplay test again on limp / 3bet / cbet rates — the axes that failed for lack of power should pass here"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: M
     program: domain-correctness
     capability: core
 

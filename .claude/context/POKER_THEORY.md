@@ -1962,3 +1962,90 @@ figure that reads as an observed one is §11.5's fallback-level table all over a
   a variance claim.
 - FSA's frequency weighting (`P(situation)`) and this section's opportunity rate are the
   same quantity and must be computed once, not twice.
+
+---
+
+## 15. All Possible Hands Is the Other Denominator (founder, 2026-07-31)
+
+§14 made *hands at the table* the common denominator for **frequency**. This is its companion
+on the other axis: *all possible hands on this board* as the common denominator for
+**strength**. Together they give any (situation, holding) two coordinates in units that mean
+the same thing everywhere — which is the concrete anchor two standards can be forced to meet
+across.
+
+### 15.1 The transform, and the correction that makes it possible
+
+The construction: take every legal two-card combination against a board, score them all,
+and locate a holding by its **rank within that universe**. The board is not a filter applied
+to a range — it is the thing that *defines* the universe, and a range is a subset embedded
+in it.
+
+**The correction, and it is load-bearing: the ordering is BOARD-CONDITIONAL, and no global
+monotone embedding across boards exists.** AK beats 22 on an ace-high board and loses to it
+on a deuce-high one; equity ordering genuinely inverts. Any construction that assumes one
+fixed order over all hands is wrong on its second board.
+
+What survives is the **normalisation**. A percentile — rank within *this* board's universe —
+is board-invariant precisely because it is normalised, even though the underlying order is
+not. So the map is 1-1 and only-increasing **conditional on a board**, and comparability
+across boards comes from the normalisation rather than from the ordering. That distinction
+is the whole trick, and it is why the primitive already in the repo
+(`pokerCore/handEvaluator.comboStrengthPercentile`) is the right one: it enumerates the full
+board-conditioned universe and returns a normalised rank.
+
+### 15.2 Slope, and the width of the neutral zone
+
+Plot EV against percentile and two things stop being metaphors:
+
+```
+slope            dEV / d(percentile)
+neutral zone     { p : |EV(bet | p) − EV(check | p)| < ε }
+```
+
+**Slope** answers "is the ground tilted toward an action here". Steep means the correct play
+is sensitive to the exact holding; flat means the whole region plays the same way and the
+decision is regional, not per-combo.
+
+**The neutral zone's WIDTH is computed, not asserted** — it is the interval where the two
+branches are within ε of each other. "How wide should the showdown-value region be" has
+therefore always been a measurable question, answered by the range in front of you rather
+than by a rule of thumb.
+
+Deformations of that curve — stretching, sagging, shrivelling, widening — under different
+villain ranges are then literal and inspectable, not descriptive language.
+
+Both are compositions of functions this repo already has: `comboStrengthPercentile` for the
+x-axis, `computePerComboEV` / `computePerComboCheckEV` for the y-axis. Nothing new is
+required to produce the curve; the pieces have simply never been joined.
+
+### 15.3 Two pillars, and do not collapse them
+
+There is a real distinction between:
+
+- **Equilibrium-optimal** — the solver's unexploitable strategy. Pool-independent.
+- **Statistically-supported-optimal** — the line that maximises EV against the population
+  actually sitting at the table.
+
+They are different curves over the same percentile axis, and **the gap between them IS the
+exploitative edge.** Collapsing them erases the exact quantity the Five-Surface Atlas exists
+to measure (§FSA: Equilibrium vs the three Fields). "The statistics always win" is true of
+the second pillar; it is not a statement about the first.
+
+Note the practical asymmetry the founder identifies: study moves a player up a ladder —
+never deviating from a preflop range, then no open-limping, then 3-betting, then c-betting
+as a range, then board-selective c-betting — while most of the pool never studies directly
+and adapts only where it has been visibly exploited. That predicts a population strung out
+along a *measurable* axis rather than clustered at equilibrium, which is a testable claim and
+is filed as one. Every rung of that ladder is a HIGH-FREQUENCY observable (limp rate, 3-bet
+rate, c-bet rate), which is exactly the property §11.8's slowplay axis lacked and the control
+axis had.
+
+### 15.4 What this binds
+
+- A strength claim states its universe. "Top 10%" is meaningless without the board that
+  defines the denominator.
+- Percentile, not raw strength or hand identity, is the cross-board coordinate. Any code
+  comparing holdings across boards must go through the normalised form.
+- Region claims cite a measured width. "It has showdown value" is a claim about an interval
+  and should carry one.
+- Equilibrium and statistically-supported curves are reported separately, never averaged.

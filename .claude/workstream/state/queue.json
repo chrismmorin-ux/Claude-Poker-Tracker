@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-31T17:40:10.876Z",
-  "updated_by_event": "ev-1785519610876-0f0e3d45b6d2",
+  "updated_at": "2026-07-31T20:07:25.190Z",
+  "updated_by_event": "ev-1785528445190-9893237768b5",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5055,14 +5055,14 @@
     "WS-317": {
       "id": "WS-317",
       "title": "The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 31,
       "category": "domain-correctness",
       "effort": "L",
       "program": "domain-correctness",
       "capability": "core",
       "sprint_id": null,
-      "claimed_at": "",
+      "claimed_at": null,
       "completed_at": null,
       "source": {
         "type": "charter",
@@ -5109,7 +5109,60 @@
         "src/utils/handAnalysis/handSignificance.js"
       ],
       "source_class": "untagged"
+    },
+    "WS-319": {
+      "id": "WS-319",
+      "title": "The EV-by-percentile curve — join two functions that already exist and the neutral showdown zone stops being asserted and starts being measured",
+      "status": "backlog",
+      "priority_score": 27,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "founder-directive",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/pokerCore/handEvaluator.js",
+        "src/utils/exploitEngine/gameTreeDepth2.js",
+        "src/utils/exploitEngine/gameTreeEquity.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-320": {
+      "id": "WS-320",
+      "title": "Does the study ladder separate? Run the slowplay test again on limp / 3bet / cbet rates — the axes that failed for lack of power should pass here",
+      "status": "backlog",
+      "priority_score": 28,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": "",
+      "completed_at": null,
+      "source": {
+        "type": "founder-hypothesis",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "scripts/backtest/",
+        ".claude/context/POKER_THEORY.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785519610876-0f0e3d45b6d2"
+  "last_event_log_head": "ev-1785528445190-9893237768b5"
 }

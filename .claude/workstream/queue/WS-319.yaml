@@ -1,0 +1,98 @@
+id: "WS-319"
+title: "The EV-by-percentile curve — join two functions that already exist and the neutral showdown zone stops being asserted and starts being measured"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Founder concept 2026-07-31, recorded as POKER_THEORY §15. This is the BUILD half.
+
+  THE POINT. Use "all possible hands on this board" as the denominator for STRENGTH, the way
+  §14 uses "hands at the table" as the denominator for FREQUENCY. Then plot EV against that
+  coordinate and two objects that have only ever been described in words become computed:
+
+      slope         dEV / d(percentile)
+      neutral zone  { p : |EV(bet | p) − EV(check | p)| < ε }
+
+  Slope says whether the ground is tilted toward an action here — steep means the right play
+  depends on the exact combo, flat means the whole region plays the same way. The neutral
+  zone's WIDTH is the answer to "how much showdown value is enough", measured against the
+  range in front of hero rather than asserted by a rule of thumb.
+
+  NOTHING NEW IS REQUIRED. Both halves already exist and have never been joined:
+
+    x-axis   pokerCore/handEvaluator.comboStrengthPercentile
+             enumerates every legal two-card combo against the board, scores each, returns
+             the normalised rank. That IS "the whole of the information given by the board".
+    y-axis   exploitEngine/gameTreeDepth2.computePerComboEV  (line ~298)
+             exploitEngine/gameTreeDepth2.computePerComboCheckEV (line ~409)
+
+  THE CORRECTION THAT MAKES IT BUILDABLE (§15.1). The ordering is BOARD-CONDITIONAL. AK beats
+  22 on an ace-high board and loses to it on a deuce-high one — equity ordering genuinely
+  inverts, so there is no global monotone embedding across boards. What is comparable across
+  boards is the NORMALISED rank, not the hand and not raw strength. Any implementation that
+  builds one fixed ordering over all hands is wrong on its second board.
+
+  WHY IT MATTERS BEYOND THE VISUAL. This is the strength coordinate the Five-Surface Atlas
+  needs. FSA weights divergence by frequency (§14) to get EV; it also needs to say WHERE in a
+  range a divergence sits. Percentile is that "where". A divergence concentrated at the top of
+  a range and one spread across the middle are different findings, and today they are the same
+  number.
+
+  Compare §11.7's quintile slicing, which found the check branch's damage concentrated at q4:
+  that analysis was this curve, computed once by hand, for one purpose. Make it a primitive.
+accept_criteria: |
+  - A function takes (heroCards | range, board, villainRange, pot, betSize, villainModel) and
+    returns the EV-by-percentile curve for at least bet and check branches, as arrays aligned
+    on a shared percentile axis.
+  - Percentile comes from comboStrengthPercentile — NOT a re-implementation. A second ranking
+    function is the same defect class as a second situation key (WS-317); if the existing one
+    is too slow, make it faster, do not fork it.
+  - Slope and neutral-zone width are returned as computed fields, with ε stated in the output
+    rather than hidden in the code. The width is meaningless without the ε that defines it.
+  - BOARD-CONDITIONALITY IS ASSERTED, not just documented: a test on two boards where the
+    ordering of a known pair INVERTS (AK vs 22 on A-high vs 2-high) proves the percentile is
+    recomputed per board and no cached global order leaks across.
+  - The curve reproduces a known result. §11.7 measured the check branch losing most at q4
+    (the 60-80th percentile) on both sites; running this primitive on the same conditions must
+    show the same shape. A new instrument that cannot reproduce the finding that motivated it
+    is not yet trustworthy.
+  - Cost is measured and stated. comboStrengthPercentile enumerates ~1176 combos and scores
+    each — per-combo EV on top of that is the expensive part. Report runtime for one curve and
+    say plainly whether it is viable on a live path or is analysis-only. WS-301 already flags
+    a depth-2 evaluation at 8.5s in-harness; do not assume this is cheap.
+  - Emitted in the §14 spirit: the curve carries the universe it was computed against (board,
+    villain range, n combos), because a strength claim without its denominator is meaningless.
+effort: "M"
+files_involved:
+  - "src/utils/pokerCore/handEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Is this analysis-only or a live surface? A live path needs it fast enough for the table; an analysis primitive can be slow. The answer changes the implementation, so measure the cost before choosing."
+  - "What is ε for the neutral zone — an absolute bb threshold, or a fraction of the pot? Pot-relative is more transportable across stack depths; absolute is easier to explain. This is a product decision about what 'close enough to indifferent' means."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31"
+created_at: "2026-07-31T20:10:00Z"
+status_note: |
+  Filed 2026-07-31 alongside POKER_THEORY §15. Doctrine and build filed together deliberately:
+  the pieces are already in the repo unjoined, so a doctrine section without a build path would
+  be a described capability that never arrives — the failure mode this session has hit twice
+  (predictionAudit, WS-276's perceivedHeroRange).
