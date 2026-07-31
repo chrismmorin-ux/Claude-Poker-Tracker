@@ -8,12 +8,14 @@ generated_by: "ses-20260731-0504-464211b4"
 vital_signs_ok: true
 red_vitals: []
 vitals_note: >
-  Full app suite 13,226 passed / 0 failed / 553 files on 2026-07-31 after the WS-317
-  situation-key migration; bit-identity confirmed arithmetically (13,202 before, +24 new
-  tests). A session-end re-verification run was still in flight at write time and had
-  reported no failure. CAVEAT: two Monte-Carlo tests (miniRolloutEquity; one in
-  advisorAccuracy) fail ~25% of runs independent of any code change — a single red run on
-  either is not evidence of a regression, re-run before investigating. Unticketed.
+  Session-end verification 2026-07-31: 13,239 passed / 0 failed / 20 skipped. Test-count
+  arithmetic is clean end to end — 13,202 at session start, +24 from the WS-317 migration
+  (21 situationKey + 3 heroAnalysis) = 13,226, then +13 admissibility tests = 13,239. No
+  pre-existing test changed outcome at any point, which is what "bit-identical" meant for
+  WS-317. CAVEAT: two Monte-Carlo tests (miniRolloutEquity; one in advisorAccuracy) fail
+  ~25% of runs independent of any code change — both happened to land green here. A single
+  red run on either is not evidence of a regression; re-run before investigating.
+  Unticketed, and worth fixing: a gate that fails randomly is not a gate.
 
 queue_counts:
   backlog: 48

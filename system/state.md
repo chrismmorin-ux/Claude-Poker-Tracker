@@ -14,7 +14,7 @@ Last updated: 2026-07-31 (WS-303 shipped + SPR-163/164 closed; provenance regist
 
 | Area | Status | Check | Detail |
 |------|--------|-------|--------|
-| Tests | GREEN | `bash scripts/smart-test-runner.sh` | 2026-07-31: full app suite **13,226 passed / 0 failed / 553 files** (20 skipped) after the WS-317 situation-key migration. Bit-identity confirmed arithmetically: 13,202 before, +21 situationKey +3 heroAnalysis = 13,226 — no pre-existing test changed outcome. **Two known-flaky MC tests** (`miniRolloutEquity`, one in `advisorAccuracy`) fail ~25% of runs independent of any change — a gate that fails randomly is not a gate; unticketed. |
+| Tests | GREEN | `bash scripts/smart-test-runner.sh` | 2026-07-31 session-end: **13,239 passed / 0 failed** (20 skipped). Count arithmetic clean end to end — 13,202 at session start, +24 from WS-317 (21 situationKey + 3 heroAnalysis) = 13,226, +13 admissibility = 13,239. No pre-existing test changed outcome at any point; that is what bit-identity meant for the WS-317 migration. **Two known-flaky MC tests** (`miniRolloutEquity`, one in `advisorAccuracy`) fail ~25% of runs independent of any change — both green here. A gate that fails randomly is not a gate; unticketed. |
 | Build | GREEN | `npm run build` | Not re-run this session (no component/bundler changes; all edits in `src/utils`, `scripts/`, docs). |
 | Git | GREEN | `git status --short` | **CLEAN** — 9 commits this session, all pushed to `main` local. First clean tree in weeks; the multi-ticket backlog (WS-303 + WS-307 + WS-312/314) that had accumulated uncommitted was landed in `f650531`. |
 | Dependencies | NEEDS CHECK | `npm audit` | Last verified: never since CWOS adoption (2026-05-01) |
