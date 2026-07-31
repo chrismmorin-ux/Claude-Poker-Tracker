@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785426977717-dd4a18ea6a66"
-generated_content_hash: "cb25672b969a26600fc5f7e9d9d26d4ef2c54d22df10f183e88f9dfd593ad597"
-generated_at: "2026-07-30T15:56:17.770Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl"]
-event_count: 1161
+generated_from_event: "ev-1785468425507-bc1ad1cd8394"
+generated_content_hash: "b3e03f1800dc76e17b631aa4732b5d4ebe7e3aed4dc1a1ee7efa65c54450017e"
+generated_at: "2026-07-31T03:27:05.621Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
+event_count: 1168
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 728
-- Events recorded: 1161
-- Source chunks: 19
+- Commands recorded: 730
+- Events recorded: 1168
+- Source chunks: 20
 
 ## Command `auto:42416:1781030643103`
 
@@ -7730,3 +7730,28 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-30T15:56:17.717Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-ms89j5mxba127b28aacd`
+
+- Start: 2026-07-31T01:27:35.272Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T01:27:35.272Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-161", +8 more |
+
+## Command `cmd-itemclosed-ms8dst8t273f0d3843d4`
+
+- Start: 2026-07-31T03:27:04.215Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T03:27:04.215Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-307", +3 more |
+| 2 | 2026-07-31T03:27:04.515Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-161", +4 more |
+| 3 | 2026-07-31T03:27:04.822Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 4 | 2026-07-31T03:27:05.332Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-07-31T03:27:05.372Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-07-31T03:27:05.507Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
