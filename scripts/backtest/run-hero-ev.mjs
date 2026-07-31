@@ -119,8 +119,35 @@ const main = async () => {
       if (!partialPath) return;
       try {
         const report = buildHeroEvReport(run, reportOpts);
+
+        // THE PARTIAL IS NOT A RANDOM SUBSAMPLE, and saying so is the whole point of this
+        // stamp. The runner walks EVAL players sequentially, so an early snapshot contains
+        // every decision of the first player(s) and none of anyone else's. Observed live on
+        // the first run that used this: at 300 scored decisions the headline arm had
+        // `players = 1` — one individual's result, carrying a perfectly confident-looking
+        // edge of +16.06 bb and `ciLow: null`, because a cluster bootstrap over one cluster
+        // is undefined (ipsEstimator.clusterBootstrapCI returns null below k=2).
+        //
+        // An edge without a CI, drawn from one player, is exactly the kind of number that
+        // gets quoted. The artifact has to refuse that reading itself rather than rely on
+        // whoever opens it.
+        const contributingPlayers = report?.arms?.engineRaked?.players ?? 0;
+        const partialStamp = {
+          complete: false,
+          decisionsScored: run.decisionsScored,
+          contributingPlayers,
+          ciAvailable: report?.gate?.heroEvCiLow !== null && report?.gate?.heroEvCiLow !== undefined,
+          caveat:
+            'PARTIAL SNAPSHOT — NOT a validated result and NOT a random subsample. EVAL '
+            + 'players are processed sequentially, so this contains all decisions from the '
+            + `first ${contributingPlayers} player(s) and none from the rest. The edge is `
+            + 'therefore player-biased, and no confidence interval exists until at least 2 '
+            + 'players have contributed (the CI is a cluster bootstrap over players). Do not '
+            + 'quote the edge from this file; wait for the completed run.',
+        };
+
         mkdirSync(dirname(partialPath), { recursive: true });
-        writeFileSync(partialPath, JSON.stringify({ report, run }, null, 2));
+        writeFileSync(partialPath, JSON.stringify({ partial: partialStamp, report, run }, null, 2));
         partialWrites++;
       } catch (err) {
         // Never let snapshot bookkeeping kill a multi-hour run.
