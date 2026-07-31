@@ -1,0 +1,116 @@
+id: "WS-317"
+title: "The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Phase 1 of the Five-Surface Atlas (.claude/projects/five-surface-atlas.md) and the
+  keystone the exploit-model architecture charter §6 has named since 2026-06-18:
+  "This must be unified and made the single join across GTO / Field / Read before
+  triangulation is meaningful. This is the first build dependency."
+
+  TWO DEFECTS, ONE FIX.
+
+  1. THE KEY IS A POSITIONAL STRING WITH AD-HOC PARSERS.
+
+       decisionAccumulator.js:189
+       buildSituationKey = (street, texture, posCategory, isAgg, isIP, facingAction, contextAction)
+         => `${street}:${texture}:${posCategory}:${isAgg}:${isIP}:${facingAction}:${contextAction}`
+
+     Readers that parse it independently, by position:
+       - villainDecisionModel.js:126   parseSituationKey
+       - modelAudit.js:130             bucket.situationKey.split(':')
+       - villainProfileBuilder.js:428  parts = bucket.situationKey.split(':')
+       - villainDecisionModel.js:630   startsWith(st + ':')   [prefix match]
+
+     Adding a dimension silently breaks every positional reader. This is the failure mode
+     the engine CLAUDE.md already records three times — WS-285 (a comment asserting an
+     unmeasured ordering), WS-291 (a doc the data refuted), WS-300 (a comment naming hands
+     the indices did not encode). Same shape: a structure asserting something nothing checks.
+
+  2. FOUR DIMENSIONS THE KEYSTONE REQUIRES AND THE KEY LACKS.
+
+     Charter §6 defines a spot as street x position x board-texture x SPR band x action
+     context x players-remaining. The key has neither SPR nor players-remaining.
+
+       SPR BAND — engine doctrine treats SPR as a first-principles decision input; the
+         founder's own maxim is that "afraid of getting stacked" is SPR, not a label. A spot
+         definition without SPR groups together decisions the engine itself says differ.
+       PLAYERS REMAINING — and per WS-274 the rule is WHO, not how many. Multiway already
+         has a known gap (WS-277).
+       SOURCE / PROVENANCE — the promoted registry's row-grain rule: source id must survive
+         the join or composition reporting and scope-leak detection are impossible. Charter
+         §6 states the keystone carries provenance THROUGH the join.
+       POOL IDENTITY — stake AND venue class. Without it the three Field surfaces (HandHQ
+         2009 online, Ignition current online, Wind Creek live 1/3) cannot be told apart,
+         which is the entire comparison FSA exists to make.
+
+  PRECEDENT, ALREADY IN THIS REPO. scripts/backtest/decisionGeometry.mjs: "Small on purpose,
+  and shared on purpose. Deriving it three times would be three chances to disagree about
+  what 'the pot' means at a node — and the pot convention is one of the details that
+  silently corrupts every downstream number if it drifts." Identical argument, one scale up.
+
+  NOT A REFACTOR FOR TIDINESS. Nothing in FSA — no divergence, no volume, no live-vs-online
+  transfer answer — is computable until two surfaces can be expressed on one grid.
+accept_criteria: |
+  - One structured key (an object with named fields), one builder, one parser. No module
+    parses a situation key by split(), index position, or prefix match. Assert it: a test
+    that greps the source for `split(':')` on a situation key and fails is legitimate here,
+    because positional parsing is precisely the defect.
+  - A dimension can be ADDED without editing any reader. Prove it by adding one in the same
+    change and touching no consumer.
+  - SPR band, players-remaining, source and pool are present. SPR banding must reuse the
+    engine's existing SPR zone definitions, not invent a second set — a second banding is
+    the same class of defect as a second situation key.
+  - HIERARCHY_ORDER survives AS MEASURED. It is ['isAgg','isIP','texture','street',
+    'posCategory'] and WS-285 measured that ordering against alternatives. Re-deriving or
+    "tidying" it during migration would discard a measurement. Its test must still pass.
+  - Source id survives an aggregation: build a mixed-source aggregate and assert it can
+    report its own composition without external bookkeeping. This is the registry's
+    row-grain rule made real, and it is the acceptance criterion prog-data-provenance cares
+    about most.
+  - Behaviour is UNCHANGED where the key did not gain a dimension. The villain model, model
+    audit and profile builder must produce identical output on a fixed corpus slice before
+    and after — a migration that moves numbers has done two things at once and neither is
+    verifiable. Bit-identical, or a stated and measured reason.
+  - Backtest and app agree: scripts/backtest/ and src/utils/ must key spots the same way, or
+    the FSA comparison is between two coordinate systems rather than two surfaces.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "scripts/backtest/decisionGeometry.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-316"
+sprint_id: null
+decision_flags:
+  - "Migration shape: change buildSituationKey in place and migrate all readers in one commit, or introduce the structured key alongside and retire the string over several? In-place is riskier but leaves no period where two key notions coexist — which is the defect being fixed."
+  - "Does the persisted bucket format change? Buckets carry situationKey today; a structured key may need a store migration or a derived-at-read-time approach. The second avoids a migration but pays the parse cost on every read."
+source:
+  type: charter
+  created_by: ai
+  finding_id: ""
+  run_id: "FSA-phase-1"
+created_at: "2026-07-31T06:40:00Z"
+status_note: |
+  Filed 2026-07-31 as Five-Surface Atlas Phase 1. The architecture charter has named this
+  the first build dependency since 2026-06-18 and it has not been picked up; FSA is the
+  first project that cannot start without it, which is what makes it actionable now rather
+  than aspirational. Note the charter also assumed prog-data-provenance governed it — that
+  program did not exist until 2026-07-31 and now does.

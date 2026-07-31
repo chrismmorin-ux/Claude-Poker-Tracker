@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785478648344-b6fc181dcaa8"
-generated_content_hash: "ffd9e35cebd08a7ab177524c8de86c062b25c2a259ed9f632fa7e46021156874"
-generated_at: "2026-07-31T06:17:28.379Z"
+generated_from_event: "ev-1785487225569-fc00738a9a23"
+generated_content_hash: "c051b1bc566ffb8e79a8a963fd8bab59046c02959282d8f87a0840eea42f1fda"
+generated_at: "2026-07-31T08:40:25.601Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1209
+event_count: 1214
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 761
-- Events recorded: 1209
+- Commands recorded: 766
+- Events recorded: 1214
 - Source chunks: 20
 
 ## Command `auto:42416:1781030643103`
@@ -8075,3 +8075,53 @@ path, not direct markdown edits.
 | 4 | 2026-07-31T06:17:28.245Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
 | 5 | 2026-07-31T06:17:28.278Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 6 | 2026-07-31T06:17:28.344Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:29384:1785486840168`
+
+- Start: 2026-07-31T08:34:00.168Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T08:34:00.168Z | T12:program-management | program-registry-synced | programs_dir=".claude/workstream/programs", programs_count=14 |
+
+## Command `auto:38808:1785487225201`
+
+- Start: 2026-07-31T08:40:25.201Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T08:40:25.201Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:38808:1785487225481`
+
+- Start: 2026-07-31T08:40:25.481Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T08:40:25.481Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:38808:1785487225507`
+
+- Start: 2026-07-31T08:40:25.507Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T08:40:25.507Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:38808:1785487225569`
+
+- Start: 2026-07-31T08:40:25.569Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T08:40:25.569Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

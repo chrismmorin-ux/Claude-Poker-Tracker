@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "programs",
-  "updated_at": "2026-07-31T06:17:28.344Z",
-  "updated_by_event": "ev-1785478648344-b6fc181dcaa8",
+  "updated_at": "2026-07-31T08:40:25.569Z",
+  "updated_by_event": "ev-1785487225569-fc00738a9a23",
   "items": {
     "anti-hallucination": {
       "id": "anti-hallucination",
@@ -383,6 +383,103 @@
       },
       "engine_history_count": 0
     },
+    "data-provenance": {
+      "id": "data-provenance",
+      "name": "Data Provenance & Source Accountability",
+      "status": "NEW",
+      "tier": "active",
+      "health_score": 0,
+      "last_run_date": null,
+      "founder_priority": 1,
+      "health_ceiling": 0,
+      "findings_open": 0,
+      "work_items_open": 0,
+      "problem_classes": [
+        {
+          "name": "Source Registration",
+          "description": "Every dataset feeding a displayed value or a founder decision is registered with a trust tier",
+          "examples": [
+            "a new ingest path lands without an SRC- entry",
+            "live hands identified by ABSENCE of a source stamp, so a third source is indistinguishable from them",
+            "an artifact that gates a decision (readiness scorecard) treated as scratch output"
+          ],
+          "detection": "Diff registered sources against ingest paths, stores, and evidence files cited by any gate or surface"
+        },
+        {
+          "name": "Chain Integrity",
+          "description": "The path from source to displayed number is walkable, and its evidence pointers still resolve",
+          "examples": [
+            "a cited file has moved or been renamed",
+            "two computation paths exist for one displayed number",
+            "a chain terminating in a founder decision rather than a pixel was never modelled"
+          ],
+          "detection": "Resolve every file:line reference in the chain map; scan for duplicate computation of registered quantities"
+        },
+        {
+          "name": "Trust Monotonicity",
+          "description": "No derivation step raises the trust tier of what it consumes",
+          "examples": [
+            "re-aggregating observed hands into a Reference-tier table",
+            "a founder estimate cited downstream as a measured baseline",
+            "a derived posterior fed back in as an observation"
+          ],
+          "detection": "Walk each chain and compare tier_at_step across derivations; flag any increase"
+        },
+        {
+          "name": "Leakage & Circularity",
+          "description": "Nothing is evaluated against data it was derived from",
+          "examples": [
+            "scoring the engine on the corpus its priors were mined from (SRC-011 / SRC-012 shared origin)",
+            "shrinking a villain toward a pool baseline that includes that villain",
+            "quoting a model's own estimate as the base rate it is compared against"
+          ],
+          "detection": "Check every measurement states its reference table and partition; verify leave-one-out guards on pooled baselines"
+        },
+        {
+          "name": "Claim Scope",
+          "description": "A claim stays inside the population, era, and game type its evidence covers",
+          "examples": [
+            "a live-play claim supported entirely by 2009 online rows",
+            "a smoke-run figure quoted as a validated result",
+            "a 1/2 pool estimate used silently as the 1/3 prior"
+          ],
+          "detection": "Compare each claim's stated scope against the source composition of the rows behind it"
+        }
+      ],
+      "accountability": {
+        "on_finding": {
+          "action": "create_work_item",
+          "max_open_items": 5,
+          "priority_floor": 20,
+          "escalation": {
+            "stale_days": 21,
+            "escalate_to": "session_start",
+            "escalate_priority_bump": 8
+          }
+        },
+        "on_stale": {
+          "action": "create_work_item",
+          "message": "Provenance has not been checked in {days} days — registry and chain map decay silently.",
+          "block_sprint": false
+        },
+        "on_tier_change": {
+          "action": "notify_founder",
+          "auto_escalate": true,
+          "auto_deescalate": false
+        }
+      },
+      "cap_breach": {
+        "active": false
+      },
+      "health_breakdown": {
+        "finding_health": 1,
+        "protocol_currency": 0,
+        "problem_class_coverage": 0,
+        "maturity_progress": 0.25,
+        "hard_caps_applied": []
+      },
+      "engine_history_count": 0
+    },
     "data-quality": {
       "id": "data-quality",
       "name": "Data Quality & Integrity",
@@ -623,7 +720,7 @@
       "health_ceiling": 9,
       "health_updated_at": "2026-07-22T00:00:00Z",
       "findings_open": 11,
-      "work_items_open": 42,
+      "work_items_open": 43,
       "problem_classes": [
         {
           "name": "First-principles decision modeling",
@@ -1323,5 +1420,5 @@
       "engine_history_count": 0
     }
   },
-  "last_event_log_head": "ev-1785478648344-b6fc181dcaa8"
+  "last_event_log_head": "ev-1785487225569-fc00738a9a23"
 }

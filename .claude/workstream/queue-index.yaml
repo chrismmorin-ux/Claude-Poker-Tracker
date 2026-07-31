@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 192
+total_items: 193
 by_status:
   decomposed: 1
   done: 80
   in_progress: 3
   deferred: 44
-  backlog: 45
+  backlog: 46
   dismissed: 1
   completed: 7
   review: 1
@@ -23,7 +23,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 62
+  domain-correctness: 63
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1860,6 +1860,15 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-317"
+    title: "The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: L
     program: domain-correctness
     capability: core
 
