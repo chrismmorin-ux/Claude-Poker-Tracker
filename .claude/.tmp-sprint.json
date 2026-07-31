@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-07-30T13:57:38.755Z",
-  "goal": "Ship WS-300: Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
+  "composed_at": "2026-07-31T21:26:09.049Z",
+  "goal": "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-300",
-      "title": "Engine test range fixtures are INVERTED — `topRange(20)` is the weakest 20%, `tightRange()` is small pairs and junk",
-      "raw_score": 30,
-      "adjusted_score": 30,
+      "id": "WS-307",
+      "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+      "raw_score": 31,
+      "adjusted_score": 31,
       "effort": "M",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-300 selected (30 × no damping = 30).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+19 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-307 selected (31 × no damping = 31).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+21 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,
