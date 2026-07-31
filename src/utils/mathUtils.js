@@ -24,6 +24,27 @@ export const safeDiv = (numerator, denominator, fallback = 0) => {
 export const sigmoid = (x) => 1 / (1 + Math.exp(-x));
 
 /**
+ * Inverse of `sigmoid`: log(p / (1 - p)). Maps (0, 1) to the real line.
+ *
+ * Use it to combine probabilities additively — a shift in log-odds is a
+ * multiplicative shift in the odds ratio, so composing there keeps the result in
+ * (0, 1) with no clamping and treats both tails symmetrically. Averaging raw
+ * probabilities does neither.
+ *
+ * The input is clamped to `eps` away from both bounds: logit(0) and logit(1) are
+ * infinite, and the callers of this function work with probabilities that can
+ * legitimately reach their own floors and ceilings.
+ *
+ * @param {number} p - Probability
+ * @param {number} [eps=1e-6] - Distance from 0 and 1 to clamp within
+ * @returns {number} Log-odds
+ */
+export const logit = (p, eps = 1e-6) => {
+  const q = clamp(p, eps, 1 - eps);
+  return Math.log(q / (1 - q));
+};
+
+/**
  * Scaled logistic for equity-ratio decisions.
  * Maps input through a logistic centered at `center`, output clamped to [floor, floor+scale].
  * Default params match the call-probability logistic used across the game tree.
