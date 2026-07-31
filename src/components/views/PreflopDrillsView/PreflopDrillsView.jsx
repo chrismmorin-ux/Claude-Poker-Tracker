@@ -23,13 +23,21 @@ import { ShapeMode } from './ShapeMode';
 import { RecipeMode } from './RecipeMode';
 import { MathMode } from './MathMode';
 
+// Labels name the OBJECT the tab operates on; the street comes from the view.
+// Renamed 2026-07-31 (audits/2026-07-31-entry-drill-tab-label-collision.md) to
+// resolve verbatim collisions with PostflopDrillsView — this view estimates
+// MATCHUP equity and browses MATCHUPS, where postflop estimates RANGE
+// composition and browses SCENARIOS. `Lessons` stays colliding on purpose: same
+// object, street differs, so a prefix would only restate the page header.
+// Internal `id`s are unchanged — they key persistence and the openDrills
+// deep-link contract (same discipline as WS-231 F-DRILL-03).
 const TABS = [
   { id: 'shape',     label: 'Shape' },
   { id: 'recipe',    label: 'Recipe Drill' },
   { id: 'explorer',  label: 'Equity Lookup' },
-  { id: 'estimate',  label: 'Estimate Drill' },
-  { id: 'framework', label: 'Framework Drill' },
-  { id: 'library',   label: 'Library' },
+  { id: 'estimate',  label: 'Equity Estimate' },
+  { id: 'framework', label: 'Matchup Frameworks' },
+  { id: 'library',   label: 'Matchup Library' },
   { id: 'lessons',   label: 'Lessons' },
   { id: 'math',      label: 'Math' },
 ];

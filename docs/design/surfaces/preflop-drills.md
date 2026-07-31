@@ -22,7 +22,7 @@
 
 ## Purpose
 
-Preflop equity + range trainer. Eight tabs, each targeting a different learning dimension. Shipped today: **Shape**, **Recipe Drill**, **Explorer**, and drill content for **Math**. WIP / stubs: **Estimate**, **Framework Drill**, **Library**, **Lessons** in their full form (F-W2). The surface is the mental-model building ground between live sessions — build the intuition before the table extracts rent for not having it.
+Preflop equity + range trainer. Eight tabs, each targeting a different learning dimension: **Shape**, **Recipe Drill**, **Equity Lookup**, **Equity Estimate**, **Matchup Frameworks**, **Matchup Library**, **Lessons**, **Math**. (The 2026-04 "WIP / stub (F-W2)" labels on Estimate / Framework / Library / Lessons are **STALE** — all four have since matured, mirroring the same correction made on `postflop-drills.md`.) The surface is the mental-model building ground between live sessions — build the intuition before the table extracts rent for not having it.
 
 ## JTBD served
 
@@ -53,8 +53,8 @@ Secondary:
 │ Preflop Drills — exact equity trainer   [Back to Sessions] │
 ├────────────────────────────────────────────────────────────┤
 │ Tab bar:                                                   │
-│   [Shape] [Recipe Drill] [Equity Lookup] [Estimate Drill]  │
-│   [Framework Drill] [Library] [Lessons] [Math]             │
+│   [Shape] [Recipe Drill] [Equity Lookup] [Equity Estimate] │
+│   [Matchup Frameworks] [Matchup Library] [Lessons] [Math]  │
 ├────────────────────────────────────────────────────────────┤
 │ Mode content (one of the 8 modes renders)                  │
 │                                                            │
@@ -153,3 +153,5 @@ Coverage in v1: 2 of 5 SCF v1 reference lessons map to preflop drill substrate (
 - 2026-04-21 — Created (DCOMP-W0 session 2, Tier A baseline).
 - 2026-05-02 — SCF Gate 4 extension: opt-in-test mode subsection added. 3-delta description; entry from lesson card `Test myself` button; result-display surface with cd5_exempt manifest. Implementation deferred to SCF Gate 5 multi-PR.
 - 2026-06-15 — WS-231 (WS-229 roundtable corrective): **Explorer** tab renamed **Equity Lookup** (F-DRILL-03 — resolves the cross-view false-friend with postflop, where the same label hosted a different tool). Product-line clarified main-app-only / sidebar-N/A (F-DRILL-01 / D-3). Tab-switch state-loss protection added across drill views (F-DRILL-02). Internal tab `id` unchanged (`explorer`).
+
+- 2026-07-31 — **Tab label collision fix** (entry audit [`2026-07-31-entry-drill-tab-label-collision.md`](../audits/2026-07-31-entry-drill-tab-label-collision.md), GREEN). `Estimate Drill` → **Equity Estimate**, `Framework Drill` → **Matchup Frameworks**, `Library` → **Matchup Library** — each previously collided verbatim with a `PostflopDrillsView` tab operating on a *different object* (matchup equity vs range composition; `domination`/`race` lenses vs `board_tilt`/`whiff_rate` lenses; curated matchups vs curated scenarios). Applies the rule established by WS-231 F-DRILL-03: **a label names its object; the street comes from the view.** `Lessons` deliberately still collides — same object, street differs, so a prefix would only restate the page header. Internal tab `id`s unchanged (they key persistence + the `openDrills` deep-link contract). Purpose paragraph's stale F-W2 WIP claim corrected. Guarded by `views/__tests__/drillTabLabels.test.js`.
