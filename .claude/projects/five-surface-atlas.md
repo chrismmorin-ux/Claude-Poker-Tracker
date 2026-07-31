@@ -72,6 +72,25 @@ played more short-handed?" without re-deriving anything.
 situation distribution to weight a live claim would smuggle the online pool back in through
 the weights after carefully excluding it from the surfaces.
 
+**And `P(situation)` has a name now — it is POKER_THEORY §14's per-hand frequency.** The
+founder arrived at the same object from the opposite direction (2026-07-31): make *hands at
+the table* the common denominator so every quantity in the engine becomes events per 100
+hands. That is exactly this weight. The decomposition §14.2 settles on —
+
+```
+events per 100 hands  =  opportunities per 100 hands  ×  rate | opportunity
+```
+
+— is structurally identical to this project's *frequency × divergence*, so **one instrument
+serves both and it must be built once.** Phase 2 below is that instrument. Two independent
+lines of reasoning landing on the same structure is the reason to trust it.
+
+Carried limits, from §14.3, which bind here: the per-hand form gives the right unit for
+variance but hands are **not** independent within a session, so cluster over sessions or
+players and let hands be the unit inside the cluster. And any frequency inferred through an
+unobserved-completion assumption (showdown scarcity being the standing case) is **modelled,
+not measured**, and must be labelled so wherever it reaches a surface.
+
 ### 2. Friction / concede / better arc — a signed decomposition
 
 Divergence from GTO is **not error**. For an exploitative engine it is the entire point. What
@@ -146,7 +165,7 @@ scale up.
 | # | Phase | Exit condition |
 |---|---|---|
 | **1** | **Situation key unification.** One structured key (object, not positional string), one parser, all readers migrated. Add SPR band, players-remaining, source, pool. `HIERARCHY_ORDER` preserved as measured. | No module parses a key by `split`. A dimension can be added without touching a reader. Source id survives an aggregation. |
-| **2** | **Frequency weights per pool.** `P(situation)` for live 1/3 (9-handed and short) from SRC-014, and for each Field surface from its own source. | Weights exist per pool, with their sample sizes stated. Live weights are never borrowed from the corpus. |
+| **2** | **Per-hand frequency weights per pool (POKER_THEORY §14).** Build the one instrument that expresses any quantity as `opportunities per 100 hands × rate \| opportunity`. `P(situation)` for live 1/3 (9-handed and short) from SRC-014, and for each Field surface from its own source. | Weights exist per pool with sample sizes stated; live weights never borrowed from the corpus; every emitted rate carries its opportunity count; inferred-completion figures are stamped as modelled; variance claims name their cluster unit. |
 | **3** | **The divergence instrument.** Two surfaces + a weight → the volume number, with per-situation decomposition. | Any two registered surfaces can be differenced and the result attributed to situations. |
 | **4** | **Verdict + exploitability.** The signed triple per divergence; best-response EV against our own surface. | Friction / concede / better-arc is emitted per situation, not asserted. Hero's own exploitability has a number. |
 | **5** | **Equilibrium ingestion (SRC-013).** Solver output as a real Reference source with solver identity, stack depth, rake model, spot coverage. | GTO comparisons stop being made against published chart strings. |

@@ -1876,3 +1876,89 @@ Measured, holding hero's 3♠3♦ and the board fixed and changing only the vill
 
 Both directions are load-bearing. **A fix that suppresses both spots has encoded "don't
 bluff with made hands", which is §13.1 backwards.** Assert the converse, always.
+
+---
+
+## 14. The Hand Is the Denominator (founder, 2026-07-31)
+
+Every rate in this engine currently divides by something different. `P(check | strong)`
+divides by showdowns that revealed strength; VPIP divides by hands dealt in; fold-to-cbet
+divides by times a cbet was faced; the hero-EV edge divides by scored decisions. Each is
+defensible alone. **Together they are not commensurable, and most of this document's hard
+lessons are that incommensurability surfacing in a new costume.**
+
+§11.8's showdown-selection artifact, §11.5's fallback-level selection effect, the WS-303
+check-branch sign flip, and the 2026-07-31 hero-EV run where 600 decisions came from three
+players are all one problem: **a denominator nobody chose, doing work nobody audited.**
+
+### 14.1 One currency: events per 100 hands
+
+Normalise every quantity to **hands at the table**. A rate becomes a frequency —
+*occurrences per 100 hands* — and three things follow immediately.
+
+**Showdown scarcity splits into two estimable factors.** Instead of one contaminated
+conditional, `P(strong ∧ showdown)` per hand factors as
+
+```
+P(reach showdown)  ×  P(strong | showdown)
+```
+
+The selection bias stops being a hidden property of the denominator and becomes an explicit
+term. §11.8 had to warn in prose that showdown reveals inflate `P(check | strong)` *for
+everyone*; per-hand, that inflation is a number.
+
+**Evidential weight becomes computable rather than assumed.** A showdown observation and a
+tendency observation are currently combined with no principled relative weight. Per-hand
+their weights are simply their rates, so "how much should a rare showdown move the posterior
+against a common tendency" has an arithmetic answer instead of a constant.
+
+**And it is the same object the Five-Surface Atlas needs.** FSA weights divergence by
+`P(situation)` to convert it into EV. Per-hand frequency **is** `P(situation)`. Changing the
+per-hand frequencies changes the environment — table size, stack depth, pool aggression —
+and every downstream number re-derives without touching the divergence function. Two
+independent lines of reasoning arriving at the same structure is the reason to trust it.
+
+### 14.2 The decomposition that makes it work
+
+"Hands at the table" is the right *currency* but the wrong *opportunity count* for most
+quantities: a BB-defence stat's natural denominator is hands in the BB facing an open, not
+all hands. Keep both:
+
+```
+events per 100 hands  =  opportunities per 100 hands  ×  rate | opportunity
+```
+
+The left side is comparable across every quantity in the engine. The right side keeps each
+quantity's own conditioning set intact, satisfying the standing rule that **numbers carry
+their conditional**. And the split is structurally identical to FSA's *frequency ×
+divergence* — which is why one instrument can serve both.
+
+This also makes a whole class of error visible. A change that improves `rate | opportunity`
+while shrinking `opportunities` may be worth nothing; today those move in different units
+and nothing forces the comparison.
+
+### 14.3 Two honest limits — do not let this section overclaim
+
+**It gives the right UNIT for variance, not a perfect simulation of it.** Per-hand
+normalisation is why bb/100 is the standard unit and it supplies a well-defined resampling
+object. But hands within a session are **not independent** — same opponents, same table
+dynamic, same tilt state — so bootstrapping over hands understates variance for exactly the
+reason bootstrapping over decisions did on 2026-07-31 (600 decisions, 3 players, a CI that
+looked excellent because it had three clusters to resample). Cluster over sessions or
+players; let hands be the unit *inside* the cluster, never the cluster itself.
+
+**It LOCALISES the unobserved rather than correcting it.** Inferring a true frequency from
+observed showdowns requires an assumption about `P(strong | no showdown)`, which is by
+construction never seen. That is still a large gain — one explicit, named, estimable unknown
+beats a bias smeared invisibly across every conditional — but the resulting number is
+*modelled*, not measured, and must be labelled as such wherever it is displayed. A corrected
+figure that reads as an observed one is §11.5's fallback-level table all over again.
+
+### 14.4 What this binds
+
+- Any new rate ships with its opportunity count, or it cannot be compared to anything.
+- Any figure derived through an unobserved-completion assumption is stamped as modelled.
+- Variance claims name their cluster unit. "Bootstrapped" without naming the cluster is not
+  a variance claim.
+- FSA's frequency weighting (`P(situation)`) and this section's opportunity rate are the
+  same quantity and must be computed once, not twice.
