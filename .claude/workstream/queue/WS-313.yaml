@@ -126,6 +126,34 @@ status_note: |
     - Tap must keep working (tap commits, hold magnifies). Cancellation is
       non-negotiable.
 
+  NEW INPUT 2026-07-31 — ACTION/SIZING ENTRY EXPLORATION (founder concept):
+  docs/design/explorations/action-entry-sizing.md. Founder proposed a funnel — tap Bet
+  opens a slider snapping to common sizes, "wiggle" for precision around the node, one
+  continuous gesture capturing progressive detail so a balk still records something.
+  Measured budget: command column 313x500 rendered, preset row spans 288px of travel.
+  Findings to carry into the artifact:
+    - The gap is real: there is nothing between "one of four presets" (1 tap) and
+      "open a keyboard" (3 taps + occlusion). Both keyboard-path controls are BELOW
+      the touch floor (custom input 229x33, GO 45x33) — fix regardless of direction.
+    - A plain linear slider breaks at large pots: 288px covers ~$12/px on a $2000 pot,
+      i.e. +/-$60 at realistic finger precision. Progressive precision is a REQUIREMENT
+      of the concept, not a refinement of it. The founder's instinct is arithmetically
+      confirmed.
+    - RECOMMENDED AMENDMENT: tap still commits (fast path untouched, protects HE-23);
+      press-and-drag from a preset refines. Replace "wiggle" (a mode switch — no
+      affordance, false-positives from tremor/jostle at a live table) with
+      VELOCITY-ADAPTIVE GAIN: fast = coarse + snap, slow = fine. A wiggle IS a
+      low-velocity movement, so this delivers what he described without a mode.
+    - Early lift MUST commit the nearest snap node — never nothing (punishes the
+      interruption the idea is designed for) and never the raw mid-drag value (silently
+      records an arbitrary number). This is what makes it degrade gracefully into
+      today's behaviour and satisfies glance-return-chris.
+    - Learned presets (hero-scoped) are pre-arming applied to sizing. CAVEAT: presets
+      record BOTH hero and villain actions; "my common sizes" is only correct for hero.
+      A blended learned set would degrade both.
+    - NOT on Fold/Call/Check (discrete, nothing to refine, taxes HE-23, collides with
+      HE-22's pre-arm).
+
   CARRIED RISK: R7 timing unmeasured. Treat "the speed problem is postflop entry,
   player entry and legibility" as a stated assumption; validate before Gate 5.
   Project: .claude/projects/table-view-redesign-2026-07-31.md

@@ -20,6 +20,7 @@
 | `08-local-repro-1600x720-nexthand-below-fold.png` | **Local repro at exactly 1600×720** — Next Hand is entirely below the fold |
 | `09-local-repro-rotate-gate-portrait.png` | Local repro of the rotate gate at a 720×1600 viewport |
 | `10-card-selector-device-scale-1170x540.png` | Card selector at device-equivalent scale (0.695) — grid cells measure 79×92 rendered px |
+| `11-sizing-controls-device-scale.png` | Sizing presets / custom input / GO at device scale — the input (229×33) and GO (45×33) are **below the touch floor** |
 
 ---
 
@@ -112,6 +113,23 @@ The sub-floor targets in that surface are the header `CardSlot`s (~28×40 at dev
 **The real risk in the card grid is homogeneity, not size** — 52 near-identical cells where a perfectly accurate tap can still hit the wrong card, and confirmation arrives only after the write. That is a feedback-timing defect, and it is what `WS-317` (confirm-before-commit) addresses. See [Gate 1 entry](../../audits/2026-07-31-entry-confirm-before-commit.md).
 
 **Also confirms EVID-2's device estimate:** measured scale at a 1170×540 CSS viewport is **0.695**, matching the DPR-2 prediction. A declared 44px target therefore renders at **~30.6px** on the founder's device — now measured rather than inferred.
+
+## EVID-7 — Sizing-entry physical budget *(measured 2026-07-31)*
+
+Measured for the action-entry exploration ([`explorations/action-entry-sizing.md`](../../explorations/action-entry-sizing.md)), at 1170×540 / scale 0.695:
+
+| Element | Declared | Rendered | vs 44px floor |
+|---|---|---|---|
+| Command column | 450 × 720 | **313 × 500** | — |
+| Sizing preset (×4) | 100 × 68 | **69 × 47** | ✅ just clears |
+| Action button | 213 × 100 | **148 × 69** | ✅ |
+| Custom amount input | 330 × 48 | **229 × 33** | ❌ **below floor** |
+| GO button | ~65 × 48 | **45 × 33** | ❌ **below floor** |
+| Preset row span | — | **288 px** | slider travel budget |
+
+**Two new floor violations** on the only path to an arbitrary bet amount — the custom input and GO. Recording a non-preset size is currently the least reliable interaction in the surface, and it also requires a keyboard that occludes the table.
+
+**288px is the constraint that governs any slider proposal.** At a $100 pot that is ~$0.61/px (fine); at a $2000 pot it is ~$12/px, or ±$60 at realistic finger precision (unusable). A plain linear slider therefore breaks down at large pots — which is why progressive precision is a requirement of the founder's concept, not a refinement of it.
 
 ## EVID-4 — Floating voice button overlaps the card grid *(NEW, minor)*
 

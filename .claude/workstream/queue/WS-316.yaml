@@ -49,6 +49,16 @@ description: |
   s = 0.695 exactly as the DPR-2 row predicts. So a declared 44px target renders at
   ~30.6 px on his phone. This is now measured, not inferred.
 
+  TWO MORE FLOOR VIOLATIONS FOUND 2026-07-31 by direct measurement at device scale,
+  both on the ONLY path to recording an arbitrary (non-preset) bet amount:
+
+      custom amount input   declared 330x48  ->  rendered 229x33
+      GO button             declared  65x48  ->  rendered  45x33
+
+  So the least-reliable targets in the surface sit on the path used precisely when the
+  preset row cannot express what happened — i.e. exactly the sizes that carry the most
+  information. Fix these regardless of which overall strategy is chosen.
+
   Either way the H-ML06 44px minimum IS NOT MET ANYWHERE IN THE APP on the founder's
   own phone. The 100px "can't-miss" action buttons render at 63-84px. The 36px orbit
   strip buttons render at 23-30px.

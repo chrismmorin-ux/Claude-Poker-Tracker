@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-31T22:47:32.885Z",
-  "updated_by_event": "ev-1785538052885-835a022faa21",
+  "updated_at": "2026-07-31T22:56:54.996Z",
+  "updated_by_event": "ev-1785538614996-2287be1defa6",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5096,5 +5096,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785538052885-835a022faa21"
+  "last_event_log_head": "ev-1785538614996-2287be1defa6"
 }
