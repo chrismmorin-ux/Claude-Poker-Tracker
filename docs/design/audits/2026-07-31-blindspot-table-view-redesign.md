@@ -49,13 +49,13 @@ D-3 places a persistent interactive rail in the felt's bottom band. Which thumb 
 
 Carried from Gate 1 G2. The atlas covers entering (HE-11), correcting (HE-12), and being advised (MH domain). Advice is **inert** — it never touches the input. Pre-arming is a third thing, and its success criteria are not derivable from the other two. The load-bearing question it must answer: **does a pre-armed wrong default get committed more often than an un-armed one?** Nothing in the atlas frames that.
 
-**Proposal:** author `HE-19 — Accept or override a proposed action` with explicit failure mode *"the proposal was committed without being read."*
+**Proposal:** author `HE-22 — Accept or override a proposed action` with explicit failure mode *"the proposal was committed without being read."*
 
 ### B2 — No job scopes the orbit as a unit *(YELLOW)*
 
 HE-11 is per-seat-action ("so I don't fall behind"). Orbit tap-ahead and the three batch controls already operate on runs of seats with no job of their own — they were built as HE-11 accelerators. The founder is describing **per-orbit** throughput. Optimising a per-seat metric against a per-orbit goal is how you ship a faster button and a slower hand.
 
-**Proposal:** author `HE-20 — Record a full orbit without falling behind the dealer`, with the orbit as the unit of success.
+**Proposal:** author `HE-23 — Record a full orbit without falling behind the dealer`, with the orbit as the unit of success.
 
 ### B3 — No job for the roster as a standing object *(YELLOW)*
 
@@ -186,8 +186,8 @@ Both amendments preserve the founder's intent fully. Neither is a scope reductio
 | # | Item | Closes | Cost |
 |---|---|---|---|
 | R1 | Author situational persona `glance-return-chris` | A1 / G1 | S |
-| R2 | Author `HE-19 — Accept or override a proposed action` | B1 / G2 | S |
-| R3 | Author `HE-20 — Record a full orbit without falling behind` | B2 / G3 | S |
+| R2 | Author `HE-22 — Accept or override a proposed action` | B1 / G2 | S |
+| R3 | Author `HE-23 — Record a full orbit without falling behind` | B2 / G3 | S |
 | R4 | Extend PM domain with the roster-maintenance job | B3 / G4 | S |
 | R5 | Resolve `ringmaster-in-hand` PROTO — validate or retire | A2 / G5 | founder input |
 | R6 | Founder: handedness + grip in one-handed landscape | A4 | 1 question |
@@ -231,3 +231,4 @@ Binding on the surface artifact, carried from this roundtable:
 ## Change log
 
 - 2026-07-31 — Drafted. YELLOW verdict; 2 critical amendments (C1, C2); Gate 3 required, scoped to R1–R7.
+- 2026-07-31 — **ID correction during Gate 3 execution.** This audit proposed `HE-19` and `HE-20`; both are already allocated to the all-in / side-pot family by [`2026-06-19-blindspot-allin-side-pots.md`](./2026-06-19-blindspot-allin-side-pots.md) (HE-19 all-in recording, HE-20a/20b showdown attribution, HE-21 stack entry) and are referenced in `CommandStrip.jsx`. Reassigned to **HE-22** and **HE-23**. The clash exists because HE-19/20/21 were allocated in an audit and never written into `jtbd/domains/hand-entry.md` — flagged as a framework hygiene gap, see WS-312 note.

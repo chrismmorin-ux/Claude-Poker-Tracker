@@ -2,7 +2,7 @@ id: "WS-312"
 title: "TVR Gate 3 — research pass closing the two RED gaps: no persona for spatial re-orientation, no JTBD for app-proposed input"
 legacy_id: ""
 type: design
-status: backlog
+status: in_progress
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -45,13 +45,13 @@ accept_criteria: |
        is what Gate 4 designs against. Distinct from stepped-away-from-hand (minutes,
        whole-hand loss) and mid-hand-chris (continuous attention).
 
-  R2 — Author `HE-19 — Accept or override a proposed action` in
+  R2 — Author `HE-22 — Accept or override a proposed action` in
        docs/design/jtbd/domains/hand-entry.md. Failure mode must be stated explicitly:
        "the proposal was committed without being read." Success criteria must make the
        load-bearing question measurable: does a pre-armed wrong default get committed
        more often than an un-armed one?
 
-  R3 — Author `HE-20 — Record a full orbit without falling behind the dealer`, with
+  R3 — Author `HE-23 — Record a full orbit without falling behind the dealer`, with
        the ORBIT as the unit of success. Rationale: HE-11 is per-seat-action; the
        existing batch controls and orbit tap-ahead already operate on runs of seats
        with no job of their own. Optimising a per-seat metric against a per-orbit goal
@@ -105,3 +105,36 @@ created_at: "2026-07-31T00:00:00Z"
 status_note: |
   Gate 2 output: docs/design/audits/2026-07-31-blindspot-table-view-redesign.md
   Project: .claude/projects/table-view-redesign-2026-07-31.md
+
+  PROGRESS 2026-07-31 — R1-R4 DONE, R5-R7 outstanding.
+
+  DONE:
+    R1 docs/design/personas/situational/glance-return-chris.md  (marked UNVERIFIED;
+       carries the surface contract Gate 4 designs against, plus 4 open questions
+       all answerable by watching the founder record two orbits)
+    R2 HE-22 Accept or override a proposed action     (hand-entry.md)
+    R3 HE-23 Record a full orbit without falling behind (hand-entry.md)
+    R4 PM-16 Keep the table roster matching reality all session (player-management.md)
+    ATLAS.md ID ranges updated.
+
+  ID COLLISION CAUGHT AND CORRECTED. The Gate 2 audit proposed HE-19 and HE-20.
+  Both are already allocated to the all-in / side-pot family by
+  audits/2026-06-19-blindspot-allin-side-pots.md (HE-19 all-in recording,
+  HE-20a/20b showdown attribution, HE-21 stack entry) and HE-19 is referenced in
+  CommandStrip.jsx. Reassigned to HE-22 / HE-23. ROOT CAUSE: those four IDs live
+  only in an audit and were never written into jtbd/domains/hand-entry.md, so the
+  domain's ID space is not self-describing and the next author will hit the same
+  collision. Writing them up is outstanding framework-hygiene work, flagged in
+  ATLAS.md and in hand-entry.md's change log.
+
+  STILL OUTSTANDING:
+    R5 ringmaster-in-hand PROTO resolution   — FOUNDER INPUT
+    R6 handedness / grip                     — FOUNDER INPUT (one question)
+    R7 baseline measurement                  — PARTIALLY UNBLOCKED. The app now runs
+       locally (`npm run env:local` + `npm run devshot`), so rendered-size and
+       clipping measurements are done and recorded in the evidence folder. The
+       TIMING half (seconds per orbit, seconds to seat a player) still needs a human
+       at the table, not a harness.
+
+  GATE 3 IS NOT COMPLETE and Gate 4 (WS-313) stays blocked: the exit condition is
+  re-running Gate 2 to GREEN, which cannot happen while R5/R6 are open.

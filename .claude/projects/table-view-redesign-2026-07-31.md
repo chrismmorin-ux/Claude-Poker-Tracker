@@ -2,7 +2,7 @@
 
 **Opened:** 2026-07-31 (founder request)
 **Program:** design (5-Gate UX Framework)
-**Status:** Gate 2 COMPLETE (YELLOW) → **Gate 3 NEXT, scoped**
+**Status:** Gate 2 COMPLETE (YELLOW) → **Gate 3 IN PROGRESS** (R1–R4 done; R5/R6 need founder input, R7 needs table observation)
 **Branch:** `claude/poker-table-redesign-z0h4rc`
 
 ---
@@ -64,7 +64,7 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 |---|---|---|
 | 1 — Entry | ✅ **RED** | [`audits/2026-07-31-entry-table-view-redesign.md`](../../docs/design/audits/2026-07-31-entry-table-view-redesign.md) |
 | 2 — Blind-Spot | ✅ **YELLOW** | [`audits/2026-07-31-blindspot-table-view-redesign.md`](../../docs/design/audits/2026-07-31-blindspot-table-view-redesign.md) |
-| 3 — Research | ⬜ **NEXT** — scoped to R1–R7 | WS-312 |
+| 3 — Research | 🟡 **IN PROGRESS** — R1–R4 done, R5–R7 open | WS-312 |
 | 4 — Design | ⬜ blocked on Gate 3 | WS-313 |
 | 5 — Implementation | ⬜ blocked on Gate 4 | WS-314+ |
 
@@ -77,13 +77,28 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-315** | **P0** — Orientation gate hard-blocks app entry, no recovery on rotate | — (standalone bug) | backlog |
 | **WS-311** | **P0** — CommandStrip clips the Next Hand CTA at preflop (confirmed on device) | — (standalone bug) | backlog |
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
-| **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | backlog |
+| **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **in progress** — R1–R4 done |
 | **WS-313** | TVR Gate 4 — surface artifact for Table View v2 | 4 | blocked by WS-312 |
 | **WS-314** | TVR Gate 5 — implementation (decomposes at Gate 4) | 5 | blocked by WS-313 |
 
 **The three P0s are deliberately not gated behind the redesign.** They degrade — and in two cases outright block — the surface *today*. They should ship on their own merits whether or not the redesign proceeds. Recommended order: **WS-315** (blocks entry) → **WS-311** (blocks hand advance) → **WS-316** (measure first; the fix strategy is a Gate 4 decision).
 
 **WS-316 is also a Gate 4 input, not just a bug.** It invalidates Gate 2 pre-commitment #2 ("all action targets stay ≥44px and equal-area") as literally written — that constraint is currently unsatisfiable inside a uniformly scaled canvas. Gate 4 must restate every size floor in terms of **rendered** size.
+
+---
+
+## Gate 3 output so far (2026-07-31)
+
+| # | Artifact | Note |
+|---|---|---|
+| R1 | [`personas/situational/glance-return-chris.md`](../../docs/design/personas/situational/glance-return-chris.md) | The persona D-2 must be designed for — returns eyes to the screen after 2–15s of watching the physical table. **Marked UNVERIFIED**; carries the surface contract Gate 4 designs against, plus four open questions all answerable by watching you record two orbits. |
+| R2 | `HE-22 — Accept or override a proposed action` | The job pre-arming serves. Failure mode stated as *"the proposal was committed without being read."* |
+| R3 | `HE-23 — Record a full orbit without falling behind the dealer` | Orbit as the unit of success, because HE-11 is per-seat and the founder's goal is per-orbit. |
+| R4 | `PM-16 — Keep the table roster matching reality all session` | The continuous job the rail actually serves; PM-02 is a discrete act. |
+
+**ID collision caught and corrected.** Gate 2 proposed `HE-19` and `HE-20`; both were already allocated to the all-in / side-pot family (`audits/2026-06-19-blindspot-allin-side-pots.md`) and `HE-19` is referenced in `CommandStrip.jsx`. Reassigned to HE-22/HE-23. Root cause: those IDs live only in an audit and were never written into the domain file, so the ID space is not self-describing — flagged in `ATLAS.md` as outstanding hygiene work.
+
+**Gate 3 is not complete.** Its exit condition is re-running Gate 2 to GREEN, which needs R5 (is `ringmaster-in-hand` real?) and R6 (handedness) — both founder input. Gate 4 (`WS-313`) stays blocked.
 
 ---
 
