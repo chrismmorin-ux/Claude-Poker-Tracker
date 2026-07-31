@@ -1,16 +1,17 @@
 # Surface — Study Home (cross-project)
 
 **ID:** `study-home`
-**Code paths:** (none yet — design-only at Gate 4)
-- *Planned:* `src/components/views/StudyHomeView/StudyHomeView.jsx`
-- *Planned:* `SCREEN.STUDY_HOME` route + `studyHomeReducer`
+**Code paths:**
+- `src/components/views/StudyHomeView/StudyHomeView.jsx` (**v1 SHIPPED 2026-07-31** — flat-index region only)
+- `SCREEN.STUDY_HOME` route (shipped)
+- *Planned:* `studyHomeReducer` — lands with the intent router (deferred, see §v1 scope)
 
 **Route / entry points:**
-- *Planned:* `SCREEN.STUDY_HOME` (top-level nav entry, peer of `SCREEN.TABLE`)
-- Opens from: top-nav / settings / per-project deep links (each project embed adds its own entry)
+- `SCREEN.STUDY_HOME` (top-level nav entry, peer of `SCREEN.TABLE`) — **shipped**; `CollapsibleSidebar` "Study" entry.
+- Opens from: top-nav; *planned:* settings / per-project deep links (each project embed adds its own entry)
 - Closes to: previous view via back
 
-**Last reviewed:** 2026-05-11
+**Last reviewed:** 2026-07-31 (v1 implementation)
 
 ---
 
@@ -23,9 +24,11 @@ This surface is the first concrete output of the cross-project coordination iden
 ## JTBD served
 
 Primary:
+- `DS-69` — **Route to the right study surface for what I came to do** — the surface's reason to exist; served in full by v1 (§SH-V1).
 - `DS-46` — Spaced repetition for key charts (**Proposed**) — partial; spaced-repetition surfacing lives in per-project embeds, study-home indexes them
-- `DS-47` — Skill map / mastery grid (**Proposed**) — partial; aggregated mastery view is one tab of the home
-- `JTBD-SE-01` (session-entry) — open the right study surface for the current intent (entry routing role)
+- `DS-47` — Skill map / mastery grid (**Proposed**) — partial; aggregated mastery view is one tab of the home. NOTE: DS-47 is the *gamified* grid the autonomy doctrine refuses; any mastery rendering here follows DS-68's non-gamified form.
+
+> **Corrected 2026-07-31.** This list previously claimed `JTBD-SE-01 (session-entry) — open the right study surface for the current intent`. SE-01 is *tonight's watchlist* (villain-specific session prep) and never covered study routing. See §SH-V1 §JTBD correction.
 
 Secondary:
 - `ON-87` — Cold-start descriptor seeding (Active, SLS) — first-launch enrollment journey runs in this surface for Shape Language
@@ -46,6 +49,48 @@ Primary:
 Secondary:
 - [Chris (live player)](../personas/core/chris-live-player.md) — opens between sessions.
 - [Apprentice](../personas/core/apprentice-student.md) — coach-assigned curriculum entry.
+
+---
+
+## §SH-V1 — v1 scope (shipped 2026-07-31)
+
+**Gates:** [entry](../audits/2026-07-31-entry-study-home-v1.md) (YELLOW) → [blind-spot](../audits/2026-07-31-blindspot-study-home-v1.md) (YELLOW) → Gate 3 patch (DS-69 authored) → this amendment.
+
+**Why v1 exists.** This spec was authored 2026-05-11 for a *future* cross-project composition problem and never built. On 2026-07-31 the founder reported a *present* findability problem: 14 of ~16 study tabs were reachable only through a button at the bottom of `SessionsView`. v1 is that fix, built as this surface rather than as a second study hub.
+
+### What v1 ships
+
+**The flat-index region only, grouped by purpose.** The spec already mandates that region as *"always visible, never gated"* (red line #6), so v1 is a strict subset of ratified design, not a deviation.
+
+| Group | Question it answers | Entries (v1) |
+|---|---|---|
+| **Learn** | I want to understand a concept | Curriculum (Self Coach) · Postflop Lessons · Preflop Lessons |
+| **Practice** | I want to test myself | Line Study · Postflop Drills · Preflop Drills |
+| **Review** | I want to check my own work | Hand Review · Refresher · Calibration |
+
+Each entry carries a **one-line "when to use this"**, which is what lets a user choose without decoding the four tab labels duplicated across the two drill views (`Lessons`, `Library`, `Estimate Drill`, `Framework Drill` — see §Known issues).
+
+### What v1 defers, and why
+
+**The Reference / Deliberate / Discover intent router is DEFERRED, not rejected.** It is load-bearing for the embed contract below, but 3 of the 4 declared embeds (Range Lab, Presession Drill, Played-Hand Review) do not exist and the 4th (Shape Language) is design-only. A 3-segment control shipped today would route nothing: every existing surface would behave identically in all three modes. **It lands with the first embed that needs it.**
+
+**The two axes are orthogonal.** Reference/Deliberate/Discover is a *graded-vs-ungraded* axis **within** a project. Learn/Practice/Review is a *purpose* axis **across** surfaces. The finished Study Home carries both: a purpose-grouped index whose entries may each support intent modes. v1 is the outer axis; the router is the inner one.
+
+### Binding constraints on v1
+
+- **Red line #5 — no streaks, shame, or engagement pressure.** A routing hub is the single most natural place in the app to render "you haven't practiced X in 34 days," and the data to do it is available (`conceptMastery` exposes staleness). Forbidden. **Counts are factual inventory of what exists** ("14 lessons", "8 lines") — never behavioral measurement of the user. The one user-describing count (Self Coach's flagged-concept count) is carried verbatim from Homebase's existing study-queue card, which shipped under the same red line. Test-enforced (`StudyHomeView.redlines.test.jsx`).
+- **Red line #6 — flat index always accessible.** v1 renders unconditionally: no enrollment gate, no empty-state lockout, no loading state that hides the index.
+- **Scope ceiling.** v1 modifies no drill view, renames no tab, moves no content. It routes into existing surfaces exactly as they are. Consolidation stays rejected (`drills-consolidation.project.md`).
+
+### Deliberate redundancies (recorded, not resolved)
+
+Both were examined at Gate 2 Stage D and kept on purpose:
+- **Homebase** keeps its `Self Coach` tile and `Study queue` card. Homebase is a launchpad for frequent destinations and the card carries live state; the hub is for *choosing*. Removing them would trade one findability complaint for another.
+- **`SessionsView`** keeps its Preflop/Postflop buttons. They are the incumbent path and some muscle memory exists. Removing them is a separate reversible cleanup once the hub has proven itself — a v2 candidate, not a silent keep.
+
+### JTBD correction
+
+This spec previously cited `JTBD-SE-01 (session-entry) — open the right study surface for the current intent`. **SE-01 is "tonight's watchlist" — villain-specific session preparation, not study routing.** The mis-citation is what let the spec appear JTBD-covered while the real gap went unnamed for 81 days. The correct entry is **DS-69 — route-to-the-right-study-surface**, authored at Gate 3 on 2026-07-31.
 
 ---
 
@@ -159,13 +204,16 @@ Red lines #2, #7, #8, #9 (per SLS Gate 2 audit + autonomy red lines ladder) bind
 
 ## Known issues
 
-This surface has no issues — it is design-only at Gate 4 ship. Implementation tickets will surface bugs at Phase 5+.
+- **Duplicated tab labels across the two drill views (v2 candidate).** `Lessons`, `Library`, `Estimate Drill`, and `Framework Drill` each appear with identical labels in both `PreflopDrillsView` and `PostflopDrillsView`. v1 *mitigates* this — each hub card names its street and carries a when-to-use line — but does not *fix* it: a user who lands inside Postflop Drills still sees an ambiguous tab strip. Founder declined the rename in the 2026-07-31 round; recorded as a residual rather than absorbed silently. Raised at Gate 2 Stage E.
+- **Intent router unbuilt.** Deferred by §SH-V1 until the first embed needs it. Until then the surface has no reducer and no persisted state.
+- **Third path to Self Coach.** Self Coach now has four entry points (nav, Homebase tile, Homebase study-queue card, hub). Accepted at Gate 2 Stage D; not resolved in v1.
 
 ---
 
 ## Test coverage
 
-- *Planned:* `src/components/views/StudyHomeView/__tests__/` once Phase 5 ships.
+- `src/components/views/StudyHomeView/__tests__/StudyHomeView.test.jsx` — group structure, routing, and card inventory (v1, shipped).
+- `src/components/views/StudyHomeView/__tests__/StudyHomeView.redlines.test.jsx` — red lines #5 and #6 asserted directly against the rendered DOM (v1, shipped).
 - Red-line conformance matrix tests authored per the [SPR-074 catalog](../audits/2026-05-11-sls-g4-redline-conformance.md) — one assertion per red line × per surface; tests land at Stream B/D code phase.
 
 ---
@@ -183,4 +231,5 @@ This surface has no issues — it is design-only at Gate 4 ship. Implementation 
 
 ## Change log
 
+- 2026-07-31 — **v1 implemented** (§SH-V1 added). Flat-index region shipped, grouped by purpose (Learn / Practice / Review) per founder-reported findability defect; intent router deferred until the first embed needs it; `SCREEN.STUDY_HOME` + `StudyHomeView` claimed; `CollapsibleSidebar` grouped into Play / Review / Study / Tools sections. The two drill views were deliberately **not** given their own nav entries — they are one click inside Study, and separate icons would re-flatten what the grouping exists to organize. Drill views additionally gained caller-supplied initial tab + return screen (`openDrills` / `closeDrills`, mirroring the existing `openLessonDetail` / `openPlayerProfile` pattern), replacing a hardcoded default tab and a hardcoded "← Back to Sessions" that was correct only while `SessionsView` was the sole entry point. JTBD list corrected (SE-01 mis-citation → DS-69, authored at Gate 3). Known issues section replaced (was "no issues — design-only"). Gates: entry YELLOW → blind-spot YELLOW → Gate 3 patch → this amendment.
 - 2026-05-11 — Created at SPR-073 (Shape Language Gate 4, WS-039). First registered embed: `shape-language-study-home`. Parent surface authored by SLS per Q1 verdict ("first Gate 4 that needs it"); future projects extend by registering embeds, not editing this file's invariants.

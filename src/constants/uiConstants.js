@@ -21,6 +21,13 @@ export const SCREEN = {
   EXTENSION: 'extension',
   PREFLOP_DRILLS: 'preflopDrills',
   POSTFLOP_DRILLS: 'postflopDrills',
+  // Study Home v1 (2026-07-31) — purpose-grouped index over the study surfaces
+  // (Learn / Practice / Review). Claims the route planned by
+  // docs/design/surfaces/study-home.md §SH-V1. Fixes the findability defect where
+  // 14 of ~16 study tabs were reachable only via a button at the bottom of
+  // SessionsView. Gates: audits/2026-07-31-entry-study-home-v1.md (YELLOW) →
+  // audits/2026-07-31-blindspot-study-home-v1.md (YELLOW). Serves JTBD DS-69.
+  STUDY_HOME: 'studyHome',
   // Exploit Deviation project — Presession Drill (feature-flagged, default off)
   PRESESSION_DRILL: 'presessionDrill',
   // Unified PlayerFinder — single fullscreen surface for player find /

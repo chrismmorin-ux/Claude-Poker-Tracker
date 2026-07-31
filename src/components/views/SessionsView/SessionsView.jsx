@@ -76,7 +76,7 @@ export const SessionsView = ({ scale }) => {
   // AUDIT-2026-04-21-SV F1: deferred-delete pattern for Delete Session toast+undo.
   // Tracks { sessionId → timeout, snapshot } while the undo window is open.
   const pendingDeletesRef = useRef(new Map());
-  const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession, setReplayHand } = useUI();
+  const { setCurrentScreen, SCREEN, autoOpenNewSession, setAutoOpenNewSession, setReplayHand, openDrills } = useUI();
   const { resetHand: resetTableState } = useGameHandlers();
   const { initTournament, createNewTournament } = useTournament();
   const {
@@ -589,14 +589,14 @@ export const SessionsView = ({ scale }) => {
               scroll content. */}
           <div className="flex flex-wrap gap-3 mt-6">
             <button
-              onClick={() => setCurrentScreen(SCREEN.PREFLOP_DRILLS)}
+              onClick={() => openDrills(SCREEN.PREFLOP_DRILLS, null, SCREEN.SESSIONS)}
               className="flex-1 min-w-[140px] px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg font-medium transition-colors"
               style={{ minHeight: 48 }}
             >
               Preflop Drills
             </button>
             <button
-              onClick={() => setCurrentScreen(SCREEN.POSTFLOP_DRILLS)}
+              onClick={() => openDrills(SCREEN.POSTFLOP_DRILLS, null, SCREEN.SESSIONS)}
               className="flex-1 min-w-[140px] px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-lg font-medium transition-colors"
               style={{ minHeight: 48 }}
             >

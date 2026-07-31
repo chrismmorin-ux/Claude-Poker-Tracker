@@ -35,8 +35,14 @@ const TABS = [
 ];
 
 export const PreflopDrillsView = ({ scale }) => {
-  const { setCurrentScreen, SCREEN } = useUI();
-  const [activeTab, setActiveTab] = useState('shape');
+  const { SCREEN, drillsInitialTab, drillsReturnScreen, closeDrills } = useUI();
+  // Study Home v1 (2026-07-31): the entering caller may name the tab, so a
+  // hub card can land on Lessons or Line directly instead of the default.
+  // Read once as the initial value — a later context change must not yank the
+  // user off a tab they navigated to by hand.
+  const [activeTab, setActiveTab] = useState(
+    () => (TABS.some((t) => t.id === drillsInitialTab) ? drillsInitialTab : 'shape'),
+  );
 
   // Tab-switch guard (WS-229 F-DRILL-02): active-drill modes report unsaved progress
   // into progressRef; confirm before a switch that would discard it.
@@ -61,10 +67,13 @@ export const PreflopDrillsView = ({ scale }) => {
             </p>
           </div>
           <button
-            onClick={() => setCurrentScreen(SCREEN.SESSIONS)}
+            onClick={closeDrills}
             className="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
           >
-            ← Back to Sessions
+            {/* Was hardcoded "Back to Sessions", which was only ever right because
+                SessionsView was the sole entry point. Study Home is now a second
+                one, so the label follows where the user actually came from. */}
+            ← Back to {drillsReturnScreen === SCREEN.STUDY_HOME ? 'Study' : 'Sessions'}
           </button>
         </div>
 
