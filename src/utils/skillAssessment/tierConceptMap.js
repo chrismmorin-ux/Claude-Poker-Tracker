@@ -199,6 +199,17 @@ export const CONCEPT_REGISTRY = {
   'multiway-cbet-discipline-3way':      { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
   'multiway-cbet-discipline-4way-plus': { kind: 'rule-anchored-specific', tier: 5, parent: 'multiway-cbet-discipline-cluster', children: [] },
 
+  // ─── Tier 5 (cont.) — field-size scaling (2026-07-31, entry audit
+  // `audits/2026-07-31-entry-multiway-field-size-lesson.md`) ────────────────
+  // `general-skill`, NOT a child of multiway-cbet-discipline-cluster. The
+  // umbrella above is one leak rule (hero over-cbets multiway); this concept is
+  // the underlying relationship that rule is a consequence of, and it governs
+  // continue/fold and call decisions the cbet rule never observes. Filing it as
+  // a child would invert the dependency — the umbrella's own lesson cites this
+  // one, not the reverse. Drill-backed via `mw-field-size` in
+  // postflopDrillContent/lessons.js, so mastery comes from the drill scheduler.
+  'multiway-field-size-scaling': { kind: 'general-skill', tier: 5, parent: null, children: [] },
+
   // ─── Tier 2 (cont.) — RFI open discipline umbrella (SPR-109 / WS-146 sixth claim) ────
   // hero-pf-open-overfold: hero opens too tight first-in (open frequency too
   // LOW). First UNDER-frequency decision-bucket rule. Tier 2 because RFI is the

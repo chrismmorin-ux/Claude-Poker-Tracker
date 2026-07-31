@@ -203,13 +203,15 @@ describe('conceptMastery — rule-anchored-umbrella kind', () => {
 describe('conceptMastery — listAllConceptMastery', () => {
   it('returns one record per registered concept', async () => {
     const all = await listAllConceptMastery('user1');
-    // Post-SPR-109: 51 concepts = 5 general-skill + 9 umbrellas + 37 sub-concepts.
+    // 52 concepts = 6 general-skill + 9 umbrellas + 37 sub-concepts.
     // (post-SPR-108 was 43 = 5 + 7 + 31; SPR-109 added rfi-discipline umbrella +
     // 4 position sub-concepts AND turn-barrel-discipline umbrella + 2 sub-concepts
-    // (good-runout / bad-runout) = +8 net concepts)
-    expect(all.length).toBe(51);
+    // (good-runout / bad-runout) = +8 net concepts → 51. 2026-07-31 added the
+    // general-skill `multiway-field-size-scaling` → 52.)
+    expect(all.length).toBe(52);
     const ids = all.map((r) => r.conceptId);
     expect(ids).toContain('pot-odds');
+    expect(ids).toContain('multiway-field-size-scaling');
     expect(ids).toContain('cbet-defense-cluster');
     expect(ids).toContain('ip-cbet-defense-dry-LATE');
     expect(ids).toContain('bb-defense-cluster');

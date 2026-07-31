@@ -79,9 +79,10 @@ const LessonBody = ({ lesson }) => (
 );
 
 const LessonSection = ({ section }) => {
-  if (section.kind === 'prose')   return <ProseSection section={section} />;
-  if (section.kind === 'formula') return <FormulaSection section={section} />;
-  if (section.kind === 'example') return <ExampleSection section={section} />;
+  if (section.kind === 'prose')     return <ProseSection section={section} />;
+  if (section.kind === 'formula')   return <FormulaSection section={section} />;
+  if (section.kind === 'example')   return <ExampleSection section={section} />;
+  if (section.kind === 'benchmark') return <BenchmarkSection section={section} />;
   return <UnsupportedSection section={section} />;
 };
 
@@ -109,6 +110,86 @@ const ProseSection = ({ section }) => (
 const FormulaSection = ({ section }) => (
   <div className="bg-gray-900/80 border border-gray-800 rounded-lg px-4 py-3">
     <code className="text-sm text-emerald-300 font-mono">{section.body}</code>
+  </div>
+);
+
+/**
+ * BenchmarkSection — a static, fair-share-anchored ladder.
+ *
+ * Deliberately NON-INTERACTIVE (Gate 1 entry audit 2026-07-31, §Scope). The
+ * concept it renders is a monotone ordering that hero must be able to run at the
+ * table WITHOUT the app; a slider or calculator here would teach dependence on
+ * the device and defeat the lesson's success criterion. Do not "improve" this
+ * into an interactive widget.
+ *
+ * The `anchor` row renders pinned and visually distinct — it is the reference
+ * line every other row is read against, not just another row.
+ */
+const BenchmarkSection = ({ section }) => (
+  <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-4">
+    <div className="flex items-baseline justify-between mb-2">
+      <div>
+        <div className="text-xs uppercase tracking-wide text-gray-500">Benchmark</div>
+        {section.heading && (
+          <h3 className="text-sm font-semibold text-gray-200 mt-0.5">{section.heading}</h3>
+        )}
+      </div>
+      {section.anchor && (
+        <div className="text-xs text-teal-300 font-mono whitespace-nowrap ml-3">
+          {section.anchor}
+        </div>
+      )}
+    </div>
+
+    {section.intro && (
+      <p className="text-sm text-gray-300 leading-relaxed mb-3">{section.intro}</p>
+    )}
+
+    {/* max-w keeps the numeric columns near their labels. A full-width table on a
+        1600px viewport strands the numbers at the right edge, and this section is
+        meant to be SCANNED as a ladder — eye-travel is the whole cost here. */}
+    <div className="overflow-x-auto">
+      <table className="w-full max-w-2xl text-sm border-collapse">
+        <thead>
+          <tr className="text-xs uppercase tracking-wide text-gray-500">
+            {section.columns.map((col, i) => (
+              <th
+                key={col}
+                className={`pb-1.5 border-b border-gray-700 font-medium ${i === 0 ? 'text-left' : 'text-right pl-6'}`}
+              >
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {section.rows.map((row) => (
+            <tr
+              key={row.label}
+              className={row.emphasis ? 'text-teal-200 font-semibold' : 'text-gray-300'}
+            >
+              <td className="py-1.5 border-b border-gray-800/60">{row.label}</td>
+              {row.values.map((v, i) => (
+                <td
+                  key={`${row.label}-${i}`}
+                  className="py-1.5 pl-6 text-right font-mono border-b border-gray-800/60 whitespace-nowrap"
+                >
+                  {v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    {section.takeaway && (
+      <p className="text-sm text-gray-300 italic mt-3">{section.takeaway}</p>
+    )}
+
+    {/* Numbers are measured, not asserted — attribution is mandatory per the Gate 1
+        number-drift mitigation. */}
+    <div className="text-[11px] text-gray-500 mt-2">Source: {section.source}</div>
   </div>
 );
 
