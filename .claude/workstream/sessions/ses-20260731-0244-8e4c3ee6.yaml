@@ -1,15 +1,124 @@
 id: "ses-20260731-0244-8e4c3ee6"
-status: active
+status: completed
 started_at: "2026-07-31T02:44:04.172Z"
-ended_at: null
+ended_at: "2026-07-31T15:32:00Z"
 mode: auto
-last_heartbeat: "2026-07-31T02:50:43.789Z"
+last_heartbeat: "2026-07-31T15:32:00Z"
 pid: 13964
 agent_session_id: "8e4c3ee6-8211-4231-9e83-bc08634fcfd3"
 
-# Minted by cwos-claims because no registered session matched this process.
-# A session that never ran /session-start still needs an identity to claim under.
-claimed_items:
-  - "WS-303"
-
+claimed_items: []
 files_locked: []
+
+handoff_notes: |
+  SPR-163 / WS-303 — shipped, committed (f650531), full suite GREEN: 554 files,
+  13,239 passed, 20 skipped, 0 failed.
+
+  SHIPPED
+  - Depth-3 narrowing miscount: villain acts TWICE down flop->turn->river (calls the flop
+    bet, calls the turn bet) and gameTreeDepth2 applied THREE narrowings — the extra one
+    fired when the turn card was dealt. Dealing a card is not an action. Depth-2 already
+    modelled it correctly. Guard test proven to bite ("expected 4 to be 3").
+  - Per-action narrowing softness (ACTION_TAU_FRACTION, check 1.0). Measured both sites:
+    narrowing is worth raise +0.54/+0.60, call +0.18/+0.17, bet +0.15/+0.16,
+    check -0.19/-0.15. One global constant was serving four actions whose optima differ
+    in SIGN.
+  - WS-312 fixed on the path that actually renders advice (buildTreeReasoning), after a
+    delegated agent found my spec targeted classifyAction — which is dead code.
+  - WS-314 complement normalisation (resolveCheckBetSplit); two further candidate sites
+    examined and deliberately left, with reasons.
+  - POKER_THEORY §11.7 (per-action softness), §11.8 (archetype not separable; IP/OOP
+    split), §11.9 (teachable model scored). exploitEngine/CLAUDE.md anti-patterns.
+
+  DECISION THAT WAS NEVER FOUNDER-RATIFIED — READ THIS FIRST
+  WS-303's accept criterion #4 ("a villain who slowplays must still be representable") is
+  NOT met by the shipped default. At tauFraction 1.0 the check score is monotonically
+  non-increasing — capping, not a U. On A-7-2, AA takes check-weight 0.183 vs KQo 0.721.
+  I left a RED test saying so. A concurrent session re-specified that test to assert
+  capping instead, arguing §11.8 refutes the criterion (the slowplayer archetype does not
+  separate from noise: chi2/df = 1.005 vs 1.859 on a control; cross-axis correlation
+  0.036; zero of 700 players clear both axes at margin 0.10). That argument is sound and
+  evidence-based, and the founder was asked the trap-vs-cap question twice but never
+  answered explicitly. Treat the capping default as evidence-supported but
+  founder-unconfirmed.
+
+  ALSO NOT DONE from WS-303's accept criteria: re-score through the WS-273 villain harness
+  for regression. Never run.
+
+  OPEN, NOT TICKETED — highest value first
+  1. IP/OOP check split in narrowByBoard. P(check|strong) is 10.3% for a check-back vs
+     34.3% for an OOP check (n=428/565, both sites). narrowByBoard takes only an action
+     string and pools them. CAVEAT measured later: adding the split to the teachable model
+     bought only 2-3 points of the engine's edge — a large CONDITIONAL effect produced a
+     small AGGREGATE gain, because 10.3/34.3 conditions on strong hands, a minority of the
+     class mix. Do not oversell it (I did).
+  2. Bet branch has no bluff term. scoreCombosForAction scores bet/call/raise as pure
+     equity, so P(bet|air) is driven to the floor while villains bluff. Value of narrowing
+     at q1: -1.19 (FTP) / -1.24 (PS) — the largest single miscalibration found all session.
+     Thin cells (n=88/55) — re-measure before acting.
+  3. WS-308 root cause found, not fixed: with no villain model the CHECK branch prices
+     villain betting from a flat population prior {check .45, bet .55} while the BET branch
+     prices folding from per-combo composition. Same range, two estimators, one a constant.
+     That constant x the check-raise response is 72% of the check branch's EV.
+     comboBetFilter is already per-combo — the machinery exists.
+  4. Pressure-induced range widening. Founder: sustained iso-raising/overbetting drags a
+     nit out of their comfort range. Nothing models hero's own aggression as an input to
+     villain's FUTURE range. Distinct from WS-275 (recency weighting) — this is causal.
+  5. WS-315 needs a design call: blocker value for bluffing should target villain's
+     CONTINUING range, not the 'nuts' bucket (heroActionBuilder.js:183).
+  6. engineAuthoredDrift: villain's check range on sb-vs-btn-3bp-oop-wet-t98 moved
+     isWeaklyCapped false->true. That is a CONTENT REVIEW signal, not a snapshot refresh —
+     authored drill teaching premised on an uncapped check range may now be wrong.
+
+  CURRICULUM WORK — Gate 1 DONE, Gate 2 REQUIRED
+  docs/design/audits/2026-07-31-entry-narrowing-literacy-curriculum.md. Verdict YELLOW.
+  Personas GREEN (first-principles-learner is a near-exact match). One JTBD gap, proposed
+  DS-69 "know how much a villain's action actually tells me". Scope is a new PANEL in
+  PostflopDrillsView (LessonsMode scaffold exists), NOT a new routed view — study-home is
+  design-only with no code. Charts are hand-rolled SVG (6 precedents; FoldCurvePanel is
+  closest); live parameter controls have 2 precedents. NO VIEW CODE until Gate 2 is GREEN.
+
+  TEACHABLE MODEL RESULT (§11.9)
+  A 15-number rule recovers ~56-57% of the engine's narrowing edge, on EVAL players it was
+  never fitted to, replicating on both sites. Leakage control: FNV-1a POOL/EVAL split,
+  tables mined from POOL only, all arms scored on EVAL only. Replicating cells: a bet
+  barely moves the read (1.25/0.83/0.68), a call mostly rules out air, a check-back halves
+  strong hands (0.60) where an OOP check barely dents them (0.78). NOT comparable to
+  §11.7/§11.8 — different decision population (symmetric acting-seat vs asymmetric
+  hero-villain construction).
+
+  Next recommended action: get the founder's explicit call on trap-vs-cap (the code already
+  ships that way), then ticket items 1-6. Run the WS-273 harness re-score to close WS-303's
+  last unmet criterion.
+
+context_notes: |
+  CONCURRENCY — a second session (ses-20260731-0504-464211b4, mode auto) ran in this repo
+  simultaneously for most of this session. It authored heroEvRunner/mine-manifold/run-hero-ev,
+  composed and closed its own SPR-164, took over .current-session, CLOSED SPR-163 and marked
+  WS-303 done at 06:17Z (I never ran cwos-next done), re-specified my red test, and committed
+  my uncommitted engine work as part of its own session close. My changes survived intact and
+  the commit message is accurate — but that was luck, not safety. It never claimed items and
+  never locked files.
+
+  Deliberately NOT done here: regenerating system/state.md and system-summary.yaml. The
+  concurrent session mutates the same shared state and hand-patching would race it; its own
+  session close (commit 280795e) already refreshed state.
+
+  DELEGATION FINDINGS (~20 agents, ~2.5M delegated tokens):
+  - Zero hallucinations. Every file:line claim spot-checked was verbatim correct.
+  - Cheap models repeatedly REFUTED the premise handed to them: WS-314's ticket blamed a
+    sound mechanism; WS-308's numbers were stale; my WS-312 spec targeted dead code; my
+    horizon-asymmetry hypothesis was refuted with numbers. Three tickets touched had stale
+    or wrong premises.
+  - FIRE-AND-WAIT FAILS. Four times an agent launched long background jobs and ended its turn
+    waiting on a watcher that outlived it — once after being explicitly told not to. One
+    relaunched its jobs, producing duplicate processes writing the same file. WORKING PATTERN:
+    delegate the code change plus a fast smoke test; run every long job from the parent.
+  - Two agents must never own one file. I serialised all evening, then let it slip once and
+    got a mid-edit corpus run.
+  - ALWAYS require a variant arm to assert it differs from its base. A4 shipped bit-identical
+    to A3 (check-back n=0, structurally unobservable) and would have been reported as "the
+    split doesn't help". Exact float equality is the right guard — the two scores printed
+    identically at 3 decimals.
+  - Piping a background job to `tail` masks its exit code; node died on a bad arg and the
+    harness reported exit 0.

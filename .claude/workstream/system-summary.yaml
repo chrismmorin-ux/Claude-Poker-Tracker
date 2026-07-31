@@ -40,8 +40,12 @@ next_recommended:
     changes whether FSA treats the pool as one Field surface or several strata. Cheap
     because §11.8's method already exists and only the axes change.
   do_first: >
-    Read out/hero-ev-scaled.json if the background run finished — it is the first
-    potentially-admissible C3 measurement.
+    Read out/hero-ev-44players-PARTIAL-650dec.json. The run was killed a third time at
+    650/1200, so out/hero-ev-scaled.json does NOT exist. The partial reached 44
+    contributing players — past the 30 bar — and reads edge +3.69 with CI low -5.99, i.e.
+    armsWouldPass FALSE on its own arithmetic, not merely blocked on admissibility. Still
+    inadmissible (INCOMPLETE_RUN); do not record it. See the session handoff for the full
+    k=3/28/31/44 trajectory and the command to finish the run (~55 min).
 
 programs_installed: 14
 stale_programs:

@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785529196587-1c64090dad97"
-generated_content_hash: "a12ab5f66059f77358d1ce31d90d639501a9fa8f2182f5dc04a76dc01ad85a0d"
-generated_at: "2026-07-31T20:19:56.657Z"
+generated_from_event: "ev-1785529883587-7fbd5f772e92"
+generated_content_hash: "a851c54d230cdf2e19b0a531851bf8303f037e7ce0f4707e644e1dbcf71bd57d"
+generated_at: "2026-07-31T20:31:23.636Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1370
+event_count: 1375
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 917
-- Events recorded: 1370
+- Commands recorded: 922
+- Events recorded: 1375
 - Source chunks: 20
 
 ## Command `auto:42416:1781030643103`
@@ -9640,3 +9640,53 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T20:19:56.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:29288:1785529882792`
+
+- Start: 2026-07-31T20:31:22.792Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T20:31:22.792Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:29288:1785529883239`
+
+- Start: 2026-07-31T20:31:23.239Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T20:31:23.239Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:29288:1785529883274`
+
+- Start: 2026-07-31T20:31:23.274Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T20:31:23.274Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:29288:1785529883398`
+
+- Start: 2026-07-31T20:31:23.398Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T20:31:23.398Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-ms9ee3lr557b10a4a9e2`
+
+- Start: 2026-07-31T20:31:23.587Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-07-31T20:31:23.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |

@@ -61,17 +61,44 @@ handoff_notes: |
     - `--record --from` refuses an inadmissible report outright, not overridably.
 
   NEXT RECOMMENDED ACTION
-    Read the finished hero-EV run (out/hero-ev-scaled.json) FIRST — it was still
-    running at session end (~350/1200, 28 players, edge +1.37, CI low -8.48). If it
-    completes with 30+ players it is the first admissible C3 measurement; on the current
-    trajectory it will read a SMALL, NOT-SIGNIFICANT edge, which is a real result and
-    should be recorded via:
-      node scripts/readiness/model-readiness.mjs --record --from out/hero-ev-scaled.json \
-        --label "..." --source out/hero-ev-scaled.json
-    (that command self-refuses if the run is inadmissible).
+    UPDATED AFTER SESSION CLOSE — the run was killed a third time, at 650/1200. There is
+    NO out/hero-ev-scaled.json. What survived is the partial, preserved as:
 
-    Then WS-320 (study-ladder separability) — it is a MEASUREMENT that could redirect
-    several builds, and cheap because §11.8's method already exists.
+        out/hero-ev-44players-PARTIAL-650dec.json
+
+    It is the most informative hero-EV artifact to date and it is still NOT admissible
+    (blockedBy: INCOMPLETE_RUN). Do not record it.
+
+    THE TRAJECTORY, which is the actual finding of the day:
+
+        k=3    edge +16.72   CI low  +7.52    <- reported c3Passes TRUE
+        k=28   edge  +1.37   CI low  -8.48
+        k=31   edge  +0.87   CI low  -8.05
+        k=44   edge  +3.69   CI low  -5.99    <- past the 30-cluster bar
+
+    At 44 players `armsWouldPass` is FALSE on its own arithmetic — this is no longer only
+    an admissibility block, the interval genuinely straddles zero. The estimate bounces
+    between roughly +0.9 and +3.7 with the CI spanning zero throughout, which is what a
+    small-or-absent edge looks like, not an edge waiting for more data. The control still
+    scores exactly 0, so the instrument is sound. ESS 99.1 of 650 (15.2%).
+
+    So the honest expectation for a completed run is: ADMISSIBLE, and C3 FAILS. That is a
+    real result about the engine's advice against the 2009 online pool, and it is worth
+    finishing precisely because a null that is measured is worth more than a null assumed.
+
+    TO FINISH IT (~55 min for the remaining 550 decisions at ~5s each):
+      node scripts/backtest/run-hero-ev.mjs --reference none \
+        --behavior-policy out/behavior-policy.json --stakes 50NLH \
+        --max-files 400 --max-players 300 --max-hands-per-player 60 \
+        --max-decisions 1200 --out out/hero-ev-scaled.json
+    then record with --record --from (it self-refuses if inadmissible).
+
+    THREE RUNS HAVE NOW BEEN KILLED. If a fourth is impractical, consider lowering
+    --max-decisions to ~700, which the trajectory suggests is already enough to land the
+    conclusion — the cluster count is what mattered and it is met at 44.
+
+    Then WS-320 (study-ladder separability) — a MEASUREMENT that could redirect several
+    builds, and cheap because §11.8's method already exists.
 
   AUTOPILOT ELIGIBLE
     Not assessed this session. WS-318 is S-effort but carries a decision_flag (what
