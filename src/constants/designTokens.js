@@ -82,6 +82,9 @@ export const NAV_COLORS = {
   online:     { base: '#0284c7', hover: '#0369a1' },  // sky-600/700
   printableRefresher: { base: '#c05621', hover: '#9c4318' },  // burnt-orange (math card accent)
   selfCoach: { base: '#7c3aed', hover: '#6d28d9' },  // violet-600/700 (study/coach distinct from history-purple)
+  // Study Home v1 (2026-07-31) — the study-group anchor. Deeper violet than
+  // selfCoach so the hub reads as the parent of the group it heads, not a peer.
+  studyHome: { base: '#6d28d9', hover: '#5b21b6' },  // violet-700/800
   settings:   { base: '#4b5563', hover: '#6b7280' },  // gray-600/500
 };
 

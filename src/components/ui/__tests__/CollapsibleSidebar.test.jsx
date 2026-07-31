@@ -228,4 +228,49 @@ describe('CollapsibleSidebar', () => {
       expect(NAV_COLORS[navKey].hover).toMatch(/^#[0-9a-f]{6}$/i);
     });
   });
+
+  // Study Home v1 (2026-07-31) — nav grouping.
+  describe('grouped navigation', () => {
+    const SCREEN_WITH_STUDY = { ...MOCK_SCREEN, STUDY_HOME: 'studyHome', SELF_COACH: 'selfCoach',
+      PRINTABLE_REFRESHER: 'printableRefresher', ANALYSIS: 'analysis', ONLINE: 'online',
+      EXTENSION: 'extension', SETTINGS: 'settings', HOMEBASE: 'homebase', TOURNAMENT: 'tournament' };
+
+    it('renders group headers when expanded', () => {
+      render(<CollapsibleSidebar {...defaultProps} SCREEN={SCREEN_WITH_STUDY} />);
+      for (const label of ['Play', 'Review', 'Study', 'Tools']) {
+        expect(screen.getByText(label, { selector: 'div' })).toBeInTheDocument();
+      }
+    });
+
+    it('hides header TEXT when collapsed — an icon rail has no room for it', () => {
+      render(<CollapsibleSidebar {...defaultProps} SCREEN={SCREEN_WITH_STUDY} isCollapsed />);
+      for (const label of ['Play', 'Review', 'Tools']) {
+        expect(screen.queryByText(label, { selector: 'div' })).not.toBeInTheDocument();
+      }
+    });
+
+    it('gives Study its own nav entry, and does NOT give the drill views one', () => {
+      // The drill views are one click inside Study. Separate icons would
+      // re-flatten exactly what the grouping exists to organize (§SH-V1).
+      render(<CollapsibleSidebar {...defaultProps} SCREEN={SCREEN_WITH_STUDY} />);
+      expect(screen.getByRole('button', { name: /^Study$/ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Preflop Drills/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Postflop Drills/ })).not.toBeInTheDocument();
+    });
+
+    it('keeps the nav list scrollable so the last item stays reachable', () => {
+      // MEASURED REGRESSION GUARD: at the 720px target the flat 12-item list
+      // already ran ~24px past the viewport with no scroll container, so Settings
+      // was unreachable; group headers pushed it to ~180px past. The fix is the
+      // scroll container, not shorter labels — a future item added to any group
+      // must not silently fall off the bottom again.
+      const { container } = render(<CollapsibleSidebar {...defaultProps} SCREEN={SCREEN_WITH_STUDY} />);
+      const settings = screen.getByRole('button', { name: /Settings/ });
+      const navRegion = settings.closest('div.overflow-y-auto');
+      expect(navRegion, 'nav list must live inside an overflow-y-auto container').not.toBeNull();
+      expect(navRegion.className).toMatch(/min-h-0/);
+      // The flex spacer above it must also be shrinkable, or the scroll never engages.
+      expect(container.querySelector('div.flex-1.min-h-0')).not.toBeNull();
+    });
+  });
 });

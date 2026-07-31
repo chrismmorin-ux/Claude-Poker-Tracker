@@ -58,6 +58,7 @@ const ExtensionPanel = lz(() => import('../components/views/OnlineView/Extension
 const PlayerFinderView = lz(() => import('../components/views/PlayerFinderView/PlayerFinderView'), 'PlayerFinderView');
 const PreflopDrillsView = lz(() => import('../components/views/PreflopDrillsView/PreflopDrillsView'), 'PreflopDrillsView');
 const PostflopDrillsView = lz(() => import('../components/views/PostflopDrillsView/PostflopDrillsView'), 'PostflopDrillsView');
+const StudyHomeView = lz(() => import('../components/views/StudyHomeView/StudyHomeView'), 'StudyHomeView');
 const PresessionDrillView = lz(() => import('../components/views/PresessionDrillView'), 'PresessionDrillView');
 const PrintableRefresherView = lz(() => import('../components/views/PrintableRefresherView'), 'PrintableRefresherView');
 const AnchorLibraryView = lz(() => import('../components/views/AnchorLibraryView'), 'AnchorLibraryView');
@@ -91,6 +92,7 @@ export const VIEW_REGISTRY = {
   [SCREEN.ONLINE]: { name: 'Online', component: OnlineView, hash: '#online' },
   [SCREEN.EXTENSION]: { name: 'Extension', component: ExtensionPanel, noScale: true, hash: '#extension' },
   [SCREEN.PLAYER_FINDER]: { name: 'Player Finder', component: PlayerFinderView, orientation: 'portrait', hash: '#player-finder' },
+  [SCREEN.STUDY_HOME]: { name: 'Study', component: StudyHomeView, hash: '#study' },
   [SCREEN.PREFLOP_DRILLS]: { name: 'Preflop Drills', component: PreflopDrillsView },
   [SCREEN.POSTFLOP_DRILLS]: { name: 'Postflop Drills', component: PostflopDrillsView },
   [SCREEN.PRESESSION_DRILL]: { name: 'Presession Drill', component: PresessionDrillView },

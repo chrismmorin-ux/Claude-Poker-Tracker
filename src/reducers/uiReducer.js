@@ -41,6 +41,7 @@ export const UI_ACTIONS = {
   SET_PLAYER_PROFILE: 'SET_PLAYER_PROFILE',
   // EAL Stream D / WS-169 / SPR-066 (2026-05-09) — Calibration Dashboard nav state.
   SET_CALIBRATION_DASHBOARD: 'SET_CALIBRATION_DASHBOARD',
+  SET_DRILLS_CONTEXT: 'SET_DRILLS_CONTEXT',
   // Which section Settings should open on. Settings is a long single-scroll
   // page of collapsed panels, so "go to Settings" is not the same as "show me
   // the thing I tapped for".
@@ -96,6 +97,16 @@ export const initialUiState = {
   // dashboardReturnScreen: where back-nav should return to (typically
   //   ANCHOR_LIBRARY when entered via deep-link, else TABLE).
   dashboardAnchorDeepLink: null,
+  // Study Home v1 (2026-07-31) — drill-view entry context.
+  // drillsInitialTab: which tab the drill view should open ON, so a Study Home
+  //   card can land the user on Line Study or Lessons rather than the hardcoded
+  //   default. null → the view's own default.
+  // drillsReturnScreen: where the drill view's back button returns to. Before
+  //   this, that button was hardcoded "← Back to Sessions", which was correct
+  //   only because SessionsView was the sole entry point. Same pattern as
+  //   lessonReturnScreen / profileReturnScreen / dashboardReturnScreen.
+  drillsInitialTab: null,
+  drillsReturnScreen: null,
   dashboardReturnScreen: null,
   // settingsFocus: id of the Settings section to expand and scroll to on entry
   // (e.g. 'errorLog'); null when Settings is opened from primary nav. Consumed
@@ -143,6 +154,9 @@ export const UI_STATE_SCHEMA = {
   profilePlayerId: { type: 'number', required: false },
   profileReturnScreen: { type: 'string', required: false },
   // EAL Stream D / WS-169 / SPR-066
+  // Study Home v1 (2026-07-31)
+  drillsInitialTab: { type: 'string', required: false },
+  drillsReturnScreen: { type: 'string', required: false },
   dashboardAnchorDeepLink: { type: 'string', required: false }, // null when no deep-link
   dashboardReturnScreen: { type: 'string', required: false },
   settingsFocus: { type: 'string', required: false }, // null when no deep-link
@@ -357,6 +371,13 @@ const rawUiReducer = (state, action) => {
         ...state,
         dashboardAnchorDeepLink: action.payload?.dashboardAnchorDeepLink ?? null,
         dashboardReturnScreen: action.payload?.dashboardReturnScreen ?? null,
+      };
+
+    case UI_ACTIONS.SET_DRILLS_CONTEXT:
+      return {
+        ...state,
+        drillsInitialTab: action.payload?.drillsInitialTab ?? null,
+        drillsReturnScreen: action.payload?.drillsReturnScreen ?? null,
       };
 
     case UI_ACTIONS.SET_SETTINGS_FOCUS:

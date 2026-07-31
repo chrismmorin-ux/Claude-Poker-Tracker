@@ -40,6 +40,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     profileReturnScreen,
     dashboardAnchorDeepLink,
     dashboardReturnScreen,
+    drillsInitialTab,
+    drillsReturnScreen,
     settingsFocus,
   } = uiState;
 
@@ -212,6 +214,33 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: SCREEN.CALIBRATION_DASHBOARD });
   }, [dispatchUi, currentView]);
 
+  // Study Home v1 (2026-07-31) — open a drill view ON a specific tab, and
+  // remember where to return to.
+  //
+  // Both drill views hardcoded `useState('explorer')` and a "← Back to Sessions"
+  // button, which was correct only while SessionsView was the sole entry point.
+  // Study Home routes in from a third place and needs to land on Line Study or
+  // Lessons directly, so tab + return screen become caller-supplied. Mirrors
+  // openLessonDetail / openPlayerProfile / openCalibrationDashboard exactly.
+  const openDrills = useCallback((screen, tab = null, returnScreen = null) => {
+    dispatchUi({
+      type: UI_ACTIONS.SET_DRILLS_CONTEXT,
+      payload: {
+        drillsInitialTab: typeof tab === 'string' && tab.length > 0 ? tab : null,
+        drillsReturnScreen: returnScreen || currentView,
+      },
+    });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: screen });
+  }, [dispatchUi, currentView]);
+
+  // Leave a drill view, returning to whatever opened it. Falls back to SESSIONS
+  // because that was the historical sole entry point.
+  const closeDrills = useCallback(() => {
+    const prev = drillsReturnScreen || SCREEN.SESSIONS;
+    dispatchUi({ type: UI_ACTIONS.SET_DRILLS_CONTEXT, payload: { drillsInitialTab: null, drillsReturnScreen: null } });
+    dispatchUi({ type: UI_ACTIONS.SET_SCREEN, payload: prev });
+  }, [dispatchUi, drillsReturnScreen]);
+
   // Open Settings ON a specific section rather than at the top of it.
   // Settings is one long scroll of collapsed panels, so a plain
   // setCurrentScreen(SETTINGS) leaves the founder hunting for whatever they
@@ -296,6 +325,11 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     // EAL Stream D — Calibration Dashboard navigation (WS-169 / SPR-066)
     openCalibrationDashboard,
     closeCalibrationDashboard,
+    // Study Home v1 — drill-view entry context
+    drillsInitialTab,
+    drillsReturnScreen,
+    openDrills,
+    closeDrills,
     openSettings,
     clearSettingsFocus,
   }), [
@@ -321,6 +355,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     profileReturnScreen,
     dashboardAnchorDeepLink,
     dashboardReturnScreen,
+    drillsInitialTab,
+    drillsReturnScreen,
     settingsFocus,
     setCurrentScreen,
     togglePlayerSelection,
@@ -349,6 +385,8 @@ export const UIProvider = ({ uiState, dispatchUi, children }) => {
     closePlayerProfile,
     openCalibrationDashboard,
     closeCalibrationDashboard,
+    openDrills,
+    closeDrills,
     openSettings,
     clearSettingsFocus,
   ]);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy, MonitorSmartphone, Globe, Printer, Brain, Home } from 'lucide-react';
+import { BarChart3, BookOpen, Target, Users, FlaskConical, Settings, Trophy, MonitorSmartphone, Globe, Printer, Brain, Home, GraduationCap } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS } from '../../constants/sessionConstants';
 import { NAV_COLORS } from '../../constants/designTokens';
 
@@ -127,19 +127,41 @@ export const CollapsibleSidebar = ({
   const [editingVenue, setEditingVenue] = useState(false);
   const [editingGameType, setEditingGameType] = useState(false);
 
-  const navItems = [
-    { screen: SCREEN.HOMEBASE, label: 'Home', icon: <Home size={20} />, navKey: 'home' },
-    { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, navKey: 'stats' },
-    { screen: SCREEN.HISTORY, label: 'Hand Review', icon: <BookOpen size={20} />, navKey: 'history' },
-    { screen: SCREEN.SESSIONS, label: 'Sessions', icon: <Target size={20} />, navKey: 'sessions' },
-    { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
-    { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },
-    ...(isTournament ? [{ screen: SCREEN.TOURNAMENT, label: 'Tournament', icon: <Trophy size={20} />, navKey: 'tournament' }] : []),
-    { screen: SCREEN.EXTENSION, label: 'Extension', icon: <MonitorSmartphone size={20} />, navKey: 'extension' },
-    { screen: SCREEN.ONLINE, label: 'Online', icon: <Globe size={20} />, navKey: 'online' },
-    { screen: SCREEN.PRINTABLE_REFRESHER, label: 'Refresher', icon: <Printer size={20} />, navKey: 'printableRefresher' },
-    { screen: SCREEN.SELF_COACH, label: 'Self Coach', icon: <Brain size={20} />, navKey: 'selfCoach' },
-    { screen: SCREEN.SETTINGS, label: 'Settings', icon: <Settings size={20} />, navKey: 'settings' },
+  // Grouped nav (Study Home v1, 2026-07-31).
+  //
+  // This was a flat list of 12 items in which `Refresher` and `Self Coach` sat
+  // between `Online` and `Settings` with nothing marking them as the same
+  // activity — one of the three findability defects in
+  // audits/2026-07-31-entry-study-home-v1.md. Grouping is purely presentational:
+  // same screens, same navKeys, same handlers, headers inserted between them.
+  //
+  // The two drill views are deliberately NOT nav entries. They are one click
+  // inside Study, which is the grouped index built for exactly that job; giving
+  // them their own icons would re-flatten what this grouping exists to organize.
+  const navGroups = [
+    { id: 'root', label: null, items: [
+      { screen: SCREEN.HOMEBASE, label: 'Home', icon: <Home size={20} />, navKey: 'home' },
+    ] },
+    { id: 'play', label: 'Play', items: [
+      { screen: SCREEN.SESSIONS, label: 'Sessions', icon: <Target size={20} />, navKey: 'sessions' },
+      { screen: SCREEN.PLAYERS, label: 'Players', icon: <Users size={20} />, navKey: 'players' },
+      ...(isTournament ? [{ screen: SCREEN.TOURNAMENT, label: 'Tournament', icon: <Trophy size={20} />, navKey: 'tournament' }] : []),
+    ] },
+    { id: 'review', label: 'Review', items: [
+      { screen: SCREEN.HISTORY, label: 'Hand Review', icon: <BookOpen size={20} />, navKey: 'history' },
+      { screen: SCREEN.STATS, label: 'Stats', icon: <BarChart3 size={20} />, navKey: 'stats' },
+      { screen: SCREEN.ANALYSIS, label: 'Analysis', icon: <FlaskConical size={20} />, navKey: 'analysis' },
+    ] },
+    { id: 'study', label: 'Study', items: [
+      { screen: SCREEN.STUDY_HOME, label: 'Study', icon: <GraduationCap size={20} />, navKey: 'studyHome' },
+      { screen: SCREEN.SELF_COACH, label: 'Self Coach', icon: <Brain size={20} />, navKey: 'selfCoach' },
+      { screen: SCREEN.PRINTABLE_REFRESHER, label: 'Refresher', icon: <Printer size={20} />, navKey: 'printableRefresher' },
+    ] },
+    { id: 'tools', label: 'Tools', items: [
+      { screen: SCREEN.ONLINE, label: 'Online', icon: <Globe size={20} />, navKey: 'online' },
+      { screen: SCREEN.EXTENSION, label: 'Extension', icon: <MonitorSmartphone size={20} />, navKey: 'extension' },
+      { screen: SCREEN.SETTINGS, label: 'Settings', icon: <Settings size={20} />, navKey: 'settings' },
+    ] },
   ];
 
   // Get highlighted seat info
@@ -286,30 +308,50 @@ export const CollapsibleSidebar = ({
         </div>
       )}
 
-      {/* Spacer to push nav items to bottom */}
-      <div className="flex-1" />
+      {/* Spacer to push nav items to bottom. min-h-0 lets the nav below actually
+          shrink — without it a flex child refuses to go below its content height
+          and the overflow-y-auto never engages. */}
+      <div className="flex-1 min-h-0" />
 
-      {/* Navigation Items - Bottom of sidebar */}
-      <div className="flex flex-col gap-2 p-2 pb-4">
-        {navItems.map(({ screen, label, icon, navKey }) => {
-          const colors = NAV_COLORS[navKey];
-          return (
-            <button
-              key={screen}
-              onClick={() => onNavigate(screen)}
-              className={`text-white rounded-lg flex items-center gap-2 transition-all ${
-                isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'
-              }`}
-              style={{ backgroundColor: colors.base }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.base; }}
-              title={isCollapsed ? label : undefined}
-            >
-              {icon}
-              {!isCollapsed && <span className="font-semibold text-sm">{label}</span>}
-            </button>
-          );
-        })}
+      {/* Navigation Items — bottom of sidebar, scrollable.
+          This region OVERFLOWED before it scrolled: at the 720px target the last
+          item (Settings) already sat ~24px past the viewport with the flat
+          12-item list, and adding group headers pushed it to ~180px past. Neither
+          the clipping nor the fix is cosmetic — Settings was unreachable at the
+          target resolution. Measured 2026-07-31. */}
+      <div className="flex flex-col gap-1.5 p-2 pb-4 overflow-y-auto min-h-0 shrink">
+        {navGroups.map((group) => (
+          <React.Fragment key={group.id}>
+            {/* Collapsed, the sidebar is an icon rail with no room for a header —
+                the group still reads as a group via the separating rule. */}
+            {group.label && (isCollapsed
+              ? <div className="mx-2 my-0.5 border-t border-gray-700 shrink-0" aria-hidden="true" />
+              : (
+                <div className="px-3 pt-1.5 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-gray-500 shrink-0">
+                  {group.label}
+                </div>
+              ))}
+            {group.items.map(({ screen, label, icon, navKey }) => {
+              const colors = NAV_COLORS[navKey];
+              return (
+                <button
+                  key={navKey}
+                  onClick={() => onNavigate(screen)}
+                  className={`text-white rounded-lg flex items-center gap-2 shrink-0 transition-all ${
+                    isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3 py-2.5'
+                  }`}
+                  style={{ backgroundColor: colors.base }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.hover; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.base; }}
+                  title={isCollapsed ? label : undefined}
+                >
+                  {icon}
+                  {!isCollapsed && <span className="font-semibold text-sm">{label}</span>}
+                </button>
+              );
+            })}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );

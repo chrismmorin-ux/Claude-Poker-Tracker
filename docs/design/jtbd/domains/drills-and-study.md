@@ -299,6 +299,23 @@ Jobs around learning and concept mastery, typically off-table.
 
 ---
 
+## DS-69 — Route to the right study surface for what I came to do
+
+> When I sit down to study, I want to see the study surfaces grouped by what they're *for* — learn a concept, practice it, review what I actually did — so I can pick one in seconds instead of remembering which screen each one is buried under.
+
+- **State:** Proposed (founder-reported 2026-07-31: *"I find it difficult to find where I want to go to study or review or practice the curriculum."* Authored at Gate 3 patch scope per `../../audits/2026-07-31-blindspot-study-home-v1.md` Stage B).
+- **Origin:** Gate 2 Stage B. The domain had 26 entries describing what each study surface *does* and none describing how a user *chooses between them* — so every surface passed its own audit while the routing between them was nobody's job. Measured current state at authoring: 14 of ~16 study tabs reachable only via a button at the bottom of `SessionsView`; `Refresher` and `Self Coach` unmarked siblings between `Online` and `Settings`; four tab labels (`Lessons`, `Library`, `Estimate Drill`, `Framework Drill`) duplicated verbatim across the two drill views.
+- **Primary personas:** [study-block](../../personas/situational/study-block.md), [Scholar](../../personas/core/scholar-drills-only.md). Secondary: [Apprentice](../../personas/core/apprentice-student.md) (least able to decode system vocabulary), [post-session-chris](../../personas/situational/post-session-chris.md) (arrives wanting *review* specifically).
+- **Success shape:** the user names an intent in their own words — study / practice / review — and reaches the matching surface in one navigation step, without knowing the surface's proper name. Grouping is by **purpose**, not by street, engine, or implementation.
+- **Autonomy constraint (load-bearing):** a routing hub is the most natural place in the app to add "you haven't practiced X in 34 days," and red line #5 forbids it. Counts rendered on the hub are **factual inventory of what exists** ("14 lessons", "8 lines") — never **behavioral measurements of the user** ("last studied 34 days ago", "3-day streak"). Binds hardest on [returning-after-break](../../personas/situational/returning-after-break.md), whose persona file already forbids novice-treatment and re-placement on return.
+- **Distinct from:**
+  - **CO-55** (learn-next-concept-im-ready-for) — CO-55 sequences *which concept* within the curriculum; DS-69 selects *which surface* before any concept is in play. DS-69 precedes CO-55.
+  - **DS-43** (10-minute drill on today's weak concept) — DS-43 assumes the drill surface is already open and picks an exercise; DS-69 is the step before that.
+  - **SE-01** (tonight's watchlist) — SE-01 is villain-specific session preparation. `surfaces/study-home.md` previously mis-cited SE-01 as covering study routing, which is what let the spec appear JTBD-covered while this gap went unnamed. Corrected 2026-07-31.
+- **Served by:** `surfaces/study-home.md` v1.
+
+---
+
 ## Domain-wide constraints
 
 - Drill time-pressure should be off by default — this isn't mid-hand.
