@@ -269,6 +269,51 @@ description: |
   Also unverified either way: whether the check branch prices the board-pairing risk — a
   set filling up beats the nut flush, which argues against checking.
 
+  ── BLUFF COMPONENT LANDED (session 3, founder-approved) ─────────────────────
+
+  Hero's aggressive ranges now carry a bluff tail. Share is not a taste parameter — §6.1
+  fixes it at alpha = f/(1+f), so a three-quarter-pot bet is 0.43 bluffs. Measured 0.40
+  against that target on Qs7s2s.
+
+  Candidates are weak-at-showdown hands weighted by NUT-blocking, per the founder's
+  framing: holding the ace of the flush suit removes the nut flush from villain's range,
+  so hero can credibly represent it and villain is left with weaker suited holdings.
+
+  Effect on the nut-flush spot: foldPct.bet 0.950 (clairvoyant) -> 0.714 (range-conditioned,
+  no bluffs) -> 0.384 (with the bluff tail). Villain now folds a plausible amount to hero's
+  betting range instead of over-folding against a pure-value construction.
+
+  TWO IMPLEMENTATION ERRORS FOUND AND FIXED WHILE BUILDING IT, both worth remembering:
+    - `rangeIndex` takes RANKS and a suited flag, not encoded cards. Passing cards put
+      the bluff weight on arbitrary grid cells. (rank = card >> 2, suit = card & 3.)
+    - Blocker weight must come from the 'nuts' bucket ONLY and be weighted by how many
+      nut combos a card appears in. Including 'very-strong' made every card of the suit a
+      "blocker" on a monotone board, so 9s6h scored like As2h.
+    - Aggregation must AVERAGE per combo, not sum: an offsuit cell holds 12 combos and a
+      suited cell 4, so summing handed the tail to offsuit junk on combo count alone.
+
+  ── SCENARIO 1 IS NOT BLOCKED HERE — SEE WS-314 ──────────────────────────────
+
+  With the fold estimate corrected, BET still loses to CHECK, and the cause is now
+  isolated and is NOT in this item. Branch breakdown with the nut flush (equity 0.983):
+
+      flag OFF   fold(pct=0.90 ev=100.0)  call(pct=0.07 ev=74.5)  raise(pct=0.03 ev=-1.3)
+      flag ON    fold(pct=0.45 ev=100.0)  call(pct=0.40 ev=71.9)  raise(pct=0.15 ev= 5.3)
+
+  The CALL branch is ~72-75 in BOTH arms — pre-existing, untouched by this work. It should
+  be ~170: hero holds a hand that beats every calling hand, so being called must be worth
+  more than the 100 hero collects when villain folds. Betting only looked healthy before
+  because a fake 0.90 fold rate contributed 90 of its 95.6; correcting the fold estimate
+  removed the prop and exposed the defect underneath.
+
+  Filed as WS-314 (P0, scored 32) and marked `enables: WS-313` — the Scenario 1 accept
+  criterion cannot be met until the called branch is priced correctly, and forcing it from
+  this side would mean tuning the fold estimate to compensate for a different bug.
+
+  Also filed WS-315 from the founder's line-planning framing (hero's range decomposes into
+  LINES — check-call / check-raise / bet-3bet-fold — not single actions), blocked on both
+  this item and WS-314.
+
 accept_criteria: |
   - Villain's fold/call/raise decision is priced against hero's PERCEIVED range, not
     hero's actual cards. Where hero's range is unavailable, the substitute must be
@@ -289,8 +334,10 @@ accept_criteria: |
   - The same fix is applied to comboCallFilter / comboBetFilter / comboCheckBackFilter
     and comboActionProbabilities, not only to estimateFoldPct — otherwise
     equity-when-called stays clairvoyant while fold equity is corrected.
-  - advisorAccuracy Scenario 1 ranks BET above CHECK with the nut flush, and its
-    console.warn becomes a real assertion (it fails today: check 112.0 vs bet 95.7).
+  - MOVED TO WS-314. advisorAccuracy Scenario 1 ranking BET above CHECK is blocked by a
+    pre-existing called-branch mispricing (call branch 72 where it should be ~170),
+    measured identical in both arms of this item's flag. It cannot be satisfied from the
+    fold-estimate side without tuning one bug to hide another.
   - Sizing check: with a strong hand, optimal sizing is driven by called-value, not by
     an inflated fold rate. Record a before/after sizing for one value spot.
   - Behavioural test that fails against the current engine.

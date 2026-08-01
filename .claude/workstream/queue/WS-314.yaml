@@ -1,0 +1,93 @@
+id: "WS-314"
+title: "Hero's called-branch EV is valued at ~40% of its true worth — the nut flush's call branch prices at 72 when it should be ~170"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  SURFACED BY WS-313, NOT CAUSED BY IT. Confirmed pre-existing by running both arms.
+
+  THE SPOT. Hero holds AsKs on Qs7s2s — the NUT FLUSH, hero equity 0.983. Pot 100.
+  Branch breakdown of hero's best bet candidate:
+
+      flag OFF   fold(pct=0.90 ev=100.0)  call(pct=0.07 ev=74.5)  raise(pct=0.03 ev=-1.3)
+      flag ON    fold(pct=0.45 ev=100.0)  call(pct=0.40 ev=71.9)  raise(pct=0.15 ev= 5.3)
+
+  The CALL branch is ~72-75 in BOTH arms. It should be roughly
+
+      eqVsCallRange x (pot + 2 x bet) x realization - bet
+        ~ 0.98 x 250 x 0.85 - 75  ~ 133,  and ~170 unrealized
+
+  Hero holds a hand that beats essentially every calling hand, and the branch where
+  villain calls is valued BELOW the branch where villain folds (100.0). That is
+  backwards: with the nuts, being called is the good outcome.
+
+  The RAISE branch is worse — 5.3 with the nut flush facing a raise, when hero re-raises
+  or calls and wins nearly always.
+
+  WHY IT WENT UNNOTICED FOR SO LONG. Under the clairvoyant model villain "folded" 90% to
+  a bet (WS-313), so bet EV was 0.90 x 100 + 0.07 x 74.5 = 95.6 — dominated by the fold
+  term. The fold branch was propping up the number and the broken call branch contributed
+  almost nothing. WS-313 corrected the fold estimate to 0.45, the prop went away, and the
+  defect became load-bearing: bet fell to ~74 and lost to check.
+
+  So the WS-313 accept criterion "Scenario 1 ranks BET above CHECK" is blocked HERE, not
+  in the fold model. Both directions of the check-vs-bet comparison were measured and the
+  fold estimate is now sane on both sides; the call branch is not.
+
+  WHERE TO LOOK. `evaluateHeroAction`'s bet/raise path in gameTreeEvaluator.js:
+    - `eqVsCallRange` via `computeFilteredEquity(comboDistribution, comboCallFilter(...))`
+      — confirm it returns ~0.98 here. `computeFilteredEquity` weights by the filter but
+      sums `combo.heroEquity`, which is correct by inspection, so verify empirically
+      rather than by reading.
+    - `callBranchEV = eqVsCallRange * (potAfterCall - rake) * realization - heroInvestment`
+      — check `realization` (adjustedRealization on a flop IP) and `heroInvestment`. A
+      realization discount applied to a hand that is already the effective nuts is a
+      candidate: §Equity Realization exists for hands that must survive future streets,
+      and the nut flush on a monotone flop has almost nothing to survive.
+    - `callersOnCall` / `expectedCallers` sizing of `potAfterCall`.
+  Do not assume which one it is — the arithmetic above narrows it to a factor of ~2, so
+  instrument the terms and find the one that is off.
+accept_criteria: |
+  - With the nut flush on a monotone flop, the CALL branch EV exceeds the FOLD branch EV.
+    Being called with the nuts must be worth more than winning the pot uncontested.
+  - The raise branch with the nuts is strongly positive, not ~0.
+  - Terms are instrumented and the responsible factor named with a measured before/after,
+    not inferred from reading the formula.
+  - advisorAccuracy Scenario 1 ranks BET above CHECK, and its console.warn becomes a real
+    assertion. (This is inherited from WS-313, which cannot satisfy it alone.)
+  - A regression test pinning called-branch EV against a hand-computed value for one spot,
+    so a future realization/rake change cannot silently halve it again.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-313"]
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-313-bluff-tail"
+created_at: "2026-08-01T05:20:00Z"
+status_note: |
+  Scored 32 — just below WS-313's 33. It is a confirmed wrong number on a live advice
+  path, it blocks one of WS-313's accept criteria, and it mis-prices the VALUE side of
+  every bet the engine recommends, which is the half the founder has been pressing on
+  ("we should be really sizing up with our value hands").
+
+  Verified pre-existing: the call branch measures 74.5 with the WS-313 flag OFF and 71.9
+  with it ON. Nothing in WS-313 touched it.

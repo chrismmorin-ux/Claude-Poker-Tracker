@@ -1,0 +1,123 @@
+id: "WS-315"
+title: "Hero's range should decompose into LINES (check-call / check-raise / bet-3bet-fold), not single actions"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER-ORIGINATED (2026-08-01), while approving the WS-313 bluff component. Recorded
+  close to verbatim because the framing is the contribution:
+
+    "we can accurately categorize things by their action - next action. like i might
+     decide to check-fold to a cbet, or check raise, or check-call up to a certain bet
+     size. these are the subsets of a specific hand and board overall strategy. looking
+     at a hand preflop or on the river, a hero may choose to bet-3bet-fold. he knows
+     it's one of the stronger bluffs, but it kind of survives against the checks and the
+     board kinda dictates this is the bluff. like having a flush draw and holding the
+     suited ace in your hand. you block the nuts, so you instantly get to pretend like
+     you do. opponent is limited to the other suited cards, which feel weak in the face
+     of a 3bet on the river. but if the player shoves, you can't beat any of his value
+     range, so that line and that fold is visible 3 steps before you even see the
+     results to their first action."
+
+  THE CLAIM, restated. A hand's membership in "hero's betting range" is not atomic. The
+  real unit is a LINE — a multi-street plan with a stated continuation:
+
+      check-fold          check-call-to-X         check-raise
+      bet-fold            bet-call                bet-3bet-fold
+
+  Two hands can both "bet" and belong to completely different strategies, because what
+  they do NEXT differs. Today the engine models the current action only, so it cannot
+  represent that distinction at all.
+
+  WHY THIS IS NOT COSMETIC — three consequences.
+
+  1. RANGE CONSTRUCTION. WS-313 builds hero's perceived range by narrowing on the current
+     action. A line-aware range would narrow on the PLAN, which is strictly more
+     information and produces a different (better) range. The bluff tail added under
+     WS-313 is really "hands whose plan is bet-and-give-up" plus "hands whose plan is
+     bet-3bet" — currently pooled, though they are different hands and villain should
+     respond to them differently.
+
+  2. BLOCKERS SELECT THE LINE, NOT JUST THE HAND. The founder's example is exact: with
+     the ace of the flush suit hero removes the nut flush from villain's range, so hero
+     can credibly represent it — and villain's remaining suited holdings are precisely
+     the ones that play badly facing a 3-bet. That is a reason to choose a LINE
+     (bet-3bet), not merely a reason to bet. WS-313's bluff tail already weights
+     candidates by nut-blocking; this extends the same logic one street deeper.
+
+  3. THE FOLD IS KNOWABLE IN ADVANCE. "if the player shoves, you can't beat any of his
+     value range, so that line and that fold is visible 3 steps before you even see the
+     results to their first action." A shove beats every hand in hero's bluffing line by
+     construction, so the fold is decided when the line is chosen, not when the shove
+     arrives. Surfacing that ahead of time is the product value — at the table it is the
+     difference between a planned fold and a tilting one.
+
+  WHAT ALREADY EXISTS TO BUILD ON.
+    - `buildResponseGuidance` (gameTreeEvaluator.js) already emits `ifCall` / `ifRaise` /
+      `ifVillainBets` branch guidance. That is a one-step-lookahead seed of exactly this;
+      it is currently derived AFTER the action is chosen rather than being part of what
+      is chosen.
+    - `decisionTreeBuilder.js` builds a decision tree from exploits + game state.
+    - Depth-2/3 (`gameTreeDepth2.js`) already looks ahead for EV; the lookahead exists,
+      it just is not surfaced as a named plan or fed back into range construction.
+    - `rangeEngine/lineTaxonomy.js` and the WS-256 preflop subclasses (openFirstIn,
+      isoRaise, cold3Bet, squeeze, limpReraise) are the PREFLOP version of this idea
+      already shipped — hero-side postflop lines are the same construction one street on.
+      Read that first; the shrinkage/containment lessons from WS-256's Amendment 1 apply
+      (a child line's range must be carved out of its parent, not built independently).
+
+  SCOPE WARNING. This is a modelling change to the core decision spine, not a feature
+  bolt-on. It should be designed before it is built, and it interacts with WS-313 (range
+  construction) and WS-314 (called-branch EV) — both of which should land first, because
+  a line's value cannot be evaluated while the called branch is mispriced by ~2x.
+accept_criteria: |
+  - A line is a first-class object: current action + planned continuation per villain
+    response, evaluable as a unit.
+  - Hero's perceived range can be conditioned on a LINE, not just an action, and
+    WS-313's per-action samples become per-line samples.
+  - The founder's river example is representable end to end: holding the nut-suit blocker,
+    the engine picks bet-3bet-fold, states that a shove is a fold, and says so BEFORE
+    villain acts.
+  - Line-level guidance is surfaced to the founder at the table in the same breath as the
+    action, not as a post-hoc annotation.
+  - Containment holds as in WS-256 Amendment 1: the union of a parent action's lines is
+    exactly the parent's range, asserted by test.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/heroPerceivedRange.js"
+  - "src/utils/exploitEngine/decisionTreeBuilder.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+blocked_by: ["WS-313", "WS-314"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Is a line a fixed enum (check-fold / check-call / check-raise / bet-fold / bet-call / bet-3bet-fold) or derived per spot from the game tree? The enum is legible to the founder and matches how the preflop taxonomy already works; derived is more general and less likely to miss a line the board dictates."
+  - "Does line selection feed BACK into hero's perceived range (villain responds to the line), or is it output-only in v1? Feeding back is the theoretically correct move and is what makes blockers select the line, but it is circular and needs a fixed point or a single pass."
+source:
+  type: founder-direction
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-313-session"
+created_at: "2026-08-01T05:20:00Z"
+status_note: |
+  Scored 30 — below WS-313 (33) and WS-314 (32) because both are prerequisites, not
+  because it is smaller. It is plausibly the largest single idea raised in this session
+  and it reframes what the engine's output IS: a plan, rather than a next action.
+
+  Note the pattern this continues. WS-256 already built exactly this decomposition for
+  PREFLOP (parent action -> subclasses, with containment enforced). The postflop side was
+  never given the same treatment, so hero's postflop range is still modelled one action
+  at a time. That asymmetry is the gap.
