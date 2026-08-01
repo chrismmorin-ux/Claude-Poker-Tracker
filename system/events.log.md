@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785548897263-58e812f0adca"
-generated_content_hash: "82a18a1dbc273162de689281ac713c2b7b3b2298ce177b3dccfcc14dfd751bfa"
-generated_at: "2026-08-01T01:48:17.348Z"
+generated_from_event: "ev-1785560505395-f85f6592e5f8"
+generated_content_hash: "17ab7bdcb7ff1246abc42dcb71f6c3d06a823a6af7450b4e09783bd003b2231d"
+generated_at: "2026-08-01T05:01:45.465Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1175
+event_count: 1182
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 742
-- Events recorded: 1175
+- Commands recorded: 745
+- Events recorded: 1182
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -7870,3 +7870,37 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-01T01:48:17.263Z | T6:workstream-rebalance | /next | sprint_id="SPR-161", reason="founder-directed anchor overr"..., +4 more |
+
+## Command `cmd-sprintapprove-ms9rxcwoac5931f2d7e9`
+
+- Start: 2026-08-01T02:50:17.116Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T02:50:17.116Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-162", +8 more |
+
+## Command `cmd-itemcreated-ms9wmecne93624b45ceb`
+
+- Start: 2026-08-01T05:01:43.867Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:01:43.867Z | T6:workstream | /next | item_id="WS-322", program="design", +4 more |
+
+## Command `cmd-sprintdone-ms9wmes0a72ace9441bb`
+
+- Start: 2026-08-01T05:01:44.402Z
+- Events: 5
+- Tracks: T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:01:44.402Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-162", +4 more |
+| 2 | 2026-08-01T05:01:44.665Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 3 | 2026-08-01T05:01:45.284Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-08-01T05:01:45.319Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-08-01T05:01:45.395Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

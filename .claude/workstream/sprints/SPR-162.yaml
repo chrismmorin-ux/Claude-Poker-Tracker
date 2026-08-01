@@ -1,7 +1,9 @@
 id: "SPR-162"
 title: "TVR Gate 4 Phase A — decide the geometry the whole redesign sits on"
-status: approved
+status: done
 approved_at: "2026-08-01T02:50:16.952Z"
+completed_at: "2026-08-01T05:01:44.386Z"
+completed_by_commit: "6b4d04b"
 program_focus: "design"
 
 goal: |

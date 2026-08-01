@@ -1,6 +1,7 @@
 # Gate 4 Phase A — Table View geometry contract
 
-**Item:** `WS-319` · **Sprint:** SPR-162 · **Status:** decision proposed, one founder call outstanding
+**Item:** `WS-319` · **Sprint:** SPR-162 · **Status:** ✅ DECIDED 2026-08-01
+**⚠️ The founder chose APP-WIDE.** This document is now the *Table-View-specific* half of a broader rule. The doctrine, the per-view classification, and the migration live in **[`layout-doctrine.md`](./layout-doctrine.md)**. Read that first; this remains accurate for TableView.
 **Consumed by:** `WS-320` (interaction vocabulary), `WS-313` (surface artifact)
 **Supersedes for geometry only:** nothing yet — `surfaces/table-view.md` stays canonical until Phase C.
 
@@ -123,13 +124,15 @@ Three levers, in order of promise:
 
 ---
 
-## Open question for the founder
+## Resolved — app-wide (founder, 2026-08-01)
 
-**Is the un-scaling TableView-only, or app-wide?**
+I recommended TableView-only. The founder chose **app-wide**, and on investigation that is the better call for a reason neither of us had in front of us at the time: **there is already a responsive migration in flight.**
 
-`ScaledContainer` is used by `ShowdownView`, `HandReplayView` and the drill views too. TableView-only is cheaper and lower-risk, but it creates two layout idioms inside one product — which is the drift `sidebar-shell-spec.md` exists to prevent. App-wide is coherent but turns a Gate 4 phase into a cross-surface migration.
+The [2026-06-19 responsive/layout audit](../audits/2026-06-19-responsive-layout-audit.md) established the paradigm split, built `FluidView` as the vehicle, migrated Sessions / Settings / Players — and then stalled on its own **open question #1**: *"Stats/Analysis/Online/Tournament — keep the fixed game-canvas, or reflow as fluid?"* That question has been open for six weeks and it is a version of the one I asked.
 
-**Recommendation: TableView-only now, with the inconsistency recorded as a tracked gap** rather than an accident. The Table View is the only surface used under time pressure with a thumb; the others are read or reviewed. That is a real reason for them to differ, and stating it makes it a decision instead of drift.
+So app-wide is not a larger new project. It **finishes an existing one**, and supplies the missing rule for the split-region cases the June per-view framing could not express.
+
+See [`layout-doctrine.md`](./layout-doctrine.md). Migration filed as `WS-322`.
 
 ---
 

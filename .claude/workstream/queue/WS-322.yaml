@@ -1,0 +1,119 @@
+id: "WS-322"
+title: "App-wide layout migration — un-scale every interactive region per the per-region doctrine (finishes the 2026-06-19 responsive plan)"
+legacy_id: ""
+type: refactor
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "responsive-layout"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  FOUNDER DECISION 2026-08-01: "appwide". Implements
+  docs/design/surfaces/layout-doctrine.md.
+
+  THIS IS NOT A NEW MIGRATION — IT FINISHES ONE. The 2026-06-19 responsive/layout
+  system-coherence audit already established the paradigm split, built `FluidView`
+  (h-[100dvh] + overflow-y-auto) as the standard vehicle in its Phase 1, and migrated
+  SessionsView, SettingsView and PlayersView. It then stalled on its own open question
+  #1 — "do Stats/Analysis/Online/Tournament stay scaled, or become fluid reading
+  surfaces? (Determines Phase-3 scope.)" — which sat unanswered for six weeks.
+
+  The founder has now answered it, and the doctrine DERIVES the answer rather than
+  asserting it: none of those four contains a region whose geometry carries meaning.
+  They are panels of numbers. Fluid.
+
+  THE ONE GENUINELY NEW THING is the grain. The June audit's rule was PER-VIEW, and it
+  cannot express the Table View, which holds a spatial region (the felt) and an
+  interactive one (the command column) at once. Forcing both into one paradigm is what
+  produced 30.6px touch targets and a clipped primary CTA. The doctrine promotes the
+  rule to PER-REGION:
+
+      Spatial regions scale. Interactive regions do not.
+
+  For most views that collapses back to the per-view rule and nothing changes. Only
+  TableView and HandReplayView actually need the finer grain.
+
+  SCOPE — roughly 9 views still call ScaledContainer:
+    split (spatial + interactive)  TableView, HandReplayView
+    un-scale entirely              StatsView, AnalysisView, OnlineView, TournamentView,
+                                   HomebaseView, Preflop/Postflop/Presession drills
+    already done                   SessionsView, SettingsView, PlayersView
+    OPEN                           ShowdownView — see doctrine section 6
+accept_criteria: |
+  0. SEQUENCING. TableView's split is owned by TVR Gate 4 Phase C (WS-313), NOT here —
+     it needs the surface artifact. This item covers the other views. Do not race
+     WS-313 into the same files.
+
+  1. RESOLVE SHOWDOWNVIEW FIRST (doctrine section 6). It is the only view whose
+     classification is genuinely open: is the nine-seat arrangement load-bearing, or is
+     it a per-seat form that happens to look like a table? Recommendation in the
+     doctrine is interactive/fluid — showdown is entered AFTER the hand, the spatial map
+     has done its job, and the task is data entry. But it mirrors the table's seat
+     layout and breaking that correspondence has a recognition cost. Decide explicitly.
+
+  2. MIGRATE the un-scale-entirely list to FluidView, one view per commit, each with a
+     `npm run devshot` before/after at 1600x720 AND 1170x540. FluidView already exists
+     and already encodes the bounded-height + overflow-y-auto pattern; do not hand-roll
+     a scroll container per view — that is the exact bug class FluidView was created to
+     kill (it recurred across Sessions, Settings, Self-Coach, Anchor Library, Printable
+     Refresher).
+
+  3. PER VIEW, verify:
+       - no content clipped below the fold (the recurring defect)
+       - every interactive target renders >=44px — MEASURED, not asserted from a class
+         string. A test that greps `min-h-[44px]` is exactly the test that let
+         AUDIT-2026-04-21-TV F8 ship a 28px target.
+       - the view's orientation classification in viewRegistry.jsx still matches what
+         it now is. A fluid view should generally not be forcing landscape.
+
+  4. UPDATE the orientation policy as views become fluid. VIEW_TO_ORIENTATION defaults
+     anything unflagged to 'landscape'; a fluid view has no reason to. This shrinks the
+     surface where WS-315's rotate gate can fire — it does NOT fix WS-315, whose cause
+     is device-specific and still unreproduced.
+
+  5. ADD THE REGRESSION GUARD the doctrine implies: a test asserting RENDERED target
+     size at the supported viewport range for the primary controls of each migrated
+     view. Without it this drifts straight back.
+
+  6. UPDATE docs/design/audits/2026-06-19-responsive-layout-audit.md — mark open
+     question #1 answered and Phase 3 scoped. Do not silently leave a six-week-old open
+     question looking open.
+effort: "L"
+files_involved:
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/components/ui/FluidView.jsx"
+  - "src/components/views/StatsView.jsx"
+  - "src/components/views/AnalysisView/index.jsx"
+  - "src/components/views/OnlineView/OnlineView.jsx"
+  - "src/components/views/TournamentView/TournamentView.jsx"
+  - "src/components/views/HomebaseView/HomebaseView.jsx"
+  - "src/components/views/PreflopDrillsView/PreflopDrillsView.jsx"
+  - "src/components/views/PostflopDrillsView/PostflopDrillsView.jsx"
+  - "src/components/views/PresessionDrillView/index.jsx"
+  - "src/components/views/ShowdownView/ShowdownView.jsx"
+  - "src/constants/viewRegistry.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "This is L and touches ~9 views. It should be DECOMPOSED into per-view items before execution rather than run as one sprint — one view per commit with before/after devshots is the unit that can actually be verified."
+  - "HomebaseView carries an explicit design note that it renders inside ScaledContainer BY DESIGN and that the fixed canvas is what letterboxes overlapping tiles away in portrait (HomebaseView.jsx:36-47, per surfaces/homebase-view.md). Un-scaling it re-opens that decision. Read the surface artifact before touching it — it may be a legitimate exception to the doctrine."
+  - "Do not touch TableView here. Its split belongs to WS-313 (Gate 4 Phase C) and needs the surface artifact first."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-08-01T00:00:00Z"
+status_note: |
+  Doctrine: docs/design/surfaces/layout-doctrine.md (WS-319, SPR-162).
+  Continues: docs/design/audits/2026-06-19-responsive-layout-audit.md Phase 3.
+  Vehicle already exists: src/components/ui/FluidView.jsx.

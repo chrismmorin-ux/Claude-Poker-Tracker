@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 197
+total_items: 198
 by_status:
   decomposed: 1
-  done: 78
-  in_progress: 3
+  done: 79
+  in_progress: 4
   deferred: 43
-  backlog: 53
+  backlog: 52
   dismissed: 1
   completed: 7
   review: 1
@@ -40,6 +40,8 @@ by_category:
   provenance: 3
   range-lab: 7
   refactor: 3
+  research-integrity: 1
+  responsive-layout: 1
   review-workflow: 1
   seam-integrity: 7
   seat-selection: 1
@@ -48,7 +50,7 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 6
-  table-view: 10
+  table-view: 11
   test-reliability: 2
   testing: 2
   ux: 3
@@ -1808,7 +1810,6 @@ items:
     program: domain-correctness
     capability: core
 
-
   - id: "WS-311"
     title: "CommandStrip compresses instead of scrolling — 720px column over-subscribed by ~100-140px in common states, shrinking the 100px action buttons first"
     status: backlog
@@ -1875,8 +1876,8 @@ items:
     capability: core
 
   - id: "WS-318"
-    title: "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street x line (cbet / checkraise / donk / barrel / probe) from the corpus"
-    status: backlog
+    title: "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street × line (cbet / checkraise / donk / barrel / probe) from the corpus"
+    status: in_progress
     priority_score: 24
     category: table-view
     effort: M
@@ -1885,7 +1886,7 @@ items:
 
   - id: "WS-319"
     title: "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?"
-    status: backlog
+    status: done
     priority_score: 25
     category: table-view
     effort: M
@@ -1910,3 +1911,13 @@ items:
     effort: S
     program: domain-correctness
     capability: core
+
+  - id: "WS-322"
+    title: "App-wide layout migration — un-scale every interactive region per the per-region doctrine (finishes the 2026-06-19 responsive plan)"
+    status: backlog
+    priority_score: 22
+    category: responsive-layout
+    effort: L
+    program: design
+    capability: core
+

@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "sprints",
-  "updated_at": "2026-07-30T14:53:46.913Z",
-  "updated_by_event": "ev-1785423226913-98508b9b3618",
+  "updated_at": "2026-08-01T05:01:45.319Z",
+  "updated_by_event": "ev-1785560505319-3ace14e78eb0",
   "items": {
     "SPR-001": {
       "id": "SPR-001",
@@ -2605,7 +2605,38 @@
         "untagged"
       ],
       "anchor_source_class": "untagged"
+    },
+    "SPR-161": {
+      "id": "SPR-161",
+      "title": "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+      "status": "abandoned",
+      "program_focus": "domain-correctness",
+      "created_at": "2026-08-01T01:44:28.561Z",
+      "approved_at": "2026-08-01T01:44:28.561Z",
+      "goal": "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+      "item_count": 1,
+      "items_done": 0,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
+    },
+    "SPR-162": {
+      "id": "SPR-162",
+      "title": "TVR Gate 4 Phase A — decide the geometry the whole redesign sits on",
+      "status": "done",
+      "program_focus": "design",
+      "created_at": "2026-08-01T02:50:16.952Z",
+      "approved_at": "2026-08-01T02:50:16.952Z",
+      "completed_at": "2026-08-01T05:01:44.386Z",
+      "goal": "TVR Gate 4 Phase A — decide the geometry the whole redesign sits on",
+      "item_count": 1,
+      "items_done": 0,
+      "last_anchor_source_classes": [
+        "untagged"
+      ],
+      "anchor_source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785423226913-98508b9b3618"
+  "last_event_log_head": "ev-1785560505319-3ace14e78eb0"
 }

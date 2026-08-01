@@ -79,8 +79,9 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-311** | **P0** — CommandStrip clips the Next Hand CTA at preflop (confirmed on device) | — (standalone bug) | backlog |
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
 | **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **done** |
-| **WS-319** | Gate 4 **Phase A** — geometry | 4 | **SPR-162 — decision drafted, 1 founder call open** |
-| **WS-320** | Gate 4 **Phase B** — one interaction vocabulary (tap commits / hold refines) | 4 | blocked by WS-319 |
+| **WS-319** | Gate 4 **Phase A** — geometry | 4 | ✅ **DONE** (SPR-162) — app-wide |
+| **WS-322** | App-wide layout migration (finishes the June responsive plan) | — | backlog, L, decompose before running |
+| **WS-320** | Gate 4 **Phase B** — one interaction vocabulary (tap commits / hold refines) | 4 | **unblocked — NEXT** |
 | **WS-313** | Gate 4 **Phase C** — the surface artifact | 4 | blocked by A + B |
 | **WS-318** | Mine pool sizing per street × line — miner written & verified | — | **blocked on founder** (corpus is local) |
 | **WS-321** | `mine-sizing-and-lines.py` has the same stab/donk conflation | — | backlog |
@@ -176,7 +177,15 @@ children:  48 tabs · 65 seat · 85 orbit · 432 action block · 0 spacer · 209
 
 `WS-186` (table flip) deferred explicitly, and Phase A makes it *cheaper* later: with the felt as the only scaled region, a 180° flip becomes a transform on the felt alone rather than on the whole canvas including the controls.
 
-Contract: [`surfaces/table-view-geometry.md`](../../docs/design/surfaces/table-view-geometry.md).
+**Founder chose APP-WIDE (2026-08-01).** I had recommended TableView-only. App-wide is the better call, for a reason neither of us had in front of us: **there is already a responsive migration in flight.**
+
+The [2026-06-19 responsive audit](../../docs/design/audits/2026-06-19-responsive-layout-audit.md) established the paradigm split, built `FluidView` as the vehicle, migrated Sessions / Settings / Players — then stalled on its own **open question #1** (*"do Stats/Analysis/Online/Tournament stay scaled, or become fluid?"*), which has sat unanswered for six weeks. That is a version of the question asked here.
+
+So app-wide **finishes existing work** rather than starting new work. It also supplies the rule June was missing: the June rule was **per-view** and cannot express TableView, which holds a spatial felt *and* an interactive command column. The doctrine promotes it to **per-region** — *spatial regions scale, interactive regions do not*. For most views that collapses back to the per-view rule and nothing changes; only TableView and HandReplay need the finer grain.
+
+June's open question #1 is now marked **answered: fluid** — and derived rather than asserted, since none of those four views contains a region whose geometry carries meaning.
+
+Doctrine: [`surfaces/layout-doctrine.md`](../../docs/design/surfaces/layout-doctrine.md) · TableView half: [`surfaces/table-view-geometry.md`](../../docs/design/surfaces/table-view-geometry.md) · Migration: `WS-322`.
 
 ---
 

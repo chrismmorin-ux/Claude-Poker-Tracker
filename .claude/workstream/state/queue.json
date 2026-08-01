@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-08-01T01:13:48.927Z",
-  "updated_by_event": "ev-1785546828927-131bc8cc19f2",
+  "updated_at": "2026-08-01T05:01:45.319Z",
+  "updated_by_event": "ev-1785560505319-3ace14e78eb0",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5131,15 +5131,15 @@
     "WS-319": {
       "id": "WS-319",
       "title": "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 25,
       "category": "table-view",
       "effort": "M",
       "program": "design",
       "capability": "core",
       "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": null,
+      "claimed_at": "2026-08-01T02:50:16.952Z",
+      "completed_at": "2026-08-01T00:00:00Z",
       "source": {
         "type": "founder-request",
         "created_by": "ai",
@@ -5216,7 +5216,43 @@
         "docs/research/player-archetypes-empirical-2026-07-26.md"
       ],
       "source_class": "untagged"
+    },
+    "WS-322": {
+      "id": "WS-322",
+      "title": "App-wide layout migration — un-scale every interactive region per the per-region doctrine (finishes the 2026-06-19 responsive plan)",
+      "status": "backlog",
+      "priority_score": 22,
+      "category": "responsive-layout",
+      "effort": "L",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/components/ui/ScaledContainer.jsx",
+        "src/components/ui/FluidView.jsx",
+        "src/components/views/StatsView.jsx",
+        "src/components/views/AnalysisView/index.jsx",
+        "src/components/views/OnlineView/OnlineView.jsx",
+        "src/components/views/TournamentView/TournamentView.jsx",
+        "src/components/views/HomebaseView/HomebaseView.jsx",
+        "src/components/views/PreflopDrillsView/PreflopDrillsView.jsx",
+        "src/components/views/PostflopDrillsView/PostflopDrillsView.jsx",
+        "src/components/views/PresessionDrillView/index.jsx",
+        "src/components/views/ShowdownView/ShowdownView.jsx",
+        "src/constants/viewRegistry.jsx"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785546828927-131bc8cc19f2"
+  "last_event_log_head": "ev-1785560505319-3ace14e78eb0"
 }

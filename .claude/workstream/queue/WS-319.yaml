@@ -2,11 +2,11 @@ id: "WS-319"
 title: "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?"
 legacy_id: ""
 type: design
-status: backlog
+status: done
 claimed_by: ses-20260731-2246-ed04bf9c
 claimed_at: "2026-08-01T02:50:16.952Z"
 started_at: null
-completed_at: null
+completed_at: "2026-08-01T00:00:00Z"
 completion_commit: null
 priority_score: 25.0
 priority_label: "P1"
@@ -116,6 +116,33 @@ source:
   run_id: "session-2026-07-31-tvr-kickoff"
 created_at: "2026-07-31T00:00:00Z"
 status_note: |
+  DONE 2026-08-01. Founder chose APP-WIDE.
+
+  OUTPUT: docs/design/surfaces/layout-doctrine.md (the rule + per-view classification)
+          docs/design/surfaces/table-view-geometry.md (the TableView half)
+
+  THE DECISION: spatial regions scale, interactive regions do not. Promoted from the
+  2026-06-19 audit's PER-VIEW rule to PER-REGION, because per-view cannot express
+  TableView — a spatial felt and an interactive command column in one view. Forcing
+  both into one paradigm is what produced 30.6px targets and a clipped primary CTA.
+
+  MEASUREMENT THAT DROVE IT: column at scale 1.0 is scrollHeight 839 vs clientHeight
+  720, and the flex-1 spacer is ALREADY at 0. No coordinate-system change makes 839 fit
+  in 720 — the column is over-subscribed on CONTENT, and scale was hiding that by
+  shrinking everything below the touch floor.
+
+  UNEXPECTED FINDING, and it made app-wide the cheaper answer than it looked: THERE IS
+  ALREADY A RESPONSIVE MIGRATION IN FLIGHT. The 2026-06-19 audit built FluidView,
+  migrated Sessions/Settings/Players, and then stalled on its own open question #1
+  ("do Stats/Analysis/Online/Tournament stay scaled?") for six weeks. That question is
+  a version of the one asked here. App-wide FINISHES that work rather than starting new
+  work, and supplies the per-region rule the June framing was missing. June Q1 is now
+  marked answered in that audit.
+
+  KNOCK-ONS: WS-311 closes via Phase C (Next Hand becomes structurally unclippable once
+  the control zone is pinned). WS-186 stays deferred but gets cheaper. WS-322 filed for
+  the migration. ShowdownView's classification left explicitly open (doctrine section 6).
+
   Split from WS-313 (Gate 4) 2026-07-31 — that item was L/3-sessions against a
   2-session cap and could not be sprint-composed.
   Inputs: WS-316 (touch floor, measured), WS-311 (compression, reproduced at design
