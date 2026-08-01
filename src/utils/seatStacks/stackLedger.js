@@ -122,6 +122,22 @@ export const readStack = (ledger, seat, currentHand) => {
   };
 };
 
+/**
+ * A seat's stack AT A POINT IN THE HAND: start-of-hand minus what it has already
+ * put in the middle.
+ *
+ * The ledger deliberately stores start-of-hand values — that is the quantity
+ * carry-forward maintains. "What does seat 4 have right now" is a different
+ * question, and answering it by reading the ledger directly would overstate
+ * every stack by whatever is already committed.
+ */
+export const readStackAtPoint = (ledger, seat, currentHand, committed = {}) => {
+  const base = readStack(ledger, seat, currentHand);
+  if (base.amount === null) return base;
+  const put = Number(committed?.[seat] ?? committed?.[String(seat)] ?? 0) || 0;
+  return { ...base, amount: Math.max(0, base.amount - put) };
+};
+
 // =============================================================================
 // LEDGER CONSTRUCTION AND MUTATION (all non-mutating)
 // =============================================================================
@@ -259,8 +275,11 @@ export const advanceHand = (
  * Returns `{ amount: null }` when hero or every opponent is inadmissible —
  * abstention, per INV-STK-01, rather than a number built on a guess.
  */
-export const effectiveStackAt = (ledger, { heroSeat, liveSeats = [], currentHand = 0 } = {}) => {
-  const hero = readStack(ledger, heroSeat, currentHand);
+export const effectiveStackAt = (
+  ledger,
+  { heroSeat, liveSeats = [], currentHand = 0, committed = {} } = {},
+) => {
+  const hero = readStackAtPoint(ledger, heroSeat, currentHand, committed);
   if (hero.amount === null || !hero.admissible) {
     return { amount: null, source: hero.source, admissible: false };
   }
@@ -268,7 +287,7 @@ export const effectiveStackAt = (ledger, { heroSeat, liveSeats = [], currentHand
   const opponents = liveSeats
     .map(Number)
     .filter((s) => s !== Number(heroSeat))
-    .map((s) => readStack(ledger, s, currentHand))
+    .map((s) => readStackAtPoint(ledger, s, currentHand, committed))
     .filter((r) => r.amount !== null && r.admissible);
 
   if (opponents.length === 0) {
@@ -321,16 +340,19 @@ export const toBigBlinds = (amount, bb) => {
  * quantity than the one recorded — the same discipline `potBasis` already
  * enforces for the pot.
  */
-export const buildStackBinding = (ledger, { heroSeat, liveSeats = [], currentHand = 0, pot = null, bb = null } = {}) => {
+export const buildStackBinding = (
+  ledger,
+  { heroSeat, liveSeats = [], currentHand = 0, pot = null, bb = null, committed = {} } = {},
+) => {
   const stacks = {};
   const sources = {};
   for (const seat of liveSeats.map(Number)) {
-    const r = readStack(ledger, seat, currentHand);
+    const r = readStackAtPoint(ledger, seat, currentHand, committed);
     stacks[seat] = r.amount;
     sources[seat] = r.source;
   }
 
-  const eff = effectiveStackAt(ledger, { heroSeat, liveSeats, currentHand });
+  const eff = effectiveStackAt(ledger, { heroSeat, liveSeats, currentHand, committed });
   const spr = eff.amount === null ? null : sprFrom(eff.amount, pot);
 
   return {

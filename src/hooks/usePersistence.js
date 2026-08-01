@@ -145,7 +145,13 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         dealerButtonSeat: gameState.dealerButtonSeat,
         mySeat: gameState.mySeat,
         actionSequence: gameState.actionSequence,
-        absentSeats: gameState.absentSeats
+        absentSeats: gameState.absentSeats,
+        // Seat stack ledger (surface `seat-stack-ledger`). START-OF-HAND stacks
+        // with provenance. Additive field — the IDB additive-only invariant
+        // holds and no migration is required; hands saved before this exist
+        // without it and read back as `{}`, i.e. "unknown", which is correct.
+        seatStacks: gameState.seatStacks ?? {},
+        handNumber: gameState.handNumber ?? 0
       },
       cardState: {
         communityCards: cardState.communityCards,

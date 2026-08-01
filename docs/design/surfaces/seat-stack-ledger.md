@@ -136,9 +136,17 @@ than degrading visibly. Fixed as part of this surface's implementation.
 
 | Piece | Status |
 |---|---|
-| `src/utils/seatStacks/stackLedger.js` | ✅ Implemented, 32 tests |
-| `gameReducer` wiring (seed / reconcile / carry-forward) | ⏳ Next |
-| Persistence (additive hand field + migration registry) | ⏳ Next |
-| Snapshot binding (`replaySnapshot`, `handReviewSnapshot`) | ⏳ Next |
-| `deriveEffStackAt` deletion onto `effectiveStackAt` | ⏳ Next |
-| Correction affordance (between-hands) | ⏳ Pending founder review of C-1..C-6 |
+| `src/utils/seatStacks/stackLedger.js` | ✅ 32 tests |
+| `src/utils/seatStacks/handSettlement.js` | ✅ 7 tests |
+| `gameReducer` wiring (seed / reconcile / carry-forward / decay) | ✅ 12 tests |
+| `useGameHandlers.nextHand` settles before clearing the sequence | ✅ |
+| Persistence — additive `seatStacks` + `handNumber` on the hand record | ✅ |
+| Snapshot binding (`replaySnapshot`) | ✅ |
+| `deriveEffStackAt` deleted onto `effectiveStackAt` (STK-1) | ✅ |
+| Snapshot binding (`handReviewSnapshot`) | ⏳ street-based surface; same pattern |
+| Correction affordance (between-hands, C-5/C-6) | ⏳ Pending founder review of C-1..C-6 |
+
+**Until the correction affordance ships**, the ledger is populated by seeding from the session
+buy-in and by C-3 contradiction correction. That means most values start inadmissible
+(`buyin-default`) and become admissible only once a seat's action proves a real number. This is the
+intended ordering — the ledger earns admissibility from evidence rather than starting out trusted.
