@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-31T22:56:54.996Z",
-  "updated_by_event": "ev-1785538614996-2287be1defa6",
+  "updated_at": "2026-08-01T00:40:18.131Z",
+  "updated_by_event": "ev-1785544818131-5f293190b958",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5094,7 +5094,37 @@
         "docs/design/heuristics/"
       ],
       "source_class": "untagged"
+    },
+    "WS-318": {
+      "id": "WS-318",
+      "title": "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street × line (cbet / checkraise / donk / barrel / probe) from the corpus",
+      "status": "backlog",
+      "priority_score": 24,
+      "category": "table-view",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-313"
+      ],
+      "files_involved": [
+        "scripts/backtest/mine-sizing-and-lines.py",
+        "src/utils/potCalculator.js",
+        "src/components/views/TableView/CommandStrip.jsx",
+        "docs/research/"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785538614996-2287be1defa6"
+  "last_event_log_head": "ev-1785544818131-5f293190b958"
 }

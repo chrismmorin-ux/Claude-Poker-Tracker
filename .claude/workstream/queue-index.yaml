@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 193
+total_items: 194
 by_status:
   decomposed: 1
   done: 78
   in_progress: 3
   deferred: 43
-  backlog: 49
+  backlog: 50
   dismissed: 1
   completed: 7
   review: 1
@@ -1871,4 +1871,13 @@ items:
     category: table-view
     effort: M
     program: design
+    capability: core
+
+  - id: "WS-318"
+    title: "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street x line (cbet / checkraise / donk / barrel / probe) from the corpus"
+    status: backlog
+    priority_score: 24
+    category: table-view
+    effort: M
+    program: domain-correctness
     capability: core

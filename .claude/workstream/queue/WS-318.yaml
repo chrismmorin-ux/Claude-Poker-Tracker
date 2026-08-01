@@ -1,0 +1,150 @@
+id: "WS-318"
+title: "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street × line (cbet / checkraise / donk / barrel / probe) from the corpus"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER QUESTION, 2026-07-31:
+  "Did we pull the default actions and common sizes from the MDA and make it specific
+  to street? Common cbets are different than common check raises or turn probes or
+  river thin value / bluff and stabs (aggressive action from callers to the preflop
+  raise that isn't a donk)."
+
+  ANSWER: NO ON BOTH COUNTS. Verified by code read 2026-07-31.
+
+  1. THE DEFAULTS ARE HARDCODED, WITH NO PROVENANCE.
+     potCalculator.js:456-459 —
+
+         DEFAULT_PREFLOP_OPEN   = [2.5, 4, 5, 10]
+         DEFAULT_PREFLOP_RAISE  = [2, 3, 4, 5]
+         DEFAULT_POSTFLOP_BET   = [0.25, 0.5, 0.75, 1.0]
+         DEFAULT_POSTFLOP_RAISE = [2, 3, 4, 5]
+
+     No comment, no citation, no derivation. These are convention, not measurement.
+
+  2. THERE IS NO STREET SPECIFICITY POSTFLOP, AND NO LINE SPECIFICITY AT ALL.
+     CommandStrip.jsx:509-515 computes exactly FOUR sizing contexts:
+
+         preflop  -> currentBet <= bb ? 'preflop_open' : 'preflop_raise'
+         postflop -> action === BET ? 'postflop_bet' : 'postflop_raise'
+
+     So a flop c-bet, a turn probe and a river bluff ALL get 1/4, 1/2, 3/4, pot — the
+     same four buttons. The distinction the founder is drawing does not exist anywhere
+     in the sizing path.
+
+  3. BUT THE TAXONOMY HE WANTS IS ALREADY IMPLEMENTED — in the mining layer, not the
+     app. scripts/backtest/mine-sizing-and-lines.py:71-73 + 187-203 classifies every
+     postflop aggressive action into exactly:
+
+         flop_cbet   flop_checkraise   flop_donk   flop_checkcall
+         turn_barrel   turn_checkraise   turn_probe
+         river_barrel  river_checkraise  river_probe
+
+     The founder's "STAB" maps to the script's PROBE — non-PFA first aggression on turn
+     or river. Note the script is right to have no flop stab: on the flop a non-PFA
+     first bet IS a donk, because a stab requires the PFA to have already declined.
+
+  4. WHAT THE SCRIPT DOES WITH IT IS THE GAP. It COUNTS lines (line coverage, for a
+     per-player "has this player ever taken this line" sophistication study). It never
+     records the SIZE. So we have the classifier and throw away the number.
+
+  THE DELTA IS SMALL. At the classification point (line 187-203) the script already
+  holds `amount` (the raise-to, parsed at line 175). What it lacks is a running pot:
+  `committed[]` is zeroed at every street boundary (line 146-149) and those chips are
+  discarded rather than accumulated. Carrying the pot forward is ~5 lines, after which
+  every classification point can record a pot fraction.
+
+  WHY THIS IS THE CLEANEST QUESTION THE CORPUS CAN ANSWER.
+  Sizing is the LEAST-CENSORED quantity we have. Hand strength is censored brutally —
+  folds are never shown, bluffs that work are never shown, so every strength
+  distribution inherits a correction. But EVERY BET'S SIZE IS RECORDED whether or not
+  the hand reached showdown. No censoring correction is needed. Against the standing
+  doctrine that most corpus findings must be read "as shape and bound, not level",
+  sizing distributions are the exception where the level is directly observed.
+
+  THE CAVEAT THAT LIMITS IT, and it is the important one.
+  The corpus is ONLINE play. The founder plays LIVE $1/$3 9-handed. Live pools size
+  differently — notably larger preflop opens (live 5-10x vs online 2.5-3x, which is
+  probably why DEFAULT_PREFLOP_OPEN already carries a 10x). So the corpus gives a
+  reliable TAXONOMY and SHAPE (which lines cluster where, how much spread each has)
+  but the LEVELS may be systematically displaced for his game. Treat corpus output as
+  a PRIOR, not as the answer.
+
+  PARTIAL LIMIT ON ONE OF THE FOUNDER'S CATEGORIES. "River thin value / bluff" cannot
+  be split by the corpus except on shown hands: river bet SIZES are fully observed, but
+  the value-vs-bluff INTENT label requires a showdown. So "common river thin-value
+  size" and "common river bluff size" as separate distributions are showdown-censored
+  even though the sizes themselves are not. Report the river bet-size distribution
+  unconditionally, and the value/bluff split only with its k/n and censoring direction.
+accept_criteria: |
+  1. EXTEND mine-sizing-and-lines.py (or fork a dedicated miner — do not break the
+     existing correlation study, which is a separate question):
+       - carry a running pot across street boundaries
+       - at each line classification, record the sizing as a pot fraction for first
+         aggression (cbet / donk / barrel / probe) and as a multiple of the bet faced
+         for check-raises
+       - accumulate a POOL-LEVEL distribution per (street x line), not just per-player
+
+  2. REPORT, per street x line cell:
+       - k/n (never a bare percentage — standing rule)
+       - the distribution, not just a mean: at minimum p25 / p50 / p75, and the modal
+         bucket. A single mean over a bimodal sizing distribution is the exact error
+         that would produce four useless presets.
+       - explicit note where n is too thin (check-raises will be, per Finding 14)
+
+  3. ANSWER THE DESIGN QUESTION the founder actually asked: DO the modal sizes differ
+     materially across street x line? Cells to compare:
+         flop_cbet vs turn_barrel vs river_barrel      (same role, different street)
+         flop_cbet vs flop_donk                        (same street, different role)
+         turn_probe vs turn_barrel                     (the stab-vs-continuation case)
+         *_checkraise across streets
+     BOTH OUTCOMES ARE USEFUL:
+       - They differ -> the sizing context key must expand from 4 to ~10, and the
+         redesign's learned presets have a grounded prior. Feeds WS-313 / the
+         non-linear track's node values.
+       - They do not -> the current single postflop bucket is defensible, we stop
+         paying for granularity that buys nothing, and that is a cheap answer.
+
+  4. STATE THE ONLINE-VS-LIVE DISPLACEMENT explicitly in the output. Do not silently
+     ship online modes as live defaults.
+
+  5. DESIGN OUTPUT (feeds WS-313 Gate 4): recommend the sizing-context key. If the
+     cells differ, the key becomes something like
+     `${street}_${role}` with role in {cbet, donk, barrel, probe, checkraise},
+     replacing the current 4-way postflop_bet / postflop_raise split.
+effort: "M"
+files_involved:
+  - "scripts/backtest/mine-sizing-and-lines.py"
+  - "src/utils/potCalculator.js"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "docs/research/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-313"
+sprint_id: null
+decision_flags:
+  - "PRIOR vs TRUTH. Corpus output is an online-pool prior for a live game. The right architecture is almost certainly corpus-derived shape as the PRIOR, updated by the founder's own recorded hands — the same Bayesian pattern POKER_THEORY already mandates for population priors + per-player updates. That also resolves the hero-vs-villain problem raised in the sizing exploration: population prior for villain sizings, the founder's own history for hero sizings. Do not blend them."
+  - "Do NOT let the engine's OWN sizing recommendation seed these defaults. That is FIND-038 (the model validating itself). Defaults must come from observed frequencies — corpus or the founder's own recorded actions — never from what the engine thinks the size should be."
+  - "If the cells turn out NOT to differ materially, close this and keep the single postflop bucket. A negative result here is worth as much as a positive one and is much cheaper to act on."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Raised during the action-entry exploration (docs/design/explorations/action-entry-sizing.md).
+  Directly grounds Option E (learned presets) and the non-linear track's node values.
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

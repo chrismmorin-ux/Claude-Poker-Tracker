@@ -355,9 +355,80 @@ A **hold-threshold control** (instant / 180 ms / 320 ms) so the §8 open questio
 
 ---
 
+## 12 — Are the defaults grounded in the corpus? *(founder, 2026-07-31)*
+
+> "Did we pull the default actions and common sizes from the MDA and make it specific to street? Common cbets are different than common check raises or turn probes or river thin value/bluff and stabs (aggressive action from callers to the preflop raise that isn't a donk)."
+
+**No, and no.** Verified by code read.
+
+### 12.1 — The defaults are convention, not measurement
+
+`potCalculator.js:456-459` — four hardcoded arrays, no comment, no citation, no derivation:
+
+```
+DEFAULT_PREFLOP_OPEN   = [2.5, 4, 5, 10]
+DEFAULT_POSTFLOP_BET   = [0.25, 0.5, 0.75, 1.0]
+```
+
+### 12.2 — Postflop is one bucket for everything
+
+`CommandStrip.jsx:509-515` produces exactly **four** sizing contexts, and postflop collapses to two:
+
+```
+preflop  → preflop_open | preflop_raise
+postflop → postflop_bet | postflop_raise
+```
+
+**A flop c-bet, a turn probe and a river bluff all get the same four buttons.** The distinction the founder is drawing does not exist anywhere in the sizing path.
+
+### 12.3 — But the taxonomy already exists, one layer down
+
+`scripts/backtest/mine-sizing-and-lines.py:71-73, 187-203` already classifies every postflop aggressive action into precisely the vocabulary in the question:
+
+```
+flop_cbet   flop_checkraise   flop_donk   flop_checkcall
+turn_barrel   turn_checkraise   turn_probe
+river_barrel  river_checkraise  river_probe
+```
+
+The founder's **"stab"** is the script's **probe** — non-PFA first aggression on turn or river. The script is also right to have no *flop* stab: on the flop a non-PFA first bet **is** a donk, because a stab requires the PFA to have already declined.
+
+**The gap is what the script does with it.** It *counts* lines (for a per-player "has this player ever taken this line" study) and never records the **size**. We built the classifier and throw the number away.
+
+### 12.4 — The delta is about five lines
+
+At the classification point the script already holds `amount` (parsed at :175). What it lacks is a running pot — `committed[]` is zeroed at each street boundary (:146-149) and those chips are discarded rather than accumulated. Carry the pot forward, and every classification point can emit a pot fraction.
+
+### 12.5 — Why this is the cleanest question the corpus can answer
+
+**Sizing is the least-censored quantity in the dataset.** Hand strength is censored brutally — folds are never shown, successful bluffs are never shown — so every strength distribution inherits a correction, and the standing doctrine is to read corpus findings "as shape and bound, not level."
+
+**Sizing is the exception.** Every bet's size is recorded whether or not the hand reached showdown. No censoring correction is needed; the level is directly observed.
+
+### 12.6 — The caveat that limits it
+
+The corpus is **online** play. The founder plays **live $1/$3 9-handed**, and live pools size differently — notably larger preflop opens (live 5–10x vs online 2.5–3x, which is likely why `DEFAULT_PREFLOP_OPEN` already carries a `10`). So the corpus gives a reliable **taxonomy and shape** but the **levels** may be systematically displaced.
+
+**Therefore: corpus as prior, his own recorded hands as the update.** That is the same Bayesian pattern `POKER_THEORY` already mandates for population priors plus per-player updates — and it resolves the hero-vs-villain problem from §3 Option E cleanly: *population prior for villain sizings, the founder's own history for hero sizings, never blended.*
+
+### 12.7 — One category the corpus cannot fully deliver
+
+"River thin value / bluff" **cannot** be split except on shown hands. River bet *sizes* are fully observed; the value-vs-bluff *intent label* needs a showdown. So report the river bet-size distribution unconditionally, and the value/bluff split only with its k/n and censoring direction.
+
+### 12.8 — What this changes for the track
+
+If the cells differ materially, the sizing-context key expands from 4 to ~10 (`street × role`), and **the non-linear track's node values get a grounded prior instead of a convention.** That is the difference between a track whose nodes are where bets actually cluster and one whose nodes are where someone assumed they cluster — and the whole argument for the non-linear track (§8) was that it spends pixels where the density is. **Without this, the design is right but the numbers are guesses.**
+
+If the cells *do not* differ, the current single postflop bucket is defensible and we stop paying for granularity that buys nothing. Both outcomes are cheap and useful.
+
+Filed as `WS-318`.
+
+---
+
 ## Change log
 
 - 2026-07-31 — Created from founder proposal. Physical budget measured; five options; C+E+A recommended.
+- 2026-07-31 — **§12 (founder): are the defaults corpus-derived and street-specific?** No and no — `potCalculator.js:456-459` is hardcoded convention and `CommandStrip.jsx:509-515` collapses all postflop bets into one context, so a flop c-bet, turn probe and river bluff share four buttons. But `mine-sizing-and-lines.py` already classifies every aggressive action into exactly the founder's taxonomy (cbet/checkraise/donk/barrel/probe per street) and merely discards the size. ~5 lines to carry a running pot converts a line counter into a pool sizing distribution. Sizing is the least-censored quantity in the corpus, so this is the cleanest question it can answer — but it is online data for a live game, so corpus = prior, own hands = update. Filed WS-318; without it the non-linear track's node values remain guesses.
 - 2026-07-31 — **§11 prototype defect: interrupted drag** (founder-reported). Four gesture-plumbing bugs: page-scroll stealing the pointer via missing `touch-action`, full DOM rebuild per pointermove, a cancel zone 16px below the track, and — worst — `pointercancel` wired to commit, so a browser-stolen gesture silently recorded a value the user never released on. Three of the four carry directly to production; the `pointerup` ≠ `pointercancel` rule should be a Gate 4 surface-wide constraint since WS-317's card selector has the same exposure. Hold-threshold control added so the 180ms question can be settled by trying it.
 - 2026-07-31 — **§10 amendment 2 (founder): readout units, overbets, all-in.** Tap-commits ratified. Ratio promoted to primary readout over dollars — memory stores ratios, not amounts, so a dollar-led UI invites false precision; current `SizingPresetsPanel` has this backwards (amount 20px vs ratio 11px). Overbets resolved as a fixed trailing tail rather than a mid-drag rescale, preserving node positional stability. All-in specified as a categorical latch past a dead gap, not a point on the magnitude scale — consistent with the existing `allIn: true` flag that the side-pot ledger depends on.
 - 2026-07-31 — **§8 amendment: non-linear equal-spaced track (founder).** Supersedes Option C's track design — 2.3× finer resolution everywhere by not rendering the axis to scale, composes with velocity gain as a separate layer, strengthens rather than weakens positional stability, and resolves one of WS-317's three long-press collisions on merit. §9 interactive prototype published to answer the gain-discontinuity question by feel.

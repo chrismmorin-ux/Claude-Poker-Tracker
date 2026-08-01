@@ -187,6 +187,14 @@ status_note: |
       track does not express; handleAllInSubmit already routes it via callAmount. Probably
       belongs on the Call control, not the sizing track.
 
+  BLOCKED-ON-DATA INPUT: WS-318. The sizing defaults are hardcoded convention
+  (potCalculator.js:456-459) and postflop collapses to ONE context
+  (CommandStrip.jsx:509-515), so a flop c-bet, a turn probe and a river bluff share the
+  same four buttons. WS-318 mines the pool distribution per street x line from the
+  corpus. Until it reports, the non-linear track's NODE VALUES are guesses — and the
+  entire argument for the non-linear track is that it spends pixels where the density
+  actually is. Specify the track's mechanics now; leave the node values parameterised.
+
   CARRIED RISK: R7 timing unmeasured. Treat "the speed problem is postflop entry,
   player entry and legibility" as a stated assumption; validate before Gate 5.
   Project: .claude/projects/table-view-redesign-2026-07-31.md
