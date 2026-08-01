@@ -231,6 +231,34 @@ three graders are modality-independent.
 
 ## Known issues
 
+**[VRN-2] FIXED 2026-08-01 — recording died on finger-lift, capturing only fragments.** Reported
+from live use: *"sometimes it turns on and then off very quickly, even when I don't move my pressed
+finger."* Two independent causes, both producing the same symptom:
+
+1. **Button swap under the held finger.** Reaching the hold threshold started recording, which
+   unmounted the Start button and mounted a separate Stop button *in the same position, under the
+   still-pressed finger*. The pointerup ending the hold dispatched its click onto that new element
+   and stopped the session immediately. Fix: **one button across both states** — same DOM node,
+   state changes only its label — plus suppression of the click emitted by the starting hold's
+   release.
+2. **Restart path silently stranded the session.** Chrome ends continuous recognition on its own
+   after a pause, several times inside one narration. The restart called `start()` again on the
+   instance that had just ended (throws `InvalidStateError`), and the fallback swallowed its own
+   failure and returned — leaving `isRecording` true with no live microphone. Fix: **always build a
+   fresh instance**, treat a failed restart as retryable with backoff, and concede only after
+   repeated failures (delivering the session marked `interrupted` so the words already spoken
+   survive).
+
+**Third defect, found during browser verification of the fix itself and corrected before ship:**
+the first version suppressed the release-click with a one-shot boolean armed at start. That flag is
+consumed by whatever click arrives next — so if the release-click missed the button, it stayed armed
+and silently swallowed the founder's next genuine Stop tap. Replaced with a window anchored to the
+actual `pointerup` that expires on its own, which cannot get stuck and works regardless of hold
+duration. Regression tests pin all three failure modes.
+
+Silence tolerance also raised 20s → 45s: narrating a hand means reading the screen between thoughts,
+and a pause is thinking, not finishing.
+
 **[VRN-1] Touch target renders at 27.1 visual-px on both mounts — pre-existing app-wide condition,
 not introduced by VRN.** Measured 2026-08-01 via Playwright at the reference viewport. The button's
 computed `min-height` **is** 44px and its `offsetHeight` **is** 44 — the style applies correctly.

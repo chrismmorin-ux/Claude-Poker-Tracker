@@ -27,7 +27,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const DEFAULT_MAX_MS = 300000;      // 5 min absolute ceiling — a runaway-mic backstop
-const DEFAULT_SILENCE_MS = 20000;   // generous: thinking pauses are normal mid-hand
+// Raised 20s -> 45s after live use (2026-08-01): narrating a hand means reading
+// the screen between thoughts, and a pause is thinking, not finishing.
+const DEFAULT_SILENCE_MS = 45000;
+const MAX_RESTART_FAILURES = 4;     // consecutive failures before conceding
+const RESTART_BACKOFF_MS = 250;
 
 function getSpeechRecognitionCtor() {
   if (typeof window === 'undefined') return null;
@@ -78,6 +82,12 @@ export function useSpeechCapture({
   const lastSpeechAtRef = useRef(0);
   const silenceTimerRef = useRef(null);
   const maxTimerRef = useRef(null);
+  // Chrome ends continuous recognition on its own after a pause — routinely,
+  // several times inside one narration. Restarting is the normal path, not an
+  // error path, so a single failure must not end the session.
+  const restartFailuresRef = useRef(0);
+  const restartTimerRef = useRef(null);
+  const beginRecognitionRef = useRef(null);
 
   // Keep callbacks in refs so restarting recognition mid-session never closes
   // over a stale context getter.
@@ -99,6 +109,7 @@ export function useSpeechCapture({
   const clearTimers = useCallback(() => {
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
     if (maxTimerRef.current) { clearTimeout(maxTimerRef.current); maxTimerRef.current = null; }
+    if (restartTimerRef.current) { clearTimeout(restartTimerRef.current); restartTimerRef.current = null; }
   }, []);
 
   const detachRecognition = useCallback(() => {
@@ -151,8 +162,11 @@ export function useSpeechCapture({
   // Create + wire a recognition instance. Called on start and on every
   // auto-restart: Chrome ends continuous recognition on its own after a pause,
   // and a 60s narration must survive that without losing the session.
+  // Returns true when a live recognition instance is running. The boolean is
+  // load-bearing: the restart path in `onend` needs to know whether the mic is
+  // actually listening, not merely that a call was made.
   const beginRecognition = useCallback(() => {
-    if (!supported) return;
+    if (!supported) return false;
     detachRecognition();
 
     const rec = new Ctor();
@@ -218,34 +232,49 @@ export function useSpeechCapture({
     };
 
     rec.onend = () => {
-      // Restart if the founder still intends to be recording and we are inside
-      // the ceiling. Otherwise let the session close naturally.
-      if (shouldRecordRef.current && Date.now() - startedAtRef.current < maxMs) {
-        try {
-          rec.start();
-          return;
-        } catch {
-          /* fall through to a fresh instance below */
-        }
-        try {
-          beginRecognition();
-          return;
-        } catch {
-          /* give up and close */
-        }
+      if (!shouldRecordRef.current) return;          // deliberate stop, already handled
+      if (Date.now() - startedAtRef.current >= maxMs) { endSession(false); return; }
+
+      // ALWAYS build a fresh instance. Calling start() again on the instance
+      // that just ended throws InvalidStateError in Chrome — the bug that used
+      // to strand the session with the UI showing "recording" and no live mic.
+      const ok = beginRecognitionRef.current && beginRecognitionRef.current();
+      if (ok) {
+        restartFailuresRef.current = 0;
+        return;
       }
-      if (shouldRecordRef.current) endSession(false);
+
+      // One failed restart is not a dead session — back off briefly and retry.
+      restartFailuresRef.current += 1;
+      if (restartFailuresRef.current >= MAX_RESTART_FAILURES) {
+        endSession(true);
+        return;
+      }
+      restartTimerRef.current = setTimeout(() => {
+        restartTimerRef.current = null;
+        if (shouldRecordRef.current && beginRecognitionRef.current) {
+          beginRecognitionRef.current();
+        }
+      }, RESTART_BACKOFF_MS);
     };
 
     try {
       rec.start();
       recognitionRef.current = rec;
       setError(null);
+      return true;
     } catch (err) {
+      // Reported to the caller so the restart path can decide, rather than
+      // swallowed here.
       setError((err && err.message) || 'start-failed');
       recognitionRef.current = null;
+      return false;
     }
   }, [Ctor, supported, detachRecognition, endSession, maxMs]);
+
+  // Kept in a ref so `onend` always reaches the current instance-builder rather
+  // than one captured when the session began.
+  useEffect(() => { beginRecognitionRef.current = beginRecognition; }, [beginRecognition]);
 
   /** Begin a session. Deliberate activation is the caller's responsibility (E-4). */
   const start = useCallback(() => {
@@ -257,6 +286,7 @@ export function useSpeechCapture({
     segmentsRef.current = [];
     setSegmentCount(0);
     setError(null);
+    restartFailuresRef.current = 0;
     shouldRecordRef.current = true;
     startedAtRef.current = Date.now();
     lastSpeechAtRef.current = Date.now();

@@ -29,6 +29,10 @@ import { useVoiceReasoningNote } from '../../hooks/useVoiceReasoningNote';
 import { fullTranscript } from '../../utils/voiceReasoning/noteSession';
 
 const HOLD_TO_START_MS = 400;
+// Covers only the click emitted by the release of the starting hold. Long enough
+// for the browser's pointerup -> click gap, short enough that a deliberate Stop
+// tap a moment later is always honoured.
+const RELEASE_CLICK_GRACE_MS = 400;
 
 const formatClock = (ms) => {
   if (!Number.isFinite(ms) || ms <= 0) return '';
@@ -136,6 +140,17 @@ export const VoiceNarrationSection = ({
   const startedAtRef = useRef(0);
   const [elapsed, setElapsed] = useState(0);
   const tickRef = useRef(null);
+  // The pointerup that ENDS the starting hold produces a click on the same
+  // button, which would stop the recording the instant the finger lifts.
+  //
+  // Suppression is TIME-ANCHORED TO THE RELEASE, not a one-shot boolean. A
+  // boolean flag armed at start is consumed by whatever click arrives next — and
+  // if the release-click misses the button (finger drifted, pointer capture
+  // quirk), the flag stays armed and silently swallows the founder's next
+  // genuine Stop tap. A window that opens on pointerup and expires on its own
+  // cannot get stuck, and works no matter how long the hold lasted.
+  const startHoldPendingReleaseRef = useRef(false);
+  const suppressClickUntilRef = useRef(0);
 
   const beginTicking = useCallback(() => {
     startedAtRef.current = Date.now();
@@ -151,12 +166,15 @@ export const VoiceNarrationSection = ({
     setElapsed(0);
   }, []);
 
-  // Hold-to-start (E-4). Releasing before the threshold is a no-op — no mic.
+  // Hold-to-start (Gate 2 E-4). Releasing before the threshold is a no-op — no mic.
   const handlePointerDown = useCallback(() => {
     if (isRecording) return;
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     holdTimerRef.current = setTimeout(() => {
       holdTimerRef.current = null;
+      // Recording begins with the finger still down. Mark that a release is
+      // still owed, so we know to absorb the click it generates.
+      startHoldPendingReleaseRef.current = true;
       beginTicking();
       start();
     }, HOLD_TO_START_MS);
@@ -167,12 +185,29 @@ export const VoiceNarrationSection = ({
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
     }
+    if (startHoldPendingReleaseRef.current) {
+      startHoldPendingReleaseRef.current = false;
+      // Open a brief window covering only the click this release emits. It
+      // expires on its own, so a missed click cannot leave suppression armed.
+      suppressClickUntilRef.current = Date.now() + RELEASE_CLICK_GRACE_MS;
+    }
   }, []);
 
-  const handleStop = useCallback(() => {
-    stop();
-    stopTicking();
-  }, [stop, stopTicking]);
+  // ONE button, one handler. Recording must survive the release of the hold that
+  // started it — that release is not a stop instruction, and treating it as one
+  // ended sessions the moment the finger lifted.
+  const handleClick = useCallback(() => {
+    if (Date.now() < suppressClickUntilRef.current) {
+      suppressClickUntilRef.current = 0;
+      return;
+    }
+    if (isRecording) {
+      stop();
+      stopTicking();
+    }
+    // Not recording + a bare click = deliberately nothing. Starting requires a
+    // hold, so an accidental tap can never open a hot mic.
+  }, [isRecording, stop, stopTicking]);
 
   React.useEffect(() => {
     // The session can end on its own (silence ceiling, tab hidden). Keep the
@@ -196,34 +231,30 @@ export const VoiceNarrationSection = ({
       className="shrink-0 bg-gray-800/40 rounded-lg px-3 py-2 border border-gray-700/50 flex flex-col gap-1"
     >
       <div className="flex items-center gap-2">
-        {!isRecording ? (
-          <button
-            type="button"
-            onPointerDown={handlePointerDown}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            disabled={micBlocked}
-            className={`px-3 py-2 rounded text-xs font-semibold min-h-[44px] ${
-              micBlocked
-                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+        {/* ONE button across both states. Swapping in a separate Stop control
+            put a fresh element under the still-pressed finger, and the release
+            of the starting hold clicked it — recording died on finger-lift.
+            Same element, same position, state changes only its label. */}
+        <button
+          type="button"
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onClick={handleClick}
+          disabled={micBlocked}
+          className={`px-3 py-2 rounded text-xs font-semibold min-h-[44px] ${
+            micBlocked
+              ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+              : isRecording
+                ? 'bg-red-700 text-white hover:bg-red-600'
                 : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-            }`}
-            data-testid="vrn-start-button"
-            title="Hold to start recording"
-          >
-            &#127908; Talk through this hand
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleStop}
-            className="px-3 py-2 rounded text-xs font-semibold min-h-[44px] bg-red-700 text-white hover:bg-red-600"
-            data-testid="vrn-stop-button"
-          >
-            &#9632; Stop
-          </button>
-        )}
+          }`}
+          data-testid={isRecording ? 'vrn-stop-button' : 'vrn-start-button'}
+          title={isRecording ? 'Tap to stop recording' : 'Hold to start recording'}
+        >
+          {isRecording ? '■ Stop' : '🎤 Talk through this hand'}
+        </button>
 
         {isRecording && (
           <span className="flex items-center gap-1 text-[11px] text-red-400" data-testid="vrn-recording-indicator">
