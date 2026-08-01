@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785560505395-f85f6592e5f8"
-generated_content_hash: "17ab7bdcb7ff1246abc42dcb71f6c3d06a823a6af7450b4e09783bd003b2231d"
-generated_at: "2026-08-01T05:01:45.465Z"
+generated_from_event: "ev-1785561329760-e9c36a32f3ea"
+generated_content_hash: "6c3bfe2b19a01cc96b1e9e7444b8c8dd8448246e98e82d4e5a4a19b26ce5fc46"
+generated_at: "2026-08-01T05:15:29.927Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1182
+event_count: 1183
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 745
-- Events recorded: 1182
+- Commands recorded: 746
+- Events recorded: 1183
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -7904,3 +7904,13 @@ path, not direct markdown edits.
 | 3 | 2026-08-01T05:01:45.284Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
 | 4 | 2026-08-01T05:01:45.319Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
 | 5 | 2026-08-01T05:01:45.395Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemcreated-ms9x43mh50e1cb1cb7aa`
+
+- Start: 2026-08-01T05:15:29.760Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:15:29.760Z | T6:workstream | /decide | item_id="WS-323", program="domain-correctness", +4 more |

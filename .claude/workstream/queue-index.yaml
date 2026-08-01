@@ -2,7 +2,7 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 198
+total_items: 199
 by_status:
   decomposed: 1
   done: 79
@@ -12,7 +12,7 @@ by_status:
   dismissed: 1
   completed: 7
   review: 1
-  blocked: 10
+  blocked: 11
 
 by_category:
   architecture: 1
@@ -1921,3 +1921,13 @@ items:
     program: design
     capability: core
 
+
+  - id: "WS-323"
+    title: "North star — strategy explorer: manipulate frequencies, watch convergence, find emergent strategies from player-type combinations"
+    status: blocked
+    priority_score: 20
+    category: domain-correctness
+    effort: XL
+    blocked_by: ["SYNTHESIS gap 1 — recommendation quality unmeasured", "SYNTHESIS gap 2 — EV loop open", "SYNTHESIS gap 3 — zero live hands scored"]
+    program: domain-correctness
+    capability: core

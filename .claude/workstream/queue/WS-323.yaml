@@ -1,0 +1,120 @@
+id: "WS-323"
+title: "North star — strategy explorer: manipulate frequencies, watch convergence, find emergent strategies from player-type combinations"
+legacy_id: ""
+type: charter
+status: blocked
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER STATEMENT OF DIRECTION, 2026-08-01:
+  "we need to really be able to manipulate things and see how frequencies converge and
+  player type combustible combinations might create whole new strategies."
+
+  Filed as a NORTH STAR so the target does not evaporate into the backlog. It is
+  BLOCKED, and the block is real rather than procedural — see the prerequisite.
+
+  WHAT IS BEING ASKED FOR. Not a better model of one villain. A space you can move
+  around in: set frequencies, run them forward, see where they settle, and — the novel
+  part — see what happens when archetype A sits next to archetype B. The claim embedded
+  in "combustible combinations" is that TYPE INTERACTION produces strategies that
+  neither type's individual model predicts. If true, that is genuinely undescribed
+  poker. Nothing in this repo can currently test it.
+
+  WHAT EXISTS TOWARD IT
+    - archetypes: cluster-player-types.py, latent-class-behaviors.py,
+      docs/research/player-archetypes-empirical-2026-07-26.md
+    - policies for backtesting: heroPolicy.mjs, behaviorPolicy.mjs, mine-behavior-policy
+    - a game tree: gameTreeDepth2, computeCallDepth2EV
+    - pool reference: mine-pool-reference.py
+
+  WHAT DOES NOT EXIST
+    - any simulator that RUNS FORWARD from chosen frequencies. The policy code replays
+      the corpus; it explores history, not a strategy space.
+    - any model of TABLE COMPOSITION. Every villain is modelled independently. Nothing
+      represents "a maniac two seats to my left changes what the nit in between should
+      do" — which is precisely the combustible-combination claim.
+    - any convergence machinery. No fixed-point iteration, no best-response loop, no
+      notion of "these frequencies settled".
+
+  THE PREREQUISITE, AND WHY IT IS NOT CAUTION
+  docs/research/SYNTHESIS-2026-07-26.md, in its own words:
+
+      "1. Hero's side. We never measured whether the ADVICE is good. ... A perfectly
+       calibrated villain model behind a broken game tree still loses money. WE HAVE NO
+       MEASUREMENT OF RECOMMENDATION QUALITY AT ALL."
+      "2. Money. The loop to EV is still open. The bb/100 bridge was withdrawn as
+       unreliable ... Everything is currently ranked by intuition."
+      "3. Live data. Zero hands scored. predictionAudit ... has never run on a real
+       session."
+
+  A strategy explorer sitting on that produces fast, well-connected, beautifully
+  visualised convergence onto WHATEVER THE UNVALIDATED EV FUNCTION HAPPENS TO REWARD —
+  and nothing in the output distinguishes that from a real discovery. It would
+  manufacture confidence, which is worse than manufacturing nothing. This is intention
+  principle P2 (trusted before manipulated) in its concrete form.
+
+  A SECOND, INDEPENDENT WALL WORTH KNOWING EARLY. The empirical route to
+  "combustible combinations" is probably closed. Finding 14: exactly one player in
+  59,700 has 30+ shown flop check-raises. Single-player behaviour is already
+  data-starved; PAIRWISE type interaction is quadratically worse. So the discovery
+  route is almost certainly SIMULATION, not mining — which routes straight back through
+  the trusted-math prerequisite. Both roads go through the same gate.
+accept_criteria: |
+  THIS ITEM DOES NOT EXECUTE. It is the target that other work is measured against, and
+  it decomposes into a charter once unblocked.
+
+  UNBLOCK CONDITIONS — all three, and they are the SYNTHESIS gaps 1-3:
+    1. Recommendation quality is MEASURED. Some instrument answers "is the advice
+       good?" with a number and a confidence. (hero-ev work, docs/research/hero-ev-2026-07-28.md,
+       is the start of this.)
+    2. The EV loop is CLOSED — a defensible bridge from model output to money, so
+       competing directions can be ranked by value rather than intuition.
+    3. NON-ZERO LIVE HANDS SCORED. Everything to date is 2009 online with a 17-year
+       gap; the whole basis could be inapplicable to a live 1/3 game and there is
+       currently no way to detect that.
+
+  WHEN UNBLOCKED, the charter must decide:
+    - forward simulation vs best-response iteration vs both
+    - what "convergence" means here, and whether an equilibrium concept is even the
+      right frame for an EXPLOITATIVE product (the app's whole premise is deviating
+      from equilibrium against a specific pool — converging to equilibrium may be the
+      wrong target and this needs stating before anything is built)
+    - how table composition is represented, and whether interaction effects are modelled
+      or emergent
+    - the falsification test: what result would tell us combustible combinations are
+      NOT real? Without that this becomes unfalsifiable and generates strategies
+      forever, all of them plausible.
+effort: "XL"
+files_involved:
+  - "docs/research/"
+  - "src/utils/exploitEngine/"
+  - "scripts/backtest/"
+blocked_by:
+  - "SYNTHESIS gap 1 — recommendation quality unmeasured"
+  - "SYNTHESIS gap 2 — EV loop open"
+  - "SYNTHESIS gap 3 — zero live hands scored"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "CONVERGENCE TO WHAT? This is the load-bearing conceptual question and it should be answered before any code. The product is EXPLOITATIVE — it exists to deviate from equilibrium against a specific pool. A convergence machine that finds equilibria may be solving the wrong problem elegantly. The interesting target is more likely 'best response to a MIXTURE of types' than 'equilibrium'."
+  - "Do not let this item justify work that skips its own prerequisite. If it starts pulling implementation forward before recommendation quality is measured, that is the failure mode it was filed to prevent."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-08-01T00:00:00Z"
+status_note: |
+  Filed 2026-08-01 from a founder statement of direction, alongside intention.md
+  principles P1-P4. Gap analysis is quoted from the repo's own
+  docs/research/SYNTHESIS-2026-07-26.md, not asserted independently.
