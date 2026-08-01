@@ -3,8 +3,8 @@ title: "Villain's fold decision is priced on villain's equity against hero's ACT
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: null
-claimed_at: null
+claimed_by: ses-20260801-0138-2cbeb290
+claimed_at: "2026-08-01T01:58:48.899Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -130,6 +130,61 @@ description: |
   CLAUDE.md (WS-307 converted the first, Scenario 3). It is deliberately NOT converted
   to an assertion yet because it would fail until this item lands; converting it is an
   accept criterion below.
+
+  ── IMPLEMENTATION STATUS (SPR-162, session 1 of ~3) ─────────────────────────
+
+  MECHANISM BUILT AND PROVEN, SHIPPED DARK. Flag `RANGE_CONDITIONED_VILLAIN_DECISIONS`
+  in engineFlags.js, default OFF, overridable per call so the delta harness can score
+  both arms in one process. Flag-off is a verified no-op (2648 exploitEngine tests
+  unchanged).
+
+  Invariance restored — villain range and board identical, only hero's cards changing:
+      OFF: 0.050 / 0.628 / 0.867  = 17.3x swing   (the defect)
+      ON:  0.379 / 0.352 / 0.482  =  1.4x swing   (card removal only)
+  Hero's own equity still computed from hero's real cards (0.053 / 0.584 / 0.714), so
+  the rule holds: hero's EV math sees hero's hand, villain's decision model does not.
+
+  The ON level lands between the two known-wrong anchors (0.4291 range-blind, 0.0500
+  clairvoyant) and is DERIVED, not tuned. Pinned by heroPerceivedRange.test.js (7 tests),
+  which drives the flag explicitly so it keeps testing intent after the default flips.
+
+  ── TWO THINGS FOUND DURING IMPLEMENTATION, BOTH STILL OPEN ──────────────────
+
+  1. PER-ACTION NARROWING IS REQUIRED FOR CORRECTNESS, and is not yet wired.
+     Hero's range must be narrowed by the action being EVALUATED. Measured:
+        hero range unnarrowed (open):       fold 0.093
+        hero range narrowed by 'raise':     fold 0.379
+     Both are "invariant" and only the second is right — villain folds to a RAISING
+     range, not to hero's whole opening range. So `foldPct.bet` and `foldPct.raise`
+     need different hero range samples, which today's single per-context sample cannot
+     express. Naively building both doubles an already-blocked cost (see 2).
+
+  2. PERF EXCEEDS BUDGET AND BLOCKS THE DEFAULT FLIP. Measured, 5-run average:
+        villain range          OFF        ON
+        tight (49 combos)      31 ms      506 ms
+        full range            377 ms    4653 ms
+     Budget is 150 ms for the WHOLE evaluation (gameTreeEvaluator timeBudgetMs). ON is
+     3.4x over on a tight range and 31x over on a full one. Note OFF is already over
+     budget at full width (377 ms) — consistent with WS-301, which measures the same
+     engine at 8.5 s for one depth-2 call.
+
+     Cause is structural, not incidental: cost is K samples x villain combos rollouts,
+     so it scales with villain range width. Lowering K trades accuracy linearly and does
+     not fix the scaling.
+
+     PROPOSED FIX, NOT YET IMPLEMENTED — stratify by villain hand strength instead of
+     per combo. Equity-vs-hero-range is a smooth function of board-relative strength, so
+     compute it once per strength stratum (~10-20 strata) and assign combos by lookup.
+     Cost becomes K x strata, INDEPENDENT of villain range width. The machinery already
+     exists: `comboStrengthPercentile` and `computeBoardStrengthTable` are both already
+     computed in this path. Needs a stated approximation error, measured against the
+     per-combo result, before it can be trusted.
+
+  DEPTH-2 NOT YET ROUTED. `comboActionProbabilities` accepts the new `villainDecisionEq`
+  parameter and falls back cleanly, but gameTreeDepth2's own per-combo loop still computes
+  its equity against hero's exact cards on the next-street board. Deliberately left until
+  the perf shape above is settled — depth-2 is the hot loop and is already the subject of
+  WS-301.
 
 accept_criteria: |
   - Villain's fold/call/raise decision is priced against hero's PERCEIVED range, not
