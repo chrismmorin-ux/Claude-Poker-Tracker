@@ -34,23 +34,17 @@
     font-family: var(--sans);
     -webkit-font-smoothing: antialiased;
     line-height: 1.5;
+    overscroll-behavior: contain;
   }
 
   .wrap {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 26px 18px 60px;
-    display: flex;
-    flex-direction: column;
-    gap: 26px;
+    max-width: 1000px; margin: 0 auto; padding: 26px 18px 60px;
+    display: flex; flex-direction: column; gap: 26px;
   }
 
   header h1 {
-    font-size: clamp(21px, 4.4vw, 30px);
-    margin: 0 0 6px;
-    letter-spacing: -0.015em;
-    text-wrap: balance;
-    font-weight: 650;
+    font-size: clamp(21px, 4.4vw, 30px); margin: 0 0 6px;
+    letter-spacing: -0.015em; text-wrap: balance; font-weight: 650;
   }
   header p { margin: 0; color: var(--ink-dim); font-size: 14.5px; max-width: 64ch; }
   .eyebrow {
@@ -60,14 +54,17 @@
 
   .stage { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
 
-  /* --- true-size command column ------------------------------------ */
+  /* The whole column opts out of browser gesture handling. Without this a drag
+     with any vertical component is claimed by the page scroller, which fires
+     pointercancel and kills the interaction mid-gesture. */
   .column {
     width: 313px; flex: 0 0 313px;
-    background: var(--panel);
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-    padding: 13px 11px 15px;
+    background: var(--panel); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 13px 11px 15px;
     display: flex; flex-direction: column; gap: 11px;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
   }
   .column-tag {
     font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
@@ -75,12 +72,9 @@
     font-family: var(--mono);
   }
 
-  /* --- dual readout: amount + memory-native ratio ------------------- */
   .readout {
-    background: var(--panel-2);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 9px 12px 10px;
+    background: var(--panel-2); border: 1px solid var(--rule);
+    border-radius: 8px; padding: 9px 12px 10px;
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     transition: border-color .12s, background .12s;
   }
@@ -109,26 +103,25 @@
   .readout.is-allin .r-ratio { color: var(--danger); font-size: 23px; }
   .readout.is-cancel .r-ratio { color: var(--danger); }
 
-  /* --- track -------------------------------------------------------- */
+  /* Generous vertical padding: the grab area extends well above and below the
+     visible rail so a finger drifting off-axis never leaves the control. */
   .track-host {
-    position: relative; height: 92px;
+    position: relative; height: 116px;
     touch-action: none; user-select: none; -webkit-user-select: none;
     cursor: pointer;
   }
   .track-rail {
-    position: absolute; left: 0; top: 46px; height: 6px;
+    position: absolute; left: 0; top: 58px; height: 6px;
     border-radius: 3px; background: linear-gradient(90deg,#232830,#2f3540);
     border: 1px solid var(--rule);
   }
   .track-over {
-    position: absolute; top: 46px; height: 6px;
-    border-radius: 3px;
+    position: absolute; top: 58px; height: 6px; border-radius: 3px;
     background: repeating-linear-gradient(90deg,#3a2a40 0 5px,#2b2130 5px 10px);
     border: 1px solid #4a3552;
   }
   .track-allin {
-    position: absolute; top: 40px; height: 18px;
-    border-radius: 4px;
+    position: absolute; top: 52px; height: 18px; border-radius: 4px;
     background: #3a1f22; border: 1px solid #7d3034;
     display: flex; align-items: center; justify-content: center;
     font-size: 9px; font-family: var(--mono); letter-spacing: .06em;
@@ -136,32 +129,31 @@
   }
   .track-allin.is-latched { background: var(--danger); color: #fff; border-color: #ff8286; }
   .track-fill {
-    position: absolute; left: 0; top: 46px; height: 6px;
-    border-radius: 3px;
+    position: absolute; left: 0; top: 58px; height: 6px; border-radius: 3px;
     background: linear-gradient(90deg,var(--gold-dim),var(--gold));
     pointer-events: none;
   }
   .node {
-    position: absolute; top: 36px;
+    position: absolute; top: 48px; left: 0;
     width: 24px; height: 24px; margin-left: -12px;
     border-radius: 50%; background: var(--panel-2);
     border: 2px solid var(--rule); pointer-events: none;
-    transition: transform .12s, border-color .12s, background .12s;
+    transition: transform .1s, border-color .1s, background .1s;
   }
   .node.is-near { border-color: var(--gold); background: #2c2721; transform: scale(1.14); }
   .node.is-predominant { box-shadow: 0 0 0 3px rgba(212,168,71,.16); border-color: var(--gold); }
   .node-label {
-    position: absolute; top: 6px; transform: translateX(-50%);
+    position: absolute; top: 18px; left: 0; transform: translateX(-50%);
     font-size: 11px; font-family: var(--mono); color: var(--ink-dim);
     pointer-events: none; white-space: nowrap; font-weight: 600;
   }
   .node-amt {
-    position: absolute; top: 66px; transform: translateX(-50%);
+    position: absolute; top: 78px; left: 0; transform: translateX(-50%);
     font-size: 10px; font-family: var(--mono); font-variant-numeric: tabular-nums;
     color: var(--ink-faint); pointer-events: none; white-space: nowrap;
   }
   .thumb {
-    position: absolute; top: 32px;
+    position: absolute; top: 44px; left: 0;
     width: 32px; height: 32px; margin-left: -16px;
     border-radius: 50%; background: var(--gold); border: 2px solid #f2d99a;
     box-shadow: 0 2px 10px rgba(0,0,0,.55);
@@ -176,14 +168,15 @@
     min-height: 1.4em; font-family: var(--mono);
   }
   .cancel-zone {
-    border: 1px dashed var(--rule); border-radius: 8px; padding: 6px;
+    border: 1px dashed var(--rule); border-radius: 8px; padding: 8px;
     text-align: center; font-size: 10.5px; letter-spacing: .07em;
     text-transform: uppercase; color: var(--ink-faint);
-    transition: border-color .12s, color .12s;
+    transition: border-color .12s, color .12s, background .12s;
   }
-  .cancel-zone.is-hot { border-color: var(--danger); color: var(--danger); }
+  .cancel-zone.is-hot {
+    border-color: var(--danger); color: var(--danger); background: #26191a;
+  }
 
-  /* --- side ---------------------------------------------------------- */
   .side { flex: 1 1 350px; min-width: 300px; display: flex; flex-direction: column; gap: 16px; }
   .card {
     background: var(--panel); border: 1px solid var(--rule);
@@ -239,7 +232,7 @@
   #log li.via-tap    { border-left-color: var(--commit); }
   #log li.via-refine { border-left-color: var(--gold); }
   #log li.via-allin  { border-left-color: var(--danger); }
-  #log li.via-cancel { border-left-color: var(--rule); color: var(--ink-faint); }
+  #log li.via-cancel, #log li.via-interrupted { border-left-color: var(--rule); color: var(--ink-faint); }
   #log .via { color: var(--ink-faint); font-size: 11px; }
   .empty { color: var(--ink-faint); font-size: 12px; font-style: italic; }
 
@@ -258,19 +251,19 @@
 <div class="wrap">
 
   <header>
-    <p class="eyebrow">Table View Redesign · interaction prototype v2</p>
+    <p class="eyebrow">Table View Redesign · interaction prototype v3</p>
     <h1>Non-linear bet track</h1>
     <p>
       Column rendered at its true <strong>313 × 500</strong> device size. <strong>Tap a node
-      to commit.</strong> Press and hold to refine, then drag — slower is finer. Lift early
-      and it commits the nearest node. Past the top node is the overbet tail; the far end
-      latches to all-in.
+      to commit.</strong> Press and hold, then drag — slower is finer. Lift early and it
+      commits the nearest node. Past the top node is the overbet tail; the far end latches
+      to all-in. Drag well below the track to cancel.
     </p>
   </header>
 
   <div class="stage">
 
-    <div class="column">
+    <div class="column" id="column">
       <div class="column-tag"><span>COMMAND COLUMN</span><span>313 × 500</span></div>
 
       <div class="readout" id="readout">
@@ -291,7 +284,7 @@
       </div>
 
       <div class="hint" id="hint">tap · or hold to refine</div>
-      <div class="cancel-zone" id="cancelzone">drag down to cancel</div>
+      <div class="cancel-zone" id="cancelzone">drag down here to cancel</div>
     </div>
 
     <div class="side">
@@ -327,6 +320,12 @@
           <button class="opt" data-gain="on"  aria-pressed="true">velocity</button>
           <button class="opt" data-gain="off" aria-pressed="false">fixed</button>
         </div>
+        <div class="seg" id="holdseg">
+          <span>hold</span>
+          <button class="opt" data-hold="0"   aria-pressed="false">instant</button>
+          <button class="opt" data-hold="180" aria-pressed="true">180 ms</button>
+          <button class="opt" data-hold="320" aria-pressed="false">320 ms</button>
+        </div>
       </div>
 
       <div class="card">
@@ -338,6 +337,7 @@
             <tr><td class="lbl">Coarse resolution</td><td id="m-coarse">—</td></tr>
             <tr><td class="lbl">At 5px finger precision</td><td id="m-finger">—</td></tr>
             <tr><td class="lbl">Fine (slow drag)</td><td id="m-fine">—</td></tr>
+            <tr><td class="lbl">Gesture interruptions</td><td id="m-interrupt">0</td></tr>
           </tbody>
         </table>
       </div>
@@ -353,18 +353,19 @@
   <footer>
     <p>
       <strong>Ratio is primary, dollars secondary.</strong> You remember a villain's bet as
-      "about two-thirds pot", not as $68 — so the unit you match against is the one shown
-      largest. It switches per spot: % of pot postflop, × bb for a preflop open, × the last
-      raise for a 3-bet.
+      "about two-thirds pot", not as $68 — so the unit you match against is shown largest.
+      It switches per spot: % of pot postflop, × bb for a preflop open, × the last raise
+      for a 3-bet.
     </p>
     <p>
-      <strong>All-in is a latch, not a slider position.</strong> It is a categorical action —
-      that seat has no further decisions, though the hand continues for everyone else — so it
-      sits past a gap at the end rather than being the largest number on a continuum.
+      <strong>All-in is a latch, not a slider position.</strong> It is categorical — that
+      seat has no further decisions, though the hand continues for everyone else — so it
+      sits past a gap rather than being the largest number on a continuum.
     </p>
     <p>
-      Switch <code>track</code> to <em>to scale</em> at a <code>$2000</code> pot to feel what
-      the warping buys. Nothing here writes to the app.
+      <strong>An interrupted gesture records nothing.</strong> If the browser or OS steals
+      the pointer mid-drag it is logged as interrupted, never committed. The counter above
+      tracks how often that happens.
     </p>
   </footer>
 
@@ -374,13 +375,10 @@
 (function () {
   'use strict';
 
-  var HOLD_MS = 180, MOVE_TOL = 8, CANCEL_DY = 62;
+  var MOVE_TOL = 8;
+  var CANCEL_BELOW = 92;   // px below the track host before cancel arms
 
-  // track geometry as fractions of full width
-  var NODE_BAND = 0.66;   // 0 .. 0.66  = the four equally spaced nodes
-  var OVER_BAND = 0.88;   // 0.66 .. 0.88 = overbet tail
-  var GAP       = 0.90;   // 0.88 .. 0.90 = deliberate dead gap
-                          // 0.90 .. 1.00 = all-in latch
+  var NODE_BAND = 0.66, OVER_BAND = 0.88, GAP = 0.90;
 
   var CONTEXTS = {
     postflop: {
@@ -390,11 +388,9 @@
         { label: '75%', frac: 0.75 },
         { label: 'pot', frac: 1.00 }
       ],
-      overTop: 2.0,
-      linearMin: 0.25, linearMax: 2.0,
+      overTop: 2.0, linearMin: 0.25, linearMax: 2.0,
       base: function (s) { return s.pot; },
-      ratio: function (f) { return Math.round(f * 100) + '% pot'; },
-      unitShort: 'pot'
+      ratio: function (f) { return Math.round(f * 100) + '% pot'; }
     },
     preflop: {
       nodes: [
@@ -403,11 +399,9 @@
         { label: '4x',   frac: 4 },
         { label: '5x',   frac: 5 }
       ],
-      overTop: 12,
-      linearMin: 2, linearMax: 12,
-      base: function () { return 3; },              // $3 bb
-      ratio: function (f) { return (Math.round(f * 10) / 10) + '× bb'; },
-      unitShort: 'bb'
+      overTop: 12, linearMin: 2, linearMax: 12,
+      base: function () { return 3; },
+      ratio: function (f) { return (Math.round(f * 10) / 10) + '× bb'; }
     },
     threebet: {
       nodes: [
@@ -416,26 +410,22 @@
         { label: '3.5x', frac: 3.5 },
         { label: '4x',   frac: 4 }
       ],
-      overTop: 8,
-      linearMin: 2, linearMax: 8,
-      base: function () { return 12; },             // $12 open
-      ratio: function (f) { return (Math.round(f * 10) / 10) + '× raise'; },
-      unitShort: 'raise'
+      overTop: 8, linearMin: 2, linearMax: 8,
+      base: function () { return 12; },
+      ratio: function (f) { return (Math.round(f * 10) / 10) + '× raise'; }
     }
   };
 
   var state = {
     ctx: 'postflop', pot: 100, stackMult: 3,
-    mode: 'nonlinear', gain: 'on',
-    value: 50, armedIndex: 1, phase: 'idle', allin: false
+    mode: 'nonlinear', gain: 'on', holdMs: 180,
+    value: 50, armedIndex: 1, phase: 'idle', allin: false, interrupts: 0
   };
 
   var el = {};
   ['track','nodes','fill','thumb','ratio','amount','vlabel','readout','hint',
-   'cancelzone','log','rail','over','allin'].forEach(function (k) {
-    el[k] = document.getElementById(k === 'cancelzone' ? 'cancelzone' : k);
-  });
-  ['m-travel','m-range','m-coarse','m-finger','m-fine'].forEach(function (k) {
+   'cancelzone','log','rail','over','allin','column',
+   'm-travel','m-range','m-coarse','m-finger','m-fine','m-interrupt'].forEach(function (k) {
     el[k] = document.getElementById(k);
   });
 
@@ -443,90 +433,86 @@
   function base() { return cfg().base(state); }
   function effStack() { return state.pot * state.stackMult; }
   function nodeValue(n) { return n.frac * base(); }
-
   function money(v) {
     var r = v >= 100 ? Math.round(v) : Math.round(v * 10) / 10;
     return '$' + r.toLocaleString('en-US');
   }
 
-  function W() { return el.track.getBoundingClientRect().width; }
-  function nodeBandW() { return W() * (state.mode === 'linear' ? 1 : NODE_BAND); }
+  var geo = { w: 0, bandW: 0, pos: [] };
 
-  function nodePositions() {
-    var c = cfg(), n = c.nodes.length, out = [], i;
+  function measure() {
+    geo.w = el.track.getBoundingClientRect().width;
+    geo.bandW = geo.w * (state.mode === 'linear' ? 1 : NODE_BAND);
+    var c = cfg(), n = c.nodes.length, i;
+    geo.pos = [];
     if (state.mode === 'nonlinear') {
-      var bw = nodeBandW();
-      for (i = 0; i < n; i++) out.push(n === 1 ? bw / 2 : (i / (n - 1)) * bw);
+      for (i = 0; i < n; i++) geo.pos.push(n === 1 ? geo.bandW / 2 : (i / (n - 1)) * geo.bandW);
     } else {
       for (i = 0; i < n; i++) {
         var t = (c.nodes[i].frac - c.linearMin) / (c.linearMax - c.linearMin);
-        out.push(Math.max(0, Math.min(1, t)) * W());
+        geo.pos.push(Math.max(0, Math.min(1, t)) * geo.w);
       }
     }
-    return out;
   }
 
-  function inAllIn(x) { return state.mode === 'nonlinear' && x >= GAP * W(); }
+  function inAllIn(x) { return state.mode === 'nonlinear' && x >= GAP * geo.w; }
 
   function posToValue(x) {
-    var c = cfg(), b = base(), w = W();
-    x = Math.max(0, Math.min(w, x));
-    if (state.mode === 'linear') {
-      return (c.linearMin + (x / w) * (c.linearMax - c.linearMin)) * b;
-    }
-    var pos = nodePositions(), bw = nodeBandW();
-    if (x <= bw) {
-      for (var i = 0; i < pos.length - 1; i++) {
-        if (x <= pos[i + 1]) {
-          var span = pos[i + 1] - pos[i] || 1;
-          var f = (x - pos[i]) / span;
+    var c = cfg(), b = base();
+    x = Math.max(0, Math.min(geo.w, x));
+    if (state.mode === 'linear') return (c.linearMin + (x / geo.w) * (c.linearMax - c.linearMin)) * b;
+    if (x <= geo.bandW) {
+      for (var i = 0; i < geo.pos.length - 1; i++) {
+        if (x <= geo.pos[i + 1]) {
+          var span = geo.pos[i + 1] - geo.pos[i] || 1;
+          var f = (x - geo.pos[i]) / span;
           return (c.nodes[i].frac + f * (c.nodes[i + 1].frac - c.nodes[i].frac)) * b;
         }
       }
-      return c.nodes[pos.length - 1].frac * b;
+      return c.nodes[geo.pos.length - 1].frac * b;
     }
-    // overbet tail: top node -> overTop across the over band
     var top = c.nodes[c.nodes.length - 1].frac;
-    var ow = (OVER_BAND - NODE_BAND) * w || 1;
-    var of_ = Math.min(1, (x - bw) / ow);
-    return (top + of_ * (c.overTop - top)) * b;
+    var ow = (OVER_BAND - NODE_BAND) * geo.w || 1;
+    return (top + Math.min(1, (x - geo.bandW) / ow) * (c.overTop - top)) * b;
   }
 
   function valueToPos(v) {
-    var c = cfg(), b = base(), w = W(), frac = v / b;
+    var c = cfg(), b = base(), frac = v / b;
     if (state.mode === 'linear') {
       var t = (frac - c.linearMin) / (c.linearMax - c.linearMin);
-      return Math.max(0, Math.min(1, t)) * w;
+      return Math.max(0, Math.min(1, t)) * geo.w;
     }
-    var pos = nodePositions(), bw = nodeBandW();
     var top = c.nodes[c.nodes.length - 1].frac;
-    if (frac <= c.nodes[0].frac) return pos[0];
+    if (frac <= c.nodes[0].frac) return geo.pos[0];
     if (frac <= top) {
       for (var i = 0; i < c.nodes.length - 1; i++) {
         if (frac <= c.nodes[i + 1].frac) {
           var d = c.nodes[i + 1].frac - c.nodes[i].frac || 1;
           var f = (frac - c.nodes[i].frac) / d;
-          return pos[i] + f * (pos[i + 1] - pos[i]);
+          return geo.pos[i] + f * (geo.pos[i + 1] - geo.pos[i]);
         }
       }
     }
-    var ow = (OVER_BAND - NODE_BAND) * w;
-    var g = Math.min(1, (frac - top) / ((c.overTop - top) || 1));
-    return bw + g * ow;
+    var ow = (OVER_BAND - NODE_BAND) * geo.w;
+    return geo.bandW + Math.min(1, (frac - top) / ((c.overTop - top) || 1)) * ow;
   }
 
   function nearestNode(x) {
-    var pos = nodePositions(), best = 0, bd = Infinity;
-    for (var i = 0; i < pos.length; i++) {
-      var d = Math.abs(pos[i] - x);
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < geo.pos.length; i++) {
+      var d = Math.abs(geo.pos[i] - x);
       if (d < bd) { bd = d; best = i; }
     }
     return best;
   }
 
-  // ---- render -------------------------------------------------------
-  function renderTrackBands() {
-    var w = W(), nl = state.mode === 'nonlinear';
+  // ---- DOM built ONCE per context/mode, never during a drag ----------
+  var nodeEls = [], labelEls = [], amtEls = [];
+
+  function buildTrack() {
+    measure();
+    var c = cfg(), nl = state.mode === 'nonlinear', w = geo.w;
+
     el.rail.style.width = (nl ? NODE_BAND * w : w) + 'px';
     el.over.style.display = nl ? 'block' : 'none';
     el.allin.style.display = nl ? 'flex' : 'none';
@@ -536,34 +522,41 @@
       el.allin.style.left  = (GAP * w) + 'px';
       el.allin.style.width = ((1 - GAP) * w) + 'px';
     }
-    el.allin.classList.toggle('is-latched', state.allin);
-  }
 
-  function renderNodes() {
-    var c = cfg(), pos = nodePositions(), html = '', b = base();
+    el.nodes.textContent = '';
+    nodeEls = []; labelEls = []; amtEls = [];
     for (var i = 0; i < c.nodes.length; i++) {
       var n = c.nodes[i];
-      var cls = 'node' + (i === state.armedIndex && !state.allin ? ' is-near' : '') +
-                (n.predominant ? ' is-predominant' : '');
-      html += '<div class="' + cls + '" style="left:' + pos[i] + 'px"></div>';
-      html += '<div class="node-label" style="left:' + pos[i] + 'px">' + n.label + '</div>';
-      html += '<div class="node-amt" style="left:' + pos[i] + 'px">' + money(n.frac * b) + '</div>';
+      var d = document.createElement('div');
+      d.className = 'node' + (n.predominant ? ' is-predominant' : '');
+      d.style.transform = 'translateX(' + geo.pos[i] + 'px)';
+      el.nodes.appendChild(d); nodeEls.push(d);
+
+      var lb = document.createElement('div');
+      lb.className = 'node-label'; lb.textContent = n.label;
+      lb.style.transform = 'translateX(' + geo.pos[i] + 'px) translateX(-50%)';
+      el.nodes.appendChild(lb); labelEls.push(lb);
+
+      var am = document.createElement('div');
+      am.className = 'node-amt'; am.textContent = money(n.frac * base());
+      am.style.transform = 'translateX(' + geo.pos[i] + 'px) translateX(-50%)';
+      el.nodes.appendChild(am); amtEls.push(am);
     }
-    el.nodes.innerHTML = html;
   }
 
-  function renderValue() {
+  // ---- per-frame: only class + transform writes, no DOM churn --------
+  function paint() {
     var c = cfg(), b = base();
+
     if (state.allin) {
       el.ratio.textContent = 'ALL IN';
       el.amount.textContent = money(effStack()) + ' effective';
-      el.vlabel.innerHTML = 'NO FURTHER<br>ACTIONS';
+      el.vlabel.textContent = 'NO FURTHER ACTIONS';
     } else {
-      var frac = state.value / b;
-      el.ratio.textContent = c.ratio(frac);
+      el.ratio.textContent = c.ratio(state.value / b);
       el.amount.textContent = money(state.value);
-      el.vlabel.innerHTML = (state.phase === 'refine' ? 'REFINING'
-                          : state.phase === 'cancel' ? 'CANCEL' : 'ARMED');
+      el.vlabel.textContent = state.phase === 'refine' ? 'REFINING'
+                            : state.phase === 'cancel' ? 'CANCEL' : 'ARMED';
     }
 
     var over = !state.allin && state.value / b > c.nodes[c.nodes.length - 1].frac;
@@ -574,124 +567,133 @@
        : state.phase === 'refine' ? ' is-refine'
        : state.phase === 'armed' ? ' is-armed' : '');
 
-    var x = state.allin ? (GAP + (1 - GAP) / 2) * W() : valueToPos(state.value);
-    el.fill.style.width = (state.allin ? OVER_BAND * W() : x) + 'px';
-    el.thumb.style.left = x + 'px';
+    for (var i = 0; i < nodeEls.length; i++) {
+      nodeEls[i].classList.toggle('is-near', i === state.armedIndex && !state.allin);
+    }
+
+    var x = state.allin ? (GAP + (1 - GAP) / 2) * geo.w : valueToPos(state.value);
+    el.fill.style.width = (state.allin ? OVER_BAND * geo.w : x) + 'px';
+    el.thumb.style.transform = 'translateX(' + x + 'px)';
     el.thumb.className = 'thumb' +
       ((state.phase === 'refine' || state.phase === 'cancel') ? ' is-live' : '') +
       (state.allin ? ' in-allin' : over ? ' in-over' : '');
     el.allin.classList.toggle('is-latched', state.allin);
   }
 
-  function renderMetrics() {
-    var c = cfg(), b = base(), bw = nodeBandW();
+  function paintMetrics() {
+    var c = cfg(), b = base();
     var lo, hi;
-    if (state.mode === 'nonlinear') {
-      lo = c.nodes[0].frac * b; hi = c.nodes[c.nodes.length - 1].frac * b;
-    } else {
-      lo = c.linearMin * b; hi = c.linearMax * b;
-    }
-    var perPx = (hi - lo) / bw;
+    if (state.mode === 'nonlinear') { lo = c.nodes[0].frac * b; hi = c.nodes[c.nodes.length - 1].frac * b; }
+    else { lo = c.linearMin * b; hi = c.linearMax * b; }
+    var perPx = (hi - lo) / (geo.bandW || 1);
     var finger = perPx * 5;
     var fine = state.gain === 'on' ? finger * 0.15 : finger;
 
-    el['m-travel'].textContent = Math.round(bw) + ' px';
+    el['m-travel'].textContent = Math.round(geo.bandW) + ' px';
     el['m-range'].textContent = money(lo) + ' – ' + money(hi);
     el['m-coarse'].textContent = '$' + (Math.round(perPx * 100) / 100) + ' / px';
     el['m-finger'].className = finger > 25 ? 'bad' : finger > 8 ? 'warn' : 'good';
     el['m-finger'].textContent = '± ' + money(finger);
     el['m-fine'].className = fine > 25 ? 'bad' : fine > 8 ? 'warn' : 'good';
     el['m-fine'].textContent = state.gain === 'on' ? '± ' + money(fine) : 'n/a (fixed)';
+    el['m-interrupt'].className = state.interrupts ? 'bad' : 'good';
+    el['m-interrupt'].textContent = String(state.interrupts);
   }
 
-  function renderAll() { renderTrackBands(); renderNodes(); renderValue(); renderMetrics(); }
+  function rebuild() { buildTrack(); paint(); paintMetrics(); }
 
-  // ---- commit --------------------------------------------------------
+  // ---- log ------------------------------------------------------------
   function commit(kind) {
     var empty = el.log.querySelector('.empty');
-    if (empty) el.log.innerHTML = '';
+    if (empty) el.log.textContent = '';
     var li = document.createElement('li'), c = cfg(), b = base();
-    if (kind === 'cancel') {
-      li.className = 'via-cancel';
-      li.innerHTML = '<span>—</span><span class="via">cancelled</span>';
-    } else if (kind === 'allin') {
-      li.className = 'via-allin';
-      li.innerHTML = '<span>' + money(effStack()) + '</span>' +
-                     '<span class="via">ALL IN · seat closed</span>';
-    } else {
-      li.className = 'via-' + kind;
-      li.innerHTML = '<span>' + money(state.value) + '</span>' +
-                     '<span class="via">' + c.ratio(state.value / b) + ' · ' + kind + '</span>';
-    }
+    li.className = 'via-' + kind;
+    var left = document.createElement('span'), right = document.createElement('span');
+    right.className = 'via';
+    if (kind === 'cancel')          { left.textContent = '—'; right.textContent = 'cancelled'; }
+    else if (kind === 'interrupted'){ left.textContent = '—'; right.textContent = 'interrupted · not recorded'; }
+    else if (kind === 'allin')      { left.textContent = money(effStack()); right.textContent = 'ALL IN · seat closed'; }
+    else { left.textContent = money(state.value); right.textContent = c.ratio(state.value / b) + ' · ' + kind; }
+    li.appendChild(left); li.appendChild(right);
     el.log.insertBefore(li, el.log.firstChild);
     while (el.log.children.length > 12) el.log.removeChild(el.log.lastChild);
   }
 
-  // ---- gesture --------------------------------------------------------
+  // ---- gesture ---------------------------------------------------------
   var g = null;
-  function lx(e) { return e.clientX - el.track.getBoundingClientRect().left; }
-  function ly(e) { return e.clientY - el.track.getBoundingClientRect().top; }
+  function rect() { return el.track.getBoundingClientRect(); }
 
   el.track.addEventListener('pointerdown', function (e) {
-    el.track.setPointerCapture(e.pointerId);
-    var x = lx(e);
+    e.preventDefault();
+    try { el.track.setPointerCapture(e.pointerId); } catch (err) {}
+    measure();
+    var r = rect(), x = e.clientX - r.left;
+
     if (inAllIn(x)) {
       state.allin = true; state.phase = 'armed';
-      g = { id: e.pointerId, startX: x, moved: 0, refine: false, allinStart: true };
+      g = { id: e.pointerId, startX: x, moved: 0, refine: false };
       el.hint.textContent = 'release to record all-in';
-      renderAll();
-      return;
+      paint(); return;
     }
+
     state.allin = false;
     var idx = nearestNode(x);
-    g = { id: e.pointerId, startX: x, lastX: x, lastT: performance.now(),
-          moved: 0, refine: false, idx: idx };
+    g = { id: e.pointerId, startX: x, lastX: x, lastT: e.timeStamp || performance.now(),
+          moved: 0, refine: state.holdMs === 0 };
     state.armedIndex = idx;
     state.value = nodeValue(cfg().nodes[idx]);
-    state.phase = 'armed';
-    el.hint.textContent = 'hold to refine…';
-    renderAll();
-    g.holdTimer = setTimeout(function () {
-      if (!g) return;
-      g.refine = true; state.phase = 'refine';
-      el.hint.textContent = 'drag — slower is finer';
-      renderValue();
-    }, HOLD_MS);
-  });
+    state.phase = g.refine ? 'refine' : 'armed';
+    el.hint.textContent = g.refine ? 'drag — slower is finer' : 'hold to refine…';
+    paint();
+
+    if (state.holdMs > 0) {
+      g.holdTimer = setTimeout(function () {
+        if (!g) return;
+        g.refine = true; state.phase = 'refine';
+        el.hint.textContent = 'drag — slower is finer';
+        paint();
+      }, state.holdMs);
+    }
+  }, { passive: false });
 
   el.track.addEventListener('pointermove', function (e) {
     if (!g || e.pointerId !== g.id) return;
-    var x = lx(e), y = ly(e), now = performance.now();
+    e.preventDefault();
+    var r = rect();
+    var x = e.clientX - r.left;
+    var y = e.clientY - r.top;
+    var now = e.timeStamp || performance.now();
     g.moved = Math.max(g.moved, Math.abs(x - g.startX));
 
-    if (y > CANCEL_DY + 46) {
+    // Cancel only on a deliberate downward drag well clear of the track.
+    if (y > r.height + CANCEL_BELOW) {
       state.phase = 'cancel';
       el.cancelzone.classList.add('is-hot');
       el.hint.textContent = 'release to cancel';
-      renderValue(); return;
+      paint(); g.lastX = x; g.lastT = now; return;
     }
     el.cancelzone.classList.remove('is-hot');
-    if (state.phase === 'cancel') state.phase = g.refine ? 'refine' : 'armed';
+    if (state.phase === 'cancel') {
+      state.phase = g.refine ? 'refine' : 'armed';
+      el.hint.textContent = g.refine ? 'drag — slower is finer' : 'hold to refine…';
+    }
 
-    // latch / unlatch all-in by crossing the gap
     if (inAllIn(x)) {
       if (!state.allin) { state.allin = true; el.hint.textContent = 'all-in — release to record'; }
-      renderValue(); g.lastX = x; g.lastT = now; return;
+      paint(); g.lastX = x; g.lastT = now; return;
     }
-    if (state.allin && !g.allinStart) { state.allin = false; }
-    if (state.allin && g.allinStart) { state.allin = false; g.allinStart = false; }
+    if (state.allin) { state.allin = false; }
 
     if (!g.refine) {
       var idx = nearestNode(x);
       if (idx !== state.armedIndex) {
         state.armedIndex = idx;
         state.value = nodeValue(cfg().nodes[idx]);
-        renderAll();
+        paint();
       }
       g.lastX = x; g.lastT = now; return;
     }
 
-    state.phase = 'refine';
     var dx = x - g.lastX, dt = Math.max(1, now - g.lastT);
     var speed = Math.abs(dx) / dt;
     var k = state.gain === 'on' ? 0.15 + 0.85 * Math.min(1, speed / 1.2) : 1;
@@ -699,39 +701,48 @@
     state.value = Math.max(0, state.value + dx * vpp * k);
     state.armedIndex = nearestNode(valueToPos(state.value));
     g.lastX = x; g.lastT = now;
-    renderAll();
-  });
+    paint();
+  }, { passive: false });
 
-  function endGesture(e) {
-    if (!g || e.pointerId !== g.id) return;
-    clearTimeout(g.holdTimer);
-    el.cancelzone.classList.remove('is-hot');
-
-    if (state.phase === 'cancel') {
-      commit('cancel'); el.hint.textContent = 'cancelled — nothing recorded';
-      state.allin = false;
-    } else if (state.allin) {
-      commit('allin'); el.hint.textContent = 'all-in recorded — seat has no further actions';
-    } else if (!g.refine || g.moved <= MOVE_TOL) {
-      state.value = nodeValue(cfg().nodes[state.armedIndex]);
-      commit('tap'); el.hint.textContent = 'committed at node';
-    } else {
-      commit('refine'); el.hint.textContent = 'committed refined value';
-    }
-
+  function settle(msg) {
     state.phase = 'idle'; g = null;
-    renderAll();
+    paint(); paintMetrics();
     setTimeout(function () {
       if (state.phase === 'idle') {
         el.hint.textContent = 'tap · or hold to refine';
-        state.allin = false; renderAll();
+        state.allin = false; paint();
       }
     }, 1500);
+    if (msg) el.hint.textContent = msg;
   }
-  el.track.addEventListener('pointerup', endGesture);
-  el.track.addEventListener('pointercancel', endGesture);
 
-  // ---- options ---------------------------------------------------------
+  el.track.addEventListener('pointerup', function (e) {
+    if (!g || e.pointerId !== g.id) return;
+    e.preventDefault();
+    clearTimeout(g.holdTimer);
+    el.cancelzone.classList.remove('is-hot');
+
+    if (state.phase === 'cancel')      { commit('cancel'); state.allin = false; settle('cancelled — nothing recorded'); }
+    else if (state.allin)              { commit('allin');  settle('all-in recorded — seat has no further actions'); }
+    else if (!g.refine || g.moved <= MOVE_TOL) {
+      state.value = nodeValue(cfg().nodes[state.armedIndex]);
+      commit('tap'); settle('committed at node');
+    } else { commit('refine'); settle('committed refined value'); }
+  }, { passive: false });
+
+  // An interrupted gesture records NOTHING. Committing here would write a value
+  // the user never released on — the same silent-write failure the design forbids.
+  el.track.addEventListener('pointercancel', function (e) {
+    if (!g || e.pointerId !== g.id) return;
+    clearTimeout(g.holdTimer);
+    el.cancelzone.classList.remove('is-hot');
+    state.interrupts++;
+    state.allin = false;
+    commit('interrupted');
+    settle('gesture interrupted — nothing recorded');
+  });
+
+  // ---- options ----------------------------------------------------------
   function wireSeg(id, attr, apply) {
     var host = document.getElementById(id);
     host.addEventListener('click', function (e) {
@@ -745,16 +756,17 @@
       for (var j = 0; j < c.nodes.length; j++) if (c.nodes[j].predominant) pi = j;
       state.armedIndex = pi; state.value = nodeValue(c.nodes[pi]);
       state.phase = 'idle'; state.allin = false;
-      renderAll();
+      rebuild();
     });
   }
-  wireSeg('ctxseg','data-ctx',    function (v) { state.ctx = v; });
-  wireSeg('potseg','data-pot',    function (v) { state.pot = Number(v); });
-  wireSeg('stackseg','data-stack',function (v) { state.stackMult = Number(v); });
-  wireSeg('modeseg','data-mode',  function (v) { state.mode = v; });
-  wireSeg('gainseg','data-gain',  function (v) { state.gain = v; });
+  wireSeg('ctxseg','data-ctx',     function (v) { state.ctx = v; });
+  wireSeg('potseg','data-pot',     function (v) { state.pot = Number(v); });
+  wireSeg('stackseg','data-stack', function (v) { state.stackMult = Number(v); });
+  wireSeg('modeseg','data-mode',   function (v) { state.mode = v; });
+  wireSeg('gainseg','data-gain',   function (v) { state.gain = v; });
+  wireSeg('holdseg','data-hold',   function (v) { state.holdMs = Number(v); });
 
-  window.addEventListener('resize', renderAll);
-  renderAll();
+  window.addEventListener('resize', rebuild);
+  rebuild();
 })();
 </script>

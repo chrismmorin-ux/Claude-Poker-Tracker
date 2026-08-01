@@ -138,7 +138,29 @@ accept_criteria: |
      needing its own ID. Do not mint an ID without checking the ID space first — see
      the HE-19/HE-20 collision recorded in ATLAS.md.
 
-  9. SUCCESS SIGNAL: a measurable reduction in HE-12 (undo/repair) traffic on the
+  9. GESTURE-PLUMBING RULES, learned the hard way from the sizing prototype 2026-07-31
+     (docs/design/explorations/action-entry-sizing.md §11). These apply to ANY
+     press-hold-release control, and the card selector has the same exposure:
+
+       a) `pointerup` and `pointercancel` ARE NOT THE SAME EVENT. A gesture stolen by
+          the browser/OS must record NOTHING. The prototype had cancel wired to the
+          commit handler, so an interrupted drag silently wrote a value the user never
+          released on — the exact silent-write failure this ticket exists to prevent.
+          Make this a surface-wide rule at Gate 4, not a per-control detail.
+       b) `touch-action: none` must cover the whole interactive region, not just the
+          control. The page scroller will otherwise claim any drag with a vertical
+          component and fire pointercancel mid-gesture. Pair with
+          `overscroll-behavior: contain` and preventDefault on down/move
+          ({ passive: false }).
+       c) Do NOT rebuild DOM per pointermove. In React that means holding the live
+          value in a ref with direct style writes during the drag, not a state update
+          per event — a state-driven rebuild of a 52-cell grid at pointer frequency
+          will drop frames on the target device.
+       d) Escape zones need real clearance. The prototype armed cancel 16px below the
+          control; an ordinary finger drift tripped it. 90px+ and light the zone before
+          it arms.
+
+  10. SUCCESS SIGNAL: a measurable reduction in HE-12 (undo/repair) traffic on the
      surfaces where it ships. Confirm-before-commit is prevention; if undos do not
      fall, it did not work.
 effort: "M"

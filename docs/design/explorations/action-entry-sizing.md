@@ -313,8 +313,51 @@ Still open and only answerable by feel: whether the node-boundary gain change fe
 
 ---
 
+## 11 — Prototype defect: interrupted drag *(founder-reported, 2026-07-31)*
+
+> "I don't have uninterrupted dragging. If I drag off the precise slider area or even as the slider changes when I move it, I sometimes have to reinstate the long press action to continue."
+
+Four separate defects in the prototype, all in the gesture plumbing rather than the design. Worth recording because **three of them are traps any real implementation will hit**, and one was an instance of the exact failure this design is supposed to prevent.
+
+### D1 — Page scroll steals the pointer *(the main cause)*
+
+`touch-action: none` was set only on the track element. The page itself is scrollable, so a drag with any vertical component was claimed by the browser's scroller, which fires `pointercancel` and kills the gesture. This is why it happened "when I drag off the precise slider area."
+
+**Fix:** `touch-action: none` on the whole column, `overscroll-behavior: contain` on the body, and `preventDefault()` on pointerdown/move with `{ passive: false }`.
+
+**Carries to production:** the real command column needs the same treatment, and the felt behind it must not scroll either.
+
+### D2 — Full DOM rebuild on every pointermove *(the "as the slider changes" half)*
+
+`renderNodes()` rewrote `nodes.innerHTML` — tearing down and recreating twelve elements — **on every pointer event**, at up to 120 Hz. That is enough jank on a phone to drop frames and make the drag feel like it is catching.
+
+**Fix:** build node DOM once per context/mode change; per-frame work is now only `classList.toggle` and `transform` writes.
+
+**Carries to production:** React will do this by default if the node list is rebuilt from state each render. The sizing track needs the value in a ref with direct style writes during the drag, not a state update per pointermove.
+
+### D3 — The cancel zone was 16px below the track
+
+Cancel armed at `y > 108px` on a 92px-tall track — sixteen pixels of slack. An ordinary finger drifting downward tripped it, the readout flipped to CANCEL, and releasing there discarded the entry.
+
+**Fix:** cancel now requires **92px clear below the track**, and the zone lights up before it arms.
+
+### D4 — `pointercancel` was committing *(the one that matters)*
+
+`pointercancel` was wired to the same handler as `pointerup`, so a gesture **stolen by the browser silently recorded a value the user never released on.** That is precisely the silent-write failure §4 forbids — sitting in my own prototype.
+
+**Fix:** an interrupted gesture records **nothing** and is logged as `interrupted`. The prototype now counts interruptions in the telemetry panel, so the failure is visible rather than silent.
+
+**Carries to production, and it is the load-bearing lesson:** `pointerup` and `pointercancel` are not the same event. Any drag-to-commit control must treat cancel as *abandon*, never as *commit*. Gate 4 should state this as a rule for the whole surface, since `WS-317`'s press-hold-release card selector has exactly the same exposure.
+
+### Also added
+
+A **hold-threshold control** (instant / 180 ms / 320 ms) so the §8 open question — whether 180 ms fires when you meant to tap — can be answered by trying all three rather than by argument. `instant` removes the hold entirely: press engages refine immediately, and tap-vs-drag is decided purely by whether you moved.
+
+---
+
 ## Change log
 
 - 2026-07-31 — Created from founder proposal. Physical budget measured; five options; C+E+A recommended.
+- 2026-07-31 — **§11 prototype defect: interrupted drag** (founder-reported). Four gesture-plumbing bugs: page-scroll stealing the pointer via missing `touch-action`, full DOM rebuild per pointermove, a cancel zone 16px below the track, and — worst — `pointercancel` wired to commit, so a browser-stolen gesture silently recorded a value the user never released on. Three of the four carry directly to production; the `pointerup` ≠ `pointercancel` rule should be a Gate 4 surface-wide constraint since WS-317's card selector has the same exposure. Hold-threshold control added so the 180ms question can be settled by trying it.
 - 2026-07-31 — **§10 amendment 2 (founder): readout units, overbets, all-in.** Tap-commits ratified. Ratio promoted to primary readout over dollars — memory stores ratios, not amounts, so a dollar-led UI invites false precision; current `SizingPresetsPanel` has this backwards (amount 20px vs ratio 11px). Overbets resolved as a fixed trailing tail rather than a mid-drag rescale, preserving node positional stability. All-in specified as a categorical latch past a dead gap, not a point on the magnitude scale — consistent with the existing `allIn: true` flag that the side-pot ledger depends on.
 - 2026-07-31 — **§8 amendment: non-linear equal-spaced track (founder).** Supersedes Option C's track design — 2.3× finer resolution everywhere by not rendering the axis to scale, composes with velocity gain as a separate layer, strengthens rather than weakens positional stability, and resolves one of WS-317's three long-press collisions on merit. §9 interactive prototype published to answer the gain-discontinuity question by feel.
