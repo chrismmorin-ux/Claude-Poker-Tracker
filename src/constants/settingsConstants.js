@@ -39,6 +39,9 @@ export const SETTINGS_ACTIONS = {
   // 2026-05-12 — added per first-live-use iteration.
   SET_VOICE_CARD_ENTRY_ACTIVATION_MODE: 'SET_VOICE_CARD_ENTRY_ACTIVATION_MODE',
   SET_VOICE_CARD_ENTRY_POSITION: 'SET_VOICE_CARD_ENTRY_POSITION',
+  // VRN (2026-08-01) — Voice Reasoning Notes feature flag. Default OFF;
+  // Phase 1 is the HandReplayView lane only.
+  SET_VOICE_REASONING_NOTES_ENABLED: 'SET_VOICE_REASONING_NOTES_ENABLED',
   // EAL WS-222 (2026-06-12) — anchor-calibration observation enrollment.
   // The ONLY legal UI write path for enrollment; useAnchorEnrollmentBridge
   // mirrors the persisted value into anchorLibraryReducer at runtime.
@@ -132,6 +135,23 @@ export const DEFAULT_SETTINGS = {
     confidenceThreshold: 0.65,
     activationMode: 'hold',
     position: 'bottom-left',
+  },
+
+  // VRN (2026-08-01) — Voice Reasoning Notes. Free-form spoken reasoning bound to
+  // the exact game state it was uttered about, so founder claims become scoreable
+  // evidence with admissible `founder` provenance (.claude/context/POKER_AXIOMS.md).
+  //
+  // Surface spec: docs/design/surfaces/voice-reasoning-notes.md
+  // Gate 1: docs/design/audits/2026-08-01-entry-voice-reasoning-notes.md (YELLOW)
+  // Gate 2: docs/design/audits/2026-08-01-blindspot-voice-reasoning-notes.md
+  //
+  // Phase 1 ships the REPLAY lane only (HandReplayView). The live-table lane is
+  // blocked on Gate 2 finding E-1 — whether the browser streams microphone audio
+  // to a remote service, which matters far more for 60s of open-mic table talk
+  // near identifiable third parties than for 2s of spoken card names. Do not add
+  // a live-table mount without closing E-1 first.
+  voiceReasoningNotes: {
+    enabled: false,
   },
 
   // EAL WS-222 (2026-06-12, Q1-A: enrollment is a Settings field). Persisted

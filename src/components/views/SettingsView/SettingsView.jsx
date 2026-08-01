@@ -17,6 +17,8 @@ import { AnchorCalibrationSection } from './AnchorCalibrationSection';
 import { AnchorCalibrationResetSection } from './AnchorCalibrationResetSection';
 // VCE (WS-181, 2026-05-11) — voice card entry spike behind a feature flag.
 import { VoiceCardEntrySection } from './VoiceCardEntrySection';
+// VRN (2026-08-01) — voice reasoning notes, replay lane behind a feature flag.
+import { VoiceReasoningNotesSection } from './VoiceReasoningNotesSection';
 // Owner-only sandbox tab (2026-05-05) — gated by email; renders nothing
 // for non-owner accounts. Houses prototypes + dev affordances.
 import { AdminSection } from './AdminSection';
@@ -152,6 +154,11 @@ export const SettingsView = ({ scale }) => {
           <AnchorCalibrationResetSection />
 
           <VoiceCardEntrySection
+            settings={settings}
+            dispatchSettings={dispatchSettings}
+          />
+
+          <VoiceReasoningNotesSection
             settings={settings}
             dispatchSettings={dispatchSettings}
           />

@@ -15,6 +15,12 @@ import { HeroCoachingCard } from './HeroCoachingCard';
 import { VillainAnalysisSection } from './VillainAnalysisSection';
 // EAL Phase 6 Stream D B3 (S17, 2026-04-27) — Tier 0 owner observation capture.
 import { AnchorObservationSection } from './AnchorObservationSection';
+// VRN Phase 1 (2026-08-01) — Voice Reasoning Notes, replay lane. Mounted directly
+// below the playback transport so the founder can hold to start and then step
+// through the hand talking without touching anything else (founder req F4).
+// Deliberately NOT adjacent to AnchorObservationSection (Gate 2 C-5 — misgrab).
+// Surface spec: docs/design/surfaces/voice-reasoning-notes.md
+import { VoiceNarrationSection } from './VoiceNarrationSection';
 import { TendencyStatsCard } from '../../ui/TendencyStatsCard';
 // HSP-W1 (WS-143 / SPR-029, 2026-05-03) — first-consumer wire for the Hero State Primitive.
 // Renders canonical-vs-actual side-by-side panels per hero decision point.
@@ -48,7 +54,7 @@ import { useHeroLeaks } from '../../../hooks/useHeroLeaks';
 import { deriveSituationKey } from '../../../utils/skillAssessment/deriveSituationKey';
 import { GUEST_USER_ID } from '../../../utils/persistence/index';
 // SCF G5 / WS-147 (SPR-032, 2026-05-03) — Drill-this navigates to LessonDetailView via UIContext.
-import { useUI } from '../../../contexts';
+import { useUI, useSettings } from '../../../contexts';
 
 export const ReviewPanel = ({
   replay,
@@ -110,6 +116,8 @@ export const ReviewPanel = ({
   // SCF G5 / WS-147 (SPR-032, 2026-05-03) — Drill-this opens LessonDetailView.
   // Per autonomy red line #5: navigation only, no graded transition copy.
   const { openLessonDetail } = useUI();
+  // VRN Phase 1 — feature flag read for the narration capture section.
+  const { settings } = useSettings();
   const onDrillLeak = useCallback((leak) => {
     if (!leak?.relatedConceptId) return;
     openLessonDetail(leak.relatedConceptId);
@@ -179,6 +187,14 @@ export const ReviewPanel = ({
           Action {currentActionIndex + 1} / {timelineLength}
         </span>
       </div>
+
+      {/* B2. Voice Reasoning Notes capture (VRN Phase 1, replay lane) */}
+      <VoiceNarrationSection
+        handId={hand?.handId ?? null}
+        replay={replay}
+        hand={hand}
+        enabled={!!settings?.voiceReasoningNotes?.enabled}
+      />
 
       {/* C. Current Action Card */}
       {currentActionEntry && (

@@ -360,6 +360,23 @@ const rawSettingsReducer = (state, action) => {
       };
     }
 
+    // VRN: feature flag toggle (2026-08-01, Phase 1 replay lane behind flag).
+    // Surface spec: docs/design/surfaces/voice-reasoning-notes.md
+    case SETTINGS_ACTIONS.SET_VOICE_REASONING_NOTES_ENABLED: {
+      const { enabled } = action.payload;
+      const current = state.settings.voiceReasoningNotes || DEFAULT_SETTINGS.voiceReasoningNotes;
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          voiceReasoningNotes: {
+            ...current,
+            enabled: !!enabled,
+          },
+        },
+      };
+    }
+
     // EAL WS-222: anchor-calibration observation enrollment (red line #1
     // opt-in). The only legal UI write path for enrollment — the runtime
     // anchorLibraryReducer mirror is kept in sync by useAnchorEnrollmentBridge.
