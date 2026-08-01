@@ -391,7 +391,19 @@ turn_barrel   turn_checkraise   turn_probe
 river_barrel  river_checkraise  river_probe
 ```
 
-The founder's **"stab"** is the script's **probe** — non-PFA first aggression on turn or river. The script is also right to have no *flop* stab: on the flop a non-PFA first bet **is** a donk, because a stab requires the PFA to have already declined.
+**Correction (founder, same day).** I first mapped his "stab" onto the script's `probe`. That was wrong, and he named the case precisely: *an in-position villain betting when the PFR checks to him.* That is neither a donk nor a c-bet.
+
+A **donk** leads *into* an aggressor who has not yet acted. A **stab** bets *after* that aggressor has checked. Same seat, same street, opposite information — a donk attacks a range that has not yet spoken, a stab attacks one that has just shown weakness. The existing `mine-sizing-and-lines.py` pools both into `flop_donk`, which means the cell is dominated by stabs while being labelled donk.
+
+The discriminator was already in the data structure — *has the PFA already checked on this street?*
+
+| non-PFA first aggression | cell |
+|---|---|
+| PFA already checked this street | **stab** |
+| PFA not acted, prior street had a bet | **donk** |
+| PFA not acted, prior street checked through | **probe** |
+
+The same asymmetry exists on the aggressor's side, so that is split too: a **barrel** (bet last street, bet again) is a different action from a **delayed c-bet** (checked last street, then bet).
 
 **The gap is what the script does with it.** It *counts* lines (for a per-player "has this player ever taken this line" study) and never records the **size**. We built the classifier and throw the number away.
 

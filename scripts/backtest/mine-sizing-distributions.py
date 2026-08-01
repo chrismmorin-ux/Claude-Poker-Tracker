@@ -61,14 +61,38 @@ from multiprocessing import Pool
 
 # ---------------------------------------------------------------------------
 # Cells. Postflop first-aggression and check-raises, split by street and role.
-# "probe" is the founder's "stab": non-PFA first aggression on turn or river.
-# There is deliberately no flop stab — on the flop a non-PFA first bet IS a donk,
-# because a stab requires the preflop aggressor to have already declined.
+#
+# CORRECTED 2026-07-31 (founder): an earlier version folded "villain bets when the
+# PFR checks to him" into `donk`. That was wrong, and the founder caught it —
+#
+#     "what about an in position villain bet when checked to by the pfr? ... it is a
+#      very common bet that players make when checked to, essentially 'stabbing' at
+#      the pot, sometimes value and sometimes bluff. this isn't a donk or a cbet"
+#
+# He is right. A DONK is a lead INTO the aggressor before the aggressor acts. A STAB
+# is a bet AFTER the aggressor has checked. Opposite geometry, opposite information:
+# a donk attacks a range that has not yet spoken, a stab attacks one that has just
+# shown weakness. Pooling them averages two different populations.
+#
+# The discriminator is observable and was already in the data structure: has the PFA
+# already checked on THIS street when the bet lands?
+#
+#   non-PFA first aggression, PFA already checked this street ...... STAB
+#   non-PFA first aggression, PFA has not acted, prior street bet .. DONK  (lead-in)
+#   non-PFA first aggression, PFA has not acted, prior street checked PROBE
+#
+# The same asymmetry exists on the PFA's side, so it is split too: a barrel (bet the
+# previous street, bet again) is a different action from a delayed c-bet (checked the
+# previous street, then bet).
 # ---------------------------------------------------------------------------
 POT_FRACTION_CELLS = [
-    "flop_cbet", "flop_donk",
-    "turn_barrel", "turn_probe",
-    "river_barrel", "river_probe",
+    "flop_cbet", "flop_donk", "flop_stab",
+    "turn_barrel", "turn_delayed_cbet", "turn_donk", "turn_probe", "turn_stab",
+    "river_barrel", "river_delayed_cbet", "river_donk", "river_probe", "river_stab",
+    # PFA folded before this street: the stab/donk/probe distinction is undefined
+    # because there is no aggressor to be in position on. Kept separate rather than
+    # silently mislabelled.
+    "flop_lead_nopfa", "turn_lead_nopfa", "river_lead_nopfa",
 ]
 RAISE_MULTIPLE_CELLS = [
     "flop_checkraise", "turn_checkraise", "river_checkraise",
@@ -169,7 +193,8 @@ def mine_hand(hand, acc):
     last_pf_raiser = None
 
     folded = [False] * n
-    checked = [[False] * 4 for _ in range(1)] * 0 or [[False] * n for _ in range(4)]
+    checked = [[False] * n for _ in range(4)]
+    bet_made = [[False] * n for _ in range(4)]   # for barrel vs delayed-c-bet
     street_has_bet = [False] * 4
 
     for tok in actions:
@@ -231,23 +256,44 @@ def mine_hand(hand, acc):
             live = sum(1 for i in range(n) if not folded[i])
             split = "hu" if live <= 2 else "multi"
 
+            name = ["", "flop", "turn", "river"][street]
+
             if checked[street][p]:
                 # check-raise: the poker-native unit is a multiple of the bet faced
                 if current_bet > 1e-9:
-                    cell = ["", "flop_checkraise", "turn_checkraise", "river_checkraise"][street]
-                    record(acc, cell, amount / current_bet, split)
+                    record(acc, name + "_checkraise", amount / current_bet, split)
             elif not street_has_bet[street]:
-                # first aggression on this street
+                # First aggression on this street. Four distinct actions live here and
+                # they must not be pooled — see the header note.
                 if pot_before > 1e-9:
-                    is_pfa = (p == last_pf_raiser)
-                    if street == 1:
-                        cell = "flop_cbet" if is_pfa else "flop_donk"
-                    elif street == 2:
-                        cell = "turn_barrel" if is_pfa else "turn_probe"
+                    pfa = last_pf_raiser
+                    prev_bet = street_has_bet[street - 1] if street >= 1 else True
+
+                    if pfa is not None and p == pfa:
+                        # The aggressor. Barrelling and delayed c-betting are different
+                        # actions: one continues a story, the other starts one late.
+                        if street == 1:
+                            cell = "flop_cbet"
+                        else:
+                            cell = name + ("_barrel" if bet_made[street - 1][pfa]
+                                           else "_delayed_cbet")
+                    elif pfa is None or folded[pfa]:
+                        cell = name + "_lead_nopfa"
+                    elif checked[street][pfa]:
+                        # THE FOUNDER'S CASE. The aggressor has checked; this bet lands
+                        # after that check, into a range that just showed weakness.
+                        cell = name + "_stab"
+                    elif street >= 2 and not prev_bet:
+                        # Aggressor has not acted and declined the previous street.
+                        cell = name + "_probe"
                     else:
-                        cell = "river_barrel" if is_pfa else "river_probe"
+                        # Aggressor has not acted and did bet last street: a true lead-in.
+                        cell = name + "_donk"
+
                     record(acc, cell, amount / pot_before, split)
 
+            if street >= 1:
+                bet_made[street][p] = True
             street_has_bet[street] = True
 
         committed[p] = amount

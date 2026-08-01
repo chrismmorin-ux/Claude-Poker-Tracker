@@ -51,9 +51,34 @@ description: |
          turn_barrel   turn_checkraise   turn_probe
          river_barrel  river_checkraise  river_probe
 
-     The founder's "STAB" maps to the script's PROBE — non-PFA first aggression on turn
-     or river. Note the script is right to have no flop stab: on the flop a non-PFA
-     first bet IS a donk, because a stab requires the PFA to have already declined.
+     CORRECTION 2026-07-31 — I got this wrong first time and the founder caught it:
+       "what about an in position villain bet when checked to by the pfr? ... it is a
+        very common bet that players make when checked to, essentially 'stabbing' at
+        the pot, sometimes value and sometimes bluff. this isn't a donk or a cbet"
+
+     He is right, and so is the ORIGINAL mine-sizing-and-lines.py, which has the same
+     defect. A DONK is a lead INTO the aggressor before the aggressor acts. A STAB is a
+     bet AFTER the aggressor has checked. Opposite geometry and opposite information: a
+     donk attacks a range that has not yet spoken, a stab attacks one that has just
+     shown weakness. Pooling them averages two different populations, and the stab is
+     one of the most common bets in poker, so the pooled cell is dominated by it while
+     being labelled "donk".
+
+     The discriminator is observable and was already in the data structure — has the
+     PFA already checked on THIS street when the bet lands:
+
+       non-PFA first aggression, PFA already checked this street ...... STAB
+       non-PFA first aggression, PFA not acted, prior street had bet .. DONK
+       non-PFA first aggression, PFA not acted, prior street checked .. PROBE
+
+     The same asymmetry exists on the aggressor's side and is now split too: a BARREL
+     (bet the previous street, bet again) is a different action from a DELAYED C-BET
+     (checked the previous street, then bet).
+
+     NOTE FOR WHOEVER TOUCHES mine-sizing-and-lines.py NEXT: its `flop_donk` counter
+     has this same conflation. Its conclusions are about line COVERAGE (did this player
+     ever take this line), which is less sensitive to the mislabel than a sizing
+     distribution would be, but the label is still wrong.
 
   4. WHAT THE SCRIPT DOES WITH IT IS THE GAP. It COUNTS lines (line coverage, for a
      per-player "has this player ever taken this line" sophistication study). It never
