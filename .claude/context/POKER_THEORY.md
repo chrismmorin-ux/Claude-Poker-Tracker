@@ -317,6 +317,45 @@ Both are false leaks. Both point hero's counter-strategy the wrong way, and both
 
 **Multiway amplification:** equity denial is worth MORE with more opponents, because there are more live draws to deny. The heads-up framing of this section understates protection in exactly the spots the app is most used (§6 is heads-up throughout — see the multiway spine work).
 
+#### 3.4.3 The value test needs REALISED equity — restricting to the callers is not enough (WS-312, binding)
+
+Motive 1 above requires ">50% equity **against the opponent's calling range**". That is correct and
+**incomplete**, and the gap shipped a live misfile twice.
+
+There are two different quantities that both answer to the name "equity against the calling range":
+
+| quantity | what it is | for a flush draw on A♠K♦6♠ |
+|---|---|---|
+| **all-in vs callers** | share of the pot hero ends up winning, runouts included | **0.49** |
+| **realised vs callers** | share of the calling combos hero beats **right now** | **0.02** |
+
+A first fix scored the thin-value gate on the *first* row and left the defect untouched: Q♠J♠ — a
+second-nut flush draw beating **nothing** — arrived at 0.4929, cleared the 0.45 thin-value floor, and
+was reported to the founder as *"Thin value bet — 52% equity, marginally +EV when called."*
+
+**Why restricting the range does not help.** All-in equity carries the draw's outs, and the hands
+that call are **precisely the made hands the draw is drawing against**. Filtering to the callers
+changes *which range* the equity is measured against, not *which kind of equity it is*. The outs
+survive the filter, so the number stays high for exactly the hands the test is supposed to exclude.
+
+**The test is the RATIO, not either number.** `realised / all-in` is near 1 for a made hand and near
+0 for a draw. Compare that ratio to a floor (`REALISED_VALUE_FLOOR`, `actionClassifier.js`); do not
+substitute one quantity for the other, which would silently re-tier hands against a ladder calibrated
+for a different scale. A ratio **above 1** is normal and means "not drawing" — top pair beats more of
+the calling range now than it still will by the river, because it gets outdrawn.
+
+**Corollary — a draw's call branch is often +EV, so profitability cannot gate the bluff family.** The
+old ladder read `isCallProfitable` to open the value family and `!isCallProfitable` to open the bluff
+family. A draw with a marginally profitable call branch therefore satisfied neither bluff branch and
+had nowhere to land but thin value. **A semi-bluff must be reachable on a profitable call branch** —
+the profit comes from the outs, which is what makes it a semi-bluff rather than value.
+
+**Sizing is why this is not cosmetic.** Thin value sizes DOWN to keep worse hands in (§4.1); a
+semi-bluff sizes UP to charge the draw and maximise fold equity (§6.1's denial term). Same hand,
+opposite advice — the same inversion §3.4.2 records for protection-vs-thin-value. And because the
+classifier also labels HERO's action class, a semi-bluff logged as thin value teaches the wrong
+lesson back into the weakness model.
+
 **Critical insight (unchanged)**: The same bet size can serve different motivations for different players. A half-pot bet can be a value bet, a bluff, a protection bet, or a blocker bet. A 2x pot bet can be a polarized bluff, a vulnerable hand charging draws, or an overbet with the nuts maximizing extraction. The motivation is determined by the player's tendencies, their hand, and the opponent's range composition — NOT by the size alone.
 
 ### 3.5 Bet Sizing — What It Does and Doesn't Tell Us

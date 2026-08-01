@@ -2,9 +2,9 @@ id: "WS-312"
 title: "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ""
-claimed_at: ""
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
 completed_at: null
 completion_commit: null
@@ -90,3 +90,50 @@ status_note: |
 
   Measured table (A♠K♦6♠, top-25% villain, checked to hero) recorded in the session
   transcript; re-derivable by evaluating the listed hands through evaluateGameTree.
+
+  ── FIRST ATTEMPT SHIPPED INERT (found 2026-08-01) ──────────────────────────────
+  A prior session landed an eqVsCallRange fix for this item INSIDE commit f650531, whose
+  message names WS-303 only — so the queue never learned, and this stayed P0 at the top of
+  the ranking while looking done in the code. It carried 59 passing unit tests.
+
+  The fix did not work. Measured against the live engine on this exact spot, Q♠J♠ still
+  read "Thin value bet — 52% equity, marginally +EV when called". The unit tests passed
+  only because they hand-fed `eqVsCallRange: 0.28` — A VALUE THE ENGINE CANNOT PRODUCE.
+  Actual eqVsCallRange = 0.4929, which is ABOVE the 0.45 thin-value floor.
+
+  ROOT CAUSE of the failed fix: `eqVsCallRange` (computeFilteredEquity) averages
+  `combo.heroEquity`, which is all-in-BY-THE-RIVER equity. Restricting to callers changes
+  WHICH RANGE the equity is measured against, not WHICH KIND — so a draw's outs survive
+  the restriction, and the callers are precisely the made hands it is drawing against.
+
+  STRUCTURAL half, previously unnoticed: the ladder gated the value family on
+  `isCallProfitable` and the bluff family on `!isCallProfitable`. A draw's call branch is
+  often marginally +EV because the draw gets there, so a profitable draw could reach
+  NEITHER bluff branch and had nowhere to land but thin value. A draw could not be a
+  semi-bluff on a bet at all. No equity substitution could have fixed that.
+
+  ── ERRATUM IN THE ACCEPT CRITERIA ─────────────────────────────────────────────
+  Criterion 4 names A♠5♠ as "top pair + nut flush draw". A♠ is a BOARD card here, so that
+  hand cannot be dealt. Because A♠ is on the board, K♠ is the highest available flush card,
+  making K♠Q♠ (second pair + the genuine nut flush draw) the realizable instance. Used in
+  the behavioural test in its place.
+
+  ── MEASURED AFTER THE FIX (A♠K♦6♠, topRange(25), checked to hero) ──────────────
+    hand   eqVsCall  sdVsCall  realised  class
+    Q♠J♠     0.4945    0.0159     0.03   Semi-bluff   (was "Thin value bet")
+    A♦9♦     0.6707    0.7612     1.14   Value bet
+    K♠Q♠     0.6982    0.5355     0.77   Value bet    (redraw preserved)
+    5♦4♦     0.1302    0.0000     0.00   Bluff
+
+  A realised ratio above 1 is correct, not a bug: top pair beats MORE of the calling range
+  now than it still will by the river, because it gets outdrawn.
+
+  Fix = realised-fraction veto (founder-selected over rescoring the ladder, so the
+  calibrated 0.55/0.50/0.45/0.30 floors stay untouched). New quantity `heroAheadNow` per
+  combo + `computeFilteredShowdownValue`; `REALISED_VALUE_FLOOR = 0.5` ships as a FOUNDER
+  ESTIMATE flagged for WS-273 calibration. Threaded on BOTH the bet and check-raise paths
+  per founder direction — the check-raise narrative had been splitting value-vs-bluff on
+  raw whole-range heroEquity, cruder still.
+
+  Doctrine recorded as POKER_THEORY §3.4.3 (binding).
+closed_by_event: "ev-1785605524017-e2e56d8bd7f1"

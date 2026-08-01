@@ -1,0 +1,31 @@
+id: "SPR-166"
+title: "Ship WS-312: A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equi"
+status: done
+approved_at: "2026-08-01T16:54:07.134Z"
+completed_at: "2026-08-01T17:32:03.991Z"
+completed_by_commit: "f4fa0fe"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-312: A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-01T16:54:07.134Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-312 selected (29 × no damping = 29).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-312"
+    title: "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-01T17:32:03.991Z"
+
+created_at: "2026-08-01T16:54:07.134Z"
