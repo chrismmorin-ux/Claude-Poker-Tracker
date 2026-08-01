@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-07-30T15:56:17.648Z",
-  "updated_by_event": "ev-1785426977648-6dbb83f9fb6e",
+  "updated_at": "2026-08-01T01:05:00.058Z",
+  "updated_by_event": "ev-1785546300058-321c5a3e6c4d",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4776,7 +4776,7 @@
     "WS-307": {
       "id": "WS-307",
       "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
-      "status": "backlog",
+      "status": "done",
       "priority_score": 31,
       "category": "domain-correctness",
       "effort": "M",
@@ -4784,7 +4784,7 @@
       "capability": "core",
       "sprint_id": null,
       "claimed_at": null,
-      "completed_at": null,
+      "completed_at": "2026-08-01T01:04:39Z",
       "source": {
         "type": "measurement",
         "created_by": "ai",
@@ -4884,7 +4884,57 @@
         "docs/research/"
       ],
       "source_class": "untagged"
+    },
+    "WS-311": {
+      "id": "WS-311",
+      "title": "computePopBaselineFromEquity is computed and thrown away — dead per-combo baseline in gameTreeDepth2",
+      "status": "backlog",
+      "priority_score": 6,
+      "category": "domain-correctness",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "audit",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "ws-307-depth2-audit"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeDepth2.js"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-312": {
+      "id": "WS-312",
+      "title": "Check-raise fold equity is range-blind too — the WS-307 defect surviving in a sibling branch",
+      "status": "backlog",
+      "priority_score": 24,
+      "category": "domain-correctness",
+      "effort": "M",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "measurement",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "ws-307-depth2-audit"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "src/utils/exploitEngine/gameTreeEvaluator.js"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785426977648-6dbb83f9fb6e"
+  "last_event_log_head": "ev-1785546300058-321c5a3e6c4d"
 }

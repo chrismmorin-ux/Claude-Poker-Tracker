@@ -1,7 +1,9 @@
 id: "SPR-161"
 title: "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds"
-status: approved
+status: done
 approved_at: "2026-07-31T21:29:37.038Z"
+completed_at: "2026-08-01T01:04:39.348Z"
+completed_by_commit: "354ff0a"
 program_focus: "domain-correctness"
 
 goal: |
@@ -23,6 +25,7 @@ items:
     title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-08-01T01:04:39.348Z"
 
 created_at: "2026-07-31T21:29:37.038Z"

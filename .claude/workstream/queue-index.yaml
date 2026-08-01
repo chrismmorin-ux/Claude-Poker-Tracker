@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 186
+total_items: 188
 by_status:
   decomposed: 1
-  done: 77
+  done: 78
   in_progress: 3
   deferred: 43
-  backlog: 43
+  backlog: 44
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 57
+  domain-correctness: 59
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1774,7 +1774,7 @@ items:
 
   - id: "WS-307"
     title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: M
@@ -1803,6 +1803,24 @@ items:
     title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
     status: backlog
     priority_score: 29
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-311"
+    title: "computePopBaselineFromEquity is computed and thrown away — dead per-combo baseline in gameTreeDepth2"
+    status: backlog
+    priority_score: 6
+    category: domain-correctness
+    effort: S
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-312"
+    title: "Check-raise fold equity is range-blind too — the WS-307 defect surviving in a sibling branch"
+    status: backlog
+    priority_score: 24
     category: domain-correctness
     effort: M
     program: domain-correctness

@@ -1450,3 +1450,12 @@ sprints:
     created_at: "2026-07-30T13:57:38.943Z"
     completed_at: "2026-07-30T14:21:09.104Z"
 
+  - id: "SPR-161"
+    title: "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-07-31T21:29:37.038Z"
+    completed_at: "2026-08-01T01:04:39.348Z"
+

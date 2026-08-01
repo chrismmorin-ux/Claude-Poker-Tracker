@@ -2,12 +2,12 @@ id: "WS-307"
 title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-01T01:04:39Z"
+completion_commit: "354ff0a"
 priority_score: 31.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -147,3 +147,4 @@ status_note: |
   ID note: WS-306 is skipped — that number is used by the session-claims work already
   shipped in commit 292e56f (see kit/scripts/cwos-next.js Step 0b) which never got a
   queue file.
+closed_by_event: "ev-1785546279361-6d73216ab627"
