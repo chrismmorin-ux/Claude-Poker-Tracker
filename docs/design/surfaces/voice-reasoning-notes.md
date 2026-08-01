@@ -90,15 +90,38 @@ is a deliberate carve-out:
 
 ---
 
-## Phase 1 — replay lane (this gate clears)
+## Phase 1 — off-table lanes (this gate clears)
 
-### Placement
+### Two mounts, one control
 
-New section in `ReviewPanel.jsx`, adjacent to but distinct from Section G (Anchor Observations).
-Persistent — renders whenever a hand is loaded in replay, independent of whether notes exist.
-**Must not disturb the existing step-through controls** (Gate 2 D-1 amendment), and must not sit
-adjacent to the Anchor Observation button in a way that invites misgrab (Gate 2 C-5 — the two
-buttons have sharply different consequences).
+The founder narrates from two different screens, and both are cleared:
+
+| Surface | Mount | Stepping granularity | `source` |
+|---|---|---|---|
+| `HandReplayView` / `ReviewPanel.jsx` | below the playback transport | action-by-action | `'replay'` |
+| `AnalysisView` / `HandReviewPanel.jsx` | top of the Walkthrough column | street-by-street | `'review'` |
+
+`VoiceNarrationSection` lives in `src/components/ui/` and is **surface-agnostic** — the caller
+supplies a `buildContext` function, so the control never learns how a given surface represents its
+cursor. Each mount sits beside that surface's own stepping controls, so the founder can hold to
+start and then navigate while talking (F4).
+
+**The two surfaces have different granularity, and the record says which.** HandReplayView steps
+action-by-action, so the pot is exact at the cursor. The Hand Review walkthrough steps
+street-by-street, so "the pot" is ambiguous unless the moment is named. Every snapshot from that
+surface carries `potBasis`:
+
+- `'street-start'` — blinds plus every action on prior streets (nothing focused)
+- `'action'` — pot through the focused action, inclusive (an action was clicked)
+
+This follows the standing rule that a number travels with its conditional. A grader reading `pot`
+without reading `potBasis` is reading a different quantity than the one recorded.
+
+Both mounts are persistent — they render whenever a hand is loaded, independent of whether notes
+exist. Neither may disturb its surface's existing step-through controls (Gate 2 D-1 amendment), and
+neither may sit adjacent to the Anchor Observation button in a way that invites misgrab (Gate 2 C-5
+— the two controls have sharply different consequences). On `ReviewPanel` the Anchor button is at
+the far bottom of the panel; on `HandReviewPanel` it is absent entirely.
 
 ### Control states
 
@@ -208,11 +231,12 @@ three graders are modality-independent.
 
 ## Known issues
 
-**[VRN-1] Touch target renders at 27.1 visual-px on HandReplayView — pre-existing surface
-condition, not introduced by VRN.** Measured 2026-08-01 via Playwright at the reference viewport:
-the VRN start button and the existing `🏷 Tag pattern` button both render **27.1px** tall despite
-both declaring `min-h-[44px]`. ReviewPanel sits inside a scale transform of roughly 0.62, so every
-control in the panel is below the H-ML06 ≥44 visual-px floor.
+**[VRN-1] Touch target renders at 27.1 visual-px on both mounts — pre-existing app-wide condition,
+not introduced by VRN.** Measured 2026-08-01 via Playwright at the reference viewport. The button's
+computed `min-height` **is** 44px and its `offsetHeight` **is** 44 — the style applies correctly.
+The shortfall is entirely an ancestor `transform: scale(0.615125)`, which renders it at 27.07
+visual-px, below the H-ML06 ≥44 floor. The existing `🏷 Tag pattern` button measures identically on
+ReviewPanel, confirming this is the panel scaling rather than anything specific to this control.
 
 VRN's control was deliberately left matching its neighbour rather than special-cased — making one
 button in the panel bigger than the rest would trade a heuristic violation for an inconsistency,
@@ -220,10 +244,11 @@ and the right fix is panel-wide. VCE solved the equivalent problem by placing it
 `ScaledContainer` (D-5); the same treatment is the likely resolution here, but it affects the whole
 ReviewPanel and belongs to that surface's owner, not to this feature.
 
-**Verified working 2026-08-01:** Settings toggle renders and persists; the narration section mounts
-under the playback transport on HandReplayView when the flag is on and a hand is loaded;
-`Tag pattern` sits at the far bottom of the panel, satisfying the Gate 2 C-5 non-adjacency
-requirement with a wide margin.
+**Verified working 2026-08-01:** Settings toggle renders and persists. The narration section mounts
+on **both** surfaces when the flag is on and a hand is loaded — under the playback transport on
+HandReplayView, and at the top of the Walkthrough column on the Hand Review screen (above the
+street content, so it stays put as streets change). `Tag pattern` sits at the far bottom of
+ReviewPanel, satisfying the Gate 2 C-5 non-adjacency requirement with a wide margin.
 
 ---
 
@@ -231,3 +256,8 @@ requirement with a wide margin.
 
 - 2026-08-01 — Authored at Gate 4. Phase 1 (replay lane) cleared. Live lane blocked on Gate 2 E-1 +
   Gate 3 persona work. Session/segment-timeline model adopted per founder requirement F4.
+- 2026-08-01 — Second mount added on the Hand Review walkthrough (`AnalysisView`) at founder
+  request. `VoiceNarrationSection` moved to `src/components/ui/` and made surface-agnostic via a
+  caller-supplied `buildContext`; `source` widened to `'replay' | 'review' | 'live'`. New
+  `handReviewSnapshot.js` binds street-level context and introduces `potBasis` so a street-granular
+  pot carries its own conditional.

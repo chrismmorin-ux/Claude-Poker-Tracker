@@ -1,12 +1,17 @@
 /**
- * VoiceNarrationSection.jsx — Voice Reasoning Notes (VRN) capture, replay lane.
+ * VoiceNarrationSection.jsx — Voice Reasoning Notes (VRN) capture control.
  *
  * Surface spec: docs/design/surfaces/voice-reasoning-notes.md
  * Gate 1: audits/2026-08-01-entry-voice-reasoning-notes.md
  * Gate 2: audits/2026-08-01-blindspot-voice-reasoning-notes.md
  *
- * Mounted directly below the playback transport so the founder can hold to start,
- * then step through the hand talking without touching anything again (F4).
+ * SURFACE-AGNOSTIC. Mounted on both narration surfaces:
+ *   - HandReplayView / ReviewPanel — steps action-by-action
+ *   - AnalysisView / HandReviewPanel walkthrough — steps street-by-street
+ * The caller supplies `buildContext`, so this component never learns how a given
+ * surface represents its cursor. Both mounts sit next to that surface's stepping
+ * controls, so the founder can hold to start and then navigate while talking (F4).
+ *
  * Deliberately NOT adjacent to AnchorObservationSection: the two controls have
  * sharply different consequences and sitting them together invites misgrab
  * (Gate 2 C-5).
@@ -20,8 +25,8 @@
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import { useVoiceReasoningNote } from '../../../hooks/useVoiceReasoningNote';
-import { fullTranscript } from '../../../utils/voiceReasoning/noteSession';
+import { useVoiceReasoningNote } from '../../hooks/useVoiceReasoningNote';
+import { fullTranscript } from '../../utils/voiceReasoning/noteSession';
 
 const HOLD_TO_START_MS = 400;
 
@@ -63,8 +68,18 @@ const NoteRow = ({ note, onDelete }) => {
             <div key={i} className="mb-1">
               <div className="text-[10px] text-gray-500">
                 {seg.context?.street || '—'}
-                {seg.context ? ` · action ${seg.context.actionIndex + 1}` : ''}
-                {seg.context?.pot ? ` · pot $${seg.context.pot}` : ''}
+                {/* actionIndex is null on the street-based review surface — it
+                    only has a focused action when one was clicked. */}
+                {Number.isInteger(seg.context?.actionIndex) && seg.context.actionIndex >= 0
+                  ? ` · action ${seg.context.actionIndex + 1}`
+                  : ''}
+                {/* The pot travels with its basis: 'action' is exact, 'street-start'
+                    is the pot as the street began. Without it the number is ambiguous. */}
+                {seg.context?.pot
+                  ? ` · pot $${seg.context.pot}${
+                      seg.context.potBasis === 'street-start' ? ' (street start)' : ''
+                    }`
+                  : ''}
                 {seg.context?.board?.length ? ` · ${seg.context.board.join(' ')}` : ''}
               </div>
               <div className="text-[11px] text-gray-300">{seg.text}</div>
@@ -87,11 +102,18 @@ const NoteRow = ({ note, onDelete }) => {
 /**
  * @param {Object} props
  * @param {number|string|null} props.handId
- * @param {Object} props.replay — useReplayState() return value
- * @param {Object|null} props.hand — the hand record
+ * @param {() => object|null} props.buildContext — state binding for this surface
+ * @param {'replay'|'review'|'live'} [props.source]
  * @param {boolean} [props.enabled] — feature flag
+ * @param {boolean} [props.compact] — tighter layout for space-constrained panels
  */
-export const VoiceNarrationSection = ({ handId, replay, hand, enabled = false }) => {
+export const VoiceNarrationSection = ({
+  handId,
+  buildContext,
+  source = 'replay',
+  enabled = false,
+  compact = false,
+}) => {
   const {
     supported,
     permissionStatus,
@@ -105,8 +127,8 @@ export const VoiceNarrationSection = ({ handId, replay, hand, enabled = false })
     removeNote,
   } = useVoiceReasoningNote({
     handId,
-    replayState: replay,
-    selectedHand: hand,
+    buildContext,
+    source,
     enabled,
   });
 
@@ -213,8 +235,14 @@ export const VoiceNarrationSection = ({ handId, replay, hand, enabled = false })
           </span>
         )}
 
-        {!isRecording && !micBlocked && (
+        {!isRecording && !micBlocked && !compact && (
           <span className="text-[10px] text-gray-500">Hold to start · keep stepping while you talk</span>
+        )}
+
+        {!isRecording && !micBlocked && compact && notes.length > 0 && (
+          <span className="text-[10px] text-gray-500">
+            {notes.length} note{notes.length === 1 ? '' : 's'}
+          </span>
         )}
 
         {isSaving && <span className="text-[10px] text-gray-500">Saving…</span>}
@@ -235,7 +263,10 @@ export const VoiceNarrationSection = ({ handId, replay, hand, enabled = false })
       )}
 
       {notes.length > 0 && (
-        <div className="mt-1" data-testid="vrn-note-list">
+        <div
+          className={compact ? 'mt-1 max-h-28 overflow-y-auto pr-1' : 'mt-1'}
+          data-testid="vrn-note-list"
+        >
           {notes.map((note) => (
             <NoteRow key={note.id} note={note} onDelete={removeNote} />
           ))}

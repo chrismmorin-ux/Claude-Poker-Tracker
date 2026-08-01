@@ -29,6 +29,8 @@ import {
 // SANITIZATION
 // =============================================================================
 
+export const VALID_NOTE_SOURCES = Object.freeze(['replay', 'review', 'live']);
+
 /**
  * Validate + normalize a note before write. Throws on structural invalidity so a
  * malformed note fails loudly at the boundary rather than silently persisting
@@ -44,7 +46,11 @@ export const sanitizeReasoningNote = (note) => {
   if (!Array.isArray(note.segments) || note.segments.length === 0) {
     throw new Error('reasoningNote must have at least one segment');
   }
-  if (note.source !== 'replay' && note.source !== 'live') {
+  // 'replay' = HandReplayView (action-by-action), 'review' = the Hand Review
+  // walkthrough (street-by-street), 'live' = the not-yet-cleared live-table lane.
+  // The source matters to graders: it tells them the granularity the context was
+  // captured at, which is why it is validated rather than free text.
+  if (!VALID_NOTE_SOURCES.includes(note.source)) {
     throw new Error(`reasoningNote has invalid source: ${note.source}`);
   }
 

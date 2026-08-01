@@ -11,6 +11,13 @@ import { SCREEN } from '../../../constants/uiConstants';
 import { HandBrowser } from './HandBrowser';
 import { HandWalkthrough } from './HandWalkthrough';
 import { ReviewObservations } from './ReviewObservations';
+// VRN (2026-08-01) — Voice Reasoning Notes, second mount. Sits above the
+// walkthrough so the founder can hold to start and then step streets while
+// talking (founder req F4). Context binds street-by-street here, action-by-action
+// in HandReplayView. Surface spec: docs/design/surfaces/voice-reasoning-notes.md
+import { VoiceNarrationSection } from '../../ui/VoiceNarrationSection';
+import { buildHandReviewSnapshot } from '../../../utils/voiceReasoning/handReviewSnapshot';
+import { useSettings } from '../../../contexts';
 
 export const HandReviewPanel = () => {
   const { allPlayers } = usePlayer();
@@ -67,6 +74,30 @@ export const HandReviewPanel = () => {
     setCurrentScreen(SCREEN.HAND_REPLAY);
   }, [setReplayHand, setCurrentScreen, hands]);
 
+  // VRN state binding for this surface. Street-based, with an exact action
+  // binding when one is focused — see handReviewSnapshot's potBasis note.
+  const { settings } = useSettings();
+  const buildNarrationContext = useCallback(
+    () => buildHandReviewSnapshot(
+      {
+        currentStreet,
+        availableStreets,
+        timeline,
+        streetActions,
+        communityCardsForStreet,
+        focusedAction,
+        focusedActionIndex,
+        heroSeat,
+      },
+      selectedHand,
+    ),
+    [
+      currentStreet, availableStreets, timeline, streetActions,
+      communityCardsForStreet, focusedAction, focusedActionIndex,
+      heroSeat, selectedHand,
+    ],
+  );
+
   // Per-action range/equity analysis — lazy: only compute when an action is focused
   const analysisHand = focusedActionIndex !== null ? selectedHand : null;
   const { actionAnalysis, isComputing } = useHandReplayAnalysis(analysisHand, timeline, tendencyMap);
@@ -119,11 +150,25 @@ export const HandReviewPanel = () => {
       </div>
 
       {/* Center: Hand Walkthrough */}
-      <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 overflow-hidden">
+      <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 overflow-hidden flex flex-col">
         <h3 className="text-sm font-bold mb-2 text-indigo-400">
           Walkthrough
           {isComputing && <span className="ml-2 text-[10px] text-gray-500">(analyzing...)</span>}
         </h3>
+
+        {/* VRN capture — above the walkthrough so it stays put while streets change. */}
+        {selectedHand && (
+          <div className="mb-2">
+            <VoiceNarrationSection
+              handId={selectedHand?.handId ?? null}
+              buildContext={buildNarrationContext}
+              source="review"
+              enabled={!!settings?.voiceReasoningNotes?.enabled}
+              compact
+            />
+          </div>
+        )}
+
         <HandWalkthrough
           selectedHand={selectedHand}
           streetActions={streetActions}

@@ -21,7 +21,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpeechCapture } from './useSpeechCapture';
-import { buildReplaySnapshot } from '../utils/voiceReasoning/replaySnapshot';
 import { createSession, appendSegment, finalizeSession } from '../utils/voiceReasoning/noteSession';
 import {
   appendReasoningNote,
@@ -30,31 +29,36 @@ import {
 } from '../utils/persistence/reasoningNoteWriter';
 
 /**
+ * Surface-agnostic. The caller supplies `buildContext`, so the hook never learns
+ * how any particular surface represents its cursor — HandReplayView steps by
+ * action, the Hand Review walkthrough steps by street, and a future live lane
+ * would step by whatever the table does.
+ *
  * @param {object} options
- * @param {number|string|null} options.handId — hand being replayed
- * @param {object} options.replayState — return value of useReplayState()
- * @param {object|null} options.selectedHand — the hand record
+ * @param {number|string|null} options.handId — hand the note attaches to
+ * @param {() => object|null} options.buildContext — state binding, called per segment
+ * @param {'replay'|'review'|'live'} [options.source] — which surface produced it
  * @param {boolean} [options.enabled] — feature flag
  */
 export function useVoiceReasoningNote({
   handId = null,
-  replayState = null,
-  selectedHand = null,
+  buildContext = null,
+  source = 'replay',
   enabled = false,
 } = {}) {
   const [notes, setNotes] = useState([]);
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Live refs so the segment-time context getter never closes over stale replay
+  // Live refs so the segment-time context getter never closes over stale surface
   // state. `captureContext` runs inside the recognition callback, potentially
   // many renders after the session started.
-  const replayStateRef = useRef(replayState);
-  const selectedHandRef = useRef(selectedHand);
+  const buildContextRef = useRef(buildContext);
   const handIdRef = useRef(handId);
-  useEffect(() => { replayStateRef.current = replayState; }, [replayState]);
-  useEffect(() => { selectedHandRef.current = selectedHand; }, [selectedHand]);
+  const sourceRef = useRef(source);
+  useEffect(() => { buildContextRef.current = buildContext; }, [buildContext]);
   useEffect(() => { handIdRef.current = handId; }, [handId]);
+  useEffect(() => { sourceRef.current = source; }, [source]);
 
   const loadNotes = useCallback(async () => {
     if (handId === null || handId === undefined) {
@@ -77,9 +81,9 @@ export function useVoiceReasoningNote({
    * words to where the founder was standing in the hand at that moment.
    */
   const captureContext = useCallback(() => {
-    const rs = replayStateRef.current;
-    if (!rs) return null;
-    return buildReplaySnapshot(rs, selectedHandRef.current);
+    const fn = buildContextRef.current;
+    if (typeof fn !== 'function') return null;
+    return fn();
   }, []);
 
   /**
@@ -95,7 +99,7 @@ export function useVoiceReasoningNote({
     if (!Array.isArray(rawSegments) || rawSegments.length === 0) return;
 
     const startedAt = rawSegments[0]?.startedAt || Date.now();
-    let session = createSession({ source: 'replay', startedAt, handId: targetHandId });
+    let session = createSession({ source: sourceRef.current, startedAt, handId: targetHandId });
     for (const segment of rawSegments) {
       session = appendSegment(session, segment);
     }

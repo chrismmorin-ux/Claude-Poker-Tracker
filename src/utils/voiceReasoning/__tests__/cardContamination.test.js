@@ -36,10 +36,11 @@ const SRC = resolve(HERE, '../../..');
 const VRN_SOURCES = [
   'utils/voiceReasoning/noteSession.js',
   'utils/voiceReasoning/replaySnapshot.js',
+  'utils/voiceReasoning/handReviewSnapshot.js',
   'utils/persistence/reasoningNoteWriter.js',
   'hooks/useSpeechCapture.js',
   'hooks/useVoiceReasoningNote.js',
-  'components/views/HandReplayView/VoiceNarrationSection.jsx',
+  'components/ui/VoiceNarrationSection.jsx',
 ];
 
 // Mutation paths that would let a note reach card or game state.

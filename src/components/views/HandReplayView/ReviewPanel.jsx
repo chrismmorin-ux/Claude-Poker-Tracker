@@ -20,7 +20,8 @@ import { AnchorObservationSection } from './AnchorObservationSection';
 // through the hand talking without touching anything else (founder req F4).
 // Deliberately NOT adjacent to AnchorObservationSection (Gate 2 C-5 — misgrab).
 // Surface spec: docs/design/surfaces/voice-reasoning-notes.md
-import { VoiceNarrationSection } from './VoiceNarrationSection';
+import { VoiceNarrationSection } from '../../ui/VoiceNarrationSection';
+import { buildReplaySnapshot } from '../../../utils/voiceReasoning/replaySnapshot';
 import { TendencyStatsCard } from '../../ui/TendencyStatsCard';
 // HSP-W1 (WS-143 / SPR-029, 2026-05-03) — first-consumer wire for the Hero State Primitive.
 // Renders canonical-vs-actual side-by-side panels per hero decision point.
@@ -118,6 +119,13 @@ export const ReviewPanel = ({
   const { openLessonDetail } = useUI();
   // VRN Phase 1 — feature flag read for the narration capture section.
   const { settings } = useSettings();
+
+  // VRN state binding. Reads `replay` at call time (not render time) so a segment
+  // spoken after the founder steps to a new action binds to where he actually is.
+  const buildNarrationContext = useCallback(
+    () => buildReplaySnapshot(replay, hand),
+    [replay, hand],
+  );
   const onDrillLeak = useCallback((leak) => {
     if (!leak?.relatedConceptId) return;
     openLessonDetail(leak.relatedConceptId);
@@ -191,8 +199,8 @@ export const ReviewPanel = ({
       {/* B2. Voice Reasoning Notes capture (VRN Phase 1, replay lane) */}
       <VoiceNarrationSection
         handId={hand?.handId ?? null}
-        replay={replay}
-        hand={hand}
+        buildContext={buildNarrationContext}
+        source="replay"
         enabled={!!settings?.voiceReasoningNotes?.enabled}
       />
 
