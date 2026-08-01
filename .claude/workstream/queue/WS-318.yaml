@@ -2,7 +2,7 @@ id: "WS-318"
 title: "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street × line (cbet / checkraise / donk / barrel / probe) from the corpus"
 legacy_id: ""
 type: research
-status: backlog
+status: in_progress
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -145,6 +145,45 @@ source:
   run_id: "session-2026-07-31-tvr-kickoff"
 created_at: "2026-07-31T00:00:00Z"
 status_note: |
+  MINER WRITTEN AND VERIFIED 2026-07-31 — scripts/backtest/mine-sizing-distributions.py.
+  BLOCKED ON FOUNDER: the corpus lives on his machine, not in the container.
+
+  RUN IT WITH:
+    python scripts/backtest/mine-sizing-distributions.py \
+      --corpus-root C:/Users/chris/data/phh-dataset/data/handhq \
+      --out out/sizing-distributions.json --workers 12
+  Optional --stakes to restrict (e.g. --stakes 200NLH,400NLH).
+
+  WHY A NEW SCRIPT rather than editing mine-sizing-and-lines.py: that one answers a
+  different question (do leaks CORRELATE within a player), so it counts per-player line
+  COVERAGE. Overloading it would entangle two studies. The new script reuses its
+  classification logic and accumulates POOL-LEVEL distributions instead. The one thing
+  it adds is a running pot — the original zeroes committed[] at each street boundary and
+  discards those chips, because coverage counting never needed a pot.
+
+  MEMORY: fine-binned histograms (0.01-wide for pot fractions, 0.05 for raise
+  multiples), not raw samples — 21.6M hands of samples would not fit. Quantiles come off
+  the histogram, which is far finer than any actionable precision. Overflow past the top
+  bin is COUNTED and REPORTED, never silently dropped.
+
+  SMOKE-TESTED against scripts/backtest/fixtures/sample-hands.phhs. Every code path
+  fires. Pot arithmetic VERIFIED BY HAND against two fixture hands:
+
+    line 115: open 1.50/0.50 = 3.00bb (reported 3.00-3.05)
+              flop c-bet 2.00/3.00 = 0.667 pot (reported p50 0.67)
+              river 4.00/7.00 = 0.571 pot (reported p50 0.57)
+              p1 is the preflop CALLER betting after the PFA checked back the turn ->
+              classified river_probe, i.e. the founder's STAB. Category confirmed.
+    line 71:  open 2.00/0.50 = 4.00bb (reported p75 4.03)
+              flop c-bet 3.50/4.25 = 0.824 pot (reported p75 0.82) -- note 4.25 includes
+              the dead SB from a folded player, which is correct
+              flop check-raise 7.00/3.50 = 2.00x (reported mode 2.00-2.05)
+
+  All six figures match the hand calculation exactly.
+
+  ALSO EMITS a heads-up vs multiway split per pot-fraction cell, since pot-fraction
+  norms differ materially with the number of live players and it was ~3 lines.
+
   Raised during the action-entry exploration (docs/design/explorations/action-entry-sizing.md).
   Directly grounds Option E (learned presets) and the non-linear track's node values.
   Project: .claude/projects/table-view-redesign-2026-07-31.md
