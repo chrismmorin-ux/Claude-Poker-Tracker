@@ -131,6 +131,38 @@ description: |
   to an assertion yet because it would fail until this item lands; converting it is an
   accept criterion below.
 
+  ── PERF BLOCKER RESOLVED (session 2) ────────────────────────────────────────
+
+  The cost was never in the equity maths. `sampleCombos` ranked hero's range using
+  `comboStrengthPercentile`, and that function RE-ENUMERATES EVERY LEGAL COMBO ON THE
+  BOARD on each call — so ordering a ~200-combo hero range cost ~200 x 1081 hand
+  evaluations, dwarfing everything else. Percentile is a monotone transform of raw made-
+  hand score, and only the ORDER is load-bearing, so sorting by score gives the identical
+  sample for one evaluation per combo.
+
+      villain range        OFF        ON (before)     ON (after)
+      tight (49 combos)     28 ms         506 ms          30 ms
+      full  (1081 combos)  431 ms        4653 ms         417 ms
+
+  155x on the wide case; the range-conditioned path now costs about what the clairvoyant
+  one did. Fold estimate unchanged (0.326 vs 0.343/0.336 across runs — MC noise).
+  Guarded by a RATIO assertion in heroPerceivedRange.test.js (machine-independent), which
+  exists to catch a return to the 12x regime rather than police variance.
+
+  TWO OPTIMISATIONS TRIED AND REJECTED ON ACCURACY, recorded so they are not retried:
+    - Coarsening the memo key to the 5-way strength bucket moved the fold estimate
+      0.343 -> 0.489, a 43% error. Buying speed by making the number wrong is the exact
+      WS-307 family this item exists to fix.
+    - Cutting runout samples 32 -> 8 barely moved the total, because the cost was not in
+      the sampling. Kept anyway (DECISION_EQUITY_SAMPLES) since decision equity feeds a
+      bounded logistic and is averaged over K hero combos, but it was not the fix.
+  Also landed: runouts and hero scores hoisted to the distribution level so they are
+  computed once rather than per villain combo, and memoization of equity-vs-range by
+  exact made-hand score plus a redraw signature.
+
+  `sampleCombos` now lives in pokerCore/rangeSampling.js and heroPolicy.mjs re-exports it,
+  so the harness and the live engine cannot diverge on which hands represent a range.
+
   ── IMPLEMENTATION STATUS (SPR-162, session 1 of ~3) ─────────────────────────
 
   MECHANISM BUILT AND PROVEN, SHIPPED DARK. Flag `RANGE_CONDITIONED_VILLAIN_DECISIONS`

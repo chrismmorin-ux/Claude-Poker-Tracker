@@ -83,44 +83,18 @@ const toPrimitive = (action) => {
 };
 
 /**
- * Systematic weight-proportional sample of `k` combos, ordered by board strength.
+ * Re-exported from the shared implementation so the harness and the live engine sample
+ * a range the SAME way. Moved to src/ under WS-313, when `gameTreeContext` needed the
+ * identical stratified sample to price villain decisions against hero's range; two
+ * copies of "which hands represent this range" would silently diverge.
  *
- * Sorting by strength before systematic sampling is what makes this stratified: the
- * sample points march up the strength axis, so a range that is 20% nutted and 40% air
- * contributes roughly that mix at any k, instead of depending on where random draws
- * happened to land.
+ * Behaviour note: the shared version sorts by raw made-hand score rather than by
+ * `comboStrengthPercentile`. Percentile is a monotone transform of score, so the
+ * ordering — the only property the sampler relies on — is unchanged, but it costs one
+ * hand evaluation per combo instead of a full board re-enumeration per combo.
  */
-export const sampleCombos = (range, board, k = DEFAULT_COMBO_SAMPLES) => {
-  const combos = enumerateCombos(range, board);
-  if (combos.length === 0) return [];
+export { sampleCombos } from '../../src/utils/pokerCore/rangeSampling.js';
 
-  for (const c of combos) {
-    c.strength = comboStrengthPercentile(c.card1, c.card2, board);
-  }
-  combos.sort((a, b) => a.strength - b.strength);
-
-  const total = combos.reduce((s, c) => s + c.weight, 0);
-  if (!(total > 0)) return [];
-  if (combos.length <= k) {
-    return combos.map((c) => ({ ...c, sampleWeight: c.weight / total }));
-  }
-
-  // Equally spaced cumulative-weight points, offset to the midpoint of each stratum
-  // so the sample is not biased toward either tail.
-  const out = [];
-  const step = total / k;
-  let cum = 0;
-  let idx = 0;
-  for (let i = 0; i < k; i++) {
-    const target = (i + 0.5) * step;
-    while (idx < combos.length - 1 && cum + combos[idx].weight < target) {
-      cum += combos[idx].weight;
-      idx++;
-    }
-    out.push({ ...combos[idx], sampleWeight: 1 / k });
-  }
-  return out;
-};
 
 /**
  * Compute pi_ours at one decision node.

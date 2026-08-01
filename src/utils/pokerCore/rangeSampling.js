@@ -9,7 +9,7 @@
  */
 
 import { enumerateCombos } from './rangeMatrix';
-import { comboStrengthPercentile } from './handEvaluator';
+import { bestFiveFromSeven } from './handEvaluator';
 
 /**
  * Systematic weight-proportional sample of `k` combos, ordered by board strength.
@@ -35,8 +35,16 @@ export const sampleCombos = (range, board, k) => {
   const combos = enumerateCombos(range, board);
   if (combos.length === 0) return [];
 
+  // Sort by RAW made-hand score, not by percentile. Both induce the identical ordering —
+  // percentile is a monotone transform of score — but `comboStrengthPercentile`
+  // re-enumerates every legal combo on the board on EACH call, so ranking a 200-combo
+  // range cost ~200 x 1081 hand evaluations. Measured, that sort dominated the whole
+  // range-conditioned path; by score it is one evaluation per combo.
+  //
+  // Only the ORDER is load-bearing here — the sample points step through cumulative
+  // weight, and nothing downstream reads `strength` as a value.
   for (const c of combos) {
-    c.strength = comboStrengthPercentile(c.card1, c.card2, board);
+    c.strength = bestFiveFromSeven([c.card1, c.card2, ...board]);
   }
   combos.sort((a, b) => a.strength - b.strength);
 
