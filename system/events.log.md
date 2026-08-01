@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785568947448-cca9c86016b1"
-generated_content_hash: "6a6fa5dc282b2ecd69214d2580e3153391527ceaab385d175aeb81121ea68dde"
-generated_at: "2026-08-01T07:22:27.502Z"
+generated_from_event: "ev-1785568956789-5180a24f8523"
+generated_content_hash: "8dfe845055c7301c578ebe214ca353de52066f3fd617b8fc9ee91b4218bf10c9"
+generated_at: "2026-08-01T07:22:36.846Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1326
+event_count: 1327
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 888
-- Events recorded: 1326
+- Commands recorded: 889
+- Events recorded: 1327
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -9335,3 +9335,13 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-01T07:22:27.448Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-msa1nkocbcb610138116`
+
+- Start: 2026-08-01T07:22:36.789Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:22:36.789Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
