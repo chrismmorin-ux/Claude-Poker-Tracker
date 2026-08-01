@@ -1,15 +1,15 @@
 {
-  "composed_at": "2026-07-31T21:26:09.049Z",
-  "goal": "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds",
+  "composed_at": "2026-08-01T01:38:54.779Z",
+  "goal": "Ship WS-313: Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-307",
-      "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
-      "raw_score": 31,
-      "adjusted_score": 31,
-      "effort": "M",
+      "id": "WS-313",
+      "title": "Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant",
+      "raw_score": 33,
+      "adjusted_score": 33,
+      "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-307 selected (31 × no damping = 31).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+21 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-313 selected (33 × no damping = 33).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+22 more).\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 1.5,
+    "effort_sessions": 3,
     "ceremony": "standard"
   }
 }

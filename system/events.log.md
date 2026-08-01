@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785547329504-10727c688caa"
-generated_content_hash: "7eec14a80fac78d2f8ecc143a79498ac2efa350f909dce42e3b488d74914740a"
-generated_at: "2026-08-01T01:22:09.546Z"
+generated_from_event: "ev-1785548327421-5113b5e3f423"
+generated_content_hash: "540fabb14fa58e2a27427f69a30529caa308cfe7fb6779677c58e14268036dbf"
+generated_at: "2026-08-01T01:38:47.696Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1180
+event_count: 1184
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 742
-- Events recorded: 1180
+- Commands recorded: 746
+- Events recorded: 1184
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -7875,3 +7875,43 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-01T01:22:09.505Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:2692:1785548326637`
+
+- Start: 2026-08-01T01:38:46.637Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:38:46.637Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:2692:1785548327310`
+
+- Start: 2026-08-01T01:38:47.310Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:38:47.310Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:2692:1785548327348`
+
+- Start: 2026-08-01T01:38:47.348Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:38:47.348Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:2692:1785548327421`
+
+- Start: 2026-08-01T01:38:47.421Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:38:47.421Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

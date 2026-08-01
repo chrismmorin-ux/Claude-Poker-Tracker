@@ -61,7 +61,7 @@ accept_criteria: |
 effort: "M"
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
-blocked_by: []
+blocked_by: ["WS-313"]
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -73,6 +73,14 @@ source:
   run_id: "ws-307-depth2-audit"
 created_at: "2026-08-01T00:55:00Z"
 status_note: |
+  SEQUENCING (added when WS-313 was filed): blocked on WS-313. Both are the same
+  symptom — a fold estimate that does not reflect the range — but they are DIFFERENT
+  defects and must not be conflated. WS-312 is range-BLINDNESS (the check-raise path
+  never consults comboDistribution at all); WS-313 is CLAIRVOYANCE (the per-combo
+  equity that estimate would be built from is computed against hero's actual cards).
+  Wiring the check-raise path into today's per-combo estimate would import the
+  clairvoyance, so this must land after WS-313 or it gets done twice.
+
   Filed from SPR-161 (WS-307). Scored below WS-307's 31 because it is not yet a
   reproduced wrong recommendation — the range-blindness and the 15% floor are read
   from the code and the 0.050-vs-0.15 gap is measured, but no spot has been shown

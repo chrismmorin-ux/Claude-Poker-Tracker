@@ -1823,6 +1823,7 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: M
+    blocked_by: ["WS-313"]
     program: domain-correctness
     capability: core
 

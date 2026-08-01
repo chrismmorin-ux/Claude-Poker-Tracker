@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-08-01T01:22:09.437Z",
-  "updated_by_event": "ev-1785547329437-5d167bcd770d",
+  "updated_at": "2026-08-01T01:38:47.348Z",
+  "updated_by_event": "ev-1785548327348-4e6634e4f1e2",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4928,7 +4928,9 @@
         "finding_id": "",
         "run_id": "ws-307-depth2-audit"
       },
-      "blocked_by": [],
+      "blocked_by": [
+        "WS-313"
+      ],
       "enables": [],
       "files_involved": [
         "src/utils/exploitEngine/gameTreeEvaluator.js"
@@ -4964,5 +4966,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785547329437-5d167bcd770d"
+  "last_event_log_head": "ev-1785548327348-4e6634e4f1e2"
 }
