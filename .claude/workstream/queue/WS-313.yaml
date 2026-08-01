@@ -154,6 +154,39 @@ status_note: |
     - NOT on Fold/Call/Check (discrete, nothing to refine, taxes HE-23, collides with
       HE-22's pre-arm).
 
+  SIZING-ENTRY AMENDMENT 2 (founder, 2026-07-31) — see exploration §10:
+    - TAP-COMMITS RATIFIED. Long-press is only for precision. Settled, not open.
+    - RATIO IS THE PRIMARY READOUT, dollars secondary. Rationale is a claim about human
+      memory and it is correct: nobody remembers "$68", they remember "about two-thirds
+      pot". The dollar figure is DERIVED from the ratio, not the other way round.
+      SizingPresetsPanel.jsx:75-76 currently has this exactly backwards — amount at 20px,
+      ratio label at 11px. The interface leads with the unit the user does not think in.
+      The ratio unit must be CONTEXT-NATIVE: % pot postflop, x bb preflop open, x last
+      raise for a 3-bet.
+      DATA-QUALITY COROLLARY (the real prize): recording "~65% pot" faithfully is BETTER
+      data than a confident-looking $137 that was a guess. A dollar-led UI invites false
+      precision, and false precision in a read-building tracker is worse than coarse
+      honesty because downstream models cannot distinguish the two.
+      CONSIDERED AND REJECTED: an explicit confidence field on the sizing — captures the
+      same information more expensively and adds a decision to every entry. Do not
+      re-derive this at Gate 4.
+    - OVERBETS: fixed TRAILING TAIL, not a mid-drag rescale. A rescale re-maps nodes under
+      a moving finger and destroys the "node k is always at pixel k*96" property that is
+      this design's best feature. The tail is compressed by construction, which is correct
+      — overbets are rarer and remembered more coarsely, so precision follows frequency.
+      Also rejected: a rolling window that slides nodes leftward; forfeits positional
+      stability for the rare case in order to serve it.
+    - ALL-IN IS A LATCH, NOT A SLIDER POSITION. The founder's own clause is the constraint:
+      "that player has no more actions but others might" — a STATE consequence, not a
+      magnitude one. The codebase already agrees: handleAllInSubmit records
+      {allIn: true} as a FLAG (CommandStrip.jsx:581-596) and calculateSidePots depends on
+      the flag, not on the amount being large. Place it past a deliberate dead gap at the
+      track end so a fast drag cannot slide into it — all-in is the one sizing that cannot
+      be corrected by a slightly different number later.
+      STILL OPEN: an all-in CALL (short stack calls off for less) is a different case this
+      track does not express; handleAllInSubmit already routes it via callAmount. Probably
+      belongs on the Call control, not the sizing track.
+
   CARRIED RISK: R7 timing unmeasured. Treat "the speed problem is postflop entry,
   player entry and legibility" as a stated assumption; validate before Gate 5.
   Project: .claude/projects/table-view-redesign-2026-07-31.md

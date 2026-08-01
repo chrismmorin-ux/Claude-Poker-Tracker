@@ -246,7 +246,75 @@ Nothing here writes to the app. It is a feel test for a Gate 4 decision.
 
 ---
 
+## 10 — Amendment 2: readout units, overbets, all-in *(founder, 2026-07-31)*
+
+> "It should support just being clicked as well, if a preset is the one being chosen — the long press is just for precision. We can get creative with how we enable the overbets… maybe the slider scales at overbet scale. We need to also be displaying % of pot as well as the actual amount. Player could remember a previous action as roughly a certain size and capture most of the information. Same thing with common sizing for preflop or 3-bets, and obviously support all in, in which that player has no more actions but others might."
+
+### 10.1 — Tap-commits is ratified
+
+Confirms §8's amendment: tap commits at a node, long-press is *only* for precision. The fast path is untouched, `HE-23` is protected. No further design question here — it is settled and the prototype implements it.
+
+### 10.2 — Ratio must be the primary readout, not the amount *(the strongest point in this round)*
+
+> "Player could remember a previous action as roughly a certain size and capture most of the information."
+
+This is a claim about **what unit human memory stores**, and it is correct. Nobody watches a villain and remembers "$68." They remember *"about two-thirds pot."* The dollar figure is a derived quantity that the player reconstructs from the ratio and the pot — not the other way round.
+
+That inverts the readout hierarchy the current UI uses. `SizingPresetsPanel.jsx:75-76` renders **`$amount` at 20px and the ratio label at 11px** — the derived quantity is nearly twice the size of the remembered one. **The interface leads with the unit the user does not think in.**
+
+Three consequences:
+
+1. **Ratio primary, dollars secondary.** The user is matching a memory, not choosing a number. Show the thing they are matching against, largest.
+2. **The ratio is context-native, not always "% of pot."** Postflop → % pot. Preflop open → × bb. 3-bet → × the last raise. The founder said as much ("same thing with common sizing for preflop or 3-bets"); the memory unit changes with the spot, so the readout must too.
+3. **Data-quality corollary, and it is the real prize.** Recording *"≈65% pot"* faithfully is **better data** than recording a confident-looking `$137` that was actually a guess. A ratio-led interface lets the player record what they actually observed at the precision they actually observed it. A dollar-led interface invites false precision — and false precision in a read-building tracker is worse than coarse honesty, because downstream models cannot tell the difference.
+
+*(Deliberately not proposed: an explicit confidence field on the sizing. It would capture the same information more expensively and adds a decision to every entry. The ratio-led readout gets most of the benefit for free. Flagging it as considered and rejected so Gate 4 does not re-derive it.)*
+
+### 10.3 — Overbets: trailing tail, not a rescale
+
+The founder offered two mechanisms — capture it "in the trailing space", or have "the slider scale at overbet scale." **The trailing tail is the safer of the two and it is what the prototype implements.**
+
+A mid-drag rescale re-maps every node under a finger that is already moving. Even with eyes on screen it risks the value jumping, and it destroys the property §8 identified as this design's best feature: *node k is always at pixel k × 96.* A fixed trailing tail keeps every node where it was and spends only the unused right-hand space.
+
+Geometry in the prototype:
+
+```
+|<----------- nodes, equally spaced ----------->|<- overbet ->| gap |ALL IN|
+0%                                             66%           88%   90%  100%
+```
+
+The overbet band is compressed by construction — that is correct, because overbets are both rarer and remembered more coarsely ("he jammed like one-and-a-half pot"). Precision follows frequency, which is the same principle that justified the non-linear track in the first place.
+
+**Considered and rejected:** a rolling window that slides nodes leftward as you push into overbet territory. It preserves resolution but moves the nodes, which forfeits positional stability for the rare case in order to serve it. Wrong trade.
+
+### 10.4 — All-in is a latch, not a slider position
+
+> "obviously support all in, in which that player has no more actions but others might"
+
+The clause after the comma is the design constraint, and it is a **state** consequence, not a magnitude one. All-in is not "the biggest bet on the continuum" — it is a categorical action that closes that seat while the hand continues for everyone else.
+
+The codebase already agrees: `handleAllInSubmit` (`CommandStrip.jsx:581-596`) records `{ raiseTo, allIn: true }` or `{ callAmount, allIn: true }` — a **flag**, not just a large number — and `activeSeatCount` / `hasSeatFolded` already drive the hand-decided guards. The side-pot ledger (`calculateSidePots`) depends on that flag being set, not on the amount being large.
+
+So all-in must be reachable from the same gesture but must not be a point on the magnitude scale. The prototype puts it **past a deliberate dead gap** at the track's end: you can drag into it, it latches, and the readout switches to `ALL IN / $X effective / NO FURTHER ACTIONS`. The gap is what stops a fast drag from sliding into it accidentally — which matters, because all-in is the one sizing that cannot be corrected by a slightly-different number later.
+
+**Open for Gate 4:** an all-in *call* (short stack calls off for less than the bet) is a different case that this track does not express — `handleAllInSubmit` already routes it via `callAmount`. Probably belongs on the Call control, not here.
+
+### 10.5 — What changed in the prototype
+
+- Ratio promoted to primary (27px), dollars secondary (15px) — inverting today's hierarchy.
+- Context-native ratio unit, with a **3-bet** spot added alongside postflop and preflop.
+- Overbet tail (66–88%) and all-in latch (90–100%) with a dead gap between.
+- Effective-stack control, so the all-in figure is real.
+- Node captions now show dollars, since the ratio is already in the node label.
+
+**→ [Prototype](https://claude.ai/code/artifact/fa2e9344-c7a6-4e91-8c82-20cc5b97706b)** · vendored at `explorations/sizing-track-prototype.html`
+
+Still open and only answerable by feel: whether the node-boundary gain change feels sticky (§8 q3), whether `HOLD_MS = 180` fires when you meant to tap, and whether the dead gap before all-in is wide enough to prevent accidents but narrow enough to reach deliberately.
+
+---
+
 ## Change log
 
 - 2026-07-31 — Created from founder proposal. Physical budget measured; five options; C+E+A recommended.
+- 2026-07-31 — **§10 amendment 2 (founder): readout units, overbets, all-in.** Tap-commits ratified. Ratio promoted to primary readout over dollars — memory stores ratios, not amounts, so a dollar-led UI invites false precision; current `SizingPresetsPanel` has this backwards (amount 20px vs ratio 11px). Overbets resolved as a fixed trailing tail rather than a mid-drag rescale, preserving node positional stability. All-in specified as a categorical latch past a dead gap, not a point on the magnitude scale — consistent with the existing `allIn: true` flag that the side-pot ledger depends on.
 - 2026-07-31 — **§8 amendment: non-linear equal-spaced track (founder).** Supersedes Option C's track design — 2.3× finer resolution everywhere by not rendering the axis to scale, composes with velocity gain as a separate layer, strengthens rather than weakens positional stability, and resolves one of WS-317's three long-press collisions on merit. §9 interactive prototype published to answer the gain-discontinuity question by feel.
