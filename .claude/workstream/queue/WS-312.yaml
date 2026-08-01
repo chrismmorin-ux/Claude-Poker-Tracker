@@ -1,0 +1,80 @@
+id: "WS-312"
+title: "Check-raise fold equity is range-blind too — the WS-307 defect surviving in a sibling branch"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found while fixing WS-307. NOT covered by that fix, and deliberately left alone —
+  it is a distinct EV path whose numbers move, so it needs its own measurement rather
+  than a silent ride-along on an M-effort item.
+
+  WS-307 fixed hero's BET/RAISE fold estimate (gameTreeEvaluator.evaluateHeroAction),
+  which had been taken from `queryActionDistribution` — range-blind — and is now seeded
+  from the range-conditioned `foldMeta[facing].baseEstimate`.
+
+  The CHECK-RAISE branch of the same function (~line 298) still does the old thing:
+
+      let vFoldToCR = vFacingRaise.confidence >= 0.25
+        ? clamp(vFacingRaise.actions.fold ?? 0.50, 0.15, 0.85)
+        : 0.50;
+
+  `vFacingRaise` is the villain behavioural model; the fallback is a flat 0.50. Neither
+  consults `comboDistribution`, so this estimate cannot respond to the composition of
+  the range in front of it — the exact defect WS-307 reports.
+
+  The clamp makes it concrete: `[0.15, 0.85]` means check-raise fold equity can never
+  fall below 15%, even against a range that is all sets and overpairs with 0% air. On
+  the WS-307 board (QhJhTs vs AA-TT/AK/AQ) the range-conditioned estimate is 0.050, so
+  the floor alone overstates fold equity by 3x, and check-raise EV is priced on it.
+
+  WHY IT WAS NOT HIT BY THE WS-307 REPRO. The reported spot has hero FACING a bet, so
+  the check-raise candidate is never the top-ranked action there. The defect is live
+  wherever hero is OOP with the option to check-raise.
+
+  THE GENERAL SHAPE. Both are "an EV term computed from a prior instead of from the game
+  state in front of it" (cf. FIND-040, and WS-307's own three instances). The fix has the
+  same shape too: seed from the already-resolved §7.4 hierarchy rather than re-deriving a
+  range-blind number locally. Note `foldMeta` is keyed by 'bet' / 'raise'; check-raise
+  faces hero's RAISE, so `foldMeta.raise` is the right source — confirm before wiring.
+accept_criteria: |
+  - `vFoldToCR` responds to range composition: materially lower against a range with no
+    foldable combos than against one with real air, demonstrated with measured numbers.
+  - The [0.15, 0.85] clamp floor is revisited on the per-combo path for the same reason
+    WS-307 lowered its 0.10 floor to 0.02 — but must stay non-zero (§3.6.1).
+  - Behavioural test that FAILS against the pre-fix engine, using the shared
+    `__tests__/fixtures/ranges.js` fixtures.
+  - Before/after check-raise EV recorded for at least one spot — this changes a live
+    advice path and must not ship unmeasured.
+  - FIND-029 guard: no equity gate on check-raises; a genuine over-folder must still
+    yield a +EV low-equity check-raise.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-307-depth2-audit"
+created_at: "2026-08-01T00:55:00Z"
+status_note: |
+  Filed from SPR-161 (WS-307). Scored below WS-307's 31 because it is not yet a
+  reproduced wrong recommendation — the range-blindness and the 15% floor are read
+  from the code and the 0.050-vs-0.15 gap is measured, but no spot has been shown
+  where it flips the top-ranked action. First step when picked up: find that spot,
+  or establish that the check-raise candidate is never top-ranked when it matters.

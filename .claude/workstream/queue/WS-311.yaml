@@ -1,0 +1,77 @@
+id: "WS-311"
+title: "computePopBaselineFromEquity is computed and thrown away — dead per-combo baseline in gameTreeDepth2"
+legacy_id: ""
+type: chore
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 6.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found during the WS-307 depth-2 audit (founder chose the wider scope). Not a
+  correctness bug — filed so the misleading comment does not read as evidence later.
+
+  `computePopBaselineFromEquity` (gameTreeDepth2.js:115) computes a per-combo
+  population calling rate from exact equity vs pot odds. It has exactly ONE caller,
+  line 244:
+
+      const popCallRate = computePopBaselineFromEquity(comboEquity, potOddsNeeded);
+
+  and `popCallRate` is never read in that block. The code that follows adjusts
+  pFold/pCall/pRaise from `villainModel.foldEstimates.facingBet.foldPct` against
+  `POPULATION_PRIORS.bet.fold` — a flat prior — via `stickinessRatio`. (The
+  `popCallRate` at lines 232/234 is a DIFFERENT variable in a different else-if
+  branch, which is part of why this survived review.)
+
+  So the function is effectively dead, and the comment above the call —
+  "Use per-combo equity logistic (not bucket anchors) for population baseline
+  (§7.3: no bucket labels)" — describes a game-state derivation the block does not
+  actually perform.
+
+  WHY IT IS NOT A BUG. pFold/pCall/pRaise entering that branch were already set by
+  the per-combo equity logistic further up the function, so the range conditioning
+  §7.3 promises IS present. Only the redundant recomputation is discarded. Behaviour
+  is unaffected either way — which is the point: removing it cannot change any output.
+
+  This is the fourth instance of the pattern exploitEngine/CLAUDE.md already names —
+  a comment asserting something the code does not do, with nothing checking (WS-285
+  dimension ordering, WS-291 doc-vs-data, WS-300 index literals). Here the assertion
+  is inert rather than wrong.
+accept_criteria: |
+  - Either delete `computePopBaselineFromEquity` and the dead assignment, or wire its
+    result into the adjustment if the per-combo baseline is what that branch SHOULD be
+    using. Decide which — do not leave it computed-and-discarded.
+  - If deleted: the comment at the call site must stop claiming a per-combo baseline
+    is used there.
+  - If wired in: it changes EV output, so it needs a behavioural test and a measured
+    before/after, not just a green suite.
+  - No behaviour change may ship unmeasured — this branch feeds depth-2 EV.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Delete the dead helper, or wire it in? Wiring it in is a behaviour change to depth-2 EV and needs measurement; deleting is zero-risk."
+source:
+  type: audit
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-307-depth2-audit"
+created_at: "2026-08-01T00:55:00Z"
+status_note: |
+  Filed from the WS-307 (SPR-161) depth-2 audit. The other two scaledLogistic call
+  sites in that file were checked and are sound: line 171 uses the [0.10,0.80]
+  defaults for pCall but derives pFold = 1 - pCall - pRaise so the raise term absorbs
+  the residual; line 181 passes explicit floor/scale. Neither carries the WS-307
+  defect, which was specific to foldEquityCalculator conflating "not calling" with
+  "folding".

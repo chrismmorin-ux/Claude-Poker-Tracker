@@ -74,6 +74,68 @@ source:
   finding_id: ""
   run_id: "run-ws-300-fixture-triage"
 created_at: "2026-07-30T14:20:00Z"
+resolution_note: |
+  ROOT CAUSE — three compounding defects, all one family (an EV term computed from a
+  PRIOR instead of the game state in front of it; cf. FIND-040):
+
+  1. foldEquityCalculator.estimateFoldPct derived each combo's fold as `1 - pCall`,
+     where pCall = scaledLogistic(...) is bounded to [0.10, 0.80]. Fold therefore had
+     a HARD FLOOR of 0.20 per combo: a combo holding the nuts was modelled as folding
+     21.3% of the time. The missing mass is RAISE — the nuts does not fold to a raise.
+     Now uses comboActionProbabilities (the canonical three-way per-combo model).
+     Measured: nut combo pFold 0.2186 -> 0.0196.
+
+  2. The no-model blend weighted the range-derived estimate 1 against a flat 0.45
+     constant weighted 10 (PRIOR_WEIGHT), discarding 91% of the range evidence. A
+     pseudocount shrinks an OBSERVED FREQUENCY with small N; a full per-combo
+     enumeration is not a sample. This bounded the output to [0.409, 0.500] for EVERY
+     range — a nine-point band, which is why the estimate was effectively range-blind.
+     Population blend now skipped when per-combo enumeration exists (§7.4: a higher
+     tier is not blended with the tier beneath it). Clamp floor 0.10 -> 0.02 on that
+     path (stays non-zero per §3.6.1 — "unlikely", never "impossible").
+
+  3. gameTreeEvaluator.evaluateHeroAction priced hero's bet/raise off
+     queryActionDistribution, which is range-BLIND, and never consulted
+     comboDistribution at all. This was the direct source of the reported +41.7 EV.
+     Now seeded from foldMeta[facing].baseEstimate — the §7.4 hierarchy already
+     resolved in context, taken PRE-contextual-adjustment so the blocker/texture/
+     advantage multipliers downstream are not applied twice.
+
+  MEASURED OUTCOME on the reported spot (3s3d on QhJhTs, 75 into 100, vs AA-TT/AK/AQ):
+    fold estimate  0.4291 -> 0.0500   (range is 51% nuts / 49% strong, 0% air)
+    raise EV       +41.7  -> -111.8
+    ranking        raise first -> FOLD first (EV 0), raise 3rd
+  Range conditioning now demonstrable: 0.050 vs a range that cannot fold, 0.204 vs a
+  range with 26% air.
+
+  DEPTH-2 AUDIT (founder chose the wider scope). The three scaledLogistic call sites in
+  gameTreeDepth2.js are NOT affected:
+    - line 171 pCall uses the [0.10,0.80] defaults, but pFold = 1 - pCall - pRaise, so
+      the raise term absorbs the non-call residual (then all three are normalized).
+    - line 181 pRaise passes explicit floor/scale — deliberately calibrated.
+    - line 118 computePopBaselineFromEquity: its ONLY consumer (line 244) assigns the
+      result to `popCallRate` and never reads it. Dead code, no correctness impact —
+      pFold there was already range-conditioned upstream. Filed as WS-311.
+  The defect was specific to conflating "not calling" with "folding".
+
+  FIND-029 NOT regressed: no equity gate was added. Guarded by an explicit converse
+  assertion (a range with real air still yields fold equity > 0.10) plus the existing
+  193 gameTreeEquity tests, all green.
+
+  Tests: rangeConditionedFoldEquity.test.js (4 new; verified to FAIL 3/4 against the
+  pre-fix engine by stashing the source changes). advisorAccuracy Scenario 3's
+  console.warn converted to a real assertion — it had been firing on every run for
+  months while the test reported green.
+
+  gameTreeEvaluator "no mixFrequency when one action dominates" was rewritten: it had
+  been VACUOUS (every mixFrequency was null, so its guard always took the pass branch
+  and the real assertion had never executed). Correcting the fold estimate compressed
+  the bet-sizing EV spread from 24 points to 4, pushing four candidates into the
+  5%-of-pot mixing window and running it for the first time. It now asserts the stated
+  intent — the dominant ACTION is bet — rather than a sizing-concentration proxy.
+
+  Verified: exploitEngine 2648/2648 green, production build clean.
+
 status_note: |
   Filed under WS-300 (SPR-160) per founder decision that WS-300 repairs the measuring
   instrument and engine behaviour changes get their own item. Evidence:
