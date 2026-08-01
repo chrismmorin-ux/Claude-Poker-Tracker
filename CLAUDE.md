@@ -153,7 +153,9 @@ INV-cli-bypass-via-command monitors compliance from envelope telemetry; sustaine
 
 ## Catch-state suggestions (ADR-040 / WS-299)
 
-A `UserPromptSubmit` hook (`cwos-catch-state-hook.js`) runs the catch-state classifier on each founder turn. When the rule-tier (R1–R6) produces a suggestion clearing the 0.6 confidence gate, the hook injects an `additionalContext` line of the form:
+**Where this runs.** Claude Code hooks are wired per repo in `.claude/settings*.json`, and the kit has no way to install them — there is no safe merge strategy into a JSON file you also own. So today this hook is configured in HomeBase only; most adopted repos have no hooks at all. It reaches every repo when kit content ships as a plugin (ADR-064 Stage 1), since plugins declare hooks. Until then, treat the rest of this section as conditional: **if** the line below appears in your context, act on it; if it never appears, nothing is wrong and there is nothing to wait for.
+
+When configured, a `UserPromptSubmit` hook (`cwos-catch-state-hook.js`) runs the catch-state classifier on each founder turn. When the rule-tier (R1–R6) produces a suggestion clearing the confidence gate (`CONFIDENCE_THRESHOLD` in `kit/scripts/core/cwos-catch-state.js`, currently 0.7 — raised from 0.6 on 2026-07-25 when AS-CATCH-2 was falsified at a 36% accept rate), the hook injects an `additionalContext` line of the form:
 
 > `Catch-state: consider /engine X on Y (R1,R3) conf=0.78. Founder may dismiss silently.`
 

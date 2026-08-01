@@ -156,7 +156,7 @@ Create a session ID: `ses-YYYYMMDD-HHMM-XXXX` (date-time + 4 random hex chars)
 
 ### 2. Check for Abandoned Sessions
 
-The primary mechanism is the `SessionStart` hook in `.claude/settings.local.json`, which runs `cwos-session-recovery.js --auto --quiet` automatically on fresh Claude Code sessions. Step 0b also invoked this script to evaluate the `abandoned_session` escalation signal — if we reached here via that signal, recovery has already run and the script is a no-op on second invocation. Otherwise this step is the fallback for disabled or missed hooks.
+Where a `SessionStart` hook is configured in `.claude/settings*.json`, it runs `cwos-session-recovery.js --auto --quiet` automatically on fresh Claude Code sessions and is the primary mechanism. **Most adopted repos have no hooks** — the kit cannot install them, and they arrive fleet-wide only when ADR-064 Stage 1 ships them via the plugin — so in those repos the step below is not a fallback, it is the only path, and skipping it means abandoned sessions are never recovered. Step 0b also invoked this script to evaluate the `abandoned_session` escalation signal — if we reached here via that signal, recovery has already run and the script is a no-op on second invocation.
 
 ```
 node kit/scripts/cwos-session-recovery.js --auto

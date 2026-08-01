@@ -5,10 +5,10 @@
 total_items: 174
 by_status:
   decomposed: 1
-  done: 59
+  done: 60
   in_progress: 3
   deferred: 44
-  backlog: 48
+  backlog: 47
   dismissed: 1
   completed: 7
   review: 1
@@ -1580,7 +1580,7 @@ items:
 
   - id: "WS-310"
     title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
-    status: backlog
+    status: done
     priority_score: 29
     category: domain-correctness
     effort: M

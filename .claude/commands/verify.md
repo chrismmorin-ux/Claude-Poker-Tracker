@@ -68,7 +68,10 @@ selection so it stays cheap enough to run often:
 - `/verify` and `/audit` run **full mode** (`node kit/scripts/cwos-verify.js`) —
   every invariant, the authoritative pass.
 - **Session start** runs **fast mode** (`--fast-mode --since-git-commit --quiet`)
-  via a SessionStart hook — the curated `fast: true` subset plus any invariant
+  via a SessionStart hook *where one is configured* — HomeBase today, every repo
+  once ADR-064 Stage 1 ships hooks via the plugin. Where it is not, run it by
+  hand or rely on `/verify`. The mode itself is the curated `fast: true` subset
+  plus any invariant
   whose `watched_paths` overlap files changed this session. Silent unless a
   check FAILs. An invariant with no `watched_paths` is always-run, so
   incremental mode never silently skips an unclassified check.

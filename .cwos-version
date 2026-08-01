@@ -1,17 +1,17 @@
-version: 3.8.3
+version: 3.8.5
 adopted_at: "2026-05-01T03:46:43.573Z"
-updated_at: "2026-08-01T06:04:41.860Z"
+updated_at: "2026-08-01T07:21:24.530Z"
 capabilities_enabled: [core]
 level: L1
 homebase_path: "C:/Users/chris/repos/homebase"
-kit_version_at_install: 3.8.3
+kit_version_at_install: 3.8.5
 installed_files:
   .claude/commands/onboard-check.md: "sha256:3ce71469ab9855b5090b8d39ac0d373ea9982030a94b3507241a4685855b0351"
   .claude/commands/feedback.md: "sha256:e7b752acb3dfffe3139728d9fffda2948bea5db4896c693f909c29dcc870ce5a"
   .claude/commands/checkpoint.md: "sha256:5ac887fb508a25e9b0ca207c4c9f875e6f9bca34d984ca5d759da00a253908ef"
   docs/bow-contract.md: "sha256:483d89ba26c8fe8ee6d9a3ed544249de6ffbec148e53b9da82818a1926225a57"
   .claude/commands/status.md: "sha256:cc1828f117c0b2f2728bae49847f2699d5fa3ac1da813b85015380dcb0df8ba9"
-  .claude/commands/session-start.md: "sha256:d7e3143ba93a3e3e1f4172e794e6c75a2d8ebdbcde76b099028f6475b276718b"
+  .claude/commands/session-start.md: "sha256:f1ffd1eddfabca89fdadbc8120cc5ad1265e91fc0715126bf1932d40408f98f9"
   .claude/commands/session-end.md: "sha256:3af88f5807c1cf59239a008bec565e8a5317eb60447f6b57594ad8945905c572"
   .claude/commands/welcome.md: "sha256:00798027775a466dda3ef2b5f2c1a18cfec1ba2ff8db404db205a5d2d377c7c2"
   .claude/commands/discover.md: "sha256:5210ce5054ad0d29d351c27a83d38c9a852ba9952891139f9f79a2bc1054da59"
@@ -25,7 +25,7 @@ installed_files:
   .claude/commands/audit.md: "sha256:7db7caece7fe3036b18f3066914551a31efb25361b7f7713c48fbdf86959826b"
   .claude/commands/kit-upgrade.md: "sha256:c829a1cac8ac4ecaa6ff75ac52485d5e90f144a5a7c764ff518dd050ebf77322"
   .claude/commands/plan.md: "sha256:5d39e587b6ae3b32396cf1b30ccaacc493e9f4ba2a8afcf28af5a3daff4ed9df"
-  .claude/commands/verify.md: "sha256:c28ae4654649b1eb23f9ffa0e640acb37165433aba402462c6f1e3b0c61a1428"
+  .claude/commands/verify.md: "sha256:33c04b318f76ded64002c1229b7f4ab4179772d17ccae6242e1879988c477c34"
   .claude/commands/decide.md: "sha256:9dbd5dc254fc564a091bb8fed9b0225ec15deef30e2cf183d631520d1243897d"
   .claude/commands/autopilot.md: "sha256:a4fe658fce6b2ed1cc2a65a3f046ac44809c73cac6c413baf11f62d08d15bbef"
   .cwos-config.yaml: "sha256:83223e9d4aa203343b3326acb9b01cd4557e1fbbfeebfbe7bccf1b0b90c20b78"
@@ -286,7 +286,7 @@ installed_files:
   kit/scripts/cwos-feedback-capture.js: "sha256:f3e683cf79a6873757957a43887141f9dc16f76ed38acd3dbcd5a88ca06df709"
   kit/scripts/cwos-security-posture-check.js: "sha256:6e501ce0fba6b69e9509e1b531494b8fed87fd1e18fe1bc303ed4efdb3b8f5de"
   kit/scripts/cwos-admin-escalation-audit.js: "sha256:c2b8bd02ed905dbe19e43f3aa6f75fcd08616fd95f21820cb9d83c8abfdd3f1b"
-  kit/scripts/cwos-migrate.js: "sha256:555181d54ecd67cf52374513b8d1ac7aa52c7ccdc5e4840b2dbba9be31e3bf45"
+  kit/scripts/cwos-migrate.js: "sha256:040f5901362bafceb70e1256009a70cdc48231447c6537359f41fb5736929722"
   kit/scripts/cwos-kit-upgrade.js: "sha256:dfa26d9ae96a25e51c53ee875caa66d564be3f7225f37e1f55a1dbc2c1b33c13"
   kit/scripts/cwos-hash-manifest.js: "sha256:1baec3f16590fdf22757543bfe7e462aae1b2fe794a74cccef613c51157c90f3"
   kit/scripts/cwos-manifest-deps-validate.js: "sha256:d74abcc00c7ecd702f273c1e9d4830d46688dfc58c55925a1d16fe0dfbd7c511"
@@ -353,7 +353,8 @@ installed_files:
   docs/guides/next-command-pedagogy.md: "sha256:5122b96f768b26e39328d4e03236e3200cbbcdeb4e868f303295715b41f085e9"
   docs/guides/pulse-pedagogy.md: "sha256:fb8bcd4d24384e11012081a20251987a068bf5d6b5edc3f080f0ab6f7972c05a"
   docs/guides/audit-pedagogy.md: "sha256:9dc3360961c9a21c399e9a49dbcd684dfc1424c3a259ac310a5dff286c5198e3"
-  CLAUDE.md: "sha256:d58ce85ce3a81ff8014623dfd429919c3dfe3d1b80fd9e920da9d32a8e9cee06"
+  kit/scripts/lib/preamble-merge.js: "sha256:15c03491c76171dbf84a02deeab959b761a47261a365589a408d17090dae3079"
+  CLAUDE.md: "sha256:f9805c4c0e3cb39e8093116c1bb7b522d0689e7defc1d650fc7a1520c241a371"
   .claude/commands/next.md: "sha256:1063f5bc694ac2f9b43171ec4ed5e7ae127d61d5135f8e748006aa62d6d45519"
   .claude/commands/engine.md: "sha256:1ee8a4473820ce6af125af09edd7965a76e8e903dcdee26c4226d19ff19da83f"
   .cwos-onboarding.yaml: "sha256:93ba868fd4e53ba862400fb306631f8ec87ea6145b6b1490f704a5ad53ec9171"
@@ -368,11 +369,11 @@ installed_files:
   .claude/agents/performance-engineer.md: "sha256:34ec5e65a3141e0bffa6cdb7c81f3d4ea0784a82ad006b9d7ac594073355e371"
   .claude/agents/security-engineer.md: "sha256:e82a2c6dbdd0546e1911f86088f17157904e1b428c99b53361e5cf5f53911d0b"
   .claude/workstream/config.yaml: "sha256:c0a91d7a7314d8860f163032e271a3f9b25063a7e1a70d5ae95274fc0cadc0c7"
-  .claude/workstream/queue-index.yaml: "sha256:820eb7a940a99bae171c126ac40712fe43a19fecf93400af81c0286173c2dc42"
+  .claude/workstream/queue-index.yaml: "sha256:2364873b47e03c9d2f4ab8c652495d2bcd0cef09482a041f5e26431da3b70cde"
   .claude/workstream/findings-index.yaml: "sha256:ccf0cb7db0affcb04d5b69a56a478e91309335324698b710341e0b6ebf4041f5"
   .claude/workstream/enhancements-index.yaml: "sha256:4b6eadbb625b79280accec0337293f41ebf79e86a8631ae21b2b8f8e5fba86ec"
   .claude/workstream/readiness-index.yaml: "sha256:8849a8c9c30237bb81655f9131db320aebb23965019b0946127ad7a3c21ba47e"
-  .claude/workstream/sprint-index.yaml: "sha256:892e5f8ad3cc4e17f5b2c2f32b83e3bc3195c3a86d5c291a9e8d075a5cbd9fdc"
+  .claude/workstream/sprint-index.yaml: "sha256:21675695685f86bc27fca2576a84e4feb946ccd02e8cd2794d8b1b10803e82e8"
   .claude/workstream/usage.yaml: "sha256:ade46e9d2447a2f70adde76e950db1cfd29935e292d303c8dd6c4cba77d42fee"
   .claude/workstream/system-summary.yaml: "sha256:016763871fcd4d0608581d8fc392c17e277f9808ce0e2e26d8a1c46690083dc8"
   .claude/workstream/engines/registry.yaml: "sha256:ba047750605f2c930268c352ce4aeeabc16d9b76f593c2e7143418cf49fcc518"

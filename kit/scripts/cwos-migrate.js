@@ -31,6 +31,7 @@ const { loadManifest, LEVEL_NUM, resolveSystemDir, resolveDestination } = requir
 const { capabilitiesForLevel } = require('./lib/capability-map');
 const { ensureCapabilityDirs, expectedCapabilityDirs, enabledCapabilities } = require('./lib/cwos-kit-dirs');
 const { corpusHash } = require('./lib/cwos-corpus-hash');
+const { mergePreamble } = require('./lib/preamble-merge');
 
 // 11 mutation sites across 5 logical phases (schema-migrate, file-update,
 // index-rebuild, snapshot, version-stamp). Emit one phase event at the end
@@ -1102,11 +1103,33 @@ function updateFiles(repoPath, homebasePath, classification) {
     fs.copyFileSync(src, dest);
   }
 
-  // Customized files: create .kit-update sidecar
+  // Customized files: create .kit-update sidecar — EXCEPT where the MANIFEST
+  // declares a merge strategy that can update the file in place without
+  // touching what the founder wrote. WS-523: `preamble-replace` had never been
+  // honored on this path, so CLAUDE.md (which always diverges, because every
+  // repo appends project content below the marker) was sidecarred on every
+  // single upgrade and its preamble never changed.
   for (const entry of classification.customized) {
     const src = path.join(homebasePath, entry.source);
-    const dest = path.join(repoPath, entry.destination + '.kit-update');
     if (!fs.existsSync(src)) continue;
+
+    if (entry.merge_strategy === 'preamble-replace') {
+      const destAbs = path.join(repoPath, entry.destination);
+      const merged = mergePreamble(
+        fs.existsSync(destAbs) ? fs.readFileSync(destAbs, 'utf8') : '',
+        fs.readFileSync(src, 'utf8'));
+      if (merged.ok) {
+        ensureDir(path.dirname(destAbs));
+        fs.writeFileSync(destAbs, merged.content);
+        classification.preambleMerged = classification.preambleMerged || [];
+        classification.preambleMerged.push(entry.destination);
+        continue;
+      }
+      // No marker to merge against — fall through to the sidecar rather than
+      // guess which region of the founder's instructions file is ours.
+    }
+
+    const dest = path.join(repoPath, entry.destination + '.kit-update');
     ensureDir(path.dirname(dest));
     fs.copyFileSync(src, dest);
   }
