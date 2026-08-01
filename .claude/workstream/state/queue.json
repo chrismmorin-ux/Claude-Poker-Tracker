@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-08-01T05:46:26.794Z",
-  "updated_by_event": "ev-1785563186794-8a0af8de4774",
+  "updated_at": "2026-08-01T06:47:44.744Z",
+  "updated_by_event": "ev-1785566864744-0b71ee1e8083",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -589,54 +589,6 @@
         "source_line": 260
       },
       "blocked_by": [],
-      "enables": [],
-      "files_involved": [],
-      "source_class": "untagged"
-    },
-    "WS-056": {
-      "id": "WS-056",
-      "title": "Phase 1",
-      "status": "done",
-      "priority_score": 15,
-      "category": "range-lab",
-      "effort": "M",
-      "program": "engineering",
-      "capability": "core",
-      "sprint_id": "SPR-099",
-      "claimed_at": "2026-05-21T15:30:00Z",
-      "completed_at": "2026-05-21T19:10:00Z",
-      "source": {
-        "origin": "backlog-md-migration-2026-05-01",
-        "legacy_section": "NEXT — Ready to Start",
-        "source_line": 290
-      },
-      "blocked_by": [
-        "WS-055"
-      ],
-      "enables": [],
-      "files_involved": [],
-      "source_class": "untagged"
-    },
-    "WS-057": {
-      "id": "WS-057",
-      "title": "Phase 2",
-      "status": "done",
-      "priority_score": 15,
-      "category": "range-lab",
-      "effort": "M",
-      "program": "engineering",
-      "capability": "core",
-      "sprint_id": "SPR-100",
-      "claimed_at": "2026-05-21T19:30:00Z",
-      "completed_at": "2026-05-21T23:20:00Z",
-      "source": {
-        "origin": "backlog-md-migration-2026-05-01",
-        "legacy_section": "NEXT — Ready to Start",
-        "source_line": 291
-      },
-      "blocked_by": [
-        "WS-056"
-      ],
       "enables": [],
       "files_involved": [],
       "source_class": "untagged"
@@ -1526,175 +1478,6 @@
       ],
       "source_class": "spr-followup"
     },
-    "WS-150": {
-      "id": "WS-150",
-      "title": "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM",
-      "status": "done",
-      "priority_score": 14,
-      "category": "hero-state-primitive",
-      "effort": "L",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "",
-      "claimed_at": "2026-06-10T22:19:23Z",
-      "completed_at": "2026-06-10T22:19:23Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §7 + project_hero_state_primitive.md v2 backlog",
-        "conversation_session": "session-2026-05-03-design-hsp-v2",
-        "parent_ws": "WS-136"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "docs/HERO_STATE_DESIGN.md",
-        "src/utils/heroState/ (extension)",
-        "docs/design/hero-state-templates/{turn,river}/ (NEW)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-151": {
-      "id": "WS-151",
-      "title": "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)",
-      "status": "done",
-      "priority_score": 13,
-      "category": "hero-state-primitive",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-102",
-      "claimed_at": "2026-05-22T12:05:00Z",
-      "completed_at": "2026-05-22T12:35:00Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_ws": "WS-150",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §4.4 + project_hero_state_primitive.md v2 backlog"
-      },
-      "blocked_by": [],
-      "enables": [
-        "WS-153"
-      ],
-      "files_involved": [
-        "docs/HERO_STATE_DESIGN.md (extend §4.4)",
-        "docs/design/hero-state-templates/turn/ (NEW)",
-        "docs/design/hero-state-templates/CONVENTIONS.md (read)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-152": {
-      "id": "WS-152",
-      "title": "HSP-A4 — River archetype taxonomy + templates (14 archetypes)",
-      "status": "done",
-      "priority_score": 13,
-      "category": "hero-state-primitive",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-103",
-      "claimed_at": "2026-05-30T12:00:00Z",
-      "completed_at": "2026-05-30T12:30:00Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_ws": "WS-150",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §4.5 + project_hero_state_primitive.md v2 backlog"
-      },
-      "blocked_by": [],
-      "enables": [
-        "WS-153"
-      ],
-      "files_involved": [
-        "docs/HERO_STATE_DESIGN.md (extend §4.5)",
-        "docs/design/hero-state-templates/river/ (NEW)",
-        "docs/design/hero-state-templates/CONVENTIONS.md (read)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-153": {
-      "id": "WS-153",
-      "title": "HSP-B3 — Extend classifyArchetype() to turn + river (remove NotImplementedError)",
-      "status": "done",
-      "priority_score": 13,
-      "category": "hero-state-primitive",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-103",
-      "claimed_at": "2026-05-30T12:00:00Z",
-      "completed_at": "2026-05-30T13:00:00Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_ws": "WS-150",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §4.4 + §4.5"
-      },
-      "blocked_by": [
-        "WS-151",
-        "WS-152"
-      ],
-      "enables": [],
-      "files_involved": [
-        "src/utils/heroState/classifyArchetype.js",
-        "src/utils/heroState/types.js (extend ARCHETYPE_IDS const)",
-        "src/utils/heroState/__tests__/classifyArchetype.test.js",
-        "src/utils/decisionAccumulator.js (read — action-history vocab reuse audit)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-154": {
-      "id": "WS-154",
-      "title": "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)",
-      "status": "done",
-      "priority_score": 13,
-      "category": "hero-state-primitive",
-      "effort": "L",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-106",
-      "claimed_at": "2026-06-04T00:00:00Z",
-      "completed_at": "2026-06-04T00:00:00Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_ws": "WS-150",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §7.4"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "docs/HERO_STATE_DESIGN.md (rewrite §7.4)",
-        "docs/design/hero-state-templates/multiway/ (NEW)",
-        "src/utils/heroState/classifyArchetype.js (extend)",
-        "src/utils/heroState/equityVsRangeParts.js (extend for sequential decisions)",
-        "src/utils/heroState/buildHeroState.js (extend)",
-        "src/utils/heroState/types.js (extend ARCHETYPE_IDS + add multiway-specific fields if needed)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-155": {
-      "id": "WS-155",
-      "title": "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)",
-      "status": "done",
-      "priority_score": 13,
-      "category": "hero-state-primitive",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-105",
-      "claimed_at": "2026-06-04T00:00:00Z",
-      "completed_at": "2026-06-04T00:00:00Z",
-      "source": {
-        "origin": "founder-promotion-2026-05-03",
-        "parent_ws": "WS-150",
-        "parent_doc": "docs/HERO_STATE_DESIGN.md §7.2"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "docs/HERO_STATE_DESIGN.md (resolve §7.2)",
-        "src/utils/heroState/buildHeroState.js (integrate composer)",
-        "src/utils/heroState/composeAdjustments.js (NEW or inline)",
-        "src/utils/heroState/__tests__/composeAdjustments.test.js (NEW)"
-      ],
-      "source_class": "spr-followup"
-    },
     "WS-156": {
       "id": "WS-156",
       "title": "HSP-X2 — Caching strategy (event-driven; only claim if production HSP usage surfaces a perf issue)",
@@ -1883,37 +1666,6 @@
       ],
       "source_class": "spr-followup"
     },
-    "WS-164": {
-      "id": "WS-164",
-      "title": "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)",
-      "status": "done",
-      "priority_score": 18,
-      "category": "player-identification-v2",
-      "effort": "M",
-      "program": "design",
-      "capability": "core",
-      "sprint_id": "",
-      "claimed_at": "2026-06-09T00:00:00Z",
-      "completed_at": "2026-06-09T00:00:00Z",
-      "source": {
-        "origin": "ws-008-decomposition-spr-034-2026-05-04",
-        "parent_ws": "WS-008"
-      },
-      "blocked_by_note": "Also depends on Table-Build Gate 5 — separate workstream not yet ticketed; consult founder if Table-Build CandidateColumn is needed before this child can ship to a real surface.",
-      "blocked_by": [
-        "WS-163"
-      ],
-      "enables": [],
-      "files_involved": [
-        "src/utils/playerMatching/scorePlayerMatch.js (NEW)",
-        "src/utils/playerMatching/__tests__/scorePlayerMatch.test.js (NEW)",
-        "src/components/views/PlayerProfileView/ConfidenceBar.jsx (NEW shared)",
-        "src/components/views/TableBuildView/CandidateColumn.jsx (modify when exists)",
-        "src/components/views/PlayersView.jsx (rewire to scorePlayerMatch)",
-        "docs/projects/player-identification-v2/recognition-confidence-schema.md (NEW)"
-      ],
-      "source_class": "spr-followup"
-    },
     "WS-165": {
       "id": "WS-165",
       "title": "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)",
@@ -2063,41 +1815,6 @@
       ],
       "source_class": "spr-followup"
     },
-    "WS-190": {
-      "id": "WS-190",
-      "title": "Mid-hand tag-for-review — owner-tappable flag during action entry that surfaces in a Review Queue surface afterward",
-      "status": "done",
-      "priority_score": 14,
-      "category": "review-workflow",
-      "effort": "M",
-      "program": "design",
-      "capability": "core",
-      "sprint_id": "SPR-107",
-      "claimed_at": "2026-06-05T00:00:00Z",
-      "completed_at": "2026-06-05T00:00:00Z",
-      "source": {
-        "parent_ws": "",
-        "parent_spr": "",
-        "user_request": "2026-05-12 — owner: 'We need a way for a player to tag a hand for later review, while entering the hand.'"
-      },
-      "blocked_by": [
-        "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 (no new features). Bug fixes exempt; this is a feature."
-      ],
-      "enables": [],
-      "files_involved": [
-        "docs/design/audits/YYYY-MM-DD-entry-hand-tag.md (NEW)",
-        "docs/design/surfaces/hand-tag-for-review.md (NEW)",
-        "src/components/views/TableView/CommandStrip.jsx (tag affordance)",
-        "src/utils/persistence/migrationRegistry.js (v26 entry — additive field)",
-        "src/utils/persistence/migrations.js (migrationV26)",
-        "src/utils/persistence/sessionsStorage.js (hand-record schema extension)",
-        "src/components/views/SessionsView/SessionsView.jsx (Review Queue filter chip)",
-        "src/components/views/HandReplayView/HandReplayView.jsx (tag display + untag)",
-        "src/reducers/sessionReducer.js OR new tag-handler action",
-        "system/invariants.md (INV-TAG-* — single-source-of-truth for tagged state)"
-      ],
-      "source_class": "spr-followup"
-    },
     "WS-191": {
       "id": "WS-191",
       "title": "Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry",
@@ -2243,105 +1960,6 @@
         "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
       ],
       "source_class": "spr-followup"
-    },
-    "WS-210": {
-      "id": "WS-210",
-      "title": "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)",
-      "status": "done",
-      "priority_score": 15,
-      "category": "range-lab",
-      "effort": "M",
-      "program": "engineering",
-      "capability": "core",
-      "sprint_id": "SPR-101",
-      "claimed_at": "2026-05-22T00:10:00Z",
-      "completed_at": "2026-05-22T11:55:00Z",
-      "source": {
-        "origin": "spr-followup",
-        "parent_ws": "WS-057"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [],
-      "source_class": "spr-followup"
-    },
-    "WS-211": {
-      "id": "WS-211",
-      "title": "HSP — Orchestrator deriveActionContext() upgrade for turn/river precision",
-      "status": "done",
-      "priority_score": 15,
-      "category": "hero-state-primitive",
-      "effort": "M",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": "SPR-104",
-      "claimed_at": "2026-05-31T00:00:00Z",
-      "completed_at": "2026-06-04T00:00:00Z",
-      "source": {
-        "origin": "ws-153-followup-2026-05-30",
-        "parent_ws": "WS-150",
-        "parent_doc": "src/utils/heroState/classifyArchetype.js JSDoc (WS-153 spec resolution note) + .claude/workstream/sprints/SPR-103.yaml"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/heroState/buildHeroState.js (deriveActionContext extension)",
-        "src/utils/heroState/__tests__/buildHeroState.test.js (new scenario coverage)",
-        "src/utils/exploitEngine/decisionAccumulator.js (READ — reuse audit)",
-        "src/utils/skillAssessment/heroDecisionAccumulator.js (READ — reuse audit)",
-        "src/utils/skillAssessment/deriveSituationKey.js (READ — reuse audit)",
-        "src/utils/decisionSystems/accumulator/createAccumulator.js (READ — reuse audit)"
-      ],
-      "source_class": "spr-followup"
-    },
-    "WS-212": {
-      "id": "WS-212",
-      "title": "Kit upgrade 3.5.0 → 3.8.0 — install missing cwos-* script suite (run from HomeBase)",
-      "status": "done",
-      "priority_score": 16,
-      "category": "cwos-infrastructure",
-      "effort": "S",
-      "program": "engineering",
-      "capability": "core",
-      "sprint_id": "",
-      "claimed_at": null,
-      "completed_at": "2026-06-09T00:00:00Z",
-      "source": {
-        "origin": "conversation-2026-06-09-session-end-followup",
-        "conversation": "Founder asked whether /adopt runs here or from HomeBase after recurring kit/scripts-absent friction (fr-014)"
-      },
-      "blocked_by_note": "Cannot run autonomously in this repo. /kit-upgrade operates on the repo's own kit/scripts/cwos-kit-upgrade.js, which is absent (the whole problem) — so it can't bootstrap here. Must be initiated from a Claude Code session rooted in HomeBase (C:/Users/chris/Claude HomeBase) via /adopt --update (Step 1), then optionally /kit-upgrade in-repo (Step 2). Founder-driven meta-task; do not surface as an autonomous-execution candidate.",
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "kit/ (new — provisioned by adopt/kit-upgrade)",
-        ".cwos-version (version stamp + installed_files)",
-        ".claude/commands/ + .claude/skills/ (HomeBase-authored surfaces refreshed; .kit-update sidecars for customized files)"
-      ],
-      "source_class": "conversation"
-    },
-    "WS-213": {
-      "id": "WS-213",
-      "title": "Harden naive YAML reader to strip inline comments on scalar values",
-      "status": "done",
-      "priority_score": 12,
-      "category": "infrastructure",
-      "effort": "S",
-      "program": "self-compliance",
-      "capability": "core",
-      "sprint_id": "SPR-116",
-      "completed_at": "2026-06-10T22:37:20.749Z",
-      "source": {
-        "type": "manual",
-        "created_by": "user",
-        "origin": "SPR-113 follow-up — broader root-cause of the inline-comment cap-breach bug"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "kit/scripts/cwos-next.js"
-      ],
-      "source_class": "untagged"
     },
     "WS-214": {
       "id": "WS-214",
@@ -2525,60 +2143,6 @@
       "enables": [],
       "files_involved": [
         "src/components/views/PostflopDrillsView/__tests__/RangeLabExplorer.test.jsx"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-221": {
-      "id": "WS-221",
-      "title": "Global anchor-library reset — red line #4b (design-gated destructive action)",
-      "status": "done",
-      "priority_score": 9,
-      "category": "ux",
-      "effort": "M",
-      "program": "design",
-      "capability": "core",
-      "sprint_id": "",
-      "completed_at": "2026-06-13T04:37:29.521Z",
-      "source": {
-        "type": "manual",
-        "created_by": "ai-during-sprint",
-        "sprint_id": "SPR-115",
-        "origin_item": "WS-025"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/reducers/anchorLibraryReducer.js",
-        "src/constants/anchorLibraryConstants.js",
-        "src/components/views/CalibrationDashboardView/",
-        "src/components/views/AnchorLibraryView/__tests__/autonomyRedLines.test.jsx"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-222": {
-      "id": "WS-222",
-      "title": "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)",
-      "status": "done",
-      "priority_score": 10,
-      "category": "ux",
-      "effort": "M",
-      "program": "design",
-      "capability": "core",
-      "sprint_id": "",
-      "completed_at": "2026-06-13T01:53:57.362Z",
-      "source": {
-        "type": "manual",
-        "created_by": "ai-during-sprint",
-        "sprint_id": "SPR-115",
-        "origin_item": "WS-025"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/components/views/SettingsView/",
-        "src/components/views/CalibrationDashboardView/EnrollmentStateBanner.jsx",
-        "src/reducers/anchorLibraryReducer.js",
-        "src/hooks/useAnchorLibraryPersistence.js"
       ],
       "source_class": "untagged"
     },
@@ -3031,84 +2595,6 @@
       ],
       "source_class": "untagged"
     },
-    "WS-241": {
-      "id": "WS-241",
-      "title": "detectPositionallyAware: replace raw frequentist ratio with Beta-posterior comparison (FIND-011)",
-      "status": "done",
-      "priority_score": 18,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "FIND-011",
-        "run_id": "run-domain-correctness-delta-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/rangeEngine/traitDetector.js",
-        "src/utils/rangeEngine/__tests__/ (traitDetector tests)"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-242": {
-      "id": "WS-242",
-      "title": "ICM risk-premium: covered-shove stack-transfer asymmetry (riskChips uses full stack)",
-      "status": "done",
-      "priority_score": 16,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "",
-        "run_id": "run-domain-correctness-delta-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/icmEngine/riskPremium.js",
-        "src/hooks/usePushFold.js",
-        "src/utils/icmEngine/__tests__/icmEngine.test.js"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-243": {
-      "id": "WS-243",
-      "title": "POKER_THEORY doc reconcile: PRIOR_WEIGHT ~5->~10 + document rake/SPR-zones/fold-curves (FIND-012, FIND-013)",
-      "status": "done",
-      "priority_score": 14,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "FIND-012",
-        "run_id": "run-domain-correctness-delta-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        ".claude/context/POKER_THEORY.md"
-      ],
-      "source_class": "untagged"
-    },
     "WS-244": {
       "id": "WS-244",
       "title": "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)",
@@ -3161,31 +2647,6 @@
       ],
       "source_class": "untagged"
     },
-    "WS-246": {
-      "id": "WS-246",
-      "title": "calcBluffEV: net rake out of the semi-bluff called branch (FIND-028)",
-      "status": "done",
-      "priority_score": 14,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "FIND-028",
-        "run_id": "run-domain-correctness-challenge-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/exploitEngine/foldEquityCalculator.js"
-      ],
-      "source_class": "untagged"
-    },
     "WS-247": {
       "id": "WS-247",
       "title": "bestResponseToAggression raise-gate: replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)",
@@ -3209,59 +2670,6 @@
       "files_involved": [
         "src/utils/exploitEngine/gameTreeEquity.js",
         "src/utils/exploitEngine/villainModelData.js"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-248": {
-      "id": "WS-248",
-      "title": "Unify villain bluff-frequency: comboBetFilter + computeVillainBetProb share one source (FIND-027)",
-      "status": "done",
-      "priority_score": 15,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "FIND-027",
-        "run_id": "run-domain-correctness-challenge-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/exploitEngine/gameTreeEquity.js",
-        "src/utils/exploitEngine/gameTreeDepth2.js",
-        "src/utils/exploitEngine/gameTreeEvaluator.js"
-      ],
-      "source_class": "untagged"
-    },
-    "WS-249": {
-      "id": "WS-249",
-      "title": "Verify range-rebuild idempotency vs showdown-anchor accumulation (FIND-026)",
-      "status": "done",
-      "priority_score": 14,
-      "category": "domain-correctness",
-      "effort": "S",
-      "program": "domain-correctness",
-      "capability": "core",
-      "sprint_id": null,
-      "claimed_at": null,
-      "completed_at": "2026-06-20T00:00:00Z",
-      "source": {
-        "type": "finding",
-        "created_by": "ai",
-        "finding_id": "FIND-026",
-        "run_id": "run-domain-correctness-challenge-2026-06-20"
-      },
-      "blocked_by": [],
-      "enables": [],
-      "files_involved": [
-        "src/utils/rangeEngine/bayesianUpdater.js",
-        "src/utils/rangeEngine/__tests__/bayesianUpdater.test.js"
       ],
       "source_class": "untagged"
     },
@@ -5316,5 +4724,5 @@
       "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785563186794-8a0af8de4774"
+  "last_event_log_head": "ev-1785566864744-0b71ee1e8083"
 }

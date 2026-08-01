@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785563186794-8a0af8de4774"
-generated_content_hash: "5ce343b4580a876bf8f8adcde13c7a08cf67c3abcc80b639864e499f1ee7ff7a"
-generated_at: "2026-08-01T05:46:27.170Z"
+generated_from_event: "ev-1785566883859-572606d48362"
+generated_content_hash: "4117b4c657f9fcbedfdd45f4194c1504506ea197f5079df1767d4e9aed5fd669"
+generated_at: "2026-08-01T06:48:03.893Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1184
+event_count: 1322
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 747
-- Events recorded: 1184
+- Commands recorded: 885
+- Events recorded: 1322
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -7924,3 +7924,1383 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-01T05:46:26.794Z | T6:workstream | /decide | item_id="WS-324", program="domain-correctness", +5 more |
+
+## Command `auto:6752:1785566730306`
+
+- Start: 2026-08-01T06:45:30.306Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.306Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:6752:1785566730572`
+
+- Start: 2026-08-01T06:45:30.572Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.572Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:6752:1785566730595`
+
+- Start: 2026-08-01T06:45:30.595Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.595Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:6752:1785566730647`
+
+- Start: 2026-08-01T06:45:30.647Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:45:30.647Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:8308:1785566859979`
+
+- Start: 2026-08-01T06:47:39.979Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:39.979Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860060`
+
+- Start: 2026-08-01T06:47:40.060Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.060Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860114`
+
+- Start: 2026-08-01T06:47:40.114Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.114Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860166`
+
+- Start: 2026-08-01T06:47:40.166Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.166Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860210`
+
+- Start: 2026-08-01T06:47:40.210Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.210Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860251`
+
+- Start: 2026-08-01T06:47:40.251Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.251Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860295`
+
+- Start: 2026-08-01T06:47:40.295Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.295Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860339`
+
+- Start: 2026-08-01T06:47:40.339Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.339Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860388`
+
+- Start: 2026-08-01T06:47:40.388Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.388Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860434`
+
+- Start: 2026-08-01T06:47:40.433Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.433Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860478`
+
+- Start: 2026-08-01T06:47:40.478Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.478Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860521`
+
+- Start: 2026-08-01T06:47:40.521Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.521Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860568`
+
+- Start: 2026-08-01T06:47:40.567Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.567Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860615`
+
+- Start: 2026-08-01T06:47:40.615Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.615Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860657`
+
+- Start: 2026-08-01T06:47:40.657Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.657Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860699`
+
+- Start: 2026-08-01T06:47:40.699Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.699Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860741`
+
+- Start: 2026-08-01T06:47:40.741Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.741Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860781`
+
+- Start: 2026-08-01T06:47:40.781Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.781Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860820`
+
+- Start: 2026-08-01T06:47:40.820Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.820Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860860`
+
+- Start: 2026-08-01T06:47:40.860Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.860Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860900`
+
+- Start: 2026-08-01T06:47:40.900Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.900Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860937`
+
+- Start: 2026-08-01T06:47:40.937Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.937Z | T6:workstream | item-archived | entity_type="queue", path=".claude/workstream/queue/arch"..., +1 more |
+
+## Command `auto:8308:1785566860978`
+
+- Start: 2026-08-01T06:47:40.978Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:40.978Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861017`
+
+- Start: 2026-08-01T06:47:41.017Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.017Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861057`
+
+- Start: 2026-08-01T06:47:41.057Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.057Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861095`
+
+- Start: 2026-08-01T06:47:41.095Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.095Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861138`
+
+- Start: 2026-08-01T06:47:41.138Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.138Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861175`
+
+- Start: 2026-08-01T06:47:41.175Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.175Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861213`
+
+- Start: 2026-08-01T06:47:41.213Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.213Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861250`
+
+- Start: 2026-08-01T06:47:41.250Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.250Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861286`
+
+- Start: 2026-08-01T06:47:41.286Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.286Z | T6:workstream | item-archived | entity_type="findings", path=".claude/workstream/findings/a"..., +1 more |
+
+## Command `auto:8308:1785566861326`
+
+- Start: 2026-08-01T06:47:41.326Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.326Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861368`
+
+- Start: 2026-08-01T06:47:41.368Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.368Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861408`
+
+- Start: 2026-08-01T06:47:41.408Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.408Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861445`
+
+- Start: 2026-08-01T06:47:41.445Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.445Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861481`
+
+- Start: 2026-08-01T06:47:41.481Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.481Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861519`
+
+- Start: 2026-08-01T06:47:41.519Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.519Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861558`
+
+- Start: 2026-08-01T06:47:41.558Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.558Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861598`
+
+- Start: 2026-08-01T06:47:41.598Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.598Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861642`
+
+- Start: 2026-08-01T06:47:41.642Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.642Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861682`
+
+- Start: 2026-08-01T06:47:41.682Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.682Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861725`
+
+- Start: 2026-08-01T06:47:41.725Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.725Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861766`
+
+- Start: 2026-08-01T06:47:41.766Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.766Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861813`
+
+- Start: 2026-08-01T06:47:41.813Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.813Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861853`
+
+- Start: 2026-08-01T06:47:41.853Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.853Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861892`
+
+- Start: 2026-08-01T06:47:41.892Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.892Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861929`
+
+- Start: 2026-08-01T06:47:41.929Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.929Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861964`
+
+- Start: 2026-08-01T06:47:41.964Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.964Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566861999`
+
+- Start: 2026-08-01T06:47:41.999Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:41.999Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862033`
+
+- Start: 2026-08-01T06:47:42.033Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.033Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862068`
+
+- Start: 2026-08-01T06:47:42.068Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.068Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862105`
+
+- Start: 2026-08-01T06:47:42.105Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.105Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862142`
+
+- Start: 2026-08-01T06:47:42.142Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.142Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862183`
+
+- Start: 2026-08-01T06:47:42.183Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.183Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862223`
+
+- Start: 2026-08-01T06:47:42.223Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.223Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862259`
+
+- Start: 2026-08-01T06:47:42.259Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.259Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862295`
+
+- Start: 2026-08-01T06:47:42.295Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.295Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862331`
+
+- Start: 2026-08-01T06:47:42.331Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.331Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862367`
+
+- Start: 2026-08-01T06:47:42.367Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.367Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862412`
+
+- Start: 2026-08-01T06:47:42.412Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.412Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862446`
+
+- Start: 2026-08-01T06:47:42.446Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.446Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862480`
+
+- Start: 2026-08-01T06:47:42.480Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.480Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862515`
+
+- Start: 2026-08-01T06:47:42.515Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.515Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862548`
+
+- Start: 2026-08-01T06:47:42.548Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.548Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862582`
+
+- Start: 2026-08-01T06:47:42.582Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.582Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862621`
+
+- Start: 2026-08-01T06:47:42.621Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.621Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862656`
+
+- Start: 2026-08-01T06:47:42.656Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.656Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862691`
+
+- Start: 2026-08-01T06:47:42.691Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.691Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862729`
+
+- Start: 2026-08-01T06:47:42.729Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.729Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862762`
+
+- Start: 2026-08-01T06:47:42.762Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.762Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862796`
+
+- Start: 2026-08-01T06:47:42.796Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.796Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862832`
+
+- Start: 2026-08-01T06:47:42.832Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.832Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862865`
+
+- Start: 2026-08-01T06:47:42.865Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.865Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862898`
+
+- Start: 2026-08-01T06:47:42.898Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.898Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862931`
+
+- Start: 2026-08-01T06:47:42.931Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.931Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862963`
+
+- Start: 2026-08-01T06:47:42.963Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.963Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566862995`
+
+- Start: 2026-08-01T06:47:42.995Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:42.995Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863026`
+
+- Start: 2026-08-01T06:47:43.026Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.026Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863060`
+
+- Start: 2026-08-01T06:47:43.060Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.060Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863093`
+
+- Start: 2026-08-01T06:47:43.093Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.093Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863126`
+
+- Start: 2026-08-01T06:47:43.126Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.126Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863160`
+
+- Start: 2026-08-01T06:47:43.160Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.160Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863197`
+
+- Start: 2026-08-01T06:47:43.197Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.197Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863230`
+
+- Start: 2026-08-01T06:47:43.230Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.230Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863264`
+
+- Start: 2026-08-01T06:47:43.264Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.264Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863297`
+
+- Start: 2026-08-01T06:47:43.297Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.297Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863335`
+
+- Start: 2026-08-01T06:47:43.335Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.335Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863372`
+
+- Start: 2026-08-01T06:47:43.372Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.372Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863408`
+
+- Start: 2026-08-01T06:47:43.408Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.408Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863442`
+
+- Start: 2026-08-01T06:47:43.442Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.442Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863476`
+
+- Start: 2026-08-01T06:47:43.476Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.476Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863510`
+
+- Start: 2026-08-01T06:47:43.510Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.510Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863544`
+
+- Start: 2026-08-01T06:47:43.544Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.544Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863579`
+
+- Start: 2026-08-01T06:47:43.579Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.579Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863614`
+
+- Start: 2026-08-01T06:47:43.614Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.614Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863648`
+
+- Start: 2026-08-01T06:47:43.648Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.648Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863682`
+
+- Start: 2026-08-01T06:47:43.682Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.682Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863716`
+
+- Start: 2026-08-01T06:47:43.716Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.716Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863749`
+
+- Start: 2026-08-01T06:47:43.749Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.749Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863779`
+
+- Start: 2026-08-01T06:47:43.779Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.779Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863809`
+
+- Start: 2026-08-01T06:47:43.809Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.809Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863840`
+
+- Start: 2026-08-01T06:47:43.840Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.840Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863872`
+
+- Start: 2026-08-01T06:47:43.872Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.872Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863904`
+
+- Start: 2026-08-01T06:47:43.904Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.904Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863935`
+
+- Start: 2026-08-01T06:47:43.935Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.935Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863963`
+
+- Start: 2026-08-01T06:47:43.963Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.963Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566863991`
+
+- Start: 2026-08-01T06:47:43.991Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:43.991Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864019`
+
+- Start: 2026-08-01T06:47:44.019Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.019Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864046`
+
+- Start: 2026-08-01T06:47:44.046Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.046Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864076`
+
+- Start: 2026-08-01T06:47:44.076Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.076Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864106`
+
+- Start: 2026-08-01T06:47:44.105Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.105Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864137`
+
+- Start: 2026-08-01T06:47:44.137Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.137Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864168`
+
+- Start: 2026-08-01T06:47:44.168Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.168Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864199`
+
+- Start: 2026-08-01T06:47:44.199Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.199Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864228`
+
+- Start: 2026-08-01T06:47:44.228Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.228Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864260`
+
+- Start: 2026-08-01T06:47:44.260Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.260Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864291`
+
+- Start: 2026-08-01T06:47:44.291Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.291Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864322`
+
+- Start: 2026-08-01T06:47:44.322Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.322Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864351`
+
+- Start: 2026-08-01T06:47:44.351Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.351Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864380`
+
+- Start: 2026-08-01T06:47:44.380Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.380Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864410`
+
+- Start: 2026-08-01T06:47:44.410Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.410Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864438`
+
+- Start: 2026-08-01T06:47:44.438Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.438Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864466`
+
+- Start: 2026-08-01T06:47:44.466Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.466Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864493`
+
+- Start: 2026-08-01T06:47:44.493Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.493Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864519`
+
+- Start: 2026-08-01T06:47:44.519Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.519Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864546`
+
+- Start: 2026-08-01T06:47:44.546Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.546Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864572`
+
+- Start: 2026-08-01T06:47:44.572Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.572Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864599`
+
+- Start: 2026-08-01T06:47:44.599Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.599Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864628`
+
+- Start: 2026-08-01T06:47:44.628Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.628Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864657`
+
+- Start: 2026-08-01T06:47:44.657Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.657Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864689`
+
+- Start: 2026-08-01T06:47:44.689Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.689Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864716`
+
+- Start: 2026-08-01T06:47:44.716Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.716Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8308:1785566864744`
+
+- Start: 2026-08-01T06:47:44.744Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:47:44.744Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `cmd-commandcompleted-msa0f573814d88553e9a`
+
+- Start: 2026-08-01T06:48:03.859Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:48:03.859Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |

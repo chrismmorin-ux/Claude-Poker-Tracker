@@ -750,3 +750,34 @@ assumptions:
 **New consequence — parent priors are narrower than the union of their children.** Containment means a child can only place weight where its parent already has some. The parent priors predate the taxonomy, so a child's doctrine shape is expressed *relative to* the parent's support rather than beyond it: the `squeeze` bluff tail cannot appear at hands the parent `threeBet` prior scores 0, and subclasses end up differing more in *how much* of a hand they claim than in *which* hands. §1 ("parent = union") and §2.5.2 (per-class shapes) are only jointly satisfiable if the parent prior is itself the union of its children's shapes — it currently is not. **Open follow-up:** widen the parent priors to that union, which would change parent grids and so requires re-validating every existing consumer. Deliberately not done here; it would break the parent-invariance guarantee that makes WS-256 additive and safe.
 
 ---
+
+---
+
+## DEC-026: Layout paradigm is per-REGION, not per-view — spatial regions scale, interactive regions do not (app-wide)
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** explicit (founder: "appwide")
+**Decision:** `ScaledContainer`'s uniform `transform: scale()` no longer governs interactive regions. The felt (and any region whose geometry carries meaning) keeps scaling; command columns, rails and control surfaces lay out in real CSS px. Applied app-wide, not TableView-only.
+**Reasoning:** Measured — `s = 0.950` at the design canvas and `0.695` on the founder's device, so a declared 44px target renders at 41.8px / 30.6px and the H-ML06 floor is met **nowhere in the app**. This nullified a class of prior work (AUDIT-2026-04-21-TV F8 "fixed" a target to 44px and shipped it at 28px). The 2026-06-19 responsive audit had the right rule but at the wrong grain: **per-view cannot express TableView**, which holds a spatial felt and an interactive command column at once, and forcing both into one paradigm is what produced the sub-floor targets and the clipped primary CTA. Founder chose app-wide over the cheaper TableView-only option; on investigation app-wide is also *less* work than it appeared, because it finishes a migration already in flight (FluidView + Sessions/Settings/Players) and resolves that audit's open question #1, unanswered for six weeks.
+**Trade-off accepted:** the app stops being one uniformly scaled picture; felt and column no longer share a coordinate system, so every element spanning them needs re-anchoring; vertical scroll appears on a primary path (mitigated by pinning street tabs and the control zone).
+**Context:** WS-319 / SPR-162 (TVR Gate 4 Phase A). Doctrine: `docs/design/surfaces/layout-doctrine.md`. Migration: WS-322. Subsumes WS-311.
+
+---
+
+## DEC-027: Priority order is engine → EV → education; the Table View redesign slows behind accuracy work
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** explicit (founder)
+**Decision:** Accuracy work takes precedence over the Table View Redesign. TVR is not cancelled — Gate 4 Phases B/C, the three P0 defects and the layout migration stay filed with evidence intact — but they queue behind establishing trust in the math and the findings.
+**Reasoning:** Founder: *"engine producing EV producing education, needs to be very accurate and all corners looked into."* Falls directly out of intention principle P2 (trusted before manipulated). The redesign's own sizing track is the clearest instance: its node values are conventions until WS-318 runs, and WS-318's output is only trustworthy once WS-324 confirms the corpus findings replicate. Building the surface first would ship an interface whose numbers nobody can defend.
+**Trade-off accepted:** a surface with three known P0 defects (blocked entry, clipped primary CTA, sub-floor touch targets) stays broken longer. Founder made this call knowing the defect list.
+**Context:** Recorded in `system/intention.md` Recent Direction Changes. Gates WS-323 behind WS-324.
+
+---
+
+## DEC-028: Confirm-before-commit is a design-language principle, and `pointerup` ≠ `pointercancel` is a surface-wide rule
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit (from founder's card-selector proposal + a defect in my own prototype)
+**Decision:** Where a target is **dense, homogeneous or consequential**, the interface must show what will happen before it happens, with the commit point decoupled from the initial touch. Press-hold-preview-release is one implementation, not the principle. Binding corollary: **an interrupted gesture records nothing** — `pointercancel` means *abandon*, never *commit*.
+**Reasoning:** The founder proposed hold-to-zoom on the card selector for "misclick defense". Measurement refuted the stated premise — card cells render at 79×92px, roughly twice the floor — but supported the real one: every selection in the app is **aim → commit → verify**, so in a grid of 52 near-identical cells a perfectly accurate tap can still hit the wrong card with no warning. That is a *feedback-timing* defect, not a size defect, and the reframing is what makes it auditable across surfaces rather than a one-off zoom feature. The `pointercancel` corollary was learned the hard way: my own prototype wired cancel to the commit handler and **silently recorded values the user never released on** — the exact failure the principle exists to prevent.
+**Trade-off / open:** long-press already means "open a different control" in three shipped places (sizing editor, seat context menu, PotDisplay F9). The vocabulary collision is unresolved and belongs to WS-320 (Gate 4 Phase B); the recommendation is to scope refine-on-hold to dense grids first rather than re-litigate three settled decisions.
+**Context:** WS-317, WS-320. `docs/design/explorations/action-entry-sizing.md` §11.
+
