@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 189
+total_items: 169
 by_status:
   decomposed: 1
-  done: 78
-  in_progress: 3
+  done: 56
+  in_progress: 4
   deferred: 43
-  backlog: 45
+  backlog: 46
   dismissed: 1
   completed: 7
   review: 1
@@ -17,15 +17,13 @@ by_status:
 by_category:
   architecture: 1
   correctness: 1
-  cwos-infrastructure: 1
   data-integrity: 1
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 60
+  domain-correctness: 56
   exploit-anchor-library: 8
-  hero-state-primitive: 9
-  infrastructure: 1
+  hero-state-primitive: 2
   input-ux: 3
   kit-quality: 1
   line-study-slice-widening: 11
@@ -33,14 +31,13 @@ by_category:
   performance: 1
   played-hand-review-protocol: 6
   player-identification: 1
-  player-identification-v2: 7
+  player-identification-v2: 6
   pre-session-drill: 6
   predictive-model-calibration: 1
   printable-refresher: 5
   provenance: 3
-  range-lab: 7
+  range-lab: 4
   refactor: 3
-  review-workflow: 1
   seam-integrity: 7
   seat-selection: 1
   self-coach-foundation: 4
@@ -51,7 +48,7 @@ by_category:
   table-view: 1
   test-reliability: 2
   testing: 2
-  ux: 3
+  ux: 1
 
 items:
   - id: "WS-008"
@@ -293,28 +290,6 @@ items:
     category: printable-refresher
     effort: M
     program: design
-    capability: core
-
-  - id: "WS-056"
-    title: "Phase 1"
-    status: done
-    priority_score: 15
-    category: range-lab
-    effort: M
-    blocked_by: ["WS-055"]
-    sprint_id: "SPR-099"
-    program: engineering
-    capability: core
-
-  - id: "WS-057"
-    title: "Phase 2"
-    status: done
-    priority_score: 15
-    category: range-lab
-    effort: M
-    blocked_by: ["WS-056"]
-    sprint_id: "SPR-100"
-    program: engineering
     capability: core
 
   - id: "WS-058"
@@ -677,69 +652,6 @@ items:
     program: design
     capability: core
 
-  - id: "WS-150"
-    title: "HSP-v2 — Hero State Primitive v2 (master) — turn/river + multiway + composition + caching + LLM"
-    status: done
-    priority_score: 14
-    category: hero-state-primitive
-    effort: L
-    program: domain-correctness
-    capability: core
-    completion_notes: "CLOSED 2026-06-10 (founder-approved during /next premise check — umbrella was stale and winning sprint composition while ~90% shipped). Accept criteria met: all 7 children closed or explicitly re-deferred with rationale —   WS-151 done (SPR-102, turn taxonomy: 12 archetypes + templates)   WS-152 done (SPR-103, river taxonomy + templates)   WS-153 done (SPR-103, classifyArchetype turn/river, NotImplementedError removed)   WS-154 done (SPR-106, multiway model; FLOP_MULTIWAY_SRP/_3BP/_LIMPED + role slot)   WS-155 done (SPR-105, adjustment composition rule; §7.2 resolved)   WS-156 deferred (event-driven caching; claim only on production perf signal)   WS-157 re-deferred 2026-06-10 (LLM spike is event-driven on long-tail     frequency evidence from instrumented production usage; rationale in ticket) src/utils/heroState/ extended turn/river + multiway (239/239 heroState tests at SPR-106 close). First-principles guard preserved per child completion notes. HERO_STATE_DESIGN.md §7.2 + §7.4 resolved; §7.3 (LLM) + §7.6 (caching) remain open by design — both event-driven."
-
-  - id: "WS-151"
-    title: "HSP-A3 — Turn archetype taxonomy + templates (~8 archetypes)"
-    status: done
-    priority_score: 13
-    category: hero-state-primitive
-    effort: M
-    sprint_id: "SPR-102"
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-152"
-    title: "HSP-A4 — River archetype taxonomy + templates (14 archetypes)"
-    status: done
-    priority_score: 13
-    category: hero-state-primitive
-    effort: M
-    sprint_id: "SPR-103"
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-153"
-    title: "HSP-B3 — Extend classifyArchetype() to turn + river (remove NotImplementedError)"
-    status: done
-    priority_score: 13
-    category: hero-state-primitive
-    effort: M
-    blocked_by: ["WS-151", "WS-152"]
-    sprint_id: "SPR-103"
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-154"
-    title: "HSP-M1 — Full multiway model (replaces FLOP_MULTIWAY v1 stub; sequential-decision modeling)"
-    status: done
-    priority_score: 13
-    category: hero-state-primitive
-    effort: L
-    sprint_id: "SPR-106"
-    program: domain-correctness
-    capability: core
-    completion_notes: "SHIPPED 2026-06-04 (SPR-106). Plan-mode Phase 1 finding significantly contracted scope from spec pre-figure: gameTreeEvaluator is already fully multiway-aware (numOpponents threads through adjustedRealization 0.85^(n-1) + multiwayFoldPct ∏ formula), so no engine work needed. Three founder decisions ratified:   1. 3 archetypes split by potType (FLOP_MULTIWAY_SRP / _3BP / _LIMPED)      + multiwayHeroRole descriptor slot for hero-PFR-vs-caller axis.      FLOP_MULTIWAY retained as catch-all.   2. equityVsRangeParts MULTIWAY throw lifted; returns null role      partition + populated overall against the supplied range.      buildHeroState:519 dead-code guard fixed (gates on      playersRemaining<3 now).   3. Ship in-sprint, zero child tickets upfront; turn/river splits +      pairwise narrowing primitive captured as v3_TODO frontmatter. Delivered:   - docs/HERO_STATE_DESIGN.md §7.4 RESOLVED with 4 subsections     (taxonomy / already-shipped primitives table / role-partition     limitation / first-principles guard binding); §7 Q4 flipped   - 3 new templates: FLOP_MULTIWAY_SRP / _3BP / _LIMPED at     docs/design/hero-state-templates/flop/ (all 5 pedagogical     structural points; slot-driven, no hardcoded numerics)   - FLOP_MULTIWAY body rewritten as catch-all; v2_TODO → v3_TODO   - types.js: ARCHETYPE_IDS 44 → 47; MULTIWAY_HERO_ROLES enum added;     Situation typedef extended with multiwayHeroRole property   - classifyArchetype.js: potType-routed multiway block in     classifyFlop; v3_TODO comments added to classifyTurn/River   - buildHeroState.js: deriveMultiwayHeroRole() helper + wired into     buildSituation; ARCHETYPE_FAMILY_MAP +3 entries; dead-code guard     at line 572 rephrased to playersRemaining<3   - equityVsRangeParts.js: MULTIWAY throw lifted; skipRolePartition     flag pattern; JSDoc updated   - Tests: +8 classifier multiway-routing tests + 5 buildHeroState     end-to-end multiway tests + 1 equityVsRangeParts behavior change +     reachability case updates + types.js v3 catalog assertions =     239/239 heroState (+18 net vs 221 at SPR-105 close) Verification:   - heroState __tests__/: 239/239 passing   - HandReplay HeroStateSection: 21/21 passing   - gameTreeEvaluator: 193/193 passing (paranoia check; not touched)   - skillAssessment: 216/217 passing (1 pre-existing date-aged flake     at conceptMastery.test.js:120, also flagged in SPR-104 notes —     independent of WS-154)   - Production build: 12.41s, clean   - smart-test-runner.sh: 11,901 passing / 1 pre-existing flake /     20 skipped (483/484 files green) First-principles guard preserved end-to-end:   - archetypeId / multiwayHeroRole / potType are OUTPUTS of game-state     derivation; templates RENDER, never DECIDE   - Bluff-frequency reduction DERIVES from ∏ fold rates (gameTreeEquity     multiwayFoldPct); no hardcoded multiway multiplier   - Equity discount DERIVES from 0.85^(n-1) (adjustedRealization);     no archetype-keyed sizing lookup HSP v2 milestone significantly closer: only conditional WS-156 (caching, perf-signal-gated) + WS-157 (LLM authoring, research spike) remain. WS-150 master ticket can close after those land or are de-scoped."
-
-  - id: "WS-155"
-    title: "HSP-X1 — Adjustment composition rule (precedence vs multiply vs sum when multiple tendencies fire)"
-    status: done
-    priority_score: 13
-    category: hero-state-primitive
-    effort: M
-    sprint_id: "SPR-105"
-    program: domain-correctness
-    capability: core
-    completion_notes: "Shipped end-to-end pipeline per founder-ratified expanded scope (composer + delta producer). Plan-mode caught premise issue at start: villainProfile .vulnerabilities had no delta field — buildAdjustments was applying `{}` uniformly. Scope expanded M → M+S to wire WEAKNESS_TO_DELTA producer.  Files shipped:   - NEW src/utils/heroState/composeAdjustments.js (~160 LoC, 5 exports +     SIZING_MULTIPLIER_FLOOR/CEILING constants)   - src/utils/exploitEngine/villainProfileBuilder.js — added     WEAKNESS_TO_DELTA (8 entries) + deltaForWeaknessId helper; extended     translateWeaknesses to attach delta + rationale per vulnerability;     exported _WEAKNESS_TO_DELTA for testing   - src/utils/heroState/buildHeroState.js — buildAdjustments now passes     delta + severity + confidence through; main orchestrator now exposes     composedDelta in returned HeroState   - src/utils/heroState/types.js — added ComposedDelta typedef; extended     HeroState typedef with composedDelta field   - docs/HERO_STATE_DESIGN.md §7.2 — RESOLVED 2026-06-04; new §7.2.1     subsection documents per-axis rules + poker-theory derivation   - NEW src/utils/heroState/__tests__/composeAdjustments.test.js (~280 LoC,     34 tests across 5 describe blocks)   - src/utils/heroState/__tests__/buildHeroState.test.js — +5 integration     tests for composedDelta (identity / calling-station / stack-clamp /     soft-degrade / adjustments-pre-composition preservation)   - src/utils/exploitEngine/__tests__/villainProfileBuilder.test.js — +5     tests for WEAKNESS_TO_DELTA mapping (calling station / over-folder /     overvalues-medium / unmapped / all-8-entries schema validation)  Per-axis composition rules ratified at plan-mode:   1. sizingMultiplier — multiplicative with clamp [0.6, 2.0] + clamped:true      flag (poker-theory: locally-linear regime bounds; 2.0 ceiling from      POKER_THEORY §3.5 polarization breakpoint; 0.6 floor matches      RIVER_BLOCK_BET threshold)   2. polarize — OR (any-fires-wins; range-construction is binary, not      intensity dial)   3. bluffFreq — MIN-wins (asymmetric loss; minimax-regret; calling-station      worst-case error dominates)   4. actionOverride — precedence-by-severity, conservatism tiebreak      (fold < check < call < bet < raise)  WEAKNESS_TO_DELTA v1 maps 8 load-bearing vulnerability classes: sit-overcalls-river (calling station), sit-folds-to-pressure (over-folder), sit-cbets-wet-unprofitable (wet-cbet bluffer), sit-checks-dry-underbet (dry under-bettor), sit-slowplays-strong (uncapped check-range), sit-weak-showdowns (light caller), sit-overvalues-medium (overbet target), pf-folds-to-3bet-high (preflop fold-to-3bet). Unmapped ids ship delta:{} — informational entries with rationale but no numeric lever. Future tickets extend the map as new vulnerability classes emerge.  Acceptance:   - 34/34 composeAdjustments tests green   - 49/49 buildHeroState tests green (was 44; +5 integration)   - 48/48 villainProfileBuilder tests green (was 43; +5 mapping)   - 221/221 full heroState suite green (was 182; +39 net)   - Production build clean (14.66s, 64 precache entries)   - 3 pre-existing flakes in combined impact-zone run (1 date-aged     conceptMastery; 2 slow EV tests timeout under concurrent load) — all     reproduce on pre-change main; 66/66 pass when run in isolation.     Independent of WS-155.  First-principles guard preserved: composedDelta is OUTPUT of composition over Adjustment[] (POKER_THEORY §7); never input to gameTreeEvaluator. Plans come from equity / SPR / pot odds / players remaining. composedDelta is consumer-facing summary; consumers (HandReplay, future SCF + live coach) decide application."
-
   - id: "WS-156"
     title: "HSP-X2 — Caching strategy (event-driven; only claim if production HSP usage surfaces a perf issue)"
     status: deferred
@@ -801,16 +713,6 @@ items:
     program: design
     capability: core
 
-  - id: "WS-164"
-    title: "PIO G5 child E — Multi-attribute ranking + scoring (PVA + DISAMB)"
-    status: done
-    priority_score: 18
-    category: player-identification-v2
-    effort: M
-    blocked_by: ["WS-163"]
-    program: design
-    capability: core
-
   - id: "WS-165"
     title: "PIO G5 child F — Settings photo-toggle + source-util-policy CI-grep (SET + SUP)"
     status: completed
@@ -860,17 +762,6 @@ items:
     program: design
     capability: core
 
-  - id: "WS-190"
-    title: "Mid-hand tag-for-review — owner-tappable flag during action entry that surfaces in a Review Queue surface afterward"
-    status: done
-    priority_score: 14
-    category: review-workflow
-    effort: M
-    blocked_by: ["refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 (no new features). Bug fixes exempt; this is a feature."]
-    sprint_id: "SPR-107"
-    program: design
-    capability: core
-
   - id: "WS-191"
     title: "Seat autoselector overhaul Phase 2 — root-cause each captured wrong-selection from WS-189 telemetry"
     status: backlog
@@ -917,47 +808,6 @@ items:
     blocked_by: ["WS-055"]
     program: design
     capability: core
-
-  - id: "WS-210"
-    title: "Range Lab Phase 2b — range-vs-range comparison (paint a 2nd range)"
-    status: done
-    priority_score: 15
-    category: range-lab
-    effort: M
-    sprint_id: "SPR-101"
-    program: engineering
-    capability: core
-
-  - id: "WS-211"
-    title: "HSP — Orchestrator deriveActionContext() upgrade for turn/river precision"
-    status: done
-    priority_score: 15
-    category: hero-state-primitive
-    effort: M
-    sprint_id: "SPR-104"
-    program: domain-correctness
-    capability: core
-    completion_notes: "Path A (heroState-local) shipped per founder ratification at composition.  Implementation:   - 4 new local helpers in buildHeroState.js (alongside countPreflopRaises):     normalizeActionVerb, wasHeroPreflopAggressor, heroBetStreet,     villainBetStreet, allPriorPostflopStreetsCheckedThrough.   - deriveActionContext() extended with a precision branch for turn/river     when gameState.heroSeat is present; falls back to v1 heuristic when     heroSeat is missing (preserves backward-compat for callers like     HandReplay's reconstructGameStateAt which doesn't yet pass heroSeat —     out of scope per WS-211 files_involved).   - buildSituation() now derives sizingFraction from pendingBetSize/pot     when caller omits sizingFraction (avoids divide-by-zero when pot=0;     caller-supplied value wins).   - +19 tests in __tests__/buildHeroState.test.js covering:       * TURN BARREL (action complete) + BARREL spot (decision point)       * TURN VS_BARREL OOP       * TURN PROBE (flop checked through, hero leads turn OOP)       * TURN CBET-delayed (hero PFA checked back flop IP, bets turn)       * TURN VS_DONK (×2 — checked-back-flop pattern + bet-flop-villain-donks-turn pattern)       * RIVER BARREL / VS_BARREL OOP / PROBE (requires flop+turn both checked)       * RIVER CBET-delayed / VS_DONK       * RIVER PROBE strict-prereq (turn-bet break ≠ probe)       * sizingFraction derivation from pendingBetSize/pot → RIVER_BLOCK_BET       * Caller-supplied sizingFraction wins over derived       * No derivation when pot=0 (divide-by-zero guard)       * Caller-supplied actionContext wins over derived (override path)       * heroSeat absent → v1 fallback (no consumer regression)       * 3BP TURN BARREL routing  Vocab-reuse audit (accept_criterion #6):   - exploitEngine/decisionAccumulator.js (READ) — shape-compatible but lives     in a higher layer that consumes heroState. Direct import would invert     dependency direction. REJECTED.   - skillAssessment/heroDecisionAccumulator.js (READ) — shape-compatible     but lives in skillAssessment which consumes heroState. REJECTED.   - skillAssessment/deriveSituationKey.js (READ) — strongest shape match     (8-axis with preflopAggressor `pfa`/`pfc` axis), mirrored its     NORMALIZE_ACTION + DERIVE_PREFLOP_AGGRESSOR patterns heroState-locally     (normalizeActionVerb + wasHeroPreflopAggressor). REJECTED for direct     import (layer inversion) — patterns copied with provenance comment.   - decisionSystems/accumulator/createAccumulator.js (READ) — generic     factory with no domain content. REJECTED (no-fit).  Follow-up path B (extract neutral src/utils/actionHistory/streetContext.js) remains a legitimate refactor if/when a 3rd consumer surfaces the same turn/river vocabulary in skillAssessment or exploitEngine. Single consumer today → YAGNI per founder ratification.  First-principles guard preserved: archetypeId stays OUTPUT-only. The derived actionContext is itself an OUTPUT of action-history reconstruction; the classifier reads it as an axis. POKER_THEORY.md §7 contract holds.  Acceptance:   - 44/44 buildHeroState tests green (+19 net).   - 182/182 heroState suite green (was 163; +19 matches).   - Production build clean (12.02s).   - Impact-zone (HandReplayView + skillAssessment + shapeLanguage):     790/791 green. The 1 failure is a pre-existing date-aged flake at     conceptMastery.test.js:120 ('2026-05-04' lastUpdatedAt → recencyPenalty     decays to 0 as of 2026-06-04). Independent of WS-211 — reproduces on     pre-change main."
-
-  - id: "WS-212"
-    title: "Kit upgrade 3.5.0 → 3.8.0 — install missing cwos-* script suite (run from HomeBase)"
-    status: done
-    priority_score: 16
-    category: cwos-infrastructure
-    effort: S
-    program: engineering
-    capability: core
-
-  - id: "WS-213"
-    title: "Harden naive YAML reader to strip inline comments on scalar values"
-    status: done
-    priority_score: 12
-    category: infrastructure
-    effort: S
-    sprint_id: "SPR-116"
-    program: self-compliance
-    capability: core
-    completion_notes: "SHIPPED 2026-06-10 (SPR-116). Root fix inside the shared reader (kit/scripts/lib/cwos-utils.js): new quote-aware stripInlineComment() helper cuts at the first '#' preceded by whitespace outside quoted spans. Applied (1) at top of parseScalar — covers mapping scalars, block-sequence items, sequence-of-mapping values, inline-array elements; (2) on afterColon in parseMapping before branch dispatch — fixes `key: [a, b]  # note` corrupting the last array element. Block-scalar content untouched (readBlockScalar never routes through parseScalar). Bonus fix beyond accept criteria: `key: \"val\"  # note` now properly unquotes (previously returned the raw string with quotes). Leading-# values (`key: #fff`) deliberately unchanged — minimal scope. cwos-next.js loadConfig toInt() guard retained as defense-in-depth. Tests: scripts/__tests__/cwos-utils-yaml.test.js (12 cases incl. SPR-113 reproduction + quoted/unquoted/block-scalar/inline-array coverage), all green. Verification: gate parses caps as numbers {max_items: 5, max_effort_sessions: 2}; candidates parses queue cleanly. Full suite 12,297/12,320 passing — 2 failures are pre-existing full-suite-load flakes (gameTreeDepth2 green in isolation; src/ has zero imports of kit code, so the reader change cannot affect app tests)."
 
   - id: "WS-214"
     title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"
@@ -1021,24 +871,6 @@ items:
     category: test-reliability
     effort: S
     program: engineering
-    capability: core
-
-  - id: "WS-221"
-    title: "Global anchor-library reset — red line #4b (design-gated destructive action)"
-    status: done
-    priority_score: 9
-    category: ux
-    effort: M
-    program: design
-    capability: core
-
-  - id: "WS-222"
-    title: "Anchor-calibration enrollment toggle UI — red line #1 completion (no dispatch site exists)"
-    status: done
-    priority_score: 10
-    category: ux
-    effort: M
-    program: design
     capability: core
 
   - id: "WS-223"
@@ -1207,33 +1039,6 @@ items:
     program: design
     capability: core
 
-  - id: "WS-241"
-    title: "detectPositionallyAware: replace raw frequentist ratio with Beta-posterior comparison (FIND-011)"
-    status: done
-    priority_score: 18
-    category: domain-correctness
-    effort: S
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-242"
-    title: "ICM risk-premium: covered-shove stack-transfer asymmetry (riskChips uses full stack)"
-    status: done
-    priority_score: 16
-    category: domain-correctness
-    effort: S
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-243"
-    title: "POKER_THEORY doc reconcile: PRIOR_WEIGHT ~5->~10 + document rake/SPR-zones/fold-curves (FIND-012, FIND-013)"
-    status: done
-    priority_score: 14
-    category: domain-correctness
-    effort: S
-    program: domain-correctness
-    capability: core
-
   - id: "WS-244"
     title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
     status: done
@@ -1252,39 +1057,12 @@ items:
     program: domain-correctness
     capability: core
 
-  - id: "WS-246"
-    title: "calcBluffEV: net rake out of the semi-bluff called branch (FIND-028)"
-    status: done
-    priority_score: 14
-    category: domain-correctness
-    effort: S
-    program: domain-correctness
-    capability: core
-
   - id: "WS-247"
     title: "bestResponseToAggression raise-gate: replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)"
     status: done
     priority_score: 16
     category: domain-correctness
     effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-248"
-    title: "Unify villain bluff-frequency: comboBetFilter + computeVillainBetProb share one source (FIND-027)"
-    status: done
-    priority_score: 15
-    category: domain-correctness
-    effort: S
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-249"
-    title: "Verify range-rebuild idempotency vs showdown-anchor accumulation (FIND-026)"
-    status: done
-    priority_score: 14
-    category: domain-correctness
-    effort: S
     program: domain-correctness
     capability: core
 
@@ -1829,10 +1607,29 @@ items:
 
   - id: "WS-313"
     title: "Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant"
-    status: backlog
+    status: in_progress
     priority_score: 33
     category: domain-correctness
     effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-314"
+    title: "Hero's called-branch EV is valued at ~40% of its true worth — the nut flush's call branch prices at 72 when it should be ~170"
+    status: backlog
+    priority_score: 32
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-315"
+    title: "Hero's range should decompose into LINES (check-call / check-raise / bet-3bet-fold), not single actions"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-313", "WS-314"]
     program: domain-correctness
     capability: core
 

@@ -750,3 +750,35 @@ assumptions:
 **New consequence — parent priors are narrower than the union of their children.** Containment means a child can only place weight where its parent already has some. The parent priors predate the taxonomy, so a child's doctrine shape is expressed *relative to* the parent's support rather than beyond it: the `squeeze` bluff tail cannot appear at hands the parent `threeBet` prior scores 0, and subclasses end up differing more in *how much* of a hand they claim than in *which* hands. §1 ("parent = union") and §2.5.2 (per-class shapes) are only jointly satisfiable if the parent prior is itself the union of its children's shapes — it currently is not. **Open follow-up:** widen the parent priors to that union, which would change parent grids and so requires re-validating every existing consumer. Deliberately not done here; it would break the parent-invariance guarantee that makes WS-256 additive and safe.
 
 ---
+
+---
+
+### DEC-026: Villain's decision model is priced on hero's PERCEIVED range, not hero's cards
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit
+**Decision:** One rule, one accessor (`villainDecisionEquity`): hero's own EV math uses `combo.heroEquity` (hero does know their cards); every villain DECISION uses equity against hero's perceived range (villain does not). Applied to `estimateFoldPct`, `comboCallFilter`, `comboBetFilter`, `comboCheckBackFilter` and `comboActionProbabilities`.
+**Reasoning:** The engine priced every villain decision off `1 - combo.heroEquity` — hero's equity from hero's exact two cards — so villain decided as though clairvoyant. Measured with villain's range and board held fixed and only hero's hole cards changing, the modelled fold rate swung 17.3x (0.050 holding 33, 0.867 holding AK). The bias ran backwards from strategy: weak hero hand suppressed bluffs, strong hero hand inflated fold equity exactly where hero wants calls. Trade-off accepted: hero's stand-in range is an ASSUMPTION, not a fitted model, and is weaker evidence than a measured range would be — but it is strictly better than information villain cannot have at all.
+**Context:** WS-313 (SPR-162), following WS-307.
+
+### DEC-027: Hero's perceived range is configurable, with a population-derived default
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** founder decision
+**Decision:** `heroRangeConfig.js` holds hero's assumed style per position; the default derives from `buildBaselineRange` → `getPopulationPrior`, the same machinery villain ranges use. Code-level config, not a Settings UI.
+**Reasoning:** Founder chose configurable over inferred. Configurable must not mean undefined, so an unconfigured engine still produces a defensible number rather than falling back to hero's real cards (which would be the defect). A Settings surface would be a UX change requiring design Gates 1 and 4, and the sprint was already over its effort cap — filed as follow-up instead.
+**Context:** WS-313.
+
+### DEC-028: Engine changes that move every recommendation ship dark behind a flag, gated on a corpus delta
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** founder decision
+**Decision:** `RANGE_CONDITIONED_VILLAIN_DECISIONS` defaults OFF and is overridable per call so both arms can be scored in one process. The default flips only after a before/after diff over the corpus is reviewed.
+**Reasoning:** Founder chose the delta harness over switching directly on test evidence. The change alters bluffing, value sizing and calling simultaneously; seeing the aggregate strategy shift in a report beats discovering it at the table. A flag left behind after the decision is made is a second code path nobody runs, so it and its dead branch get deleted once the default flips.
+**Context:** WS-313.
+
+### DEC-029: Bluff share is fixed by theory, not exposed as a tunable
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Hero's aggressive ranges carry a bluff tail sized at `alpha = f/(1+f)` (POKER_THEORY §6.1), with candidates weighted by nut-blocking rather than chosen from air.
+**Reasoning:** The bluff:value ratio is determined by the same breakeven that gives `foldPct > bet/(pot+bet)` — bluffing more is exploitable, bluffing less lets villain over-fold profitably. Making it a parameter would invite tuning a number theory already fixes. Blocker weighting is what makes the tail credible: a hand that removes villain's nuts can represent them; random air cannot, and villain should not respect it.
+**Context:** WS-313, founder-directed.
+
+### DEC-030: An unmet accept criterion moves to the item that actually blocks it
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit
+**Decision:** `advisorAccuracy` Scenario 1 (BET must outrank CHECK with the nut flush) moved from WS-313 to WS-314, and WS-314 marked `enables: WS-313`.
+**Reasoning:** With the fold estimate corrected, BET still lost to CHECK — but the cause measured identical in BOTH arms of the flag (call branch 74.5 OFF vs 71.9 ON), so it is a pre-existing called-branch mispricing, not this item's defect. Satisfying the criterion from the fold-estimate side would have meant tuning one bug to compensate for another, which is the WS-307 family the whole line of work exists to eliminate. Precedent: when a criterion cannot be met without distorting the fix, move the criterion, do not bend the number.
+**Context:** WS-313 → WS-314.

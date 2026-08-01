@@ -13,3 +13,75 @@ claimed_items:
   - "WS-313"
 
 files_locked: []
+
+status: completed
+ended_at: "2026-08-01T05:30:00Z"
+
+handoff_notes: |
+  ONE FOUNDER CHALLENGE PRODUCED THE WHOLE SESSION. WS-307 was fixed and closed; the
+  founder then questioned its framing ("skeptical that their entire range always sticks
+  around"), which was correct and uncovered a defect one level deeper than the one just
+  shipped. Three more items came out of that.
+
+  COMPLETED
+  - WS-307 / SPR-161 — DONE, commit 354ff0a. Fold 0.4291 -> 0.0500, raise EV +41.7 ->
+    -111.8, ranking raise-first -> FOLD first. Three compounding causes, all "an EV term
+    from a prior instead of game state".
+
+  IN FLIGHT — WS-313 / SPR-162, sprint still open, item claimed
+  Shipped DARK behind RANGE_CONDITIONED_VILLAIN_DECISIONS (default OFF). Landed:
+    - hero perceived range (configurable seed, population default), per-action narrowing
+      (bet/raise/check), bluff tail at alpha = f/(1+f) weighted by nut-blocking
+    - invariance 17.3x -> 1.4x; foldBet 0.950 -> 0.714 -> 0.384
+    - perf 506ms -> 30ms (tight), 4653ms -> 417ms (full)
+  NOT done: depth-2 routing, the corpus delta harness, and the flag flip.
+
+  NEXT SESSION SHOULD START WITH WS-314, NOT WS-313.
+  WS-314 (P0, `enables: WS-313`) is the called-branch mispricing: with the nut flush the
+  call branch prices at ~72 where it should be ~170, measured identical in BOTH arms of
+  the WS-313 flag (74.5 OFF / 71.9 ON) so it is pre-existing. It blocks WS-313's Scenario 1
+  criterion and it mis-prices the VALUE side of every bet the engine recommends. The
+  delta harness is not worth building until it is fixed — the arm being measured would be
+  wrong in a way unrelated to what the harness is testing.
+
+  KEY FINDINGS WORTH CARRYING
+  - The bug the founder caught is bigger than the one it followed: villain's decisions
+    were priced on hero's EXACT cards, so the modelled fold rate swung 17.3x on cards
+    villain cannot see, and the bias ran BACKWARDS from strategy.
+  - Perf lesson: the cost was never in the equity maths. `comboStrengthPercentile`
+    re-enumerates every legal combo on the board PER CALL — a latent trap for anything
+    that sorts a range. Sort by raw score; the ordering is identical.
+  - Two optimisations were rejected ON ACCURACY and the numbers are recorded so they are
+    not retried (coarse memo key: 43% error; fewer runout samples: cost wasn't there).
+  - Ratios are the right headline for a defect and the wrong test statistic once fixed —
+    the corrected numbers are small and a ratio between them flakes. Absolute spread +
+    averaging over runs.
+
+  DECISIONS: DEC-026..DEC-030 recorded (see system/decisions.md). DEC-030 sets the
+  precedent that matters most: when an accept criterion cannot be met without distorting
+  the fix, MOVE THE CRITERION to the item that actually blocks it — do not bend the number.
+
+  AUTOPILOT: not eligible. Every open item here is P0/P1 with decision flags or
+  measurement obligations; none are small mechanical bugs.
+
+context_notes: |
+  BRANCH: claude/poker-multiway-flop-strategy-1514n2, 7 commits, all pushed, tree clean.
+  Suite 13,179 passing / 552 files; build clean.
+
+  FLAG STATE: RANGE_CONDITIONED_VILLAIN_DECISIONS = false in engineFlags.js. It is
+  overridable per call (`rangeConditionedVillainDecisions`) so both arms can be scored in
+  one process — that is what the delta harness needs. Tests drive the flag explicitly so
+  they keep testing intent after the default flips.
+
+  ITEM GRAPH: WS-314 enables WS-313. WS-312 and WS-315 are both blocked_by WS-313
+  (WS-315 also by WS-314). WS-311 is independent cleanup (S).
+
+  CWOS FRICTION, needs upstream attention: fr-021 is fr-020 RECURRING UNCHANGED after
+  five weeks with a correct diagnosis already written — `cwos-next done` still leaves
+  completed_at/completion_commit null (hand-stamped again this session). fr-022: /next
+  emitted sprint_approved with status:approved BEFORE the founder approved, which made a
+  bare "approve" genuinely ambiguous and cost a wrong-direction step. fb-004 carries the
+  founder's directive that recurring friction should become upstream kit work rather than
+  being re-logged each session.
+
+  SPR-162 is status:approved with WS-313 pending — the WS-269 gate fix should resume it.

@@ -2,10 +2,10 @@ id: "WS-313"
 title: "Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant"
 legacy_id: ""
 type: bug
-status: backlog
+status: in_progress
 claimed_by: ses-20260801-0138-2cbeb290
 claimed_at: "2026-08-01T01:58:48.899Z"
-started_at: null
+started_at: "2026-08-01T01:58:48Z"
 completed_at: null
 completion_commit: null
 priority_score: 33.0
