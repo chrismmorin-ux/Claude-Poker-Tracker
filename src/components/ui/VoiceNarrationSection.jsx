@@ -34,6 +34,22 @@ const HOLD_TO_START_MS = 400;
 // tap a moment later is always honoured.
 const RELEASE_CLICK_GRACE_MS = 400;
 
+// Plain description of how a session closed. Descriptive, never evaluative —
+// this states what happened to the recording, not what it thinks of the hand.
+// "I think it got cut off at some point" is the failure this copy exists to end:
+// an auto-ended session used to be indistinguishable from a deliberate stop.
+const END_REASON_LABEL = {
+  silence: 'ended itself after 45s quiet',
+  'max-duration': 'hit the 10 min length limit',
+  hidden: 'ended when the screen went away',
+  unmounted: 'ended when you left the screen',
+  'restart-failed': 'ended — the mic dropped out',
+  'not-allowed': 'ended — mic access was lost',
+  'service-not-allowed': 'ended — mic access was lost',
+};
+
+const describeEnd = (reason) => END_REASON_LABEL[reason] || 'was cut short';
+
 const formatClock = (ms) => {
   if (!Number.isFinite(ms) || ms <= 0) return '';
   const total = Math.floor(ms / 1000);
@@ -62,12 +78,19 @@ const NoteRow = ({ note, onDelete }) => {
         {streets.length > 0 && (
           <span className="text-cyan-500/80 mr-1">{streets.join('→')}</span>
         )}
-        {note.interrupted && <span className="text-amber-500/90 mr-1" title="Session was cut short">⚠</span>}
+        {note.interrupted && (
+          <span className="text-amber-500/90 mr-1" title={`Recording ${describeEnd(note.endReason)}`}>⚠</span>
+        )}
         <span>{expanded ? text : preview}</span>
       </button>
 
       {expanded && (
         <div className="mt-1 pl-2 border-l border-gray-700">
+          {note.interrupted && (
+            <div className="text-[10px] text-amber-500/90 mb-1" data-testid="vrn-note-end-reason">
+              Recording {describeEnd(note.endReason)} — the last thought may be incomplete.
+            </div>
+          )}
           {(note.segments || []).map((seg, i) => (
             <div key={i} className="mb-1">
               <div className="text-[10px] text-gray-500">
@@ -126,6 +149,7 @@ export const VoiceNarrationSection = ({
     error,
     isSaving,
     notes,
+    lastEnd,
     start,
     stop,
     removeNote,
@@ -284,6 +308,14 @@ export const VoiceNarrationSection = ({
           {!supported
             ? 'Voice not supported on this browser.'
             : 'Microphone access denied — open device settings to enable.'}
+        </div>
+      )}
+
+      {/* Told at the moment it happens, not only in the saved record. A session
+          that ended on its own must never look like one the founder ended. */}
+      {!isRecording && lastEnd?.interrupted && (
+        <div className="text-[10px] text-amber-500/90" data-testid="vrn-last-end-notice">
+          ⚠ Recording {describeEnd(lastEnd.reason)}. Saved up to that point.
         </div>
       )}
 

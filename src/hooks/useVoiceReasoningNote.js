@@ -49,6 +49,8 @@ export function useVoiceReasoningNote({
   const [notes, setNotes] = useState([]);
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  // How the most recent session closed, for immediate feedback at the control.
+  const [lastEnd, setLastEnd] = useState(null);
 
   // Live refs so the segment-time context getter never closes over stale surface
   // state. `captureContext` runs inside the recognition callback, potentially
@@ -107,8 +109,13 @@ export function useVoiceReasoningNote({
     const finalized = finalizeSession(session, {
       endedAt: rawSegments[rawSegments.length - 1]?.endedAt || Date.now(),
       interrupted: !!meta.interrupted,
+      endReason: meta.reason || null,
     });
     if (!finalized) return;
+
+    // Surfaced immediately, not only in the saved record: "did that get cut
+    // off?" is a question the founder should never have to guess at.
+    setLastEnd({ interrupted: !!meta.interrupted, reason: meta.reason || null });
 
     setIsSaving(true);
     setSaveError(null);
@@ -155,6 +162,9 @@ export function useVoiceReasoningNote({
     else start();
   }, [enabled, isRecording, start, stop]);
 
+  // A new session supersedes the previous session's outcome notice.
+  useEffect(() => { if (isRecording) setLastEnd(null); }, [isRecording]);
+
   return {
     supported,
     permissionStatus,
@@ -163,6 +173,7 @@ export function useVoiceReasoningNote({
     error: speechError || saveError,
     isSaving,
     notes,
+    lastEnd,
     start,
     stop,
     toggleRecording,

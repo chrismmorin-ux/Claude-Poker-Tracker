@@ -94,8 +94,13 @@ export function appendSegment(session, segment = {}) {
  * @param {boolean} [options.interrupted] — session was cut rather than stopped
  *   cleanly (action arrived, screen slept, hand changed). Marks the trailing
  *   segment so a grader knows the thought may be unfinished (Gate 2 C-3).
+ * @param {string|null} [options.endReason] — WHY it ended: 'stopped', 'silence',
+ *   'max-duration', 'hidden', 'unmounted', 'restart-failed', or an engine error
+ *   code. `interrupted` alone says a note may be short; this says what to do
+ *   about it, and lets a grader discount a claim that was cut off mid-argument
+ *   rather than reading the truncation as the founder's conclusion.
  */
-export function finalizeSession(session, { endedAt = 0, interrupted = false } = {}) {
+export function finalizeSession(session, { endedAt = 0, interrupted = false, endReason = null } = {}) {
   if (!session || !Array.isArray(session.segments) || session.segments.length === 0) {
     return null;
   }
@@ -114,6 +119,7 @@ export function finalizeSession(session, { endedAt = 0, interrupted = false } = 
     segments,
     endedAt,
     interrupted,
+    endReason: typeof endReason === 'string' && endReason ? endReason : (interrupted ? 'interrupted' : 'stopped'),
   };
 }
 
