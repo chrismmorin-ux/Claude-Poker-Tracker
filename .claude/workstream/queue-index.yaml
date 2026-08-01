@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 188
+total_items: 189
 by_status:
   decomposed: 1
   done: 78
   in_progress: 3
   deferred: 43
-  backlog: 44
+  backlog: 45
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   data-isolation: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 59
+  domain-correctness: 60
   exploit-anchor-library: 8
   hero-state-primitive: 9
   infrastructure: 1
@@ -1823,6 +1823,15 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-313"
+    title: "Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant"
+    status: backlog
+    priority_score: 33
+    category: domain-correctness
+    effort: L
     program: domain-correctness
     capability: core
 

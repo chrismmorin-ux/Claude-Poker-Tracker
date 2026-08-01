@@ -1,0 +1,123 @@
+id: "WS-313"
+title: "Villain's fold decision is priced on villain's equity against hero's ACTUAL hand — the per-combo model is clairvoyant"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER-ORIGINATED, then measured. Raised while reviewing WS-307: scepticism that any
+  real range "cannot fold", and the observation that top set on QJT is not actually a
+  comfortable hand — flush and straight completers are everywhere and it has only
+  full-house outs. Both are correct, and the measurement below shows why.
+
+  THE DEFECT. In `estimateFoldPct` (and the same shape in `comboActionProbabilities`),
+  each villain combo's fold decision is priced from:
+
+      const villainEq = 1 - combo.heroEquity;
+      const eqRatio   = villainEq / potOdds;
+
+  `combo.heroEquity` comes from `computeComboEquity(heroScore, vScore, heroCards,
+  villainCards, board)` — hero's EXACT two cards against that EXACT villain combo. So
+  `villainEq` is villain's equity against hero's actual holding. Villain is modelled as
+  though they can see hero's hand. Every combo is then correctly told it is far ahead of
+  3♠3♦, so nothing folds, and the aggregate fold estimate collapses to ~0.05.
+
+  Villain does not know hero holds 33. Villain is choosing against hero's RAISING RANGE.
+
+  MEASURED on QhJhTs (4,000 trials/hand). Hero raising range taken as
+  AKs,AKo,QQ,JJ,TT,QJs,QJo,QTs,JTs,KQs,K9s,98s,AQs:
+
+      hand          eq vs 3s3d (what the model uses)   eq vs raising range (reality)
+      AA                      88.4%                              28.7%
+      KK                      90.5%                              34.0%
+      AQ (top pair)           88.2%                              19.9%
+      QQ (top set)            94.8%                              56.5%
+      TT (bottom set)         96.8%                              44.9%
+      AK (nut straight)       93.6%                              71.3%
+
+  CONSEQUENCES, in order of size:
+
+  1. Roughly half that range SHOULD fold to a raise. AA/KK/AQ hold 20-34% against the
+     range that actually raises here — they are near-drawing-dead to straights, sets and
+     two pair. The model has them folding ~2%.
+  2. The founder's read on top set is confirmed by the numbers: QQ is 56.5%, a genuine
+     marginal continue with reverse implied odds, not the 94.8% lock the model sees.
+     Bottom set is 44.9% — behind.
+  3. So "a range that cannot fold" (the WS-307 framing, including its commit message and
+     test names) is WRONG as a general claim. What is true is narrower: a range that
+     cannot fold IF IT CAN SEE HERO'S HAND. That framing needs correcting wherever it
+     was written down.
+  4. WS-307's fix is still directionally right — it restored range-responsiveness and
+     stopped RAISE being misfiled as FOLD — but the MAGNITUDE it produces (0.050 on the
+     reported spot) is not trustworthy, because the equity feeding it is clairvoyant.
+
+  DO NOT "FIX" THIS BY RAISING THE FLOOR. The number is wrong because its INPUT is
+  wrong. Clamping the output to look plausible would hide the defect and re-create the
+  WS-307 family (a number chosen to look right rather than derived from game state).
+
+  SECOND-ORDER, MUST BE HANDLED TOGETHER. If AA/KK/AQ start folding, the CONTINUING
+  range is sets and straights only — so hero's equity-when-called DROPS. The called
+  branch must be recomputed against the continuing subset, not the full range, or the
+  fix will make raises look better rather than worse. `computeEquityThresholdEquity`
+  already exists for this shape.
+
+  THE EXPLOIT THE FOUNDER NAMED, which the engine currently cannot express. If a villain
+  genuinely does not fold, the counter is to SIZE UP with value, not to bluff — the
+  codebase's own doctrine already says this ("DO NOT conflate calling station with cannot
+  have strong hands ... value bet wider AND bigger, NOT bluff more", exploitEngine/
+  CLAUDE.md). Today a low fold estimate only suppresses hero's bluffs; nothing routes it
+  into wider/larger value sizing. Worth checking whether that is a separate gap.
+accept_criteria: |
+  - Villain's fold/call/raise decision is priced against hero's PERCEIVED range, not
+    hero's actual cards. Where hero's range is unavailable, the substitute must be
+    stated and defensible — not silently hero's real hand.
+  - On the QJT spot: AA/KK/AQ show materially non-trivial fold probability while
+    AK/QQ stay near zero. Per-combo, not just in aggregate.
+  - Hero's equity-when-called is computed against the CONTINUING range, so the fold
+    fix cannot inflate raise EV.
+  - Aggregate fold estimate for the WS-307 spot lands between the two known-wrong
+    anchors (0.4291 pre-WS-307, range-blind; 0.0500 post-WS-307, clairvoyant), with
+    the value DERIVED, not tuned to sit in the middle.
+  - WS-307's "a range that cannot fold" language is corrected in
+    rangeConditionedFoldEquity.test.js and anywhere else it was asserted.
+  - Behavioural test that fails against the current engine.
+  - FIND-029 guard still holds: a genuine over-folder still yields a +EV bluff-raise.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "What stands in for hero's perceived range? Options: the action-consistent range hero would raise with (needs a hero-range model that does not exist yet), a doctrine prior by board texture, or hero's actual hand held as an explicit acknowledged approximation. This is the load-bearing design decision and it should be made before any code moves."
+  - "Does a low fold estimate need to route into LARGER value sizing (the founder's exploit), or is that a separate item?"
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-307-founder-review"
+created_at: "2026-08-01T01:10:00Z"
+status_note: |
+  Scored 33 — above WS-307's 31. It is the same failure family one level deeper: WS-307
+  fixed a fold estimate that ignored the range, this fixes the equity that estimate is
+  computed FROM. Every consumer of per-combo fold probability inherits it, so it also
+  bounds how much any of the WS-307-adjacent numbers can be trusted.
+
+  Founder framing worth preserving verbatim: "im skeptical that their entire range always
+  sticks around, because that makes them price inflexible and we should be really sizing
+  up with our value hands to exploit it." The scepticism was right, and the exploit
+  instinct points at the gap noted at the end of the description.

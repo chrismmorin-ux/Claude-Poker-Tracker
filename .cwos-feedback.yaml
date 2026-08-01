@@ -32,6 +32,38 @@ user_feedback:
       accurate proposal instead of as mid-flight interruptions.
     resolved: false
     resolution: null
+  - id: fb-004
+    timestamp: "2026-08-01T01:10:00Z"
+    session_id: "ses-20260731-2126-fa05cd65"
+    category: feature_request
+    summary: "Founder directive — route recurring CWOS defects upstream to HomeBase so they get fixed, not just re-logged each session"
+    detail: >
+      Founder asked that this session's CWOS problems be filed "with HomeBase AI
+      input channel so it can fix it eventually." Two defects observed this session,
+      both logged in friction_log:
+
+      fr-021 — cwos-next.js `done` still leaves completed_at/completion_commit null
+      on template-created queue items. This is fr-020 RECURRING UNCHANGED five weeks
+      later, with a complete and correct diagnosis already written at that time
+      (presence-vs-value guard). Nothing upstream acted on it. Every sprint close in
+      every repo using the standard ticket template loses closure provenance on the
+      editable surface, and the backfill debt grows by one item per close (43+ here).
+
+      fr-022 — /next auto-minted a session via cwos-claims, claimed a P0 item, and
+      emitted sprint_approved with status:approved BEFORE the founder approved
+      anything. A composed-but-unapproved sprint is therefore indistinguishable from
+      an approved one in the state files, which made a bare founder "approve" genuinely
+      ambiguous and cost a wrong-direction step (the AI routed it to /session-end and
+      released the P0 claim before reconstructing the real sequence from the event log).
+
+      THE ACTUAL REQUEST, which is broader than either defect: friction_log currently
+      functions as a diary rather than a queue. fr-020 was diagnosed precisely, marked
+      non-blocking, and then simply recurred. There is no mechanism that turns a
+      repeated friction entry into upstream work. Suggest HomeBase treat a friction id
+      recurring across sessions or repos as an automatic kit work item, since recurrence
+      is the signal that the "non-blocking, workaround applied" judgement was wrong.
+    resolved: false
+    resolution: null
   - id: fb-002
     timestamp: "2026-05-20T00:00:00Z"
     session_id: "session-2026-05-20-next"
@@ -255,6 +287,24 @@ friction_log:
     component: cwos-next-done
     workaround: "None applied — out of scope for WS-269 (the sprint in flight) and non-blocking. Kit fix: change the three guards from presence to value checks (treat `null`/empty as unstamped) and patch in place rather than inserting, e.g. replace `^completed_at:.*$` when the captured value is null. Worth a backfill pass over the 42 stale items at the same time."
 
+  - id: fr-021
+    timestamp: "2026-08-01T01:05:00Z"
+    session_id: "ses-20260731-2126-fa05cd65"
+    category: manual_fix
+    severity: low
+    detail: "fr-020 RECURRED, unchanged, five weeks later — cwos-next.js done closed WS-307 (SPR-161) with status:done but left completed_at:null and completion_commit:null. Same presence-vs-value guard described in fr-020; the diagnosis there is correct and complete, it simply has not been fixed upstream. Second confirmed occurrence in this repo. Recording the recurrence rather than a new diagnosis so fleet aggregation can see this is persistent, not a one-off: any repo using the standard ticket template loses closure provenance on the editable surface on EVERY sprint close, and the backfill debt grows by one item each time."
+    component: cwos-next-done
+    workaround: "Hand-stamped completed_at + completion_commit (354ff0a) on WS-307 after `done` ran, then re-ran cwos-reconcile.js. Kit fix unchanged from fr-020: guards must treat null/empty as unstamped and patch in place. The backfill set is now 43+ items in this repo."
+  - id: fr-022
+    timestamp: "2026-08-01T01:05:00Z"
+    session_id: "ses-20260731-2126-fa05cd65"
+    category: workaround
+    severity: medium
+    detail: "A /next composition auto-minted a session identity and CLAIMED a P0 item without the founder ever approving the sprint, and without /session-start having run. Sequence: /next ran at 21:26Z, cwos-claims minted ses-20260731-2126 (the session YAML says so verbatim: 'Minted by cwos-claims because no registered session matched this process'), composed SPR-161, wrote claimed_by onto WS-307, and emitted sprint_approved at 21:29Z with SPR-161 already carrying status:approved — all BEFORE the founder typed approval. The AI then read a bare 'approve' with no pending question of its own and initially mis-routed it to /session-end, releasing the claim on WS-307, before reconstructing the real sequence from the event log and git timestamps and reverting. Cost: one wrong-direction step plus a claim release/restore on a P0 item. No data lost."
+    component: cwos-next-approve / cwos-claims
+    workaround: "Reconstructed intent from events/2026-07-31.jsonl (single sprint_approved event) cross-referenced against commit times, restored the claim via git checkout, then executed SPR-161 normally. Kit fix, two parts: (1) sprint_approved should not be emitted — nor status set to approved — until an actual approval is recorded; a composed-but-unapproved sprint needs a distinct status so a later reader can tell the two apart. (2) When a session is auto-minted rather than registered by /session-start, that fact should be surfaced to the AI at gate time, because it changes how an ambiguous founder reply should be interpreted."
+
+
 # Pre-existing entry (kept for context):
 # Entry format:
 #   - id: fr-001
@@ -269,7 +319,7 @@ friction_log:
 # Section C: Aggregation summary (auto-maintained)
 summary:
   total_friction_events: 20
-  total_user_feedback: 3
+  total_user_feedback: 4
   unresolved_feedback: 2
   by_severity:
     high: 3
@@ -296,8 +346,9 @@ summary:
     cwos-next-approve: 1
     cwos-next-done-auto-resolved: 1
     cwos-next-gate: 1
-    cwos-next-done: 1
-  most_recent_friction: "fr-020 — 2026-07-25 — cwos-next done never stamps completed_at/completion_commit on template-created queue items (42 of 69 closed items affected, non-blocking); prior: fr-019 — 2026-07-25 — the fb-002/fr-012 gate gap materialized as duplicate sprint execution (SPR-150 + SPR-151 both ran WS-263); fixed same day by WS-269"
+    cwos-next-done: 2
+    cwos-next-approve / cwos-claims: 1
+  most_recent_friction: "fr-022 — 2026-08-01 — /next auto-minted a session and claimed a P0 item, and emitted sprint_approved before any founder approval, making a bare 'approve' ambiguous; prior: fr-021 — 2026-08-01 — fr-020 recurred unchanged (cwos-next done still leaves completed_at/completion_commit null)"
   most_recent_feedback: "fb-001 — 2026-05-20 — verify ticket premise at /next composition (recurring audit-ticket mismatch, 2nd occurrence after SPR-094)"
 
 # Pattern: 4 of 9 are kit/scripts/cwos-* missing in this adopted repo. Future
