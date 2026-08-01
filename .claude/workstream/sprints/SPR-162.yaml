@@ -1,0 +1,30 @@
+id: "SPR-162"
+title: "TVR Gate 4 Phase A — decide the geometry the whole redesign sits on"
+status: approved
+approved_at: "2026-08-01T02:50:16.952Z"
+program_focus: "design"
+
+goal: |
+  TVR Gate 4 Phase A — decide the geometry the whole redesign sits on
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-01T02:50:16.952Z"
+  matches: []
+
+composition_notes: |
+  Manual adjustment to the founder's stated focus (skill Step 4 option 3). The deterministic anchor was WS-307 (engine, P=31); founder scoped this run to the table view redesign. WS-319 is the TVR bottleneck: Gate 4 Phases B and C are both blocked on it, and it subsumes WS-311 if (b) is chosen. Cap usage 1.5/2 sessions.
+
+items:
+  - id: "WS-319"
+    title: "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?"
+    mode: plan-first
+    effort: M
+    status: pending
+
+decisions_needed:
+  - "Item WS-319: (a) scale-aware floor / (b) un-scale the interactive bands / (c) raise the design-px floor — (b) is the only one that fixes the touch floor AND the compression in one move."
+  - "Item WS-319: if (b) — is the geometry change TableView-only, or app-wide (ShowdownView, HandReplayView, drills all use ScaledContainer)?"
+  - "Item WS-319: resolve WS-186 (table flip) here — single transform layer, or defer behind TVR."
+
+created_at: "2026-08-01T02:50:16.952Z"

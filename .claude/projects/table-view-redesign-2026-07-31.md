@@ -79,7 +79,7 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-311** | **P0** — CommandStrip clips the Next Hand CTA at preflop (confirmed on device) | — (standalone bug) | backlog |
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
 | **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **done** |
-| **WS-319** | Gate 4 **Phase A** — geometry: does the command column stay inside the scale transform? | 4 | **unblocked — NEXT** |
+| **WS-319** | Gate 4 **Phase A** — geometry | 4 | **SPR-162 — decision drafted, 1 founder call open** |
 | **WS-320** | Gate 4 **Phase B** — one interaction vocabulary (tap commits / hold refines) | 4 | blocked by WS-319 |
 | **WS-313** | Gate 4 **Phase C** — the surface artifact | 4 | blocked by A + B |
 | **WS-318** | Mine pool sizing per street × line — miner written & verified | — | **blocked on founder** (corpus is local) |
@@ -153,6 +153,30 @@ Split along the actual dependency structure, not for convenience:
 | **C** | `WS-313` | **The surface artifact** — narrowing, roster rail, defaults, TournamentView, decomposing Gate 5. | M |
 
 Each is now cap-sized and they are strictly ordered. Writing C first would mean specifying a surface on top of an unresolved coordinate system and an unresolved gesture vocabulary, then rewriting it.
+
+---
+
+## Phase A finding (2026-08-01, SPR-162)
+
+Measured the command column at scale 1.0, so design px = rendered px:
+
+```
+column box    450 × 720
+scrollHeight  839        ← over-subscribed by 119px
+children:  48 tabs · 65 seat · 85 orbit · 432 action block · 0 spacer · 209 control zone
+```
+
+**Two things change the shape of the decision.**
+
+**The `flex-1` spacer is already at 0.** `WS-311`'s proposed fix (c) — *collapse the spacer before shrinking controls* — is dead. The spacer has already collapsed; the compression is what happens after it ran out.
+
+**No coordinate-system change makes 839 fit in 720.** Scale-aware floors and a raised design-px floor both make it *worse* (bigger controls, same box). Un-scaling makes it worse in absolute terms too (540 real px for 839 of content on the founder's device). **The column is over-subscribed on content, independent of the transform** — scale was hiding it by shrinking everything below the touch floor.
+
+**Decision: un-scale the interactive bands, and treat content reduction as non-optional.** The felt keeps scaling (its proportions *are* the information); the command column and any roster rail lay out in real CSS px, where a 44px control is actually 44px. Street tabs pin to the top, control zone pins to the bottom, only the middle band scrolls — so `Next Hand` becomes structurally unclippable and **`WS-311` closes via Phase A** rather than being fixed twice.
+
+`WS-186` (table flip) deferred explicitly, and Phase A makes it *cheaper* later: with the felt as the only scaled region, a 180° flip becomes a transform on the felt alone rather than on the whole canvas including the controls.
+
+Contract: [`surfaces/table-view-geometry.md`](../../docs/design/surfaces/table-view-geometry.md).
 
 ---
 

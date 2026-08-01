@@ -100,7 +100,16 @@ accept_criteria: |
        (b) Make the conditional rows mutually exclusive (all-in and batch never
            co-render) — smaller change, but removes a currently-reachable control.
        (c) Collapse the `flex-1` spacer under pressure before any control shrinks.
-     Prefer (c) + (a) in combination: spend the slack first, then scroll, never shrink.
+           DEAD — MEASURED 2026-08-01 UNDER WS-319. The spacer is ALREADY AT 0. There is
+           no slack to spend; the compression observed is what happens after it ran out.
+
+     SUPERSEDED: WS-319 (Gate 4 Phase A) measured the column at scale 1.0 —
+     scrollHeight 839 vs clientHeight 720, over-subscribed by 119 design px, and 839 is
+     a FLOOR (the advice bar and push-fold panel rendered nothing in that state).
+     Phase A adopts un-scaling plus a scroll region with the street tabs and control
+     zone PINNED, which makes the Next Hand CTA structurally unclippable.
+     CLOSE THIS ITEM VIA WS-319 rather than fixing it separately — a separate fix would
+     be work done twice.
 
   3. Assert the floor with a test: in the worst-case state, every recording control
      satisfies the H-ML06 44px minimum AS RENDERED (see WS-316 — asserting the declared
