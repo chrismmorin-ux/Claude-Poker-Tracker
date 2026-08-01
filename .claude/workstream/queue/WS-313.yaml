@@ -77,6 +77,60 @@ description: |
   have strong hands ... value bet wider AND bigger, NOT bluff more", exploitEngine/
   CLAUDE.md). Today a low fold estimate only suppresses hero's bluffs; nothing routes it
   into wider/larger value sizing. Worth checking whether that is a separate gap.
+
+  ── SCAN RESULTS (founder asked for a sweep of the same family) ───────────────
+
+  THE LEAK IS NOT CONFINED TO THE FOLD ESTIMATE. Every per-combo villain action
+  filter prices off `1 - combo.heroEquity`:
+
+    gameTreeEquity.comboCallFilter      (:354)  villain's CALL probability
+    gameTreeEquity.comboBetFilter       (:378)  villain's BET probability
+    gameTreeEquity.comboCheckBackFilter (:388)  derived from comboBetFilter
+    foldEquityCalculator.estimateFoldPct        villain's FOLD probability
+    gameTreeDepth2.comboActionProbabilities     all three at depth 2/3
+
+  These feed eqVsCallRange / eqVsBetRange / eqVsCheckBackRange, so the clairvoyance
+  also biases WHICH combos are assumed to continue — and therefore hero's
+  equity-when-called, everywhere, not just fold equity.
+
+  THE INVARIANCE TEST THAT PROVES IT. Villain cannot see hero's cards, so villain's
+  fold rate must be INVARIANT to hero's holding when villain's range and the board
+  are fixed. Measured on QhJhTs, villain range identical in every row, only hero's
+  hole cards changing:
+
+      hero holds            model says villain folds to a raise
+      33  (bottom pair)                 0.050
+      97o (air)                         0.053
+      QQ  (top set)                     0.619
+      AK  (nut straight)                0.852
+
+  A 17x swing driven entirely by cards villain cannot see. Against a wide villain
+  range the same test gives 0.202 (hero 33) vs 0.912 (hero QQ).
+
+  THE BIAS RUNS BACKWARDS FROM STRATEGY — this is the important part.
+    hero weak   -> `1 - heroEquity` high for every combo -> villain "never folds"
+                -> fold equity ~0 -> bluffs suppressed
+    hero strong -> `1 - heroEquity` low for every combo  -> villain "folds a lot"
+                -> fold equity inflated exactly where hero WANTS CALLS
+
+  CONFIRMED LIVE ON THE VALUE SIDE. advisorAccuracy Scenario 1 (nut flush AsKs on
+  Qs7s2s, hero equity 0.983) — the engine ranks CHECK (EV 112.0) ABOVE BET (EV 95.7).
+  Cause measured directly: foldPct.bet = 0.950. The model believes betting the nut
+  flush folds villain out 95% of the time, so checking to keep them in scores higher.
+  The engine is recommending you do not bet the nuts because they will fold.
+
+  That is the exact inverse of the founder's read — "if i know someone won't fold ...
+  we should be really sizing up with our value hands" — and it is structural, not a
+  tuning error. It also reaches SIZING: findOptimalBetSize takes foldPct as its base
+  and scales it by the fold curve, so an inflated fold rate on strong hands steers
+  sizing toward maximising folds rather than maximising called value.
+
+  Scenario 1 has been logging this as a console.warn on every run while passing green
+  — the second instance of the enforce-nothing diagnostic named in exploitEngine/
+  CLAUDE.md (WS-307 converted the first, Scenario 3). It is deliberately NOT converted
+  to an assertion yet because it would fail until this item lands; converting it is an
+  accept criterion below.
+
 accept_criteria: |
   - Villain's fold/call/raise decision is priced against hero's PERCEIVED range, not
     hero's actual cards. Where hero's range is unavailable, the substitute must be
@@ -90,6 +144,17 @@ accept_criteria: |
     the value DERIVED, not tuned to sit in the middle.
   - WS-307's "a range that cannot fold" language is corrected in
     rangeConditionedFoldEquity.test.js and anywhere else it was asserted.
+  - Villain's fold rate is INVARIANT to hero's hole cards when villain's range and
+    board are held fixed — asserted by test. This is the cleanest single guarantee
+    and it is what the 17x swing above violates. Small residual variation from card
+    removal is expected and acceptable; a 17x swing is not.
+  - The same fix is applied to comboCallFilter / comboBetFilter / comboCheckBackFilter
+    and comboActionProbabilities, not only to estimateFoldPct — otherwise
+    equity-when-called stays clairvoyant while fold equity is corrected.
+  - advisorAccuracy Scenario 1 ranks BET above CHECK with the nut flush, and its
+    console.warn becomes a real assertion (it fails today: check 112.0 vs bet 95.7).
+  - Sizing check: with a strong hand, optimal sizing is driven by called-value, not by
+    an inflated fold rate. Record a before/after sizing for one value spot.
   - Behavioural test that fails against the current engine.
   - FIND-029 guard still holds: a genuine over-folder still yields a +EV bluff-raise.
 effort: "L"
