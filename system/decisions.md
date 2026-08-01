@@ -781,3 +781,45 @@ assumptions:
 **Trade-off / open:** long-press already means "open a different control" in three shipped places (sizing editor, seat context menu, PotDisplay F9). The vocabulary collision is unresolved and belongs to WS-320 (Gate 4 Phase B); the recommendation is to scope refine-on-hold to dense grids first rather than re-litigate three settled decisions.
 **Context:** WS-317, WS-320. `docs/design/explorations/action-entry-sizing.md` §11.
 
+
+---
+
+## DEC-029: `getMinRaise` derives the legal ladder from amounts; `reopensAction` governs only who may act
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit (WS-324 Phase 2)
+
+**Decision:** The min-raise ladder is re-derived by walking the recorded amounts and tracking the last *full* raise increment. It does NOT read the `reopensAction` flag that `recordSeatAction` already stamps on sub-min all-ins.
+
+**Reasoning:** The two answer different questions. `reopensAction` is about **who** may act again — it is a rule about players, and it is only meaningful on sequences this app recorded. `getMinRaise` is about **how much** — a property of the betting history itself. Deriving it from amounts means imported hands, hand-built fixtures and replayed sequences all get the same answer as freshly recorded ones. Reading the flag instead would have been fewer lines and would have silently returned wrong numbers for every sequence the recorder did not build.
+
+The trade-off accepted: the incomplete-raise rule is now expressed in two places (the recorder decides reopening, the calculator decides the ladder). That is duplication, but of a *rule*, not of a *number* — and the alternative couples a pure derivation to a recording artifact.
+
+**Context:** WS-324 Phase 2. `getMinRaise` had zero tests and was offering illegal raise sizes after a short all-in (flop bet 10 + shove to 14 → 18, legal 24). Recorded as `INV-POT-INCOMPLETE-RAISE-LADDER`.
+
+---
+
+## DEC-030: Randomized generators must produce reachable game states; unreachable shapes are characterized, never asserted as properties
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit (WS-324 Phase 2)
+
+**Decision:** Property-test generators for game logic are constrained to states legal play can actually reach. Where a degenerate shape is worth guarding against anyway, it gets ONE explicit characterization test that says so — not a property.
+
+**Reasoning:** The side-pot property test initially generated "every large contributor folded", found silent chip loss, and looked like a serious money bug. It is not: forcing the last big contributor out requires a live player with chips behind, who would then be eligible, so the state is unreachable. Had the generator been left unconstrained, the suite would permanently assert behaviour on a fiction — and worse, the finding would have been reported to the founder at a severity it does not deserve.
+
+The guard was still added, because silent non-conservation is the wrong failure mode for a derived quantity and `calculateSidePots` accepts imported and estimated sequences. But the distinction is recorded: **reachability determines severity, and severity determines how it gets reported.**
+
+**Context:** WS-324 Phase 2, `calculateSidePots`. See `docs/research/math-validation-2026-08-01.md` §3.
+
+---
+
+## DEC-031: Validation of our own math must use ground truth that is not our own code
+
+**Date:** 2026-08-01 | **Status:** Accepted | **Detected:** implicit (WS-324 Phase 2)
+
+**Decision:** A math component counts as validated only when checked against at least one of: (a) a value derived analytically (arithmetic that can be re-checked by hand), (b) an invariant that must hold for any correct implementation regardless of algorithm, or (c) an independent implementation written from scratch with a deliberately different approach. Agreement between two of our own optimized implementations is **consistency**, not validation, and must be labelled as such.
+
+**Reasoning:** The equity core had `evaluate7` checked against `bestFiveFromSeven` over 10,000 hands, and exact enumeration checked against Monte Carlo. Both looked like strong evidence and neither could ever have caught a bug in `bestFiveFromSeven` itself — the shared dependency both sides rest on. This is a general failure mode of self-referential test suites: coverage and confidence rise while the actual risk is untouched.
+
+Consequence for the trust register: rows now record *what kind* of ground truth backs each claim, not merely pass/fail. "Internal — second implementation" and "External/analytic" are different statuses and are displayed differently.
+
+**Context:** WS-324 Phase 2 second pass. Produced `INV-EQUITY-ANALYTIC` (complementarity + suit isomorphism) and an independent from-scratch evaluator agreeing over 20,000 matchups. No defects found — the pass is confirmation, not discovery, and is recorded that way.
