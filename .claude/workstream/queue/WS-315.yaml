@@ -121,6 +121,57 @@ source:
   run_id: "session-2026-07-31-tvr-kickoff"
 created_at: "2026-07-31T00:00:00Z"
 status_note: |
+  PHASE 2 SHIPPED 2026-08-01. Phases 1 and 3 still open — this item stays in_progress.
+
+  FOUNDER, 2026-08-01: "can you push the landscape/portrait Orientation fixes? it
+  still isn't in the app." He was right that it wasn't there — NOTHING had been
+  built. The previous session filed this ticket and diagnosed it, but shipped no
+  fix, and the handoff did not make that clearly enough. Phase 2 was then built and
+  shipped on his instruction.
+
+  WHAT SHIPPED (Phase 2 — the unblock, independent of the mechanism):
+    - THE GATE IS NOW A HINT. "Continue anyway" button; dismissal persists in
+      sessionStorage so it does not re-nag on every view change. A landscape canvas
+      in a portrait viewport is DEGRADED, not broken — and the screenshot shows the
+      home screen is in fact perfectly usable in portrait. Blocked was strictly
+      worse than degraded.
+    - ORIENTATION IS MEASURED, NOT INFERRED. New hook src/hooks/useIsPortraitViewport.js
+      replaces the Tailwind `portrait:` variant, subscribing to resize,
+      visualViewport.resize AND orientationchange.
+    - THE orientationchange TIMING TRAP IS HANDLED IN BOTH PLACES. That event fires
+      BEFORE innerWidth/innerHeight settle on Android Chrome, so a synchronous read
+      returns the PRE-rotation size. Both the new hook and useScale.js now re-measure
+      on rAF + 50ms + 300ms instead of trusting the first read. useScale previously
+      listened to resize and visualViewport ONLY — never orientationchange — which
+      is a strong candidate for "the gate cleared but the app still looked wrong".
+    - COPY FIXED. It no longer instructs an action that cannot succeed: with
+      auto-rotate off, "turn your phone sideways" does nothing. Now conditions on
+      auto-rotate and offers the way through.
+
+  VERIFIED (Playwright, real Chromium, 720x1600 -> 1600x720):
+    portrait load          hint shown, button RENDERED 203x48px (clears the 44px
+                           floor as rendered — it sits OUTSIDE ScaledContainer)
+    continue anyway        hint clears, app content present behind it
+    rotate to landscape    hint clears, ScaledContainer scale recovers to 0.950
+    reload in portrait     no re-nag (session-sticky dismissal)
+  Screenshots: .devshots/ws315/ (not committed — regenerate with the dev server up).
+  11 new component tests in RotateDeviceHint.test.jsx, including a fake-timer test
+  pinning the late-settling orientationchange case.
+
+  STILL OPEN:
+    PHASE 1 (reproduce on the founder's device) — NOT DONE and still required. The
+      MECHANISM IS STILL NOT ESTABLISHED. Phase 2 makes the symptom survivable; it
+      does not prove what caused it. Still do the auto-rotate ON/OFF matrix and
+      record innerWidth/Height, visualViewport, screen.orientation.type and the
+      computed scale at each step. If it turns out to be an OS rotation lock, the
+      copy is now correct; if it is something else, we will know from Phase 1.
+    PHASE 3 (what the Table View actually DOES in portrait) — unchanged, belongs to
+      the redesign, still queued behind DEC-027 trust work.
+
+  DESIGN GATE: treated as a surface-bound defect fix per this item's own
+  decision_flag — the overlay is a fallback, not a designed surface. Gate 2 skip
+  logged here deliberately. Founder authorized the change directly.
+
   Evidence: docs/design/evidence/2026-07-31-tvr-device-baseline/ (EVID-3, files 06 + 07).
   Project: .claude/projects/table-view-redesign-2026-07-31.md
   P0 because it blocks entry to the app entirely, for the uninstalled-PWA population.
