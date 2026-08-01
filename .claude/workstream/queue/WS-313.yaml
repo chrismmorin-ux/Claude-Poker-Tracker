@@ -218,6 +218,57 @@ description: |
   the perf shape above is settled — depth-2 is the hot loop and is already the subject of
   WS-301.
 
+  ── PER-ACTION NARROWING LANDED (session 2) ──────────────────────────────────
+
+  Villain now responds to the ACTION, not just to hero. gameTreeContext builds one hero
+  range per candidate action ('bet' / 'raise' / 'check'), all sharing ONE runout set, so
+  the extra actions cost almost nothing. Measured on QhJhTs, villain range and board
+  fixed, only hero's cards changing:
+
+      hero            foldBet   foldRaise
+      33 bottom pair   0.103      0.318
+      QQ top set       0.078      0.317
+      AK straight      0.113      0.458
+
+  Both estimates invariant to hero's cards (spread 0.04 and 0.14 against a pre-fix 0.817),
+  and foldRaise is ~3x foldBet — villain folds far more to a raise because hero's raising
+  range is much stronger. Before this, both numbers came from ONE sample and were nearly
+  identical, which is why the earlier measurement showed 0.093 unnarrowed vs 0.379 narrowed.
+
+  WS-307 spot with the flag on: FOLD still ranks first (correct), and the raise improves
+  from -113.5 to -17.6 — it should, because there IS real fold equity against a raising
+  range. It stays negative, so the original defect does not return.
+
+  ── THE NUT-FLUSH CRITERION NEEDS FOUNDER JUDGEMENT, NOT A CODE FIX ──────────
+
+  The clairvoyance IS fixed there: foldPct.bet drops 0.950 -> 0.714 and is now invariant
+  to hero's holding. But CHECK (111.1) still outranks BET (78.7) on Qs7s2s, so the accept
+  criterion as written is NOT met, and it should not be forced.
+
+  The reason changed, and the new one may be legitimate. On a MONOTONE board hero's
+  perceived betting range is genuinely strong — `narrowByBoard` keeps only 44% of hero's
+  range mass when hero bets — so villain folding ~71% is a defensible estimate, and
+  against a range that folds that often, checking to induce can beat betting. Several
+  strong players do check the nut flush on a monotone board for exactly this reason.
+
+  BUT THERE IS A REAL MODELLING GAP BEHIND IT, and it should be settled before the
+  criterion is either met or dropped. `narrowByBoard` was built to INFER a villain's
+  strength from an action they took; it shifts weight toward strong hands. Used to
+  CONSTRUCT hero's betting range it therefore produces a range with no bluffs, so villain
+  is told to fold more than a balanced bettor deserves. A hero betting range on a
+  monotone board should contain semi-bluffs and air; this one does not.
+
+  Two candidate resolutions, founder's call:
+    (a) Give hero's perceived betting range a bluff component (a balanced construction
+        rather than a strength-narrowed one). Most correct, and it would likely restore
+        BET above CHECK on its own.
+    (b) Accept check-to-induce as the right answer here and rewrite the criterion, on the
+        grounds that a 71% folding range genuinely does make betting the nuts worse than
+        inducing. Requires being satisfied that 0.714 is a good estimate, which (a) says
+        it is not.
+  Also unverified either way: whether the check branch prices the board-pairing risk — a
+  set filling up beats the nut flush, which argues against checking.
+
 accept_criteria: |
   - Villain's fold/call/raise decision is priced against hero's PERCEIVED range, not
     hero's actual cards. Where hero's range is unavailable, the substitute must be
