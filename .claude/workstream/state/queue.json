@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-08-01T00:40:18.131Z",
-  "updated_by_event": "ev-1785544818131-5f293190b958",
+  "updated_at": "2026-08-01T01:13:48.927Z",
+  "updated_by_event": "ev-1785546828927-131bc8cc19f2",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -4945,11 +4945,11 @@
     },
     "WS-313": {
       "id": "WS-313",
-      "title": "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)",
+      "title": "TVR Gate 4 Phase C — the Table View v2 surface artifact (narrowing, roster rail, defaults), consuming the geometry and vocabulary decisions",
       "status": "backlog",
       "priority_score": 20,
       "category": "table-view",
-      "effort": "L",
+      "effort": "M",
       "program": "design",
       "capability": "core",
       "sprint_id": null,
@@ -4961,7 +4961,10 @@
         "finding_id": "",
         "run_id": "session-2026-07-31-tvr-kickoff"
       },
-      "blocked_by": [],
+      "blocked_by": [
+        "WS-319",
+        "WS-320"
+      ],
       "enables": [
         "WS-314"
       ],
@@ -5098,7 +5101,7 @@
     "WS-318": {
       "id": "WS-318",
       "title": "Sizing defaults are hardcoded and street-blind — mine the pool distribution per street × line (cbet / checkraise / donk / barrel / probe) from the corpus",
-      "status": "backlog",
+      "status": "in_progress",
       "priority_score": 24,
       "category": "table-view",
       "effort": "M",
@@ -5124,7 +5127,96 @@
         "docs/research/"
       ],
       "source_class": "untagged"
+    },
+    "WS-319": {
+      "id": "WS-319",
+      "title": "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?",
+      "status": "backlog",
+      "priority_score": 25,
+      "category": "table-view",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-320",
+        "WS-313"
+      ],
+      "files_involved": [
+        "src/hooks/useScale.js",
+        "src/components/ui/ScaledContainer.jsx",
+        "src/constants/gameConstants.js",
+        "docs/design/surfaces/table-view.md"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-320": {
+      "id": "WS-320",
+      "title": "TVR Gate 4 Phase B — one interaction vocabulary: tap commits / hold refines, and the long-press collision",
+      "status": "backlog",
+      "priority_score": 23,
+      "category": "table-view",
+      "effort": "M",
+      "program": "design",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [
+        "WS-319"
+      ],
+      "enables": [
+        "WS-313"
+      ],
+      "files_involved": [
+        "docs/design/surfaces/table-view.md",
+        "docs/design/surfaces/seat-context-menu.md",
+        "docs/design/heuristics/"
+      ],
+      "source_class": "untagged"
+    },
+    "WS-321": {
+      "id": "WS-321",
+      "title": "mine-sizing-and-lines.py conflates stab with donk — the flop_donk line-coverage counter is mostly stabs",
+      "status": "backlog",
+      "priority_score": 15,
+      "category": "research-integrity",
+      "effort": "S",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "ai-finding",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [],
+      "files_involved": [
+        "scripts/backtest/mine-sizing-and-lines.py",
+        "scripts/backtest/fixtures/line-taxonomy-cases.phhs",
+        "docs/research/player-archetypes-empirical-2026-07-26.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785544818131-5f293190b958"
+  "last_event_log_head": "ev-1785546828927-131bc8cc19f2"
 }

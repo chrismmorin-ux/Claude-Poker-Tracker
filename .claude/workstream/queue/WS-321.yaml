@@ -1,0 +1,98 @@
+id: "WS-321"
+title: "mine-sizing-and-lines.py conflates stab with donk — the flop_donk line-coverage counter is mostly stabs"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 15.0
+priority_label: "P2"
+category: "research-integrity"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found 2026-07-31 while building mine-sizing-distributions.py for WS-318. The founder
+  caught the same error in my new script first; this ticket records that the ORIGINAL
+  has it too, so the fix does not stop at the new code.
+
+  THE DEFECT. mine-sizing-and-lines.py:187-203 classifies non-PFA first aggression as:
+
+      if street == 1:
+          L["flop_cbet" if p == last_pf_raiser else "flop_donk"] += 1
+
+  Any non-PFA first bet on the flop becomes `flop_donk`. But two different actions land
+  there:
+
+      PFA has NOT acted, non-PFA leads into them ........ donk   (correct)
+      PFA has CHECKED, non-PFA bets into that check ..... STAB   (mislabelled)
+
+  A donk attacks a range that has not yet spoken; a stab attacks one that has just
+  shown weakness. Opposite geometry, opposite information. And stabbing is far more
+  common than donking, so `flop_donk` is dominated by stabs while carrying the donk
+  label. The same conflation exists in turn_probe / river_probe.
+
+  WHAT IT AFFECTS, AND HOW MUCH. The script's published conclusions are about LINE
+  COVERAGE — "has this player EVER taken this line" — feeding the correlation/PCA test
+  for whether one sophistication factor explains a player's leaks
+  (docs/research/player-archetypes-empirical-2026-07-26.md, the sizing-spread /
+  line-coverage table).
+
+  Coverage is a presence indicator, so it is LESS sensitive to the mislabel than a
+  frequency or a sizing distribution would be — a player who stabs but never donks
+  still registers coverage of "the donk line", which inflates apparent coverage and
+  therefore ATTENUATES the very correlation the study was looking for. Given the study
+  already notes that sampling noise attenuates correlations and that observed values
+  are a LOWER BOUND, this pushes in the same direction: it makes the reported
+  correlations conservative rather than overstated.
+
+  So this is a labelling and interpretation defect, not a result-inverting one. It
+  should be fixed and the affected table re-read, not treated as a retraction.
+
+  THE FIX IS THE SAME DISCRIMINATOR already implemented in
+  mine-sizing-distributions.py and verified by fixtures/line-taxonomy-cases.phhs:
+  has the PFA already checked on THIS street when the bet lands?
+accept_criteria: |
+  1. Port the discriminator from mine-sizing-distributions.py into
+     mine-sizing-and-lines.py: split `*_donk` into `*_donk` + `*_stab`, and split
+     `*_barrel` into `*_barrel` + `*_delayed_cbet`. The logic is already written and
+     fixture-verified; this is a port, not a design.
+
+  2. Add the same fixture coverage — fixtures/line-taxonomy-cases.phhs already isolates
+     each cell and every bet lands at exactly 0.50 pot, so it doubles as an arithmetic
+     check.
+
+  3. RE-RUN and compare line-coverage figures before/after. Report specifically:
+       - how many players registered `flop_donk` coverage purely from stabs
+       - whether the LINES list growing from 10 to ~14 changes the coverage
+         distribution enough to move the PCA/correlation conclusion
+     If the conclusion is unchanged, say so explicitly and annotate the published table.
+     If it moves, that is a finding in its own right.
+
+  4. Annotate docs/research/player-archetypes-empirical-2026-07-26.md where the
+     line-coverage table appears — the label was wrong even if the conclusion holds.
+     Do not silently rewrite history; add a dated correction note.
+effort: "S"
+files_involved:
+  - "scripts/backtest/mine-sizing-and-lines.py"
+  - "scripts/backtest/fixtures/line-taxonomy-cases.phhs"
+  - "docs/research/player-archetypes-empirical-2026-07-26.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Requires the corpus to re-run, so the verification half is founder-blocked like WS-318. The code fix and fixture coverage are not — do those first so the re-run is a single pass."
+source:
+  type: ai-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Discovered via WS-318. Discriminator + fixtures already exist in
+  scripts/backtest/mine-sizing-distributions.py and
+  scripts/backtest/fixtures/line-taxonomy-cases.phhs — this is a port.

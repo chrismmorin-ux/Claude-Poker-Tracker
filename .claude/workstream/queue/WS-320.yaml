@@ -1,0 +1,114 @@
+id: "WS-320"
+title: "TVR Gate 4 Phase B — one interaction vocabulary: tap commits / hold refines, and the long-press collision"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 23.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Phase B of Gate 4, split out of WS-313 (which was L/3-sessions against a 2-session
+  cap). Runs after WS-319 fixes the geometry, before WS-313 writes the surface artifact.
+
+  THIS PHASE SETTLES ONE QUESTION: what does a press mean, everywhere on this surface?
+
+  Three separate threads converged on the same primitive and they must be resolved as
+  one, or the surface ends up with three near-identical gestures that behave differently:
+
+    WS-317  confirm-before-commit  — tap commits, hold magnifies, release confirms
+                                     (card grid, orbit strip, recents)
+    §8-§11  sizing track           — tap commits at a node, hold refines the value,
+                                     release commits; velocity-adaptive gain
+    HE-22   pre-armed defaults     — the app proposes; accepting is a tap
+
+  They are the same rule applied to a discrete set, a continuous value, and a proposal.
+  Stating it once is the whole point:
+
+      TAP COMMITS. HOLD REFINES. RELEASE CONFIRMS. CANCEL ABANDONS.
+
+  THE BLOCKING COLLISION. Long-press already means "OPEN A DIFFERENT CONTROL" in three
+  shipped places — sizing-preset editor (SizingPresetsPanel.jsx:63-67), seat context
+  menu (SeatComponent.jsx:100), PotDisplay edit (shipped as AUDIT-2026-04-21-TV F9).
+  If hold means "refine this" on the card grid and "open a separate editor" on the
+  sizing presets two inches away, the vocabulary is learned as "hold does something
+  unpredictable", which is worse than either meaning alone.
+
+  Note the founder's non-linear-track proposal already PICKS A WINNER for one of the
+  three, on merit: "long-press-drag to anything non-standard" displaces the sizing
+  editor, and refining the value you are recording is far more frequent than editing
+  preset configuration. That is one collision settled; two remain.
+accept_criteria: |
+  1. STATE THE VOCABULARY ONCE, as a rule that holds across the surface, and list every
+     control it applies to and every control it deliberately does not.
+
+  2. RESOLVE THE THREE EXISTING LONG-PRESS MEANINGS. Options are in WS-317; the
+     recommendation is to scope refine-on-hold to dense grids + the sizing track first,
+     where the founder's proposal already displaces the only competing meaning, and
+     leave the seat context menu and PotDisplay alone pending usage evidence. Whatever
+     is chosen, the seat context menu keeps a reachable entry (it is the only path to
+     several ops) and F9 is not silently reverted.
+
+  3. MUST-NOT, carried from WS-317 and binding: no hold gesture on the primary action
+     buttons. It taxes HE-23 dozens of times per orbit, Fold/Call/Raise are not
+     confusable to begin with, and it would stack a confirmation on top of HE-22's
+     pre-arm.
+
+  4. GESTURE-PLUMBING CONTRACT — surface-wide, learned from the prototype defects
+     recorded in explorations/action-entry-sizing.md §11:
+       a) `pointerup` and `pointercancel` ARE NOT THE SAME EVENT. An interrupted
+          gesture records NOTHING. The prototype had them sharing a handler and
+          silently wrote values the user never released on.
+       b) `touch-action: none` over the whole interactive region, plus
+          `overscroll-behavior: contain` and preventDefault on down/move — otherwise
+          the page scroller claims any drag with a vertical component and fires
+          pointercancel mid-gesture.
+       c) no DOM rebuild per pointermove; hold the live value in a ref with direct
+          style writes during the drag.
+       d) escape/cancel zones need >=90px of clearance and must light up before they
+          arm.
+
+  5. SPECIFY THE INTERRUPTED-HOLD CASE against glance-return-chris: a hold interrupted
+     by a look-away must persist until release or cancel — never auto-commit, never
+     silently time out.
+
+  6. SETTLE THE HOLD THRESHOLD by trying it, not by argument. The prototype exposes
+     instant / 180ms / 320ms precisely for this.
+
+  7. PRE-ARMED STATE gets a treatment vocabulary that exists nowhere else on the
+     surface and cannot be confused with the recorded-action vocabulary
+     (ActionSequence badges, getActionSeatStyle). Outline/dashed/pulse, not fill.
+
+  NON-GOALS: geometry (WS-319), the surface artifact itself (WS-313), and the sizing
+  NODE VALUES (WS-318 — specify the mechanics, leave the numbers parameterised).
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/table-view.md"
+  - "docs/design/surfaces/seat-context-menu.md"
+  - "docs/design/heuristics/"
+blocked_by:
+  - "WS-319"
+blocked_by_legacy: []
+enables:
+  - "WS-313"
+sprint_id: null
+decision_flags:
+  - "Resolving the vocabulary in favour of refine-on-hold re-opens AUDIT-2026-04-21-TV F9 (PotDisplay long-press), a shipped and owner-approved decision. Do not touch it without an explicit founder call — the recommendation is to leave it and accept a scoped inconsistency for now."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Split from WS-313 (Gate 4) 2026-07-31.
+  Inputs: WS-317, docs/design/explorations/action-entry-sizing.md §8-§11,
+  the interactive prototype (explorations/sizing-track-prototype.html).
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

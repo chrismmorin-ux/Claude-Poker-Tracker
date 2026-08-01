@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 194
+total_items: 197
 by_status:
   decomposed: 1
   done: 78
   in_progress: 3
   deferred: 43
-  backlog: 50
+  backlog: 53
   dismissed: 1
   completed: 7
   review: 1
@@ -48,7 +48,7 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 6
-  table-view: 8
+  table-view: 10
   test-reliability: 2
   testing: 2
   ux: 3
@@ -1828,11 +1828,12 @@ items:
     capability: core
 
   - id: "WS-313"
-    title: "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)"
+    title: "TVR Gate 4 Phase C — the Table View v2 surface artifact (narrowing, roster rail, defaults), consuming the geometry and vocabulary decisions"
     status: backlog
     priority_score: 20
     category: table-view
-    effort: L
+    effort: M
+    blocked_by: ["WS-319", "WS-320"]
     program: design
     capability: core
 
@@ -1879,5 +1880,33 @@ items:
     priority_score: 24
     category: table-view
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-319"
+    title: "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?"
+    status: backlog
+    priority_score: 25
+    category: table-view
+    effort: M
+    program: design
+    capability: core
+
+  - id: "WS-320"
+    title: "TVR Gate 4 Phase B — one interaction vocabulary: tap commits / hold refines, and the long-press collision"
+    status: backlog
+    priority_score: 23
+    category: table-view
+    effort: M
+    blocked_by: ["WS-319"]
+    program: design
+    capability: core
+
+  - id: "WS-321"
+    title: "mine-sizing-and-lines.py conflates stab with donk — the flop_donk line-coverage counter is mostly stabs"
+    status: backlog
+    priority_score: 15
+    category: research-integrity
+    effort: S
     program: domain-correctness
     capability: core

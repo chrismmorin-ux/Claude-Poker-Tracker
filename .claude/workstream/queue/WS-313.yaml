@@ -1,5 +1,5 @@
 id: "WS-313"
-title: "TVR Gate 4 — surface artifact for Table View v2 (dynamic proportion, pre-armed defaults, bounded roster rail)"
+title: "TVR Gate 4 Phase C — the Table View v2 surface artifact (narrowing, roster rail, defaults), consuming the geometry and vocabulary decisions"
 legacy_id: ""
 type: design
 status: backlog
@@ -15,9 +15,24 @@ capability: "core"
 program: "design"
 finding_id: ""
 description: |
-  Gate 4 of the Table View Redesign (TVR). Produces the surface artifact that Gate 5
+  Gate 4 PHASE C of the Table View Redesign. Produces the surface artifact that Gate 5
   implements against. Per LIFECYCLE.md, Gate 4 is NOT bypassable and no production
   code may be written before it completes.
+
+  SPLIT 2026-07-31. This item originally carried all of Gate 4 and measured L (3 effort
+  sessions) against a 2-session cap, so /next could not compose it into a sprint at all.
+  Split along the real dependency structure — geometry decides the coordinate system,
+  vocabulary decides what a press means, and only then can the surface be specified:
+
+      WS-319  Phase A  geometry     — does the command column stay inside the scale
+                                      transform? Fixes coordinate system, touch floor,
+                                      overflow behaviour. Subsumes WS-311 if (b).
+      WS-320  Phase B  vocabulary   — tap commits / hold refines / release confirms /
+                                      cancel abandons, and the long-press collision.
+      WS-313  Phase C  the artifact — THIS ITEM.
+
+  Deciding C before A and B would mean writing a surface artifact on top of an
+  unresolved coordinate system and an unresolved gesture vocabulary, then rewriting it.
 
   Reworks `docs/design/surfaces/table-view.md` from the ground up rather than
   amending it — the change is to the surface's ALLOCATION, not its contents, and
@@ -75,13 +90,15 @@ accept_criteria: |
    - Scope Gate 5 into implementable items and decompose WS-314.
 
   GATE 4 EXIT: surface artifact exists and is linked from WS-314.
-effort: "L"
+effort: "M"
 files_involved:
   - "docs/design/surfaces/table-view.md"
   - "docs/design/surfaces/seat-context-menu.md"
   - "docs/design/surfaces/player-picker.md"
   - "docs/design/journeys/"
-blocked_by: []
+blocked_by:
+  - "WS-319"
+  - "WS-320"
 blocked_by_legacy: []
 enables:
   - "WS-314"

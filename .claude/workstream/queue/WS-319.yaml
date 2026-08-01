@@ -1,0 +1,123 @@
+id: "WS-319"
+title: "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?"
+legacy_id: ""
+type: design
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.0
+priority_label: "P1"
+category: "table-view"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Phase A of Gate 4, split out of WS-313 because that item measured L (3 effort
+  sessions) against a 2-session cap and therefore could not be composed into a sprint
+  at all — /next surfaced this on 2026-07-31.
+
+  The split follows the real dependency structure rather than convenience. THIS phase
+  is the one everything else sits on: it fixes the coordinate system, the touch floor
+  and the scroll behaviour that the narrowing, the roster rail, the pre-armed defaults
+  and the sizing track all then design within. Deciding it after those would mean
+  rewriting them.
+
+  THE DECISION. `ScaledContainer` applies ONE `transform: scale(s)` over the whole
+  1600x720 canvas (useScale.js). Measured s = 0.950 at the design viewport and 0.695 at
+  the founder's device. Consequences, all measured, not inferred:
+
+    - a declared 44px target renders at 41.8px at design size and ~30.6px on his phone.
+      The H-ML06 floor is met NOWHERE in the app (WS-316).
+    - the command column's children sum to ~818-858px in a 720px box, and because they
+      carry `height` with default flex-shrink and there is no overflow-y, the column
+      COMPRESSES rather than scrolls — the Next Hand CTA is clipped off-screen at
+      1600x720, the app's own design resolution (WS-311, reproduced).
+    - the custom-amount input (229x33) and GO (45x33) sit below the floor on the ONLY
+      path to a non-preset bet size.
+
+  THE THREE STRATEGIES, which must be decided TOGETHER because they are alternatives
+  to the same problem and two of them subsume WS-311:
+
+    (a) SCALE-AWARE FLOOR. Derive minimum target sizes from `s` at render time so the
+        RENDERED size clears 44px; design-px values grow as s falls. Keeps the single
+        canvas. Every floor becomes a function rather than a constant. Does NOT fix the
+        compression — a bigger control in a fixed 720px box overflows sooner.
+
+    (b) UN-SCALE THE INTERACTIVE BANDS. The felt keeps scaling (it is spatial and
+        information-dense, and its meaning IS its proportions). The command column and
+        any roster rail lay out in real CSS px at real device size. Mixed model: the
+        column stops being a picture of a control panel and becomes one.
+        SUBSUMES WS-311 — a real 500-CSS-px column can scroll honestly instead of
+        silently compressing, and the 44px floor becomes literally true.
+
+    (c) RAISE THE DESIGN-PX FLOOR to 44/s_min across the supported device range. One
+        line of policy, immediately verifiable. Costs vertical space everywhere and
+        makes the compression strictly worse.
+
+  RECOMMENDATION TO EVALUATE FIRST: (b). It is the only one that fixes the floor and
+  the compression in the same move, and the command column has no reason to be
+  spatially proportional to the felt — nothing about a button's meaning depends on its
+  size relative to the table. The cost is that the app stops being one uniformly scaled
+  picture, which is a real aesthetic and architectural change and is exactly why this
+  is a Gate 4 decision and not a bug fix.
+accept_criteria: |
+  1. DECIDE (a) / (b) / (c) with the reasoning recorded. State explicitly what is given
+     up. If (b): the felt and the column no longer share a coordinate system, and every
+     element that spans them (context menu positioning via LAYOUT.CONTEXT_MENU_OFFSET_*,
+     the F12 reopen-range affordance, any roster rail that touches the felt edge) needs
+     its anchoring re-specified.
+
+  2. STATE THE SPATIAL CONTRACT the rest of Gate 4 designs within:
+       - which regions scale and which do not
+       - where the touch floor is enforced and in what units (RENDERED px, per WS-316)
+       - what overflows and how (scroll, collapse-spacer-first, or neither)
+       - how narrowing (D-2, live-players-remaining, street-boundary transitions) moves
+         the boundary between the regions
+
+  3. RESOLVE WS-186 (table flip) HERE. Rotation and narrowing are two independent
+     spatial transforms over the same coordinate system; specified separately they will
+     conflict. Either design a single transform layer covering both, or defer WS-186
+     explicitly behind TVR. It cannot proceed in parallel.
+
+  4. RE-STATE THE GATE 2 PRE-COMMITMENT in rendered terms. "All action targets stay
+     >=44px and equal-area" is currently unsatisfiable as literally written; Gate 4 must
+     say what it means once the geometry is fixed.
+
+  5. VERIFY ON DEVICE, not in jsdom: `npm run devshot` at 1600x720 AND at 1170x540,
+     confirming Next Hand is inside the viewport in every state and that the primary
+     recording controls clear the floor as RENDERED.
+
+  6. F10 motor separation (Reset Hand vs Next Hand) survives whatever layout results.
+
+  NON-GOALS: no interaction design here (that is WS-320), no surface artifact (WS-313).
+  This phase decides geometry only.
+effort: "M"
+files_involved:
+  - "src/hooks/useScale.js"
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/constants/gameConstants.js"
+  - "docs/design/surfaces/table-view.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-320"
+  - "WS-313"
+sprint_id: null
+decision_flags:
+  - "Option (b) ends the single-uniform-canvas model that every view in this app currently shares (ShowdownView, HandReplayView and the drills all use ScaledContainer). Decide whether the geometry change is TableView-only or app-wide. TableView-only is cheaper but creates two layout idioms in one product — which is the kind of drift sidebar-shell-spec.md exists to prevent."
+  - "If (b) is chosen, WS-311 should be closed BY this work rather than fixed separately — fixing it first would be work done twice."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-07-31T00:00:00Z"
+status_note: |
+  Split from WS-313 (Gate 4) 2026-07-31 — that item was L/3-sessions against a
+  2-session cap and could not be sprint-composed.
+  Inputs: WS-316 (touch floor, measured), WS-311 (compression, reproduced at design
+  resolution), docs/design/evidence/2026-07-31-tvr-device-baseline/.
+  Project: .claude/projects/table-view-redesign-2026-07-31.md

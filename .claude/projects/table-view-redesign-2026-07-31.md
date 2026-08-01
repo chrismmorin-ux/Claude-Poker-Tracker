@@ -79,7 +79,11 @@ Both critical amendments preserve founder intent in full. Neither reduces scope.
 | **WS-311** | **P0** — CommandStrip clips the Next Hand CTA at preflop (confirmed on device) | — (standalone bug) | backlog |
 | **WS-316** | **P0** — Uniform scale transform nullifies the 44px touch floor app-wide | — (bug + Gate 4 input) | backlog |
 | **WS-312** | TVR Gate 3 — research pass (R1–R7) | 3 | **done** |
-| **WS-313** | TVR Gate 4 — surface artifact for Table View v2 | 4 | **unblocked — NEXT** |
+| **WS-319** | Gate 4 **Phase A** — geometry: does the command column stay inside the scale transform? | 4 | **unblocked — NEXT** |
+| **WS-320** | Gate 4 **Phase B** — one interaction vocabulary (tap commits / hold refines) | 4 | blocked by WS-319 |
+| **WS-313** | Gate 4 **Phase C** — the surface artifact | 4 | blocked by A + B |
+| **WS-318** | Mine pool sizing per street × line — miner written & verified | — | **blocked on founder** (corpus is local) |
+| **WS-321** | `mine-sizing-and-lines.py` has the same stab/donk conflation | — | backlog |
 | **WS-317** | Confirm-before-commit — press-hold-preview-release for dense targets | 1 done (YELLOW) → 2 | backlog — **design inside WS-313** |
 | **WS-314** | TVR Gate 5 — implementation (decomposes at Gate 4) | 5 | blocked by WS-313 |
 
@@ -133,6 +137,22 @@ Gate 1 entry authored ([`2026-07-31-entry-confirm-before-commit.md`](../../docs/
 **Must-not:** never on the primary action buttons. It would tax `HE-23` dozens of times per orbit, Fold/Call/Raise are not confusable in the first place, and it would stack a confirmation on top of `HE-22`'s pre-arm.
 
 **This is a Gate 4 input, not a follow-on.** It overlaps `WS-316` as a *third* strategy for the touch-floor problem — it doesn't enlarge targets, it removes the need for precision. The three strategies must be evaluated together in the surface artifact.
+
+---
+
+## Gate 4 split (2026-07-31)
+
+`/next` could not compose Gate 4 at all: `WS-313` measured **L = 3 effort sessions against a 2-session cap**. That is a real defect in how I scoped it — one ticket carrying eleven pre-commitments plus the touch-floor strategy plus the confirm-before-commit design plus the sizing track.
+
+Split along the actual dependency structure, not for convenience:
+
+| Phase | Item | Decides | Effort |
+|---|---|---|---|
+| **A** | `WS-319` | **Geometry.** Does the command column keep living inside the uniform scale transform? Fixes the coordinate system, the touch floor, and overflow behaviour. **Subsumes `WS-311`** if the column is un-scaled. | M |
+| **B** | `WS-320` | **Vocabulary.** *Tap commits. Hold refines. Release confirms. Cancel abandons.* Plus the three-way long-press collision. | M |
+| **C** | `WS-313` | **The surface artifact** — narrowing, roster rail, defaults, TournamentView, decomposing Gate 5. | M |
+
+Each is now cap-sized and they are strictly ordered. Writing C first would mean specifying a surface on top of an unresolved coordinate system and an unresolved gesture vocabulary, then rewriting it.
 
 ---
 
