@@ -1,0 +1,40 @@
+id: "SPR-161"
+title: "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+status: abandoned
+approved_at: "2026-08-01T01:44:28.561Z"
+abandoned_at: "2026-08-01T01:52:00.000Z"
+abandoned_reason: |
+  Founder-directed anchor override. The deterministic ranking put WS-307 first
+  (31, domain-correctness cap-breach priority floor) but the founder's in-flight
+  thread is the Table View Redesign — Gates 1-3 shipped this branch and Gate 4 was
+  split into WS-319/320/321 forty-five minutes before this sprint composed. WS-319
+  scores 25 and lost the anchor to a program-cap floor, which is exactly the case
+  where the ranking does not see session continuity.
+
+  WS-307 is UNFIXED and released to backlog at full priority — premise-checked this
+  session against git history: no commit touches the postflop raise branch's
+  fold-equity term. WS-309 remains sequenced behind it.
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-01T01:44:28.561Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-307 selected (31 × no damping = 31).
+  Program cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+23 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-307"
+    title: "The engine RAISES bottom pair with 6% equity into a range that almost never folds"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-08-01T01:44:28.561Z"

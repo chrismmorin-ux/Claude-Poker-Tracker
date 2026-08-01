@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785546828927-131bc8cc19f2"
-generated_content_hash: "9b96ab13c1fadb7bd70fa99f253559d7cf7f5ad1ea1beeaa32f483e78c5c856c"
-generated_at: "2026-08-01T01:13:49.076Z"
+generated_from_event: "ev-1785548897263-58e812f0adca"
+generated_content_hash: "82a18a1dbc273162de689281ac713c2b7b3b2298ce177b3dccfcc14dfd751bfa"
+generated_at: "2026-08-01T01:48:17.348Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
-event_count: 1173
+event_count: 1175
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 740
-- Events recorded: 1173
+- Commands recorded: 742
+- Events recorded: 1175
 - Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
@@ -7850,3 +7850,23 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-01T01:13:48.927Z | T6:workstream | /next | item_id="WS-321", program="domain-correctness", +4 more |
+
+## Command `cmd-sprintapprove-ms9pkqay32f7152094a6`
+
+- Start: 2026-08-01T01:44:28.717Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:44:28.717Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-161", +8 more |
+
+## Command `cmd-sprintabandoned-ms9ppmng719b9920d8b2`
+
+- Start: 2026-08-01T01:48:17.263Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T01:48:17.263Z | T6:workstream-rebalance | /next | sprint_id="SPR-161", reason="founder-directed anchor overr"..., +4 more |

@@ -1,16 +1,16 @@
 {
-  "composed_at": "2026-08-01T01:40:40.235Z",
-  "goal": "Ship WS-307: The engine RAISES bottom pair with 6% equity into a range that almost never folds",
-  "program_focus": "domain-correctness",
-  "override_class": null,
+  "composed_at": "2026-08-01T01:49:27.610Z",
+  "goal": "Ship WS-319: TVR Gate 4 Phase A — fix the coordinate system, the touch floor, and the overflow behaviour the rest of the redesign designs within",
+  "program_focus": "design",
+  "override_class": "founder-directed-anchor",
   "items": [
     {
-      "id": "WS-307",
-      "title": "The engine RAISES bottom pair with 6% equity into a range that almost never folds",
-      "raw_score": 31,
-      "adjusted_score": 31,
+      "id": "WS-319",
+      "title": "TVR Gate 4 Phase A — the geometry decision: does the command column keep living inside the uniform scale transform?",
+      "raw_score": 25,
+      "adjusted_score": 25,
       "effort": "M",
-      "program": "domain-correctness",
+      "program": "design",
       "source_class": "untagged",
       "blocked_by_note": null,
       "soft_block_factor": 1,
@@ -19,12 +19,15 @@
       "queue_item_known": true
     }
   ],
-  "decisions_needed": [],
+  "decisions_needed": [
+    "Item WS-319: Option (b) ends the single-uniform-canvas model that every view in this app currently shares (ShowdownView, HandReplayView and the drills all use ScaledContainer). Decide whether the geometry change is TableView-only or app-wide. TableView-only is cheaper but creates two layout idioms in one product — which is the kind of drift sidebar-shell-spec.md exists to prevent.",
+    "Item WS-319: If (b) is chosen, WS-311 should be closed BY this work rather than fixed separately — fixing it first would be work done twice."
+  ],
   "anti_goal_check": {
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-307 selected (31 × no damping = 31).\nProgram cap-breach: design, domain-correctness (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-252 7→27, WS-253 5→27, WS-254 14→27 (+23 more).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-319 — FOUNDER-DIRECTED OVERRIDE, not the deterministic top candidate.\nThe CLI ranked WS-307 first (31) via the domain-correctness cap-breach priority floor; SPR-161 was composed and approved on that anchor, then abandoned when the founder identified the Table View Redesign as the live thread. WS-307 released to backlog UNFIXED (premise-checked against git history this session).\nSingle item by choice: WS-319 is M (1.5 sessions). The CLI's same-program continuity rule would have added WS-315 (design, S, 30) to reach the 2.0-session cap — held back because both classify plan-first, and score-descending sequencing would have run WS-315 AHEAD of the anchor the founder asked for. WS-319 is also the item WS-320/WS-313 design within.\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 1.5,

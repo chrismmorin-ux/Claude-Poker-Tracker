@@ -3,11 +3,13 @@ status: active
 started_at: "2026-08-01T01:40:30.949Z"
 ended_at: null
 mode: auto
-last_heartbeat: "2026-08-01T01:40:30.970Z"
+last_heartbeat: "2026-08-01T01:44:28.756Z"
 pid: 568
 agent_session_id: "790d7777-ef7f-4bea-9cfc-e1e6aabc7567"
 
 # Minted by cwos-claims because no registered session matched this process.
 # A session that never ran /session-start still needs an identity to claim under.
-claimed_items: []
+claimed_items:
+  - "WS-307"
+
 files_locked: []
