@@ -38,6 +38,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawnSync } = require('child_process');
 const { readYAMLFile, withFileLock } = require('./lib/cwos-utils');
+const { resolveRepoVersion } = require('./lib/kit-version');
 // WS-503: the snapshot/rollback mechanism this file pioneered now lives in a
 // shared lib so /adopt can reuse it rather than grow a second implementation.
 const repoSnapshot = require('./lib/repo-snapshot');
@@ -93,17 +94,13 @@ function resolveHomeBase(override, repoPath) {
 }
 
 // .cwos-version may be YAML (new) or a bare version scalar (legacy fixtures).
+// WS-547: precedence moved to lib/kit-version.js. This used to prefer
+// kit_version_at_install over version — the same inversion as cwos-migrate — and
+// it also never looked at the /genesis `kit_version:` shape, so an M0 repo
+// resolved to null here.
 function readInstalledVersion(repoPath) {
-  const vp = path.join(repoPath, '.cwos-version');
-  if (!fs.existsSync(vp)) return null;
-  const raw = fs.readFileSync(vp, 'utf8');
-  const { ok, data } = readYAMLFile(vp);
-  if (ok && data && typeof data === 'object') {
-    const v = data.kit_version_at_install || data.version;
-    if (v) return String(v).trim();
-  }
-  const m = raw.match(/(\d+\.\d+(?:\.\d+)?)/);
-  return m ? m[1] : null;
+  const resolved = resolveRepoVersion(repoPath);
+  return resolved ? resolved.version : null;
 }
 
 function readKitVersion(homebase) {
@@ -177,7 +174,32 @@ function loadHashBaseline(homebase, repoPath, installedVersion) {
 /**
  * Detect locally hand-edited kit files among those that will be overwritten.
  * Returns [{ source, destination, expected, actual }].
+ *
+ * WS-544: the comparison is line-ending insensitive. Baselines are sha256 over
+ * raw bytes, and 127 of the 389 files HomeBase ships contain CRLF, so the same
+ * logical content hashes differently depending on which platform checked the
+ * repo out. The observed symptom was the WRONG direction of wrong: /kit-upgrade
+ * reported "No local kit modifications" for a repo whose cwos-utils.js genuinely
+ * differed, because the file fell out of the known-baseline path entirely.
+ *
+ * A file counts as unmodified when the baseline matches ANY of its three
+ * renderings: as-is, all-LF, or all-CRLF. Both directions have to be covered —
+ * the baseline may have been recorded on a CRLF checkout and be compared against
+ * an LF one, or the reverse — and only the local bytes are available to vary,
+ * since a baseline is a hash and cannot be re-normalized after the fact.
+ * Accepting any of the three keeps the shipped baselines (hashes-3.8.0,
+ * hashes-3.8.1) valid; regenerating them would break detection for every repo
+ * already installed on those versions.
+ *
+ * A real edit still shows up: changing content changes all three hashes.
  */
+function lineEndingVariantHashes(buf) {
+  const raw = sha256(buf);
+  const text = buf.toString('utf8');
+  const lf = text.replace(/\r\n/g, '\n');
+  return new Set([raw, sha256(Buffer.from(lf, 'utf8')), sha256(Buffer.from(lf.replace(/\n/g, '\r\n'), 'utf8'))]);
+}
+
 function detectLocalMods(homebase, repoPath, manifestFiles, baseline) {
   if (!baseline) return null; // unavailable — caller surfaces this
   const mods = [];
@@ -189,8 +211,9 @@ function detectLocalMods(homebase, repoPath, manifestFiles, baseline) {
     const key = baseline.keyedByDestination ? dest : entry.source;
     const expected = baseline.files[key];
     if (!expected) continue;
-    const actual = sha256(fs.readFileSync(destAbs));
-    if (actual !== expected) mods.push({ source: entry.source, destination: dest, expected, actual });
+    const buf = fs.readFileSync(destAbs);
+    if (lineEndingVariantHashes(buf).has(expected)) continue;
+    mods.push({ source: entry.source, destination: dest, expected, actual: sha256(buf) });
   }
   return mods;
 }
@@ -274,6 +297,51 @@ function run(homebase, repoPath, scriptRel, args, opts = {}) {
   return { ok: r.status === 0, code: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
 }
 
+// WS-544: require() every .js the repo actually has under kit/scripts/, each in
+// its own child process so an import-time exit or side effect cannot corrupt the
+// upgrade run. Scripts are guarded by `require.main === module`, so a clean load
+// produces no output and does no work; a missing transitive dependency shows up
+// here as MODULE_NOT_FOUND, which is exactly the breakage the old gate missed.
+function requireSmokeCheck(repoPath) {
+  const scriptsDir = path.join(repoPath, 'kit', 'scripts');
+  if (!fs.existsSync(scriptsDir)) return { checked: 0, broken: [] };
+
+  const files = [];
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name === '__tests__' || e.name === 'node_modules') continue;
+        walk(full);
+      } else if (e.isFile() && e.name.endsWith('.js')) {
+        files.push(full);
+      }
+    }
+  })(scriptsDir);
+
+  const broken = [];
+  const noisy = [];
+  for (const abs of files) {
+    const r = spawnSync('node', ['-e', `require(${JSON.stringify(abs)})`], {
+      cwd: repoPath, encoding: 'utf8', timeout: 20000,
+    });
+    if (r.status === 0) continue;
+
+    const msg = (r.stderr || r.stdout || `exit ${r.status}`).trim();
+    const line = msg.split('\n').find(l => /Error|Cannot find/.test(l)) || msg.split('\n')[0];
+    const rec = { file: path.relative(repoPath, abs).split(path.sep).join('/'), error: line.slice(0, 140) };
+
+    // Only a MODULE-RESOLUTION failure is a gate failure. A script that lacks a
+    // `require.main === module` guard runs on import and exits non-zero with its
+    // usage text — annoying, but not a missing dependency, and rolling an
+    // upgrade back over it would be a false positive. Pre-WS-544 kits are full
+    // of exactly those, so this distinction is what keeps the check usable.
+    if (/Cannot find module|MODULE_NOT_FOUND/.test(msg)) broken.push(rec);
+    else noisy.push(rec);
+  }
+  return { checked: files.length, broken, noisy };
+}
+
 // Each check returns { name, pass, detail }.
 // `preUnresolved` is the set of registry paths already broken BEFORE the upgrade;
 // the gate fails the registry check only on paths the upgrade newly broke, so a
@@ -315,6 +383,21 @@ function runValidationGate(homebase, repoPath, targetVersion, validateRegistryPa
       : (reg.ok ? `${reg.checked} paths ok` : `${reg.unresolved.length} pre-existing unresolved (not introduced by upgrade)`),
   });
 
+  // WS-544: load every shipped script. The gate above exercises reconcile /
+  // next / pulse / audit and nothing else, which is why it reported 7/7 green
+  // for a claude-poker-tracker upgrade that had just left four scripts unable
+  // to require('./lib/cli'). Requiring each file in its own child process is
+  // the cheapest check that would have caught it.
+  const smoke = requireSmokeCheck(repoPath);
+  checks.push({
+    name: 'require smoke (every shipped script loads)',
+    pass: smoke.broken.length === 0,
+    detail: smoke.broken.length
+      ? `${smoke.broken.length} script(s) fail at require(): ${smoke.broken.slice(0, 3).map(b => `${b.file} — ${b.error}`).join(' | ').slice(0, 220)}`
+      : `${smoke.checked} script(s) resolve their dependencies`
+        + (smoke.noisy.length ? ` (${smoke.noisy.length} unguarded script(s) ran on import — not a dependency fault)` : ''),
+  });
+
   const stamped = readInstalledVersion(repoPath);
   checks.push({ name: 'version stamped', pass: stamped === targetVersion, detail: `${stamped} (want ${targetVersion})` });
 
@@ -352,6 +435,18 @@ function printDiff(repoPath, classification, schemaPlan, localMods, baselineInfo
   const total = M + A + C;
   if (total > 150) lines.push(`  … (${total} files total)`);
   lines.push('');
+  const drifted = classification.driftedScripts || [];
+  if (drifted.length) {
+    // WS-557: these diverged from baseline but are machinery, so they are
+    // replaced rather than sidecarred. Named here because a silent replace
+    // would be its own invisible failure; the snapshot keeps the old copy.
+    lines.push(`${drifted.length} script(s) diverged from baseline and will be REPLACED (not sidecarred):`);
+    drifted.slice(0, 12).forEach(e => lines.push(`  [replace] ${e.destination}${e.reason === 'no-baseline' ? '  (not in baseline)' : ''}`));
+    if (drifted.length > 12) lines.push(`  … and ${drifted.length - 12} more`);
+    lines.push('  kit/scripts/ is machinery — holding one back strands the modules that call it.');
+    lines.push('  Previous copies are retained in the pre-upgrade snapshot.');
+    lines.push('');
+  }
   if (localMods === null) {
     lines.push(`⚠ Local-mod baseline unavailable (no hashes-<version> manifest, no installed_files).`);
     lines.push(`  Customized files are still protected: cwos-migrate writes .kit-update sidecars (git-tag baseline).`);
@@ -477,6 +572,7 @@ function main() {
     emit(opts, header + '\n' + diff + '\n\nRun with --apply to upgrade (snapshot + auto-rollback on gate failure).',
       { ok: true, dry_run: true, installed: installedVersion, target: targetVersion,
         files: { overwrite: classification.stock.length, add: classification.new.length + classification.needsInstall.length, customized: classification.customized.length },
+        drifted_scripts: (classification.driftedScripts || []).map(e => ({ destination: e.destination, reason: e.reason })),
         schema: schemaPlan, local_mods: localMods, baseline: baselineInfo });
     return;
   }
@@ -505,8 +601,11 @@ function main() {
 
   emit(opts,
     `${header}\n\n✓ Upgrade complete: v${installedVersion} → v${targetVersion}.\n  Snapshot: ${path.basename(result.snapshot)} (retained)\n  Gate: all ${result.gate.checks.length} checks passed.` +
-    (classification.customized.length ? `\n\n  Action: review ${classification.customized.length} .kit-update sidecar(s) for your customizations.` : ''),
-    { ok: true, applied: true, installed: installedVersion, target: targetVersion, snapshot: path.basename(result.snapshot), gate: result.gate, kit_update_sidecars: classification.customized.map(e => e.destination + '.kit-update') });
+    (classification.customized.length ? `\n\n  Action: review ${classification.customized.length} .kit-update sidecar(s) for your customizations.` : '') +
+    ((classification.driftedScripts || []).length ? `\n  Note: ${classification.driftedScripts.length} diverged script(s) were replaced; previous copies are in the snapshot.` : ''),
+    { ok: true, applied: true, installed: installedVersion, target: targetVersion, snapshot: path.basename(result.snapshot), gate: result.gate,
+      kit_update_sidecars: classification.customized.map(e => e.destination + '.kit-update'),
+      drifted_scripts: (classification.driftedScripts || []).map(e => ({ destination: e.destination, reason: e.reason })) });
 }
 
 function countProgsBelow(repoPath, target) {
@@ -595,6 +694,7 @@ module.exports = {
   resolveSchemaChain, detectMinProgramSchema, targetProgramSchema,
   loadHashBaseline, detectLocalMods, createPreUpgradeSnapshot, restoreSnapshot,
   latestSnapshot, runValidationGate, readInstalledVersion, copyTree,
+  requireSmokeCheck, lineEndingVariantHashes,
 };
 
 if (require.main === module) main();

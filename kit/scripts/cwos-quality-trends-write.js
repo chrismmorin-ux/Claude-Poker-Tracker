@@ -158,8 +158,13 @@ function loadFeedback(feedbackFile) {
 function computeFounderRelevance(engineId, allScores, feedback) {
   // signal_rate over feedback entries for this engine.
   const fb = feedback.filter(e => e.engine === engineId);
-  let useful = 0, notUseful = 0;
+  let useful = 0, notUseful = 0, autoResolved = 0;
   for (const e of fb) {
+    // De-bias: auto-resolved marks are circular ("WS closed → finding useful")
+    // and can never be negative. Counting them lets signal_rate only ratchet
+    // upward as work completes, defeating AC-11's drift-detection purpose.
+    // Track them separately for transparency; exclude from the gated rate.
+    if (e.marked_by === 'auto-resolved') { autoResolved++; continue; }
     if (e.signal === 'useful') useful++;
     else if (e.signal === 'not_useful' || e.signal === 'dismiss') notUseful++;
     // 'defer' / 'wrong_priority' are neutral
@@ -174,6 +179,7 @@ function computeFounderRelevance(engineId, allScores, feedback) {
     const byRun = {};
     for (const e of fb) {
       if (!e.run_id) continue;
+      if (e.marked_by === 'auto-resolved') continue; // de-bias: exclude circular marks
       if (!byRun[e.run_id]) byRun[e.run_id] = { useful: 0, not_useful: 0 };
       if (e.signal === 'useful') byRun[e.run_id].useful++;
       else if (e.signal === 'not_useful' || e.signal === 'dismiss') byRun[e.run_id].not_useful++;
@@ -199,6 +205,7 @@ function computeFounderRelevance(engineId, allScores, feedback) {
 
   return {
     graded_count: graded,
+    auto_resolved_count: autoResolved,
     signal_rate,
     spearman_rho,
     spearman_n,
@@ -299,6 +306,7 @@ function emitEngine(name, block) {
   lines.push(`    strongest_dimension: "${block.strongest_dimension}"`);
   lines.push(`    founder_relevance:`);
   lines.push(`      graded_count: ${block.founder_relevance.graded_count}`);
+  lines.push(`      auto_resolved_count: ${block.founder_relevance.auto_resolved_count ?? 0}`);
   lines.push(`      signal_rate: ${emitNum(block.founder_relevance.signal_rate, 3)}`);
   lines.push(`      spearman_rho: ${emitNum(block.founder_relevance.spearman_rho, 3)}`);
   lines.push(`      spearman_n: ${block.founder_relevance.spearman_n}`);

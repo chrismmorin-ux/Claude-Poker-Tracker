@@ -145,8 +145,25 @@ Scan `.claude/workstream/programs/` for all `prog-*.yaml` files:
 - Count: total programs, healthy, stale, red
 
 ### 5. Active Sessions [SKIPPED if pre-phase succeeded]
-Scan `.claude/workstream/sessions/` for sessions with `status: active`:
-- List each with claimed items and duration
+Read `sessions` from the pre-phase envelope. It carries three fields (WS-533):
+
+- **`live`** — sessions that pass the liveness test. **Report these prominently.**
+  If any exist, say so plainly with their claimed items: *"⚠ N other session(s)
+  live in this repo — coordinate before editing shared files."* This is the line
+  whose absence caused the 2026-07-26 concurrent-session incident, where the
+  answer only emerged 40 minutes in from mtimes and a process list.
+- **`active`** — what the session FILES claim. A record left by a crashed session
+  still says `active` until recovery runs, so never present `active` alone as
+  "somebody is working." Where `active` exceeds `live`, the difference is stale
+  records; mention it as such and suggest `cwos-session-recovery.js --auto`.
+- **`registry.ok`** — whether the registry can be believed. **If false, say so and
+  do NOT report "no other sessions".** A registry that stopped recording reads as
+  all-clear when it means no data; that is how it rotted unnoticed from 2026-05-15
+  to 2026-07-26. Render `registry.reason` and treat concurrency as UNKNOWN.
+
+If falling back to a manual scan (pre-phase failed), scan
+`.claude/workstream/sessions/` for `status: active` and state explicitly that
+liveness was not checked — an unverified list is not an all-clear.
 
 ### 6. Recent Findings [SKIPPED if pre-phase succeeded]
 Scan `.claude/workstream/findings/` for findings with `status: open`:

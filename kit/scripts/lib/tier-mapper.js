@@ -23,7 +23,8 @@ const fs = require('fs');
 const path = require('path');
 const { readYAMLFile } = require('./cwos-utils.js');
 
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+// WS-549: kit/data is distribution content and travels with this module.
+const DATA_DIR = path.join(require('./kit-paths').resolveDistRoot(), 'kit', 'data');
 const ARCHETYPES_PATH = path.join(DATA_DIR, 'archetypes.yaml');
 const STAGES_PATH = path.join(DATA_DIR, 'stages.yaml');
 

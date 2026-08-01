@@ -12,6 +12,19 @@
  *   node cwos-verify.js --quiet            # silent unless failure
  *   node cwos-verify.js --strict           # exit 1 on any failure
  *   node cwos-verify.js --fix              # update Last Verified dates for passing checks
+ *
+ * Incremental / fast selection (WS-429 / FIND-296 — cap session-start latency):
+ *   node cwos-verify.js --fast-mode               # curated high-signal subset only
+ *   node cwos-verify.js --since-git-commit [ref]  # only invariants guarding changed files
+ *   node cwos-verify.js --fast-mode --since-git-commit   # union (session-start default)
+ *
+ *   - --since-git-commit selects invariants whose watched_paths (INVARIANT_META)
+ *     overlap the changed-file set since `ref` (default: working tree + staged +
+ *     untracked). An invariant with NO watched_paths is ALWAYS-RUN — incremental
+ *     mode never silently skips an unclassified check. Git-absent => full set.
+ *   - --fast-mode runs only invariants tagged `fast: true` (cheap, always-relevant).
+ *   - Full mode (no flags) runs every check, unchanged. Wire --fast-mode into
+ *     session-start; full-mode into /verify and /audit.
  */
 
 'use strict';
@@ -21,8 +34,25 @@ require('./lib/preflight');
 const fs = require('fs');
 const path = require('path');
 const { globFiles, readYAMLFile, findWorkstreamDir, todayISO, findRepoRoot, makeEventEmitter } = require('./lib/cwos-utils');
+const { cliGate } = require('./lib/cli');
+const { parseSemver, resolveRepoVersion, baselineTag } = require('./lib/kit-version');
 
 const emitEvent = makeEventEmitter();
+
+// ─── Per-run YAML read cache (WS-429) ────────────────────────────────────────
+//
+// Several invariants read the same index files (fleet/registry.yaml, etc.). A
+// module-level memo keyed by absolute path collapses those re-reads within a
+// single verify invocation. Cleared at the top of every main() run so the cache
+// NEVER persists across process invocations — replay/determinism is unaffected.
+const _yamlCache = new Map();
+function clearVerifyCache() { _yamlCache.clear(); }
+function cachedReadYAMLFile(p) {
+  if (_yamlCache.has(p)) return _yamlCache.get(p);
+  const r = readYAMLFile(p);
+  _yamlCache.set(p, r);
+  return r;
+}
 
 // ─── Repo Root Discovery ────────────────────────────────────────────────────
 
@@ -117,7 +147,171 @@ const INVARIANT_CHECKS = [
   { id: 'INV-057', name: 'cwos-adopt-install.js uses writeFileAtomic exclusively (WS-426 / FIND-291 + FIND-292)', check: checkAdoptInstallAtomicWrites },
   { id: 'INV-059', name: 'No shipped kit file hardcodes docs/evolution/ — calibration paths must resolve per repo scope (WS-421 / FIND-281)', check: checkNoHardcodedEvolutionPaths },
   { id: 'INV-program-fields-have-runtime-effect', name: 'prog-template accountability fields have runtime readers (WS-366 / FIND-248)', check: checkProgramFieldsHaveRuntimeEffect },
+  { id: 'INV-preflight-gate-not-bypassed', name: 'Single-question pre-flight gate not bypassed — ack markers have matching ack events (ADVISORY) (WS-433 / FIND-305)', check: checkPreflightGateNotBypassed },
+  { id: 'INV-060', name: 'Engine model tiers declared + floor-respecting — agent-dispatch engines declare model_tiers; no dead model: scalar; floors honored (WS-390)', check: checkEngineModelTiers },
+  { id: 'INV-061', name: 'State-domain rebuild contract — every domain classified, none git-tracked, refresh hook wired (ADR-058 / WS-504)', check: checkStateDomainRebuildContract },
+  { id: 'INV-062', name: 'Security posture matches declaration — this node runs the permission mode + guards it declares (ADR-059 / WS-521)', check: checkSecurityPostureMatchesDeclaration },
+  { id: 'INV-063', name: 'Every fleet repo declares a phone_surface — kind: none is an answer, omission is not (WS-516)', check: checkPhoneSurfaceDeclared },
+  { id: 'INV-064', name: 'kit/MANIFEST.yaml ships every module its registered scripts require (WS-544)', check: checkManifestDepsComplete },
+  { id: 'INV-065', name: 'Every fleet .cwos-version resolves to a version with a real kit baseline (WS-547 / ADR-064 P1)', check: checkVersionStampsResolvable },
+  { id: 'INV-066', name: 'No script resolves a root by counting parent dirs up from __dirname (WS-549 / ADR-064 P3)', check: checkPathRootResolution },
 ];
+
+// ─── Incremental-selection + fast-mode metadata (WS-429 / FIND-296) ──────────
+//
+// watched_paths: repo-relative path PREFIXES (forward-slash). A dir prefix ends
+//   with '/'; a bare path matches that file exactly or as a directory. In
+//   --since-git-commit mode an invariant runs iff one of its watched_paths
+//   prefixes a changed file. An invariant absent from this map (or with empty
+//   watched_paths) is ALWAYS-RUN — incremental mode never silently skips an
+//   unclassified check (the conservative default that keeps coverage honest).
+//
+// fast: the curated high-signal subset run by --fast-mode — cheap, always-
+//   relevant checks that catch the most common silent breakage, chosen so the
+//   set is comfortable to run on every session start.
+const INVARIANT_META = {
+  'INV-001': { watched_paths: ['kit/agents/'] },
+  'INV-002': { watched_paths: ['engines/'], fast: true },
+  'INV-006': { watched_paths: ['.claude/workstream/queue/', '.claude/workstream/queue-index.yaml', '.claude/workstream/state/queue.json'], fast: true },
+  'INV-008': { watched_paths: ['fleet/'] },
+  'INV-009': { watched_paths: ['docs/'], fast: true },
+  'INV-010': { watched_paths: ['kit/commands/', 'docs/'] },
+  'INV-013': { watched_paths: ['engines/', 'kit/MANIFEST.yaml'] },
+  'INV-014': { watched_paths: ['engines/', 'kit/templates/workstream/engines/registry.yaml', '.claude/workstream/engines/registry.yaml'], fast: true },
+  'INV-018': { watched_paths: ['kit/commands/', 'fleet/commands/', 'sim/commands/', '.claude/commands/'], fast: true },
+  'INV-024': { watched_paths: ['kit/MANIFEST.yaml', 'engines/INDEX.md', '.claude/commands/', 'kit/commands/', 'engines/'] },
+  'INV-027': { watched_paths: ['kit/commands/', 'fleet/commands/', 'sim/commands/', '.claude/commands/'] },
+  'INV-028': { watched_paths: ['kit/scripts/', 'docs/'] },
+  'INV-029': { watched_paths: ['docs/', 'kit/scripts/'] },
+  'INV-030': { watched_paths: ['kit/scripts/core/'] },
+  'INV-031': { watched_paths: ['.claude/workstream/'], fast: true },
+  'INV-032': { watched_paths: ['kit/scripts/'] },
+  'INV-033': { watched_paths: ['kit/commands/'] },
+  'INV-034': { watched_paths: ['.claude/workstream/programs/', 'kit/templates/workstream/programs/'] },
+  'INV-035': { watched_paths: ['kit/MANIFEST.yaml', 'engines/'] },
+  'INV-039': { watched_paths: ['fleet/', 'kit/VERSION'] },
+  'INV-040': { watched_paths: ['.claude/workstream/programs/', 'kit/templates/workstream/programs/'] },
+  'INV-038': { watched_paths: ['.claude/workstream/sprints/'] },
+  'INV-037': { watched_paths: ['.claude/workstream/sprints/', '.claude/workstream/queue/'] },
+  'INV-036': { watched_paths: ['kit/scripts/'] },
+  'INV-readpath-determinism': { watched_paths: ['kit/scripts/'] },
+  'INV-041': { watched_paths: ['.claude/workstream/programs/', 'kit/templates/workstream/programs/'] },
+  'INV-042': { watched_paths: ['kit/commands/'] },
+  'INV-043': { watched_paths: ['kit/commands/'] },
+  'INV-044': { watched_paths: ['.claude/workstream/'] },
+  'INV-045': { watched_paths: ['kit/scripts/'] },
+  'INV-046': { watched_paths: ['.claude/workstream/runs/', 'engines/'] },
+  'INV-047': { watched_paths: ['.claude/workstream/programs/'], fast: true },
+  'INV-048': { watched_paths: ['engines/'] },
+  'INV-049': { watched_paths: ['kit/MANIFEST.yaml', 'engines/homebase-only/'] },
+  'INV-053': { watched_paths: ['.claude/workstream/findings/'] },
+  'INV-055': { watched_paths: ['kit/scripts/'] },
+  'INV-056': { watched_paths: ['kit/commands/', 'kit/MANIFEST.yaml'] },
+  'INV-057': { watched_paths: ['kit/scripts/cwos-adopt-install.js'] },
+  'INV-059': { watched_paths: ['kit/'] },
+  'INV-060': { watched_paths: ['engines/'] },
+  'INV-061': { watched_paths: ['kit/scripts/core/state-store.js', '.gitignore', '.claude/settings.json', '.claude/settings.local.json'], fast: true },
+  // fast: true — posture drift should surface at session start, not only on a
+  // full pass. The whole point of ADR-059 is that the posture stopped being an
+  // unexamined inheritance; a check that runs rarely would recreate that.
+  'INV-062': { watched_paths: ['fleet/registry.yaml', 'kit/scripts/cwos-security-posture-check.js'], fast: true },
+  // Not fast — this only changes when the registry does, and the offline half
+  // is cheap but not free. The registry is in watched_paths, so adding a repo
+  // triggers it.
+  'INV-063': { watched_paths: ['fleet/registry.yaml', 'kit/scripts/cwos-phone-surface-check.js'] },
+  // Any script edit can introduce a require, so kit/scripts/ is watched whole.
+  // fast: a full run is a few hundred file reads and it catches the breakage
+  // class that ships silently to every repo.
+  'INV-064': { watched_paths: ['kit/MANIFEST.yaml', 'kit/scripts/'], fast: true },
+  // fast: a handful of stamp reads plus one `git rev-parse` per repo. Cheap, and
+  // it gates whether any upgrade in the fleet can be computed at all.
+  'INV-065': { watched_paths: ['fleet/registry.yaml', 'kit/scripts/lib/kit-version.js', 'kit/scripts/cwos-migrate.js'], fast: true },
+  // fast: a regex over ~170 files. Any script edit can reintroduce the pattern,
+  // so kit/scripts/ is watched whole — the same reasoning as INV-064.
+  'INV-066': { watched_paths: ['kit/scripts/'], fast: true },
+  'INV-program-fields-have-runtime-effect': { watched_paths: ['kit/templates/workstream/programs/', 'kit/scripts/'] },
+  'INV-preflight-gate-not-bypassed': { watched_paths: ['.claude/workstream/events/'], fast: true },
+  // ALWAYS-RUN (no watched_paths, intentionally): INV-004 (broad persona scan),
+  // INV-011 (state freshness, time-based), INV-016 (backlog review cadence),
+  // INV-025 (schema_version, repo-wide), INV-026 (hook liveness, time-based —
+  // but FAST so session-start always sees it), INV-cli-envelope-consumed-
+  // completely (telemetry-based).
+  'INV-026': { fast: true },
+};
+
+// Does a changed file (repo-relative, forward-slash) fall under a watched prefix?
+function fileMatchesPrefix(file, prefix) {
+  if (prefix.endsWith('/')) return file === prefix.slice(0, -1) || file.startsWith(prefix);
+  return file === prefix || file.startsWith(prefix + '/');
+}
+
+// Changed-file set since `ref` (optional). Union of committed-since-ref +
+// unstaged + staged + untracked, repo-relative, forward-slashed. Returns null
+// when git is unavailable or the ref is bad — callers fail safe (run full set).
+function getChangedFiles(rootDir, ref) {
+  const { spawnSync } = require('child_process');
+  const run = (gitArgs) => {
+    const r = spawnSync('git', gitArgs, { cwd: rootDir, encoding: 'utf8', timeout: 5000 });
+    if (!r || r.status !== 0 || typeof r.stdout !== 'string') return null;
+    return r.stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+  };
+  if (run(['rev-parse', '--show-toplevel']) === null) return null; // not a git repo
+  const sets = [];
+  if (ref) {
+    const committed = run(['diff', '--name-only', ref, 'HEAD']);
+    if (committed === null) return null; // bad ref → fail safe to full set
+    sets.push(committed);
+  }
+  for (const args of [['diff', '--name-only'], ['diff', '--name-only', '--cached'], ['ls-files', '--others', '--exclude-standard']]) {
+    const out = run(args);
+    if (out) sets.push(out);
+  }
+  const all = new Set();
+  for (const s of sets) for (const f of s) all.add(f.replace(/\\/g, '/'));
+  return Array.from(all);
+}
+
+// Narrow the check list per --fast-mode / --since-git-commit. Both absent →
+// full set. fast-mode → only fast:true. since → changed-overlap + always-run.
+// Both → union. Original declaration order is preserved.
+function selectChecks(allChecks, { fastMode, sinceMode, sinceRef, rootDir }) {
+  if (!fastMode && !sinceMode) return { checks: allChecks, note: null };
+  const selected = new Set();
+  const notes = [];
+
+  if (fastMode) {
+    for (const c of allChecks) {
+      const m = INVARIANT_META[c.id];
+      if (m && m.fast) selected.add(c.id);
+    }
+    notes.push(`fast-mode: ${selected.size} essential`);
+  }
+
+  if (sinceMode) {
+    const changed = getChangedFiles(rootDir, sinceRef);
+    if (changed === null) {
+      for (const c of allChecks) selected.add(c.id); // git absent / bad ref → full set
+      notes.push('since-git-commit: git unavailable or ref unresolved → ran full set (fail-safe)');
+    } else {
+      let matched = 0;
+      let alwaysRun = 0;
+      for (const c of allChecks) {
+        const m = INVARIANT_META[c.id];
+        const watched = m && m.watched_paths;
+        if (!watched || watched.length === 0) {
+          selected.add(c.id);
+          alwaysRun++;
+        } else if (watched.some((p) => changed.some((f) => fileMatchesPrefix(f, p)))) {
+          selected.add(c.id);
+          matched++;
+        }
+      }
+      notes.push(`since-git-commit (${sinceRef || 'working-tree'}): ${changed.length} changed file(s) → ${matched} matched + ${alwaysRun} always-run`);
+    }
+  }
+
+  return { checks: allChecks.filter((c) => selected.has(c.id)), note: notes.join('; ') };
+}
 
 function checkNoKitAgentsDir(rootDir) {
   const exists = fs.existsSync(path.join(rootDir, 'kit', 'agents'));
@@ -206,6 +400,117 @@ function checkEngineContractConsistency(rootDir) {
     detail: mismatches.length === 0
       ? `${checked} engines: frontmatter ↔ Intent Contract block consistent (name + default_mode)`
       : `${mismatches.length} mismatches across ${checked} engines:\n  ` + mismatches.join('\n  '),
+  };
+}
+
+// ─── INV-060: Engine model_tiers declared + floor-respecting (WS-390) ───────
+//
+// Model tier is the WEAKEST quality lever (BENCH series 1: structure > diversity
+// > model). agent-dispatch engines therefore drop scan phases to cheaper models
+// while keeping cross-critique + synthesis on Opus (the high-leverage phases).
+// This check enforces that the tiering convention is DECLARED and FLOOR-SAFE so
+// it cannot silently rot into dead config — the exact failure mode of the old
+// `model:` scalar, which was parsed but never consumed by anything (WS-390).
+//
+// Scope: declaration-level only. Whether the orchestrator actually dispatched at
+// the declared tier at runtime is the runtime-dispatch audit's job (INV-046).
+//
+// Floors (from engines/procedures/agent-dispatch.md MODEL TIER DEFAULTS):
+//   expert ≥ haiku · cross_critic ≥ sonnet · synthesis ≥ sonnet (never haiku).
+//
+// Rank order: haiku < sonnet < opus < fable. `fable` (Mythos-class, above Opus)
+// is a valid declared opt-up for any role; tier DEFAULTS are unchanged pending
+// the WS-475 re-benchmark on Claude 5 models (lever-impact-map.yaml is N=1 on 4.x).
+
+const _MODEL_RANK = { haiku: 1, sonnet: 2, opus: 3, fable: 4 };
+const _TIER_FLOORS = { expert: 'haiku', cross_critic: 'sonnet', synthesis: 'sonnet' };
+const _VALID_TIER_KEYS = new Set(['expert', 'cross_critic', 'synthesis', 'remediation']);
+
+// Parse a `model_tiers:` declaration from frontmatter. Supports both the block
+// form (model_tiers:\n  expert: sonnet) and the inline form
+// (model_tiers: { expert: sonnet, synthesis: opus }). Returns a role→tier map
+// (possibly empty); null only when there is no frontmatter at all.
+function _parseModelTiers(content) {
+  if (!content.startsWith('---')) return null;
+  const end = content.indexOf('\n---', 3);
+  if (end < 0) return null;
+  const fmLines = content.slice(3, end).split('\n');
+  const tiers = {};
+  let inBlock = false;
+  // Strip a trailing YAML inline comment (whitespace + '#' …) and surrounding quotes.
+  const clean = (v) => v.replace(/\s+#.*$/, '').trim().replace(/^["']|["']$/g, '');
+  for (const raw of fmLines) {
+    const line = raw.replace(/\s+$/, '');
+    const inlineMatch = line.match(/^model_tiers:\s*\{(.+)\}\s*$/);
+    if (inlineMatch) {
+      for (const pair of inlineMatch[1].split(',')) {
+        const ci = pair.indexOf(':');
+        if (ci < 0) continue;
+        const k = pair.slice(0, ci).trim();
+        if (k) tiers[k] = clean(pair.slice(ci + 1));
+      }
+      return tiers;
+    }
+    if (/^model_tiers:\s*$/.test(line)) { inBlock = true; continue; }
+    if (inBlock) {
+      const m = line.match(/^\s+([a-z_]+):\s*(.+?)\s*$/i);
+      if (m) { tiers[m[1]] = clean(m[2]); continue; }
+      if (/^\S/.test(line)) inBlock = false; // a non-indented line ends the block
+    }
+  }
+  return tiers;
+}
+
+function checkEngineModelTiers(rootDir) {
+  const stdDir = path.join(rootDir, 'engines/standard');
+  if (!fs.existsSync(stdDir)) {
+    return { passed: true, detail: 'engines/standard not present — skipped' };
+  }
+  const violations = [];
+  let declared = 0, exempt = 0;
+  for (const f of globFiles(stdDir, '*.md')) {
+    let content;
+    try { content = fs.readFileSync(f, 'utf8'); } catch { continue; }
+    const fm = _parseEngineFrontmatter(content);
+    if (!fm) continue;
+    const rel = path.relative(rootDir, f).replace(/\\/g, '/');
+    const tiers = _parseModelTiers(content) || {};
+    const hasTiers = Object.keys(tiers).length > 0;
+    const isAgentDispatch = fm.procedure === 'agent-dispatch';
+
+    // The dead `model:` scalar is no longer a valid declaration (WS-390): it was
+    // never consumed, so it silently misled. Require `model_tiers:` instead.
+    if (fm.model && !hasTiers) {
+      violations.push(`${rel}: dead scalar 'model:' — declare 'model_tiers:' instead (the scalar field is never consumed)`);
+    }
+
+    if (isAgentDispatch && !hasTiers) {
+      violations.push(`${rel}: agent-dispatch engine must declare 'model_tiers:' (expert/cross_critic/synthesis)`);
+      continue;
+    }
+    if (!hasTiers) { exempt++; continue; } // inline engine, no subagent dispatch — inherits session model
+
+    declared++;
+    for (const [role, tier] of Object.entries(tiers)) {
+      if (!_VALID_TIER_KEYS.has(role)) {
+        violations.push(`${rel}: unknown model_tiers role '${role}' (valid: ${[..._VALID_TIER_KEYS].join(', ')})`);
+        continue;
+      }
+      if (!_MODEL_RANK[tier]) {
+        violations.push(`${rel}: invalid tier '${tier}' for '${role}' (valid: ${Object.keys(_MODEL_RANK).join(', ')})`);
+        continue;
+      }
+      const floor = _TIER_FLOORS[role];
+      if (floor && _MODEL_RANK[tier] < _MODEL_RANK[floor]) {
+        violations.push(`${rel}: '${role}' tier '${tier}' is below floor '${floor}'`);
+      }
+    }
+  }
+  return {
+    passed: violations.length === 0,
+    detail: violations.length === 0
+      ? `${declared} engine(s) declare valid model_tiers; ${exempt} inline engine(s) exempt (inherit session model)`
+      : `${violations.length} model-tier violation(s):\n  ` + violations.join('\n  '),
   };
 }
 
@@ -320,14 +625,8 @@ function checkHomebaseOnlyManifestFlag(rootDir) {
 //  - kit/commands/evolve.md — /evolve IS the Product Evolution command, flagged
 //    homebase_only: true in MANIFEST (never ships). It legitimately operates on
 //    the evolution dir (constitutions, change-impacts), like a homebase-only engine.
-//  - engines/library/corrective-plan/SKILL.md — references a HomeBase measurement
-//    scorecard (corrective-scorecards/), a different subsystem from the calibration
-//    write-loops this invariant targets. Tracked separately by FIND-282; its
-//    measurement-record section is governed by ADR-050's labeled exception (sunset
-//    2026-06-13, WS-408). Deferred here to avoid colliding with that in-flight work.
 const EVOLUTION_PATH_ALLOWLIST = new Set([
   'kit/commands/evolve.md',
-  'engines/library/corrective-plan/SKILL.md',
 ]);
 
 function checkNoHardcodedEvolutionPaths(rootDir) {
@@ -682,13 +981,19 @@ function checkQueueIndexParity(rootDir) {
 function checkFleetPaths(rootDir) {
   const registryPath = path.join(rootDir, 'fleet/registry.yaml');
   if (!fs.existsSync(registryPath)) return { passed: false, detail: 'fleet/registry.yaml not found' };
-  const { ok, data } = readYAMLFile(registryPath);
+  const { ok, data } = cachedReadYAMLFile(registryPath);
   if (!ok) return { passed: false, detail: 'fleet/registry.yaml could not be parsed' };
 
   const repos = Array.isArray(data.repos) ? data.repos : [];
   const missing = [];
   let realCount = 0;
   let simCount = 0;
+  let notHostedCount = 0;
+
+  // Node awareness (ADR-057): only require paths for repos the registry
+  // says are hosted on the machine running the check.
+  const { resolveNodeContext, isRepoHostedHere } = require('./lib/fleet-nodes');
+  const nodeCtx = resolveNodeContext(data);
 
   for (const repo of repos) {
     // Simulated repos are ephemeral — their path field points to sim/.sandbox/
@@ -710,16 +1015,18 @@ function checkFleetPaths(rootDir) {
     // The name is still tracked so future /discover / /adopt runs can
     // wire it up, but INV-008 should not flag the missing path as drift.
     if (repo.skip_path_check === true) continue;
+    if (!isRepoHostedHere(repo, nodeCtx)) { notHostedCount++; continue; }
     if (repo.path && !fs.existsSync(repo.path)) {
       missing.push(`${repo.name || repo.id || '?'} → ${repo.path}`);
     }
   }
 
+  const hostedNote = notHostedCount > 0 ? ` (${notHostedCount} on other nodes, skipped)` : '';
   return {
     passed: missing.length === 0,
     detail: missing.length === 0
-      ? `${realCount} real + ${simCount} simulated repos, all paths/sources exist`
-      : `${missing.length} missing: ${missing.slice(0, 3).join(', ')}`,
+      ? `${realCount} real + ${simCount} simulated repos, all paths/sources exist${hostedNote}`
+      : `${missing.length} missing: ${missing.slice(0, 3).join(', ')}${hostedNote}`,
   };
 }
 
@@ -1844,6 +2151,70 @@ function checkReplayPurity(rootDir) {
   };
 }
 
+// ─── INV-061: State-domain rebuild contract (ADR-058 / WS-504) ────────────
+//
+// state/*.json is an untracked per-node cache (ADR-058). Three assertions:
+//   1. Every domain the state store materializes has a declared rebuild
+//      source below — a new domain added without one fails here instead of
+//      silently reopening the multi-node conflict class FIND-331 described.
+//   2. No state-store domain JSON is git-tracked (findings-feedback-manifest
+//      is not a domain and stays tracked).
+//   3. If a settings file wires a cwos-reconcile SessionStart hook, it must
+//      carry --refresh-state — otherwise the rebuild path is inert on fresh
+//      clones (the exact half-shipped outage run-026's failure analysis named).
+
+const STATE_DOMAIN_REBUILD_SOURCES = {
+  queue: 'yaml-rebuild',      // queue/WS-*.yaml via reconcile reducer refresh
+  findings: 'yaml-rebuild',   // findings/FIND-*.yaml
+  sprints: 'yaml-rebuild',    // sprints/SPR-*.yaml
+  programs: 'yaml-rebuild',   // programs/prog-*.yaml + registry
+  engines: 'artifact-backfill', // runs/run-NNN artifacts via Phase 2n sweep
+  envelope: 'per-node',       // command telemetry — machine-local by design
+  config: 'per-node',         // permanently empty (no reducer)
+  sessions: 'per-node',       // permanently empty (no reducer)
+};
+
+function checkStateDomainRebuildContract(rootDir) {
+  let domains;
+  try {
+    ({ DEFAULT_DOMAINS: domains } = require(path.join(rootDir, 'kit', 'scripts', 'core', 'state-store.js')));
+  } catch {
+    return { passed: true, detail: 'core/state-store.js not present — N/A (pre-step-2)' };
+  }
+  if (!Array.isArray(domains)) {
+    return { passed: false, detail: 'state-store exports no DEFAULT_DOMAINS — cannot verify rebuild contract' };
+  }
+  const unclassified = domains.filter((d) => !STATE_DOMAIN_REBUILD_SOURCES[d]);
+  if (unclassified.length > 0) {
+    return {
+      passed: false,
+      detail: `domain(s) without a declared rebuild source (ADR-058): ${unclassified.join(', ')} — classify as yaml-rebuild / artifact-backfill / per-node in STATE_DOMAIN_REBUILD_SOURCES (cwos-verify.js) and implement the rebuild path`,
+    };
+  }
+  const { spawnSync } = require('child_process');
+  try {
+    const r = spawnSync('git', ['ls-files', '.claude/workstream/state'], { cwd: rootDir, encoding: 'utf8', timeout: 5000 });
+    if (r.status === 0) {
+      const tracked = r.stdout.split('\n').map((s) => s.trim()).filter(Boolean)
+        .filter((f) => f.endsWith('.json') && !f.endsWith('findings-feedback-manifest.json'));
+      if (tracked.length > 0) {
+        return { passed: false, detail: `git-tracked state domain JSON (ADR-058 forbids): ${tracked.join(', ')} — git rm --cached + gitignore` };
+      }
+    }
+  } catch { /* git unavailable — skip tracked-file assertion */ }
+  for (const settingsRel of ['.claude/settings.json', '.claude/settings.local.json']) {
+    const p = path.join(rootDir, settingsRel);
+    if (!fs.existsSync(p)) continue;
+    let raw = '';
+    try { raw = fs.readFileSync(p, 'utf8'); } catch { continue; }
+    if (raw.includes('cwos-reconcile.js') && raw.includes('SessionStart')
+        && raw.includes('--check-drift') && !raw.includes('--refresh-state')) {
+      return { passed: false, detail: `${settingsRel} wires a cwos-reconcile SessionStart hook without --refresh-state — fresh clones never rebuild the state cache (ADR-058)` };
+    }
+  }
+  return { passed: true, detail: `${domains.length} domains classified; no tracked domain JSON; SessionStart refresh wiring consistent.` };
+}
+
 // ─── INV-044: Per-field replay-purity (WS-261 / AS-037-11) ───────────────
 //
 // Complements INV-031 (whole-state replay-purity) with per-field
@@ -2108,15 +2479,18 @@ function checkFleetVersionDrift(rootDir) {
   if (!fs.existsSync(registryPath)) return { passed: true, detail: 'fleet/registry.yaml not found — no fleet to check' };
   if (!fs.existsSync(versionPath)) return { passed: false, detail: 'kit/VERSION not found' };
 
-  const { ok, data } = readYAMLFile(registryPath);
+  const { ok, data } = cachedReadYAMLFile(registryPath);
   if (!ok) return { passed: false, detail: 'fleet/registry.yaml could not be parsed' };
 
   const headVersionRaw = fs.readFileSync(versionPath, 'utf8').trim();
-  const headParts = headVersionRaw.split('.').map(n => parseInt(n, 10));
-  if (headParts.length < 2 || headParts.some(Number.isNaN)) {
+  // WS-547: parsing goes through lib/kit-version.js so every version comparison
+  // in kit/scripts/ shares one definition of what a version is.
+  const headParsed = parseSemver(headVersionRaw);
+  if (!headParsed) {
     return { passed: false, detail: `kit/VERSION (${headVersionRaw}) does not parse as semver` };
   }
-  const [headMajor, headMinor] = headParts;
+  const headMajor = headParsed.major;
+  const headMinor = headParsed.minor;
 
   // Allowed drift: 1 minor by default. Future: read from a config file.
   const MAX_DRIFT_MINOR = 1;
@@ -2166,12 +2540,13 @@ function checkFleetVersionDrift(rootDir) {
       warnings.push(`${repo.name || '?'}: missing kit_version (adopted but field absent)`);
       continue;
     }
-    const repoParts = repoVersionRaw.split('.').map(n => parseInt(n, 10));
-    if (repoParts.length < 2 || repoParts.some(Number.isNaN)) {
+    const repoParsed = parseSemver(repoVersionRaw);
+    if (!repoParsed) {
       warnings.push(`${repo.name || '?'}: kit_version (${repoVersionRaw}) does not parse as semver`);
       continue;
     }
-    const [repoMajor, repoMinor] = repoParts;
+    const repoMajor = repoParsed.major;
+    const repoMinor = repoParsed.minor;
 
     // Major mismatch = unconditional violation (drift is conceptually infinite).
     if (repoMajor !== headMajor) {
@@ -2200,6 +2575,68 @@ function checkFleetVersionDrift(rootDir) {
     };
   }
   return { passed: true, detail: `${checkedCount} adopted repo(s) within ${MAX_DRIFT_MINOR}-minor drift bound of HEAD ${headVersionRaw}` };
+}
+
+// INV-065: every fleet repo's .cwos-version must resolve to a version, and that
+// version must have a baseline the upgrade path can actually diff against.
+//
+// Distinct from INV-039 above, which measures how far each repo has DRIFTED and
+// reads the deprecated `kit_version` cache in fleet/registry.yaml. This one
+// reads each repo's real stamp and asks a prior question: can we tell what it
+// has at all? Two live repos failed that on 2026-07-30 — physical-therapy-by-ai
+// resolved three releases ahead of reality, and siteproof resolved to the string
+// 'unknown' and asked git for the tag `kit-vunknown`. Both failures were silent,
+// and both ended in an upgrade that stamped a new version and applied nothing.
+//
+// This is the standing guard against a fifth stamp shape, or a fifth reader with
+// its own precedence, reintroducing the class. Repo-local reads only, so it
+// survives the ADR-064 move of kit content into a plugin.
+//
+// Source: WS-547 / FIND-migrate-version-precedence-inverted / ADR-064 P1.
+function checkVersionStampsResolvable(rootDir) {
+  const registryPath = path.join(rootDir, 'fleet/registry.yaml');
+  if (!fs.existsSync(registryPath)) return { passed: true, detail: 'fleet/registry.yaml not found — no fleet to check' };
+  const { ok, data } = cachedReadYAMLFile(registryPath);
+  if (!ok || !Array.isArray(data.repos)) return { passed: false, detail: 'fleet/registry.yaml could not be parsed' };
+
+  const { runGitInRepo } = require('./lib/shell-safe');
+  const unresolvable = [];   // stamp exists but yields no version
+  const unbaselined = [];    // version resolves but has no baseline to diff against
+  let checkedCount = 0;
+
+  for (const repo of data.repos) {
+    if (repo.type === 'simulated') continue;
+    if (repo.skip_path_check === true) continue;
+    if (!repo.path) continue;
+    // Not-hosted repos live on another node (ADR-057) — absence is normal here.
+    if (!fs.existsSync(path.join(repo.path, '.cwos-version'))) continue;
+    checkedCount++;
+
+    const resolved = resolveRepoVersion(repo.path);
+    if (!resolved) { unresolvable.push(repo.name || repo.path); continue; }
+
+    // A version with no release tag cannot be diffed. Guard A in cwos-migrate
+    // refuses at run time; this surfaces it before someone tries.
+    const tag = baselineTag(resolved.version);
+    const r = runGitInRepo(rootDir, ['rev-parse', '--verify', `refs/tags/${tag}`], { timeout: 5000 });
+    if (!r || !r.ok) unbaselined.push(`${repo.name || repo.path} (${resolved.version} → ${tag} missing)`);
+  }
+
+  if (unresolvable.length > 0) {
+    return {
+      passed: false,
+      detail: `${unresolvable.length}/${checkedCount} repo(s) have a .cwos-version that resolves to no version: ${unresolvable.join(', ')}. ` +
+        `An upgrade of these would misclassify every file and stamp a no-op. Fix the stamp, or pass --from <version> to cwos-migrate.js.`,
+    };
+  }
+  if (unbaselined.length > 0) {
+    return {
+      passed: false,
+      detail: `${unbaselined.length}/${checkedCount} repo(s) resolve to a version with no kit baseline: ${unbaselined.join('; ')}. ` +
+        `cwos-migrate.js will refuse these (exit 3) until the release is tagged or --from names one that is.`,
+    };
+  }
+  return { passed: true, detail: `${checkedCount} repo stamp(s) resolve to a version with a real kit baseline` };
 }
 
 // INV-038: Sprints approved on or after 2026-04-25 (WS-227 ship date) must
@@ -2499,17 +2936,52 @@ function checkHookRaceProtection(rootDir) {
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 
+// ADR-063 / WS-542: uniform CLI contract. A full run is ~10 minutes / 160+ CPU
+// seconds, so a mistyped flag that is silently ignored is expensive — a session
+// asked for `--quick` (not a flag) and got the entire suite, timing out, while
+// the `--fast-mode` tier it wanted already existed but was undiscoverable.
+const CLI = {
+  name: 'cwos-verify',
+  summary: 'run invariant checks over the repo',
+  flags: {
+    quiet: { type: 'boolean', describe: 'silent unless something fails' },
+    strict: { type: 'boolean', describe: 'exit 1 on any FAIL (default exits 0 — see notes)' },
+    'fast-mode': { type: 'boolean', describe: 'cheap subset only — use this for session-start checks' },
+    'since-git-commit': {
+      type: 'string', optionalValue: true, placeholder: 'ref',
+      describe: 'only invariants touching files changed since <ref> (default: HEAD)',
+    },
+    only: { type: 'string', placeholder: 'INV-ID', describe: 'run a single invariant by id' },
+    fix: { type: 'boolean', describe: 'apply safe auto-fixes when nothing failed' },
+    'fix-hardlinks': { type: 'boolean', describe: 'repair broken command hardlinks, then exit' },
+    force: { type: 'boolean', describe: 'with --fix-hardlinks, overwrite content-divergent targets' },
+  },
+  notes: [
+    'A full run takes ~10 minutes. Prefer --fast-mode, --since-git-commit, or --only.',
+    '',
+    'NOTE: without --strict a FAIL still exits 0. Do not gate on the exit code',
+    'unless you pass --strict.',
+  ].join('\n'),
+};
+
 function main() {
-  const args = process.argv.slice(2);
-  const quiet = args.includes('--quiet');
-  const strict = args.includes('--strict');
-  const fix = args.includes('--fix');
-  const fixHardlinks = args.includes('--fix-hardlinks');
-  const force = args.includes('--force');
-  const onlyIdx = args.indexOf('--only');
-  const onlyId = onlyIdx !== -1 ? args[onlyIdx + 1] : null;
+  const { values } = cliGate(process.argv.slice(2), CLI);
+  const quiet = values.quiet;
+  const strict = values.strict;
+  const fix = values.fix;
+  const fixHardlinks = values['fix-hardlinks'];
+  const force = values.force;
+  const onlyId = values.only || null;
+  const fastMode = values['fast-mode'];
+  const since = values['since-git-commit'];
+  const sinceMode = since !== undefined;
+  // `true` means the flag was given with no ref; a string is an explicit ref.
+  const sinceRef = typeof since === 'string' ? since : null;
 
   const rootDir = resolveRepoRoot();
+
+  // Per-run YAML cache (WS-429) — fresh every invocation.
+  clearVerifyCache();
 
   // --fix-hardlinks runs the scanner in repair mode and returns early. Never
   // invoke implicitly — requires explicit flag. --force adds permission to
@@ -2523,8 +2995,16 @@ function main() {
     process.exit(actions.errors.length > 0 ? 1 : 0);
   }
 
-  const checks = onlyId ? INVARIANT_CHECKS.filter(c => c.id === onlyId) : INVARIANT_CHECKS;
-  if (checks.length === 0) {
+  let checks;
+  let selectionNote = null;
+  if (onlyId) {
+    checks = INVARIANT_CHECKS.filter(c => c.id === onlyId);
+  } else {
+    const sel = selectChecks(INVARIANT_CHECKS, { fastMode, sinceMode, sinceRef, rootDir });
+    checks = sel.checks;
+    selectionNote = sel.note;
+  }
+  if (checks.length === 0 && onlyId) {
     console.error(`No invariant matches "${onlyId}". Available: ${INVARIANT_CHECKS.map(c => c.id).join(', ')}`);
     process.exit(1);
   }
@@ -2540,7 +3020,9 @@ function main() {
   const failed = results.filter(r => !r.passed);
 
   if (!quiet || failed.length > 0) {
-    console.log(`cwos-verify: ${results.length - failed.length}/${results.length} invariants passed`);
+    const scope = (fastMode || sinceMode) ? ` (${results.length}/${INVARIANT_CHECKS.length} selected)` : '';
+    console.log(`cwos-verify: ${results.length - failed.length}/${results.length} invariants passed${scope}`);
+    if (selectionNote) console.log(`  selection: ${selectionNote}`);
     for (const r of results) {
       const icon = r.passed ? 'PASS' : 'FAIL';
       console.log(`  [${icon}] ${r.id} — ${r.name}`);
@@ -3224,8 +3706,229 @@ function checkProgramYamlSchema(rootDir) {
   };
 }
 
+// ─── INV-preflight-gate-not-bypassed (WS-433 / FIND-305) ─────────────────────
+//
+// ADVISORY. The single-question pre-flight gate lives in cwos-frame.js confirm;
+// it refuses an engine_intent_recorded whose prompted fields weren't each
+// individually acked. This invariant is the defensive backstop: it scans recent
+// engine_intent_recorded events and flags any whose `preflight_acked_fields`
+// marker lists fields with NO matching engine_field_acked event in the same
+// pre-flight cycle — i.e. a marker written without the acks behind it (the gate
+// leaked). Founder-forced confirms (preflight_forced) are accounted, not flagged.
+// Never hard-fails (a false signal must not block session start); surfaces at
+// session start via WS-429 fast-mode.
+
+function readVerifyEventTail(eventsDir, maxEvents) {
+  if (!fs.existsSync(eventsDir)) return [];
+  const files = fs.readdirSync(eventsDir).filter((f) => f.endsWith('.jsonl')).sort();
+  const events = [];
+  for (let i = files.length - 1; i >= 0 && events.length < maxEvents; i--) {
+    const text = fs.readFileSync(path.join(eventsDir, files[i]), 'utf8');
+    const lines = text.split('\n').filter(Boolean);
+    for (let j = lines.length - 1; j >= 0 && events.length < maxEvents; j--) {
+      try { events.unshift(JSON.parse(lines[j])); } catch (_) { /* skip */ }
+    }
+  }
+  return events;
+}
+
+function checkPreflightGateNotBypassed(rootDir) {
+  const eventsDir = path.join(rootDir, '.claude', 'workstream', 'events');
+  if (!fs.existsSync(eventsDir)) return { passed: true, detail: 'no event log — N/A' };
+  const events = readVerifyEventTail(eventsDir, 500);
+  const recordedCount = events.filter((e) => e && e.payload && e.payload.type === 'engine_intent_recorded').length;
+  if (recordedCount === 0) return { passed: true, detail: 'no engine_intent_recorded events — nothing to audit' };
+
+  let acked = 0, forced = 0, bare = 0;
+  const anomalies = [];
+  for (let idx = 0; idx < events.length; idx++) {
+    const e = events[idx];
+    if (!(e && e.payload && e.payload.type === 'engine_intent_recorded')) continue;
+    const p = e.payload;
+    if (p.preflight_forced) { forced++; continue; }
+    if (Array.isArray(p.preflight_acked_fields) && p.preflight_acked_fields.length > 0) {
+      acked++;
+      // Gather acks for this engine in the cycle: after the prior recorded
+      // intent for the same engine, before this one.
+      let priorIdx = -1;
+      for (let k = idx - 1; k >= 0; k--) {
+        const pe = events[k];
+        if (pe && pe.payload && pe.payload.type === 'engine_intent_recorded' && pe.payload.engine === p.engine) { priorIdx = k; break; }
+      }
+      const cycleAcks = new Set();
+      for (let k = priorIdx + 1; k < idx; k++) {
+        const ae = events[k];
+        if (ae && ae.payload && ae.payload.type === 'engine_field_acked' && ae.payload.engine === p.engine && ae.payload.field) cycleAcks.add(ae.payload.field);
+      }
+      const missing = p.preflight_acked_fields.filter((f) => !cycleAcks.has(f));
+      if (missing.length > 0) anomalies.push(`${p.contract_id || e.id}: claims acked [${p.preflight_acked_fields.join(',')}] but no ack event for [${missing.join(',')}]`);
+    } else {
+      bare++; // full-confidence (no field prompts) or pre-WS-433
+    }
+  }
+
+  if (anomalies.length > 0) {
+    return {
+      passed: true, // ADVISORY — never blocks
+      detail: `ADVISORY: ${anomalies.length} engine_intent_recorded event(s) carry a pre-flight ack marker with no matching ack event — the gate may have leaked. e.g. ${anomalies.slice(0, 2).join(' | ')}`,
+    };
+  }
+  return {
+    passed: true,
+    detail: `clean — ${recordedCount} recorded intent(s): ${acked} ack-gated, ${forced} founder-forced, ${bare} full-confidence/pre-WS-433.`,
+  };
+}
+
+// ─── INV-062: Security posture matches declaration (ADR-059 / WS-521) ──────
+// Delegates to cwos-security-posture-check.js rather than reimplementing the
+// comparison: that script is the shipped mechanism and the thing run directly
+// on other nodes over ssh. One definition of the check, two entry points.
+function checkSecurityPostureMatchesDeclaration(rootDir) {
+  const os = require('os');
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-security-posture-check.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-security-posture-check.js not present — N/A' };
+  }
+
+  const { spawnSync } = require('child_process');
+  const res = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+
+  // Exit 2 = this node declares no posture, or the registry/settings are
+  // unreadable. Not a violation: an adopted repo that never opted in must not
+  // fail verification over a control it never adopted.
+  if (res.status === 2) {
+    return { passed: true, detail: `no security_posture declared for this node — N/A (${(res.stderr || '').trim().split('\n')[0]})` };
+  }
+  if (res.status === null || res.error) {
+    return { passed: true, detail: `posture check could not run — ${res.error ? res.error.message : 'no exit status'}` };
+  }
+
+  let parsed = null;
+  try { parsed = JSON.parse(res.stdout || '{}'); } catch { /* fall through to raw */ }
+
+  if (res.status === 0) {
+    return { passed: true, detail: `posture matches declaration on ${(parsed && parsed.node) || os.hostname()}` };
+  }
+
+  const findings = (parsed && parsed.findings) || [];
+  const summary = findings.length
+    ? findings.map((f) => `${f.control}: expected ${f.expected}, actual ${f.actual}`).join(' | ')
+    : (res.stdout || res.stderr || '').trim();
+  return {
+    passed: false,
+    detail: `security posture DRIFT on ${(parsed && parsed.node) || os.hostname()} — ${summary}. Fix the settings, or update the declaration in fleet/registry.yaml and record it as a superseding decision (ADR-059).`,
+  };
+}
+
+// ─── INV-063: Every fleet repo declares a phone_surface (WS-516) ───────────
+// Delegates to cwos-phone-surface-check.js — one definition, two entry points.
+// Runs the OFFLINE half only: no --probe, so verification never depends on the
+// network. Liveness is advisory and belongs to WS-519's generation step.
+function checkPhoneSurfaceDeclared(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-phone-surface-check.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-phone-surface-check.js not present — N/A' };
+  }
+
+  const { spawnSync } = require('child_process');
+  const res = spawnSync(process.execPath, [script], { encoding: 'utf8' });
+
+  // Exit 2 = no fleet/registry.yaml (an adopted repo, not the hub). Not a
+  // violation: only HomeBase carries the fleet registry.
+  if (res.status === 2) return { passed: true, detail: 'no fleet/registry.yaml — N/A (not the fleet hub)' };
+  if (res.status === null || res.error) {
+    return { passed: true, detail: `phone-surface check could not run — ${res.error ? res.error.message : 'no exit status'}` };
+  }
+
+  let parsed = null;
+  try { parsed = JSON.parse(res.stdout || '{}'); } catch { /* fall through */ }
+
+  if (res.status === 0) {
+    return { passed: true, detail: `${(parsed && parsed.classified_count) || 0} fleet repo(s) classified; schema clean` };
+  }
+
+  const problems = (parsed && parsed.problems) || [];
+  const summary = problems.length
+    ? problems.slice(0, 4).map((p) => `${p.repo}: ${p.problem}`).join(' | ') + (problems.length > 4 ? ` (+${problems.length - 4} more)` : '')
+    : (res.stdout || res.stderr || '').trim();
+  return { passed: false, detail: `phone_surface problems — ${summary}` };
+}
+
+// ─── INV-064: the kit ships every module its scripts require (WS-544) ─────────
+// Delegates to cwos-manifest-deps-validate.js — one definition, two entry
+// points (here, and the publish gate inside cwos-hash-manifest.js).
+//
+// Absence degrades to PASS, deliberately. WS-544's own worst symptom was
+// checkProgramFieldsHaveRuntimeEffect returning passed:false when its validator
+// would not load: the invariant could never pass in a repo that never received
+// the script, and it quietly accrued consecutive_failures toward escalation
+// instead of crashing where someone would look. A missing validator is a
+// not-installed signal, not a violation.
+function checkManifestDepsComplete(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-manifest-deps-validate.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-manifest-deps-validate.js not present — N/A' };
+  }
+  if (!fs.existsSync(path.join(rootDir, 'kit', 'MANIFEST.yaml'))) {
+    return { passed: true, detail: 'no kit/MANIFEST.yaml — N/A (not a kit source repo)' };
+  }
+
+  let checkManifestDeps;
+  try { ({ checkManifestDeps } = require(script)); }
+  catch (e) { return { passed: true, detail: `validator not loadable — ${e.message}` }; }
+
+  const result = checkManifestDeps(rootDir);
+  if (result.exit_code === 2) {
+    return { passed: true, detail: `manifest unreadable — ${result.error} (N/A)` };
+  }
+  if (result.ok) {
+    return {
+      passed: true,
+      detail: `${result.scripts_checked} registered .js — every hard require ships at or below its consumer's tier`,
+    };
+  }
+
+  const v = result.violations;
+  const summary = v.slice(0, 4).map((x) => `[${x.kind}] ${x.source}${x.target ? ' -> ' + x.target : ''}`).join(' | ')
+    + (v.length > 4 ? ` (+${v.length - 4} more)` : '');
+  return { passed: false, detail: `${v.length} manifest dependency violation(s) — ${summary}` };
+}
+
+// ─── INV-066: nothing finds a root by counting parent dirs (WS-549) ──────────
+// Delegates to cwos-pathroot-lint.js. Same absence-degrades-to-PASS contract as
+// INV-064 above: a repo that never received the linter is not in violation.
+//
+// No advisory tier and no suppression comment. The 19 sites this retired
+// accumulated precisely because nothing failed on them — they were correct in
+// HomeBase, which is the only place anyone looked.
+function checkPathRootResolution(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-pathroot-lint.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-pathroot-lint.js not present — N/A' };
+  }
+
+  let scan;
+  try { ({ scan } = require(script)); }
+  catch (e) { return { passed: true, detail: `linter not loadable — ${e.message}` }; }
+
+  const result = scan(rootDir);
+  if (result.ok) {
+    return {
+      passed: true,
+      detail: `${result.files_scanned} script(s) scanned — no __dirname root-walking`,
+    };
+  }
+
+  const summary = result.violations.slice(0, 4).map(v => `${v.file}:${v.line}`).join(' | ')
+    + (result.violations.length > 4 ? ` (+${result.violations.length - 4} more)` : '');
+  return {
+    passed: false,
+    detail: `${result.violation_count} site(s) resolve a root by directory arithmetic — ${summary}. Use lib/kit-paths.js.`,
+  };
+}
+
 if (require.main === module) {
   main();
 }
 
-module.exports = { checkCliBypassViaCommand, checkReadRestraint, checkPersonaDispatch, checkProgramYamlSchema, checkAdopterValueRelation, checkCommandManifestCoverage, checkAdoptInstallAtomicWrites, checkDistributionRefs, checkNoHardcodedEvolutionPaths };
+module.exports = { checkCliBypassViaCommand, checkReadRestraint, checkPersonaDispatch, checkProgramYamlSchema, checkAdopterValueRelation, checkCommandManifestCoverage, checkAdoptInstallAtomicWrites, checkDistributionRefs, checkNoHardcodedEvolutionPaths, checkPreflightGateNotBypassed, checkEngineModelTiers, checkSecurityPostureMatchesDeclaration, checkPhoneSurfaceDeclared, checkManifestDepsComplete, checkPathRootResolution, INVARIANT_CHECKS, INVARIANT_META, selectChecks, getChangedFiles, fileMatchesPrefix, clearVerifyCache, cachedReadYAMLFile };

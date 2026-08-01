@@ -24,4 +24,7 @@
 
 'use strict';
 
-require('./cwos-reconcile.js');
+// WS-544: forward only when RUN. An unguarded top-level require meant that
+// merely importing this shim — as a dependency smoke check must — executed a
+// full reconcile.
+if (require.main === module) require('./cwos-reconcile.js');

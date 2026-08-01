@@ -136,5 +136,9 @@ function main() {
   process.exit(0);
 }
 
-try { main(); }
-catch { process.exit(0); }  // Hook MUST NOT block session start under any failure mode.
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check neither runs the hook nor exits the checking process.
+if (require.main === module) {
+  try { main(); }
+  catch { process.exit(0); }  // Hook MUST NOT block session start under any failure mode.
+}

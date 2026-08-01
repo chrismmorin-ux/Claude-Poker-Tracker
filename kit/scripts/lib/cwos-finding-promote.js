@@ -30,6 +30,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { readYAMLFile, writeFileAtomic, formatScalar, todayISO, withFileLock } = require('./cwos-utils');
 
 // Severities the auto_promote gate maps. Lowercased on read so finding
@@ -144,12 +145,24 @@ function buildQueueItemFromFinding(finding, wsId, opts = {}) {
     priority_score: priority,
     effort: opts.effort || 'M',
     created_at: today,
-    created_by: 'auto-promote-via-reconcile',
+    created_by: opts.createdBy || 'auto-promote-via-reconcile',
     severity,
     source_finding: finding.id,
     description,
     recommended_action: recommendedAction,
     dedup_key: `auto-promote-${finding.id}`,
+    // WS-540: content fingerprint so a later promotion of a DIFFERENT finding
+    // reporting the SAME evidence resolves to this item instead of creating a
+    // twin. Null when the evidence is too thin to match on safely.
+    ...(evidenceFingerprint(finding) ? { evidence_key: evidenceFingerprint(finding) } : {}),
+    // WS-489: source_meta carries engine/run provenance so serializeQueueItem
+    // can write a source: mapping with an `engine` key — the reducer's
+    // classifySource requires it for source_class: engine-finding.
+    ...(opts.source ? { source_meta: opts.source } : {}),
+    // WS-489: review: pending marks an auto-promoted item awaiting the
+    // founder's batch yes/no in /next. Status stays backlog (no draft
+    // status exists in ALLOWED_QUEUE_STATUSES).
+    ...(opts.review ? { review: 'pending' } : {}),
   };
 }
 
@@ -192,6 +205,9 @@ function serializeQueueItem(item) {
   lines.push(`created_by: ${formatScalar(item.created_by)}`);
   lines.push(`source_finding: ${formatScalar(item.source_finding)}`);
   lines.push(`dedup_key: ${formatScalar(item.dedup_key)}`);
+  if (item.evidence_key) {
+    lines.push(`evidence_key: ${formatScalar(item.evidence_key)}`);
+  }
   if (item.description) {
     lines.push('description: |');
     for (const ln of String(item.description).split('\n')) {
@@ -201,9 +217,20 @@ function serializeQueueItem(item) {
   if (item.recommended_action) {
     lines.push(`recommended_action: ${formatScalar(item.recommended_action)}`);
   }
+  if (item.review) {
+    lines.push(`review: ${formatScalar(item.review)}`);
+  }
+  const meta = item.source_meta || {};
   lines.push(`source:`);
   lines.push(`  finding_id: ${formatScalar(item.source_finding)}`);
-  lines.push(`  promoted_via: cwos-reconcile auto-promote`);
+  if (meta.engine) {
+    // `engine` key first-matches in classifySource → source_class: engine-finding.
+    lines.push(`  engine: ${formatScalar(meta.engine)}`);
+  }
+  if (meta.run_id) {
+    lines.push(`  run_id: ${formatScalar(meta.run_id)}`);
+  }
+  lines.push(`  promoted_via: ${meta.promoted_via || 'cwos-reconcile auto-promote'}`);
   lines.push(`  promoted_at: ${formatScalar(item.created_at)}`);
   return lines.join('\n') + '\n';
 }
@@ -213,6 +240,99 @@ function serializeQueueItem(item) {
 // scan and the projection can never drift apart.
 function dedupKeyForFinding(findingId) {
   return `auto-promote-${findingId}`;
+}
+
+// ─── Evidence-based dedup (WS-540) ──────────────────────────────────────────
+//
+// dedup_key is keyed on finding ID, so ONE detector reported under two finding
+// IDs produces TWO work items. That is not theoretical: FIND-CA-FS-9 and
+// FIND-CA-P2 are a single constitutional-audit detector — WS-512, promoted from
+// the first, is literally annotated "[shared detector with P2]" — and they
+// yielded WS-512 and WS-513, identical evidence, identical two files, one fix
+// clearing both. Both sat in kit-quality's capped backlog until a human read
+// them side by side on 2026-07-26.
+//
+// The fingerprint is deliberately conservative. A false merge silently swallows
+// a real finding, which is far worse than a duplicate, so:
+//   - only the evidence/description body is hashed, never the title (two
+//     detectors legitimately describe the same evidence differently)
+//   - trivially short bodies never dedup — too little signal to be sure
+//   - the surviving item records the absorbed finding id rather than dropping
+//     it, so the second detector remains traceable and re-verifiable
+const MIN_EVIDENCE_LEN_FOR_DEDUP = 60;
+
+function evidenceFingerprint(finding) {
+  const body = [finding.evidence, finding.description]
+    .filter(v => typeof v === 'string' && v.trim())
+    .join('\n');
+  if (!body) return null;
+  const normalized = body
+    .toLowerCase()
+    // Detector-specific ids differ between the two findings for the same
+    // evidence ("--only FS-9" vs "--only P2"); strip them so they do not
+    // defeat the match.
+    .replace(/\bfind-[a-z0-9-]+\b/g, '')
+    .replace(/\bws-[a-z0-9-]+\b/g, '')
+    .replace(/\[shared detector[^\]]*\]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  if (normalized.length < MIN_EVIDENCE_LEN_FOR_DEDUP) return null;
+  return crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16);
+}
+
+// Scan queue/ + archive/ for an item carrying this evidence fingerprint.
+// Returns { wsId, findingId } on match, else null.
+function findWsByEvidenceKey(wsDir, evidenceKey) {
+  if (!evidenceKey) return null;
+  const queueDir = path.join(wsDir, QUEUE_DIRNAME);
+  const archiveDir = path.join(queueDir, 'archive');
+  const EV_RE = /^evidence_key:\s*"?([^"\n]+?)"?\s*$/m;
+  const FIND_RE = /^source_finding:\s*"?([^"\n]+?)"?\s*$/m;
+  const WS_FILE = /^(WS-.+)\.yaml$/;
+
+  function scanDir(dir) {
+    if (!fs.existsSync(dir)) return null;
+    for (const f of fs.readdirSync(dir)) {
+      const idm = WS_FILE.exec(f);
+      if (!idm) continue;
+      let text;
+      try { text = fs.readFileSync(path.join(dir, f), 'utf8'); }
+      catch { continue; }
+      const m = EV_RE.exec(text);
+      if (m && m[1].trim() === evidenceKey) {
+        const fm = FIND_RE.exec(text);
+        return { wsId: idm[1], findingId: fm ? fm[1].trim() : null };
+      }
+    }
+    return null;
+  }
+
+  return scanDir(queueDir) || scanDir(archiveDir);
+}
+
+// Record on the surviving item that a second finding reports the same evidence.
+// Append-only and idempotent — never rewrites existing content.
+function recordAbsorbedFinding(wsDir, wsId, findingId) {
+  const queueDir = path.join(wsDir, QUEUE_DIRNAME);
+  for (const dir of [queueDir, path.join(queueDir, 'archive')]) {
+    const p = path.join(dir, `${wsId}.yaml`);
+    if (!fs.existsSync(p)) continue;
+    try {
+      const raw = fs.readFileSync(p, 'utf8');
+      if (raw.includes(`also_satisfies_finding`) && raw.includes(findingId)) {
+        return { ok: true, noop: true };
+      }
+      const note =
+        `\nalso_satisfies_finding: "${findingId}"` +
+        `\nabsorbed_note: "${findingId} reports the same evidence as this item's source finding; ` +
+        `one fix clears both. Re-verify BOTH detectors after fixing (WS-540 evidence dedup)."\n`;
+      fs.writeFileSync(p, raw.trimEnd() + note);
+      return { ok: true, path: p };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+  return { ok: false, error: 'ws file not found' };
 }
 
 // Disk-state dedup scan (FIND-290). Scan queue/ then queue/archive/ for any
@@ -343,6 +463,36 @@ function promoteFinding(wsDir, finding, opts = {}) {
     };
   }
 
+  // WS-540: second dedup pass, keyed on evidence rather than finding id. The
+  // id-based scan above cannot catch one detector reported under two finding
+  // ids — the FIND-CA-FS-9 / FIND-CA-P2 case that produced WS-512 and WS-513.
+  // Opt-out via opts.skipEvidenceDedup for callers that genuinely want one item
+  // per finding id regardless of overlap.
+  const evidenceKey = opts.skipEvidenceDedup ? null : evidenceFingerprint(finding);
+  if (evidenceKey) {
+    const twin = findWsByEvidenceKey(wsDir, evidenceKey);
+    if (twin && twin.wsId) {
+      // Point this finding at the existing item and record the overlap on it,
+      // so the second detector stays traceable instead of disappearing.
+      const relink = writeFindingPromotedTo(wsDir, finding.id, twin.wsId, opts);
+      const noted = recordAbsorbedFinding(wsDir, twin.wsId, finding.id);
+      return {
+        ok: true,
+        skipped: 'dedup_shared_evidence',
+        finding_id: finding.id,
+        ws_id: twin.wsId,
+        twin_finding_id: twin.findingId,
+        evidence_key: evidenceKey,
+        relinked: relink.ok,
+        absorbed_recorded: noted.ok,
+        note:
+          `${finding.id} reports the same evidence as ${twin.findingId || 'the existing item\'s finding'}; ` +
+          `promoted to ${twin.wsId} instead of a second work item. One fix clears both — re-verify both detectors.`,
+        ...(relink.ok ? {} : { warning: relink.warning }),
+      };
+    }
+  }
+
   const wsId = opts.wsId || allocateNextWsId(wsDir);
   const queuePath = path.join(wsDir, QUEUE_DIRNAME, `${wsId}.yaml`);
   if (fs.existsSync(queuePath)) {
@@ -447,6 +597,175 @@ function promoteOpenFindings(wsDir, cwosConfig, opts = {}) {
   return report;
 }
 
+// WS-489 conversion bridge — run-scoped orchestrator invoked at engine-run
+// close (cwos-engine-complete emitForRun) and via the promote-findings heal
+// CLI. Deliberately narrower gates than promoteOpenFindings: no
+// proposed_route requirement and no .cwos-config.yaml gate, because run
+// scoping already bounds the blast radius to the closing run's findings —
+// it can never flood the queue with the legacy open-finding backlog.
+//
+// Reads FIND files from disk, not findings-index.yaml (the index drops
+// run_id and promoted_to). Accepts both run_id shapes (top-level and
+// source.run_id) and lowercases severity/status, mirroring the join in
+// cwos-reconcile.js validateFindingPromotion.
+//
+// Never throws. Per-finding failures accumulate in `errors`; only an
+// unusable input (missing runId, unreadable findings dir) returns ok: false.
+function promoteRunFindings(wsDir, opts = {}) {
+  const runId = opts.runId;
+  const engineId = opts.engineId || 'unknown';
+  const severities = (opts.severities || ['critical', 'high']).map(s => String(s).toLowerCase());
+  const dryRun = !!opts.dryRun;
+  const report = {
+    ok: true,
+    run_id: runId || null,
+    engine_id: engineId,
+    promoted: [],
+    skipped: [],
+    errors: [],
+    medium: [],
+    counts: {
+      total_run_findings: 0,
+      eligible: 0,
+      promoted: 0,
+      already_linked: 0,
+      errors: 0,
+      conversion_rate: null,
+    },
+  };
+  if (!runId) {
+    report.ok = false;
+    report.error = 'runId required';
+    return report;
+  }
+
+  const findingsDir = path.join(wsDir, FINDINGS_DIRNAME);
+  let files = [];
+  try {
+    if (fs.existsSync(findingsDir)) {
+      files = fs.readdirSync(findingsDir).filter(f => /^FIND-.+\.yaml$/.test(f)).sort();
+    }
+  } catch (e) {
+    report.ok = false;
+    report.error = `findings_dir_unreadable: ${e.message}`;
+    return report;
+  }
+
+  for (const f of files) {
+    const r = readYAMLFile(path.join(findingsDir, f));
+    // Unparseable findings can't be run-matched; Phase 2k reconcile reports them.
+    if (!r.ok || !r.data) continue;
+    const finding = r.data;
+    const findingRunId = String(finding.run_id || (finding.source && finding.source.run_id) || '').trim();
+    if (findingRunId !== runId) continue;
+
+    report.counts.total_run_findings += 1;
+    const status = (finding.status || '').toLowerCase();
+    const sev = (finding.severity || '').toLowerCase();
+    const promotedTo = finding.promoted_to && String(finding.promoted_to).trim();
+
+    if (promotedTo) {
+      report.counts.already_linked += 1;
+      report.skipped.push({ finding_id: finding.id, reason: 'already_promoted', ws_id: promotedTo });
+      continue;
+    }
+    if (status !== 'open') {
+      report.skipped.push({ finding_id: finding.id, reason: `status_${status || 'unset'}` });
+      continue;
+    }
+    const auditStatus = (finding.source && finding.source.audit_status) || '';
+    if (NON_PROMOTABLE_STATUSES.has(auditStatus)) {
+      report.skipped.push({ finding_id: finding.id, reason: `audit_status_${auditStatus}` });
+      continue;
+    }
+    if (!severities.includes(sev)) {
+      if (sev === 'medium') {
+        // Surfaced in the close briefing, never queued.
+        report.medium.push({ finding_id: finding.id, title: finding.title || '', severity: sev });
+      } else {
+        report.skipped.push({
+          finding_id: finding.id,
+          reason: SEVERITY_KEYS.includes(sev)
+            ? `severity_below_threshold_${sev}`
+            : `unknown_severity_${sev || 'unset'}`,
+        });
+      }
+      continue;
+    }
+
+    report.counts.eligible += 1;
+    if (dryRun) {
+      report.promoted.push({ finding_id: finding.id, ws_id: null, severity: sev, would_promote: true });
+      continue;
+    }
+
+    // Locked scan+write, same pattern as promoteOpenFindings (FIND-289 race).
+    let result;
+    try {
+      allocateNextWsId(wsDir, {
+        writer: (wsId) => {
+          result = promoteFinding(wsDir, finding, {
+            wsId,
+            today: opts.today,
+            createdBy: 'engine-run-bridge',
+            source: { engine: engineId, run_id: runId, promoted_via: 'engine-run-close' },
+            review: true,
+          });
+        }
+      });
+    } catch (err) {
+      report.errors.push({ finding_id: finding.id, reason: `lock_failed: ${err.message}` });
+      continue;
+    }
+    if (result && result.ok && result.skipped) {
+      // dedup_existing_ws: disk already had a WS for this finding (half-state
+      // heal) — relinked, counts as already_linked, not a fresh promotion.
+      report.counts.already_linked += 1;
+      report.skipped.push({ finding_id: finding.id, reason: result.skipped, ws_id: result.ws_id });
+    } else if (result && result.ok) {
+      report.promoted.push({ finding_id: finding.id, ws_id: result.ws_id, severity: sev });
+      if (typeof opts.emitEvent === 'function') {
+        // Mandatory on the live path: the T6 reducer only rematerializes
+        // state/queue.json on events — no event leaves /next blind (INV-031).
+        try {
+          opts.emitEvent('T6:workstream', 'finding-promoted', {
+            finding_id: finding.id,
+            ws_id: result.ws_id,
+            severity: sev,
+            run_id: runId,
+            engine_id: engineId,
+            promoted_via: 'engine-run-close',
+          });
+        } catch { /* emitter failures never block promotion */ }
+      }
+    } else {
+      report.errors.push({ finding_id: finding.id, reason: (result && result.reason) || 'writer_failed' });
+    }
+  }
+
+  report.counts.promoted = report.promoted.length;
+  if (report.counts.total_run_findings > 0) {
+    report.counts.conversion_rate = Math.round(
+      ((report.counts.promoted + report.counts.already_linked) / report.counts.total_run_findings) * 100
+    ) / 100;
+  }
+
+  if (!dryRun && report.promoted.length > 0) {
+    // Keep queue-index.yaml honest without depending on a follow-up
+    // reconcile — the sweep and heal-CLI paths have none. Lazy require
+    // avoids a load-order cycle (reconcile-core does not require this lib).
+    try {
+      const { rebuildQueueIndex } = require('./cwos-reconcile-core');
+      rebuildQueueIndex(wsDir);
+    } catch (e) {
+      report.errors.push({ file: 'queue-index.yaml', reason: `index_rebuild_failed: ${e.message}` });
+    }
+  }
+  report.counts.errors = report.errors.length;
+
+  return report;
+}
+
 function extractAutoPromoteRules(cwosConfig) {
   const out = { critical: false, high: false, medium: false, low: false };
   if (!cwosConfig || typeof cwosConfig !== 'object') return out;
@@ -477,10 +796,15 @@ module.exports = {
   serializeQueueItem,
   dedupKeyForFinding,
   findWsByDedupKey,
+  evidenceFingerprint,
+  findWsByEvidenceKey,
+  recordAbsorbedFinding,
+  MIN_EVIDENCE_LEN_FOR_DEDUP,
   writeFindingPromotedTo,
   logReconciliationMarker,
   promoteFinding,
   promoteOpenFindings,
+  promoteRunFindings,
   extractAutoPromoteRules,
   isTruthyConfigValue,
   defaultPriorityForSeverity,

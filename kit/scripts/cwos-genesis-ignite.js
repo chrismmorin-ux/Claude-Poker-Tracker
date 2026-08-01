@@ -34,7 +34,9 @@ const { execFileSync } = require('child_process');
 const { readYAMLFile, writeFileAtomic, todayISO } = require('./lib/cwos-utils');
 const { resolveBundle } = require('./cwos-adopt-archetype');
 
-const KIT_ROOT = path.resolve(__dirname, '..', '..');
+// WS-549: every path below is kit/data, kit/templates or kit/scripts — all
+// content the kit ships, so it resolves from the distribution.
+const KIT_ROOT = require('./lib/kit-paths').resolveDistRoot();
 const ARCHETYPES_PATH = path.join(KIT_ROOT, 'kit', 'data', 'archetypes.yaml');
 const STAGES_PATH = path.join(KIT_ROOT, 'kit', 'data', 'stages.yaml');
 const GENESIS_SPRINTS_DIR = path.join(KIT_ROOT, 'kit', 'data', 'genesis-sprints');
@@ -1034,4 +1036,6 @@ function main() {
   }
 }
 
-main();
+// WS-544: guard the entry point so requiring this file for a dependency
+// smoke check does not run it.
+if (require.main === module) main();

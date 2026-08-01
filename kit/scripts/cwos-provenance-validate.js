@@ -323,4 +323,6 @@ function main() {
   process.exit(1);
 }
 
-main();
+// WS-544: guard the entry point so requiring this file for a dependency
+// smoke check does not run it.
+if (require.main === module) main();

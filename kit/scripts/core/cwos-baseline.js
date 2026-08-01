@@ -24,7 +24,9 @@ const { execSync } = require('child_process');
 const telemetry = require('./telemetry');
 const { parseYAML } = require('../lib/cwos-utils');
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+// WS-549: reads sim/benchmarks — HomeBase-only corpora that ship with the
+// distribution, not per-repo state.
+const REPO_ROOT = require('../lib/kit-paths').resolveDistRoot();
 const CORPUS_DIR = path.join(REPO_ROOT, 'sim', 'benchmarks', 'baseline-corpus');
 const RUNS_DIR = path.join(CORPUS_DIR, 'runs');
 const PINNED_FILE = path.join(CORPUS_DIR, 'pinned-baseline.json');

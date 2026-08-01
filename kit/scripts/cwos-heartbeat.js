@@ -203,14 +203,18 @@ function main() {
   return 0;
 }
 
-try {
-  process.exit(main());
-} catch (err) {
-  // Heartbeat must never block or noisily fail. Swallow errors; surface to
-  // stderr only if verbose. This script runs on every Stop event — a loud
-  // failure would make every response noisy.
-  if (process.argv.includes('--verbose')) {
-    process.stderr.write(`heartbeat: error — ${err.message}\n`);
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check neither writes a heartbeat nor exits the checking process.
+if (require.main === module) {
+  try {
+    process.exit(main());
+  } catch (err) {
+    // Heartbeat must never block or noisily fail. Swallow errors; surface to
+    // stderr only if verbose. This script runs on every Stop event — a loud
+    // failure would make every response noisy.
+    if (process.argv.includes('--verbose')) {
+      process.stderr.write(`heartbeat: error — ${err.message}\n`);
+    }
+    process.exit(0);
   }
-  process.exit(0);
 }

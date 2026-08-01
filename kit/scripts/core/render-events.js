@@ -34,16 +34,19 @@ const DEFAULT_OUTPUT_REL = path.join('system', 'events.log.md');
 
 function defaultOutputPath(repoRoot, workstreamDir) {
   // Prefer an explicit repoRoot. Otherwise derive from the workstream dir
-  // (repo root = parent-of-.claude). Only fall back to __dirname-relative
-  // resolution when neither is available — that path is HomeBase-local
-  // and will be wrong when the kit is installed elsewhere.
+  // (repo root = parent-of-.claude). WS-549: the last resort used to be
+  // __dirname-relative — the comment here already noted it "will be wrong when
+  // the kit is installed elsewhere", which is now enforced rather than noted.
   if (repoRoot) return path.join(repoRoot, DEFAULT_OUTPUT_REL);
   if (workstreamDir) {
     // workstreamDir ends in .claude/workstream — two levels up is the repo root.
     const root = path.dirname(path.dirname(workstreamDir));
     return path.join(root, DEFAULT_OUTPUT_REL);
   }
-  return path.join(path.resolve(__dirname, '..', '..', '..'), DEFAULT_OUTPUT_REL);
+  const { resolveRepoRoot } = require('../lib/kit-paths');
+  const root = resolveRepoRoot();
+  if (!root) throw new Error('render-events: no repoRoot, no workstreamDir, and cwd is not inside a CWOS repo');
+  return path.join(root, DEFAULT_OUTPUT_REL);
 }
 
 // ─── Hashing ───────────────────────────────────────────────────────────────

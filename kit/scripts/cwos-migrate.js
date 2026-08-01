@@ -26,7 +26,8 @@ const {
   readYAMLFile, serializeYAML, writeFileAtomic, globFiles, todayISO
 } = require('./lib/cwos-utils');
 const { runGitInRepo, validateGitRef, validateRegistryPath } = require('./lib/shell-safe');
-const { loadManifest, LEVEL_NUM } = require('./cwos-adopt-install');
+const { readVersionStamp, resolveInstalledVersion, baselineTag } = require('./lib/kit-version');
+const { loadManifest, LEVEL_NUM, resolveSystemDir, resolveDestination } = require('./cwos-adopt-install');
 const { capabilitiesForLevel } = require('./lib/capability-map');
 const { ensureCapabilityDirs, expectedCapabilityDirs, enabledCapabilities } = require('./lib/cwos-kit-dirs');
 const { corpusHash } = require('./lib/cwos-corpus-hash');
@@ -183,12 +184,21 @@ function main() {
   if (!fromVersion) fromVersion = state.version;
   const repoName = path.basename(repoPath);
 
+  // WS-547 Guard A: refuse BEFORE anything is written if we cannot resolve a
+  // baseline to diff against. Runs ahead of classifyFiles, and classifyFiles is
+  // itself read-only, so an exit here leaves the repo untouched.
+  const baseline = assertBaselineResolvable(repoPath, homebasePath, state, fromVersion);
+
   console.log(`\nMigration Plan: ${repoName} (v${fromVersion} → v${toVersion})`);
   console.log('\u2500'.repeat(50));
 
   // Phase 2: Classify files
   const classification = classifyFiles(repoPath, homebasePath, fromVersion);
   printClassification(classification);
+
+  // WS-547 Guard B: the baseline resolved, but its contents did not. Same
+  // refusal, still before any write.
+  assertClassificationBaselined(classification, baseline);
 
   // Phase 3: Program schema analysis
   const programMigrations = analyzePrograms(repoPath, fromVersion);
@@ -213,6 +223,8 @@ function main() {
     classification.needsInstall.length + classification.customized.length;
   console.log(`\nEstimated changes: ${totalChanges} files, ${programMigrations.length} programs migrated, ` +
     `${classification.customized.length} .kit-update files created`);
+
+  printDriftedScripts(classification, repoPath);
 
   if (dryRun) {
     // WS-403: preview which procedural dirs the apply phase would backfill.
@@ -279,27 +291,197 @@ function main() {
 // ─── Phase 1: Detect State ─────────────────────────────────────────────────
 
 function detectState(repoPath, homebasePath, fromVersion) {
-  const versionPath = path.join(repoPath, '.cwos-version');
-  if (!fs.existsSync(versionPath)) {
-    return { cwosInstalled: false };
-  }
+  // A stamp that exists but does not parse as a mapping is still a CWOS install:
+  // legacy fixtures store a bare version scalar, and resolveInstalledVersion
+  // falls back to a regex over the raw text for exactly that case. Absence of
+  // the file is the only "not installed" signal.
+  const stamp = readVersionStamp(repoPath);
+  if (!stamp.raw) return { cwosInstalled: false };
 
-  const { ok, data } = readYAMLFile(versionPath);
-  if (!ok) return { cwosInstalled: false };
+  const data = stamp.data || {};
+  // WS-547: precedence lives in lib/kit-version.js, not here. This used to read
+  // `kit_version_at_install || data.version`, preferring the historical field
+  // over the current stamp — PTAI (version 3.0, kit_version_at_install 3.3)
+  // therefore diffed against a baseline three releases ahead of reality.
+  //
+  // An explicit --from still wins: it is the operator telling us the answer, and
+  // it is the documented repair path when a stamp cannot be resolved at all.
+  const resolved = fromVersion
+    ? { version: fromVersion, field: '--from' }
+    : resolveInstalledVersion(stamp.data, stamp.raw);
 
   return {
     cwosInstalled: true,
-    version: data.kit_version_at_install || data.version || fromVersion || 'unknown',
+    // null, never 'unknown'. The old sentinel flowed straight into
+    // `kit-v${version}` and produced a git ref that cannot exist — a lookup that
+    // then failed open and stamped a no-op. assertBaselineResolvable() below is
+    // what turns a null into a refusal.
+    version: resolved ? resolved.version : null,
+    versionField: resolved ? resolved.field : null,
     level: data.level || 'L1',
     installedFiles: data.installed_files || {},
     adoptedAt: data.adopted_at,
   };
 }
 
+// ─── Baseline resolution + refusal (WS-547 / ADR-064 P1) ───────────────────
+//
+// Three defects used to compound into one failure shape: an upgrade that
+// reports success, stamps a new version, and applies nothing.
+//
+//   1. detectState preferred the historical install field over the current one,
+//      so PTAI resolved 3.3 when it had 3.0.
+//   2. /genesis wrote a stamp shape nothing read, so siteproof resolved to the
+//      literal string 'unknown' and asked git for the tag `kit-vunknown`.
+//   3. getBaselineContent returning null was NOT an error. classifyFiles pushed
+//      the entry to `customized` and moved on, so a bad tag classified all ~390
+//      files as customized, wrote that many .kit-update sidecars, applied
+//      nothing — and updateVersionStamp ran anyway.
+//
+// The repo then held old code under a version stamp claiming otherwise, with no
+// way left to compute what it actually had: the diff mechanism and its input
+// were both gone. Per DEC-042, waking a dormant repo must be safe, not merely
+// recoverable. So an unresolvable baseline now stops the migration cold.
+//
+// Founder decision (2026-07-30): hard refuse, no bypass flag. `--from <version>`
+// is the documented repair path — it is the operator supplying the answer, not
+// a way to skip the check.
+
+const EXIT_NO_BASELINE = 3;
+
+/**
+ * Resolve WHERE the baseline for `version` comes from, without reading it.
+ *
+ * One seam, deliberately. Today the answer is always a git tag in HomeBase.
+ * ADR-064 moves kit content into a plugin whose cache is not a git repo (no
+ * .git anywhere under ~/.claude/plugins/ — verified in run-027), so WS-548 will
+ * add a { kind: 'hash-manifest' } arm here. The refusal semantics below should
+ * not have to change when it does.
+ *
+ * Returns { kind, ref, available, detail }.
+ */
+function resolveBaselineSource(homebasePath, version) {
+  if (!version) {
+    return { kind: 'none', ref: null, available: false, detail: 'no version resolved' };
+  }
+  const ref = baselineTag(version);
+  try {
+    validateGitRef(ref);
+  } catch (err) {
+    return { kind: 'git-tag', ref, available: false, detail: `invalid git ref: ${err.message}` };
+  }
+  const r = runGitInRepo(homebasePath, ['rev-parse', '--verify', `refs/tags/${ref}`], { timeout: 5000 });
+  return {
+    kind: 'git-tag',
+    ref,
+    available: !!(r && r.ok),
+    detail: (r && r.ok) ? `refs/tags/${ref}` : `tag does not exist in ${homebasePath}`,
+  };
+}
+
+/**
+ * Guard A — refuse unless a baseline exists for the resolved version.
+ * Exits EXIT_NO_BASELINE. Returns the baseline source on success.
+ */
+function assertBaselineResolvable(repoPath, homebasePath, state, fromVersion) {
+  const baseline = resolveBaselineSource(homebasePath, fromVersion);
+  if (baseline.available) return baseline;
+
+  const stampPath = path.join(repoPath, '.cwos-version').replace(/\\/g, '/');
+  const fieldNote = state.versionField
+    ? `[from ${state.versionField}:]`
+    : `[no version:, kit_version_at_install:, or kit_version:]`;
+
+  console.error('\nERROR: cannot resolve an upgrade baseline.');
+  console.error(`  .cwos-version   → ${stampPath}`);
+  console.error(`  resolved version: ${fromVersion || '(none)'}   ${fieldNote}`);
+  console.error(`  baseline ${baseline.kind}: ${baseline.ref || '(none)'} → ${baseline.detail}`);
+  console.error('');
+  console.error('  Refusing to migrate. Without a baseline every file would be misclassified');
+  console.error('  as customized, a .kit-update sidecar written for each, nothing applied —');
+  console.error('  and the new version stamped anyway. Nothing was modified.');
+  console.error('');
+  console.error('  Fix: pass --from <version>, or repair .cwos-version.');
+  process.exit(EXIT_NO_BASELINE);
+}
+
+// Below this many kit files present on disk, the null-baseline ratio is noise
+// rather than signal — a nearly-empty repo can legitimately have few matches.
+const RATIO_MIN_FILES = 10;
+// Above this share of existing files failing baseline lookup, the baseline is
+// not usable even though the tag resolved.
+//
+// Calibrated against the real fleet on 2026-07-30. A legitimately OLD baseline
+// still scores well under the bar, because most of what it cannot resolve is
+// files that did not exist yet — and those take the !existsSync branch instead:
+//
+//   physical-therapy-by-ai  v3.0    56/128 null   44%   <- oldest real repo
+//   siteproof               v3.8.0   3/100 null    3%
+//   nutrition               v3.8.0   4/364 null    1%
+//
+// A baseline that genuinely does not describe the repo scores near 100% — every
+// lookup misses, not just the ones for new files. 44% is the honest worst case
+// observed; raise this only with a measurement, not a hunch.
+const RATIO_REFUSE_ABOVE = 0.5;
+
+/**
+ * Guard B — the baseline resolved but its contents did not.
+ *
+ * A tag whose kit layout differs structurally from today's (paths moved,
+ * directory renamed) resolves fine and then returns null for nearly every
+ * lookup. That is indistinguishable from success to the old code. Here it is a
+ * refusal: `nullBaseline` counts only files that EXIST on disk and whose
+ * baseline lookup failed, so a file genuinely new in the target version — which
+ * takes the !existsSync branch into `new`/`needsInstall` — never inflates it.
+ */
+function assertClassificationBaselined(classification, baseline) {
+  const nullCount = classification.nullBaseline.length;
+  const existing = classification.stock.length + classification.customized.length;
+  if (existing < RATIO_MIN_FILES) return;
+  if (nullCount / existing <= RATIO_REFUSE_ABOVE) return;
+
+  const pct = Math.round((nullCount / existing) * 100);
+  console.error('\nERROR: the upgrade baseline resolved but does not describe this repo.');
+  console.error(`  baseline ${baseline.kind}: ${baseline.ref}`);
+  console.error(`  ${nullCount} of ${existing} existing files (${pct}%) have no baseline content.`);
+  console.error('');
+  console.error('  This is what a structurally-different release looks like: the reference');
+  console.error('  exists, but the paths inside it do not match what this repo has. Applying');
+  console.error('  it would mark nearly every file customized and stamp a no-op.');
+  console.error('  Nothing was modified.');
+  console.error('');
+  console.error('  Fix: pass --from <version> with a release whose layout matches this repo.');
+  process.exit(EXIT_NO_BASELINE);
+}
+
+/**
+ * Report scripts that diverged from baseline and are being replaced anyway.
+ *
+ * WS-557: replacing machinery silently would trade one invisible failure for
+ * another. The founder gets the list and the snapshot path, so a genuine
+ * hand-edit is recoverable rather than merely overwritten.
+ */
+function printDriftedScripts(classification, repoPath) {
+  const drifted = classification.driftedScripts || [];
+  if (drifted.length === 0) return;
+  console.log(`\n${drifted.length} script(s) diverged from the installed baseline and will be REPLACED`);
+  console.log('  (kit/scripts/ is machinery — holding one back strands the modules that call it).');
+  for (const e of drifted.slice(0, 12)) {
+    console.log(`    ${e.destination}${e.reason === 'no-baseline' ? '  [not in baseline]' : ''}`);
+  }
+  if (drifted.length > 12) console.log(`    … and ${drifted.length - 12} more`);
+  console.log('  Previous copies are kept in the pre-upgrade snapshot if you need to compare.');
+}
+
 // ─── Phase 2: Classify Files ───────────────────────────────────────────────
 
 function classifyFiles(repoPath, homebasePath, fromVersion) {
-  const result = { stock: [], customized: [], new: [], needsInstall: [] };
+  // `nullBaseline` holds the subset of `customized` that got there because the
+  // baseline lookup FAILED, not because the file genuinely diverged. The two
+  // reasons used to be indistinguishable — which is defect 3 above. Entries are
+  // pushed to both lists: classification behaviour is unchanged, the counter is
+  // purely what Guard B reads.
+  const result = { stock: [], customized: [], new: [], needsInstall: [], nullBaseline: [], driftedScripts: [] };
 
   const { ok, data: manifest } = readYAMLFile(path.join(homebasePath, 'kit', 'MANIFEST.yaml'));
   if (!ok || !manifest.files) {
@@ -307,12 +489,51 @@ function classifyFiles(repoPath, homebasePath, fromVersion) {
     return result;
   }
 
+  // WS-557: kit/scripts/** is machinery, not a customization surface.
+  //
+  // The sidecar rule below ("differs from baseline → founder edited it → keep
+  // theirs") was written for prose the founder is MEANT to edit: commands,
+  // templates, rules, the preamble. Applied to executable modules it does two
+  // wrong things at once.
+  //
+  // First, it misdiagnoses. A script that diverges from its baseline is almost
+  // never an edit — it is residue of the WS-547 failure mode, an upgrade that
+  // stamped a version and applied nothing. Measured 2026-08-01: ai-personal's
+  // cwos-utils.js differed from the kit-v3.8.1 blob it claims to be by 8 lines,
+  // and those 8 lines were a fix 3.8.1 SHIPPED. Nobody typed that.
+  //
+  // Second, and worse, it splits the machinery. Holding one module back while
+  // installing the rest gives the repo new callers against an old library.
+  // ai-personal's 3.8.2 upgrade installed cwos-reconcile-core.js (which calls
+  // escapeYamlString, added after 3.8.1) while sidecarring cwos-utils.js (which
+  // defines it) — `TypeError: escapeYAMLString is not a function`, gate failed,
+  // auto-rollback. The guard meant to protect the repo is what broke it, and it
+  // did so on the very file carrying the fix being shipped.
+  //
+  // So scripts are always replaced. Divergence is still REPORTED (driftedScripts,
+  // surfaced by every caller) and the pre-upgrade snapshot still holds the old
+  // copy, so a genuine hand-edit is named and recoverable rather than silently
+  // lost. This matches the contract /kit-upgrade already documents: kit/scripts/
+  // is a HomeBase-authored surface that upgrades update.
+  //
+  // Guard B's ratio is unaffected — it reads stock.length + customized.length,
+  // and this only moves entries between those two lists. nullBaseline entries
+  // are still counted so a structurally-wrong baseline still refuses.
+  const isMachinery = entry => entry.category === 'scripts';
+
   const tagName = `kit-v${fromVersion}`;
+  // Resolve the {system_dir} placeholder once (default 'system', or paths.system_dir
+  // from the repo's .cwos-config.yaml). Without this, MANIFEST destinations like
+  // "{system_dir}/state.md" land in a LITERAL "{system_dir}/" directory. Mutating
+  // entry.destination here propagates the resolved path to every downstream
+  // consumer (apply copies, .kit-update naming, snapshot manifest, hash baseline).
+  const systemDir = resolveSystemDir(repoPath);
 
   for (const entry of manifest.files) {
     // Skip homebase-only files
     if (entry.homebase_only) continue;
 
+    entry.destination = resolveDestination(entry.destination, systemDir);
     const destPath = path.join(repoPath, entry.destination);
     const srcRelative = entry.source;
 
@@ -337,7 +558,15 @@ function classifyFiles(repoPath, homebasePath, fromVersion) {
     if (baselineContent === null) {
       // File didn't exist at the old version — it's new in target version
       // But repo has it somehow (maybe manually added). Treat as customized.
-      result.customized.push(entry);
+      // WS-547: also counted separately. One such file is ordinary; most of them
+      // means the baseline itself is wrong, and Guard B refuses on the ratio.
+      if (isMachinery(entry)) {
+        result.stock.push(entry);
+        result.driftedScripts.push({ ...entry, reason: 'no-baseline' });
+      } else {
+        result.customized.push(entry);
+      }
+      result.nullBaseline.push(entry);
       continue;
     }
 
@@ -349,6 +578,10 @@ function classifyFiles(repoPath, homebasePath, fromVersion) {
     const norm = s => s.replace(/\r\n/g, '\n');
     if (sha256(norm(currentContent)) === sha256(norm(baselineContent))) {
       result.stock.push(entry);     // unchanged from baseline — safe to overwrite
+    } else if (isMachinery(entry)) {
+      // Diverged, but it is machinery — replace it and say so. See the note above.
+      result.stock.push(entry);
+      result.driftedScripts.push({ ...entry, reason: 'diverged' });
     } else {
       result.customized.push(entry); // genuinely customized
     }
@@ -1249,6 +1482,12 @@ function ensureDir(dirPath) {
 module.exports = {
   detectState,
   classifyFiles,
+  resolveBaselineSource,
+  assertBaselineResolvable,
+  assertClassificationBaselined,
+  EXIT_NO_BASELINE,
+  RATIO_MIN_FILES,
+  RATIO_REFUSE_ABOVE,
   migrateSchemaV2ToV3,
   migrateSchemaV3ToV4,
   SCHEMA_MIGRATIONS,

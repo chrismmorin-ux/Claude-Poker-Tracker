@@ -39,12 +39,23 @@ const { execSync } = require('child_process');
 const { writeFileAtomic, parseYAML, verifyHardlink } = require('./lib/cwos-utils');
 const { hostedOnStamp } = require('./lib/fleet-nodes');
 const { validateTargetDir } = require('./lib/shell-safe');
+const { resolveDistRoot, resolveHomeBaseRoot } = require('./lib/kit-paths');
 
-// HomeBase root — derived from this script's location. kit/scripts/cwos-genesis-scaffold.js → ../..
-const KIT_ROOT = path.resolve(__dirname, '..', '..');
-const KIT_COMMANDS_DIR = path.join(KIT_ROOT, 'kit', 'commands');
-const KIT_TEMPLATES_DIR = path.join(KIT_ROOT, 'kit', 'templates');
-const FLEET_REGISTRY = path.join(KIT_ROOT, 'fleet', 'registry.yaml');
+// WS-549: these were one KIT_ROOT, and they are two different things.
+//
+// Commands and templates are content the kit SHIPS — they travel with this
+// script, so they come from the distribution.
+const DIST_ROOT = resolveDistRoot();
+const KIT_COMMANDS_DIR = path.join(DIST_ROOT, 'kit', 'commands');
+const KIT_TEMPLATES_DIR = path.join(DIST_ROOT, 'kit', 'templates');
+
+// The fleet registry exists on the hub and nowhere else. Resolved lazily so a
+// scaffold run outside HomeBase fails at the registration step with a clear
+// message, rather than silently writing a registry into the distribution.
+function fleetRegistryPath() {
+  const hub = resolveHomeBaseRoot();
+  return hub ? path.join(hub, 'fleet', 'registry.yaml') : null;
+}
 
 // Phase F (WS-321): assets installed at scaffold time so the founder can
 // operate from inside the scaffolded directory (cd in, run /intend, etc.).
@@ -232,7 +243,7 @@ function copyTemplate(srcRel, targetAbs) {
 // targetAbs/<srcRel>. Returns {ok, mode} where mode is 'hardlink' or 'copy'.
 // Cross-volume hardlink failures fall back to copy with a warning logged.
 function installAsset(srcRel, targetAbs, errors) {
-  const src = path.join(KIT_ROOT, srcRel);
+  const src = path.join(DIST_ROOT,srcRel);
   const dst = path.join(targetAbs, srcRel);
   if (!fs.existsSync(src)) {
     return { ok: false, skipped: true, reason: 'source missing' };
@@ -264,7 +275,7 @@ function installAsset(srcRel, targetAbs, errors) {
 // targetAbs/<srcDirRel>, mirroring directory structure. Used for the schemas
 // tree where new payload types are added over time.
 function installDirRecursive(srcDirRel, targetAbs, errors) {
-  const src = path.join(KIT_ROOT, srcDirRel);
+  const src = path.join(DIST_ROOT,srcDirRel);
   if (!fs.existsSync(src)) return { copied: 0, skipped: true };
   const stat = fs.statSync(src);
   if (!stat.isDirectory()) return { copied: 0, skipped: true };
@@ -275,7 +286,7 @@ function installDirRecursive(srcDirRel, targetAbs, errors) {
       const childSrc = path.join(currentSrc, entry.name);
       if (entry.isDirectory()) { walk(childSrc); continue; }
       // Compute path relative to KIT_ROOT
-      const rel = path.relative(KIT_ROOT, childSrc).replace(/\\/g, '/');
+      const rel = path.relative(DIST_ROOT, childSrc).replace(/\\/g, '/');
       const r = installAsset(rel, targetAbs, errors);
       if (r.ok) copied += 1;
     }
@@ -290,7 +301,7 @@ function installGlob(pattern, targetAbs, errors) {
   const dir = path.dirname(pattern);
   const fileGlob = path.basename(pattern); // e.g. "prog-*.yaml"
   const re = new RegExp('^' + fileGlob.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
-  const srcDir = path.join(KIT_ROOT, dir);
+  const srcDir = path.join(DIST_ROOT,dir);
   if (!fs.existsSync(srcDir)) return { copied: 0, skipped: true };
   let copied = 0;
   for (const f of fs.readdirSync(srcDir)) {
@@ -385,9 +396,18 @@ function buildOnboardingYaml(now, intentionHash, systemDir) {
   return raw;
 }
 
+// WS-547: this used to write `kit_version:` and nothing else — a field that
+// /adopt never writes and that three of the four version readers never looked
+// for. siteproof, scaffolded this way, resolved to the literal string 'unknown'
+// and asked git for the tag `kit-vunknown`; the lookup failed open and every
+// upgrade of it was a stamped no-op. `version:` is the canonical field that
+// lib/kit-version.js resolves first.
 function buildVersionFile(now, kitVersion) {
   return [
     '# CWOS Version Stamp — written by /genesis',
+    `version: "${kitVersion}"`,
+    '# kit_version is retained for back-compat with stamps written before WS-547.',
+    '# Do not add new readers — resolve via kit/scripts/lib/kit-version.js instead.',
     `kit_version: "${kitVersion}"`,
     `installed_at: "${now}"`,
     'install_path: /genesis',
@@ -398,12 +418,17 @@ function buildVersionFile(now, kitVersion) {
 }
 
 function readKitVersion() {
-  const versionPath = path.join(KIT_ROOT, 'kit', 'VERSION');
+  const versionPath = path.join(DIST_ROOT,'kit', 'VERSION');
   if (!fs.existsSync(versionPath)) return 'unknown';
   return fs.readFileSync(versionPath, 'utf8').trim();
 }
 
 function appendToFleetRegistry(targetDir, repoName, kitVersion, now, errors) {
+  const FLEET_REGISTRY = fleetRegistryPath();
+  if (!FLEET_REGISTRY) {
+    errors.push('not running inside HomeBase (no fleet/registry.yaml found) — skipped registration');
+    return false;
+  }
   if (!fs.existsSync(FLEET_REGISTRY)) {
     errors.push(`fleet registry not found at ${FLEET_REGISTRY} — skipped registration`);
     return false;
@@ -599,4 +624,6 @@ function main() {
   }
 }
 
-main();
+// WS-544: guard the entry point so requiring this file for a dependency
+// smoke check does not run it.
+if (require.main === module) main();

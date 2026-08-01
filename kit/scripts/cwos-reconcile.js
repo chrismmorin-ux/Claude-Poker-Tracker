@@ -40,6 +40,22 @@ function maybeRegenView() {
   try { renderEventsLog({}); } catch { /* silent */ }
 }
 
+// ─── State-cache freshness (ADR-058) ────────────────────────────────────────
+//
+// The four YAML-backed domains the end-of-reconcile reducer refresh can fully
+// re-materialize. engines/envelope are event folds (engines backfills via
+// Phase 2n; envelope is per-node telemetry); config/sessions are empty.
+const REBUILDABLE_STATE_DOMAINS = ['queue', 'findings', 'sprints', 'programs'];
+
+function stateCacheMissing(wsDir) {
+  const stateDir = path.join(wsDir, 'state');
+  return REBUILDABLE_STATE_DOMAINS.some((d) => {
+    const f = path.join(stateDir, `${d}.json`);
+    try { return !fs.existsSync(f) || fs.statSync(f).size === 0; }
+    catch { return true; }
+  });
+}
+
 // ─── CLI ────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -48,6 +64,7 @@ function main() {
   const dryRun = args.includes('--dry-run');
   const strict = args.includes('--strict');
   const checkDrift = args.includes('--check-drift');
+  const refreshState = args.includes('--refresh-state');
   const json = args.includes('--json');
 
   let wsDir;
@@ -59,11 +76,22 @@ function main() {
     catch { console.error('ERROR: Could not find .claude/workstream/ directory.'); process.exit(1); }
   }
 
+  // --refresh-state (ADR-058): state/*.json is an untracked per-node cache.
+  // When any rebuildable domain file is missing/empty (fresh clone, post-
+  // migration), a lightweight --check-drift run would leave state absent —
+  // so fall through to the FULL reconcile path instead: the end-of-reconcile
+  // reducer-refresh emissions re-materialize queue/findings/sprints/programs
+  // from YAMLs and Phase 2n backfills engines from runs/ artifacts.
+  const stateCacheStale = refreshState && stateCacheMissing(wsDir);
+  if (stateCacheStale && !quiet) {
+    console.log('cwos-reconcile: state cache missing/empty — running full rebuild (ADR-058 --refresh-state).');
+  }
+
   // --check-drift: lightweight mode (WS-257). Skips rebuild + most validators;
   // runs only the state-drift detector and exits 1 if drift found, 0 otherwise.
   // Used by /next Step 2 and the SessionStart hook to gate on drift before
   // composing sprints or surfacing vitals.
-  if (checkDrift) {
+  if (checkDrift && !stateCacheStale) {
     const queueDir = path.join(wsDir, 'queue');
     const queueFiles = fs.existsSync(queueDir) ? globFiles(queueDir, 'WS-*.yaml') : [];
     const queueItems = [];
@@ -930,6 +958,10 @@ function validateEngineCalibration(wsDir, warnings) {
   const byEngineRun = {};
   for (const e of entries) {
     if (!e.engine || !e.run_id) continue;
+    // De-bias: exclude circular auto-resolved marks ("WS closed → useful");
+    // they can never be negative and would decouple the rate from real
+    // founder judgment (mirrors cwos-quality-trends-write computeFounderRelevance).
+    if (e.marked_by === 'auto-resolved') continue;
     const key = `${e.engine}::${e.run_id}`;
     if (!byEngineRun[key]) byEngineRun[key] = { engine: e.engine, run_id: e.run_id, useful: 0, not_useful: 0 };
     if (e.signal === 'useful') byEngineRun[key].useful += 1;
@@ -1367,16 +1399,8 @@ function validateProgramCaps(wsDir, queueItems, findingItems, warnings, dryRun) 
     const data = r.data;
 
     if (data.monitor_only === true) continue;
-    // Status gate is case-insensitive: program YAMLs in the wild use both
-    // `status: active` and `status: ACTIVE`. The former comparison was
-    // case-sensitive against 'active'/'NEW', so any program promoted to
-    // uppercase ACTIVE fell through this `continue` and was silently exempt
-    // from cap-breach evaluation entirely — inverted severity, since the
-    // programs mature enough to be promoted are the ones most worth governing.
-    // (Found 2026-07-26: prog-domain-correctness and prog-design, the repo's
-    // only two ACTIVE programs, had no cap_breach block at all.)
-    const status = String(data.status || '').toLowerCase();
-    if (status && status !== 'active' && status !== 'new') continue;
+    const status = data.status || '';
+    if (status && status !== 'active' && status !== 'NEW') continue;
 
     const acc = data.accountability && data.accountability.on_finding;
     if (!acc || typeof acc.max_open_items !== 'number') continue;
@@ -1962,6 +1986,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  stateCacheMissing,
   validateStateDrift,
   validateProgramProtocolEngineRefs,
   validateFindingPointers,

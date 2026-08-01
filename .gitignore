@@ -93,3 +93,19 @@ out/
 # /kit-upgrade sidecars — upstream's version of a file we've customized, written
 # alongside it for hand review. Working artifacts, never part of the tree.
 *.kit-update
+
+# ── CWOS (managed block — ADR-058) ──────────────────────────────────────
+# Workstream state JSON is a per-node rebuildable cache: it is rewritten
+# wholesale on every event and cannot merge across machines. It rebuilds
+# automatically from your queue/findings/sprints/programs files, so it
+# never needs to be in version control. findings-feedback-manifest.json
+# is calibration data, not cache — it stays tracked.
+.claude/workstream/state/*.json
+!.claude/workstream/state/findings-feedback-manifest.json
+.claude/workstream/state/*.lock
+# The event log is machine-local by design (ADR-057/ADR-058).
+.claude/workstream/events/
+.claude/workstream/telemetry/
+.claude/workstream/tmp/
+.claude/.tmp-*.json
+.cwos-snapshots/

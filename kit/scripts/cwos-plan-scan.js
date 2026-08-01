@@ -419,10 +419,14 @@ function emitFindingsFromViolations(wsDir, violations) {
   }, { ownerLabel: 'plan-scan:emit-findings', maxWaitMs: 10000 });
 }
 
-try {
-  process.exit(main());
-} catch (err) {
-  process.stderr.write(`plan-scan: fatal — ${err.message}\n`);
-  if (process.argv.includes('--verbose')) process.stderr.write(err.stack + '\n');
-  process.exit(2);
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check neither scans nor exits the checking process.
+if (require.main === module) {
+  try {
+    process.exit(main());
+  } catch (err) {
+    process.stderr.write(`plan-scan: fatal — ${err.message}\n`);
+    if (process.argv.includes('--verbose')) process.stderr.write(err.stack + '\n');
+    process.exit(2);
+  }
 }

@@ -174,6 +174,10 @@ function main() {
   return 0;
 }
 
-try { main(); }
-catch { /* never block a session start */ }
-process.exit(0);
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check neither registers a session nor exits the checking process.
+if (require.main === module) {
+  try { main(); }
+  catch { /* never block a session start */ }
+  process.exit(0);
+}

@@ -41,9 +41,15 @@ const fs = require('fs');
 const path = require('path');
 const { readYAMLFile, globFiles } = require('./lib/cwos-utils');
 
-const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const { resolveDistRoot, resolveRepoRoot } = require('./lib/kit-paths');
+
+// WS-549: one REPO_ROOT served both the repo's live programs and the kit's
+// program TEMPLATES. Those are the same directory only in HomeBase — validating
+// an adopted repo silently read HomeBase's programs instead of its own.
+const DIST_ROOT = resolveDistRoot();
+const REPO_ROOT = resolveRepoRoot() || DIST_ROOT;
 const PROGRAMS_DIR = path.join(REPO_ROOT, '.claude', 'workstream', 'programs');
-const KIT_PROGRAMS_DIR = path.join(REPO_ROOT, 'kit', 'templates', 'workstream', 'programs');
+const KIT_PROGRAMS_DIR = path.join(DIST_ROOT, 'kit', 'templates', 'workstream', 'programs');
 
 function isString(v) { return typeof v === 'string' && v.length > 0; }
 function isBool(v) { return typeof v === 'boolean'; }

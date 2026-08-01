@@ -82,7 +82,6 @@ engines:
       - onboarding_state
     outputs:
       - understanding
-    chains:
     description: "Scores installed/planned components against repo_goal — surfaces prune candidates (enforces P3, prevents tool-shaped hammer)"
 
   constitutional-audit:
@@ -196,7 +195,6 @@ engines:
       - finding
       - work-item
       - report
-    chains:
     finding_severities:
       CRITICAL: critical
       HIGH: high
@@ -237,7 +235,6 @@ engines:
       - onboarding_state
     outputs:
       - understanding
-    chains:
     description: Scores findings against repo_goal — advances-goal vs maintenance ratio (enforces P1)
 
   health-check:
@@ -254,7 +251,6 @@ engines:
       - finding
       - report
       - fix
-    chains:
     finding_severities:
       FAIL: critical
       WARN: medium

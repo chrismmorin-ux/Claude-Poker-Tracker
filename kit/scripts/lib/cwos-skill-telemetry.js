@@ -58,6 +58,16 @@ const HEADER = `# Skill telemetry — engine run records. WS-414 / FIND-273.
 #   - engine_specific    { ... } — per-engine extension blob from
 #                         engines/library/<engine>/telemetry-extract.js
 #
+# Schema v1.1 additions (WS-479 surfacing provenance — additive only):
+#   - surfaced_by        trigger signals of the engine_candidate_suggested
+#                        event that preceded this invocation within 30 min
+#                        (e.g. "CP-PLAN", "R2,R6"), or "manual" when the
+#                        founder invoked without a suggestion
+#   - invocation_class   "founder-plan" | "governance-meta" | null — null by
+#                        default; classified manually at measurement time
+#                        (deterministic path heuristics misclassify; v2's
+#                        measurement plan owns automating this)
+#
 # This file is the AS-33 observation source for ADR-050. Do not edit by hand;
 # the cwos-skill-telemetry library de-duplicates on run_id and is the canonical
 # writer.
@@ -114,6 +124,49 @@ function loadEngineExtractor(repoRoot, engineId) {
 function entryExistsForRun(entries, runId) {
   if (!Array.isArray(entries)) return false;
   return entries.some(e => e && e.run_id === runId);
+}
+
+const SURFACING_WINDOW_MS = 30 * 60 * 1000;
+
+/**
+ * Surfacing provenance (WS-479): did an engine_candidate_suggested event for
+ * this engine precede the invocation within 30 minutes? Returns the
+ * suggestion's trigger signals joined (e.g. "CP-PLAN") or "manual".
+ * Best-effort: any read/parse failure -> "manual".
+ */
+function deriveSurfacedBy(wsDir, engineId, invokedAt) {
+  if (!engineId || !invokedAt) return 'manual';
+  let invokedMs;
+  try { invokedMs = new Date(invokedAt).getTime(); } catch { return 'manual'; }
+  if (!Number.isFinite(invokedMs)) return 'manual';
+
+  const eventsDir = path.join(wsDir, 'events');
+  let files;
+  try { files = fs.readdirSync(eventsDir).filter(f => f.endsWith('.jsonl')).sort(); }
+  catch { return 'manual'; }
+
+  // Scan newest chunks first; stop once event timestamps predate the window.
+  for (let i = files.length - 1; i >= 0; i--) {
+    let text;
+    try { text = fs.readFileSync(path.join(eventsDir, files[i]), 'utf8'); }
+    catch { continue; }
+    const lines = text.split('\n').filter(Boolean);
+    for (let j = lines.length - 1; j >= 0; j--) {
+      let ev;
+      try { ev = JSON.parse(lines[j]); } catch { continue; }
+      const p = ev && ev.payload;
+      if (!p || p.type !== 'engine_candidate_suggested') continue;
+      if (p.suggested_engine !== engineId) continue;
+      let evMs = null;
+      try { evMs = new Date(ev.ts || ev.timestamp || ev.created_at).getTime(); } catch { /* keep null */ }
+      if (!Number.isFinite(evMs)) continue;
+      if (evMs > invokedMs) continue;
+      if (invokedMs - evMs > SURFACING_WINDOW_MS) return 'manual';
+      const signals = Array.isArray(p.trigger_signals) ? p.trigger_signals.filter(Boolean) : [];
+      return signals.length ? signals.join(',') : 'manual';
+    }
+  }
+  return 'manual';
 }
 
 function computeWallMinutes(startedAt, completedAt) {
@@ -214,6 +267,8 @@ function writeSkillTelemetry({ runId, runDir, wsDir, engineId, programId, clock 
     wall_minutes: wallMinutes,
     tokens_derived: tokensDerived,
     tokens_derived_source: tokensDerivedSource,
+    surfaced_by: deriveSurfacedBy(wsDir, engineId, invokedAt),
+    invocation_class: null,
     engine_specific: engineSpecific,
   };
 
@@ -238,5 +293,6 @@ module.exports = {
   readBriefingVerdict,
   readBriefingFindingCounts,
   computeWallMinutes,
+  deriveSurfacedBy,
   SCHEMA_VERSION,
 };

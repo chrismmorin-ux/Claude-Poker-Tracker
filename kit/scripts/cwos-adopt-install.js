@@ -42,9 +42,21 @@ const {
   readYAMLFile, writeFileAtomic, patchYAMLFile,
   serializeYAML, formatScalar, formatInlineArray, globFiles,
   boundedSystemDir, boundedPathInRepo, SafeWriteError,
+  findWorkstreamDir, loadEventDeps,
 } = require('./lib/cwos-utils');
 
+// WS-433: raw event API for the single-question step-gate (must check r.ok —
+// the makeEventEmitter wrapper swallows validation failures).
+const { appendEvent: rawAppendEvent, ensureCommandId: rawEnsureCommandId } = loadEventDeps();
+
 const { emitBundle, bundleError } = require('./lib/cwos-orchestrate');
+
+// WS-503 / FIND-330: crash recovery. main() mutates CLAUDE.md at Phase 3 but
+// writes the .cwos-version marker at Phase 7 — a crash between them used to
+// leave a half-adopted repo that --repair fails closed on. Snapshot first,
+// restore on any throw.
+const repoSnapshot = require('./lib/repo-snapshot');
+const { matchesSyncPath, serviceName } = require('./lib/sync-paths');
 
 // 21 mutation sites across copy / template / scope-patch / manifest / legacy
 // / milestone / version-stamp phases. Emit coarse phase events at major
@@ -171,6 +183,7 @@ function parseCLI() {
     archetype: null, homebase: null, kitVersion: null, dryRun: false,
     archetypeBundle: null, archetypeBundlePath: null,
     repair: false, force: false, noFleetRegister: false,
+    allowCloudSync: false,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -186,6 +199,7 @@ function parseCLI() {
     else if (arg === '--repair')                          { config.repair = true; }
     else if (arg === '--force')                           { config.force = true; }
     else if (arg === '--no-fleet-register')               { config.noFleetRegister = true; }
+    else if (arg === '--allow-cloud-sync')                { config.allowCloudSync = true; }
   }
 
   // Load archetype-bundle JSON if provided. WS-250: when present, install
@@ -208,6 +222,23 @@ function parseCLI() {
   if (!config.target) bundleError('--target is required');
   if (!fs.existsSync(config.target) || !fs.statSync(config.target).isDirectory()) {
     bundleError(`--target path does not exist or is not a directory: ${config.target}`);
+  }
+
+  // WS-503 / FIND-330: cloud-sync pre-flight. A git repo inside a synced folder
+  // corrupts silently — the sync client rewrites files under .git/ while git
+  // holds them open. DEV-INV-002 already rates this critical for repos already
+  // registered; refusing here stops one being created. Runs before ANY mutation.
+  if (!config.allowCloudSync) {
+    const matched = matchesSyncPath(config.target);
+    if (matched) {
+      bundleError(
+        `--target is inside a ${serviceName(matched)} folder: ${config.target}\n` +
+        `${serviceName(matched)} corrupts git repos silently (it rewrites files under .git/ while git holds them open) — ` +
+        `this is a known fleet incident class, not a hypothetical.\n` +
+        `Move the repo out of ${serviceName(matched)} first, then re-run /adopt.\n` +
+        `To install anyway: /adopt --allow-cloud-sync`
+      );
+    }
   }
 
   // WS-384: --repair heals an existing install; it cannot bootstrap one. The
@@ -1372,7 +1403,9 @@ function seedDecisionsFromADRs(config, state) {
   ]);
   const adrFiles = globFiles(adrDir, '*.md')
     .filter(p => !NON_ADR_BASENAMES.has(path.basename(p).toLowerCase()))
-    .sort();
+    // Numeric-aware sort so ADR-2 seeds before ADR-10 (a plain .sort() is
+    // lexicographic and would misorder unpadded ADR numbers — WS-473).
+    .sort((a, b) => path.basename(a).localeCompare(path.basename(b), 'en', { numeric: true, sensitivity: 'base' }));
   if (adrFiles.length === 0) return;
 
   const decisionsPath = path.join(config.target, config.systemDir, 'decisions.md');
@@ -1576,18 +1609,26 @@ function updateMilestones(config, state) {
   }
 }
 
-function markMilestone(content, milestoneName, timestamp) {
-  // Find the milestone block and update status + completed_at
-  const statusRegex = new RegExp(`(${milestoneName}:[\\s\\S]*?)status:\\s*pending`);
-  const dateRegex = new RegExp(`(${milestoneName}:[\\s\\S]*?)completed_at:\\s*null`);
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  if (statusRegex.test(content)) {
-    content = content.replace(statusRegex, `$1status: complete`);
-  }
-  if (dateRegex.test(content)) {
-    content = content.replace(dateRegex, `$1completed_at: "${timestamp}"`);
-  }
-  return content;
+function markMilestone(content, milestoneName, timestamp) {
+  // Replace only within the named milestone's own block (the key line plus all
+  // lines indented deeper than it). An unanchored lazy match here would, when
+  // the milestone is already complete, run past it and flip the NEXT
+  // milestone's status: pending (WS-473).
+  const blockRegex = new RegExp(
+    `^([ \\t]*)${escapeRegex(milestoneName)}:[^\\n]*(?:\\r?\\n(?:\\1[ \\t]+[^\\n]*|[ \\t]*(?=\\r?\\n)))*`,
+    'm'
+  );
+  const m = content.match(blockRegex);
+  if (!m) return content;
+
+  let block = m[0];
+  block = block.replace(/status:\s*pending/, 'status: complete');
+  block = block.replace(/completed_at:\s*null/, `completed_at: "${timestamp}"`);
+  return content.slice(0, m.index) + block + content.slice(m.index + m[0].length);
 }
 
 // ─── Phase 7: Write Version Stamp ──────────────────────────────────────────
@@ -1748,7 +1789,7 @@ function registerInFleet(config, state) {
   const repos = (parsed.data && parsed.data.repos) || [];
   const registryText = fs.readFileSync(registryPath, 'utf8');
 
-  const result = upsertFleetEntry(registryText, repos, config);
+  const result = upsertFleetEntry(registryText, repos, config, parsed.data);
   if (result.warning) state.warnings.push(result.warning);
   if (result.action === 'skipped-relocation' || result.action === 'noop') return;
 
@@ -1770,16 +1811,20 @@ function registerInFleet(config, state) {
 }
 
 // Render a clean, modern registry entry block (no deprecated kit_version/maturity).
-function renderFleetEntry(config, registeredAt, adoptedAt) {
+// hostedOnId (WS-496): node id to stamp as hosted_on when the registry is
+// multi-node and the current host resolved; null → line omitted (legacy default).
+function renderFleetEntry(config, registeredAt, adoptedAt, hostedOnId) {
   const caps = [...config.enabledCapabilities];
-  return [
+  const lines = [
     `  - name: ${formatScalar(config.repoName)}`,
     `    path: "${toForwardSlash(config.target)}"`,
     `    type: ${config.archetype}`,
     `    capabilities_enabled: [${caps.join(', ')}]`,
     `    registered_at: "${registeredAt}"`,
     `    adopted_at: "${adoptedAt}"`,
-  ].join('\n');
+  ];
+  if (hostedOnId) lines.push(`    hosted_on: [${hostedOnId}]`);
+  return lines.join('\n');
 }
 
 // Pure, testable upsert. Returns { text, action, warning }.
@@ -1787,7 +1832,11 @@ function renderFleetEntry(config, registeredAt, adoptedAt) {
 //           'skipped-relocation' (probable move — defer to Step 7a) | 'noop'
 // Edits the registry as TEXT to preserve its header + inline comments; a
 // parseYAML→serializeYAML round-trip would erase them.
-function upsertFleetEntry(registryText, repos, config) {
+// registryData (optional, WS-496 / ADR-057): the full parsed registry. When it
+// has a nodes: section, new entries are stamped hosted_on: [<current node id>]
+// via lib/fleet-nodes.js; unknownHost warns and stamps nothing. Single-node
+// registries (no nodes: section) are byte-for-byte unchanged behavior.
+function upsertFleetEntry(registryText, repos, config, registryData) {
   const targetKey = toForwardSlash(config.target).toLowerCase();
   const lines = registryText.split(/\r?\n/);
 
@@ -1829,12 +1878,15 @@ function upsertFleetEntry(registryText, repos, config) {
   }
 
   // ── Append a new entry ──
+  // WS-496: multi-node registries get hosted_on: [<current node id>] so an
+  // adoption from a non-default node isn't mis-attributed to the default host.
+  const stamp = require('./lib/fleet-nodes').hostedOnStamp(registryData || {});
   const registeredAt = config.timestamp.slice(0, 10); // YYYY-MM-DD
-  const entry = renderFleetEntry(config, registeredAt, config.timestamp);
+  const entry = renderFleetEntry(config, registeredAt, config.timestamp, stamp.id);
   let text = registryText;
   if (!text.endsWith('\n')) text += '\n';
   text += entry + '\n';
-  return { text, action: 'created' };
+  return { text, action: 'created', warning: stamp.warning || undefined };
 }
 
 // ─── Phase repair-summary: Human-Readable Repair Report (WS-384) ───────────
@@ -1869,7 +1921,172 @@ function reportRepairSummary(config, state) {
 
 // ─── Main ──────────────────────────────────────────────────────────────────
 
+// ─── WS-433: single-question step-gate for /adopt Steps 4b-* ─────────────────
+//
+// Each 4b-* step emits one `adopt_step_answered` event (--emit). The next step
+// gates on the prior with --requires, refusing to render until that event
+// exists — enforcing the single-question ordering that prose alone failed to
+// hold (DEC-029). Per-step (not per-question) per accept-criterion #2.
+
+function readArgValue(args, name) {
+  const i = args.indexOf(name);
+  if (i === -1 || i === args.length - 1) return null;
+  return args[i + 1];
+}
+
+function readAdoptEventTail(maxEvents) {
+  const ws = findWorkstreamDir(process.cwd());
+  if (!ws) return [];
+  const eventsDir = path.join(ws, 'events');
+  if (!fs.existsSync(eventsDir)) return [];
+  const files = fs.readdirSync(eventsDir).filter((f) => f.endsWith('.jsonl')).sort();
+  const events = [];
+  for (let i = files.length - 1; i >= 0 && events.length < maxEvents; i--) {
+    const text = fs.readFileSync(path.join(eventsDir, files[i]), 'utf8');
+    const lines = text.split('\n').filter(Boolean);
+    for (let j = lines.length - 1; j >= 0 && events.length < maxEvents; j--) {
+      try { events.unshift(JSON.parse(lines[j])); } catch (_) { /* skip */ }
+    }
+  }
+  return events;
+}
+
+function adoptStepAnswered(events, step) {
+  return events.some((e) => e && e.payload && e.payload.type === 'adopt_step_answered' && e.payload.step === step);
+}
+
+function runStepGate(args) {
+  const step = readArgValue(args, '--step');
+  const requires = readArgValue(args, '--requires');
+  const emit = args.includes('--emit');
+  const noEmit = args.includes('--no-emit');
+  const clock = readArgValue(args, '--clock');
+
+  if (!step) { process.stderr.write('step-gate: --step <name> is required\n'); process.exit(2); }
+  // TRIPWIRE: one step per call — a comma-list would let a batched emit fake
+  // multiple answered steps from a single event.
+  if (step.includes(',')) {
+    process.stderr.write('step-gate: batching rejected — --step takes a single step id, not a comma-list. Gate one step at a time.\n');
+    process.exit(2);
+  }
+
+  // --requires: gate. Accepts a comma-list of acceptable priors (OR semantics)
+  // so the NONE-archetype branch (4b-bundle requires 4b-stage OR 4b-archetype)
+  // is honored. Any one present satisfies the gate.
+  if (requires) {
+    const tail = readAdoptEventTail(400);
+    const priors = requires.split(',').map((s) => s.trim()).filter(Boolean);
+    const satisfied = priors.some((p) => adoptStepAnswered(tail, p));
+    if (!satisfied) {
+      process.stderr.write(
+        `step-gate: Step '${step}' cannot render before [${priors.join(' OR ')}] is answered.\n` +
+        `  Complete the prior step and emit its event first:\n` +
+        `    node kit/scripts/cwos-adopt-install.js step-gate --step ${priors[0]} --emit\n`);
+      process.exit(2);
+    }
+  }
+
+  // --emit: record this step as answered.
+  let eventId = null;
+  if (emit && !noEmit && rawAppendEvent && rawEnsureCommandId) {
+    const payload = { type: 'adopt_step_answered', step, answered_at: clock || new Date().toISOString(), composed_by: 'cli-deterministic' };
+    const commandId = rawEnsureCommandId('adopt-step-gate');
+    const r = rawAppendEvent({
+      source_track: 'T0:envelope',
+      source_tier: 'founder-prompt',
+      track_tag: '/adopt',
+      command_id: commandId,
+      payload,
+    });
+    if (r && r.ok && r.event) eventId = r.event.id;
+    else if (r && !r.ok) {
+      process.stderr.write(`step-gate: event validation failed: ${(r.errors || []).join('; ')}\n`);
+      process.exit(2);
+    }
+  }
+
+  process.stdout.write(JSON.stringify({ ok: true, step, requires: requires || null, emitted: emit, event_id: eventId, note: noEmit ? 'no-emit mode — event was NOT written' : undefined }, null, 2) + '\n');
+}
+
+// Phase 3.6 (ADR-058 / WS-504): ensure the CWOS gitignore block exists in the
+// target repo. The MANIFEST entry (merge_strategy: additive) creates .gitignore
+// from kit/templates/gitignore-cwos.txt when the file is absent; this helper
+// covers the exists-but-missing-block case by appending. Idempotent — keyed on
+// the state-cache rule line. Non-fatal on any error (AS-23).
+function ensureCwosGitignore(config, state) {
+  const marker = '.claude/workstream/state/*.json';
+  const templatePath = path.join(config.homebase, 'kit', 'templates', 'gitignore-cwos.txt');
+  const giPath = boundedPathInRepo(config.target, '.gitignore');
+  try {
+    if (!fs.existsSync(templatePath)) return;
+    const block = fs.readFileSync(templatePath, 'utf8');
+    const cur = fs.existsSync(giPath) ? fs.readFileSync(giPath, 'utf8') : '';
+    if (cur.includes(marker)) return;
+    const next = cur ? cur + (cur.endsWith('\n') ? '' : '\n') + '\n' + block : block;
+    if (!config.dryRun) writeFileAtomic(giPath, next);
+    state.installLog.push({
+      source: 'kit/templates/gitignore-cwos.txt', destination: '.gitignore',
+      action: cur ? 'block-appended' : 'created', merge_strategy: 'append-block',
+      hash: sha256(next),
+    });
+  } catch (e) {
+    state.warnings.push(`ensureCwosGitignore failed (non-fatal): ${e.message}`);
+  }
+}
+
+// ─── Crash recovery (WS-503 / FIND-330) ────────────────────────────────────
+//
+// Surfaces an adopt can mutate in the target repo. `.claude`, `kit` and the
+// resolved system dir are captured wholesale because adopt creates hundreds of
+// files across them and, after a crash, there is no reliable on-disk record of
+// which ones — so restore runs in `replace` mode (delete the dir, put the
+// snapshot back), and anything absent at capture time is deleted outright.
+const ADOPT_SNAPSHOT_PREFIX = 'adopt-pre-install-';
+const ADOPT_SNAPSHOT_FILES = [
+  'CLAUDE.md', '.gitignore', '.cwos-version',
+  '.cwos-onboarding.yaml', '.cwos-feedback.yaml', '.cwos-config.yaml',
+];
+
+function adoptSnapshotDirs(config) {
+  return ['.claude', 'kit', config.systemDir || 'system'];
+}
+
+// Phase 6 (migrateLegacy) RENAMES the founder's own governance docs out from
+// under them: docs/INVARIANTS.md becomes docs/INVARIANTS.md.pre-cwos-backup.
+// Five phases run after it, and docs/ is not one of the captured dirs — so
+// without these entries a late crash rolled back everything CWOS created while
+// leaving the founder's files renamed, which is the half-adopted state WS-503
+// exists to prevent.
+//
+// Capturing the legacy path restores it. Naming the not-yet-existing
+// .pre-cwos-backup sibling costs nothing at capture (createSnapshot records a
+// missing path in absent_files) and makes restore delete the rename artifact,
+// so the repo comes back clean rather than carrying both copies.
+function adoptSnapshotFiles() {
+  const files = ADOPT_SNAPSHOT_FILES.slice();
+  for (const mapping of LEGACY_MAP) {
+    for (const rel of mapping.legacy) {
+      files.push(rel, rel + '.pre-cwos-backup');
+    }
+  }
+  return files;
+}
+
+// Records which phase is executing so the catch block can name it. Phase bodies
+// are untouched — this only wraps the call sites.
+let currentPhase = null;
+function runPhase(label, fn) {
+  currentPhase = label;
+  return fn();
+}
+
 function main() {
+  // WS-433: step-gate is a standalone subcommand — intercept before the install
+  // CLI parse (which assumes a fresh-adopt invocation).
+  if (process.argv[2] === 'step-gate') {
+    return runStepGate(process.argv.slice(3));
+  }
+
   const startMs = Date.now();
 
   // Phase 0: Parse CLI
@@ -1897,95 +2114,174 @@ function main() {
   const { m1Files, deferredFiles } = filterByCapabilities(manifestEntries, config.enabledCapabilities, config.archetypeBundle);
   state.deferredFiles = deferredFiles;
 
-  // ── WS-384: --repair runs a distinct, narrower phase set ──
-  // Repair heals an existing install rather than performing a fresh copy. It
-  // diff-repairs every installed file (repairInstalledFiles) and re-runs only
-  // the idempotent provisioning phases (dirs, evidence, registries). It does
-  // NOT re-run the preamble rewrite, legacy migration, governance seeding, or
-  // milestone flips — those are first-adoption concerns, not corruption-healing.
-  if (config.repair) {
-    ensureDirectories(config.target, config.systemDir, config.enabledCapabilities, config.dryRun, state);
-    repairInstalledFiles(config, config.homebase, m1Files, deferredFiles, state);
-    provisionEvidenceDirs(config, state);
-    materializeProgramsRegistry(config, state);
-    materializeEnginesRegistry(config, state);
-    writeVersionStamp(config, state); // re-stamp with healed installed_files hashes
-    registerInFleet(config, state);   // WS-385: heal a missing fleet entry too
-    reportRepairSummary(config, state);
-    emitManifestBundle(startMs, config, state);
-    return;
+  // ── WS-503 / FIND-330: snapshot before the first mutating phase ──
+  // Everything above this line only reads. --dry-run writes nothing, so it
+  // needs no snapshot (and must not create .cwos-snapshots/ as a side effect).
+  let snapshot = null;
+  if (!config.dryRun) {
+    try {
+      snapshot = repoSnapshot.createSnapshot(config.target, {
+        dirs: adoptSnapshotDirs(config),
+        files: adoptSnapshotFiles(),
+        prefix: ADOPT_SNAPSHOT_PREFIX,
+        meta: { target: toForwardSlash(config.target), kit_version: config.kitVersion, repair: config.repair },
+      });
+    } catch (err) {
+      // No snapshot means no undo. Refuse rather than install without a net.
+      bundleError(
+        `Could not create the pre-install snapshot: ${err.message}\n` +
+        `/adopt refuses to install without a way to undo. Check that ${config.target} is writable, then re-run.`
+      );
+    }
   }
 
-  // Phase 2.5: Migrate legacy .cwos/scripts/ → kit/scripts/ (kit-v3.6.0 one-time)
-  migrateLegacyScriptsPath(config, state);
+  try {
+    // ── WS-384: --repair runs a distinct, narrower phase set ──
+    // Repair heals an existing install rather than performing a fresh copy. It
+    // diff-repairs every installed file (repairInstalledFiles) and re-runs only
+    // the idempotent provisioning phases (dirs, evidence, registries). It does
+    // NOT re-run the preamble rewrite, legacy migration, governance seeding, or
+    // milestone flips — those are first-adoption concerns, not corruption-healing.
+    if (config.repair) {
+      runPhase('3-repair (heal installed files)', () => {
+        ensureDirectories(config.target, config.systemDir, config.enabledCapabilities, config.dryRun, state);
+        repairInstalledFiles(config, config.homebase, m1Files, deferredFiles, state);
+        ensureCwosGitignore(config, state); // ADR-058: idempotent, heals missing block
+      });
+      runPhase('3c (provision evidence dirs)', () => provisionEvidenceDirs(config, state));
+      runPhase('3d (materialize programs registry)', () => materializeProgramsRegistry(config, state));
+      runPhase('3e (materialize engines registry)', () => materializeEnginesRegistry(config, state));
+      runPhase('7 (write version stamp)', () => writeVersionStamp(config, state));
+      runPhase('8b (register in fleet)', () => registerInFleet(config, state));
+      reportRepairSummary(config, state);
+      emitManifestBundle(startMs, config, state);
+      return;
+    }
 
-  // Phase 3: Install M1 files
-  ensureDirectories(config.target, config.systemDir, config.enabledCapabilities, config.dryRun, state);
-  installPreamble(config, config.homebase, state);
-  copyM1Files(config, config.homebase, m1Files, state);
-  // Phase 3.5: Install deferred files for enabled capabilities.
-  // Without this phase, /adopt --capabilities core,workstream,engines installs
-  // only the M1 minimum while updateMilestones flips `installed: true` for
-  // workstream+engines anyway — silent partial install. See FIND-silent-deferred.
-  copyDeferredFiles(config, config.homebase, deferredFiles, state);
-  instantiateYAMLTemplates(config, state);
+    // Phase 2.5: Migrate legacy .cwos/scripts/ → kit/scripts/ (kit-v3.6.0 one-time)
+    runPhase('2.5 (migrate legacy scripts path)', () => migrateLegacyScriptsPath(config, state));
 
-  // Phase 3b: Patch program scope patterns for archetype
-  patchProgramScopes(config, state);
+    // Phase 3: Install M1 files
+    runPhase('3 (install core files)', () => {
+      ensureDirectories(config.target, config.systemDir, config.enabledCapabilities, config.dryRun, state);
+      installPreamble(config, config.homebase, state);
+      copyM1Files(config, config.homebase, m1Files, state);
+      // Phase 3.5: Install deferred files for enabled capabilities.
+      // Without this phase, /adopt --capabilities core,workstream,engines installs
+      // only the M1 minimum while updateMilestones flips `installed: true` for
+      // workstream+engines anyway — silent partial install. See FIND-silent-deferred.
+      copyDeferredFiles(config, config.homebase, deferredFiles, state);
+      // Phase 3.6 (ADR-058): append the CWOS gitignore block when .gitignore
+      // pre-existed (the additive MANIFEST entry only creates, never appends).
+      ensureCwosGitignore(config, state);
+      instantiateYAMLTemplates(config, state);
+    });
 
-  // Phase 3c (WS-372 / FIND-240): provision evidence_dir for each installed program.
-  // Without these, /pulse run fails ENOENT and AS-23 swallows → silent inoperative.
-  provisionEvidenceDirs(config, state);
+    // Phase 3b: Patch program scope patterns for archetype
+    runPhase('3b (patch program scopes)', () => patchProgramScopes(config, state));
 
-  // Phase 3c2: Assert bootstrap health is 0/0 per DEC-023
-  assertBootstrapHealth(config, state);
+    // Phase 3c (WS-372 / FIND-240): provision evidence_dir for each installed program.
+    // Without these, /pulse run fails ENOENT and AS-23 swallows → silent inoperative.
+    runPhase('3c (provision evidence dirs)', () => provisionEvidenceDirs(config, state));
 
-  // Phase 3d: Materialize programs/registry.yaml from the installed prog-*.yaml files.
-  // Until kit-v3.6.1 the registry stayed empty and /next blocked sprints with
-  // "no_programs_active" even when prog-*.yaml files were tier: critical.
-  materializeProgramsRegistry(config, state);
+    // Phase 3c2: Assert bootstrap health is 0/0 per DEC-023
+    runPhase('3c2 (assert bootstrap health)', () => assertBootstrapHealth(config, state));
 
-  // Phase 3e: Materialize engines/registry.yaml from the installed command files.
-  // Until kit-v3.7.0 the registry shipped with most engines commented out as
-  // TODO; reconcile's protocol-engine-ref validator surfaced 18+ noisy warnings
-  // per run referencing engines that were installed but not registered.
-  materializeEnginesRegistry(config, state);
+    // Phase 3d: Materialize programs/registry.yaml from the installed prog-*.yaml files.
+    // Until kit-v3.6.1 the registry stayed empty and /next blocked sprints with
+    // "no_programs_active" even when prog-*.yaml files were tier: critical.
+    runPhase('3d (materialize programs registry)', () => materializeProgramsRegistry(config, state));
 
-  // Phase 4: Write deferred manifest
-  writeDeferredManifest(config, deferredFiles, state);
+    // Phase 3e: Materialize engines/registry.yaml from the installed command files.
+    // Until kit-v3.7.0 the registry shipped with most engines commented out as
+    // TODO; reconcile's protocol-engine-ref validator surfaced 18+ noisy warnings
+    // per run referencing engines that were installed but not registered.
+    runPhase('3e (materialize engines registry)', () => materializeEnginesRegistry(config, state));
 
-  // Phase 5: Rewrite path references
-  rewritePathReferences(config, state);
+    // Phase 4: Write deferred manifest
+    runPhase('4 (write deferred manifest)', () => writeDeferredManifest(config, deferredFiles, state));
 
-  // Phase 6: Migrate legacy files
-  migrateLegacy(config, state);
+    // Phase 5: Rewrite path references
+    runPhase('5 (rewrite path references)', () => rewritePathReferences(config, state));
 
-  // Phase 6b: Detect parallel governance structures (programs at non-CWOS paths)
-  detectParallelGovernance(config, state);
+    // Phase 6: Migrate legacy files
+    runPhase('6 (migrate legacy files)', () => migrateLegacy(config, state));
 
-  // Phase 6c: Seed system/decisions.md from docs/adr/ (deterministic governance seeding)
-  seedGovernance(config, state);
+    // Phase 6b: Detect parallel governance structures (programs at non-CWOS paths)
+    runPhase('6b (detect parallel governance)', () => detectParallelGovernance(config, state));
 
-  // Phase 7b: Update milestone status based on enabled capabilities.
-  // Runs BEFORE the version stamp so the stamp's installed_files fingerprint
-  // captures the post-milestone .cwos-onboarding.yaml — otherwise the milestone
-  // flips would leave onboarding drifted from its own install record, and both
-  // /adopt --repair and /kit-upgrade would misread it as a local modification.
-  updateMilestones(config, state);
+    // Phase 6c: Seed system/decisions.md from docs/adr/ (deterministic governance seeding)
+    runPhase('6c (seed governance)', () => seedGovernance(config, state));
 
-  // Phase 7: Write version stamp (last repo-file mutation before it = faithful fingerprint)
-  writeVersionStamp(config, state);
+    // Phase 7b: Update milestone status based on enabled capabilities.
+    // Runs BEFORE the version stamp so the stamp's installed_files fingerprint
+    // captures the post-milestone .cwos-onboarding.yaml — otherwise the milestone
+    // flips would leave onboarding drifted from its own install record, and both
+    // /adopt --repair and /kit-upgrade would misread it as a local modification.
+    runPhase('7b (update milestones)', () => updateMilestones(config, state));
 
-  // Phase 8b: Register the repo in HomeBase's fleet/registry.yaml (WS-385)
-  registerInFleet(config, state);
+    // Phase 7: Write version stamp (last repo-file mutation before it = faithful fingerprint)
+    runPhase('7 (write version stamp)', () => writeVersionStamp(config, state));
 
-  // Phase 8: Emit manifest bundle
-  emitManifestBundle(startMs, config, state);
+    // Phase 8b: Register the repo in HomeBase's fleet/registry.yaml (WS-385)
+    runPhase('8b (register in fleet)', () => registerInFleet(config, state));
+
+    // Phase 8: Emit manifest bundle
+    emitManifestBundle(startMs, config, state);
+  } catch (err) {
+    bundleError(buildCrashReport(err, config, snapshot));
+  }
+}
+
+/**
+ * Undo a crashed install and explain it in founder language (WS-503).
+ * Returns the message; the caller passes it to bundleError (fatal bundle, exit 1).
+ */
+function buildCrashReport(err, config, snapshot) {
+  const phase = currentPhase ? `Phase ${currentPhase}` : 'an early phase';
+  const detail = (err && err.message) ? err.message : String(err);
+  const lines = [`Adopt FAILED at ${phase}`, `  ${detail}`, ''];
+
+  if (!snapshot) {
+    lines.push(
+      '  → No snapshot was taken (dry-run, or the snapshot itself failed),',
+      '    so nothing was rolled back. Your repo may be partially modified.',
+      '',
+      '  Check `git status` in the target repo before retrying.'
+    );
+    return lines.join('\n');
+  }
+
+  try {
+    repoSnapshot.restoreSnapshot(config.target, snapshot, { mode: 'replace' });
+    lines.push(
+      '  → Your repo was restored to its pre-adopt state.',
+      '    Nothing was left half-installed.',
+      '',
+      '  Safe to retry:  /adopt'
+    );
+    // Phase 8b writes to HomeBase's registry, not the target — outside the snapshot.
+    if (currentPhase && currentPhase.startsWith('8b')) {
+      lines.push('', '  Note: the fleet registry entry lives in HomeBase, not this repo.',
+        '  Re-running /adopt heals it (the write is an upsert).');
+    }
+  } catch (restoreErr) {
+    // Never swallow a failed rollback — the founder needs the manual route.
+    lines.push(
+      `  → ROLLBACK ALSO FAILED: ${restoreErr.message}`,
+      '    Your repo is in a partial state and could not be restored automatically.',
+      '',
+      `  Your pre-adopt files are intact here:`,
+      `    ${snapshot}`,
+      '  Copy them back over the repo, or restore with git if the repo was clean.'
+    );
+  }
+  return lines.join('\n');
 }
 
 // ─── Exports ────────────────────────────────────────────────────────────────
 
-module.exports = { sha256, loadManifest, filterByCapabilities, LEVEL_NUM, patchProgramScopes, upsertFleetEntry };
+module.exports = { sha256, loadManifest, filterByCapabilities, LEVEL_NUM, patchProgramScopes, upsertFleetEntry, resolveSystemDir, resolveDestination, runStepGate, adoptStepAnswered, markMilestone, updateMilestones, seedDecisionsFromADRs, ADOPT_SNAPSHOT_PREFIX, ADOPT_SNAPSHOT_FILES, adoptSnapshotDirs, adoptSnapshotFiles };
 
 // ─── Run ────────────────────────────────────────────────────────────────────
 

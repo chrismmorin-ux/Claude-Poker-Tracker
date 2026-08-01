@@ -39,7 +39,15 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const { findWorkstreamDir, readYAMLFile, loadEventDeps } = require('./lib/cwos-utils');
+const { findWorkstreamDir, readYAMLFile, loadEventDeps, makeEventEmitter } = require('./lib/cwos-utils');
+
+// WS-489: conversion bridge — auto-promote the closing run's CRIT/HIGH
+// findings into review-pending queue items. Best-effort: a missing lib
+// never blocks the completion flow.
+let promoteRunFindings = null;
+let allocateNextWsId = null;
+try { ({ promoteRunFindings, allocateNextWsId } = require('./lib/cwos-finding-promote')); }
+catch { /* WS-489 lib missing — conversion bridge becomes a no-op */ }
 
 let writeRunSummary = null;
 try { ({ writeRunSummary } = require('./lib/cwos-run-summary')); }
@@ -352,6 +360,10 @@ function findRecentChainDispatches({ eventsDir, sinceISO, sourceEngine, targetEn
   return out;
 }
 
+// DEPRECATED (WS-489): unlocked, queue-dir-only scan — subject to the
+// FIND-289 id-reissue race and blind to queue/archive/ + queue-index.yaml.
+// dispatchOnCompleteChains now uses allocateNextWsId from
+// lib/cwos-finding-promote. Kept only for test compatibility.
 function nextWsId(queueDir) {
   if (!fs.existsSync(queueDir)) fs.mkdirSync(queueDir, { recursive: true });
   let max = 0;
@@ -373,8 +385,13 @@ function renderChainQueueYaml({ wsId, sourceEngine, sourceRunId, sourceEventId, 
     `effort: M`,
     `type: engine-run`,
     `program: engine-reliability`,
-    `source_class: chain-dispatched`,
-    `source: "auto-dispatch from ${sourceEngine} ${sourceRunId} via on_complete chain"`,
+    // WS-489: source must be a mapping with an `engine` key — classifySource
+    // first-matches on it (source_class: engine-finding). The reducer stamps
+    // source_class itself and discards any on-disk literal, so none is written.
+    `source:`,
+    `  engine: "${sourceEngine}"`,
+    `  run_id: "${sourceRunId}"`,
+    `  promoted_via: on-complete-chain`,
     `chained_from:`,
     `  engine: "${sourceEngine}"`,
     `  run_id: "${sourceRunId}"`,
@@ -465,19 +482,30 @@ function dispatchOnCompleteChains({
     // Allocate WS id + write queue YAML BEFORE emitting the event so the
     // event references a real id. If the YAML write fails, we abort dispatch
     // (no event emitted) — better to have no record than a dangling reference.
+    // WS-489: allocation goes through allocateNextWsId (locked, archive- and
+    // index-aware) so concurrent closes can't reissue an id (FIND-289).
     let wsId = null;
     try {
-      wsId = nextWsId(queueDir);
-      const yaml = renderChainQueueYaml({
-        wsId,
-        sourceEngine: engineId,
-        sourceRunId: runId,
-        sourceEventId: eventId,
-        targetEngine,
-        dispatchedAt,
-      });
-      const qPath = path.join(queueDir, `${wsId}.yaml`);
-      if (!dryRun) fs.writeFileSync(qPath, yaml);
+      const writeYaml = (id) => {
+        const yaml = renderChainQueueYaml({
+          wsId: id,
+          sourceEngine: engineId,
+          sourceRunId: runId,
+          sourceEventId: eventId,
+          targetEngine,
+          dispatchedAt,
+        });
+        if (!dryRun) {
+          fs.mkdirSync(queueDir, { recursive: true });
+          fs.writeFileSync(path.join(queueDir, `${id}.yaml`), yaml);
+        }
+      };
+      if (allocateNextWsId) {
+        wsId = allocateNextWsId(wsDir, { writer: writeYaml });
+      } else {
+        wsId = nextWsId(queueDir);
+        writeYaml(wsId);
+      }
     } catch (e) {
       skipped.push({ chained_engine: targetEngine, reason: `queue write failed: ${e.message}` });
       continue;
@@ -665,13 +693,33 @@ function emitForRun({
     }
   }
 
+  // WS-489: conversion bridge — promote this run's open CRIT/HIGH findings
+  // into review-pending queue items. Non-fatal: the completion event has
+  // already shipped. Fires exactly once per run (the already_emitted
+  // short-circuit above guards re-entry); a failure here is healed manually
+  // via the `promote-findings` subcommand, which is always dedup-safe.
+  let promotion = null;
+  if (promoteRunFindings) {
+    try {
+      promotion = promoteRunFindings(wsDir, {
+        runId,
+        engineId,
+        dryRun: noEmit,
+        emitEvent: noEmit ? null : makeEventEmitter(),
+      });
+      result.promotion = promotion;
+    } catch (e) {
+      result.promotion = { ok: false, error: e.message };
+    }
+  }
+
   // WS-314: write canonical summary.yaml. Best-effort; never blocks the
   // event flow. Manifest fields plus phase-3 synthesis bullets are distilled
   // into a machine-readable digest under runs/<run-id>/summary.yaml. The
   // index builder in cwos-reconcile-core picks these up for runs-index.yaml.
   if (writeRunSummary && !noEmit) {
     try {
-      const sr = writeRunSummary({ runId, runDir, wsDir });
+      const sr = writeRunSummary({ runId, runDir, wsDir, promotion });
       result.summary = {
         ok: !!(sr && sr.ok),
         path: sr && sr.summary_path,
@@ -876,15 +924,58 @@ function runSweepCli(args) {
   process.exit(0);
 }
 
+// WS-489: heal/seed CLI. A bridge failure after the completion event has
+// shipped is never auto-retried (the already_emitted short-circuit skips the
+// whole close pipeline), and runs without a phase-3 briefing can never close
+// through emitForRun at all — this subcommand promotes a run's findings
+// directly. Dedup-safe to re-run: promoted_to + dedup_key scans skip
+// anything already linked.
+function runPromoteFindingsCli(args) {
+  const runId = readFlag(args, 'run-id');
+  const eventsDirOverride = readFlag(args, 'events-dir');
+  const workstreamDirOverride = readFlag(args, 'workstream-dir');
+  const dryRun = hasFlag(args, 'dry-run');
+  let engineId = readFlag(args, 'engine');
+
+  if (!runId || !/^run-[A-Za-z0-9_-]+$/.test(runId)) {
+    process.stderr.write('cwos-engine-complete promote-findings: --run-id <run-NNN> is required\n');
+    process.exit(2);
+  }
+  if (!promoteRunFindings) {
+    process.stderr.write('cwos-engine-complete promote-findings: lib/cwos-finding-promote unavailable\n');
+    process.exit(1);
+  }
+
+  const wsDir = workstreamDirOverride || findWorkstreamDir(process.cwd());
+  const eventsDir = eventsDirOverride || path.join(wsDir, 'events');
+
+  if (!engineId) {
+    const intent = findIntentForRun({ runId, eventsDir });
+    engineId = (intent && intent.payload && intent.payload.engine) || 'unknown';
+  }
+
+  const report = promoteRunFindings(wsDir, {
+    runId,
+    engineId,
+    dryRun,
+    emitEvent: dryRun ? null : makeEventEmitter(),
+  });
+  process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+  process.exit(report.ok ? 0 : 1);
+}
+
 function main() {
   const args = process.argv.slice(2);
   if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
     process.stdout.write('usage: cwos-engine-complete --run-id <run-NNN> [--engine <id>] [--target <id>] [--program <id>] [--no-emit] [--clock <iso>] [--events-dir <p>] [--workstream-dir <p>]\n');
     process.stdout.write('       cwos-engine-complete sweep [--no-emit] [--clock <iso>] [--events-dir <p>] [--workstream-dir <p>]\n');
     process.stdout.write('         (WS-466) backfill engine_run_completed for every completed run missing one\n');
+    process.stdout.write('       cwos-engine-complete promote-findings --run-id <run-NNN> [--engine <id>] [--dry-run] [--events-dir <p>] [--workstream-dir <p>]\n');
+    process.stdout.write('         (WS-489) promote a run\'s open CRIT/HIGH findings to review-pending queue items (heal/seed path)\n');
     process.exit(args.length === 0 ? 1 : 0);
   }
   if (args[0] === 'sweep') return runSweepCli(args.slice(1));
+  if (args[0] === 'promote-findings') return runPromoteFindingsCli(args.slice(1));
   return runEmit(args);
 }
 
@@ -900,4 +991,6 @@ module.exports = {
   nextWsId, renderChainQueueYaml, CHAIN_CYCLE_WINDOW_MS,
   // WS-466 exports — shared per-run emit + deterministic sweep
   emitForRun, findCompletableRuns, runSweep,
+  // WS-489 exports — conversion bridge heal CLI
+  runPromoteFindingsCli,
 };

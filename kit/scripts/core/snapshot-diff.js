@@ -71,7 +71,10 @@ function walkFiles(root, relBase, out) {
  * { path → sha256 } keyed by the posix-relative path from repoRoot.
  */
 function snapshotState(opts = {}) {
-  const repoRoot = opts.repoRoot || path.resolve(__dirname, '..', '..', '..');
+  // WS-549: callers normally pass repoRoot explicitly; the fallback used to be
+  // __dirname arithmetic, which snapshots the kit's own location rather than
+  // the repo under inspection whenever the two differ.
+  const repoRoot = opts.repoRoot || require('../lib/kit-paths').requireRepoRoot();
   const globs = opts.paths || DEFAULT_SNAPSHOT_GLOBS;
   const map = {};
   for (const g of globs) {

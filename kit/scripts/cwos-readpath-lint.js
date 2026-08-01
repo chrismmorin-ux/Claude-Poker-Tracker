@@ -26,7 +26,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '..', '..');
+// WS-549: lints engines/ — content the kit ships, not repo state.
+const ROOT = require('./lib/kit-paths').resolveDistRoot();
 
 // Mechanical-work triggers. Conservative: each strongly implies parse-and-compare
 // that a script does deterministically. Tuned to avoid firing on judgment prose.

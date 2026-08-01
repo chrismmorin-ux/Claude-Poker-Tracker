@@ -41,6 +41,34 @@ class SafeWriteError extends Error {
  * Handles: scalars, quoted strings, block sequences (- item), inline arrays ([a, b]),
  * block scalars (| and >), nested mappings (up to 2 levels), and comments.
  */
+/**
+ * Split a mapping line into its key and the colon that ends it.
+ *
+ * WS-548: the key used to be `trimmed.substring(0, trimmed.indexOf(':'))`, which
+ * kept the surrounding quotes on a QUOTED key. Every key in every
+ * kit/hashes-<version>.yaml is quoted (they are file paths), so
+ * `baseline.files['kit/scripts/foo.js']` resolved against a mapping whose keys
+ * were all `'"kit/scripts/foo.js"'` and returned undefined — for all 370 of
+ * them. detectLocalMods() skips on a missing baseline entry, so /kit-upgrade
+ * reported "✓ No local kit modifications" with full confidence for every repo,
+ * every time. Same failure direction as WS-544: the answer that loses your edits.
+ *
+ * Finding the colon AFTER the closing quote also fixes quoted keys that contain
+ * a colon, which the naive indexOf split at the wrong character.
+ */
+function splitKey(trimmed) {
+  const q = trimmed[0];
+  if (q === '"' || q === "'") {
+    const close = trimmed.indexOf(q, 1);
+    if (close !== -1) {
+      const colonIdx = trimmed.indexOf(':', close + 1);
+      if (colonIdx !== -1) return { colonIdx, key: trimmed.slice(1, close) };
+    }
+  }
+  const colonIdx = trimmed.indexOf(':');
+  return { colonIdx, key: colonIdx === -1 ? '' : trimmed.substring(0, colonIdx).trim() };
+}
+
 function parseYAML(text, warnings) {
   // Accept an optional warnings array. If omitted, warnings are silently
   // dropped (preserves prior behavior for ad-hoc callers like attribution-
@@ -87,10 +115,9 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
       continue;
     }
 
-    const colonIdx = trimmed.indexOf(':');
+    const { colonIdx, key } = splitKey(trimmed);
     if (colonIdx === -1) { i++; continue; } // not a key-value line
 
-    const key = trimmed.substring(0, colonIdx).trim();
     const afterColon = stripInlineComment(trimmed.substring(colonIdx + 1).trim());
 
     // WS-295: detect duplicate keys within the same mapping. Last-wins

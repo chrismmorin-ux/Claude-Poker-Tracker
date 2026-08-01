@@ -50,8 +50,9 @@ const {
   withFileLock,
 } = require('./lib/cwos-utils');
 const { loadEventDeps } = require('./lib/cwos-utils');
-// WS-306: session identity + item claims. The fields existed on every queue item since
-// adoption and nothing ever wrote them; see lib/cwos-claims.js for the incident.
+// WS-533: session identity + item claims. `claimed_by`/`claimed_at` have existed on
+// every queue item since adoption and nothing ever wrote them — /next's own docs said
+// approve "claims items"; it did not. See lib/cwos-claims.js for the incident.
 const {
   resolveSessionId,
   touchSession,
@@ -68,7 +69,8 @@ try { ({ computeHealthScore } = require('./core/health-scoring')); }
 catch { /* health-scoring unavailable */ }
 
 let validateStateDrift = null;
-try { ({ validateStateDrift } = require('./cwos-reconcile')); }
+let stateCacheMissing = null;
+try { ({ validateStateDrift, stateCacheMissing } = require('./cwos-reconcile')); }
 catch { /* reconcile unavailable */ }
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
@@ -199,27 +201,17 @@ function readContextOverrideClass() {
 function loadConfig() {
   // Standard defaults if `.cwos-config.yaml` is absent. Per next.md Step 1b.
   const defaults = { ceremony: 'standard', sprints: { max_items: 5, max_effort_sessions: 2 } };
-  // The naive YAML reader keeps inline comments on scalar values
-  // (e.g. `max_items: 5  # ...` parses as the STRING "5  # ..."). Coerce numeric
-  // caps to integers so the cap comparisons in compose() don't silently NaN out
-  // and disable the cap entirely. Falls back to the default when no leading int.
-  const toInt = (v, dflt) => {
-    if (typeof v === 'number' && Number.isFinite(v)) return v;
-    const m = typeof v === 'string' ? v.match(/-?\d+/) : null;
-    return m ? parseInt(m[0], 10) : dflt;
-  };
   try {
     const p = path.join(repoRoot(), '.cwos-config.yaml');
     if (!fs.existsSync(p)) return defaults;
     const r = readYAMLFile(p);
     if (!r.ok || !r.data) return defaults;
     const c = r.data;
-    const cs = c.sprints || {};
     return {
       ceremony: c.ceremony || defaults.ceremony,
       sprints: {
-        max_items: toInt(cs.max_items, defaults.sprints.max_items),
-        max_effort_sessions: toInt(cs.max_effort_sessions, defaults.sprints.max_effort_sessions),
+        max_items: (c.sprints && c.sprints.max_items) || defaults.sprints.max_items,
+        max_effort_sessions: (c.sprints && c.sprints.max_effort_sessions) || defaults.sprints.max_effort_sessions,
       },
     };
   } catch { return defaults; }
@@ -334,6 +326,24 @@ function runGate(args) {
     }
   }
 
+  // ADR-058 self-heal: state/*.json is an untracked per-node cache. On a
+  // fresh clone (or headless `claude -p` / /fleet-run path where the
+  // SessionStart --refresh-state hook never fired), the cache is absent —
+  // rebuild it via a full reconcile before gating so the candidate pool
+  // isn't silently empty. Non-fatal: gate proceeds either way (candidates
+  // fall back to queue-index.yaml when state lags).
+  let stateRefreshed = false;
+  try {
+    const wsDirForHeal = findWorkstreamDir(process.cwd());
+    if (stateCacheMissing && stateCacheMissing(wsDirForHeal)) {
+      const heal = spawnSync(process.execPath, [path.join(__dirname, 'cwos-reconcile.js'), '--quiet'], {
+        stdio: 'ignore', timeout: 60000,
+      });
+      stateRefreshed = heal.status === 0;
+      process.stderr.write(`gate: state cache was missing — reconcile rebuild ${stateRefreshed ? 'succeeded' : 'failed (continuing on index fallbacks)'} (ADR-058)\n`);
+    }
+  } catch { /* non-fatal (AS-23) */ }
+
   const store = loadStore();
   const result = {
     active_sprint: null,
@@ -346,29 +356,36 @@ function runGate(args) {
     token_budget: { available: false, exit: null, note: null },
     session: { id: null, claim_conflicts: [] },
     blocked: false,
+    state_refreshed: stateRefreshed,
   };
 
-  // Step 0b: session identity + claim conflicts (WS-306).
+  // Step 0b: session identity + claim conflicts (WS-533).
   //
-  // Establish who we are BEFORE anything else reads the queue, so every later step in
-  // this gate — and every claim written by a subsequent approve — is attributable. Two
-  // concurrent sessions in this repo on 2026-07-29 both edited engine files and the
-  // shared event log with nothing to detect it; `claimed_by` existed on every item and
-  // was never written by anything.
+  // Runs BEFORE the resumable-sprint check below, which exits early — if another
+  // session is already working the sprint we are about to resume, that is precisely
+  // when the founder needs to know, so the check must not sit behind that return.
   //
-  // A conflict is only a conflict when the other session is still ALIVE. A crashed
-  // session must not be able to fence off the queue forever, so a claim whose owner has
-  // stopped heartbeating is reported as reclaimable rather than blocking.
-  const wsDirForClaims = findWorkstreamDir(process.cwd());
+  // Identity comes from CLAUDE_CODE_SESSION_ID where available, NOT from
+  // `.current-session`: the pointer holds one id, so with two live sessions it names
+  // whichever registered last and every claim we wrote would be attributed to the
+  // other session. See resolveSessionId.
+  //
+  // A conflict counts only when the other session is still ALIVE. A crashed session
+  // must never fence off the queue permanently — on a machine that loses power
+  // routinely that would be a weekly occurrence — so a claim whose owner stopped
+  // heartbeating is silently reclaimable rather than blocking.
   try {
+    const wsDirForClaims = findWorkstreamDir(process.cwd());
     const mySession = resolveSessionId(wsDirForClaims);
     result.session.id = mySession;
     touchSession(wsDirForClaims, mySession);
-    // Scans the queue DIRECTORY, not state/queue.json — see listQueueIds for why.
+    // Scans the queue DIRECTORY, not state/queue.json — that cache lags item
+    // creation, and a safety check that degrades to "no conflicts" on stale input is
+    // worse than no check.
     result.session.claim_conflicts = findClaimConflicts(wsDirForClaims, mySession, null);
   } catch (e) {
-    // Never let claim bookkeeping take the gate down — the worst case is that we
-    // degrade to the pre-WS-306 behaviour, which is what shipped for months.
+    // Claim bookkeeping must never take the gate down: worst case we degrade to the
+    // pre-WS-533 behaviour, which is what shipped for months.
     result.session.error = e.message;
   }
 
@@ -576,10 +593,10 @@ function runGate(args) {
     result.blocked = true;
   }
 
-  // A live foreign claim blocks composition. This is the one place the founder gets told
-  // "another session is already on this" before two agents start editing the same files,
-  // so it is a hard stop rather than an advisory line — the failure it prevents is silent
-  // and only visible after the clobber.
+  // A LIVE foreign claim blocks composition (WS-533). This is the one place the
+  // founder is told "another session is already on this" before two agents start
+  // editing the same files, so it is a hard stop rather than an advisory line: the
+  // failure it prevents is silent and only becomes visible after the clobber.
   if (result.session.claim_conflicts.length > 0) {
     result.blocked = true;
     for (const c of result.session.claim_conflicts) {
@@ -1336,18 +1353,20 @@ function runApprove(args) {
 
   // Sprint-index.yaml is regenerated by the T6 reducer next time it fires.
   // We DO NOT hand-patch state/queue.json here — the event's reducer dispatch (via
-  // state-store) re-reads queue/WS-*.yaml. The founder-edited WS files are the editable
-  // surface; approve writes the sprint YAML and the reducer materializes downstream.
+  // state-store) re-reads queue/WS-*.yaml. The founder-edited WS files are the
+  // editable surface; approve writes the sprint YAML and the reducer materializes
+  // downstream.
   //
-  // WS-306 lifts the deferral this comment used to record. Per-item claims were left "in
-  // the founder-flow (or in next.md prose) until WS-267/268 templated similar patterns",
-  // and were then never picked up — so `/next`'s documented promise that approve "claims
-  // items" went unimplemented long enough for two concurrent sessions to collide.
+  // WS-533 lifts the deferral this comment used to record. Per-item claims were left
+  // "in the founder-flow (or in next.md prose) until WS-267/268 templated similar
+  // patterns" and were then never picked up — so /next's documented promise that
+  // approve "claims items" went unimplemented long enough for two concurrent sessions
+  // to collide (2026-07-26, and again in claude-poker-tracker on 2026-07-29).
   //
-  // Replay-purity is preserved: `claimed_by` / `claimed_at` are LEASE state, not derived
-  // state. No reducer computes them, nothing downstream reads them to rebuild anything,
-  // and re-running the event log reproduces the same queue regardless of their value.
-  // The write takes the same per-item lock as the done-path (WS-311).
+  // Replay-purity is preserved: claimed_by/claimed_at are LEASE state, not derived
+  // state. No reducer computes them, nothing downstream reads them to rebuild
+  // anything, and re-running the event log reproduces the same queue regardless of
+  // their value. The write takes the same per-item lock as the done-path.
   let claimedIds = [];
   try {
     const wsDir = findWorkstreamDir(process.cwd());
@@ -1711,9 +1730,9 @@ function runDone(args) {
     } catch (e) { /* non-fatal */ }
   }
 
-  // WS-306: a closed item releases its lease. Without this the queue accretes claims that
-  // outlive the session that took them, and the first stale hold teaches everyone to
-  // ignore the conflict warning — which is worse than never having had one.
+  // WS-533: a closed item releases its lease. Without this the queue accretes claims
+  // that outlive the session that took them, and the first stale hold teaches everyone
+  // to ignore the conflict warning — which is worse than never having had one.
   try {
     releaseItems(findWorkstreamDir(process.cwd()), result.items_closed.map((i) => i.ws_id));
   } catch (e) {

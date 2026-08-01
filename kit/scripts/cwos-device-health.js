@@ -32,20 +32,17 @@ require('./lib/preflight');
 
 const fs = require('fs');
 const path = require('path');
-const { findRepoRoot } = require('./lib/cwos-utils');
 const { validateContract, validateResult } = require('./device-health/lib/detector-base');
+const { requireRepoRoot } = require('./lib/kit-paths');
 
 // ─── Repo Root Discovery ────────────────────────────────────────────────────
 
+// WS-549: this already had the right shape — cwd-first, with __dirname only as
+// a fallback. Removing the fallback is the whole change; lib/kit-paths.js now
+// owns the markers, so `kit/` is no longer among them (FIND-278: `kit/` is
+// absent from L4 adoptions and requiring it broke the engine in all of them).
 function resolveRepoRoot() {
-  const dir = findRepoRoot(process.cwd(), { markers: ['CLAUDE.md', 'kit'], requireAll: true, maxDepth: 8 });
-  if (fs.existsSync(path.join(dir, 'CLAUDE.md')) && fs.existsSync(path.join(dir, 'kit'))) {
-    return dir;
-  }
-  // Fall back to script-relative discovery (script is at <repo>/kit/scripts/)
-  const scriptRoot = path.resolve(__dirname, '..', '..');
-  if (fs.existsSync(path.join(scriptRoot, 'CLAUDE.md'))) return scriptRoot;
-  throw new Error('Could not find repo root (CLAUDE.md + kit/ not found)');
+  return requireRepoRoot();
 }
 
 // ─── Detector Loading ───────────────────────────────────────────────────────
@@ -253,7 +250,11 @@ async function main() {
   process.exit(args.strict ? summary.exit_code : 0);
 }
 
-main().catch(err => {
-  process.stderr.write(`cwos-device-health: fatal error: ${err.message}\n${err.stack || ''}\n`);
-  process.exit(3);
-});
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check does not run it.
+if (require.main === module) {
+  main().catch(err => {
+    process.stderr.write(`cwos-device-health: fatal error: ${err.message}\n${err.stack || ''}\n`);
+    process.exit(3);
+  });
+}

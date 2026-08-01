@@ -113,8 +113,35 @@ function resolveEnabledCapabilities(onboardingData) {
 }
 
 /**
+ * Close a capability set downward over CAPABILITY_ORDER: the returned set
+ * contains every capability up to and including the highest member of `caps`.
+ * {governance} → {core, workstream, engines, governance}.
+ *
+ * WS-544: the DAG documented at the top of this file has always been cumulative,
+ * but only capabilitiesForLevel() enforced it. entryAllowed() in
+ * cwos-adopt-install.js gates on plain set membership, so an un-closed set like
+ * {core, governance} installed cwos-verify.js without the workstream modules it
+ * requires — a repo that crashes at require() with no install-time error. Every
+ * producer of an install-time capability set closes it here.
+ */
+function closeDownward(caps) {
+  const set = caps instanceof Set ? caps : new Set(caps);
+  let highest = -1;
+  for (const cap of set) {
+    const idx = CAPABILITY_ORDER.indexOf(cap);
+    if (idx > highest) highest = idx;
+  }
+  if (highest < 0) return new Set();
+  return new Set(CAPABILITY_ORDER.slice(0, highest + 1));
+}
+
+/**
  * Parse a comma-separated `--capabilities` CLI argument into a validated Set.
  * Throws on unknown names. Empty string → empty Set.
+ *
+ * The result is closed downward (see closeDownward): asking for `governance`
+ * gets you core + workstream + engines too, because governance scripts require
+ * modules that ship at those tiers.
  */
 function parseCapabilitiesArg(arg) {
   if (!arg || !arg.trim()) return new Set();
@@ -129,7 +156,7 @@ function parseCapabilitiesArg(arg) {
     }
     out.add(part);
   }
-  return out;
+  return closeDownward(out);
 }
 
 module.exports = {
@@ -140,4 +167,5 @@ module.exports = {
   levelForCapabilities,
   resolveEnabledCapabilities,
   parseCapabilitiesArg,
+  closeDownward,
 };

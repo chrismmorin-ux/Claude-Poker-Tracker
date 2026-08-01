@@ -22,6 +22,7 @@ const {
   gatherFindings, gatherActiveSessions, gatherUsage,
 } = require('./lib/cwos-orchestrate');
 const { findWorkstreamDir, globFiles, readYAMLFile } = require('./lib/cwos-utils');
+const { resolveRepoRoot } = require('./lib/kit-paths');
 const { spawnSync } = require('child_process');
 
 // WS-195: typed-API read path for recent command history (ADR-020 step 2).
@@ -29,6 +30,12 @@ const { spawnSync } = require('child_process');
 // that don't have state-store installed.
 let _stateStore = null;
 try { _stateStore = require('./core/state-store'); } catch {}
+
+// WS-544: this file is a script, not a module — everything below runs at module
+// scope, gathers state, spawns cwos-inventory, and can exit via bundleError().
+// Requiring it (as a dependency smoke check must) has to be a no-op. CommonJS
+// permits a top-level return, and nothing here is exported.
+if (require.main !== module) return;
 
 const startMs = Date.now();
 const errors = [];
@@ -50,8 +57,13 @@ function gatherInventory(errors) {
     const scriptPath = path.join(__dirname, 'cwos-inventory.js');
     if (!fs.existsSync(scriptPath)) return { available: false };
 
+    // WS-549: cwos-inventory inspects the REPO, so it must run with the repo as
+    // its cwd. This used to be script-relative directory arithmetic — the kit's
+    // own location, which is the repo only in HomeBase. Everywhere else the
+    // child was silently inventorying the wrong directory. Falling back to this
+    // process's cwd is safe: the child resolves the repo the same way we do.
     const result = spawnSync('node', [scriptPath, '--verify'], {
-      encoding: 'utf8', timeout: 5000, cwd: path.resolve(__dirname, '..', '..'),
+      encoding: 'utf8', timeout: 5000, cwd: resolveRepoRoot() || process.cwd(),
     });
 
     // Parse the YAML output for mismatches

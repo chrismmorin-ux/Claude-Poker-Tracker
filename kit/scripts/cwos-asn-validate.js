@@ -773,7 +773,11 @@ async function main() {
   emit(result.findings, exitCode, result.artifactsChecked);
 }
 
-main().catch(err => {
-  process.stderr.write(`Fatal: ${err.message}\n${err.stack}\n`);
-  process.exit(1);
-});
+// WS-544: guard the entry point so requiring this file for a dependency smoke
+// check does not run it.
+if (require.main === module) {
+  main().catch(err => {
+    process.stderr.write(`Fatal: ${err.message}\n${err.stack}\n`);
+    process.exit(1);
+  });
+}

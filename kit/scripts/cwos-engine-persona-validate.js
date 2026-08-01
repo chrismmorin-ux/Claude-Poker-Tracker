@@ -27,17 +27,25 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '..', '..');
-const AGENTS_DIR = path.join(ROOT, '.claude', 'agents');
-const PERSONAS_CORE = path.join(ROOT, 'personas', 'core');
+const { resolveDistRoot, resolveRepoRoot } = require('./lib/kit-paths');
+
+// WS-549: this was a single ROOT reaching two different places. `.claude/agents`
+// is the REPO's own state — the agents that repo actually installed. engines/
+// and personas/ are content the kit SHIPS. They are the same directory only in
+// HomeBase, which is why validating an adopted repo compared its engines
+// against HomeBase's agent roster.
+const DIST_ROOT = resolveDistRoot();
+const REPO_ROOT = resolveRepoRoot() || DIST_ROOT;
+const AGENTS_DIR = path.join(REPO_ROOT, '.claude', 'agents');
+const PERSONAS_CORE = path.join(DIST_ROOT, 'personas', 'core');
 
 // Engines we scan. Add new categories here as the engine taxonomy grows
 // (e.g., engines/homebase-only/ per WS-315).
 const ENGINE_SCAN_SPECS = [
-  { dir: path.join(ROOT, 'engines', 'standard'), pattern: /\.md$/, recursive: false },
-  { dir: path.join(ROOT, 'engines', 'library'), pattern: /SKILL\.md$/, recursive: true },
-  { dir: path.join(ROOT, 'engines', 'homebase-only'), pattern: /\.md$/, recursive: true },
-  { dir: path.join(ROOT, 'engines', 'procedures'), pattern: /\.md$/, recursive: false },
+  { dir: path.join(DIST_ROOT, 'engines', 'standard'), pattern: /\.md$/, recursive: false },
+  { dir: path.join(DIST_ROOT, 'engines', 'library'), pattern: /SKILL\.md$/, recursive: true },
+  { dir: path.join(DIST_ROOT, 'engines', 'homebase-only'), pattern: /\.md$/, recursive: true },
+  { dir: path.join(DIST_ROOT, 'engines', 'procedures'), pattern: /\.md$/, recursive: false },
 ];
 
 // Reference-extraction patterns. Each captures a single persona name in group 1.
@@ -193,14 +201,14 @@ function validate() {
       errors.push({
         kind: 'unresolved_persona_reference',
         name: ref.name,
-        source: path.relative(ROOT, ref.source),
-        expected: path.relative(ROOT, a.path),
+        source: path.relative(DIST_ROOT, ref.source),
+        expected: path.relative(REPO_ROOT, a.path),
       });
     } else if (a.frontmatter_name !== a.basename) {
       errors.push({
         kind: 'agent_name_mismatch',
         name: ref.name,
-        path: path.relative(ROOT, a.path),
+        path: path.relative(REPO_ROOT, a.path),
         basename: a.basename,
         frontmatter_name: a.frontmatter_name,
       });
@@ -220,7 +228,7 @@ function validate() {
       } else if (fmName !== basename) {
         errors.push({
           kind: 'agent_name_mismatch',
-          path: path.relative(ROOT, fp),
+          path: path.relative(REPO_ROOT, fp),
           basename,
           frontmatter_name: fmName,
         });
