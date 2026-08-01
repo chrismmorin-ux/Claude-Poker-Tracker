@@ -175,14 +175,35 @@ status_note: |
 
   Suite 13,124 -> 13,143, 546 files, 0 failures.
 
-  PHASE 2 IS NOT COMPLETE. Still open, in value order (see doc section 5):
-    - postflop / hand-vs-range / multiway equity has NO external ground truth. Only
-      internal consistency (evaluate7 vs bestFiveFromSeven, enumeration vs MC) — both
-      sides are ours, so a shared evaluator bug passes every check. CHEAP AND HIGHEST
-      VALUE: a handful of postflop board-specific equities vs an independent calculator.
-    - mwEquityValidation lives in src/__dev__/ and is excluded from the suite.
-    - the EV arithmetic itself (computeCallDepth2EV, game tree) was OUT OF SCOPE. This
-      pass validated the INPUTS to EV, not EV. That is where SYNTHESIS gap 1 bites.
+  SECOND PASS, same day — postflop equity ground truth. Doc section 4a. The largest
+  gap from the first pass is CLOSED. Three kinds of evidence, none of them one of our
+  evaluators agreeing with itself:
+    - 6 ANALYTIC FIXTURES where the expected equity is arithmetic, not a program's
+      output (turn flush-draw+gutshot = 12/44; trips vs 2 outs = 42/44; drawing dead
+      = 0; identical two pair = 0.5; royal = 1; flop drawing dead over C(45,2)=990).
+      Each derivation is written into the test so it can be re-checked by hand.
+    - 2 ANALYTIC INVARIANTS true of any correct equity function regardless of ranking:
+      complementarity (hero + villain === 1) over 120 random spots, and suit
+      isomorphism (relabel all 4 suits -> identical equity) over 90 spots x 4 perms.
+      Filed as INV-EQUITY-ANALYTIC.
+    - an INDEPENDENT FROM-SCRATCH naive evaluator (enumerate C(7,5), plain counting,
+      no bit tricks, no shared imports) agreeing with the production evaluator on the
+      WINNER across 20,000 random board-sharing matchups, plus 8 constructed category
+      boundaries. This is what actually retires the shared-bug risk — the internal
+      evaluate7 vs bestFiveFromSeven check could never have caught a bug IN
+      bestFiveFromSeven.
+
+  EVERYTHING PASSED FIRST RUN. NO DEFECTS FOUND. That is confirmation, not discovery,
+  and should not be reported as if a bug were fixed.
+
+  PHASE 2 IS STILL NOT COMPLETE. Remaining, in value order (doc section 5):
+    - THE EV ARITHMETIC ITSELF (computeCallDepth2EV, game tree) is untouched. Both
+      passes validated the INPUTS to EV, never EV. This is now the HIGHEST-VALUE
+      remaining item because it sits directly under SYNTHESIS gap 1.
+    - hand-vs-RANGE and MULTIWAY equity still have no ground truth — the second pass
+      validated hand-vs-HAND only. The aggregation layer above it (combo weighting,
+      the multiway path) is unvalidated. mwEquityValidation lives in src/__dev__/ and
+      is excluded from the suite. Cheaper than the EV work.
     - rake is modelled, never verified against a real cardroom schedule.
 
   PHASES 0 AND 1 UNTOUCHED — both need the corpus on the founder's Windows machine
