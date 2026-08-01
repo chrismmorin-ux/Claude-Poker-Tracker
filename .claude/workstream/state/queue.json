@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "domain": "queue",
-  "updated_at": "2026-08-01T05:15:29.760Z",
-  "updated_by_event": "ev-1785561329760-e9c36a32f3ea",
+  "updated_at": "2026-08-01T05:46:26.794Z",
+  "updated_by_event": "ev-1785563186794-8a0af8de4774",
   "items": {
     "WS-008": {
       "id": "WS-008",
@@ -5272,6 +5272,7 @@
         "run_id": "session-2026-07-31-tvr-kickoff"
       },
       "blocked_by": [
+        "WS-324 — robustness protocol (the trust register the explorer would cite)",
         "SYNTHESIS gap 1 — recommendation quality unmeasured",
         "SYNTHESIS gap 2 — EV loop open",
         "SYNTHESIS gap 3 — zero live hands scored"
@@ -5283,7 +5284,37 @@
         "scripts/backtest/"
       ],
       "source_class": "untagged"
+    },
+    "WS-324": {
+      "id": "WS-324",
+      "title": "Robustness protocol — replicate the structural findings out-of-sample before anything is built on them",
+      "status": "backlog",
+      "priority_score": 27,
+      "category": "research-integrity",
+      "effort": "L",
+      "program": "domain-correctness",
+      "capability": "core",
+      "sprint_id": null,
+      "claimed_at": null,
+      "completed_at": null,
+      "source": {
+        "type": "founder-request",
+        "created_by": "ai",
+        "finding_id": "",
+        "run_id": "session-2026-07-31-tvr-kickoff"
+      },
+      "blocked_by": [],
+      "enables": [
+        "WS-323"
+      ],
+      "files_involved": [
+        "scripts/backtest/mine-pool-reference.py",
+        "scripts/backtest/mine-sizing-distributions.py",
+        "docs/research/mass-pool-data-2026-07-25.md",
+        "docs/research/SYNTHESIS-2026-07-26.md"
+      ],
+      "source_class": "untagged"
     }
   },
-  "last_event_log_head": "ev-1785561329760-e9c36a32f3ea"
+  "last_event_log_head": "ev-1785563186794-8a0af8de4774"
 }

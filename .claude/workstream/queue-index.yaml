@@ -2,7 +2,7 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 199
+total_items: 200
 by_status:
   decomposed: 1
   done: 79
@@ -1929,5 +1929,14 @@ items:
     category: domain-correctness
     effort: XL
     blocked_by: ["SYNTHESIS gap 1 — recommendation quality unmeasured", "SYNTHESIS gap 2 — EV loop open", "SYNTHESIS gap 3 — zero live hands scored"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-324"
+    title: "Robustness protocol — replicate the structural findings out-of-sample before anything is built on them"
+    status: backlog
+    priority_score: 27
+    category: research-integrity
+    effort: L
     program: domain-correctness
     capability: core

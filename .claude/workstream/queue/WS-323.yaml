@@ -99,6 +99,7 @@ files_involved:
   - "src/utils/exploitEngine/"
   - "scripts/backtest/"
 blocked_by:
+  - "WS-324 — robustness protocol (the trust register the explorer would cite)"
   - "SYNTHESIS gap 1 — recommendation quality unmeasured"
   - "SYNTHESIS gap 2 — EV loop open"
   - "SYNTHESIS gap 3 — zero live hands scored"

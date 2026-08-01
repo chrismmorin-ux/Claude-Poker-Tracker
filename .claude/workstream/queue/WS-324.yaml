@@ -1,0 +1,153 @@
+id: "WS-324"
+title: "Robustness protocol — replicate the structural findings out-of-sample before anything is built on them"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P0"
+category: "research-integrity"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER, 2026-08-01: "engine producing EV producing education, needs to be very
+  accurate and all corners looked into. I would be curious if we could look for other
+  smaller datasets to test on, test the robustness of our strategy."
+
+  Direct implementation of intention principle P2 (trusted before manipulated) and the
+  unblock condition on WS-323.
+
+  WHAT THE CORPUS ACTUALLY IS (from docs/research/mass-pool-data-2026-07-25.md and
+  mine-stationarity.py, not assumed):
+
+      uoftcprg/phh-dataset, HandHQ subset
+      21,606,087 real-money NLHE cash hands
+      SIX networks: PS / PTY / IPN / FTP / ABS / ONG
+      25NL - 1000NL
+      2009-07-01 .. 2009-07-23  <- TWENTY-THREE DAYS
+
+  THE SHAPE OF THE SAMPLE IS THE POINT. 21.6M hands is enormous DEPTH and very narrow
+  BREADTH in one specific dimension: time. Three weeks of one summer, seventeen years
+  ago. Every structural finding in the research corpus inherits that window.
+
+  But it is NOT narrow across operators — six networks is real cross-population
+  breadth that has not been exploited as a robustness axis. That reframes the founder's
+  question: the first replication test needs NO new dataset at all.
+
+  THREE ROBUSTNESS AXES, in cost order.
+
+  1. CROSS-NETWORK (free, available today). Six networks are six semi-independent
+     player pools with different rake, traffic, software and marketing. Re-run each
+     headline finding per network. A finding that holds on all six is cross-population
+     evidence WITHIN the era. One that holds on PS and fails on PTY was never
+     structural — it was an operator artifact, and we would currently have no way to
+     know. NOTE: the mining pipeline already parses the network prefix
+     (mine-pool-reference.py:70 splits 'PS-2009-07-01_..._200NLH_OBFU'), so the
+     dimension is already in hand and simply is not being used as a split.
+
+  2. CROSS-STAKE (free, available today). 25NL..1000NL spans a wide skill range. A
+     finding that inverts or vanishes across stakes is a skill-level effect wearing a
+     structural label. Also the closest available proxy for the founder's live 1/3
+     game, since stake correlates with pool softness.
+
+  3. CROSS-ERA (needs new data — the genuinely hard one, and the one the founder asked
+     about). This is what the 23-day window cannot give at any n.
+
+  ON NEW DATASETS — READ THE PRIOR DECISION FIRST. mass-pool-data-2026-07-25.md already
+  evaluated and REJECTED two options, with reasons that still hold:
+      - IRC poker DB: play-money era, poor fit
+      - commercial datamined HH vendors: ToS-gray, unnecessary
+  Do not re-propose these without new information. The rejection was correct.
+
+  THE CHEAP UNEXPLORED OPTION. The corpus root is `phh-dataset/data/handhq` — handhq
+  is ONE SUBSET of the uoftcprg/phh-dataset repo. The clone is a blobless sparse
+  checkout at C:\Users\chris\data\phh-dataset with THE GIT PACK RETAINED, and the doc
+  states any directory re-materializes with `git sparse-checkout add` and NO
+  RE-DOWNLOAD. So sibling subsets may already be on disk, unmaterialized, under the
+  same MIT/CC-BY licence that was already cleared. `git sparse-checkout list` and a
+  listing of `data/` is a two-minute check with potentially a whole second dataset
+  behind it. DO THIS BEFORE LOOKING ANYWHERE ELSE.
+
+  AND THE AXIS THAT NEEDS NO BEHAVIOURAL DATA AT ALL. "Engine producing EV" splits into
+  two questions that are constantly conflated:
+      MATH   — equity, pot odds, side pots, EV arithmetic. GROUND-TRUTHABLE. Validated
+               against an independent calculator and property tests, not against a
+               human dataset. No corpus required. Cheapest, most foundational, and
+               currently unmeasured.
+      BEHAVIOUR — what pools actually do. Needs the replication above.
+  The founder's "very accurate and all corners looked into" is mostly the FIRST one,
+  and it is not blocked on any dataset hunt.
+accept_criteria: |
+  PHASE 0 — TWO-MINUTE CHECK, DO FIRST
+    `git sparse-checkout list` in C:\Users\chris\data\phh-dataset and list `data/`.
+    Report what sibling subsets exist. If any are non-handhq human real-money play,
+    that is the cross-era dataset and Phase 3 becomes free.
+
+  PHASE 1 — INTERNAL REPLICATION (no new data)
+    Re-run the headline findings split BY NETWORK and BY STAKE. At minimum the ones
+    already load-bearing:
+      - river fold rates vs big sizings (the 71.5% / 76.0% figures)
+      - barrel funnel continuation (40.0% turn, 39.4% river)
+      - fold-vs-size curves per street
+      - called-big-river composition (76-83% two-pair+)
+      - the WS-318 sizing distributions per street x line, once run
+    REPORT PER CELL: k/n per network, the spread across networks, and an explicit
+    verdict — REPLICATES / VARIES BY OPERATOR / VARIES BY STAKE / TOO THIN.
+    A finding that varies by operator must be demoted from "structural" wherever it is
+    currently cited as such.
+
+  PHASE 2 — MATH VALIDATION (no behavioural data)
+    Independent ground-truth check of the equity/EV core: equity vs a second
+    implementation, pot and side-pot arithmetic under property tests (conservation of
+    chips, no negative pots, side-pot sum equals contributions), and the min-raise
+    ladder. This is the "all corners" the founder asked for and it is unblocked today.
+
+  PHASE 3 — CROSS-ERA, only if Phase 0 finds something
+    Same headline findings, run on the independent subset. Interpretation stated in
+    advance:
+      - REPLICATES ACROSS ERAS -> genuinely structural. Promote confidence; this is
+        the strongest evidence available that a finding survives the 17-year gap.
+      - FAILS -> the finding is era-bound. That is NOT a null result. It directly
+        answers SYNTHESIS gap 3 ("the whole study could be inapplicable to a live 1/2
+        game and we would have no way to detect it") and tells us which findings must
+        be re-derived from the founder's own live hands.
+
+  BINDING ON ALL PHASES
+    - Never a bare percentage. k/n and censoring direction on every cell (P4).
+    - State the verdict per finding, not an overall vibe. The output is a table of
+      findings x replication status, and it becomes the trust register the engine and
+      the education content cite.
+    - A finding that does not replicate is not deleted — it is RE-SCOPED to the
+      population it holds for. That is information, not failure.
+effort: "L"
+files_involved:
+  - "scripts/backtest/mine-pool-reference.py"
+  - "scripts/backtest/mine-sizing-distributions.py"
+  - "docs/research/mass-pool-data-2026-07-25.md"
+  - "docs/research/SYNTHESIS-2026-07-26.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-323"
+sprint_id: null
+decision_flags:
+  - "Phase 1 and Phase 2 are independent and can run in parallel. Phase 2 (math validation) is the higher priority of the two despite being less interesting — it is the foundation the founder named first, it needs no dataset, and it is currently unmeasured."
+  - "Cross-network replication may DEMOTE findings currently cited as structural. That is the point, and it should be expected rather than treated as a setback. Budget for the possibility that a headline number is an operator artifact."
+  - "This item gates WS-323 (strategy explorer). Do not let the explorer start before the trust register exists — that is the exact failure P2 was written to prevent."
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-07-31-tvr-kickoff"
+created_at: "2026-08-01T00:00:00Z"
+status_note: |
+  Filed 2026-08-01 from founder direction. Corpus facts quoted from
+  docs/research/mass-pool-data-2026-07-25.md (six networks, 25NL-1000NL) and
+  scripts/backtest/mine-stationarity.py:25-30 (the 23-day window).
+  Prior source-selection decision (IRC / vendors rejected) is in the same doc — read it
+  before proposing datasets.

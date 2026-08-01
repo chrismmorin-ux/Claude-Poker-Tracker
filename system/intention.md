@@ -91,6 +91,12 @@ _Most recent on top._
 - **Why:** [reason]
 -->
 
+### 2026-08-01 — Priority order ratified: engine → EV → education. Table View redesign slows.
+- **Trigger:** manual (founder)
+- **Before:** The Table View Redesign was the active thread, with Gate 4 Phases B/C queued to run next.
+- **After:** Accuracy work takes precedence. Founder: *"this is a good priority order and slows down my redesign priority significantly. engine producing EV producing education, needs to be very accurate and all corners looked into."* TVR is not cancelled — Phases B/C, the P0 defects and the migration stay filed and keep their evidence. They queue behind the trust work.
+- **Why:** Falls straight out of P2. The redesign's own sizing track is an instance: its node values are guesses until `WS-318` runs, and `WS-318`'s output is only trustworthy once `WS-324` says the corpus findings replicate. Building the surface first would mean shipping an interface whose numbers nobody can defend.
+
 ### 2026-08-01 — Standing upgrade policy; imagined outcome sharpened to four ordered capabilities
 - **Trigger:** manual (founder statement of direction)
 - **Before:** Principles were placeholders. Direction was "most accurate predictive decisions + study section"; upgrade-vs-cheap-path was decided ad hoc per item, and I had been defaulting to the cheaper branch and flagging the better one as an option.
