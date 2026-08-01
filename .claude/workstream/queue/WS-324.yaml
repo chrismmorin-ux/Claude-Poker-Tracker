@@ -146,6 +146,49 @@ source:
   run_id: "session-2026-07-31-tvr-kickoff"
 created_at: "2026-08-01T00:00:00Z"
 status_note: |
+  PHASE 2 FIRST PASS DONE 2026-08-01 — docs/research/math-validation-2026-08-01.md
+
+  CORRECTION TO THIS ITEM AS FILED. The description says the math is "currently
+  unmeasured". That is WRONG and the error was mine. Preflop hand-vs-hand equity IS
+  validated against published external values (8 fixtures, +/-0.001: AA vs KK .81946,
+  AKs vs QQ .46049, JJ vs AKs .54039), and side-pot conservation IS asserted on every
+  example test via an assertConserved helper. The real gaps were narrower and in
+  different places than this item predicted.
+
+  WHAT PHASE 2 ACTUALLY FOUND (two defects, NOT of equal weight):
+
+  1. REAL, on a live path. getMinRaise had ZERO tests despite feeding the sizing UI
+     (CommandStrip.jsx:504) and the action recorder (recordSeatAction.js:178). It
+     advanced the min-raise ladder off an INCOMPLETE all-in raise, offering an illegal
+     size: flop bet 10 + shove to 14 returned 18 (legal 24); preflop open 6 + shove to 9
+     returned 12 (legal 13). Root cause is clean — recordSeatAction ALREADY implements
+     the incomplete-raise rule and stamps reopensAction:false correctly; getMinRaise
+     simply had no concept of it. Fixed by tracking the last FULL increment.
+     Filed as INV-POT-INCOMPLETE-RAISE-LADDER. 21 tests added.
+
+  2. UNREACHABLE, robustness only. Randomized property testing found a silent
+     non-conservation branch in calculateSidePots (stranded 166 of 338 chips when every
+     large contributor folded). That state cannot occur in legal play — forcing the last
+     big contributor out requires a live player with chips behind, who would then be
+     eligible. Fixed anyway because the failure was SILENT. Do not report this as a
+     money bug.
+
+  Suite 13,124 -> 13,143, 546 files, 0 failures.
+
+  PHASE 2 IS NOT COMPLETE. Still open, in value order (see doc section 5):
+    - postflop / hand-vs-range / multiway equity has NO external ground truth. Only
+      internal consistency (evaluate7 vs bestFiveFromSeven, enumeration vs MC) — both
+      sides are ours, so a shared evaluator bug passes every check. CHEAP AND HIGHEST
+      VALUE: a handful of postflop board-specific equities vs an independent calculator.
+    - mwEquityValidation lives in src/__dev__/ and is excluded from the suite.
+    - the EV arithmetic itself (computeCallDepth2EV, game tree) was OUT OF SCOPE. This
+      pass validated the INPUTS to EV, not EV. That is where SYNTHESIS gap 1 bites.
+    - rake is modelled, never verified against a real cardroom schedule.
+
+  PHASES 0 AND 1 UNTOUCHED — both need the corpus on the founder's Windows machine
+  (C:\Users\chris\data\phh-dataset). Phase 0 remains the two-minute sparse-checkout
+  check and should still be done before any dataset hunt.
+
   Filed 2026-08-01 from founder direction. Corpus facts quoted from
   docs/research/mass-pool-data-2026-07-25.md (six networks, 25NL-1000NL) and
   scripts/backtest/mine-stationarity.py:25-30 (the 23-day window).
