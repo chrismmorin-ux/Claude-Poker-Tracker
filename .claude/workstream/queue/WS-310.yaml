@@ -2,7 +2,7 @@ id: "WS-310"
 title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
 legacy_id: ""
 type: design
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -159,3 +159,4 @@ status_note: |
 
   NOT A CHARTER YET. If the gate confirms and the follow-up design is large, this should
   become a project file in .claude/projects/ rather than growing further as a ticket.
+closed_by_event: "ev-1785566104910-3ebdad6e8966"

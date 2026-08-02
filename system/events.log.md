@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785529883587-7fbd5f772e92"
-generated_content_hash: "a851c54d230cdf2e19b0a531851bf8303f037e7ce0f4707e644e1dbcf71bd57d"
-generated_at: "2026-07-31T20:31:23.636Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1375
+generated_from_event: "ev-1785624709909-1d9eeaed0f49"
+generated_content_hash: "d7fd13eeb7940b4bc0d7331dd744434bd5689f3606dea74f2c1f6d68ccc4a047"
+generated_at: "2026-08-01T22:51:49.957Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl"]
+event_count: 1431
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 922
-- Events recorded: 1375
-- Source chunks: 20
+- Commands recorded: 959
+- Events recorded: 1431
+- Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
 
@@ -9690,3 +9690,392 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T20:31:23.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `cmd-sprintapprove-ms9mphenb5ca049fc130`
+
+- Start: 2026-08-01T00:24:11.619Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T00:24:11.619Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-165", +8 more |
+
+## Command `auto:26964:1785563609860`
+
+- Start: 2026-08-01T05:53:29.860Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:29.860Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:10140:1785563610525`
+
+- Start: 2026-08-01T05:53:30.525Z
+- Events: 1
+- Tracks: T12:program-management
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:30.525Z | T12:program-management | engines-registry-synced | workstream_dir="C:/Users/chris/repos/claude-p"..., engines_count=32, +1 more |
+
+## Command `auto:9812:1785563610883`
+
+- Start: 2026-08-01T05:53:30.882Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:30.882Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:9812:1785563611346`
+
+- Start: 2026-08-01T05:53:31.346Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:31.346Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:9812:1785563611379`
+
+- Start: 2026-08-01T05:53:31.379Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:31.379Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:9812:1785563611512`
+
+- Start: 2026-08-01T05:53:31.512Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T05:53:31.512Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:21264:1785564281504`
+
+- Start: 2026-08-01T06:04:41.504Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:04:41.504Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:10972:1785564282428`
+
+- Start: 2026-08-01T06:04:42.428Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:04:42.428Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:10972:1785564282998`
+
+- Start: 2026-08-01T06:04:42.998Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:04:42.998Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:10972:1785564283070`
+
+- Start: 2026-08-01T06:04:43.070Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:04:43.070Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:10972:1785564283301`
+
+- Start: 2026-08-01T06:04:43.301Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:04:43.301Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-ms9zyg5n6dea46b2ab7b`
+
+- Start: 2026-08-01T06:35:04.910Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T06:35:04.910Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-310", +3 more |
+| 2 | 2026-08-01T06:35:05.204Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-165", +4 more |
+| 3 | 2026-08-01T06:35:05.564Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 4 | 2026-08-01T06:35:06.040Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-08-01T06:35:06.077Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-08-01T06:35:06.206Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:31040:1785568224079`
+
+- Start: 2026-08-01T07:10:24.078Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:10:24.078Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:7624:1785568224861`
+
+- Start: 2026-08-01T07:10:24.861Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:10:24.861Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:7624:1785568225270`
+
+- Start: 2026-08-01T07:10:25.270Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:10:25.270Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:7624:1785568225303`
+
+- Start: 2026-08-01T07:10:25.303Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:10:25.303Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:7624:1785568225452`
+
+- Start: 2026-08-01T07:10:25.452Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:10:25.452Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:20724:1785568884219`
+
+- Start: 2026-08-01T07:21:24.219Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:21:24.219Z | T6:workstream | migration-indexes-rebuilt | phase="index-rebuild", path=".claude/workstream" |
+
+## Command `auto:20712:1785568885032`
+
+- Start: 2026-08-01T07:21:25.032Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:21:25.032Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:20712:1785568885432`
+
+- Start: 2026-08-01T07:21:25.432Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:21:25.432Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:20712:1785568885462`
+
+- Start: 2026-08-01T07:21:25.462Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:21:25.462Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:20712:1785568885608`
+
+- Start: 2026-08-01T07:21:25.608Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T07:21:25.608Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-msam2jbsfa8d4cdd34b8`
+
+- Start: 2026-08-01T16:54:07.196Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T16:54:07.196Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-166", +8 more |
+
+## Command `cmd-itemclosed-msanfc4te69c4292ba44`
+
+- Start: 2026-08-01T17:32:04.017Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T17:32:04.017Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-312", +3 more |
+| 2 | 2026-08-01T17:32:04.287Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-166", +4 more |
+| 3 | 2026-08-01T17:32:04.575Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 4 | 2026-08-01T17:32:05.128Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-08-01T17:32:05.179Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-08-01T17:32:05.351Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintapprove-msapd0k1ff01364146ac`
+
+- Start: 2026-08-01T18:26:14.932Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T18:26:14.932Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-167", +8 more |
+
+## Command `cmd-itemclosed-msaypbwuc59efc932858`
+
+- Start: 2026-08-01T22:47:46.067Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:47:46.067Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-292", +3 more |
+| 2 | 2026-08-01T22:47:46.292Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-167", +4 more |
+| 3 | 2026-08-01T22:47:46.592Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 4 | 2026-08-01T22:47:47.113Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 5 | 2026-08-01T22:47:47.171Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-08-01T22:47:47.379Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-sprintdone-msayphvn3bbacef69b65`
+
+- Start: 2026-08-01T22:47:53.799Z
+- Events: 5
+- Tracks: T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T6:workstream, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:47:53.799Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-167", +4 more |
+| 2 | 2026-08-01T22:47:54.138Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 3 | 2026-08-01T22:47:54.556Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 4 | 2026-08-01T22:47:54.602Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 5 | 2026-08-01T22:47:54.743Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:39996:1785624524333`
+
+- Start: 2026-08-01T22:48:44.333Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:48:44.333Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:39996:1785624524684`
+
+- Start: 2026-08-01T22:48:44.684Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:48:44.684Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:39996:1785624524732`
+
+- Start: 2026-08-01T22:48:44.732Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:48:44.732Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:39996:1785624524809`
+
+- Start: 2026-08-01T22:48:44.809Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:48:44.809Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:41308:1785624701154`
+
+- Start: 2026-08-01T22:51:41.154Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:51:41.154Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:41308:1785624701474`
+
+- Start: 2026-08-01T22:51:41.474Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:51:41.474Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:41308:1785624701513`
+
+- Start: 2026-08-01T22:51:41.513Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:51:41.513Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:41308:1785624701582`
+
+- Start: 2026-08-01T22:51:41.582Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:51:41.582Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-msayuk2998d657ca2cbf`
+
+- Start: 2026-08-01T22:51:49.909Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-01T22:51:49.909Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |

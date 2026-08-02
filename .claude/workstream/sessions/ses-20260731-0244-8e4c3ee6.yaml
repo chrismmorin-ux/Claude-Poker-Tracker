@@ -91,6 +91,68 @@ handoff_notes: |
   ships that way), then ticket items 1-6. Run the WS-273 harness re-score to close WS-303's
   last unmet criterion.
 
+continuation_notes: |
+  CONTINUATION (2026-08-01) — work after the formal session close. Nothing below is committed.
+
+  ** THE FINDING THAT OUTRANKS EVERYTHING ELSE HERE **
+  The HandHQ corpus is NOT a 9-handed corpus. Each hand carries a `seats` list; sampled:
+    FTP  HU 2,500 · 6-max ~3,446 · 9-max ~900+
+    PS   HU 9,914 · 6-max ~4,093 · 9-max ~300
+  PS is ~2/3 actual HEADS-UP TABLES — a different game, not a heads-up POT at a full table.
+  This app targets 9-handed play. Every measurement in POKER_THEORY §11.7 / §11.8 / §11.9 was
+  pooled across table sizes without stratifying, so those magnitudes describe a blend matching
+  no real game — INCLUDING the engine change they justified (ACTION_TAU_FRACTION.check = 1.0).
+  A caveat block is now at the head of §11.7 saying so. Directionally the findings may survive;
+  DO NOT quote a magnitude from those sections as a 9-handed number until a stratified re-run
+  exists. Table size is recoverable per hand — this is a filtering fix, not data loss.
+  FIRST TASK FOR THE NEXT SESSION: re-run the WS-303 sweeps stratified by table size.
+
+  NEW ARTIFACTS
+  - `.claude/context/POKER_AXIOMS.md` — axiom register. Provenance is a GATE: founder /
+    external-analyst(named) / measured-here / derived may be registered; `assistant-asserted`
+    may only be nominated, never registered. Founder ruling: "we haven't validated your advice
+    as sound yet, so self-generated axioms are a bad idea." Also carries the no-result protocol
+    (5 explanations to rule out before writing `refuted`) and the challenge log.
+  - `.claude/commands/axiom.md` + `.claude/agents/claim-formalizer.md` — /axiom draft|challenge|list.
+    The agent is READ-ONLY BY DESIGN and cannot touch the register; the command stages to
+    POKER_AXIOMS.draft.md and the founder promotes. Same posture as the voice pipeline.
+  - POKER_THEORY §7 now cross-links the register.
+
+  REGISTER STATE
+  - AX-001 (acting first is a structural disadvantage; founder-sourced) — `unverified`,
+    `challenged`. CH-001 withdrew its falsifier P4 (over-determined twice: pooled a denominator
+    where betting is illegal, and scored BET where the mechanism claims BLUFF, plus a c-bet
+    confound). P1 shown over-determined (fold-through p^k alone widens ranges toward the
+    button). P2 demoted to discriminator-only. Mechanism link L4 shown false — the check-raise
+    exists, so the axiom states a force with no equilibrium bound. Replacement falsifier P4' is
+    drafted but `assistant-asserted` and NEEDS FOUNDER RATIFICATION before scoring.
+  - AX-D01 (half-street AKQ, `derived`) — exact solution re-derived, not quoted:
+    bluff = s/(1+s), call = (1-s)/(1+s), bluff share = s/(1+2s), value:bluff = (1+s):s.
+    Independently reproduces POKER_THEORY §6.2 and §6.3 — a real cross-check on doctrine.
+    Position is worth ~0.028 pot at half-pot and EXACTLY ZERO at pot-size (OOP stops calling
+    the middle hand entirely). Yields 4 engine conformance tests needing NO corpus — E3 ("the
+    middle hand is never bet") is nearly free and a violation is a proof-level defect. NOT RUN.
+  - AX-D01 carries a founder correction: do NOT mistake AKQ for poker. The half-street game
+    strips OOP of TWO options — no check-raise AND no lead bet. Real first-to-act players choose
+    from {bet, check}, so a real check is SELECTED, not forced, and carries selection
+    information a forced check cannot. AKQ constrains structure inside its own game only.
+  - Candidate axioms split by admissibility. AX-004/005/007 are `measured-here` and eligible;
+    AX-002/003/006 are `assistant-asserted` and BLOCKED ON PROVENANCE — presence is not
+    endorsement.
+
+  NEXT ACTIONS, in order
+  1. Stratified re-run of the WS-303 sweeps by table size (invalidates or confirms §11.7-11.9).
+  2. Ratify or replace P4' for AX-001, pre-committing the refutation threshold IN WRITING first
+     — the axiom's scope note ("assumes opponents act on the information") is otherwise an
+     unfalsifiability leak that lets any failure be re-described as pool passivity.
+  3. Run AX-D01's E1-E4 engine conformance tests. E3 first.
+  4. Derive the FULL-STREET AKQ game (check-raise permitted) — supplies AX-001's missing
+     equilibrium bound. Do not quote it from memory.
+  5. Founder voice memo (hand walkthrough) — expected; route via ai-personal voice intake, lands
+     in PROPOSED.md, then /axiom draft.
+  6. Still open from the main session: trap-vs-cap founder ratification, WS-273 harness re-score,
+     and the six untickered findings above.
+
 context_notes: |
   CONCURRENCY — a second session (ses-20260731-0504-464211b4, mode auto) ran in this repo
   simultaneously for most of this session. It authored heroEvRunner/mine-manifold/run-hero-ev,

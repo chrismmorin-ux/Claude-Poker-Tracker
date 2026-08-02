@@ -755,6 +755,13 @@ Board cards remove combos. If A♠ is on the board, AA goes from 6 to 3 combos, 
 
 ## 7. First-Principles Decision Modeling
 
+> **The forces this section defers to are enumerated in [`POKER_AXIOMS.md`](./POKER_AXIOMS.md).**
+> §7 says what NOT to use as a decision input (labels) and points at the causes underneath —
+> but it never lists them. The axiom register does, and requires every entry to make a
+> prediction scoreable against the corpus, with a named falsifier. Read it before adding a new
+> "compute it from game state" rule, so the rule is grounded in a stated force rather than an
+> unstated intuition.
+
 ### 7.1 Every Decision Derives from Game State, Not Labels
 
 A villain's fold/call/raise decision is the OUTPUT of a decision process with these inputs:
@@ -1349,6 +1356,53 @@ sweep showed the equity ordering earns only **~0.05 nats over not narrowing at a
 every setting sharper than ~0.30 loses to switching narrowing off. Same shape as §11.5: an
 elaborate mechanism, never measured, barely beating the trivial alternative. Treat the
 narrowing's *value* as small and provisional; treat "never zero" as settled.
+
+> ## ✅ RESOLVED — §11.7 STRATIFIED BY TABLE SIZE, AND IT HOLDS (2026-08-01)
+>
+> §11.7–§11.9 were originally measured **pooled across table sizes**. That concern is now
+> settled by measurement, and two claims made along the way were wrong. Both are recorded here
+> because the corrections are more instructive than the confirmation.
+>
+> **FALSE ALARM #1 — "the corpus is two-thirds heads-up."** It is not, and never was.
+> The raw `.phhs` files do contain many true 2-seat hands (PS especially), but
+> `phhAdapter.toAppHand` skips `n === 2` outright (`SKIP_REASONS.HEADS_UP`,
+> `phhAdapter.mjs:268`), present since the original harness commit (WS-273, `6f8b0b8`). No
+> heads-up hand has ever reached a measurement. The error was reading the corpus **directory**
+> instead of the **ingestion path** — two different questions.
+>
+> **The real confound was narrower: 6-max and 9-max pooled together.** Now measured separately.
+>
+> ### The stratified result — 4 cells, 2 sites × 2 strata
+>
+> **Cost of narrowing a CHECK** (`tau 0.3` vs narrowing off):
+>
+> | | FTP | PS |
+> |---|---|---|
+> | 6-max | −0.181 (n=2176) | −0.161 (n=5195) |
+> | 9-max | −0.169 (n=2101) | −0.159 (n=3481) |
+>
+> **§11.7's central claim survives stratification in every cell.** Narrowing a check subtracts
+> information regardless of table size, at a strikingly consistent −0.16 to −0.18.
+>
+> **The shipped `ACTION_TAU_FRACTION.check = 1.0` is validated in all four cells**, recovering
+> 68% / 61% / 75% / 72% of the available gain. `raise` and `call` optimise at 0.3 in all four,
+> also as shipped. **No engine change is warranted by stratification.**
+>
+> **FALSE ALARM #2 — "a bet is more informative at 9-max, so 0.3 is optimal there."** Claimed
+> from FTP alone; **PS contradicts it.** FTP 9-max prefers tau 0.3 by 0.011; PS 9-max prefers
+> 0.6 by 0.004. Both margins are noise. Honest reading: **bet's optimum is flat across
+> [0.3, 0.6] and the two sites pick opposite sides.** The "more informative at 9-max" direction
+> does replicate (+0.227 FTP, +0.074 PS) but the magnitude does not — direction only.
+>
+> ### The methodological lesson, which cost three retractions in one session
+>
+> A single-site result is a **hypothesis**. Two sites agreeing is a **finding**. Three separate
+> claims this session were asserted from one site and then contradicted by the second: the trap
+> amplitude, the check-back medium-weighting, and the bet/table-size effect above. Do not report
+> a one-site number as established.
+>
+> §11.8 and §11.9 have **not** been re-run stratified. Their magnitudes remain pooled-population
+> numbers; treat accordingly until someone does for them what this block did for §11.7.
 
 ### 11.7 How Much a Range Narrows Should Equal How Much the Action Says (WS-303)
 
