@@ -143,10 +143,16 @@ than degrading visibly. Fixed as part of this surface's implementation.
 | Persistence — additive `seatStacks` + `handNumber` on the hand record | ✅ |
 | Snapshot binding (`replaySnapshot`) | ✅ |
 | `deriveEffStackAt` deleted onto `effectiveStackAt` (STK-1) | ✅ |
-| Snapshot binding (`handReviewSnapshot`) | ⏳ street-based surface; same pattern |
-| Correction affordance (between-hands, C-5/C-6) | ⏳ Pending founder review of C-1..C-6 |
+| Snapshot binding (`handReviewSnapshot`) | ✅ |
+| `useSeatStackLedger` — seeding + C-3 self-healing reconciliation | ✅ |
+| Correction affordance (between-hands, C-5/C-6) | ✅ 9 tests |
 
-**Until the correction affordance ships**, the ledger is populated by seeding from the session
-buy-in and by C-3 contradiction correction. That means most values start inadmissible
-(`buyin-default`) and become admissible only once a seat's action proves a real number. This is the
-intended ordering — the ledger earns admissibility from evidence rather than starting out trusted.
+Values still START inadmissible (`buyin-default`) and become admissible only once a seat's action
+proves a real number or the founder enters one. That ordering is intended — the ledger earns
+admissibility from evidence rather than beginning trusted.
+
+**[STK-2] Empty-input guard, found in test.** The correction field committed `Number('') === 0` on a
+stray confirm. Zero is both a legitimate stack and the strongest provenance, so a blank confirm wrote
+"this seat is stacked off" as an *observation* — which would then confidently disprove claims. Empty
+input is now rejected before any coercion. Same `Number(null/'')` trap as the `sprFrom`/`toBigBlinds`
+bug caught earlier; it is worth assuming this coercion is wrong wherever absence is meaningful.

@@ -14,12 +14,22 @@ import { calculatePot } from '../utils/potCalculator';
 // Create context
 const GameContext = createContext(null);
 
+const EMPTY_LEDGER = Object.freeze({});
+
 /**
  * Game context provider component
  * Wraps children with game state and derived utilities
  */
 export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
   const { currentStreet, dealerButtonSeat, mySeat, absentSeats, actionSequence, potOverride, reviewTag } = gameState;
+  // Seat stack ledger (surface `seat-stack-ledger`). Exposed so the correction
+  // affordance and any stack-depth consumer read one source rather than each
+  // reaching into gameState.
+  // EMPTY_LEDGER is module-level so the fallback keeps a stable identity —
+  // an inline `|| {}` would mint a new object every render and defeat the
+  // memoization below for any state hydrated before this field existed.
+  const seatStacks = gameState.seatStacks || EMPTY_LEDGER;
+  const handNumber = Number(gameState.handNumber) || 0;
 
   // Derived: blind seat positions
   const smallBlindSeat = useMemo(() => {
@@ -78,6 +88,8 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     absentSeats,
     actionSequence,
     reviewTag,
+    seatStacks,
+    handNumber,
     // Dispatch
     dispatchGame,
     // Derived utilities
@@ -96,6 +108,8 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     absentSeats,
     actionSequence,
     reviewTag,
+    seatStacks,
+    handNumber,
     dispatchGame,
     smallBlindSeat,
     bigBlindSeat,

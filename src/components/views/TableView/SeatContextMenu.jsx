@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 /**
  * SeatContextMenu - Right-click menu for seat assignment and configuration.
@@ -35,6 +35,90 @@ const MakeDealerButton = ({ onClick }) => (
     Make Dealer
   </button>
 );
+
+/**
+ * Stack correction (surface `seat-stack-ledger`, Gate 2 C-5 / C-6).
+ *
+ * BETWEEN HANDS ONLY. Gated by the caller via the optional `onSetStack` prop,
+ * exactly as StraddleButton is — undefined ⇒ the row does not exist. Mid-hand
+ * numeric entry for a nine-seat table cannot survive `mid-hand-chris` (≈1.5s
+ * reading budget, often one-handed, reflow named as a frustration), and a
+ * "present but optional" compromise was rejected at Gate 2 because a row that
+ * exists still occupies space and invites misgrab.
+ *
+ * PER-SEAT AND SINGLE-VALUE (C-6). Deliberately not an all-seats grid: a grid
+ * invites reconciliation, which is the chip-accounting task this surface
+ * refuses. Correcting three seats is three deliberate acts because each one is
+ * an independent observation.
+ *
+ * Entry is inline rather than a modal so the correction never leaves the seat it
+ * is about.
+ */
+const SetStackRow = ({ seat, current, onSetStack }) => {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(
+    current?.amount !== null && current?.amount !== undefined ? String(current.amount) : '',
+  );
+
+  const commit = () => {
+    // An empty field must NOT commit. `Number('')` is 0, and 0 is both a
+    // legitimate stack and the strongest provenance there is — so a stray
+    // confirm on a blank input would write "this seat is stacked off" as an
+    // observation, and it would then confidently disprove claims.
+    const trimmed = String(value).trim();
+    if (trimmed === '') return;
+    const amount = Number(trimmed);
+    if (!Number.isFinite(amount) || amount < 0) return;
+    onSetStack(seat, amount);
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className={`${MENU_ROW_CLASS} text-emerald-700`}
+        data-testid="menu-set-stack"
+      >
+        Set stack
+        {current?.amount !== null && current?.amount !== undefined ? (
+          // The provenance is shown, not just the number — a carried figure and
+          // an entered one are different evidence and the founder decides which
+          // he is correcting.
+          <span className="text-gray-400 text-xs ml-1">
+            {`(${current.amount} · ${current.source})`}
+          </span>
+        ) : null}
+      </button>
+    );
+  }
+
+  return (
+    <div className="px-4 py-2 flex items-center gap-2" data-testid="menu-set-stack-entry">
+      <input
+        type="number"
+        inputMode="decimal"
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') setOpen(false);
+        }}
+        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+        data-testid="menu-set-stack-input"
+        aria-label={`Stack for seat ${seat}`}
+      />
+      <button
+        onClick={commit}
+        className="px-2 py-1 text-sm bg-emerald-600 text-white rounded"
+        data-testid="menu-set-stack-confirm"
+      >
+        Set
+      </button>
+    </div>
+  );
+};
 
 // WS-002 Sprint A2 (revised 2026-05-06): straddle entry moved from long-press
 // gesture (conflicted with the right-click / long-press menu itself) to a
@@ -156,11 +240,14 @@ const AssignSection = ({ seat, onFindPlayer, onAssignPlayer, recentPlayers }) =>
   </>
 );
 
-const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer, onStraddle, onAddToMultiSelect, isSeatInSelection }) => (
+const SeatConfigSection = ({ seat, onMakeMySeat, onMakeDealer, onStraddle, onSetStack, seatStack, onAddToMultiSelect, isSeatInSelection }) => (
   <>
     <MakeMySeatButton onClick={() => onMakeMySeat(seat)} />
     <MakeDealerButton onClick={() => onMakeDealer(seat)} />
     {onStraddle ? <StraddleButton onClick={() => onStraddle(seat)} /> : null}
+    {onSetStack ? (
+      <SetStackRow seat={seat} current={seatStack} onSetStack={onSetStack} />
+    ) : null}
     {onAddToMultiSelect ? (
       <MultiSelectButton
         onClick={() => onAddToMultiSelect(seat)}
@@ -175,6 +262,8 @@ export const SeatContextMenu = ({
   onMakeMySeat,
   onMakeDealer,
   onStraddle,
+  onSetStack,
+  seatStack = null,
   onAddToMultiSelect,
   isSeatInSelection,
   onFindPlayer,
@@ -203,6 +292,8 @@ export const SeatContextMenu = ({
         onMakeMySeat={onMakeMySeat}
         onMakeDealer={onMakeDealer}
         onStraddle={onStraddle}
+        onSetStack={onSetStack}
+        seatStack={seatStack}
         onAddToMultiSelect={onAddToMultiSelect}
         isSeatInSelection={isSeatInSelection}
       />

@@ -16,6 +16,7 @@ import { useSessionTimer } from '../../../hooks/useSessionTimer';
 import { useAutoStreetAdvance } from '../../../hooks/useAutoStreetAdvance';
 import { CARD_ACTIONS } from '../../../reducers/cardReducer';
 import { GAME_ACTIONS } from '../../../reducers/gameReducer';
+import { readStack } from '../../../utils/seatStacks/stackLedger';
 import { TableHeader } from './TableHeader';
 import { SeatComponent } from './SeatComponent';
 import { SeatContextMenu } from './SeatContextMenu';
@@ -59,6 +60,8 @@ export const TableView = ({ scale }) => {
     potInfo,
     blinds,
     recordStraddle,
+    seatStacks,
+    handNumber,
   } = useGame();
 
   const {
@@ -461,6 +464,14 @@ export const TableView = ({ scale }) => {
 
   const [straddleModal, setStraddleModal] = useState({ open: false, seat: null, position: null });
 
+  // Stack correction (surface `seat-stack-ledger`, C-6: per-seat, single value).
+  // An entered value is the strongest provenance there is, so this immediately
+  // makes the seat admissible for claim adjudication.
+  const handleSetSeatStack = useCallback((seat, amount) => {
+    dispatchGame({ type: GAME_ACTIONS.SET_SEAT_STACK, payload: { seat, amount } });
+    setContextMenu(null);
+  }, [dispatchGame, setContextMenu]);
+
   const handleSeatStraddle = useCallback((seat) => {
     if (!eligibleStraddleSeats.has(seat)) return;
     const position = seat === utgSeat ? 'UTG' : seat === btnSeat ? 'BTN' : null;
@@ -683,7 +694,11 @@ export const TableView = ({ scale }) => {
               </div>
             </div>
 
-            {/* Context menu */}
+            {/* Context menu.
+                `onSetStack` is passed ONLY between hands (Gate 2 C-5) — once any
+                action is recorded the prop goes undefined and the row ceases to
+                exist, because mid-hand numeric entry for nine seats cannot
+                survive mid-hand-chris. Same gating idiom as `onStraddle`. */}
             <SeatContextMenu
               contextMenu={contextMenu}
               onMakeMySeat={handleSetMySeat}
@@ -691,6 +706,8 @@ export const TableView = ({ scale }) => {
               onAddToMultiSelect={handleAddToMultiSelect}
               isSeatInSelection={contextMenu ? selectedPlayers.includes(contextMenu.seat) : false}
               onStraddle={contextMenu && eligibleStraddleSeats.has(contextMenu.seat) ? handleSeatStraddle : undefined}
+              onSetStack={actionSequence.length === 0 ? handleSetSeatStack : undefined}
+              seatStack={contextMenu ? readStack(seatStacks, contextMenu.seat, handNumber) : null}
               onFindPlayer={handleFindPlayer}
               onSwapPlayer={handleSwapPlayer}
               onAssignPlayer={handleAssignPlayer}
