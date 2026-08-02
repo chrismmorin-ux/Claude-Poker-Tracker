@@ -1,0 +1,165 @@
+id: "WS-333"
+title: "Derive the floor from the blinds outward — pot odds x realization x rake as ONE identity, then normalize every decision by geometry so structurally identical spots pool"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: "Tie the unexploitable floor into the math behind 'why bet at
+  all' being pot odds and see what emerges there as a min baseline that drives all this...
+  the statistically consistent bet sizing at the floor of the blinds and how rake plugs in...
+  the blinds end up able to play crazy wide ranges, BTN vs BB, SB vs BB, yet the SB holds a
+  super tight range even against the button. This kind of splaying that happens once money is
+  put in the hand and therefore create the first pot odds. Not fully understanding this
+  inversion and effect on how the blinds are played is a common lesson not known."
+
+  PART A — THE IDENTITY, AND ITS ORIGIN.
+
+  "Why bet at all" and "how wide must you defend" are ONE equation read from two sides. For a
+  bet risking s as a fraction of pot:
+
+      bettor's breakeven fold frequency   =  s / (1 + s)      (POKER_THEORY 6.3)
+      defender's minimum continuation      =  1 / (1 + s)      (MDF, 6.2)
+
+  Both already exist in foldEquityCalculator.js, including the correct N-player form and the
+  explicit warning that applying heads-up MDF per-player over-defends badly multiway. What
+  does NOT exist is the tie to the ORIGIN: the blinds are what make s finite in the first
+  place. With no dead money no steal is ever profitable and no defense is ever required.
+  Every pot-odds quantity in the game descends from that forced seed, and the floor should be
+  DERIVED from it rather than asserted per spot.
+
+  PART B — THE SB INVERSION, AND THE CORRECTION THAT MAKES THE FLOOR HONEST.
+
+  The founder's observation is correct and the obvious explanation is wrong. Against a 2.5x
+  BTN open at 100bb:
+
+      BB: 1bb already in, calls 1.5 into a pot of 4   -> needs ~27%
+      SB: 0.5bb already in, calls 2 into a pot of 4   -> needs ~33%
+
+  Six points apart. POT ODDS ALONE PREDICT SB DEFENDS NEARLY AS WIDE AS BB. Observed and
+  solver behaviour is the opposite — SB collapses toward 3bet-or-fold. So price is not the
+  driver.
+
+  SB carries THREE penalties at once and only one is visible in the odds:
+    1. slightly worse price
+    2. out of position postflop to the raiser
+    3. A LIVE PLAYER STILL BEHIND IT — SB's call does NOT close the action; BB's does.
+
+  The third is the structural asymmetry and it is entirely invisible to pot odds: SB can call
+  correctly on price and still be squeezed off its equity before seeing a flop.
+
+  CONSEQUENCE THAT BINDS WS-331: a floor derived from pot odds alone would instruct SB to
+  defend near-BB-wide, which is badly wrong. REALIZATION MUST BE INSIDE THE FLOOR FROM THE
+  START, not bolted on downstream. The repo has realization factors by position/SPR/texture in
+  preflopFlopEV.js; this ticket makes them constitutive of the baseline rather than a later
+  adjustment. Pot odds set the invitation; realization decides whether it can be accepted.
+
+  PART C — RAKE, AND THE ASYMMETRY THAT IS GENUINELY UNDER-TAUGHT.
+
+  potCalculator.estimateRake already implements no-flop-no-drop. Its consequence has never
+  been carried into range construction:
+
+      STEALING IS UNTAXED. PLAYING A FLOP IS TAXED.
+
+  A steal that ends preflop wins a rake-free pot; a defended pot reaches a flop and pays the
+  drop. This pushes OPPOSITE to pot odds: rake WIDENS the stealer's profitable range and
+  NARROWS the defender's, and it lands hardest on the blinds because they are the seats
+  defending into a pot that will be taxed.
+
+  MAGNITUDE IS DELIBERATELY NOT ASSERTED HERE — it is what the instrument must measure. It is
+  also much larger in live 1/2 (a $5-6 drop is a large fraction of a small pot) than in the
+  2009 online corpus, making this one of the sharpest cases where transferring an
+  online-anchored conclusion to the founder's live game would mislead. Register this in
+  WS-330 explicitly.
+
+  PART D — GEOMETRY NORMALIZATION, WHICH MAY UNBLOCK EVERYTHING ELSE.
+
+  Founder: "Consolidate all of the same looking things (situations, streets, decisions,
+  regions of cards) and start classifying them and find other patterns or exploits."
+
+  Normalize every decision by its GEOMETRY — bet-to-pot ratio s, SPR band, players remaining,
+  and WHETHER THE ACTION CLOSES (the SB/BB distinction above, which is a geometry property and
+  not a position label). Decisions that look different across streets and positions but share
+  geometry are THE SAME DECISION PROBLEM and can pool.
+
+  WHY THIS IS THE HIGH-VALUE HALF: statistical power is the binding constraint on every
+  instrument designed under this program — ~300k hands per arm unpaired, ESS collapse under
+  importance weighting, thin cells falling back to priors. Geometry pooling multiplies
+  decisions per cell, so a population deviation too small to see in any single street x
+  position cell becomes visible once pooled. That is the mechanism by which new exploits get
+  found, not a tidying exercise.
+
+  THE CAUTION, AND IT IS NOT OPTIONAL: streets are NOT interchangeable. Remaining streets
+  change both realization and the hand distribution. So POOL BY GEOMETRY AND THEN MEASURE
+  whether street adds signal — never assume it in either direction. Precedent is in-repo:
+  HIERARCHY_ORDER was established by ABLATION (WS-285), not by reasoning, and must stay
+  measured.
+
+  PART E — WHAT EMERGES, AND WHY IT IS ONE OBJECT.
+
+  Per geometry cell, indifference is computable from s alone. Measure how far the pool
+  deviates from it per cell and weight by frequency, and THE DEVIATION MAP IS THE EXPLOIT MAP —
+  derived from the blinds outward, in one identity, rather than assembled from separate
+  heuristics. This is the "min baseline that drives all this."
+accept_criteria: |
+  - The floor is DERIVED: given blinds, open size, seats, rake config, and realization, it
+    emits required continuation frequency per seat — rather than any hand-authored defense
+    table. Preflop blind defense is the base case and is reproduced from the identity.
+  - Realization is CONSTITUTIVE of the floor, not a post-hoc multiplier. A test shows the
+    pot-odds-only floor and the realization-inclusive floor diverge for SB, and that the
+    divergence has the sign and rough magnitude of observed SB tightness.
+  - "Action closes" is modelled as a GEOMETRY property, not a position label. SB-with-BB-behind
+    and a squeeze-exposed caller resolve to the same structural class.
+  - Rake enters the floor via estimateRake with no-flop-no-drop honoured, and the steal-vs-
+    defend asymmetry is emitted as an explicit quantity (how much the untaxed-steal /
+    taxed-defend gap moves each blind's required continuation).
+  - Live vs online rake sensitivity is reported separately, and an entry is added to the
+    WS-330 register for transfer risk on rake-driven conclusions.
+  - Decisions carry a geometry key (s bucket, SPR band, players remaining, action-closes) that
+    composes with WS-317's structured situation key WITHOUT a second parallel key. Reusing
+    decisionGeometry.mjs rather than deriving a fourth notion of "the pot" is required.
+  - Pooling is MEASURED: an ablation reports whether street adds signal beyond geometry, per
+    cell, with sample counts. Neither pooling nor separating is assumed.
+  - The frequency-weighted deviation-from-floor map is emitted per geometry cell and is
+    consumable by FSA's divergence instrument — not a new comparison path.
+  - Every emitted rate carries its opportunity count (POKER_THEORY 14.2 form) and its
+    conditioning set.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/potCalculator.js"
+  - "scripts/backtest/decisionGeometry.mjs"
+  - "src/utils/pokerCore/situationKey.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-331"
+  - "WS-332"
+sprint_id: null
+decision_flags:
+  - "MAY SPLIT AT DESIGN TIME. Parts A-C (the derived floor) and Part D (geometry normalization) are separable builds that were framed as one emergent idea by the founder and are genuinely coupled — the floor is DEFINED per geometry cell. Recommend designing them together and splitting execution only if the geometry key turns out to need WS-317 migration work of its own."
+  - "Does the floor target MDF (deny the bettor an auto-profitable bluff) or full best-response indifference? MDF is cheap, closed-form, and a true FLOOR but is known to be a crude approximation solvers do not literally play. Best-response indifference is the honest quantity but needs the game tree. Recommend MDF as the declared floor with its approximation error measured against the game tree on a sample, so the gap is a known number rather than a known caveat."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder tied the unexploitable floor to the pot-odds origin created by the
+  blinds, and observed the SB/BB inversion. Analysis confirmed the observation, located its
+  mechanism in realization and action-closure rather than price, and established that the
+  geometry-normalization half is likely the fix for the statistical-power constraint binding
+  every other instrument in this program.

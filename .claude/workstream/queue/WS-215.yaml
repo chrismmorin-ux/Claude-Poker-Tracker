@@ -4,7 +4,7 @@ type: bug
 status: done
 claimed_by: ""
 claimed_at: null
-completed_at: null
+completed_at: "2026-06-11T03:23:18.364Z"
 completion_commit: "35dc234"
 priority_score: 13.0
 priority_label: "P2"

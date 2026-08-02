@@ -1,0 +1,118 @@
+id: "WS-325"
+title: "Audit the Mass Data Field (MDF / SRC-012) stack — every layer from raw PHH to served prior, with its assumptions, using the known foldTo3Bet semantic mismatch as the worked example"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "I'd like to understand the surfaces of both the MDA and the
+  strategies we're feeding through this."
+
+  MDA IS ALREADY A NAMED SURFACE. In FSA it is the "Mass data" FIELD surface — SRC-012 raw /
+  SRC-011 aggregates: the HandHQ subset of uoftcprg/phh-dataset, 12.9M real-money online NLHE
+  cash hands, 6 networks, 25NL-1000NL, JULY 2009. What it does NOT have is a declared stack.
+  A Field surface is not a raw fact; it is the output of a long derivation, and every step of
+  that derivation can be wrong in a way that is invisible downstream.
+
+  THE LAYERS TO DECLARE AND AUDIT:
+    L0  raw PHH files                what is physically there; masked hole cards
+    L1  parse / adapter              phhAdapter.mjs -- action vocabulary mapping
+    L2  hand reconstruction          handOutcome.mjs -- pot awards DERIVED, not recorded
+    L3  partition                    partition.mjs -- POOL/EVAL, FNV-1a, per site
+    L4  stat definition              what counts as a vpip, a 3bet, a fold-to-3bet
+    L5  mining / aggregation         (k, n) pairs per stake per seat bucket
+    L6  stake + seat mapping         nearest-stake by log distance; 6max vs full
+    L7  prior construction           conjugate blend, per-stat pseudocounts
+    L8  service to the engine        poolBaseline.js hierarchy, leave-one-out guard
+
+  THE WORKED EXAMPLE, ALREADY DOCUMENTED IN THE GENERATED FILE ITSELF. From
+  handhqReferencePool.js: "foldTo3Bet mirrors the app's CURRENT stat semantics (folds facing
+  ANY preflop raise -- the WS-236/WS-254 definitional quirk). If WS-254 changes the app
+  definition, re-mine with matched semantics and regenerate."
+
+  That is a LAYER-4 SEMANTIC MISMATCH baked into a served prior. The name says one thing, the
+  number counts another, and every consumer two layers up inherits it silently. It is exactly
+  the class of fault the founder means by "two layers down," and it is already known — which
+  makes it the right example to build the audit around, because the audit's output can be
+  checked against a fault we can already see.
+
+  KNOWN ASSUMPTIONS THAT MUST BE STATED, NOT DISCOVERED LATER:
+    - JULY 2009. Sixteen years stale relative to any current pool. Self-limiting by design
+      (weak pseudocounts) but the staleness is an assumption, not a control.
+    - ONLINE ONLY, and the founder-ratified rule is that live and online are DISTINCT
+      POPULATIONS never merged. The founder's actual game is live 9-handed. Every MDA-anchored
+      claim about live play is TRANSFERRED, not measured.
+    - Buy-in-denominated stake labels mapped to blinds by nearest-stake; micro segments below
+      25NL resolve UP to the softest mined pool. Recorded in SRC-011, easily forgotten.
+    - Rake is NOT in the corpus. Every EV figure carries a MODELLED rake schedule.
+    - Hole cards masked pre-showdown, so any hand-conditional quantity is either
+      showdown-selected or range-marginalized. Never a population rate without saying which.
+
+  RELATIONSHIP TO THE OTHER SURFACES: three of FSA's five are Fields measured on different
+  populations. Auditing MDA's stack is the template for auditing the other two (Ignition
+  capture SRC-005, live user input SRC-014), and the layer-by-layer comparison is what makes
+  the live-vs-online transfer question answerable instead of restated.
+accept_criteria: |
+  - MDA's stack is declared layer by layer under the WS-324 schema, each layer naming its
+    inputs, transformation, output, and assumptions.
+  - Every assumption above appears in the declaration with a falsifier where one exists.
+  - The foldTo3Bet layer-4 mismatch is reproduced BY THE AUDIT rather than read from the
+    comment — demonstrating the audit can find this class of fault unaided.
+  - A scan reports every OTHER stat whose mined definition and app definition could diverge,
+    with a verdict per stat (matched / mismatched / unverifiable).
+  - The audit states, per layer, what would be UNDETECTABLE at that layer given current
+    checks — the negative space, not just the findings.
+  - Output is a registered surface declaration usable by WS-324 attribution, not a prose doc.
+  - The same declaration template is shown to work for a second Field surface (SRC-005 or
+    SRC-014), even if that audit is not completed here.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "scripts/generate-handhq-reference.mjs"
+  - "scripts/backtest/phhAdapter.mjs"
+  - "scripts/backtest/partition.mjs"
+  - "scripts/backtest/handOutcome.mjs"
+  - "docs/research/mass-pool-data-2026-07-25.md"
+blocked_by:
+  - "WS-324"
+blocked_by_legacy: []
+enables:
+  - "WS-330"
+sprint_id: null
+decision_flags: []
+naming_resolved: |
+  NAMING COLLISION, FOUND AND SETTLED 2026-08-02. The founder's spoken "MDA" expanded to
+  Mass Data Analysis. That acronym is ALREADY TAKEN in this repo: MDA = Market Dynamics
+  Analysis in the governance layer (.claude/commands/decide.md; the `market_dynamics` block
+  validated by cwos-asn-validate, whose exit code 3 is literally "MDA failure"). Two
+  meanings for one acronym inside one repo is a fault waiting to happen in exactly the way
+  this program exists to prevent.
+
+  Founder response: "Mass Data Analysis was what I used. I'm not tied to it."
+
+  RESOLVED: the canonical name is **Mass Data Field (MDF)**, source id **SRC-012** (raw) /
+  **SRC-011** (aggregates). "Field" is not a new coinage — it is FSA's own surface class for
+  this object, so the name now states what kind of thing it is. `MDA` is RETIRED in this
+  sense and must not appear in code, schemas, or Result Cards; the vocabulary register
+  records it as a retired alias so old notes and transcripts still resolve.
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder asked to understand the surfaces of the MDA as well as the
+  strategies. The mass-data source has a long undeclared derivation chain with at least one
+  already-documented semantic mismatch at the stat-definition layer.

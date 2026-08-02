@@ -1,0 +1,105 @@
+id: "WS-329"
+title: "Make the Standard of Record binding repo-wide — INV + check script so any new measurement ships a replicable Result Card, not a loose number"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "architecture"
+capability: "governance"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "Make it repo-wide that this is the standard of comparison of
+  record. So anything we build supports replication of this."
+
+  This ticket is where the standard gets TEETH. WS-322 defines the objects; this makes
+  conformance checkable and makes non-conformance visible.
+
+  THE RULE TO BIND:
+    Any artefact that makes a comparative claim about strategy, model quality, or EV must
+    resolve to a Result Card produced by running a registered Surface against a versioned
+    Deal Book and Field, carrying a complete replication manifest.
+
+  WHAT A COMPLETE REPLICATION MANIFEST PINS:
+    - engine commit SHA
+    - corpus / Deal Book content hash
+    - Field version and its provenance stamp
+    - partition (POOL/EVAL) and walk-forward prefix
+    - EVERY seed used
+    - every constant the result depends on (at minimum PRIOR_WEIGHT, ACTION_TAU_FRACTION,
+      MIN_CONTINUATION_WEIGHT, rake config, combo samples, MC trials)
+    - the TREATMENT string -- what was actually substituted and over what horizon
+    - the cluster unit for any variance claim
+    - a pointer to the standing disclaimer and suspected-fault register (WS-330)
+
+  ORDER OF OPERATIONS MATTERS AND MUST NOT BE INVERTED. An invariant that nothing can check is
+  worse than none -- it reads as coverage while enforcing nothing, which is the same failure
+  shape as capture with no reader. So this ticket does NOT land its enforcement until the
+  instrument exists (WS-322 + WS-328). Until then the invariant ships in ADVISORY mode: it
+  reports non-conforming claims without failing anything.
+
+  ENFORCEMENT SURFACES:
+    1. INV entry in system/invariants.md with a runnable check command.
+    2. A check script that scans docs/ and session notes for comparative numeric claims
+       (bb/100, accuracy %, EV deltas, "better than", "improved by") and flags any without a
+       Result Card reference.
+    3. A preflight hook on changed files, so the standard is applied at commit time rather
+       than discovered at audit time.
+    4. A line in CLAUDE.md pointing at the vocabulary register, so every session inherits it
+       without rediscovery.
+
+  GRANDFATHERING, STATED HONESTLY. The repo already contains many published figures with no
+  Result Card -- the WS-285 58.7% accuracy, the WS-287 hero-EV numbers, the corpus mining
+  results. These are NOT retroactively invalid; they were produced under stated treatments and
+  leakage controls, which is most of what a Result Card formalizes. The check script inventories
+  them and classifies each as conforming / reconstructible / unreconstructible, and only the
+  third class is a finding. Declaring existing work non-compliant en masse would produce a
+  large, useless backlog and discredit the standard on day one.
+
+  PROPORTIONALITY GUARD, because this program's own named risk is ceremony cost exceeding
+  measurement value: the standard binds COMPARATIVE CLAIMS, not every number. A debug print, an
+  exploratory count, or a one-off sanity check is not a claim. The trigger is a number that
+  someone could act on or cite.
+accept_criteria: |
+  - INV entry exists in system/invariants.md with a check command that actually runs.
+  - Check script scans for comparative numeric claims lacking a Result Card reference and
+    reports them; wired into preflight for changed files.
+  - The invariant ships ADVISORY and flips to enforcing only once WS-322 and WS-328 are done;
+    the flip is a recorded decision, not a silent edit.
+  - Existing published figures are inventoried and classified conforming / reconstructible /
+    unreconstructible. Only unreconstructible ones become findings.
+  - CLAUDE.md gains a Standard of Record section pointing at the vocabulary register and the
+    disclaimer, so sessions inherit it without rediscovery.
+  - A deliberately non-conforming claim is caught by the check in a test -- the standard is
+    proven to bite, not assumed to.
+  - The proportionality guard is expressed IN the check (comparative claims only), so the
+    script does not flag every integer in the repo.
+effort: "M"
+files_involved:
+  - "system/invariants.md"
+  - "CLAUDE.md"
+  - "scripts/"
+  - ".claude/context/SYSTEM_MODEL.md"
+blocked_by:
+  - "WS-328"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Does the enforcing mode BLOCK a commit or only warn loudly? Blocking guarantees the standard holds but will interrupt legitimate exploratory work; warning preserves flow but decays. Recommend blocking only on docs/ and system/ (where claims become durable) and warning elsewhere."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder escalated the strategy-comparison design to a repo-wide standard
+  of record. Enforcement is deliberately staged behind the instrument so the invariant is
+  never unenforceable prose.

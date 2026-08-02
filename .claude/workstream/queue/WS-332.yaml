@@ -1,0 +1,127 @@
+id: "WS-332"
+title: "Validation strands — several independent verdicts on the SAME node, compared centrally; disagreement becomes the audit queue and each strand earns a track record"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: "We can have substrands of validation. One looked at this node
+  and found it should be folded. Another looked and saw that it fit as a +EV bluff slot that
+  needed to be filled. So the comparison gets done centrally too... being able to look at it
+  from a side angle and make sure we have really considered that action. Some model will be
+  responsible for it in the end, even if certain parts are determined by a completely
+  different set of rules."
+
+  THE CORE MOVE: BOTH VERDICTS CAN BE RIGHT, BECAUSE THEY ANSWER DIFFERENT QUESTIONS. "This
+  hand folds here" (per-hand EV) and "this line needs bluffs here and this is the best
+  candidate" (range construction) are not contradictory claims about one quantity; they are
+  two quantities. Today the engine collapses them into one recommendation and the reasoning
+  that lost is discarded. The disagreement IS the product.
+
+  THE STRANDS (initial set; the register is extensible):
+    EV        pure per-hand expected value against the population. No reads. The founder is
+              right that this will dominate most of the space, and that is the point — a
+              strand that agrees with everything cheaply is what makes the contested nodes
+              findable.
+    STRUCTURE range construction: bluff-to-value ratio, which candidates carry the bluffs,
+              blockers, protection. Judges the LINE, not the hand.
+    READ      deviation warranted by a population or per-villain tendency. Makes a
+              falsifiable claim about a number (WS-327's read ledger scores it).
+    RISK      variance, SPR, stack preservation. Where "afraid of getting stacked" belongs —
+              as SPR arithmetic, never as a label.
+
+  EACH STRAND RETURNS: verdict, the quantity it judged, its reason, and its confidence. It does
+  NOT return a recommendation. Composition into one action is a separate, explicit step, and
+  that step is what gets recorded as ownership.
+
+  ACCOUNTABILITY — "some model will be responsible for it in the end." The Decision Atom
+  records which strand's verdict was ADOPTED and which were OVERRULED. That turns strands into
+  scoreable agents with track records:
+    - How often is a strand right WHEN IT WINS the argument?
+    - How often is an OVERRULED strand later vindicated by the outcome?
+    - In WHICH situations does each strand earn its keep?
+  This is learned from data, not assumed by design, and it is how the composition step stops
+  being a hand-tuned priority order.
+
+  DISAGREEMENT AS A SEARCH HEURISTIC — the highest-value output. WS-323 gives DECISION MARGIN
+  (distance from indifference). Strand disagreement is ORTHOGONAL to it: a node can sit far
+  from indifference in pure-EV terms and still be genuinely contested because the structure
+  strand says the line needs bluffs there. The queue worth auditing is:
+
+      close margin  AND  strands disagree
+
+  That intersection is the founder's "side angle" check, and it is a far better study/audit
+  filter than EV margin alone. Nodes where all strands agree are cheap and safe and should be
+  spent no attention.
+
+  RETROFIT — "we need to anticipate how our existing structures are available to be run through
+  versions of this on their own." Several components in the repo are ALREADY strand-shaped and
+  should be registered rather than rebuilt:
+    - the shipped game-tree evaluator (EV strand)
+    - bluffValueConstruction.js (STRUCTURE strand)
+    - villainDecisionModel / villainProfileBuilder (READ strand)
+    - the teachable-arms probe (a human-executable EV strand, already scored on shared decisions)
+    - the entry map from WS-323 (a preflop EV strand)
+  Each must be runnable INDEPENDENTLY over a chosen Deal Book and produce its own Result Card
+  under the same standard — the founder's "swiped through the dataset we have chosen to measure
+  it against."
+
+  CENTRAL COMPARISON, NOT PER-STRAND SCORING IN ISOLATION. All strands judge the SAME decisions
+  from the same atoms, so their verdicts are directly comparable. This mirrors the constraint
+  the teachable-arms probe already enforces: every arm must produce a valid score for a decision
+  before ANY of them is counted, or a slice where one arm degenerates silently changes the set
+  the others are averaged over.
+accept_criteria: |
+  - A strand interface exists; at least the four strands above are implemented and return
+    verdict + quantity judged + reason + confidence, and CANNOT return a recommendation.
+  - All strands are scored on a SHARED decision set; a decision where any strand fails to
+    produce a verdict is excluded for ALL strands, not silently dropped for one.
+  - The Decision Atom records adopted vs overruled strands per decision.
+  - Per-strand track records are produced: win rate when adopted, vindication rate when
+    overruled, and a per-situation breakdown of where each strand earns its keep.
+  - The contested-node queue is emitted: the intersection of close decision margin (WS-323)
+    and strand disagreement, ranked by frequency x stake.
+  - At least three EXISTING repo components are retrofitted as registered strands rather than
+    reimplemented, each runnable independently against a Deal Book and producing its own
+    Result Card.
+  - Composition (strands -> one action) is an explicit, recorded, swappable step. A hard-coded
+    priority order buried in the engine is a fail.
+  - No strand's verdict is derived from a label (position, bucket, style). Strands compute from
+    game state — the standing first-principles rule applies unchanged.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/bluffValueConstruction.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "scripts/backtest/"
+blocked_by:
+  - "WS-328"
+  - "WS-331"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "When strands disagree, does the composition step pick a winner or emit a MIXED action? Picking is legible and matches how a human plays a decision; mixing is closer to how the structure strand actually reasons (a bluff slot is a frequency, not a hand). Recommend picking at the hand level while the structure strand's frequency claim is carried as metadata, so the two are never silently averaged."
+  - "Do strands see each other's verdicts before returning? Blind strands are genuinely independent and their agreement is real evidence; sighted strands can build on each other but their agreement becomes correlated and worth less. Recommend blind, with composition as the only place they meet."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder proposed independent validation sub-strands whose comparison is
+  done centrally, with one model ultimately accountable. Analysis added that strand
+  disagreement is orthogonal to decision margin and their intersection is a better audit queue
+  than either alone, and that several existing repo components are already strand-shaped.

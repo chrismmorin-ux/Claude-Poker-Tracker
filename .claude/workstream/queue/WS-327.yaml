@@ -1,0 +1,113 @@
+id: "WS-327"
+title: "Adversarial declared-surface rounds — second author sees the first's card, alternating revisions, EV delta PRE-REGISTERED before every run"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: two AIs set their strategy with a concrete reason WHY, apply it
+  over a statistically significant number of hands, then see it "expanded or layered or
+  flattened in other places" through reflection and iteration. "The exercise is mostly about
+  being forced to account for the implications of your action -- which hand you chose, whether
+  it was mostly through equity or mostly through a read. This would be what I call PLAYING A
+  STRATEGY. It's chosen, and every decision gets to be thought through."
+
+  THE PROTOCOL:
+    Round 0  Card A declared BLIND. Complete, every rule warranted, no sight of an opponent.
+             Prediction registered BEFORE any run: expected EV, where the edge comes from,
+             and what result would falsify the reasoning.
+    Round 1  Card B declared WITH Card A in hand. Explicit best response. B must still be a
+             complete card -- one that only says "here is how I beat A" is not a strategy.
+    Round n  Alternating revisions. Each ships a diary: which rule changed, what evidence
+             forced it, and THE PREDICTED EV DELTA STATED BEFORE THE RUN.
+
+  WHY PRE-REGISTRATION IS LOAD-BEARING. Without it, "reflection" is post-hoc storytelling --
+  the model explains whatever happened and learns nothing falsifiable. Scoring the prediction
+  is what converts iteration into calibration data, and it feeds the existing prediction
+  ledger rather than starting a parallel one.
+
+  EVERY CARD ALSO PLAYS THE POPULATION FIELD, EVERY ROUND. That is the common yardstick the
+  founder asked for ("we should run this for each strategy we have if we ever want
+  comparison"), and it produces the number that matters more than raw EV:
+
+    EXPLOITABILITY GAP = EV(vs population) - EV(vs a card built to beat you)
+
+  A card that prints against the field and collapses against a best responder works only
+  until someone pays attention. FSA already proposes this as a seventh readiness-gate
+  criterion; this ticket is where it becomes measurable for a DECLARED surface rather than
+  only for the shipped engine.
+
+  THE READ LEDGER -- FOUR QUADRANTS, and the reason this whole exercise pays for itself. Every
+  `read`-warranted rule makes a falsifiable claim about a population number that the corpus
+  can check INDEPENDENTLY of whether the play made money:
+
+    read TRUE  + made money   real edge
+    read TRUE  + lost money   the edge exists, we monetized it wrong
+    read FALSE + made money   RIGHT FOR THE WRONG REASON -- the most dangerous cell
+    read FALSE + lost money   clean loss; delete the rule
+
+  The two flagged cells separate "our model of people is wrong" from "our model is fine and
+  our exploitation of it is wrong." Those two failure modes are INDISTINGUISHABLE in every
+  number the project produces today, which is how a falsified range model (WS-291) sat on the
+  live recommendation path unmeasured for the life of the project. This is the founder's
+  "10x the self-improvement process, which is CONSTANTLY surprised by how deep bugs go."
+
+  THE FEAR DETECTOR. Take every rule whose author declared it `equity`-warranted, compute what
+  pure equity arithmetic would do, and check the DIRECTION AND BAND of any deviation.
+  Systematic deviation toward PASSIVE, concentrated in the MEDIUM strength band, with no
+  arithmetic justification, is fear wearing an equity label. This operationalizes the standing
+  doctrine that equity-shaped likelihoods are wrong in the MIDDLE, not the tails, and that
+  "afraid of getting stacked" is SPR, not a label. Only meaningful in the fringe band from
+  WS-323, because that is the only place equity stops determining the answer.
+
+  NON-CONVERGENCE IS A FINDING, NOT A BUG. Rock-paper-scissors cycling across rounds means the
+  exploit space has no stable answer at that stake, which is itself worth knowing.
+accept_criteria: |
+  - Round structure runs end to end for at least three rounds with two authors, every card a
+    valid WS-322 Strategy Card, every round also played against the population field.
+  - Predictions are registered BEFORE each run in an append-only ledger and scored after;
+    a run whose prediction was not pre-registered is refused by the runner.
+  - Exploitability gap is reported per card per round.
+  - The read ledger classifies every read-warranted rule into one of the four quadrants, with
+    the population number that decided it and its conditioning set stated alongside.
+  - The fear detector runs over equity-warranted rules and reports direction, band, and
+    magnitude of unjustified passive deviation -- reported as evidence, never as a verdict on
+    the author.
+  - EV is attributed by warrant class (equity / structure / read / fear) on every Result Card.
+  - Residual-clause EV share is reported per card -- what fraction of the money came from the
+    part nobody designed.
+  - Revision diaries are preserved verbatim, including rejected alternatives; these are
+    Tier-1 unrecoverable-if-not-captured artifacts.
+effort: "M"
+files_involved:
+  - "scripts/backtest/"
+  - "src/utils/predictionAudit/"
+blocked_by:
+  - "WS-323"
+  - "WS-326"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Who authors the first two cards? Two AI instances with different mandates, OR one AI card versus a card built from the FOUNDER'S OWN observed play. The second is more useful personally and gives the fear detector a real human target -- but requires enough observed founder hands to fit a card, which the live pool may not yet support."
+  - "How many rounds before stopping? Fixed count, or run until the exploitability gap stops moving? Fixed is cheaper and bounded; convergence-based is more informative but can cycle indefinitely."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02 from the founder's core design: two strategies, second sees the first,
+  reflection and iteration, with the exercise being forced accountability for why each action
+  was chosen -- equity or read.

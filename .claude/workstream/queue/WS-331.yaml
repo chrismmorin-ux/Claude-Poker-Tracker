@@ -1,0 +1,123 @@
+id: "WS-331"
+title: "The pier posts — Pool Best Response as the computable ceiling of exploitation, held out to stop it fitting noise, and the two-post coordinate system every strategy is positioned in"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: "We should probably build a least squared error model that
+  operates strictly as a statistical pier post... the statistically perfect model. The one
+  that gets perfect EV decisions right all the time. The boring one... to know how much EV
+  gain might be attributed to playing perfectly game theory and stats (GTO-esk) against the
+  player pool, and to see how it does when playing against our strategy, which would set the
+  kind of rotating baseline around a known anchor."
+
+  THE INSTINCT IS RIGHT AND THE NAMED METHOD IS THE WRONG LOSS. Three distinct objects are
+  collapsed in that framing and building them as one would poison the anchor:
+
+  1. LEAST SQUARES IS A FITTING METHOD, NOT A DECISION RULE. Minimizing squared error on
+     predicted frequencies is not maximizing EV. evCost.mjs already establishes the reason in
+     this repo: "a fold-estimate error costs nothing if it does not change hero's decision."
+     A model off by 5% everywhere that never crosses a decision boundary costs ZERO. A model
+     off by 1% exactly at breakeven costs real money. Squared error cannot distinguish them,
+     so a least-squares post would be precise about the wrong quantity. The correct loss at a
+     decision is REGRET AT THE BOUNDARY, which the repo already computes.
+
+  2. "PERFECT EV" AND "GTO" ARE OPPOSITES. GTO is UNEXPLOITABLE and deliberately leaves money
+     on the table against a weak pool. Maximum EV against a pool is a BEST RESPONSE and is
+     itself maximally exploitable. No single object is both.
+
+  BUILD TWO POSTS.
+
+  POST 1 -- POOL BEST RESPONSE (PBR). Given the mined population policy (behaviorPolicy.mjs,
+  ALREADY BUILT and provenance-stamped), the max-EV action at every node is DERIVABLE. It is
+  boring, deterministic, takes no reads, and is the CEILING OF EXPLOITATION -- the answer to
+  "how much is there to win here at all?" Every strategy's EV as a fraction of PBR's EV is its
+  EXPLOITATION EFFICIENCY. PBR is a measuring stick and must never be played: being a best
+  response, it is maximally exploitable by construction.
+
+  POST 2 -- EQUILIBRIUM. The unexploitable floor. FSA already registers this as SRC-013 and
+  correctly records that it DOES NOT EXIST YET and is gated on an external solver artifact.
+  This ticket does NOT build it and must not fake it -- FSA Finding F3 is explicit that a
+  "GTO shape" built on PREFLOP_CHARTS would be a second Field wearing an Equilibrium label.
+
+  THE NUMBER THIS EXISTS TO PRODUCE:
+
+      EXPLOITATION PREMIUM = EV(PBR) - EV(Equilibrium)
+
+  How much money exists SPECIFICALLY BECAUSE THE POOL IS BAD, as opposed to because hero plays
+  solid poker. If the premium is small, the entire exploit engine is chasing pennies and the
+  honest founder-facing answer is "play well." If it is large, reads are where the money is and
+  we would know by how much. Nothing in the repo currently answers this.
+
+  THE ROTATING BASELINE. Every strategy gets a POSITION, not a number: EV located between the
+  two posts, and its own exploitability (best-response EV against ITSELF). That 2D location is
+  the anchor the founder asked for, and it survives engine upgrades because the posts are
+  defined by the population and the equilibrium, not by our engine.
+
+  THE CAVEAT THAT DECIDES WHETHER THIS IS TRUSTWORTHY, AND IT IS LOAD-BEARING. A best response
+  to a MEASURED model exploits every quirk of that model INCLUDING quirks that are estimation
+  noise. Uncorrected, PBR produces an inflated ceiling no real strategy could reach, and the
+  pier post becomes a fantasy that makes every strategy look bad. The fix uses machinery that
+  already exists: fit the population on the POOL half, best-respond to THAT, and evaluate on
+  EVAL. A PBR computed and evaluated on the same players is inadmissible and must be refused
+  by the runner, not merely warned about.
+
+  SECOND-ORDER GUARD: PBR's advantage should DECAY as the population model is regularized more
+  heavily. Sweeping the shrinkage and watching PBR's edge fall is the direct test of how much
+  of the ceiling is real signal versus fitted noise. Report the curve, not one point.
+accept_criteria: |
+  - PBR is computed from the mined population policy as a deterministic, read-free, max-EV
+    decision rule, registered as a Declared surface under WS-322.
+  - HELD-OUT BY CONSTRUCTION: PBR is fit on POOL and evaluated on EVAL. A same-partition PBR
+    is refused by the runner (enforced, not documented), reusing the existing leakage guard.
+  - The shrinkage sweep is reported as a curve showing how PBR's edge decays as the population
+    model is regularized — the direct measure of signal vs fitted noise in the ceiling.
+  - Exploitation efficiency (strategy EV as a fraction of PBR EV) is a standard Result Card
+    field.
+  - Every strategy is reported as a 2D POSITION (EV between posts, own exploitability), never
+    a single scalar.
+  - The Equilibrium post is REFERENCED, NOT FAKED: until SRC-013 exists, the premium is
+    reported as "lower post unavailable" rather than substituted with published chart strings.
+    A test asserts PREFLOP_CHARTS cannot be used as the Equilibrium post.
+  - PBR carries a standing warning wherever it appears that it is maximally exploitable and is
+    a yardstick, never a strategy to adopt.
+  - The disclaimer register (WS-330) gains an entry for PBR-overfits-the-model with its own
+    falsifier.
+effort: "L"
+files_involved:
+  - "scripts/backtest/behaviorPolicy.mjs"
+  - "scripts/backtest/leakageGuard.mjs"
+  - "scripts/backtest/partition.mjs"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - ".claude/projects/five-surface-atlas.md"
+blocked_by:
+  - "WS-322"
+blocked_by_legacy: []
+enables:
+  - "WS-332"
+sprint_id: null
+decision_flags:
+  - "Is PBR computed on the FULL decision tree (expensive, exact) or on the same decision-context hierarchy the behaviour policy is mined over (cheap, and best-responds to a coarsened model)? The coarse version is buildable now and is an honest ceiling FOR THAT ABSTRACTION; the full version needs the game tree and is a much larger build. Recommend coarse first, labelled as a ceiling on the abstraction rather than on the game."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder asked for a boring, highly-trusted statistical pier post to
+  attribute EV to perfect play against the pool. Analysis separated three conflated objects
+  (least-squares fitting, max-EV best response, equilibrium) and established that the best
+  response is computable TODAY from the already-mined behaviour policy, provided it is held
+  out — which is the difference between a trusted anchor and an inflated fantasy.

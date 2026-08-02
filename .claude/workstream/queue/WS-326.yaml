@@ -1,0 +1,108 @@
+id: "WS-326"
+title: "Population simulator seated from the mined behaviour policy — full hands, seat entry/exit — gated on reproducing the corpus instrument at the one-decision horizon"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  THE HARD CONSTRAINT THIS EXISTS TO SOLVE. The shipped hero-EV instrument (WS-287) has a
+  ONE-DECISION HORIZON. Its exact contract: "take our advice at THIS ONE node, then the hand
+  plays on as it actually did." That cannot answer "what does this whole strategy EARN,"
+  because the moment hero deviates on the flop, the 2009 turn card was dealt into a pot that
+  no longer exists. The textbook fix -- multiplying importance weights along the full hand --
+  collapses: four decisions at ~0.3 propensity each means a handful of hands carry all the
+  weight, and 400,000 decisions report the precision of roughly 40.
+
+  So the repo needs TWO instruments, and their DISAGREEMENT is the most valuable output:
+
+    Instrument I  Corpus substitution  real opponents, one decision   BUILT (WS-287)
+    Instrument II Simulator            modelled opponents, full hand  THIS TICKET
+
+  Neither is "the truth." Instrument I cannot see far; Instrument II can see everything but
+  only inside our model of people. Agreement between them is evidence; a number from one
+  alone is a hypothesis.
+
+  THE KEY ASSET IS ALREADY MINED. behaviorPolicy.mjs is a full action-distribution model of
+  the real 2009 field, conditioned on the WS-285-MEASURED hierarchy plus sizing, with
+  hierarchical shrinkage and no thresholds anywhere, carrying a pool-train provenance stamp.
+  That is precisely what the simulator needs in the other eight seats. This is therefore a
+  dealer loop plus existing components (handEvaluator, potCalculator, rake model), NOT a new
+  opponent-modelling research project.
+
+  THE AGREEMENT GATE IS THE WHOLE POINT AND IS NON-NEGOTIABLE. Run the simulator RESTRICTED
+  to a one-decision substitution and it must reproduce Instrument I's estimate inside its
+  confidence interval. Until it does, the simulator is lying and NO total-EV figure may be
+  quoted from it anywhere. This is the founder's "ask hard questions when it bumps into real
+  data," made into a gate rather than an intention.
+
+  WHAT THE SIMULATOR MUST MODEL BEYOND THE HAND:
+    - Seat entry and exit over time, with stacks, per the founder's "simulating a table of
+      players entering and going from the table." Table composition history is recorded, not
+      just the hand.
+    - Table size distribution -- "mostly full but sometimes 5, 6" -- as a weight, because
+      table size changes P(situation), not the divergence function (FSA).
+    - A RESPONSIVE FIELD ARM. A static field overstates every exploit, and the founder's
+      stated premise is that a bold strategy changes how others play back. Opponents that
+      adjust to hero's observed frequencies must be an arm from the start, not a later bolt-on.
+
+  VARIANCE IS THE BINDING PRACTICAL CONSTRAINT. Unpaired, resolving a 5 bb/100 difference
+  needs on the order of 300,000 hands per arm at realistic per-hand SD. PAIRED on a common
+  Deal Book -- identical deals and identical opponent seeds across arms -- removes the shared
+  luck and cuts that by roughly an order of magnitude. Every strategy in a Match therefore
+  plays the SAME Deal Book. This is not bookkeeping; it is what makes the experiment
+  affordable.
+
+  CARRIED LIMIT FROM FSA/POKER_THEORY 14.3: hands are NOT independent within a session.
+  Cluster over sessions or players and let hands be the unit inside the cluster.
+accept_criteria: |
+  - Full-hand simulation with seats drawn from behaviorPolicy, correct betting rounds, side
+    pots, uncalled-bet returns, and a stated (modelled) rake schedule.
+  - Seat entry/exit and stack evolution are simulated AND recorded in the Census.
+  - THE GATE: a one-decision-restricted simulator run reproduces Instrument I's estimate
+    within CI on a shared slice. Failing this, total-EV output is refused by the runner --
+    enforced in code, not documented as a caution.
+  - A responsive-field arm exists alongside the static-field arm, and results are always
+    reported as a pair. A single-arm result is refused.
+  - Deal Books are seeded, content-hashed, and reusable; two arms provably receive identical
+    deals and identical opponent seeds, asserted by test.
+  - The simulator reproduces the corpus's marginal statistics (vpip, pfr, 3bet, cbet,
+    foldToCbet) within stated tolerance -- a calibration check on the population model itself.
+  - Cluster unit for every variance claim is stated and is sessions or players, never hands.
+  - Every figure carries a TREATMENT string in the WS-287 style. A number without a treatment
+    is not a result.
+effort: "L"
+files_involved:
+  - "scripts/backtest/behaviorPolicy.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/handOutcome.mjs"
+  - "src/utils/pokerCore/handEvaluator.js"
+  - "src/utils/potCalculator.js"
+blocked_by:
+  - "WS-322"
+blocked_by_legacy: []
+enables:
+  - "WS-327"
+sprint_id: null
+decision_flags:
+  - "Which game does the first tournament run in? ONLINE 6max -- where the corpus can actually measure and the agreement gate is meaningful -- or LIVE 9-handed, the founder's real game, where only the simulator can score and the population model is thin (founder estimate + sparse observed pool). Recommend online first: get one genuinely measured number before trusting anything, then treat live as the transfer question FSA is built to answer."
+  - "Does the responsive field adapt within a session (observed frequencies over recent orbits) or across sessions (a persistent read on hero)? Live 9-handed regulars do the latter; online 2009 pools mostly did the former. This changes what exploitability means."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. The founder asked for total EV of a strategy over a statistically
+  significant number of hands; the existing instrument structurally cannot produce that, and
+  the mined behaviour policy is the asset that makes the second instrument tractable.

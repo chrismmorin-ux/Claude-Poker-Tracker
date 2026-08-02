@@ -6,8 +6,8 @@ status: done
 claimed_by: null
 claimed_at: "2026-07-26T00:00:00Z"
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-07-26T19:01:31.194Z"
+completion_commit: 49ed584
 priority_score: 24.0
 priority_label: "P0"
 category: "domain-correctness"

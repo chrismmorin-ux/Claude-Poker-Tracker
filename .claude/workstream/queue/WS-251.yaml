@@ -6,7 +6,7 @@ status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-06-20T23:35:17.515Z"
 completion_commit: "1b9e2db"
 priority_score: 17.0
 priority_label: "P2"

@@ -1,0 +1,138 @@
+id: "WS-330"
+title: "The standing disclaimer and suspected-fault register — what this system can honestly claim, and where the fault is most likely to be, ranked with falsifiers"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "Let's make sure we do an accurate disclaimer on the system
+  and where potential fault might be suspected to be."
+
+  TWO ARTEFACTS, one document, referenced by EVERY Result Card:
+
+  (1) THE DISCLAIMER -- what the system is and what it can honestly claim. Not legal boilerplate
+      and not modesty. A precise statement of the estimand: what was substituted, over what
+      horizon, against which opponents, on which population, in what units, with what cluster.
+
+  (2) THE SUSPECTED-FAULT REGISTER -- a RANKED list of where the fault most likely is, each entry
+      carrying: the mechanism, which layer it lives at (WS-324), which results it would
+      contaminate, a falsifier, and a status (untested / partially-supported / confirmed /
+      retired).
+
+  WHY RANKED AND NOT A FLAT CAVEAT LIST. A flat list of limitations is read once and ignored.
+  A ranked register with falsifiers is a WORK QUEUE -- it says what to measure next, and each
+  entry either gets confirmed and fixed or retired with evidence.
+
+  THE OPENING REGISTER, drawn from faults actually observable in the repo today, not invented:
+
+    POPULATION MISMATCH (highest suspicion). The founder's real game is LIVE 9-handed 1/2-1/3.
+    The corpus is ONLINE 6max/full, and the repo's own founder-ratified rule is that live and
+    online are DISTINCT populations never merged. Every live claim anchored on this corpus is
+    TRANSFERRED, not measured. Contaminates: any live-facing recommendation validated on MDA.
+
+    TEMPORAL STALENESS. July 2009. Sixteen years. Self-limiting by weak pseudocounts, but that
+    is a mitigation, not a control.
+
+    HORIZON BIAS (Instrument I). One-decision substitution into an otherwise-2009 hand. Does NOT
+    measure the value of playing a whole strategy. Reading edgeBB as a winrate overstates it by
+    roughly the decisions-per-hand factor -- already stated in ipsEstimator and easily lost
+    downstream.
+
+    MODEL-OPPONENT BIAS (Instrument II). Simulator opponents ARE our model of people. Any fault
+    in the population model becomes an invisible fault in every EV number the simulator emits.
+    This is why the agreement gate (WS-326) exists.
+
+    STATIC-FIELD OVERSTATEMENT. A field that never adapts inflates every aggressive strategy.
+
+    SELF-GRADING CIRCULARITY. The engine picks argmax-EV under its own villain model; grading it
+    with that same arithmetic is very nearly marking its own homework. Realized chips are the
+    only external anchor, and they are noisy.
+
+    MASKED HOLE CARDS. Advice is RANGE-MARGINALIZED, so results are the value of advice averaged
+    over hands hero COULD hold, not the hand hero HELD. A weaker claim than a cards-known
+    instrument, and the strongest this corpus supports.
+
+    MODELLED RAKE. The corpus records no rake. Every EV figure carries an assumed schedule.
+
+    STAT-DEFINITION MISMATCH. foldTo3Bet counts folds facing ANY preflop raise (the WS-236/254
+    quirk) while its name says otherwise -- a confirmed layer-4 fault already living in a served
+    prior. Contaminates anything consuming that stat.
+
+    SHOWDOWN SELECTION. Any hand-conditional quantity derived from shown hands is a selected set.
+    P(x | showdown) is never a population rate.
+
+    PRECISION OVERSTATEMENT. ESS, not n, is the honest denominator; 10,000 decisions at ESS 40 is
+    a 40-decision result wearing a large n. Weight clipping props up figures visibly only if the
+    clipped share is reported.
+
+    CLUSTERING. Hands are NOT independent within a session. Any variance claim whose cluster unit
+    is the hand understates the interval.
+
+    CONSTANTS CHOSEN BY TASTE. The repo has twice had to undo a constant picked by reading a
+    table rather than sweeping it. Any unswept constant is a suspected fault by default.
+
+    DEGENERATE SIGNAL. holdingKnowledge `covered` is ALWAYS TRUE on the engine as it ships, so it
+    discriminates nothing. A metric that cannot fail is not evidence, and this class of
+    always-passing check should be actively hunted.
+
+    CORPUS-MINED PRIORS LEAKING INTO CORPUS BACKTESTS -- true BY CONSTRUCTION unless structurally
+    prevented. The leakage guard closes three named channels; a fourth is always possible.
+
+    MULTIWAY APPROXIMATION. Known open gap, already ticketed separately.
+
+  THE MECHANISM THAT MAKES THIS MORE THAN A DOCUMENT: the register is VERSIONED, every Result
+  Card records which version it was produced under, and when an entry is CONFIRMED, every prior
+  Result Card whose contaminates-list includes it is automatically FLAGGED as
+  suspect-pending-review. That converts "where might the fault be" from a caveat into a
+  retroactive invalidation trail -- which is exactly what was missing when WS-291 turned out to
+  have been wrong for the life of the project, with no way to know what it had tainted.
+accept_criteria: |
+  - One document holding the disclaimer and the ranked register; every entry carries mechanism,
+    layer, contaminates-list, falsifier, and status.
+  - Every Result Card references the register VERSION it was produced under -- a card without
+    one is invalid.
+  - Confirming an entry flags every prior Result Card whose contaminates-list includes it, and
+    the flagging is demonstrated by a test.
+  - The disclaimer states the estimand precisely: substitution, horizon, opponents, population,
+    units, cluster unit. Reusable as the TREATMENT string.
+  - Entries are RANKED by suspicion with the ranking's reasoning stated -- not alphabetical, not
+    arbitrary.
+  - Retiring an entry requires evidence, recorded; entries never quietly disappear.
+  - A founder-readable summary sits at the top: what this system can honestly say today, in
+    plain language, in under a page.
+  - The register is linked from CLAUDE.md and from the program, so it is inherited by every
+    session rather than rediscovered.
+effort: "M"
+files_involved:
+  - "docs/research/"
+  - "system/constraints.md"
+  - "CLAUDE.md"
+  - ".claude/projects/five-surface-atlas.md"
+blocked_by:
+  - "WS-324"
+blocked_by_legacy: []
+enables:
+  - "WS-329"
+sprint_id: null
+decision_flags:
+  - "Is the register ranked by PROBABILITY of being wrong, or by EXPECTED DAMAGE if wrong? Population mismatch is near-certain but its damage is bounded and known; a leakage channel is unlikely but would invalidate everything. Recommend ranking by expected damage (probability x contamination breadth) and showing both components, since that is what should drive what gets measured next."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02 mid-session on founder request for an accurate disclaimer and an explicit
+  statement of where fault is suspected. The opening register is drawn from faults observable in
+  the repo today, including one already confirmed (foldTo3Bet stat-definition mismatch).

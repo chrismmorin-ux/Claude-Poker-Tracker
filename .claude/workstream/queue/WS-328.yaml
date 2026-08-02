@@ -1,0 +1,137 @@
+id: "WS-328"
+title: "Over-capture by design — Decision Atom store, Coverage Census including the zeros, the Ladder, and anchor-generation rebase; every field ships with a reader"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "When we run these it should probably do a little more than
+  its required as well. We will be looking at these in the future as test objects, wishing we
+  would have done xyz to enable their future analysis."
+
+  THE COST ASYMMETRY. Capturing an extra field costs bytes. NOT capturing it costs a re-run --
+  and by then the engine has moved, so the re-run does not reproduce the old number and the
+  comparison being attempted is lost entirely. The loss is total, not partial.
+
+  BUT THE SHARPER PRINCIPLE: reconstruct where you can, capture where you cannot. Anything
+  deterministic needs to be REPLAYABLE, not stored. Seeds and version pins are the highest-
+  value bytes in the design.
+
+  THREE TIERS OF IRREPLACEABILITY:
+    TIER 1  gone forever if not captured -- the author's reasoning at declaration time, the
+            alternatives considered and REJECTED, the prediction made before the run. No
+            second chance, near-zero cost.
+    TIER 2  recoverable only if the environment is pinned -- every engine output. The moment
+            ACTION_TAU_FRACTION or MIN_CONTINUATION_WEIGHT changes, old numbers are
+            unreproducible without the exact commit and constants.
+    TIER 3  cheap to recompute from atoms -- every aggregate, slice, and chart. NEVER the
+            primary record. An aggregate saved instead of derived is a question decided in
+            advance that future-us is allowed to ask.
+
+  THE DECISION ATOM, and the future question each field answers:
+    full action distribution, not just the choice        "how close was this?"
+    score of EVERY alternative under the card's model    decision margin -- near-ties are
+                                                          where strategies differ and models
+                                                          are fragile
+    rule id that fired PLUS rules that matched and lost  rule-level ablation without a re-run
+    named rule vs residual clause                        the residual-EV metric
+    warrant, stamped at the decision                     EV-by-warrant without re-deriving
+    belief state (range per live opponent)               expensive to recompute; input to the
+                                                          belief-vs-truth join
+    ground truth when showdown reveals, with `basis`     holdingKnowledge join at write time
+    every seed (deal, Monte Carlo, combo sampling)       exact replay; retroactive pairing
+    skip reason AT ATOM LEVEL, not just a counter        "why is 4-bet coverage thin?"
+    wall time, and tokens if AI-authored                 "is this card affordable to run?"
+
+  TWO THINGS BEYOND THE HERO SEAT:
+    - CAPTURE THE VILLAINS' DECISIONS TOO. With a responsive field, how the table plays back
+      differently against card A vs card B is a first-class result -- arguably the most
+      interesting one, since it is the founder's premise that a bold strategy changes others'
+      behaviour toward us. Hero-only logging makes that finding unreachable.
+    - CAPTURE THE SEAT-OCCUPANCY TIMELINE. Who sat, when, with what stack, for how long.
+      Otherwise "does this card earn more against a table that has been together two hours"
+      is permanently unanswerable.
+
+  NEGATIVE SPACE IS DATA. Record which contexts were hit ZERO times. Six months on, "did we
+  test 4-bet pots?" must not be inferable only from missing rows -- that cannot distinguish
+  "tested, nothing happened" from "never got there" from "a bug dropped them." The Census
+  emits every context in the domain WITH its hit count, including zeros.
+
+  THE DISCIPLINE THAT STOPS THIS BECOMING DEAD WEIGHT -- and the repo has already failed this
+  exact way. predictionAudit capture SHIPPED AND NOTHING EVER READ IT; same pattern as the
+  other shipped-but-inert capabilities. Data captured but never queried is WORSE than absent:
+  it looks like coverage, costs run time, and rots silently because nothing exercises it.
+
+    RULE: every captured field ships with at least one query that reads it, written at capture
+    time, in a standing atoms self-check that runs after every Match and prints the field's
+    distribution. If you cannot write the query, you do not yet understand what the field is
+    for, and it is speculation rather than instrumentation.
+
+  STORAGE TIERING. Result Cards and Censuses are small, human-readable, and live IN the repo
+  -- they are the anchor. Atoms are content-addressed, compressed, and live OUTSIDE git,
+  referenced by hash from the Result Card. The card without its atoms is still a valid anchor;
+  the atoms are what let you ask NEW questions of an OLD run. Order-of-magnitude: ~1-2 KB per
+  atom, ~4 decisions per hand, so 100k simulated hands is roughly half a gigabyte raw and well
+  under a tenth of that compressed.
+
+  ANCHOR GENERATIONS. The anchor is the Deal Book + Field + metric definitions. Engine version
+  is an INPUT recorded on the card, never part of the anchor -- so an engine upgrade is re-run
+  and the delta is attributable to the upgrade. When a Deal Book itself must change (population
+  shift, new stakes), it becomes a NEW GENERATION, and every prior card is re-run on it so the
+  Ladder REBASES rather than resets. Skipping the rebase re-run fragments the Ladder, which is
+  the named risk on this program.
+
+  SCHEMA EVOLUTION IS ADDITIVE-ONLY -- new fields, never repurposed or removed -- so a card
+  from generation 1 stays readable in generation 5. The repo already enforces exactly this for
+  IndexedDB with a check script; same discipline, same reason, and the check script is the
+  precedent to copy.
+accept_criteria: |
+  - Decision Atom schema implemented with every field above; atoms written append-only.
+  - Coverage Census emits every context in the declared domain WITH hit counts, zeros included.
+  - Villain-side decisions and the seat-occupancy timeline are captured, not just hero rows.
+  - An atoms self-check runs after every Match and reads EVERY captured field; adding a field
+    without a reader fails the check. This is the enforcement of the anti-rot rule.
+  - Storage is tiered: Result Card + Census in-repo and human-readable; atoms content-addressed
+    outside git and referenced by hash. A Result Card resolves its atoms by hash or reports
+    them missing -- never silently.
+  - Schema versioning is additive-only, enforced by a check script modelled on the existing
+    IDB additive check.
+  - The Ladder ranks Result Cards and REFUSES to compare across anchor generations that have
+    not been rebased.
+  - A generation rebase is demonstrated end to end: change the Deal Book, re-run prior cards,
+    show the Ladder rebasing rather than resetting.
+  - The forcing-function question list is stored WITH the schema, and any question later found
+    unanswerable is appended to it -- the schema learns from its own gaps.
+effort: "M"
+files_involved:
+  - "scripts/backtest/"
+  - "src/utils/predictionAudit/"
+  - "scripts/check-idb-additive.sh"
+blocked_by:
+  - "WS-322"
+blocked_by_legacy: []
+enables:
+  - "WS-329"
+sprint_id: null
+decision_flags:
+  - "Where do atoms physically live? Local disk outside the repo is simplest and matches the existing C:/Users/chris/data/phh-mining pattern, but is not backed up and is invisible to other fleet nodes. A content-addressed store that can be synced is more durable and more work. Recommend local-first with the hash recorded, so relocation later does not invalidate any Result Card."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder asked runs to capture more than strictly required, explicitly
+  anticipating future analyses. The anti-rot rule was added because the repo has already
+  shipped capture with no reader (predictionAudit).

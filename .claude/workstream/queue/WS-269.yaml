@@ -6,8 +6,8 @@ status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-07-25T18:49:02.195Z"
+completion_commit: "9722956"
 priority_score: 18.0
 priority_label: "P2"
 category: "kit-quality"

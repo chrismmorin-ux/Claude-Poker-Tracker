@@ -1,0 +1,109 @@
+id: "WS-324"
+title: "Declare the Stack beneath every surface — attribute divergence to the LAYER that caused it, so a fault two layers down is catchable"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "We should also be queuing up the surfaces of any decision
+  process to get there that was behind the in-place reasoning. This would catch something
+  two layers down."
+
+  THE OBSERVATION. FSA compares surfaces at the TOP level — action distribution vs action
+  distribution — and decomposes the difference BY SITUATION. That localizes divergence in
+  game-state space but says nothing about WHICH STEP OF THE REASONING produced it. A wrong
+  recommendation currently traces no further than "the engine said so."
+
+  THE FORMALIZATION. An action surface is a COMPOSITION of intermediate surfaces:
+
+    range surface -> equity surface -> fold-probability surface -> EV surface -> action surface
+
+  Each intermediate is itself a function over game states — a surface in exactly FSA's sense,
+  with its own inputs, its own assumptions, and its own ways of being wrong. Call the ordered
+  set the STACK, and each element a LAYER.
+
+  This yields a SECOND, ORTHOGONAL decomposition of the same divergence volume:
+    - by SITUATION (FSA Phase 3, already planned) — WHERE in the game the surfaces differ
+    - by LAYER (this ticket) — WHICH STEP OF THE REASONING made them differ
+
+  Both decompose the same total. Together they answer "where and why" instead of "where."
+
+  WHY THIS IS NOT THEORETICAL. WS-291 was a falsified range model sitting on the live
+  recommendation path and it survived UNMEASURED FOR THE LIFE OF THE PROJECT. It is a
+  layer-1 fault (range surface) that manifested as layer-5 symptoms (bad advice). Nothing
+  scored the layers independently, so nothing could localize it. The holdingKnowledge
+  primitive (WS-292) closed exactly one such join — belief vs truth for a holding. This
+  generalizes that move to every layer.
+
+  WHAT TO BUILD:
+    1. Every registered surface DECLARES its stack — ordered layers, each with declared
+       inputs, output type, and its named assumptions.
+    2. Every layer EMITS its intermediate value into the Decision Atom (WS-322), so the
+       reasoning chain is reconstructable per decision without a re-run.
+    3. A LAYER PROBE scores one layer independently against whatever ground truth exists
+       for it (revealed holdings for the range layer, realized showdowns for the equity
+       layer, observed fold frequencies for the fold layer, realized chips for the EV layer).
+    4. ATTRIBUTION: given two surfaces that diverge, find the FIRST layer at which their
+       stacks separate, and report how much of the total divergence volume that layer
+       accounts for.
+    5. ABLATION FROM STORED ATOMS: because intermediates are recorded, "what if layer 3 had
+       been correct?" is answerable by substitution WITHOUT re-running the engine — which
+       matters because the engine will have moved by the time the question is asked.
+
+  THE PRECEDENT FOR THE SHAPE IS IN-REPO: decisionGeometry.mjs — "small on purpose, and
+  shared on purpose... deriving it three times would be three chances to disagree about what
+  'the pot' means at a node." Same argument, one scale up.
+
+  BINDING RULE CARRIED FORWARD: a layer probe scored against a hypothesized branch is a
+  category error, not a miscalibration. holdingKnowledge already refuses this via the
+  `basis` axis (observed vs hypothesized). Layer probes inherit that refusal.
+accept_criteria: |
+  - Every surface registered under WS-322 declares a stack; a surface with an undeclared
+    stack cannot be registered, it is not merely warned about.
+  - Each layer emits its intermediate value into the Decision Atom, with the layer's own
+    provenance and assumption set.
+  - At least four layer probes exist and are scored on shared decisions: range, equity,
+    fold-probability, EV.
+  - Divergence between two surfaces decomposes by layer AND by situation, and the two
+    decompositions sum to the same total volume — asserted by test, not by inspection.
+  - A layer-substitution ablation runs from stored atoms alone, with the engine NOT invoked;
+    proven by a test that runs it against a pinned atom fixture.
+  - Layer probes refuse `hypothesized`-basis inputs, inheriting the holdingKnowledge rule.
+  - A worked example reproduces WS-291: given atoms from before the fix, attribution
+    localizes the fault to the range layer rather than to the recommendation.
+effort: "L"
+files_involved:
+  - "src/utils/holdingKnowledge/"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "scripts/backtest/"
+blocked_by:
+  - "WS-322"
+blocked_by_legacy: []
+enables:
+  - "WS-325"
+  - "WS-330"
+sprint_id: null
+decision_flags:
+  - "Do layers emit their FULL intermediate (e.g. the whole 169-cell range vector per opponent per decision) or a compressed summary plus a seed to regenerate? Full is ~10-50x the atom size and makes ablation exact; compressed keeps runs cheap but makes some future questions unanswerable. Recommend full for a sampled subset of decisions plus compressed for all, with the sampling rate recorded."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder asked for the reasoning layers behind a decision to be surfaced
+  so a fault two layers down is catchable. Analysis showed this is a second decomposition of
+  FSA's divergence volume, orthogonal to its by-situation decomposition.

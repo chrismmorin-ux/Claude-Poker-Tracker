@@ -5,7 +5,7 @@ type: improvement
 status: done
 claimed_by: ""
 claimed_at: null
-completed_at: null
+completed_at: "2026-06-10T16:48:44.114Z"
 completion_commit: "92c9320"
 priority_score: 15.0
 priority_label: "P2"

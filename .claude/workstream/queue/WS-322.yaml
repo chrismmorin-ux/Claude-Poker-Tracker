@@ -1,0 +1,111 @@
+id: "WS-322"
+title: "The Standard of Record — one vocabulary and one schema set for every strategy claim in the repo (Declared surface, Strategy Card, Decision Atom, Result Card)"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P0"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-02: "Make it repo-wide that this is the standard of comparison
+  of record. So anything we build supports replication of this."
+
+  THIS IS NOT A NEW PROJECT — IT IS THE MISSING HALF OF FSA. The Five-Surface Atlas
+  (.claude/projects/five-surface-atlas.md) already establishes the founder's own definition:
+  "A strategy is a function from game state to action distribution. Over the space of game
+  states that function is a SURFACE." FSA registers five: one Equilibrium, three Fields, one
+  Read. Every one of them is OBSERVED, FITTED, or IMPORTED.
+
+  There is no way to DECLARE a surface on purpose, run it, and score it. That is the gap.
+
+  ADD A SIXTH SURFACE CLASS: **Declared**. A Strategy Card is a declared surface — authored
+  deliberately, with stated reasons, and executable. Once Declared exists as a class, FSA's
+  divergence instrument (Phase 3) scores strategies against each other with NO second
+  comparison machinery. Building a parallel tournament harness would be the exact duplication
+  decisionGeometry.mjs warns about: "deriving it three times would be three chances to
+  disagree about what 'the pot' means at a node."
+
+  THE VOCABULARY, registered once so it stops being reinvented per session:
+
+    Surface        function over game-state space (FSA's term, unchanged)
+    Surface class  Equilibrium | Field | Read | Declared  (Declared is new)
+    Stack          the ordered layers composing a surface (WS-324)
+    Strategy Card  a declared, enclosed, warranted rule set — a Declared surface
+    Deal Book      a versioned, seeded, content-hashed hand set (corpus slice or generated)
+    Field          who occupies the other seats
+    Match          Strategy Card x Deal Book x Field -> Result Card
+    Result Card    the standardized scorecard + replication manifest
+    Decision Atom  one row per decision; aggregates are VIEWS over atoms, never the record
+    Census         the coverage record, including contexts hit ZERO times
+    Ladder         the persistent comparison across all Result Cards
+
+  NAMING COLLISION, RESOLVED EXPLICITLY: "surface" already means UX surface in docs/design/
+  surfaces/. That meaning stays scoped to docs/design/ and is unambiguous in context. The
+  FSA meaning is the one used everywhere in measurement code. Do not introduce a third.
+
+  WHAT A STRATEGY CARD MUST SATISFY (founder's definition: "a strategy just needs to account
+  for all your hands"):
+    1. DOMAIN — declared scope (game type, seats, stack depth, positions). Outside it the
+       card ABSTAINS explicitly; abstentions are counted, never silently skipped.
+    2. TOTAL COVERAGE inside the domain, which requires an explicit RESIDUAL CLAUSE — the
+       declared fallback for states the named rules do not reach. The residual's EV share is
+       a headline metric: how much of the money comes from the part nobody designed.
+    3. WARRANT per rule — equity | structure | read | fear. `read` rules make a falsifiable
+       claim about a population number. `fear` is a LEGAL warrant; you can only measure what
+       authors will admit to.
+
+  KEYS OFF WS-317 (done): the structured situation key. A Card whose rules key off anything
+  else creates a sixth ad-hoc coordinate system and is inadmissible.
+accept_criteria: |
+  - `Declared` is registered as a surface class in the FSA charter, and its divergence is
+    computed by the SAME instrument as the other four. No second comparison path exists.
+  - Schemas exist and are versioned ADDITIVE-ONLY (same discipline as the IDB rule, which
+    has a check script): Strategy Card, Decision Atom, Coverage Census, Result Card,
+    Deal Book manifest, Field manifest.
+  - A Strategy Card is BOTH human-readable and executable from one artifact — not a doc
+    plus a separate implementation that can drift.
+  - Every Card is content-hashed; every Result Card carries a replication manifest naming
+    engine commit, corpus hash, Deal Book hash, Field version, partition, every seed, and
+    every constant the result depends on (PRIOR_WEIGHT, ACTION_TAU_FRACTION,
+    MIN_CONTINUATION_WEIGHT at minimum).
+  - Rule keys resolve against WS-317's structured situation key. A Card using a positional
+    string key is rejected by the loader, not warned about.
+  - Enclosure is CHECKED, not asserted: loading a Card without a residual clause fails.
+  - The vocabulary lands in one register file that CLAUDE.md points at, so the next session
+    does not reinvent the terms.
+effort: "L"
+files_involved:
+  - ".claude/projects/five-surface-atlas.md"
+  - "src/utils/pokerCore/situationKey.js"
+  - "scripts/backtest/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-323"
+  - "WS-324"
+  - "WS-326"
+  - "WS-327"
+  - "WS-328"
+  - "WS-329"
+sprint_id: null
+decision_flags:
+  - "Does a Strategy Card declare action DISTRIBUTIONS (mixed strategies) or single actions per state? Distributions match how the engine already emits advice and how pi_ours is built, but they are much harder for a human to execute at a table — and human-executability is the point of the curriculum work."
+  - "Is `fear` a first-class warrant or a derived verdict? Declaring it invites honesty; deriving it (equity-warranted rule that deviates toward passive in the medium band with no arithmetic justification) catches authors who will not admit it. Recommend BOTH — declared, then audited against the derived test."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02 from a founder design session on bridging poker statistics, game theory,
+  and fear-linked perceived weakness. The session established that the strategy-tournament
+  concept is not adjacent to FSA but is its missing Declared surface class.

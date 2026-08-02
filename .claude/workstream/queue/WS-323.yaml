@@ -1,0 +1,111 @@
+id: "WS-323"
+title: "The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell declared surface, with the fringe measured rather than assumed"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: "One of the questions to ask is 'is this hand worth playing at
+  all?' — does this particular combination of hand produce EV near 0, which are usually the
+  fringes of ranges."
+
+  THE UNITS, CORRECTED AND THEN THE INSIGHT KEPT. Equity is a percentage; EV is money. 50%
+  is the bar for neither — suited connectors profit well under 50% equity, dominated offsuit
+  broadways exceed it and lose money multiway. But the founder's structural claim is exactly
+  right and follows from the definition: FOLDING IS EV = 0. So "worth playing" is
+  "EV(play) > 0", and fringe hands are the hands INDIFFERENT TO FOLDING. The fringe sits at
+  zero by construction, not by coincidence.
+
+  WHY THE FRINGE IS THE MOST VALUABLE BAND. When EV is approximately 0 the arithmetic
+  ABSTAINS — there is no equity answer to a breakeven decision. The choice must then come
+  from a read, from structure, or from fear. So the zero-EV band is THE ONLY PLACE WHERE
+  WARRANT TYPE IS OBSERVABLE. Everywhere else equity decides and every non-broken strategy
+  agrees. This is where strategies actually differ and where fear has room to hide — which
+  connects directly to the standing doctrine that fear pushes MEDIUM hands into passive
+  lines, and that the shape is wrong in the middle, not in the tails.
+
+  THREE ZONES, each answering a different question:
+    Clear +EV    competence. Misplaying these means broken. Cheap, fast, high-signal.
+    Fringe ~0    judgment. Where strategies diverge, reads earn or don't, fear shows.
+    Clear -EV    leaks. Playing these is straightforwardly losing money.
+
+  THE DISTINCTION THAT WILL BITE US IF SKIPPED: "near zero" and "we cannot tell" look
+  identical in a point estimate. 0.0 +/- 0.05bb is genuinely marginal — a real coin flip
+  where a read may legitimately break the tie. 0.0 +/- 3bb is UNMEASURED, and treating it as
+  marginal is how a confident rule ends up resting on nothing. Fringe is therefore defined by
+  an interval straddling zero, then SPLIT BY WIDTH. Wide-interval cells are a research queue,
+  not fringe hands.
+
+  NO THRESHOLD GATE. The engine's standing anti-pattern is explicit that
+  `if (n >= K) use the specific estimate` is "a threshold label, the same anti-pattern in
+  another costume." Emit a continuous margin with its uncertainty; zones are a REPORTING
+  band, never a decision rule.
+
+  WHY THIS IS THE RECOVERY MECHANISM. The per-decision instrument is sparse and its skips are
+  not random. The entry question has neither problem: it is defined on EVERY hand including
+  every folded one (no showdown selection), needs no continuation simulation (no horizon
+  problem), and is answerable across the whole corpus rather than a slice. It recovers
+  exactly the hands the main harness discards.
+
+  AND IT IS ALREADY A COMPLETE STRATEGY. Under the founder's own definition, a preflop entry
+  map is FULLY ENCLOSED by construction: 169 starting hands (1,326 with suits) x position x
+  facing action. Small enough to enumerate exhaustively rather than sample — the honest
+  answer to "don't brute-force more than needed" is that you brute-force the part that is
+  genuinely small. This is Layer 1, and its fringe map tells later layers where to focus.
+
+  THE CATCH, WHICH BECOMES THE BEST METRIC HERE. Entry EV is NOT a property of the hand — it
+  is conditional on the continuation policy. Suited connectors are +EV played well postflop
+  and -EV played badly. So every entry map is stamped with the continuation policy that
+  produced it. That constraint pays for itself: re-run the map under strategy generations 1,
+  2, 3 and WATCH THE FRINGE MOVE. Hands migrating from fringe into clear-+EV is what "getting
+  better" IS, measured directly on the same 169 cells forever.
+accept_criteria: |
+  - A complete entry map over (169 hands x position x facing action) within a declared
+    domain, every cell carrying EV in bb AND its interval — no bare point estimates.
+  - Fringe is defined by interval-straddles-zero and split into genuinely-marginal (tight)
+    vs unmeasured (wide). The two are never reported as one band.
+  - Zones are reporting bands only. Grep confirms no `if (EV > K)` decision gate was
+    introduced anywhere.
+  - Every map is stamped with the continuation policy AND engine commit that produced it;
+    an unstamped map is refused by the loader.
+  - The map loads as a valid WS-322 Strategy Card — total coverage inside its domain,
+    explicit residual clause, warrant per cell or per rule group.
+  - The map is scoreable on the corpus for folded hands too, demonstrating the no-showdown-
+    selection claim with a coverage count of folded vs shown decisions.
+  - A generation-over-generation fringe-migration report exists and runs on the same cells,
+    so it is comparable across engine versions.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/pokerCore/preflopEquity.js"
+  - "scripts/backtest/"
+blocked_by:
+  - "WS-322"
+blocked_by_legacy: []
+enables:
+  - "WS-327"
+sprint_id: null
+decision_flags:
+  - "169 cells (rank-pair grid) or 1,326 (suit-aware)? 1,326 is the honest unit for blockers and suitedness but is 8x the compute and most cells are near-duplicates. Recommend 169 for the headline map with a suit-aware pass only on cells whose interval straddles zero — spend the compute where the answer is actually in doubt."
+  - "Does the entry map's continuation policy default to the shipped engine, or to a declared simple Card? The engine gives the most realistic number; a declared Card makes the map self-contained and reproducible without the engine. This determines whether the map survives an engine upgrade unchanged."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02. Founder proposed the entry question as a way to RECOVER hands the
+  per-decision instrument discards; analysis showed it is also the cheapest fully-enclosed
+  strategy the repo can build, and the natural Layer 1 of the Standard of Record.
