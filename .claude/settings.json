@@ -61,6 +61,28 @@
           {
             "type": "command",
             "command": "node .claude/hooks/readiness-gate.cjs"
+          },
+          {
+            "type": "command",
+            "command": "node kit/scripts/cwos-session-register.js"
+          },
+          {
+            "type": "command",
+            "command": "node kit/scripts/cwos-session-vitals.js"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node kit/scripts/cwos-heartbeat.js"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/session-heartbeat.cjs"
           }
         ]
       }
