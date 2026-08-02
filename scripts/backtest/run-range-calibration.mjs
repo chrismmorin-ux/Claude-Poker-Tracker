@@ -93,6 +93,15 @@ const main = async () => {
     console.log('═'.repeat(76));
     console.log(`\n  scanned: ${r.scanned.decisions} postflop decisions, ${r.scanned.players} players, ${r.scanned.handsRead} hands`);
     console.log(`  revealed: acting seat ${r.scanned.revealedActing}, villain seat ${r.scanned.revealedVillain}`);
+    if (r.scanned.byTableSize) {
+      const bt = r.scanned.byTableSize;
+      // Derived from the object's own keys rather than a hardcoded stratum list. The strata
+      // changed once already — `hu` was removed when it turned out to be unreachable — and the
+      // hardcoded version then printed `hu=undefined` for a stratum that no longer existed.
+      const parts = Object.keys(bt).map((k) => `${k}=${bt[k]}`).join('  ');
+      console.log(`  villain-seat decisions by table size (WS-311): ${parts}`);
+      console.log('    (2-seat hands are skipped upstream at phhAdapter.mjs:268 — they never reach this probe)');
+    }
     console.log('\n  coverage = the true hand has NON-ZERO probability in the range.');
     console.log('  retained = share of all possible combos the range kept (the random-elimination baseline).');
     console.log('  lift     = coverage / retained. ~1.0 means the eliminations are effectively arbitrary.');
@@ -102,8 +111,37 @@ const main = async () => {
     console.log(table('ACTING SEAT — by observed action', r.acting.byAction));
     console.log(table('ACTING SEAT — by revealed hand strength', r.acting.byStrength));
     console.log(table('ACTING SEAT — by site (robustness)', r.acting.bySite));
+    // WS-292: per-player acting-seat calibration, worst-discriminated first.
+    if (Array.isArray(r.actingByPlayer) && r.actingByPlayer.length > 0) {
+      const worst = r.actingByPlayer.slice(0, 15);
+      console.log(table(
+        `ACTING SEAT — by player, worst Δlog first (n≥5; ${r.actingByPlayer.length} players qualify)`,
+        Object.fromEntries(worst.map((p) => [p.playerId.slice(0, 12), p])),
+      ));
+      console.log('  A player near or below Δlog 0 is one whose ACTIONS carry no equity signal for us —');
+      console.log('  the range we inferred gave the hand they showed no more weight than a flat range would.');
+      console.log('  Read as INPUT to a per-player width fit, not as a fitted parameter: n is small per');
+      console.log('  player, and choosing a softness off this table without a sweep is what WS-291/303 undid.');
+    }
+
     console.log(table('VILLAIN SEAT — range the game tree consumes (gameTreeContext:219)', { overall: r.villain.all, ...r.villain.byStreet }));
     console.log(table('VILLAIN SEAT — by villain action', r.villain.byAction));
+    if (r.byTableSize) {
+      // WS-311: same baseline as above, split by actual dealt-in seat count.
+      for (const st of Object.keys(r.byTableSize)) {
+        const slice = r.byTableSize[st];
+        if (!slice || !Object.keys(slice.byAction || {}).length) continue;
+        console.log(table(`VILLAIN SEAT — by action, table size = ${st} (n=${slice.n})`, slice.byAction));
+      }
+      for (const st of Object.keys(r.byTableSize)) {
+        const sweep = r.byTableSize[st]?.actionTauSweep;
+        if (!sweep) continue;
+        for (const [t, byAction] of Object.entries(sweep)) {
+          if (!Object.keys(byAction).length) continue;
+          console.log(table(`ACTION TAU SWEEP — table size = ${st}, tau=${t}`, byAction));
+        }
+      }
+    }
     console.log(table('CHAINED narrowing — as gameTreeDepth2 re-applies it', r.chained));
     if (r.tauSweep && Object.keys(r.tauSweep).length) {
       console.log(table('SOFTNESS SWEEP (villain side) — tauFraction', r.tauSweep));

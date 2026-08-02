@@ -155,10 +155,16 @@ export const estimateRangeEquityPct = (buckets) => {
  * @param {number} buttonSeat - Dealer button seat
  * @returns {{ seatRanges: Object, seatRangeProfiles: Object, seatRangeLabels: Object }}
  */
-export const initializeSeatRanges = (seatPlayers, tendencyMap, buttonSeat) => {
+export const initializeSeatRanges = (seatPlayers, tendencyMap, buttonSeat, deps = {}) => {
+  // WS-292: `openHolding` arrives by dependency injection like the other engine functions
+  // this module uses — handAnalysis deliberately does not import exploitEngine directly,
+  // and holdingKnowledge depends on it. Absent the dep, `seatHoldings` stays empty and the
+  // caller simply gets no provenance; nothing else changes.
+  const { openHolding = null } = deps;
   const seatRanges = {};
   const seatRangeLabels = {};
   const seatRangeProfiles = {};
+  const seatHoldings = {};
 
   for (const [seat, playerId] of Object.entries(seatPlayers)) {
     const tendency = tendencyMap?.[playerId];
@@ -170,12 +176,17 @@ export const initializeSeatRanges = (seatPlayers, tendencyMap, buttonSeat) => {
       if (openRange) {
         seatRanges[seat] = new Float64Array(openRange);
         seatRangeLabels[seat] = `${posName} open range`;
+        if (openHolding) {
+          seatHoldings[seat] = openHolding({
+            seed: seatRanges[seat], seedSource: 'rangeProfile', seat,
+          });
+        }
       }
       seatRangeProfiles[seat] = rangeProfile;
     }
   }
 
-  return { seatRanges, seatRangeProfiles, seatRangeLabels };
+  return { seatRanges, seatRangeProfiles, seatRangeLabels, seatHoldings };
 };
 
 /**
@@ -439,11 +450,21 @@ export const analyzeTimelineAction = async ({
   entry, index, timeline, seatRanges, seatRangeLabels,
   seatRangeProfiles, seatPlayers, tendencyMap, buttonSeat,
   communityCards, heroSeat, heroCards, showdownCards, blindsPosted, results,
+  seatHoldings = {},
   deps = {},
 }) => {
   // Injected dependencies (from exploitEngine, passed by hook caller)
+  //
+  // WS-292: the narrowing dep is now the holding-knowledge primitive rather than bare
+  // `narrowByBoard`, so replay derives "the range at this point" the same way the
+  // accumulator and the game tree do instead of being a third implementation of it.
+  // Defaults stay inert (identity) in the same defensive style as before.
   const {
-    narrowByBoard = (range) => range,
+    openHolding: openHoldingFn = null,
+    narrowHolding: narrowHoldingFn = null,
+    holdingBelief: holdingBeliefFn = (h) => ({ range: h?.range ?? null, provenance: null }),
+    revealHolding: revealHoldingFn = null,
+    holdingTruth: holdingTruthFn = null,
     segmentRange: segmentRangeFn = () => null,
     buildSituationKey: buildSituationKeyFn = () => '',
     queryActionDistribution: queryActionDistributionFn = () => ({ actions: {}, confidence: 0 }),
@@ -475,6 +496,10 @@ export const analyzeTimelineAction = async ({
   let evAssessment = null;
   let preActionRanges = null;
   let preActionLabel = null;
+  // WS-292: the seat's holding as it stood when it had to act, and the calibration of that
+  // read against the hand it later turned up (null unless this seat reached showdown).
+  let preActionHolding = null;
+  let rangeCalibration = null;
 
   // Build pre-action decision distribution for preflop
   if (street === 'preflop') {
@@ -526,11 +551,31 @@ export const analyzeTimelineAction = async ({
       style: tendency.style, threeBet: tendency.threeBet,
     } : undefined;
 
-    // Narrow range by this action
+    // Narrow range by this action — OBSERVED: this seat really took it in the hand
+    // being replayed.
+    // A seat can reach here without a handle — `initializeSeatRanges` only builds one when
+    // it was given `openHolding`, and callers may hand this function a bare `seatRanges`
+    // map. Seed lazily from the range we already hold rather than skipping the narrowing:
+    // a missing handle must never mean "silently stop narrowing", which would degrade
+    // replay to un-narrowed ranges with nothing failing.
+    preActionHolding = seatHoldings[seat]
+      || (openHoldingFn && rangeAtPoint
+        ? openHoldingFn({ seed: rangeAtPoint, seedSource: 'rangeProfile', seat })
+        : null);
+
     try {
-      const narrowed = narrowByBoard(rangeAtPoint, action, board, [], { playerStats, boardTexture });
-      seatRanges[seat] = narrowed;
-      rangeAtPoint = narrowed;
+      if (narrowHoldingFn && preActionHolding) {
+        const next = narrowHoldingFn(preActionHolding, {
+          action, board, deadCards: [], basis: 'observed',
+          options: { playerStats, boardTexture },
+        });
+        seatHoldings[seat] = next;
+        const narrowed = holdingBeliefFn(next).range;
+        seatRanges[seat] = narrowed;
+        rangeAtPoint = narrowed;
+      }
+      // The label describes the ACTION, not the mechanism that narrowed by it — it is
+      // updated whether or not a narrowing function was injected, exactly as before.
       const streetLabel = street.charAt(0).toUpperCase() + street.slice(1);
       seatRangeLabels[seat] = `${posName} range after ${streetLabel} ${action}`;
     } catch (e) {
@@ -570,6 +615,32 @@ export const analyzeTimelineAction = async ({
       const s0 = parseAndEncode(seatShowdown[0]);
       const s1 = parseAndEncode(seatShowdown[1]);
       if (s0 >= 0 && s1 >= 0) {
+        // WS-292 — THE JOIN, in the replay surface. Ground truth for this seat was already
+        // being read here, three lines from the range that predicted it, and used only to
+        // classify the action. Attaching it to the holding scores the range we were
+        // carrying against the hand they turned up.
+        //
+        // `rangeCalibration` is measured on the range as it stood BEFORE this action was
+        // folded in (`preActionHolding`), because the question is "did our read cover what
+        // they had when they decided", not "does the post-hoc range contain it" — the
+        // latter conditions on the action being scored.
+        if (revealHoldingFn && holdingTruthFn && preActionHolding) {
+          try {
+            const revealedHolding = revealHoldingFn(preActionHolding, [s0, s1], { street, order: entry.order });
+            const truth = holdingTruthFn(revealedHolding, { board });
+            if (truth && !truth.refused) {
+              rangeCalibration = {
+                covered: truth.covered,
+                weightOfTruth: truth.weightOfTruth,
+                logLift: truth.logLift,
+                retainedFraction: truth.retainedFraction,
+              };
+            }
+          } catch (e) {
+            // Calibration is observational — never let it break replay analysis.
+          }
+        }
+
         const opponentSeat = heroSeat && String(heroSeat) !== seat
           ? String(heroSeat) : null;
         if (opponentSeat && seatRanges[opponentSeat]) {
@@ -668,5 +739,11 @@ export const analyzeTimelineAction = async ({
     heroAnalysis,
     heroRangeAtPoint,
     modelPrediction,
+    // WS-292: how the range we were carrying for this seat scored against the hand it
+    // actually turned up. Null unless the seat reached showdown. Observational — nothing
+    // in the engine reads it, and per the weakness/exploit separation it must not: this is
+    // a villain-side observation, not a hero recommendation.
+    rangeCalibration,
+    holdingProvenance: preActionHolding ? holdingBeliefFn(preActionHolding).provenance : null,
   };
 };

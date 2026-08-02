@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 174
+total_items: 175
 by_status:
   decomposed: 1
-  done: 60
+  done: 62
   in_progress: 3
   deferred: 44
-  backlog: 47
+  backlog: 46
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 60
+  domain-correctness: 61
   exploit-anchor-library: 8
   hero-state-primitive: 2
   input-ux: 3
@@ -1422,7 +1422,7 @@ items:
 
   - id: "WS-292"
     title: "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE"
-    status: backlog
+    status: done
     priority_score: 28
     category: architecture
     effort: L
@@ -1598,7 +1598,7 @@ items:
 
   - id: "WS-312"
     title: "A flush draw is reported as a 'thin value bet' — the classifier reads a draw's raw equity as made-hand value"
-    status: backlog
+    status: done
     priority_score: 29
     category: domain-correctness
     effort: M
@@ -1672,6 +1672,15 @@ items:
     title: "Does the study ladder separate? Run the slowplay test again on limp / 3bet / cbet rates — the axes that failed for lack of power should pass here"
     status: backlog
     priority_score: 28
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-321"
+    title: "Fit a PER-PLAYER range width from calibration — some players' actions carry no equity signal at all, and the engine currently reads them as if they did"
+    status: backlog
+    priority_score: 27
     category: domain-correctness
     effort: M
     program: domain-correctness

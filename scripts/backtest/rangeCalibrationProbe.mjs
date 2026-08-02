@@ -33,7 +33,8 @@ import {
   narrowByBoard, classifyComboFull, computeComboEquity,
 } from '../../src/utils/exploitEngine/postflopNarrower.js';
 import { buildBaselineRange } from '../../src/utils/exploitEngine/preflopAdvisor.js';
-import { enumerateCombos, decodeIndex } from '../../src/utils/pokerCore/rangeMatrix.js';
+import { decodeIndex } from '../../src/utils/pokerCore/rangeMatrix.js';
+import { scoreCoverage, holdingTruth } from '../../src/utils/holdingKnowledge/index.js';
 import { parseAndEncode, encodeCard, cardRank } from '../../src/utils/pokerCore/cardParser.js';
 import { comboStrengthPercentile } from '../../src/utils/pokerCore/handEvaluator.js';
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
@@ -71,40 +72,116 @@ export const summarize = (s) => {
   };
 };
 
-/** All available combos ignoring the range — the denominator for "retained fraction". */
-const totalAvailableCombos = (board, dead) => {
-  const blocked = new Set([...board, ...dead]);
-  const free = 52 - blocked.size;
-  return (free * (free - 1)) / 2;
-};
-
 /**
  * Score one (range, revealed hand) pair.
+ *
+ * WS-292: the implementation moved to `src/utils/holdingKnowledge/coverage.js`. It used to
+ * live here and ONLY here — the sole join between what the engine believed and what a seat
+ * turned up existed in a backtest script, outside `src/`, so nothing the app ships could
+ * ask the question. This is now a field-name adapter over the primitive and nothing more.
+ *
+ * The adapter keeps `push()` consuming `p` and `u` separately rather than taking the
+ * primitive's ready-made `logLift`. That is deliberate: summing (log p − log u) per
+ * decision is not bit-identical to (Σ log p) − (Σ log u) in floating point, and this
+ * refactor must not move a published number by a last-bit rounding difference.
+ *
  * @returns {{covered, retained, p, u}|null}
  */
 const scoreRange = (range, board, hole, dead = []) => {
-  if (!range || !board || board.length < 3) return null;
-  const [c1, c2] = hole;
-  if (board.includes(c1) || board.includes(c2)) return null;
-  const combos = enumerateCombos(range, [...board, ...dead]);
-  if (combos.length === 0) return null;
-  const total = combos.reduce((s, c) => s + c.weight, 0);
-  if (!(total > 0)) return null;
-
-  const p = combos
-    .filter((c) => (c.card1 === c1 && c.card2 === c2) || (c.card1 === c2 && c.card2 === c1))
-    .reduce((s, c) => s + c.weight, 0) / total;
-
-  const avail = totalAvailableCombos(board, dead);
-  return {
-    covered: p > 0,
-    retained: avail > 0 ? combos.length / avail : 0,
-    p,
-    u: 1 / combos.length,
-  };
+  const s = scoreCoverage(range, board, hole, dead);
+  if (!s) return null;
+  return { covered: s.covered, retained: s.retainedFraction, p: s.weightOfTruth, u: s.uniformWeight };
 };
 
 const strengthBand = (pct) => (pct == null ? 'unknown' : pct >= 0.8 ? 'strong' : pct >= 0.5 ? 'medium' : 'weak');
+
+/**
+ * Display floor for the per-player calibration table (WS-292). Players with fewer revealed
+ * decisions than this are omitted from the REPORT because one showdown says nothing legible
+ * — not because their evidence is discarded. Nothing estimates off this constant.
+ */
+const PER_PLAYER_MIN_N = 5;
+
+// ─── WS-311: table-size stratification ───────────────────────────────────────
+//
+// §11.7–§11.9 were measured POOLED across table sizes. This app targets 9-handed play, so
+// every villain-seat number needs to be readable per stratum, not just pooled.
+//
+// Keyed off the ACTUAL dealt-in player count carried on every corpus hand
+// (`hand._backtest.dealtIn`, set in phhAdapter.mjs:429-430 from `players.length` — the raw
+// PHH `players` list, whose length equals the hand's `seats = [...]` cardinality), never a
+// table-name or stake-label heuristic.
+//
+// HEADS-UP IS NOT A STRATUM HERE, AND THAT IS CORRECT.
+// The raw corpus does contain a large number of true 2-seat hands (PS especially). They have
+// NEVER entered any measurement: `phhAdapter.toAppHand` skips `n === 2` outright
+// (SKIP_REASONS.HEADS_UP, phhAdapter.mjs:268) — present since the original harness commit
+// (WS-273, 6f8b0b8) — so a 2-seat hand never becomes an app hand and never reaches
+// `decisionAccumulator`. An earlier draft of this comment, and of POKER_THEORY's §11.7
+// caveat, claimed the measurements were "two-thirds heads-up contaminated". **That was
+// wrong**; it read the corpus directory rather than the ingestion path.
+//
+// So `hu` is not merely empty — it is unreachable, and including it would make the guard
+// below throw on every legitimate run. The real, surviving confound is narrower: 6-max and
+// 9-max are pooled together, and they are NOT the same population.
+export const TABLE_SIZE_STRATA = ['6max', '9max'];
+
+/**
+ * @param {number} dealtIn - `hand._backtest.dealtIn`
+ * @returns {'6max'|'9max'|null} — `null` for 2-seat hands, which cannot reach this probe
+ *   (see the HEADS-UP note above); returning null rather than 'hu' keeps them out of the
+ *   guard's stratum set instead of tripping it structurally.
+ */
+export const tableSizeStratum = (dealtIn) => {
+  if (!Number.isFinite(dealtIn)) return null;
+  if (dealtIn === 2) return null;
+  if (dealtIn >= 3 && dealtIn <= 6) return '6max';
+  if (dealtIn >= 7) return '9max';
+  return null;
+};
+
+/**
+ * MANDATORY GUARD (WS-311). This repo has a live precedent (the A4 arm) where a variant
+ * silently degraded to its baseline and would have been reported as a real finding. A
+ * stratification is exactly that risk in a new shape: one stratum silently empty while
+ * others carry data, or two strata reporting the identical discrimination number for the
+ * same action, both read as "measured" when they are not. Throws rather than reports —
+ * "a measurement instrument that silently degrades is worse than one that fails loudly."
+ *
+ * @param {Object} byActionPerStratum - { [stratum]: { [action]: summarizedStat|undefined } }
+ * @param {string} label - identifies which comparison failed, for the thrown message
+ */
+export const assertNoStratificationDegeneracy = (byActionPerStratum, label) => {
+  const strata = Object.keys(byActionPerStratum);
+  const totalN = (st) => Object.values(byActionPerStratum[st] || {})
+    .reduce((s, v) => s + (v?.n || 0), 0);
+  const withData = strata.filter((s) => totalN(s) > 0);
+  const withoutData = strata.filter((s) => totalN(s) === 0);
+  if (withData.length > 0 && withoutData.length > 0) {
+    throw new Error(
+      `[${label}] table-size stratification collected ZERO decisions for [${withoutData.join(', ')}] `
+      + `while [${withData.join(', ')}] collected data. A measurement instrument that silently `
+      + 'degrades to fewer strata than it claims is worse than one that fails loudly.',
+    );
+  }
+  const actions = new Set(strata.flatMap((s) => Object.keys(byActionPerStratum[s] || {})));
+  for (const action of actions) {
+    const present = strata.filter((s) => byActionPerStratum[s]?.[action]);
+    for (let i = 0; i < present.length; i++) {
+      for (let j = i + 1; j < present.length; j++) {
+        const a = byActionPerStratum[present[i]][action].deltaLogVsUniform;
+        const b = byActionPerStratum[present[j]][action].deltaLogVsUniform;
+        if (a === b) {
+          throw new Error(
+            `[${label}] action "${action}" produced BIT-IDENTICAL deltaLogVsUniform (${a}) for strata `
+            + `"${present[i]}" and "${present[j]}" — two genuinely different populations will not match `
+            + 'to exact float equality.',
+          );
+        }
+      }
+    }
+  }
+};
 
 // ─── WS-303: strength-quintile probe ─────────────────────────────────────────
 //
@@ -192,6 +269,10 @@ export const runRangeCalibrationProbe = async ({
   log(`indexed ${byPlayer.size} players from ${handsRead} hands`);
 
   const acting = { all: mkStat(), byStreet: {}, byAction: {}, byStrength: {}, bySite: {} };
+  // WS-292: acting-seat calibration keyed by player, so the per-player width the follow-up
+  // ticket has to fit can be READ rather than assumed. Scored on exactly the same decisions
+  // as `acting.all` — it is a re-slice of that stream, not a separate arm.
+  const actingByPlayer = {};
   const villain = { all: mkStat(), byStreet: {}, byAction: {} };
   const chained = { 1: mkStat(), 2: mkStat(), 3: mkStat() };
   // WS-291: sweep the logistic softness on the villain-side narrowing so the parameter
@@ -231,6 +312,19 @@ export const runRangeCalibrationProbe = async ({
   const actionTauArms = {};
   if (Array.isArray(actionTauSweep)) {
     for (const t of actionTauSweep) actionTauArms[t] = {};
+  }
+
+  // WS-311: table-size strata for the villain-seat baseline and, if configured, the
+  // per-action tau sweep — scored on the SAME decisions as their pooled counterparts above.
+  const villainByTableSize = {};
+  for (const st of TABLE_SIZE_STRATA) villainByTableSize[st] = {}; // action -> stat
+
+  const actionTauByTableSize = {};
+  if (Array.isArray(actionTauSweep)) {
+    for (const st of TABLE_SIZE_STRATA) {
+      actionTauByTableSize[st] = {};
+      for (const t of actionTauSweep) actionTauByTableSize[st][t] = {}; // action -> stat
+    }
   }
 
   // depth-tempered chaining sweep — KAPPA=1.0 must reproduce `chained` exactly (correctness
@@ -276,24 +370,41 @@ export const runRangeCalibrationProbe = async ({
           const sd = hand.gameState.showdownCards || {};
           const board = ctx.board;
           const site = hand._backtest?.site || '?';
+          // WS-311: actual dealt-in seat count for this hand — see phhAdapter.mjs:429-430.
+          const tableSize = tableSizeStratum(hand._backtest?.dealtIn);
           if (!board || board.length < 3) return;
 
           // ---- 1. acting seat: the range the accumulator tracks ----
-          const hRaw = sd[String(ctx.playerSeat)];
-          if (hRaw && ctx.rangeBefore) {
-            const hole = hRaw.map(parseAndEncode);
-            if (!hole.some((c) => c < 0)) {
-              const r = scoreRange(ctx.rangeBefore, board, hole);
-              if (r) {
-                revealedActing++;
-                push(acting.all, r);
-                push(at(acting.byStreet, ctx.street), r);
-                push(at(acting.byAction, ctx.action), r);
-                push(at(acting.bySite, site), r);
-                const band = strengthBand(comboStrengthPercentile(hole[0], hole[1], board));
-                push(at(acting.byStrength, band), r);
-              }
-            }
+          //
+          // WS-292: read straight off the holding handle the accumulator now emits. This
+          // block used to re-join the showdown map to `ctx.rangeBefore` itself; the
+          // accumulator had both halves in the same function and never connected them, so
+          // every consumer that wanted the join built its own. `holdingTruth` refuses if
+          // the range carries a hypothesized narrowing, which this one never does — the
+          // accumulator only ever narrows on actions the seat really took.
+          const truth = ctx.holding ? holdingTruth(ctx.holding, { board }) : null;
+          if (truth && !truth.refused) {
+            const hole = truth.revealed;
+            const r = {
+              covered: truth.covered,
+              retained: truth.retainedFraction,
+              p: truth.weightOfTruth,
+              u: truth.uniformWeight,
+            };
+            revealedActing++;
+            push(acting.all, r);
+            push(at(acting.byStreet, ctx.street), r);
+            push(at(acting.byAction, ctx.action), r);
+            push(at(acting.bySite, site), r);
+            const band = strengthBand(comboStrengthPercentile(hole[0], hole[1], board));
+            push(at(acting.byStrength, band), r);
+            // WS-292 follow-up input: per-player calibration. A player whose revealed hands
+            // sit persistently near the floor of the range we inferred is telling us their
+            // continuation threshold is looser than the model assumes — they arrive at the
+            // river wider and weaker than modelled. Attributed to `pid`, the player whose
+            // range this actually is; the villain-seat surface below is keyed by SEAT and
+            // cannot be attributed this way without resolving the seat to a player.
+            push(at(actingByPlayer, String(pid)), r);
           }
 
           // ---- 2. villain seat: the range the game tree actually consumes ----
@@ -327,6 +438,7 @@ export const runRangeCalibrationProbe = async ({
                     push(villain.all, r);
                     push(at(villain.byStreet, ctx.street), r);
                     push(at(villain.byAction, vAction), r);
+                    if (tableSize) push(at(villainByTableSize[tableSize], vAction), r);
                   }
                 }
                 // ---- 3b. softness sweep on the same decision ----
@@ -347,7 +459,12 @@ export const runRangeCalibrationProbe = async ({
                   try {
                     const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
                     const r = scoreRange(nt, board, vHole);
-                    if (r) push(at(actionTauArms[t], vAction), r);
+                    if (r) {
+                      push(at(actionTauArms[t], vAction), r);
+                      if (tableSize && actionTauByTableSize[tableSize]) {
+                        push(at(actionTauByTableSize[tableSize][t], vAction), r);
+                      }
+                    }
                   } catch { /* skip arm */ }
                 }
 
@@ -429,8 +546,47 @@ export const runRangeCalibrationProbe = async ({
     Object.entries(o).map(([k, v]) => [k, summarize(v)]).filter(([, v]) => v),
   );
 
+  // WS-311: summarize + guard the table-size strata BEFORE returning. Guard failure throws
+  // (assertNoStratificationDegeneracy above) rather than shipping a table that silently
+  // degraded to fewer strata — or two strata reporting the same number — than it claims.
+  const byTableSize = {};
+  for (const st of TABLE_SIZE_STRATA) {
+    const byAction = mapSummary(villainByTableSize[st]);
+    byTableSize[st] = {
+      n: Object.values(byAction).reduce((s, v) => s + v.n, 0),
+      byAction,
+    };
+    if (Array.isArray(actionTauSweep)) {
+      byTableSize[st].actionTauSweep = Object.fromEntries(
+        Object.entries(actionTauByTableSize[st]).map(([t, byAct]) => [t, mapSummary(byAct)]),
+      );
+    }
+  }
+
+  assertNoStratificationDegeneracy(
+    Object.fromEntries(TABLE_SIZE_STRATA.map((st) => [st, byTableSize[st].byAction])),
+    'villain.byAction (table-size baseline)',
+  );
+  if (Array.isArray(actionTauSweep)) {
+    for (const t of actionTauSweep) {
+      assertNoStratificationDegeneracy(
+        Object.fromEntries(TABLE_SIZE_STRATA.map((st) => [st, byTableSize[st].actionTauSweep[t]])),
+        `actionTauSweep tau=${t} (table-size)`,
+      );
+    }
+  }
+
   return {
-    scanned: { decisions, revealedActing, revealedVillain, players: byPlayer.size, handsRead },
+    scanned: {
+      decisions,
+      revealedActing,
+      revealedVillain,
+      players: byPlayer.size,
+      handsRead,
+      // WS-311: n per table-size stratum, prominent — 9-max is the thin one.
+      byTableSize: Object.fromEntries(TABLE_SIZE_STRATA.map((st) => [st, byTableSize[st].n])),
+    },
+    byTableSize,
     acting: {
       all: summarize(acting.all),
       byStreet: mapSummary(acting.byStreet),
@@ -438,6 +594,25 @@ export const runRangeCalibrationProbe = async ({
       byStrength: mapSummary(acting.byStrength),
       bySite: mapSummary(acting.bySite),
     },
+    // WS-292: per-player calibration of the acting-seat range, worst-discriminated first.
+    //
+    // WHAT THIS IS FOR. `deltaLogVsUniform` near zero for a given player means the range we
+    // inferred for them put no more weight on the hand they actually held than a flat range
+    // over the same combos would have — our read of THAT player carries no information. The
+    // founder's reading of why: they continue below the equity threshold the model assumes,
+    // so an equity-shaped narrowing mis-ranks them and they reach the river wider and
+    // weaker than modelled.
+    //
+    // WHAT IT IS NOT. This is not a fitted parameter and must not be used as one yet. n is
+    // small per player (showdowns are rare), the values are noisy, and picking a per-player
+    // softness off this table without a proper sweep would repeat exactly what WS-291 and
+    // WS-303 had to undo — a constant chosen by taste rather than measured. `minN` keeps
+    // one-showdown players out of the report; it is a display floor, not a threshold gate
+    // on any estimate (§11.5 forbids those).
+    actingByPlayer: Object.entries(mapSummary(actingByPlayer))
+      .filter(([, v]) => v.n >= PER_PLAYER_MIN_N)
+      .sort((a, b) => a[1].deltaLogVsUniform - b[1].deltaLogVsUniform)
+      .map(([playerId, v]) => ({ playerId, ...v })),
     villain: {
       all: summarize(villain.all),
       byStreet: mapSummary(villain.byStreet),

@@ -2,7 +2,7 @@ id: "WS-292"
 title: "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -89,3 +89,4 @@ status_note: |
   hero-EV instrument had been built around missing hole cards: "maybe our plumbing is off
   too." The measurement that followed (WS-291) confirmed the gap had been hiding a
   falsified model.
+closed_by_event: "ev-1785624466067-abbf4b5c6864"

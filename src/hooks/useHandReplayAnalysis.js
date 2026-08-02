@@ -12,7 +12,9 @@ import {
   initializeSeatRanges, analyzeTimelineAction, buildCounterfactualTree,
 } from '../utils/handAnalysis';
 import { getCardsForStreet } from '../utils/pokerCore/cardParser';
-import { narrowByBoard } from '../utils/exploitEngine/postflopNarrower';
+import {
+  openHolding, narrowHolding, revealHolding, holdingBelief, holdingTruth,
+} from '../utils/holdingKnowledge';
 import { segmentRange } from '../utils/exploitEngine/rangeSegmenter';
 import { buildSituationKey } from '../utils/exploitEngine/decisionAccumulator';
 import { queryActionDistribution } from '../utils/exploitEngine/villainDecisionModel';
@@ -51,8 +53,8 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
                         selectedHand?.gameState?.holeCards || [];
       const blindsPosted = selectedHand?.gameState?.blindsPosted;
 
-      const { seatRanges, seatRangeProfiles, seatRangeLabels } =
-        initializeSeatRanges(seatPlayers, tendencyMap, buttonSeat);
+      const { seatRanges, seatRangeProfiles, seatRangeLabels, seatHoldings } =
+        initializeSeatRanges(seatPlayers, tendencyMap, buttonSeat, { openHolding });
 
       const results = [];
 
@@ -74,7 +76,11 @@ export const useHandReplayAnalysis = (selectedHand, timeline, tendencyMap) => {
           showdownCards,
           blindsPosted,
           results,
-          deps: { narrowByBoard, segmentRange, buildSituationKey, queryActionDistribution },
+          seatHoldings,
+          deps: {
+            openHolding, narrowHolding, holdingBelief, revealHolding, holdingTruth,
+            segmentRange, buildSituationKey, queryActionDistribution,
+          },
         });
         // Abort if a different hand was selected mid-loop — prevents stale
         // results from clobbering newer state.

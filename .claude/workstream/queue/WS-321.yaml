@@ -1,0 +1,101 @@
+id: "WS-321"
+title: "Fit a PER-PLAYER range width from calibration — some players' actions carry no equity signal at all, and the engine currently reads them as if they did"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE SECOND HALF OF WS-292. That ticket built the join (belief ↔ ground truth) and the
+  instrument. This one fits the number the instrument exists to produce.
+
+  FOUNDER FRAMING, 2026-08-01: "A showdown hand outside the range is a mechanism that proved
+  the range methods weren't sufficient — maybe that player continues hands below the fold
+  threshold equity dictates, which is a mistake on his part, but it means more different
+  types of hands can arrive. Overcalling means they end up at the river with a wide range,
+  often a good spot to bluffcatch since they have so many available bluffs with no showdown
+  value, or for us to bluff with no showdown value, their wider range increasing fold
+  equity, especially on postflop streets."
+
+  WHAT WS-292 MEASURED. `--out` now carries `actingByPlayer`: per-player coverage of the
+  inferred range against hands that player actually showed. On a 40-file / 100-player 50NLH
+  slice, the spread is large and the tail is NEGATIVE:
+
+      RFEWRda+x4Tn   n=8    Δlog = -1.327
+      UzGEe237YuYn   n=26   Δlog = -0.990
+      L8XqkuO/GIuH   n=19   Δlog = -0.628
+      ...
+      xihmE9t5rR5s   n=7    Δlog = +0.375
+
+  Negative Δlog means the range we inferred gave the hand they showed LESS weight than a
+  flat range over the same combos would have. For those players, equity-shaped narrowing is
+  worse than not narrowing — which is what "continues below the equity threshold" looks like
+  in data. `ACTION_TAU_FRACTION` (WS-303) already established softness is a property of the
+  ACTION; this asks whether it is also a property of the PLAYER.
+
+  IMPORTANT — THE BINARY METRIC IS DEGENERATE, DO NOT BUILD ON IT. Coverage is 100.0% in
+  every corpus slice: WS-302 seeds every preflop cell (PRIOR_SUPPORT_LAMBDA = 0.8) and
+  WS-291's floor keeps survivors positive, so a literal "hand outside the range" no longer
+  occurs. The founder's mechanism is intact but its measurable form is CONTINUOUS — the true
+  hand sitting near the floor — i.e. `logLift`, not `covered`.
+
+  WHAT TO BUILD.
+    1. Sweep a per-player softness/floor through `rangeCalibrationProbe`, every arm scored on
+       the SAME decisions (the existing sweep harness already enforces this).
+    2. Shrink toward the population value by observation count — `n / (n + k)`, with k itself
+       measured, not chosen. §6.5a hierarchy and §11.5 shrinkage are the models; a threshold
+       gate ("if n >= K use the player value") is explicitly forbidden.
+    3. Wire it into `narrowByBoard`'s options through `holdingKnowledge.narrowHolding`, whose
+       options are already a pass-through.
+
+  DO NOT add an exploit rule for the consequence. A wider, weaker river range means more of
+  villain's bets are no-showdown-value bluffs (bluffcatch wider) AND more of their range
+  folds (bluff wider) — but both fall out of the game tree once the width is right. Writing
+  either as a rule violates the weakness/exploit separation (exploitEngine/CLAUDE.md).
+accept_criteria: |
+  - A per-player softness (and/or floor) is chosen by SWEEP on the corpus, not by argument,
+    with every arm scored on the same decisions and ranked by discrimination (Δlog).
+  - The estimate shrinks toward the population value by observation count; no minimum-N
+    threshold gate anywhere in the path (§11.4 / §11.5).
+  - Report the honest caveat with the number, as WS-291 did for the floor: if the curve is
+    flat, say so and say the finding is "move off the population constant", not "X is
+    special".
+  - Corpus discrimination improves measurably vs the shipped per-action-only parameter, on a
+    walk-forward split (per-villain models leak into corpus backtests by construction —
+    enforce the split structurally, not by convention).
+  - No new exploit rule is added. The counter-strategy change, if any, is whatever the game
+    tree produces from the corrected range.
+  - `holdingKnowledge` stays a pass-through: the parameter travels in `options`, and the
+    primitive gains no fitting logic.
+effort: "M"
+files_involved:
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+  - "scripts/backtest/run-range-calibration.mjs"
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/pokerCore/softWeights.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Does per-player softness apply to ALL actions or only the ones WS-303 showed carry signal (raise/call/bet, not check)? A player-level multiplier on an action whose narrowing is already worse-than-nothing may compound the error rather than correct it."
+source:
+  type: follow-up
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-167"
+created_at: "2026-08-01T22:50:00Z"
+status_note: |
+  Filed 2026-08-01 at WS-292 close-out, as the stated second half of that ticket. WS-292
+  deliberately built and scored the channel without fitting the number, because the number
+  can only be chosen by corpus measurement and choosing it by reading a table is what WS-291
+  (floor) and WS-303 (ACTION_TAU_FRACTION) both had to undo.

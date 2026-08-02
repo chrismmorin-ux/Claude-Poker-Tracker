@@ -1,14 +1,14 @@
 {
-  "composed_at": "2026-07-31T19:39:28.837Z",
-  "goal": "Ship WS-317: The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without",
+  "composed_at": "2026-08-01T18:25:11.344Z",
+  "goal": "Ship WS-292: Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-317",
-      "title": "The situation key is a positional string parsed by split(':') in four modules, and it is missing SPR, players-remaining, source and pool — the keystone nothing triangulates without",
-      "raw_score": 31,
-      "adjusted_score": 31,
+      "id": "WS-292",
+      "title": "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE",
+      "raw_score": 28,
+      "adjusted_score": 28,
       "effort": "L",
       "program": "domain-correctness",
       "source_class": "untagged",
@@ -24,7 +24,7 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-317 selected (31 × no damping = 31).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-311 18→22.\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-292 selected (28 × no damping = 28).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-311 18→22.\nCap usage: 3 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
     "effort_sessions": 3,

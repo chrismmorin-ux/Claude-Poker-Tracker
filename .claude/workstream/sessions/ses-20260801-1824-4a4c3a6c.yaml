@@ -1,0 +1,93 @@
+id: "ses-20260801-1824-4a4c3a6c"
+status: completed
+started_at: "2026-08-01T18:24:57.953Z"
+ended_at: "2026-08-01T23:05:00Z"
+mode: auto
+last_heartbeat: "2026-08-01T18:26:14.959Z"
+pid: 13964
+agent_session_id: "4a4c3a6c-be97-4699-ae5d-b0591c69f5fe"
+
+# Minted by cwos-claims because no registered session matched this process.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items:
+  - "WS-292"
+
+files_locked: []
+
+handoff_notes: |
+  SPR-167 / WS-292 — holding-knowledge primitive. DONE.
+
+  Built `src/utils/holdingKnowledge/` (index + provenance + coverage + CLAUDE.md + 20 tests):
+  the villain-side counterpart of heroState/. Answers "what do we know about this seat's
+  holding at this decision point?" as ONE value — inferred range, ground truth, provenance.
+
+  ALL SIX production narrowing sites now route through it. `heroRangeBuilder` is the only
+  remaining direct `narrowByBoard` importer, and that is hero's REPRESENTED range
+  (WS-276/307) — a different question, out of scope by design.
+    observed:     decisionAccumulator, gameTreeContext, replayAnalysis (DI), liveAdvisor
+    hypothesized: gameTreeEvaluator refinement, 5x gameTreeDepth2
+
+  FOUNDER DECISIONS THIS SESSION:
+    - Rejected "truth never feeds belief" as too broad, and was right. The rule is narrower:
+      never within the decision being scored; ALWAYS as accumulated evidence about the
+      player. DEC-030.
+    - Chose to INCLUDE the depth-2/3 chain rather than defer it (I had recommended deferring).
+      That choice is what surfaced the observed-vs-hypothesized distinction — the two families
+      were textually identical before. DEC-031.
+
+  VERIFICATION — the point of the ticket was zero behaviour change, so this is the deliverable:
+    - Full suite 563 files / 13,394 passed / 0 failed / 20 skipped.
+    - Targeted re-run on the FINAL tree (after a late gameTreeEvaluator edit): 70 files /
+      2,941 passed.
+    - Depth-2 bit-identity: 8/8 scenarios EXACTLY identical, via new
+      `scripts/backtest/dumpGameTreeEV.mjs`. Both nondeterminism sources frozen — seeded
+      Math.random AND pinned Date.now (the 150ms budget bailout made depth-3 timing-dependent,
+      so without freezing it the diff measures machine load). Harness verified to reproduce
+      itself before being trusted.
+    - Corpus probe: ZERO differences on every pre-existing key; only the new `actingByPlayer`
+      table added.
+    - Perf: -6.6% on the depth-2 scenario set (no regression on an already-over-budget path).
+    - Build clean.
+    - The new WS-303 provenance guard was MUTATION-TESTED: reintroduced the third narrowing,
+      confirmed `expected 3 to be 2`, restored.
+
+  TWO CORRECTIONS WORTH CARRYING FORWARD:
+    1. Suits are Unicode (SUITS = ['S','H','D','C'] as symbols). `parseAndEncode('As')`
+       returns -1. My first depth-2 baseline ran on a board of three INVALID cards and still
+       produced plausible recommendations. WS-300 family. Both the harness and the new test
+       file now guard their fixtures.
+    2. "A showdown hand outside the range" CANNOT HAPPEN on the shipped engine. Coverage is
+       100.0% in every corpus slice because WS-302 seeds every preflop cell
+       (PRIOR_SUPPORT_LAMBDA = 0.8); WS-291's floor then keeps survivors positive. Narrowing
+       PRESERVES a seed's zero, it does not create support. The founder's mechanism is intact
+       but continuous, not binary — read `logLift`, not `covered`. DEC-032.
+
+  LIVE FINDING — the per-player table already shows the founder's hypothesis as a number.
+  Worst-calibrated players have NEGATIVE deltaLog (-1.327 n=8, -0.990 n=26, -0.628 n=19):
+  our inferred range gave the hand they showed LESS weight than a flat range would have. For
+  those players, equity-shaped narrowing is worse than not narrowing at all.
+
+  NOT DONE, DELIBERATELY: no width was fitted. That number can only be chosen by corpus
+  sweep, and choosing it by reading a table is what WS-291 (floor) and WS-303
+  (ACTION_TAU_FRACTION) both had to undo. Filed as WS-321 with the measured table as its
+  evidence.
+
+  UNCOMMITTED — founder to commit. Note the tree already carried uncommitted work from prior
+  sessions before this one started; the bit-identity baselines were captured against that
+  tree, so they isolate THIS ticket's changes only.
+
+  Next recommended action: WS-321 (per-player width fit, P0/M, has one decision flag about
+  whether player-level softness should apply to the check action at all, given WS-303 measured
+  check-narrowing as worse than nothing).
+
+context_notes: |
+  Baselines retained for future comparison: out/ws292-before.json + out/ws292-after.json
+  (corpus), out/ws292-depth2-before.json + out/ws292-depth2-final.json (engine EVs).
+  Regenerate the engine one with `node scripts/backtest/dumpGameTreeEV.mjs <out>`.
+
+  Advisory still outstanding from prior sessions: domain-correctness/challenge YAML-vs-event-log
+  divergence (32d) — reconcile via `/pulse run domain-correctness challenge`. The gate flagged
+  it again at the start of this session; it did not block.
+
+  domain-correctness health is clamped to 2 by "block_sprint + stale -> max 2", not by finding
+  quality (0 critical / 0 high / 1 medium / 10 low). Running the overdue protocol lifts it.

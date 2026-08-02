@@ -24,7 +24,7 @@ import { rangeWidth } from '../pokerCore/rangeMatrix';
 import { getRangePositionCategory } from '../positionUtils';
 import { getVillainActionKey, getVillainRange } from '../rangeEngine/rangeAccessors';
 import { handVsRange as handVsRangeDirect } from '../pokerCore/monteCarloEquity';
-import { narrowByBoard } from '../exploitEngine/postflopNarrower';
+import { openHolding, narrowHolding, holdingBelief, BASIS } from '../holdingKnowledge';
 import { buildBaselineRange, computePreflopAdvice } from '../exploitEngine/preflopAdvisor';
 import { getSPRZone, SPR_ZONES } from '../exploitEngine/gameTreeConstants';
 import {
@@ -113,10 +113,24 @@ export const computeVillainEquities = async (heroCards, villainRangeEntries, boa
 /**
  * Narrow a villain's range for a postflop street and record the narrowing.
  * Returns { narrowed, logEntry }.
+ *
+ * WS-292: this helper was a hand-rolled proto-version of the holding-knowledge primitive —
+ * narrow, then record what the narrowing did — written before there was a primitive to
+ * reach for. It now goes through `narrowHolding` so the live advisor's narrowing is the
+ * same operation, with the same provenance, as the accumulator's and the game tree's. The
+ * narrowing is OBSERVED: this fires off `villainActions[last].action`, a real action.
+ *
+ * The user-facing `description` strings are unchanged — they appear in the sidebar's
+ * narrowing log, and this ticket changes no shipped output. `provenance` rides along for
+ * callers that want it; the existing `{ narrowed, logEntry }` shape is untouched.
  */
 export const narrowWithLog = (range, action, board, deadCards, options, seat, street) => {
   const beforeWidth = rangeWidth(range);
-  const narrowed = narrowByBoard(range, action, board, deadCards, options);
+  const holding = narrowHolding(
+    openHolding({ seed: range, seedSource: 'caller', seat }),
+    { action, board, deadCards, basis: BASIS.OBSERVED, options },
+  );
+  const { range: narrowed, provenance } = holdingBelief(holding);
   const afterWidth = rangeWidth(narrowed);
 
   const delta = beforeWidth - afterWidth;
@@ -135,6 +149,7 @@ export const narrowWithLog = (range, action, board, deadCards, options, seat, st
 
   return {
     narrowed,
+    provenance,
     logEntry: { street, seat, action, fromWidth: beforeWidth, toWidth: afterWidth, description },
   };
 };
