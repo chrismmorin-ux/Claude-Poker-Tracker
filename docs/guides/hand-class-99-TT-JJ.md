@@ -499,8 +499,18 @@ and every board and range tested agrees.
 
 ## 7. Where the engine handles this class badly
 
-The brief asked "what boosts they do poorly at." That phrase has two readings and both turn
-out to be worth answering; the first is a literal mechanism in this codebase.
+The brief asked "what boosts they do poorly at." That phrase has two readings and both are
+answered here, because both turned out to matter.
+
+- **The literal mechanism.** `rangeEngine/bayesianUpdater` has a *boost*: revealing a pair at
+  showdown boosts its rank-neighbours, and its source comment names this exact class ("if we
+  see TT, boost 99 and JJ"). §7.1 and §7.2 show that boost is mis-shaped, and quantify it.
+- **The poker reading — where the class's EV degrades.** That is answered across the study
+  rather than in one place: against premium-heavy ranges it stops being three hands at all
+  (§4.1); multiway it keeps its equity edge and loses its realization (§4.2); on 26.1% of
+  flops 99 lands below the 75th percentile (§5); and unimproved on any river it is a
+  bluff-catcher by 12–20 chips (§6.4). The single worst spot in the study is a river the
+  class did not improve on — every board and range tested agrees, with no sampling error.
 
 ### 7.1 The adjacent-pair boost is symmetric, and the class is not — **CONFIRMED finding**
 
