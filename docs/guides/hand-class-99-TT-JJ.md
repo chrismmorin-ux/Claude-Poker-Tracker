@@ -19,9 +19,10 @@ On every flop where none of them makes a set — 65.1% of flops live for all thr
 board-conditional strength percentiles are separated by **exactly 1.02 percentile points,
 on every such board, regardless of the board's top card** (§5.4, exhaustive). Not "close on
 average": constant, and constant at a value smaller than the width of a single hand class.
-Against a narrow range they are equally indistinguishable — versus a narrow 3-bet range
-(QQ+, AK — the shape §2.3 attributes to a typical live player) their equities span 0.5pp
-against a ±0.7pp error bar, and independent runs disagree on the ordering.
+Against a premium-heavy range they are equally indistinguishable — versus QQ+/AK their
+equities span 0.5pp, and versus KK+/AKs they span 0.1pp and QQ joins them. What makes a
+range separate the class is not its width but whether it contains hands the class dominates
+(§4.1).
 
 What separates them is the **shape of the distribution, not its centre**. Mean flop
 percentile moves only 84.0 → 86.3 → 88.7 from 99 to JJ. But the probability of landing
@@ -30,8 +31,10 @@ is frequently in trouble; JJ is a hand that is rarely in trouble; and when neith
 trouble they are, measurably, the same hand.
 
 The practical consequence: **the class should be played as a class, and the board should be
-doing nearly all of the discriminating.** On the flop the decision is regional rather than
-per-combo, and §6 measures how wide that region is.
+doing nearly all of the discriminating.** How wide that indifferent region is turns out to be
+a property of board texture rather than of street (§6.3) — and on a board the class beats,
+the class prefers betting *more strongly than aces do* (§6.2), which is the least intuitive
+thing this study found.
 
 ---
 
@@ -187,58 +190,66 @@ data and must not be read as a live measurement.**
 
 Monte Carlo, 120,000 trials, ±0.7pp at 95% confidence.
 
-| Villain range | width | 99 | TT | JJ | QQ |
-|---|---|---|---|---|---|
-| UTG open (GTO chart) | 10% | 50.1 | 56.3 | 61.4 | 67.0 |
-| CO open (GTO chart) | 23% | 60.0 | 64.0 | 67.9 | 71.4 |
-| BTN open (GTO chart) | 51% | 65.0 | 68.7 | 72.4 | 75.2 |
-| Live cold-caller of an open | 25% | 59.2 | 63.4 | 67.7 | 71.7 |
-| Live limp/call (loose-passive) | 52% | 66.2 | 70.4 | 72.6 | 75.8 |
-| **Narrow 3bet (QQ+, AK)** | **3%** | **36.3** | **36.4** | **35.9** | 40.0 |
-| Reg 3bet, linear | 4% | 35.4 | 38.8 | **46.0** | 54.1 |
-| Reg 3bet, polar | 4% | 47.9 | 47.6 | 48.2 | 51.6 |
-| **4bet tight (KK+, AKs)** | **1%** | **27.7** | **27.8** | **27.1** | 27.2 |
-| 4bet wide (JJ+, AQs+, AKo, A5s) | 4% | 38.2 | 38.5 | 41.2 | 49.7 |
+| Villain range | width | runs | 99 | TT | JJ | QQ | AA |
+|---|---|---|---|---|---|---|---|
+| UTG open (GTO chart) | 10% | 3 | 50.7 ±0.4 | 55.8 ±0.1 | 61.3 ±0.2 | 67.0 ±0.1 | 82.5 ±0.0 |
+| CO open (GTO chart) | 23% | 1 | 60.8 | 64.8 | 67.5 | 71.0 | 83.3 |
+| BTN open (GTO chart) | 51% | 1 | 65.3 | 69.6 | 72.0 | 75.3 | 84.6 |
+| BB defend (GTO chart) | 37% | 1 | 63.0 | 66.6 | 71.0 | 74.2 | 83.9 |
+| Live cold-caller of an open | 25% | 1 | 59.2 | 63.8 | 68.1 | 72.7 | 83.5 |
+| Live limp/call (loose-passive) | 52% | 1 | 66.4 | 69.6 | 72.1 | 76.2 | 84.2 |
+| **Narrow 3bet (QQ+, AK)** | **3%** | 3 | **35.6 ±0.3** | **36.5 ±0.2** | **36.1 ±0.5** | 40.1 ±0.1 | 84.1 ±0.2 |
+| **Reg 3bet, linear** | 4% | 3 | **35.2 ±0.3** | **38.6 ±0.4** | **45.4 ±0.5** | 54.7 ±0.3 | 83.3 ±0.5 |
+| **Reg 3bet, polar** | 4% | 3 | **47.5 ±0.4** | **48.3 ±0.3** | **47.9 ±0.5** | 51.6 ±0.3 | 82.9 ±0.2 |
+| **4bet tight (KK+, AKs)** | **1%** | 3 | **27.5 ±0.4** | **27.8 ±0.1** | **27.6 ±0.2** | 27.2 ±0.2 | 79.5 ±0.6 |
+| 4bet wide (JJ+, AQs+, AKo, A5s) | 4% | 3 | 37.7 ±0.4 | 38.2 ±0.1 | 40.8 ±0.2 | 50.1 ±0.3 | 84.1 ±0.4 |
 
-*Figures are run 1. The stage was run twice; a second independent run agreed on every value
-within the stated ±0.7pp, and on every **ordering** for ranges wider than ~20%. It disagreed
-on the ordering within 99/TT/JJ for every range narrower than ~5% — see §4.1.*
+*Each cell is 120,000 Monte Carlo trials. The `runs` column is how many independent runs
+were averaged; `±` is the across-run half-range, not the within-run CI. Narrow ranges are
+repeated because that is exactly where the class's members sit inside one interval of each
+other and an ordering read off a single run is a coin flip — the first draft of this document
+made that mistake, and §10 records it.*
 
 ### 4.1 The finding that matters most in this whole document
 
-**The distinction between 99, TT and JJ exists only against wide ranges. Against narrow
-ranges it vanishes — and sometimes inverts.**
+**The class separates against a range only when that range contains hands the class
+dominates.** Range *width* is a proxy for this, and it is a leaky one.
 
-- Versus a **BTN open (51% wide)**: 65.0 / 68.7 / 72.4 — a 7.4pp spread, monotone, and far
-  outside sampling error.
-- Versus a **narrow 3-bet (3% wide)**: 36.3 / 36.4 / 35.9 — a 0.5pp spread against a ±0.7pp
-  confidence interval. **The spread is smaller than the error bar: the ordering within the
-  class is not resolvable at this sample size.** An independent re-run of the same stage
-  returned 35.7 / 36.7 / 36.5 — same conclusion, different ordering. Do not read a ranking
-  into either row.
-- Versus a **4-bet (1% wide)**: 27.7 / 27.8 / 27.1 (re-run: 27.2 / 27.4 / 27.4). All three
-  are the same hand, and so is QQ. There is no version of this spot where "but I have JJ,
-  not 99" is an argument.
+Sorted by how far the class spreads:
 
-**The instability is itself the result.** Two runs at 120,000 trials disagreed on the
-ordering of 99/TT/JJ against every range narrower than ~5%, and agreed on the ordering
-against every range wider than ~20%. That is a sharper statement of the finding than any
-single row: against a narrow range these hands are not merely close, they are
-*indistinguishable to the measurement*, and any engine path that ranks them there is
-ranking noise.
+| Range | 99 → JJ spread | separated? |
+|---|---|---|
+| Reg 3bet, **linear** (4% wide) | **10.2pp** | yes, decisively |
+| UTG open (10%) | 10.6pp | yes |
+| Live cold-caller (25%) | 8.9pp | yes |
+| BTN open (51%) | 6.7pp | yes |
+| 4bet wide (4%) | 3.1pp | yes |
+| Reg 3bet, **polar** (4%) | **0.4pp** | **no** |
+| Narrow 3bet QQ+/AK (3%) | **0.5pp** | **no** |
+| 4bet tight KK+/AKs (1%) | **0.1pp** | **no** |
 
-This is POKER_THEORY §7.3 stated in numbers: *bucket labels are relative to the range.* The
-"medium pair" bucket is a real, useful partition against a 50%-wide range and a meaningless
-one against a 3%-wide range. Any heuristic that ranks these three hands without conditioning
-on villain's range width is answering a question it hasn't asked.
+A 4%-wide *linear* 3-bet range (TT+, AQs+, AJs, AKo, KQs) spreads the class by **10.2pp** —
+more than a 51%-wide button open does. A 4%-wide *polar* range of identical width spreads it
+by **0.4pp**. Width is not the variable; **composition is.** A linear range contains AJs, KQs
+and TT — hands JJ beats and 99 does not. A polar range is premiums plus suited junk, and
+against premiums-plus-junk all three members win and lose in the same places.
 
-**The one exception, and it is the exploitable one.** Against a *reg's* linear 3-bet range
-(TT+, AQs+, AJs, AKo, KQs) the spread explodes: 35.4 / 38.8 / **46.0**. A linear 3-betting
-range contains hands JJ dominates. A polar range does not — versus the polar version, JJ's
-equity falls back to 48.2 and is again level with 99's 47.9. **So the entire value of
-holding JJ over 99 against a 3-bet is a bet on villain's range being linear rather than
-polar.** That is a per-villain read, not a hand-class property, and it belongs in the
-villain model rather than in a preflop chart.
+Against the three premium-heavy ranges the class is not merely close, it is **at or below the
+resolution of the measurement**:
+
+- **QQ+/AK (3%):** 35.6 / 36.5 / 36.1. Only the 99↔TT gap resolves (0.9pp, non-overlapping
+  intervals); JJ is separable from neither. The class spans 0.9pp.
+- **KK+/AKs (1%):** 27.5 / 27.8 / 27.6 — and QQ is 27.2. Four hand classes, one number.
+  There is no version of this spot where "but I have JJ, not 99" is an argument, and no
+  version where "but I have QQ" is either.
+
+The first draft of this document read a 0.5pp single-run spread as "JJ is the worst of the
+three" and attached a blocker story to it. Five independent runs put JJ last once. **The
+ordering was noise; the indistinguishability is the result** — and it is a stronger one.
+
+**The exploitable consequence.** The entire value of holding JJ rather than 99 against a
+3-bet is a bet on that 3-bettor's range being *linear*, not polar. That is a per-villain
+property, it lives in the villain model, and no preflop chart can encode it.
 
 ### 4.2 Multiway — where a 9-handed game actually lives
 
@@ -248,21 +259,22 @@ Versus **live cold-callers** (25% range each):
 
 | | HU | 3-way | 4-way | 5-way | fair share |
 |---|---|---|---|---|---|
-| **99** | 58.4 ±0.7 | 39.8 ±0.7 | 30.2 ±0.8 | 23.8 ±0.8 | 50 / 33 / 25 / 20 |
-| **TT** | 63.0 ±0.7 | 44.1 ±0.7 | 32.4 ±0.8 | 25.2 ±0.8 | |
-| **JJ** | 68.1 ±0.6 | 49.8 ±0.7 | 37.5 ±0.8 | 29.6 ±0.9 | |
-| *QQ* | *72.1 ±0.6* | *54.5 ±0.7* | *44.1 ±0.8* | *36.8 ±0.9* | |
-| *AA* | *83.2 ±0.5* | *70.9 ±0.7* | *60.1 ±0.8* | *52.0 ±1.0* | |
+| **99** | 58.7 ±0.7 | 39.2 ±0.7 | 29.6 ±0.8 | 22.5 ±0.8 | 50 / 33 / 25 / 20 |
+| **TT** | 64.1 ±0.7 | 43.7 ±0.7 | 32.2 ±0.8 | 24.5 ±0.8 | |
+| **JJ** | 67.8 ±0.6 | 49.5 ±0.7 | 37.3 ±0.8 | 31.0 ±0.9 | |
+| *QQ* | *72.7 ±0.6* | *55.7 ±0.7* | *43.9 ±0.8* | *36.1 ±0.9* | |
+| *AA* | *83.6 ±0.5* | *70.9 ±0.7* | *60.7 ±0.8* | *51.4 ±1.0* | |
 
-Unlike §4.1's narrow-range rows, these gaps are **real**: 99 → JJ spans 9.7pp heads-up and
-5.8pp five-way against a ±0.8pp interval, and both the values and the ordering held across
-two independent runs.
+Unlike §4.1's premium-heavy rows, these gaps are **real**: 99 → JJ spans 9.1pp heads-up and
+8.5pp five-way against a ±0.8pp interval, and both the values and the ordering held across
+**three** independent runs. A 25%-wide range is exactly the kind that contains hands JJ
+dominates and 99 does not, which is §4.1's rule applied multiway.
 
-All three stay **above fair share at every table size** — 99 is at 23.8% five-way against a
+All three stay **above fair share at every table size** — 99 is at 22.5% five-way against a
 20% fair share. The class does not lose its equity edge multiway; it loses its *realization*
 of that edge, because 88.24% of the time it is a one-pair hand that cannot bet three streets
 into four opponents (§1.4, equity realization). The number to hold in mind is that 99's
-edge five-way is roughly +4pp of a pot it will usually not be able to contest.
+edge five-way is roughly +2.5pp of a pot it will usually not be able to contest.
 
 *A comparison this study does not make: how the class fares against an unpaired hand like
 AKs multiway. The committed harness carries only pair references, so any such claim would not
@@ -388,125 +400,102 @@ do not, and there the gap runs to 34.6 points. There is no third mechanism.
 
 ## 6. The EV curve and the measured neutral zone
 
-> ⚠️ **THIS SECTION IS BEING RE-DERIVED.** Adversarial review falsified §6.2's headline by
-> re-running the harness, and established that the per-holding figures below carry ~±1.5
-> chips of run-to-run error while being reported to 0.01 chips and classified against a
-> 2-chip threshold. The numbers in §6.1–§6.4 are from the **old, uncorrected** settings
-> (150-combo truncation, no board cache, single run) and must not be relied on until this
-> banner is removed. §6.3's river figures are the exception — river output is deterministic
-> and reproduced exactly. See §10.
-
-
 POKER_THEORY §15.2 defines the neutral zone as `{ p : |EV(bet|p) − EV(check|p)| < ε }` and
 observes that the primitives to compute it already exist but "have simply never been
-joined." This section joins them: every legal holding on a board is swept, its percentile
-plotted against `computePerComboEV − computePerComboCheckEV`, pot 100, bet 66, ε = 2 chips.
+joined." This section joins them. Every legal holding on a board is swept, its percentile
+plotted against `computePerComboEV − computePerComboCheckEV`; pot 100, bet 66, ε = 2 chips.
+Named holdings are re-evaluated 25 times and carry a measured 95% interval.
 
-**Method caveat (binding, see §1.2):** these are node-level components called directly with
-population defaults and no villain model. Read them as the *shape of the engine's EV
-surface*, not as advice the app would give.
+**How to read the numbers.** Flop rows are sampled and carry real error (`miniRolloutEquity`
+runs unseeded 32-sample rollouts). River rows are **exactly reproducible** — their measured
+sd over 25 runs is 0.00, which is the self-check that this is measuring what it claims.
+A holding is labelled `UNRESOLVED` when its interval cannot separate it from ±ε; that label
+is a result, not a gap.
 
-**Reported honestly:** the "neutral zone" below is the **hull** of in-zone combos plus their
-density — not a claim that the interval is contiguous. The decile table is where the actual
-sign change is read.
+**The neutral zone is reported as the IQR of in-zone percentiles plus the in-zone density.**
+The hull is a bad statistic — one tie-group of junk combos at the bottom of a board drags the
+lower endpoint to near zero and inflates the width several-fold. v1 of this document compared
+hulls and overstated its headline ~3×.
 
-### 6.1 Flop, class is an overpair — `8h 5s 2d` vs a live cold-caller
+### 6.1 The class on eight board × range sweeps
 
-| percentile band | mean EV(bet) − EV(check) |
-|---|---|
-| 20–30 | −29.13 |
-| 40–50 | −16.81 |
-| 50–60 | −5.06 |
-| **60–70** | **+4.92** |
-| 80–90 | +10.13 |
-| 90–100 | +11.02 |
+Δ = EV(bet) − EV(check), in chips on a 100-chip pot, ±1.96 sd over 25 runs.
 
-Neutral-zone hull `[0.6, 71.7]`, 53/1176 combos. Sign change between the 50–60 and 60–70
-bands.
+| board (vs live cold-caller) | 99 | TT | JJ | QQ | AA | AKo |
+|---|---|---|---|---|---|---|
+| FLOP `8h5s2d` — overpair, dry | **+12.91 ±1.25** | +12.42 ±1.32 | +12.07 ±1.01 | +11.54 ±0.96 | +7.97 ±0.65 | +2.21 ±1.67 |
+| FLOP `Kd8s3c` — underpair, dry | −1.21 ±1.27 | −1.46 ±0.77 | −1.31 ±1.07 | −1.64 ±0.93 | +8.77 ±0.87 | +7.14 ±0.64 |
+| FLOP `9h8h5s` — wet, two-tone | +12.37 ±0.82 | +12.18 ±1.58 | +12.97 ±1.42 | +13.68 ±1.16 | +11.71 ±1.35 | −2.19 ±2.68 |
+| FLOP `8s8d3c` — paired | **+8.49 ±1.23** | +7.67 ±0.82 | +6.92 ±0.89 | +6.48 ±0.77 | +2.81 ±0.56 | +4.95 ±1.43 |
+| FLOP `Jh9s4d` — straddling | +9.97 ±0.52 *(set)* | +1.85 ±1.14 | +10.26 ±0.62 *(set)* | +13.76 ±0.93 | +14.76 ±1.19 | −8.12 ±2.00 |
+| RIVER `Kd8s3c 7h 2s` | −18.11 ±0.00 | −16.79 ±0.00 | −15.08 ±0.00 | −13.45 ±0.00 | +0.04 ±0.00 | +0.13 ±0.00 |
+| RIVER `8h5s2d Qc 4h` | −19.65 ±0.00 | −18.33 ±0.00 | −16.62 ±0.00 | +3.37 ±0.00 *(set)* | −1.10 ±0.00 | −32.84 ±0.00 |
+| RIVER `9h8h5s 2h Qd` — flush in | −4.70 ±0.00 | −22.81 ±0.00 | −21.03 ±0.00 | −3.34 ±0.00 | −8.36 ±0.00 | −43.30 ±0.00 |
 
-| holding | pctile | Δ | prefers |
-|---|---|---|---|
-| 99 | 94.2 | +11.74 | BET |
-| TT | 94.7 | +11.88 | BET |
-| JJ | 95.2 | +13.23 | BET |
-| QQ | 95.7 | +11.01 | BET |
-| AKo | 60.6 | +3.59 | BET |
+On the underpair flop `Kd8s3c` all four of 99/TT/JJ/QQ come back **UNRESOLVED** against the
+cold-caller and **NEUTRAL** against BB-defend: bet and check are within 2% of the pot and the
+measurement cannot separate them. That is the corrected form of a claim v1 stated too
+confidently — a reviewer flipped TT from NEUTRAL to CHECK by re-running the script, because
+the old numbers had no error bar (§10).
 
-All three sit ~23 points clear of the crossing. **On a board they beat, the class is a
-clear, unsubtle bet, and the three members are worth +11.7 / +11.9 / +13.2 — a 1.5-chip
-spread on a 100-chip pot.** They are the same decision.
+### 6.2 The result that replaces v1's headline: **the curve is not monotone**
 
-### 6.2 Flop, class is an underpair — `Kd 8s 3c` vs a live cold-caller
+v1 claimed the neutral zone collapses by street. The corrected sweep does not support that,
+and something more interesting is true instead.
 
-| percentile band | mean Δ |
-|---|---|
-| 40–50 | −28.83 |
-| 60–70 | −4.32 |
-| 70–80 | −1.70 |
-| **80–90** | **+1.39** |
-| 90–100 | +6.68 |
+**EV(bet) − EV(check) peaks below the top of the percentile axis.** On the overpair flop AA
+sits at percentile 96.7 and prefers betting by **+7.97**, while 99 at 94.2 prefers it by
+**+12.91** — a 4.9-chip gap against ±1.3 error bars. On the paired flop the effect is larger
+and the top-of-range slope is outright **negative** (−0.270 chips per percentile point across
+the 80th–90th): 99 at 88.9 is **+8.49**, AA at 91.4 is **+2.81**, and against BB-defend AA
+falls to +0.91 — NEUTRAL, i.e. the strongest possible holding is indifferent to betting on a
+board where a middling overpair is not.
 
-Neutral-zone hull `[62.3, 90.9]` — **28.6pp wide, 144/1176 combos in zone.**
+This is POKER_THEORY §3.4's fifth, inverse motive — *inducing* — appearing as a measured
+slope rather than a description. The nuts lose less by checking because checking is how they
+get paid; a hand that is strong but beatable cannot afford that. §15.2 asked for the slope to
+stop being a metaphor, and here it changes sign.
 
-| holding | pctile | Δ | prefers |
-|---|---|---|---|
-| **99** | **84.5** | −1.52 | **NEUTRAL** |
-| **TT** | **85.0** | −1.89 | **NEUTRAL** |
-| **JJ** | **85.5** | −1.77 | **NEUTRAL** |
-| QQ | 86.0 | −2.92 | CHECK |
-| AKo | 96.0 | +6.93 | BET |
+**The consequence for this class is direct and useful:** on a board it beats, a middling
+overpair is **the most bet-preferring holding on the board — more so than aces.** It has no
+inducing option worth taking and no way to improve.
 
-**All three land inside the measured neutral zone, and they land within 1.0 percentile
-point of one another.** This is the answer to "how should 99/TT/JJ be played on a K-high
-board" in the form §15.2 asked for: the ground is flat there. The correct play is
-*regional* — whatever you do with 99 you should do with JJ — and the region is 28.6
-percentile points wide, which is a measured number rather than a rule of thumb.
+### 6.3 Neutral-zone width tracks board texture, not street
 
-Slope confirms it: **0.663 chips per percentile point between the 85th and 95th** on this
-board, versus **0.074** on the overpair board — the underpair board is where the ground is
-actually tilted, and the class is sitting on the flat part of it.
+| board | vs cold-caller: IQR | density | vs BB defend: IQR | density |
+|---|---|---|---|---|
+| FLOP `8h5s2d` overpair, dry | 51.7pp | 4.3% | 54.5pp | 7.1% |
+| FLOP `9h8h5s` wet, two-tone | 42.6pp | 5.7% | 8.2pp | 8.1% |
+| FLOP `Jh9s4d` straddling | 10.2pp | 10.0% | 8.2pp | 10.9% |
+| FLOP `Kd8s3c` underpair, dry | 7.1pp | 11.4% | 11.2pp | 11.6% |
+| **FLOP `8s8d3c` paired** | **1.4pp** | 2.6% | 2.7pp | 5.6% |
+| RIVER `8h5s2d Qc 4h` | 4.2pp | 9.4% | 4.6pp | 6.7% |
+| RIVER `Kd8s3c 7h 2s` | 1.5pp | 3.1% | 1.5pp | 4.7% |
+| RIVER `9h8h5s 2h Qd` flush in | **0.0pp** | 1.5% | 1.4pp | 2.1% |
 
-### 6.3 River, unimproved — `Kd 8s 3c 7h 2s` vs a live cold-caller
+**A paired flop has a narrower neutral zone (1.4pp) than two of the three rivers.** The street
+does not determine the width. What does is how *stretched* the board makes the strength
+distribution: on a paired or flush-completed board a small change in holding moves you a long
+way in EV, so almost nothing is indifferent; on a dry unpaired flop a large block of holdings
+is genuinely interchangeable.
 
-| percentile band | mean Δ |
-|---|---|
-| 40–50 | −29.30 |
-| 60–70 | −22.21 |
-| 80–90 | −7.19 |
-| **90–100** | **+2.39** |
+The honest summary is therefore narrower than v1's and better supported: **rivers are
+consistently narrow (0.0–4.6pp), flops vary enormously with texture (1.4–54.5pp), and the
+two ranges overlap.** Adding the wet and paired boards — which v1 did not sweep, a scope gap
+the review caught — is what falsified the clean street story.
 
-Neutral-zone hull `[89.2, 97.4]` — **8.2pp wide, 58/1081 combos.**
+### 6.4 Where the class sits, and why it matters
 
-| holding | pctile | Δ | prefers |
-|---|---|---|---|
-| 99 | 78.9 | −16.77 | CHECK |
-| TT | 79.5 | −16.31 | CHECK |
-| JJ | 80.0 | −14.94 | CHECK |
-| QQ | 80.6 | −13.18 | CHECK |
-| AKo | 89.2 | +0.24 | NEUTRAL |
+On every flop where the class is at or near the top of its range it is **far above** the
+neutral zone and clearly betting. On the underpair flop it is **inside** the zone and the
+measurement says so by declining to resolve it. On every river unimproved it is **far below**
+the zone: percentile ~74–80 against a zone sitting at ~89–95, preferring check by 12–20 chips
+with zero sampling error.
 
-### 6.4 The street-by-street result, which is the real finding here
-
-| board | neutral-zone hull | width | where the class sits |
-|---|---|---|---|
-| Flop, overpair (`8h5s2d`) | [0.6, 71.7] | 71.1pp | far above — clear bet |
-| Flop, underpair (`Kd8s3c`) | [62.3, 90.9] | 28.6pp | **inside** |
-| Flop, straddling (`Jh9s4d`) | [27.9, 85.0] | 57.1pp | JJ above (set), TT inside |
-| River (`Kd8s3c7h2s`) | [89.2, 97.4] | **8.2pp** | far below — clear check |
-| River (`8h5s2d Qc 4h`) | [85.6, 94.6] | 9.0pp | far below — clear check |
-
-**The neutral zone collapses from 28–71pp on the flop to 6–9pp on the river.** That is a
-measured statement of something the engine has always asserted in prose: decisions start
-regional and become pointwise. On the flop, the class occupies a wide flat region and the
-individual rank barely matters. By the river the flat region has shrunk to a sliver near the
-90th percentile, the class has fallen to the ~79th, and all three are on the wrong side of
-it — **an unimproved 99/TT/JJ arrives at the river as a bluff-catcher, and the engine's EV
-surface says so by a margin of 15 chips into a 100-chip pot.**
-
-That is the single most actionable output of this study. It is also the thing a percentile
-axis makes visible and a "medium pocket pair" label cannot.
-
----
+**An unimproved 99/TT/JJ arrives at the river as a bluff-catcher, and the engine's EV surface
+says so with no error bar at all.** That is the most reliable single result in this document —
+it is the one place where the number is exact, the §12 perceived-range correction is complete,
+and every board and range tested agrees.
 
 ## 7. Where the engine handles this class badly
 
@@ -588,24 +577,46 @@ apart and differ by **1.4 points** on the same measure. **The similarity between
 pairs is wildly non-uniform across the ladder, and it happens to break hardest inside this
 class.** A constant `adjPairBoost` cannot express that.
 
-### 7.3 Where bucket collapse is *not* a problem — an honest negative
+### 7.3 Bucket collapse is mostly harmless for this class — except where it inverts
 
-POKER_THEORY §7.3 and AP-RL-01 forbid bucket-keyed shortcuts because combos within a bucket
-have variance the bucket average hides. For this class, on boards where none makes a set,
-that variance is measured and it is **tiny** — 84.5 / 85.0 / 85.5 on `Kd 8s 3c`, and
-conditional-on-overcard-count means within 2.2 points of each other everywhere.
+v1 of this document filed a clean "honest negative" here: because 99/TT/JJ sit within ~1
+percentile point of each other on any no-set board (§5.4), a bucket-level treatment loses
+almost nothing, so AP-RL-01's cost is low for this class. Adversarial review pointed out that
+the claim rested on two hand-picked EV boards. Adding a wet board and a paired board
+**partially falsified it**, which is the more useful outcome.
 
-So this is a case where the anti-pattern's *cost* is low. That is worth recording precisely
-because it argues against over-correcting: the doctrine is right in general, and this class
-is a place where a range-level treatment loses almost nothing. It is not a reason to relax
-AP-RL-01 — the rule earns its keep on classes where the within-bucket spread is large — but
-a study that only ever confirms its own doctrine is not measuring anything.
+Within-class Δ spread, from §6.1 (vs BB defend, where the error bars are tightest):
+
+| flop | 99 | JJ | spread | intervals overlap? |
+|---|---|---|---|---|
+| `8h5s2d` overpair, dry | +15.07 ±1.45 | +14.06 ±0.75 | 1.0 | yes — indistinguishable |
+| `Kd8s3c` underpair, dry | +0.90 ±0.87 | +0.59 ±0.65 | 0.3 | yes — indistinguishable |
+| `9h8h5s` wet, two-tone | +13.16 ±0.78 | +15.07 ±1.41 | 1.9 | barely — 0.3 chips of overlap |
+| **`8s8d3c` paired** | **+7.18 ±0.73** | **+5.34 ±0.82** | **1.8** | **no — separated** |
+
+On the two dry textures the class is unambiguously one object. On the wet board the intervals
+only just touch (0.3 chips of overlap), so the class is *probably* one object there and the
+sweep is not powerful enough to say more. On a **paired** board it separates — and it separates in the direction a
+strength bucket would get backwards: **99 prefers betting more than JJ does**, because the
+whole top of that board's curve slopes the wrong way (§6.2). A bucket keyed on strength would
+rank JJ above 99 and push the recommendation the wrong way by ~1.8 chips per 100-chip pot.
+
+So the corrected verdict: AP-RL-01's cost for this class is **low on most textures and
+inverted on paired boards.** The anti-pattern is not merely defensible here, it is load-
+bearing on exactly the texture where a strength-ordered shortcut is most tempting. That is a
+better argument for the doctrine than the negative v1 filed, and it exists only because the
+review forced the board list wider.
+
+*One texture is still untested for this: monotone flops. Sweep one before treating the above
+as complete.*
 
 ### 7.4 The river check-preference — **a question, not a finding**
 
-In §6.3 the node-level EV surface prefers checking at *every* percentile band below the 90th,
-by large margins (−61 at the bottom band). Taken at face value that is a near-zero river bluff
-frequency for this configuration.
+On every river board swept, the node-level EV surface prefers checking at *every* percentile
+band below the 90th, by large margins (−62 at the bottom band), and on the flush-completed
+river it prefers checking at every band without exception. Taken at face value that is a
+near-zero river bluff frequency for this configuration — and unlike the flop rows, these are
+exactly reproducible, so it is not noise.
 
 Against that, the mined pool over-folds rivers: fold rates versus big sizings run **12–16pp
 past bluff-breakeven** (71.5% vs pot–1.5×, 76.0% vs overbet; `mass-pool-data-2026-07-25.md`).
@@ -640,14 +651,14 @@ Derived from the sections above; each line names what it rests on.
 
 1. **Open all three, from everywhere.** The prior ranks them #10/#6/#4 and #6/#5/#4 by
    position; nothing in the data argues with opening.
-2. **Facing a 3-bet, they are one hand — fold or call as a class, not as ranks.** Equity vs
-   a narrow (QQ+/AK) 3-bet range: 36.3 / 36.4 / 35.9, a spread inside the ±0.7pp error bar, and two
-   runs disagreed on the ordering (§4.1). "It's JJ not 99" is not an argument against a
-   range this narrow.
-3. **Unless you have a read that the 3-bettor is linear.** Then JJ jumps to 46.0 and 99 stays
-   at 35.4 (§4.1). This is the one spot where the class genuinely splits, and it splits on a
-   *villain* property, so it belongs in the villain model, not a chart.
-4. **Facing a 4-bet, all three fold.** 27.7 / 27.8 / 27.1 vs KK+/AKs (§4).
+2. **Facing a premium-heavy 3-bet, they are one hand — fold or call as a class, not as
+   ranks.** Equity vs QQ+/AK: 35.6 / 36.5 / 36.1, a 0.9pp span (§4.1). "It's JJ not 99" is
+   not an argument against a range made of hands none of them beats.
+3. **Unless the 3-bettor's range is LINEAR.** Then JJ is 45.4 and 99 is 35.2 — a 10.2pp
+   split out of a range only 4% wide (§4.1). Composition, not width, is the variable. It is
+   a villain property, so it belongs in the villain model, not a chart.
+4. **Facing a tight 4-bet, all three fold — and so does QQ.** 27.5 / 27.8 / 27.6, with QQ
+   at 27.2, vs KK+/AKs (§4.1). Four classes, one number.
 5. **TT is the positional hinge.** The prior moves TT's 3-bet propensity 6× from EARLY to
    LATE while 99 barely moves (§3). If a rule has to be memorised, memorise that one.
 6. **Set-mining maths: 11.76% flop, 19.18% by the river, identical for all three** (§2).
@@ -655,19 +666,27 @@ Derived from the sections above; each line names what it rests on.
 
 **Postflop**
 
-7. **On a board the class beats, bet — and stop distinguishing.** +11.7 / +11.9 / +13.2 on
-   `8h5s2d` (§6.1). A 1.5-chip spread on a 100-chip pot is not a decision.
-8. **On a board the class is under, you are in a measured 28.6-point-wide neutral zone**
-   (§6.2). Bet and check are within 2% of pot. Choose on villain-specific grounds — fold-to-
-   c-bet, board coverage, whether they have a checking range at all — because the hand itself
-   is not telling you anything.
+7. **On a board the class beats, bet — and bet it harder than you would bet aces.** On
+   `8h5s2d` the class is +12 to +15 chips into a 100-chip pot, *above* AA's +8 (§6.1). A
+   middling overpair has no inducing option and no way to improve, so betting is worth more
+   to it than to the nuts (§6.2). This is the least intuitive result in the study.
+8. **On a board the class is under, the measurement declines to resolve it.** On `Kd8s3c`
+   all of 99/TT/JJ/QQ come back UNRESOLVED or NEUTRAL — bet and check are within 2% of pot
+   (§6.1). Choose on villain-specific grounds: fold-to-c-bet, board coverage, whether they
+   have a checking range at all. The hand is not telling you anything, and that is a
+   measured statement rather than a shrug.
 9. **Percentile depreciates on the schedule in §2, not on vibes.** 99 arrives at the river
    with no overcard **6.73%** of the time; TT 13.13%; JJ 23.69%. An overpair is a claim about
    the board so far.
-10. **Unimproved on the river, this class is a bluff-catcher.** The EV surface says check by
-    ~15 chips into 100, at the ~79th percentile against a ~89th-percentile neutral zone
-    (§6.3). Value-betting it is betting into the part of villain's range that continues.
-11. **Multiway, the edge survives and the realization does not.** Above fair share at every
+10. **Unimproved on the river, this class is a bluff-catcher — and this is the one number
+    with no error bar.** Check is preferred by 12–20 chips into 100 on every river board and
+    range tested, at percentile ~74–80 against a neutral zone sitting at ~89–95 (§6.1, §6.4).
+    River output is exactly reproducible. Value-betting here is betting into the part of
+    villain's range that continues.
+11. **On a paired board, prefer the LOWER member.** 99 out-bets JJ by 1.8 chips on
+    `8s8d3c`, with non-overlapping intervals (§7.3) — the only texture tested where the class
+    separates, and it separates opposite to strength order.
+12. **Multiway, the edge survives and the realization does not.** Above fair share at every
     table size (§4.2), but 88.24% of the time it is one pair. Take the flop; do not build
     the pot.
 
@@ -679,12 +698,13 @@ Listed so the guide can be checked rather than believed.
 
 | Claim | How it dies |
 |---|---|
-| "The class is one hand against narrow ranges" | Any range under ~5% wide where the three spread more than ~2pp *and the spread survives repeated runs*. The linear-3bet case (§4.1) already spreads 10.6pp — find the boundary, don't assume it. |
+| "The class separates only against ranges containing hands it dominates" (§4.1) | A premium-heavy range (no hand between 99 and JJ in it) that still spreads the class more than ~2pp across repeated runs. Or a linear range that fails to spread it. Eight ranges were tested; the rule is induced from eight points. |
 | "Exactly 1.02 percentile points apart when no member sets" (§5.4) | It is exhaustive over C(46,3) flops, so it cannot die on flops. It says nothing about turns or rivers, where the universe changes — run `parity` on 4- and 5-card boards. |
-| "The neutral zone narrows by street" (§6.4) | Sixteen board × range pairs were swept, all at one pot geometry (pot 100, bet 66) and one epsilon (2 chips). Vary the sizing, vary epsilon, or use a polar villain range. A monotone/paired river is the most likely counterexample. |
-| **"On an underpair board the class is inside the neutral zone" (§6.2)** | Already falsified once by a re-run at the old, noisier settings, which flipped TT from NEUTRAL to CHECK. It now carries measured error bars — it dies again if a further repeat moves any member outside its stated interval. |
-| **"Bucket collapse is harmless for this class" (§7.3)** | An EV board where the within-class Δ spread exceeds the noise floor. Wet, paired and monotone boards are the candidates and are now in the sweep — this claim is the one most likely to be wrong. |
-| **"Unimproved on the river, the class is a bluff-catcher" (§6.3, §8.10)** | A river villain range built by actual narrowing rather than a chart — the chart ranges used here contain hands that would never arrive at the river. Also dies if the §7.4 pool contradiction resolves in the pool's favour. |
+| "Neutral-zone width tracks texture, not street" (§6.3) | Sixteen board × range pairs, one pot geometry (pot 100, bet 66), one epsilon (2 chips). Vary the sizing or epsilon and the widths will move; the question is whether the *ordering* across textures survives. A monotone flop is untested. |
+| **"The bet-preference curve is non-monotone at the top" (§6.2)** | Measured on two textures with non-overlapping intervals (overpair flop: AA +7.97±0.65 vs 99 +12.91±1.25; paired flop: negative top-of-range slope). It dies if the effect disappears once a villain model is attached, or if it traces to the realization asymmetry named in §1.2 rather than to inducing. **Worth attacking — it is the study's most surprising claim.** |
+| **"On an underpair board the class is indifferent" (§6.1)** | Already falsified once at the old, noisier settings, which flipped TT from NEUTRAL to CHECK. It now carries measured intervals and comes back UNRESOLVED/NEUTRAL — it dies again if a further repeat puts any member cleanly outside ±ε. |
+| "Bucket collapse is harmless for this class" (§7.3) | **Already partially falsified** — the paired board separates 99 from JJ with non-overlapping intervals, in the direction opposite to strength order. A monotone flop is the remaining untested texture. |
+| **"Unimproved on the river, the class is a bluff-catcher" (§6.4, §8.10)** | A river villain range built by actual narrowing rather than a chart — the chart ranges used here contain hands that would never arrive at the river. Also dies if the §7.4 pool contradiction resolves in the pool's favour. |
 | "The adjacent-pair boost is mis-shaped" (§7.1) | **Settled, not open.** The trace is exhaustive and reproducible (`boost` stage); the distortion cannot normalise away because no normaliser compares one rank cell to another. It would die only if `applyShowdownAnchor` or `crossRangeConstraints` changed shape. |
 | "99 and JJ play identically on identical boards" | Rests on percentile parity, which is a *strength* measure and ignores blockers and range interaction. JJ blocks JJ, QJ, JT; 99 blocks 99, T9, 98. Blocker effects are **not measured here.** |
 | Anything about "the pool" | All of it is the engine's prior, never measured against live hands. A live-hand sample of preflop actions with these three classes would settle §3 in either direction. |
@@ -727,7 +747,17 @@ both are worth knowing.
    carried ~±1.5 chips of run-to-run error and were being reported to 0.01 chips and
    classified against a 2-chip threshold. **Fix:** §6 now measures its own error bar over 25
    repeats and withholds a decision label when the interval cannot separate the value from
-   the threshold.
+   the threshold. The claim survives in corrected form (UNRESOLVED/NEUTRAL), but it is now a
+   statement the measurement can defend.
+
+**And re-deriving §6 against corrected settings overturned its headline outright.** v1 said
+the neutral zone collapses by street, comparing hull widths. On the IQR — the statistic the
+review argued for — and with wet and paired boards added, a *paired flop* has a narrower zone
+(1.4pp) than two of the three rivers. Width tracks board texture, not street (§6.3). The
+re-run also surfaced a result v1 had no way to see, because v1 omitted the AA row its own
+harness printed: **the bet-preference curve is non-monotone at the top**, and on a paired
+board its top-of-range slope is negative (§6.2). The strongest single claim in this document
+now comes from a section the review forced to be rebuilt.
 
 **A self-check that could not fail.** The percentile "fast path" was asserted equivalent to
 `comboStrengthPercentile` at run time. `bestFiveFromSeven` delegates to `evaluate5` for
