@@ -32,6 +32,13 @@ writes here.
 > T1 Authoritative/regulatory · T2 Trusted vendor · T3 Internal DB (your recording) · T4 Internal derivation/assumption · T5 External unverified.
 > §1.5 ladder: **Certain** (showdown) → T3+certain · **High** (observed action) → T3 · **Medium** (line-inference) → T4 · **Prior** (Field baseline) → see ⚠️ priors · **Reference** (GTO) → planned · **Variable** (physical read) → T3+user-rated.
 
+> **`surface_class` here is NOT FSA's surface kind.** In this registry `surface_class` describes
+> what kind of *store* a source is — `internal_db | vendor_api | derived | reference_data`. The
+> Five-Surface Atlas uses "surface" to mean *a function from game state to action distribution*,
+> and its axis is a separate field named **`surface_kind`** (`Equilibrium | Field | Read |
+> Declared`) — deliberately renamed in WS-322 so the two never collide in a grep. See
+> `docs/standard-of-record/VOCABULARY.md`. This registry's field and values are unchanged.
+
 ---
 
 ## Sources
