@@ -2,11 +2,11 @@ id: "WS-301"
 title: "A single depth-2 evaluation measured 8.5s in-harness while the whole-evaluation budget is 150ms"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
+completed_at: "2026-08-03T00:50:00Z"
 completion_commit: null
 priority_score: 28.0
 priority_label: "P0"
@@ -76,3 +76,32 @@ created_at: "2026-07-28T21:30:00Z"
 status_note: |
   Filed 2026-07-28 during SPR-158 (WS-291). Surfaced by a timing-out test; the timing
   measurements above were taken while diagnosing whether WS-291 had caused it. It had not.
+
+resolution: |
+  MEASURED, then closed on its own criteria. The live path does NOT pay the 8.5s: an
+  `evaluateGameTree` call measured 425-590 ms on three realistic flop/turn spots. But the
+  reason is not that the harness case is unrepresentative in cost — it is that the live
+  path never calls `computeCallDepth2EV` at all. Instrumented with every depth-2/3 entry
+  point wrapped and counted: ZERO calls, because `buildEvaluationContext` spends ~390 ms
+  before the 150 ms budget is first checked, so every gate fails. Filed as WS-334.
+
+  Dominant cost identified by measurement, not by reading code:
+    - inside the context build: `computeComboEquityDistribution` = 361 ms of ~390 ms
+      (everything else totals ~20 ms); trials-independent.
+    - inside one depth-2 call (3.6 s standalone): 64 per-combo evaluations —
+      16x3 betEV = 2359 ms, 16x checkEV = 808 ms. A board cache changes nothing
+      (3709 ms -> 3590 ms) and a narrowed range changes nothing (3657 ms), confirming
+      the "not per-combo" observation in the original description.
+
+  Delivered: `computeCallDepth2EV`, `computeBetCallDepth2EV` and
+  `computeRaiseResponseDepth2EV` now accept `startTime` / `timeBudgetMs` and honour them
+  with a mid-loop bailout matching the depth-3 paths, returning a weight-renormalised
+  partial average plus `completed: false`. `gameTreeEvaluator` threads the budget into all
+  five call sites. `stratifiedSample` normalises weights to sum to 1, so the added division
+  is exactly a no-op when the loop completes — no accuracy change on the complete path, and
+  none live at all, since these functions are currently unreachable there.
+
+  Verification: full suite green (574 files, 13,670 tests, 0 failures).
+  NOT re-scored through the WS-273 / WS-293 harnesses: with no reachable call site and a
+  provably no-op normalisation, there is no behavioural delta to score. That re-score
+  belongs to WS-334, where the reachability decision actually changes advice.

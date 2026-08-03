@@ -1,0 +1,157 @@
+id: "WS-334"
+title: "The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-08-03 while closing WS-301, which asked whether the live path pays the
+  8.5s depth-2 cost. It does not — and the reason is worse than the cost.
+
+  **Zero depth-2/3 calls fire on a live evaluation.** Instrumented `evaluateGameTree`
+  with every depth-2/3 entry point wrapped and counted, on three realistic spots:
+
+  | Spot | wall | depth-2/3 calls |
+  |---|---|---|
+  | flop facing bet (A♠7♥2♦, pot 60, bet 40) | 465 ms | **0** |
+  | flop facing check | 436 ms | **0** |
+  | turn facing bet (A♠7♥2♦4♣, pot 140, bet 90) | 536 ms | **0** |
+
+  THE MECHANISM. `gameTreeEvaluator` sets `timeBudgetMs = 150` and `startTime` at the top
+  of `evaluateGameTree` (gameTreeEvaluator.js:684, 726-727). Every depth-2/3 block is
+  gated behind `!isTimeBudgetExceeded()` (lines 794, 874, 901, 940, 1016, 1063). But
+  `buildEvaluationContext` runs BEFORE the first gate and costs **~390 ms**, so the budget
+  is already blown 2.6x over by the time anything checks it. Every gate fails. Always.
+
+  CORRECTION TO THE FIRST DIAGNOSIS — recorded rather than quietly fixed, because the way
+  it was got wrong is the point. The claim above was originally written as "unconditional,
+  independent of the `lowConfidence` gate", inferred from the arithmetic 390 > 150 without
+  checking which condition actually short-circuited. It did not. The gate is
+  `street !== 'river' && !lowConfidence && !isTimeBudgetExceeded()`, and on a villain with
+  no decision history `lowConfidence` is ALSO true, so the budget was never even reached in
+  the boolean. Two independent blockers, and only instrumentation distinguished them.
+
+  The stage ledger now records EVERY failing condition rather than the first to
+  short-circuit, and on a flop spot reports `blockedBy: ["confidence", "budget"]`. That is
+  the direct evidence — not an inference — that the budget blocks depth-2 on its own, i.e.
+  it would still block for a villain whose model IS confident enough to open the other gate.
+
+  WHERE THE 390 ms GOES — measured per step, not inferred:
+
+  | Step | cost |
+  |---|---|
+  | `analyzeBoardTexture` | 0 ms |
+  | `narrowByBoard` | 11 ms |
+  | `segmentRange` (1081 combos) | 9 ms |
+  | **`computeComboEquityDistribution`** | **361 ms** |
+  | `estimateFoldPct` x2 | 0 ms |
+
+  It is trials-independent: buildEvaluationContext measured 391 ms at `trials=100` and
+  404 ms at `trials=2000`, because the MC call is only 58 ms of it. Turning `trials` down
+  cannot recover the budget.
+
+  WHY IT LIKELY GOT WORSE RATHER THAN ALWAYS BEING TRUE. WS-291's soft narrowing means
+  `narrowByBoard` no longer zeroes cells, so `enumerateCombos` returns ~1081 live combos
+  instead of ~456. `computeComboEquityDistribution` is per-combo, so its cost scales with
+  that: ~2.4x. A pre-WS-291 cost near 150 ms would have been marginal-but-sometimes-passing;
+  361 ms never passes. This wants confirming against a pre-WS-291 checkout rather than
+  assumed — the arithmetic is suggestive, not measured.
+
+  WHAT IS DEAD AS A RESULT. `computeCallDepth2EV`, `computeBetCallDepth2EV`,
+  `computeRaiseResponseDepth2EV`, `computeDepth3BarrelEV` — and everything downstream of
+  them, including `nextStreetPlan` (the barrel/check-back guidance), the check-raise
+  depth-2 branch, and the depth-3 barrel EV. The river per-combo path (line 794) is gated
+  the same way and is also dead. Live advice is depth-1 only.
+
+  This is the `shipped-but-inert` family already recorded against WS-276's
+  `perceivedHeroRange` and WS-284 — a capability that is correct, tested, and unreachable
+  in production, with a green suite because the tests call it directly.
+
+  NOT YET KNOWN: whether depth-1-only advice is materially worse. That is an EV question,
+  not a latency one, and it should be scored through the WS-273 harness rather than argued.
+accept_criteria: |
+  - A behavioural test asserts that at least one depth-2 block executes on a representative
+    live evaluation. It must FAIL against the current engine — a test that passes today is
+    testing the wrong thing (WS-309 rule).
+  - `computeComboEquityDistribution` cost is reduced enough that context building fits
+    inside a budget that leaves room for depth-2, OR the budget/architecture is changed
+    deliberately and the change is recorded as a decision. Reaching MORE accuracy is the
+    objective; latency is the constraint to be engineered around, never the reason to
+    accept a shallower answer.
+  - The founder's device is the target, not this desktop: 1600x720 Galaxy A22 is materially
+    slower, so any budget that "just fits" here does not fit there. State the assumed device.
+  - Whatever is decided, the SKIP MUST BECOME VISIBLE — `treeMetadata` should report which
+    refinement stages ran and which were dropped for budget. A silent degrade to depth-1 is
+    how this survived.
+  - Accuracy delta between depth-1-only and depth-2-enabled advice is MEASURED through the
+    WS-273 calibration harness. This is for INFORMATION, not for a keep/delete verdict —
+    see the doctrine note below.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    RESOLVED BY FOUNDER 2026-08-03 — the delete option is OFF THE TABLE. The original
+    framing ("if depth-2 does not move the calibration number, delete it") was rejected on
+    two grounds, both of which generalise beyond this ticket.
+
+    ONE. A null result is only evidence if the instrument is trustworthy, and this engine
+    is not in a verified state. The subsystem under test was just discovered to be dead;
+    WS-300 had inverted range fixtures; WS-291 had a doc claim the data refuted; WS-276
+    shipped an inert parameter. A "no difference" measured on that substrate is a
+    statement about the substrate, not about depth-2.
+
+    TWO. Even from a verified state, a capability's worth is not its marginal effect on
+    one axis today. Reanalysis of a different type, a join against data not yet collected,
+    or a transformation not yet conceived can make it load-bearing later. Deleting it is
+    the one irreversible move; it destroys state space rather than preserving it.
+
+    The standing rule this instantiates — KEEP THE FULL ARTICULABLE FLEXIBILITY OF THE
+    GAME. Where accuracy can be increased, increase it. Assume the cracks are never fully
+    resolved.
+  - |
+    OPEN — how to make depth-2 reachable. Candidates: cut the 361ms, raise or restructure
+    the budget, or move refinement off the critical path (return depth-1 immediately and
+    upgrade the view when depth-2 lands). Latency is the constraint to engineer around,
+    not a reason to ship a shallower answer.
+  - |
+    OPEN — if depth-2 becomes reachable, run to completion or return partial? WS-301 gave
+    all three depth-2 entry points a mid-loop bailout, so partial is available.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-301"
+created_at: "2026-08-03T00:45:00Z"
+status_note: |
+  Filed 2026-08-03 while executing WS-301. WS-301 asked "does the live path pay the 8.5s?"
+  The answer is no, because the live path does not reach the code at all. WS-301's own
+  criteria are met and it is closed; this is the finding that replaced its premise.
+  Measurement harness was temporary and deleted, but it is no longer needed: the stage
+  ledger shipped with this item (`treeMetadata.latency`) reports the same facts from any
+  live evaluation. `src/utils/exploitEngine/__tests__/depthReachability.test.js` guards the
+  observability so the degrade can never go silent again.
+
+  SHIPPED ALREADY UNDER THIS ITEM (2026-08-03), decision still open:
+    - `treeMetadata.latency` — per-stage ran/blockedBy/atMs/ms ledger, `budgetSkipped`,
+      `preRefinementMs`, `overBudget`. Diagnostic only; nothing branches on it.
+    - `treeMetadata.depthReached` and `.callDepth2` now report work DONE. They were derived
+      from the street, so the metadata asserted depth-2 on every postflop evaluation whether
+      or not any ran — a large part of why this hid for months.
+    - `depthReachability.test.js` — 4 tests asserting the degrade stays observable.
