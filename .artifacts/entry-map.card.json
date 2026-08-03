@@ -1,0 +1,3875 @@
+{
+  "artifactVersion": 1,
+  "generatedBy": "scripts/backtest/run-entry-card.mjs",
+  "provenanceNote": "Convenience copy for machine readers. NOT part of the Strategy Card — the loader drops unknown top-level fields, so the load-bearing copy of all of this lives in card.rationale, inside the content hash.",
+  "provenance": {
+    "continuationPolicy": {
+      "id": "cp-stratified-flop-v1",
+      "module": "src/utils/exploitEngine/preflopFlopEV.js",
+      "via": "src/utils/exploitEngine/preflopAdvisor.js#computePreflopAdvice",
+      "description": "The shipped stratified-flop policy: sample flops by archetype, classify hero on each, bet nuts/strong for value, semi-bluff draws, check marginal, check-fold air (EV 0). Reached through the production preflop advisor, so the map describes the strategy that actually ships.",
+      "knownBias": "undervalues unpaired hands: no barrelling, no overcard realization, air check-folds to 0"
+    },
+    "engineCommit": "a4206bb4f621e02b199a1aae08428cace3841f70",
+    "engineDirty": true,
+    "tauBB": 0.25,
+    "field": {
+      "sourceId": "SRC-011",
+      "stakeBB": 0.5,
+      "seatBucket": "6max"
+    },
+    "bandCounts": {
+      "fringe-tight": 61,
+      "clear-": 1079,
+      "unmeasured": 132,
+      "clear+": 80,
+      "unreachable": 338
+    }
+  },
+  "card": {
+    "cardId": "entry-map/cp-stratified-flop-v1",
+    "schemaVersion": 1,
+    "title": "Entry Map — is this hand worth playing at all? (cp-stratified-flop-v1)",
+    "rationale": "The Entry Map under continuation policy cp-stratified-flop-v1, at engine commit a4206bb4f621e02b199a1aae08428cace3841f70 (DIRTY TREE — not replicable), banded at τ=0.25bb.\n\nFolding is EV = 0 by definition, so \"worth playing\" is exactly EV(enter) > 0 and the hands indifferent to folding sit at zero by construction. Every cell of (169 hand classes × 5 position categories × 2 facing-actions) was enumerated and evaluated through the production preflop advisor, and carries an interval rather than a bare point estimate — because \"near zero\" and \"we cannot tell\" look identical in a point estimate and are different facts.\n\nBand counts at this τ: clear+ 80 · fringe-tight 61 · unmeasured 132 · clear- 1079 · structurally unreachable 338.\n\nWHAT THIS CARD IS NOT. Entry EV is not a property of a hand — it is conditional on how the hand is played after the flop. cp-stratified-flop-v1 cannot barrel, realizes no equity from overcards, and check-folds air for zero, so it systematically undervalues UNPAIRED hands: this card declines to open AKs from early position, which is a true statement about the policy and a false statement about poker. It is published as the BASELINE a better continuation policy has to beat, and the fringe-migration report is the instrument that will show it being beaten — unpaired hands climbing out of clear- is precisely what a policy that can barrel would produce.\n\nEvery rule carries the equity warrant, which is itself a claim: nothing in this card rests on a population read and nothing rests on fear. A machine-enumerated map has no business claiming either.",
+    "domain": {
+      "street": "preflop",
+      "gameType": "cash",
+      "seats": [
+        6,
+        9
+      ],
+      "stackDepthBB": [
+        80,
+        200
+      ]
+    },
+    "rules": [
+      {
+        "id": "enter/99|EARLY|none",
+        "when": {
+          "handClass": "99",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "limp",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.175bb over folding, interval [+0.036bb, +0.314bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.053bb · modelError 0.012bb"
+      },
+      {
+        "id": "enter/TT|EARLY|none",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.314bb over folding, interval [+0.082bb, +0.547bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.087bb · modelError 0.033bb"
+      },
+      {
+        "id": "enter/JJ|EARLY|none",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.562bb over folding, interval [+0.355bb, +0.770bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.069bb · modelError 0.056bb"
+      },
+      {
+        "id": "enter/QQ|EARLY|none",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.906bb over folding, interval [+0.618bb, +1.194bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.088bb · modelError 0.091bb"
+      },
+      {
+        "id": "enter/KK|EARLY|none",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.884bb over folding, interval [+0.822bb, +0.946bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.022bb · modelError 0.014bb"
+      },
+      {
+        "id": "enter/AA|EARLY|none",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.234bb over folding, interval [+1.076bb, +1.393bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.050bb · modelError 0.046bb"
+      },
+      {
+        "id": "enter/JJ|MIDDLE|none",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.585bb over folding, interval [+0.299bb, +0.870bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.110bb · modelError 0.016bb"
+      },
+      {
+        "id": "enter/QQ|MIDDLE|none",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.066bb over folding, interval [+0.909bb, +1.222bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.048bb · modelError 0.049bb"
+      },
+      {
+        "id": "enter/KK|MIDDLE|none",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.094bb over folding, interval [+0.893bb, +1.295bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.054bb · modelError 0.074bb"
+      },
+      {
+        "id": "enter/AA|MIDDLE|none",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.601bb over folding, interval [+1.388bb, +1.813bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.082bb · modelError 0.006bb"
+      },
+      {
+        "id": "enter/22|MIDDLE|raise",
+        "when": {
+          "handClass": "22",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.182bb over folding, interval [+0.513bb, +1.852bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.151bb · modelError 0.279bb"
+      },
+      {
+        "id": "enter/32s|MIDDLE|raise",
+        "when": {
+          "handClass": "32s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.230bb over folding, interval [+0.023bb, +0.438bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.070bb · modelError 0.052bb"
+      },
+      {
+        "id": "enter/33|MIDDLE|raise",
+        "when": {
+          "handClass": "33",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.499bb over folding, interval [+0.819bb, +2.178bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.261bb · modelError 0.052bb"
+      },
+      {
+        "id": "enter/55|MIDDLE|raise",
+        "when": {
+          "handClass": "55",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.317bb over folding, interval [+0.394bb, +2.240bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.262bb · modelError 0.322bb"
+      },
+      {
+        "id": "enter/66|MIDDLE|raise",
+        "when": {
+          "handClass": "66",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.231bb over folding, interval [+0.719bb, +1.744bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.198bb · modelError 0.029bb"
+      },
+      {
+        "id": "enter/77|MIDDLE|raise",
+        "when": {
+          "handClass": "77",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.934bb over folding, interval [+0.257bb, +1.612bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.139bb · modelError 0.293bb"
+      },
+      {
+        "id": "enter/88|MIDDLE|raise",
+        "when": {
+          "handClass": "88",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.097bb over folding, interval [+0.240bb, +1.955bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.177bb · modelError 0.371bb"
+      },
+      {
+        "id": "enter/99|MIDDLE|raise",
+        "when": {
+          "handClass": "99",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.006bb over folding, interval [+1.638bb, +2.374bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.114bb · modelError 0.113bb"
+      },
+      {
+        "id": "enter/TT|MIDDLE|raise",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.158bb over folding, interval [+1.586bb, +2.731bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.186bb · modelError 0.161bb"
+      },
+      {
+        "id": "enter/JJ|MIDDLE|raise",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.965bb over folding, interval [+2.601bb, +3.329bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.111bb · modelError 0.115bb"
+      },
+      {
+        "id": "enter/QQ|MIDDLE|raise",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +3.254bb over folding, interval [+3.053bb, +3.455bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.077bb · modelError 0.015bb"
+      },
+      {
+        "id": "enter/KK|MIDDLE|raise",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +3.169bb over folding, interval [+2.990bb, +3.348bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.035bb · modelError 0.079bb"
+      },
+      {
+        "id": "enter/AQs|MIDDLE|raise",
+        "when": {
+          "handClass": "AQs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.254bb over folding, interval [+0.091bb, +0.416bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.062bb · modelError 0.015bb"
+      },
+      {
+        "id": "enter/AKs|MIDDLE|raise",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.465bb over folding, interval [+0.061bb, +0.869bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.110bb · modelError 0.148bb"
+      },
+      {
+        "id": "enter/AA|MIDDLE|raise",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +4.257bb over folding, interval [+3.717bb, +4.796bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.205bb · modelError 0.057bb"
+      },
+      {
+        "id": "enter/77|LATE|none",
+        "when": {
+          "handClass": "77",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.447bb over folding, interval [+0.096bb, +0.799bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.107bb · modelError 0.112bb"
+      },
+      {
+        "id": "enter/99|LATE|none",
+        "when": {
+          "handClass": "99",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.532bb over folding, interval [+0.373bb, +0.691bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.061bb · modelError 0.013bb"
+      },
+      {
+        "id": "enter/TT|LATE|none",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.924bb over folding, interval [+0.509bb, +1.340bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.127bb · modelError 0.131bb"
+      },
+      {
+        "id": "enter/JJ|LATE|none",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.210bb over folding, interval [+0.818bb, +1.601bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.126bb · modelError 0.112bb"
+      },
+      {
+        "id": "enter/QQ|LATE|none",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.638bb over folding, interval [+1.510bb, +1.767bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.042bb · modelError 0.036bb"
+      },
+      {
+        "id": "enter/KK|LATE|none",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.582bb over folding, interval [+1.437bb, +1.727bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.051bb · modelError 0.032bb"
+      },
+      {
+        "id": "enter/AA|LATE|none",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.935bb over folding, interval [+1.773bb, +2.098bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.060bb · modelError 0.026bb"
+      },
+      {
+        "id": "enter/22|LATE|raise",
+        "when": {
+          "handClass": "22",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.918bb over folding, interval [+0.457bb, +1.379bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.178bb · modelError 0.027bb"
+      },
+      {
+        "id": "enter/44|LATE|raise",
+        "when": {
+          "handClass": "44",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.994bb over folding, interval [+0.400bb, +1.587bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.172bb · modelError 0.202bb"
+      },
+      {
+        "id": "enter/55|LATE|raise",
+        "when": {
+          "handClass": "55",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.339bb over folding, interval [+0.953bb, +1.726bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.145bb · modelError 0.053bb"
+      },
+      {
+        "id": "enter/66|LATE|raise",
+        "when": {
+          "handClass": "66",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.323bb over folding, interval [+0.552bb, +2.094bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.193bb · modelError 0.301bb"
+      },
+      {
+        "id": "enter/77|LATE|raise",
+        "when": {
+          "handClass": "77",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.029bb over folding, interval [+0.604bb, +1.454bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.128bb · modelError 0.137bb"
+      },
+      {
+        "id": "enter/88|LATE|raise",
+        "when": {
+          "handClass": "88",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.652bb over folding, interval [+0.476bb, +2.827bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.250bb · modelError 0.502bb"
+      },
+      {
+        "id": "enter/99|LATE|raise",
+        "when": {
+          "handClass": "99",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.338bb over folding, interval [+1.146bb, +3.530bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.425bb · modelError 0.242bb"
+      },
+      {
+        "id": "enter/TT|LATE|raise",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.515bb over folding, interval [+1.661bb, +3.368bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.164bb · modelError 0.378bb"
+      },
+      {
+        "id": "enter/JJ|LATE|raise",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +3.508bb over folding, interval [+2.767bb, +4.249bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.226bb · modelError 0.234bb"
+      },
+      {
+        "id": "enter/QQ|LATE|raise",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +4.820bb over folding, interval [+4.506bb, +5.133bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.087bb · modelError 0.112bb"
+      },
+      {
+        "id": "enter/KK|LATE|raise",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +4.594bb over folding, interval [+4.052bb, +5.136bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.110bb · modelError 0.236bb"
+      },
+      {
+        "id": "enter/AQs|LATE|raise",
+        "when": {
+          "handClass": "AQs",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.278bb over folding, interval [+0.029bb, +0.526bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.091bb · modelError 0.044bb"
+      },
+      {
+        "id": "enter/AKs|LATE|raise",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.460bb over folding, interval [+0.278bb, +0.642bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.067bb · modelError 0.029bb"
+      },
+      {
+        "id": "enter/AA|LATE|raise",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +5.561bb over folding, interval [+4.856bb, +6.266bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.169bb · modelError 0.283bb"
+      },
+      {
+        "id": "enter/44|SB|none",
+        "when": {
+          "handClass": "44",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.443bb over folding, interval [+0.024bb, +0.862bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.162bb · modelError 0.019bb"
+      },
+      {
+        "id": "enter/77|SB|none",
+        "when": {
+          "handClass": "77",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.568bb over folding, interval [+0.189bb, +0.947bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.146bb · modelError 0.023bb"
+      },
+      {
+        "id": "enter/88|SB|none",
+        "when": {
+          "handClass": "88",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.663bb over folding, interval [+0.311bb, +1.015bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.134bb · modelError 0.040bb"
+      },
+      {
+        "id": "enter/99|SB|none",
+        "when": {
+          "handClass": "99",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.837bb over folding, interval [+0.234bb, +1.441bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.173bb · modelError 0.207bb"
+      },
+      {
+        "id": "enter/TT|SB|none",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.377bb over folding, interval [+0.896bb, +1.859bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.150bb · modelError 0.146bb"
+      },
+      {
+        "id": "enter/JJ|SB|none",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.426bb over folding, interval [+1.054bb, +1.797bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.068bb · modelError 0.167bb"
+      },
+      {
+        "id": "enter/QQ|SB|none",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.956bb over folding, interval [+1.890bb, +2.021bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.022bb · modelError 0.016bb"
+      },
+      {
+        "id": "enter/KK|SB|none",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.832bb over folding, interval [+1.643bb, +2.022bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.036bb · modelError 0.084bb"
+      },
+      {
+        "id": "enter/AKs|SB|none",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.167bb over folding, interval [+0.082bb, +0.253bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.031bb · modelError 0.016bb"
+      },
+      {
+        "id": "enter/AA|SB|none",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "open",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.217bb over folding, interval [+1.872bb, +2.561bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.097bb · modelError 0.121bb"
+      },
+      {
+        "id": "enter/66|SB|raise",
+        "when": {
+          "handClass": "66",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.595bb over folding, interval [+0.781bb, +2.408bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.300bb · modelError 0.132bb"
+      },
+      {
+        "id": "enter/88|SB|raise",
+        "when": {
+          "handClass": "88",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.860bb over folding, interval [+1.049bb, +2.671bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.244bb · modelError 0.263bb"
+      },
+      {
+        "id": "enter/99|SB|raise",
+        "when": {
+          "handClass": "99",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.120bb over folding, interval [+0.022bb, +4.218bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.589bb · modelError 0.741bb"
+      },
+      {
+        "id": "enter/TT|SB|raise",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.994bb over folding, interval [+1.103bb, +4.884bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.483bb · modelError 0.727bb"
+      },
+      {
+        "id": "enter/JJ|SB|raise",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +4.718bb over folding, interval [+3.217bb, +6.218bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.559bb · modelError 0.222bb"
+      },
+      {
+        "id": "enter/QQ|SB|raise",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +5.978bb over folding, interval [+5.718bb, +6.238bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.101bb · modelError 0.002bb"
+      },
+      {
+        "id": "enter/KK|SB|raise",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +5.648bb over folding, interval [+5.303bb, +5.993bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.090bb · modelError 0.130bb"
+      },
+      {
+        "id": "enter/AKs|SB|raise",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.212bb over folding, interval [+0.090bb, +0.334bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.046bb · modelError 0.013bb"
+      },
+      {
+        "id": "enter/AA|SB|raise",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +7.012bb over folding, interval [+6.589bb, +7.436bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.154bb · modelError 0.077bb"
+      },
+      {
+        "id": "enter/22|BB|raise",
+        "when": {
+          "handClass": "22",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.399bb over folding, interval [+0.379bb, +2.418bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.323bb · modelError 0.301bb"
+      },
+      {
+        "id": "enter/33|BB|raise",
+        "when": {
+          "handClass": "33",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.209bb over folding, interval [+0.332bb, +2.086bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.341bb · modelError 0.026bb"
+      },
+      {
+        "id": "enter/44|BB|raise",
+        "when": {
+          "handClass": "44",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.544bb over folding, interval [+0.473bb, +2.614bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.330bb · modelError 0.333bb"
+      },
+      {
+        "id": "enter/55|BB|raise",
+        "when": {
+          "handClass": "55",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +1.781bb over folding, interval [+0.282bb, +3.280bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.483bb · modelError 0.427bb"
+      },
+      {
+        "id": "enter/77|BB|raise",
+        "when": {
+          "handClass": "77",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.064bb over folding, interval [+0.436bb, +3.692bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.384bb · modelError 0.660bb"
+      },
+      {
+        "id": "enter/88|BB|raise",
+        "when": {
+          "handClass": "88",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.355bb over folding, interval [+0.786bb, +3.923bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.445bb · modelError 0.547bb"
+      },
+      {
+        "id": "enter/99|BB|raise",
+        "when": {
+          "handClass": "99",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +2.664bb over folding, interval [+1.645bb, +3.683bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.390bb · modelError 0.092bb"
+      },
+      {
+        "id": "enter/TT|BB|raise",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +3.129bb over folding, interval [+1.103bb, +5.155bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.387bb · modelError 0.900bb"
+      },
+      {
+        "id": "enter/JJ|BB|raise",
+        "when": {
+          "handClass": "JJ",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +5.163bb over folding, interval [+4.502bb, +5.824bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.212bb · modelError 0.191bb"
+      },
+      {
+        "id": "enter/QQ|BB|raise",
+        "when": {
+          "handClass": "QQ",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +6.481bb over folding, interval [+6.193bb, +6.768bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.068bb · modelError 0.116bb"
+      },
+      {
+        "id": "enter/KQs|BB|raise",
+        "when": {
+          "handClass": "KQs",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.200bb over folding, interval [+0.013bb, +0.387bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.064bb · modelError 0.045bb"
+      },
+      {
+        "id": "enter/KK|BB|raise",
+        "when": {
+          "handClass": "KK",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +6.141bb over folding, interval [+5.974bb, +6.308bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.053bb · modelError 0.049bb"
+      },
+      {
+        "id": "enter/AQs|BB|raise",
+        "when": {
+          "handClass": "AQs",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.151bb over folding, interval [+0.087bb, +0.216bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.015bb · modelError 0.026bb"
+      },
+      {
+        "id": "enter/AKs|BB|raise",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "call",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.533bb over folding, interval [+0.128bb, +0.939bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.093bb · modelError 0.167bb"
+      },
+      {
+        "id": "enter/AA|BB|raise",
+        "when": {
+          "handClass": "AA",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "3bet",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +7.345bb over folding, interval [+7.048bb, +7.643bb] entirely above zero, under cp-stratified-flop-v1"
+        },
+        "note": "mcError 0.114bb · modelError 0.025bb"
+      },
+      {
+        "id": "fringe/22|EARLY|none",
+        "when": {
+          "handClass": "22",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.040bb, interval [-0.133bb, +0.052bb] straddles zero at half-width 0.092bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/33|EARLY|none",
+        "when": {
+          "handClass": "33",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.085bb, interval [-0.320bb, +0.149bb] straddles zero at half-width 0.234bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/44|EARLY|none",
+        "when": {
+          "handClass": "44",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.113bb, interval [-0.255bb, +0.030bb] straddles zero at half-width 0.143bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/66|EARLY|none",
+        "when": {
+          "handClass": "66",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.121bb, interval [-0.358bb, +0.117bb] straddles zero at half-width 0.238bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/77|EARLY|none",
+        "when": {
+          "handClass": "77",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.024bb, interval [-0.136bb, +0.183bb] straddles zero at half-width 0.159bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/88|EARLY|none",
+        "when": {
+          "handClass": "88",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.049bb, interval [-0.111bb, +0.210bb] straddles zero at half-width 0.161bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/22|MIDDLE|none",
+        "when": {
+          "handClass": "22",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.097bb, interval [-0.304bb, +0.110bb] straddles zero at half-width 0.207bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/33|MIDDLE|none",
+        "when": {
+          "handClass": "33",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.094bb, interval [-0.204bb, +0.016bb] straddles zero at half-width 0.110bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/44|MIDDLE|none",
+        "when": {
+          "handClass": "44",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.044bb, interval [-0.217bb, +0.129bb] straddles zero at half-width 0.173bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/66|MIDDLE|none",
+        "when": {
+          "handClass": "66",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.065bb, interval [-0.221bb, +0.090bb] straddles zero at half-width 0.155bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/88|MIDDLE|none",
+        "when": {
+          "handClass": "88",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.019bb, interval [-0.202bb, +0.240bb] straddles zero at half-width 0.221bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/99|MIDDLE|none",
+        "when": {
+          "handClass": "99",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.131bb, interval [-0.029bb, +0.292bb] straddles zero at half-width 0.160bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AQo|MIDDLE|none",
+        "when": {
+          "handClass": "AQo",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.222bb, interval [-0.446bb, +0.002bb] straddles zero at half-width 0.224bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/43s|MIDDLE|raise",
+        "when": {
+          "handClass": "43s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.020bb, interval [-0.255bb, +0.214bb] straddles zero at half-width 0.234bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/JTs|MIDDLE|raise",
+        "when": {
+          "handClass": "JTs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.021bb, interval [-0.218bb, +0.260bb] straddles zero at half-width 0.239bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/KQs|MIDDLE|raise",
+        "when": {
+          "handClass": "KQs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.186bb, interval [-0.052bb, +0.424bb] straddles zero at half-width 0.238bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/22|LATE|none",
+        "when": {
+          "handClass": "22",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.075bb, interval [-0.063bb, +0.214bb] straddles zero at half-width 0.139bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AKs|LATE|none",
+        "when": {
+          "handClass": "AKs",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.066bb, interval [-0.180bb, +0.047bb] straddles zero at half-width 0.114bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/42s|LATE|raise",
+        "when": {
+          "handClass": "42s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.138bb, interval [-0.357bb, +0.082bb] straddles zero at half-width 0.219bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/87s|LATE|raise",
+        "when": {
+          "handClass": "87s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.218bb, interval [-0.450bb, +0.014bb] straddles zero at half-width 0.232bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/KQo|LATE|raise",
+        "when": {
+          "handClass": "KQo",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.195bb, interval [-0.033bb, +0.423bb] straddles zero at half-width 0.228bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/32o|SB|none",
+        "when": {
+          "handClass": "32o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.009bb, interval [-0.040bb, +0.023bb] straddles zero at half-width 0.031bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/A2o|SB|none",
+        "when": {
+          "handClass": "A2o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.102bb, interval [-0.252bb, +0.048bb] straddles zero at half-width 0.150bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/32s|SB|none",
+        "when": {
+          "handClass": "32s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.048bb, interval [-0.016bb, +0.112bb] straddles zero at half-width 0.064bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/42s|SB|none",
+        "when": {
+          "handClass": "42s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.006bb, interval [-0.098bb, +0.086bb] straddles zero at half-width 0.092bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/43s|SB|none",
+        "when": {
+          "handClass": "43s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.020bb, interval [-0.058bb, +0.098bb] straddles zero at half-width 0.078bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/53s|SB|none",
+        "when": {
+          "handClass": "53s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.010bb, interval [-0.118bb, +0.098bb] straddles zero at half-width 0.108bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/54s|SB|none",
+        "when": {
+          "handClass": "54s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.035bb, interval [-0.113bb, +0.042bb] straddles zero at half-width 0.078bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/65o|SB|none",
+        "when": {
+          "handClass": "65o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.061bb, interval [-0.142bb, +0.021bb] straddles zero at half-width 0.082bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/62s|SB|none",
+        "when": {
+          "handClass": "62s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.044bb, interval [-0.096bb, +0.009bb] straddles zero at half-width 0.053bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/63s|SB|none",
+        "when": {
+          "handClass": "63s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.072bb, interval [-0.148bb, +0.003bb] straddles zero at half-width 0.075bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/64s|SB|none",
+        "when": {
+          "handClass": "64s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.032bb, interval [-0.070bb, +0.007bb] straddles zero at half-width 0.039bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/65s|SB|none",
+        "when": {
+          "handClass": "65s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.038bb, interval [-0.115bb, +0.039bb] straddles zero at half-width 0.077bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/76o|SB|none",
+        "when": {
+          "handClass": "76o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.053bb, interval [-0.119bb, +0.013bb] straddles zero at half-width 0.066bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/74s|SB|none",
+        "when": {
+          "handClass": "74s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.042bb, interval [-0.099bb, +0.015bb] straddles zero at half-width 0.057bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/76s|SB|none",
+        "when": {
+          "handClass": "76s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.040bb, interval [-0.081bb, +0.001bb] straddles zero at half-width 0.041bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/87o|SB|none",
+        "when": {
+          "handClass": "87o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.071bb, interval [-0.149bb, +0.006bb] straddles zero at half-width 0.078bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/86s|SB|none",
+        "when": {
+          "handClass": "86s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.044bb, interval [-0.139bb, +0.051bb] straddles zero at half-width 0.095bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/K8o|SB|none",
+        "when": {
+          "handClass": "K8o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.071bb, interval [-0.156bb, +0.014bb] straddles zero at half-width 0.085bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/92s|SB|none",
+        "when": {
+          "handClass": "92s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.081bb, interval [-0.166bb, +0.003bb] straddles zero at half-width 0.085bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/95s|SB|none",
+        "when": {
+          "handClass": "95s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.071bb, interval [-0.145bb, +0.003bb] straddles zero at half-width 0.074bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/96s|SB|none",
+        "when": {
+          "handClass": "96s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.067bb, interval [-0.149bb, +0.014bb] straddles zero at half-width 0.081bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/98s|SB|none",
+        "when": {
+          "handClass": "98s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.007bb, interval [-0.057bb, +0.043bb] straddles zero at half-width 0.050bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/K9o|SB|none",
+        "when": {
+          "handClass": "K9o",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.095bb, interval [-0.193bb, +0.002bb] straddles zero at half-width 0.098bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/T9s|SB|none",
+        "when": {
+          "handClass": "T9s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.024bb, interval [-0.105bb, +0.056bb] straddles zero at half-width 0.081bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/JTo|SB|none",
+        "when": {
+          "handClass": "JTo",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.071bb, interval [-0.180bb, +0.038bb] straddles zero at half-width 0.109bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/J4s|SB|none",
+        "when": {
+          "handClass": "J4s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.078bb, interval [-0.157bb, +0.000bb] straddles zero at half-width 0.079bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/J9s|SB|none",
+        "when": {
+          "handClass": "J9s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.072bb, interval [-0.145bb, +0.000bb] straddles zero at half-width 0.073bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/JTs|SB|none",
+        "when": {
+          "handClass": "JTs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.007bb, interval [-0.080bb, +0.067bb] straddles zero at half-width 0.073bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AJo|SB|none",
+        "when": {
+          "handClass": "AJo",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.082bb, interval [-0.197bb, +0.034bb] straddles zero at half-width 0.115bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/QJs|SB|none",
+        "when": {
+          "handClass": "QJs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.078bb, interval [-0.161bb, +0.004bb] straddles zero at half-width 0.082bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/KQo|SB|none",
+        "when": {
+          "handClass": "KQo",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.025bb, interval [-0.029bb, +0.079bb] straddles zero at half-width 0.054bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AQo|SB|none",
+        "when": {
+          "handClass": "AQo",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.001bb, interval [-0.037bb, +0.035bb] straddles zero at half-width 0.036bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/K5s|SB|none",
+        "when": {
+          "handClass": "K5s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.081bb, interval [-0.176bb, +0.013bb] straddles zero at half-width 0.095bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/KQs|SB|none",
+        "when": {
+          "handClass": "KQs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.100bb, interval [-0.029bb, +0.230bb] straddles zero at half-width 0.130bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AKo|SB|none",
+        "when": {
+          "handClass": "AKo",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.084bb, interval [-0.063bb, +0.230bb] straddles zero at half-width 0.146bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AJs|SB|none",
+        "when": {
+          "handClass": "AJs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin -0.061bb, interval [-0.127bb, +0.005bb] straddles zero at half-width 0.066bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AQs|SB|none",
+        "when": {
+          "handClass": "AQs",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.113bb, interval [-0.003bb, +0.230bb] straddles zero at half-width 0.117bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/KQs|SB|raise",
+        "when": {
+          "handClass": "KQs",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.054bb, interval [-0.131bb, +0.239bb] straddles zero at half-width 0.185bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AQs|SB|raise",
+        "when": {
+          "handClass": "AQs",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.196bb, interval [-0.032bb, +0.424bb] straddles zero at half-width 0.228bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "fringe/AKo|BB|raise",
+        "when": {
+          "handClass": "AKo",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "entry margin +0.122bb, interval [-0.009bb, +0.253bb] straddles zero at half-width 0.131bb ≤ τ=0.25bb — genuinely indifferent to folding, not merely unmeasured, under cp-stratified-flop-v1"
+        },
+        "note": "the arithmetic abstains here; folding is the declared default and a read may legitimately override it. Named rather than left to the residual so a later card can override exactly these cells."
+      },
+      {
+        "id": "unmeasured/55|EARLY|none",
+        "when": {
+          "handClass": "55",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.033bb with interval [-0.361bb, +0.296bb], half-width 0.329bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/55|MIDDLE|none",
+        "when": {
+          "handClass": "55",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.077bb with interval [-0.388bb, +0.234bb], half-width 0.311bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/77|MIDDLE|none",
+        "when": {
+          "handClass": "77",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.135bb with interval [-0.356bb, +0.626bb], half-width 0.491bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/TT|MIDDLE|none",
+        "when": {
+          "handClass": "TT",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.205bb with interval [-0.122bb, +0.533bb], half-width 0.327bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/42o|MIDDLE|raise",
+        "when": {
+          "handClass": "42o",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.371bb with interval [-0.784bb, +0.041bb], half-width 0.413bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/43o|MIDDLE|raise",
+        "when": {
+          "handClass": "43o",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.226bb with interval [-0.485bb, +0.033bb], half-width 0.259bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/42s|MIDDLE|raise",
+        "when": {
+          "handClass": "42s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.185bb with interval [-0.120bb, +0.489bb], half-width 0.304bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/44|MIDDLE|raise",
+        "when": {
+          "handClass": "44",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +1.074bb with interval [-0.043bb, +2.191bb], half-width 1.117bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/54o|MIDDLE|raise",
+        "when": {
+          "handClass": "54o",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.270bb with interval [-0.782bb, +0.241bb], half-width 0.512bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/52s|MIDDLE|raise",
+        "when": {
+          "handClass": "52s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.191bb with interval [-0.467bb, +0.085bb], half-width 0.276bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/53s|MIDDLE|raise",
+        "when": {
+          "handClass": "53s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.132bb with interval [-0.540bb, +0.276bb], half-width 0.408bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/54s|MIDDLE|raise",
+        "when": {
+          "handClass": "54s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.036bb with interval [-0.746bb, +0.675bb], half-width 0.710bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/62s|MIDDLE|raise",
+        "when": {
+          "handClass": "62s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.254bb with interval [-0.977bb, +0.469bb], half-width 0.723bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/64s|MIDDLE|raise",
+        "when": {
+          "handClass": "64s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.270bb with interval [-0.543bb, +0.002bb], half-width 0.272bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/65s|MIDDLE|raise",
+        "when": {
+          "handClass": "65s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.052bb with interval [-0.259bb, +0.364bb], half-width 0.312bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/72s|MIDDLE|raise",
+        "when": {
+          "handClass": "72s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.028bb with interval [-0.334bb, +0.279bb], half-width 0.307bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/73s|MIDDLE|raise",
+        "when": {
+          "handClass": "73s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.169bb with interval [-0.657bb, +0.319bb], half-width 0.488bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/74s|MIDDLE|raise",
+        "when": {
+          "handClass": "74s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.244bb with interval [-0.511bb, +0.023bb], half-width 0.267bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/75s|MIDDLE|raise",
+        "when": {
+          "handClass": "75s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.277bb with interval [-0.766bb, +0.213bb], half-width 0.489bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/76s|MIDDLE|raise",
+        "when": {
+          "handClass": "76s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.238bb with interval [-0.850bb, +0.375bb], half-width 0.613bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/87o|MIDDLE|raise",
+        "when": {
+          "handClass": "87o",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.225bb with interval [-0.521bb, +0.072bb], half-width 0.297bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/82s|MIDDLE|raise",
+        "when": {
+          "handClass": "82s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.109bb with interval [-0.601bb, +0.382bb], half-width 0.491bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/87s|MIDDLE|raise",
+        "when": {
+          "handClass": "87s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.126bb with interval [-0.531bb, +0.278bb], half-width 0.404bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/98o|MIDDLE|raise",
+        "when": {
+          "handClass": "98o",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.418bb with interval [-0.867bb, +0.030bb], half-width 0.448bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/94s|MIDDLE|raise",
+        "when": {
+          "handClass": "94s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.349bb with interval [-0.838bb, +0.141bb], half-width 0.489bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/96s|MIDDLE|raise",
+        "when": {
+          "handClass": "96s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.029bb with interval [-0.440bb, +0.381bb], half-width 0.410bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/98s|MIDDLE|raise",
+        "when": {
+          "handClass": "98s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.091bb with interval [-0.650bb, +0.468bb], half-width 0.559bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/T5s|MIDDLE|raise",
+        "when": {
+          "handClass": "T5s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.407bb with interval [-0.831bb, +0.017bb], half-width 0.424bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/T9s|MIDDLE|raise",
+        "when": {
+          "handClass": "T9s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.208bb with interval [-0.597bb, +0.182bb], half-width 0.390bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/JTo|MIDDLE|raise",
+        "when": {
+          "handClass": "JTo",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.177bb with interval [-0.554bb, +0.200bb], half-width 0.377bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/Q7s|MIDDLE|raise",
+        "when": {
+          "handClass": "Q7s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.407bb with interval [-0.903bb, +0.090bb], half-width 0.497bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/Q9s|MIDDLE|raise",
+        "when": {
+          "handClass": "Q9s",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.529bb with interval [-1.169bb, +0.110bb], half-width 0.640bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KQo|MIDDLE|raise",
+        "when": {
+          "handClass": "KQo",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.030bb with interval [-0.400bb, +0.340bb], half-width 0.370bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/AQo|MIDDLE|raise",
+        "when": {
+          "handClass": "AQo",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.040bb with interval [-0.482bb, +0.402bb], half-width 0.442bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KTs|MIDDLE|raise",
+        "when": {
+          "handClass": "KTs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.276bb with interval [-0.641bb, +0.088bb], half-width 0.365bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KJs|MIDDLE|raise",
+        "when": {
+          "handClass": "KJs",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.370bb with interval [-0.785bb, +0.045bb], half-width 0.415bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/AKo|MIDDLE|raise",
+        "when": {
+          "handClass": "AKo",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.302bb with interval [-0.358bb, +0.962bb], half-width 0.660bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/33|LATE|none",
+        "when": {
+          "handClass": "33",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.064bb with interval [-0.292bb, +0.420bb], half-width 0.356bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/44|LATE|none",
+        "when": {
+          "handClass": "44",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.056bb with interval [-0.331bb, +0.443bb], half-width 0.387bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/55|LATE|none",
+        "when": {
+          "handClass": "55",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.151bb with interval [-0.430bb, +0.732bb], half-width 0.581bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/66|LATE|none",
+        "when": {
+          "handClass": "66",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.306bb with interval [-0.037bb, +0.650bb], half-width 0.344bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/88|LATE|none",
+        "when": {
+          "handClass": "88",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.421bb with interval [-0.135bb, +0.977bb], half-width 0.556bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/42o|LATE|raise",
+        "when": {
+          "handClass": "42o",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.268bb with interval [-0.590bb, +0.054bb], half-width 0.322bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/32s|LATE|raise",
+        "when": {
+          "handClass": "32s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.264bb with interval [-0.138bb, +0.666bb], half-width 0.402bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/33|LATE|raise",
+        "when": {
+          "handClass": "33",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +1.415bb with interval [-0.506bb, +3.337bb], half-width 1.921bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/43o|LATE|raise",
+        "when": {
+          "handClass": "43o",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.299bb with interval [-0.606bb, +0.009bb], half-width 0.308bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/43s|LATE|raise",
+        "when": {
+          "handClass": "43s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.166bb with interval [-0.415bb, +0.748bb], half-width 0.582bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/K4o|LATE|raise",
+        "when": {
+          "handClass": "K4o",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.404bb with interval [-0.808bb, +0.000bb], half-width 0.404bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/52s|LATE|raise",
+        "when": {
+          "handClass": "52s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.233bb with interval [-0.582bb, +0.117bb], half-width 0.349bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/53s|LATE|raise",
+        "when": {
+          "handClass": "53s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.228bb with interval [-0.861bb, +0.405bb], half-width 0.633bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/54s|LATE|raise",
+        "when": {
+          "handClass": "54s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.001bb with interval [-0.462bb, +0.460bb], half-width 0.461bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/64s|LATE|raise",
+        "when": {
+          "handClass": "64s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.151bb with interval [-0.713bb, +0.410bb], half-width 0.561bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/65s|LATE|raise",
+        "when": {
+          "handClass": "65s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.159bb with interval [-0.516bb, +0.197bb], half-width 0.356bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/76o|LATE|raise",
+        "when": {
+          "handClass": "76o",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.350bb with interval [-0.850bb, +0.150bb], half-width 0.500bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/72s|LATE|raise",
+        "when": {
+          "handClass": "72s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.400bb with interval [-0.877bb, +0.077bb], half-width 0.477bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/73s|LATE|raise",
+        "when": {
+          "handClass": "73s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.013bb with interval [-0.646bb, +0.620bb], half-width 0.633bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/74s|LATE|raise",
+        "when": {
+          "handClass": "74s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.383bb with interval [-0.812bb, +0.046bb], half-width 0.429bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/75s|LATE|raise",
+        "when": {
+          "handClass": "75s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.227bb with interval [-0.503bb, +0.048bb], half-width 0.276bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/76s|LATE|raise",
+        "when": {
+          "handClass": "76s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.087bb with interval [-0.499bb, +0.325bb], half-width 0.412bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/83s|LATE|raise",
+        "when": {
+          "handClass": "83s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.070bb with interval [-0.824bb, +0.684bb], half-width 0.754bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/84s|LATE|raise",
+        "when": {
+          "handClass": "84s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.307bb with interval [-0.731bb, +0.118bb], half-width 0.424bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/85s|LATE|raise",
+        "when": {
+          "handClass": "85s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.272bb with interval [-0.848bb, +0.304bb], half-width 0.576bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/86s|LATE|raise",
+        "when": {
+          "handClass": "86s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.327bb with interval [-0.761bb, +0.106bb], half-width 0.434bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/94s|LATE|raise",
+        "when": {
+          "handClass": "94s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.411bb with interval [-0.824bb, +0.001bb], half-width 0.412bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/95s|LATE|raise",
+        "when": {
+          "handClass": "95s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.077bb with interval [-0.946bb, +0.792bb], half-width 0.869bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/96s|LATE|raise",
+        "when": {
+          "handClass": "96s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.222bb with interval [-0.630bb, +0.186bb], half-width 0.408bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/98s|LATE|raise",
+        "when": {
+          "handClass": "98s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.040bb with interval [-0.319bb, +0.239bb], half-width 0.279bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/T6s|LATE|raise",
+        "when": {
+          "handClass": "T6s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.369bb with interval [-1.117bb, +0.379bb], half-width 0.748bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/T8s|LATE|raise",
+        "when": {
+          "handClass": "T8s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.286bb with interval [-0.705bb, +0.133bb], half-width 0.419bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/T9s|LATE|raise",
+        "when": {
+          "handClass": "T9s",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.008bb with interval [-0.285bb, +0.300bb], half-width 0.292bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/JTo|LATE|raise",
+        "when": {
+          "handClass": "JTo",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.003bb with interval [-0.927bb, +0.922bb], half-width 0.925bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/JTs|LATE|raise",
+        "when": {
+          "handClass": "JTs",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.040bb with interval [-0.484bb, +0.405bb], half-width 0.444bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KJo|LATE|raise",
+        "when": {
+          "handClass": "KJo",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.519bb with interval [-1.145bb, +0.108bb], half-width 0.626bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/AQo|LATE|raise",
+        "when": {
+          "handClass": "AQo",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.173bb with interval [-0.147bb, +0.493bb], half-width 0.320bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/KQs|LATE|raise",
+        "when": {
+          "handClass": "KQs",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.347bb with interval [-0.045bb, +0.739bb], half-width 0.392bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/AKo|LATE|raise",
+        "when": {
+          "handClass": "AKo",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.288bb with interval [-0.096bb, +0.671bb], half-width 0.383bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/22|SB|none",
+        "when": {
+          "handClass": "22",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.394bb with interval [-0.185bb, +0.973bb], half-width 0.579bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/33|SB|none",
+        "when": {
+          "handClass": "33",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.174bb with interval [-0.127bb, +0.474bb], half-width 0.300bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/55|SB|none",
+        "when": {
+          "handClass": "55",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.309bb with interval [-0.073bb, +0.691bb], half-width 0.382bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/66|SB|none",
+        "when": {
+          "handClass": "66",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.468bb with interval [-0.097bb, +1.033bb], half-width 0.565bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/83s|SB|none",
+        "when": {
+          "handClass": "83s",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.033bb with interval [-0.218bb, +0.285bb], half-width 0.252bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/22|SB|raise",
+        "when": {
+          "handClass": "22",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.597bb with interval [-0.044bb, +1.237bb], half-width 0.640bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/32o|SB|raise",
+        "when": {
+          "handClass": "32o",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.116bb with interval [-0.472bb, +0.241bb], half-width 0.356bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/32s|SB|raise",
+        "when": {
+          "handClass": "32s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.089bb with interval [-0.838bb, +1.017bb], half-width 0.928bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/33|SB|raise",
+        "when": {
+          "handClass": "33",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.651bb with interval [-0.346bb, +1.647bb], half-width 0.996bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/43s|SB|raise",
+        "when": {
+          "handClass": "43s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.005bb with interval [-0.436bb, +0.426bb], half-width 0.431bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/44|SB|raise",
+        "when": {
+          "handClass": "44",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.710bb with interval [-0.252bb, +1.672bb], half-width 0.962bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/52s|SB|raise",
+        "when": {
+          "handClass": "52s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.514bb with interval [-1.101bb, +0.072bb], half-width 0.586bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/55|SB|raise",
+        "when": {
+          "handClass": "55",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.629bb with interval [-0.197bb, +1.455bb], half-width 0.826bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/65s|SB|raise",
+        "when": {
+          "handClass": "65s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.331bb with interval [-0.805bb, +0.143bb], half-width 0.474bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/76s|SB|raise",
+        "when": {
+          "handClass": "76s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.545bb with interval [-1.305bb, +0.214bb], half-width 0.760bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/77|SB|raise",
+        "when": {
+          "handClass": "77",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.842bb with interval [-0.103bb, +1.787bb], half-width 0.945bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/85s|SB|raise",
+        "when": {
+          "handClass": "85s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.575bb with interval [-1.172bb, +0.022bb], half-width 0.597bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/87s|SB|raise",
+        "when": {
+          "handClass": "87s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.214bb with interval [-0.835bb, +0.408bb], half-width 0.621bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/97s|SB|raise",
+        "when": {
+          "handClass": "97s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.517bb with interval [-1.285bb, +0.250bb], half-width 0.768bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/J2s|SB|raise",
+        "when": {
+          "handClass": "J2s",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.660bb with interval [-1.357bb, +0.037bb], half-width 0.697bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/JTs|SB|raise",
+        "when": {
+          "handClass": "JTs",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.233bb with interval [-0.533bb, +0.067bb], half-width 0.300bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KQo|SB|raise",
+        "when": {
+          "handClass": "KQo",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.079bb with interval [-0.421bb, +0.263bb], half-width 0.342bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/AKo|SB|raise",
+        "when": {
+          "handClass": "AKo",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.251bb with interval [-0.087bb, +0.588bb], half-width 0.337bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/32o|BB|raise",
+        "when": {
+          "handClass": "32o",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.079bb with interval [-0.571bb, +0.412bb], half-width 0.492bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/32s|BB|raise",
+        "when": {
+          "handClass": "32s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.135bb with interval [-0.150bb, +0.419bb], half-width 0.284bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/43o|BB|raise",
+        "when": {
+          "handClass": "43o",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.064bb with interval [-0.406bb, +0.277bb], half-width 0.342bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/42s|BB|raise",
+        "when": {
+          "handClass": "42s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.031bb with interval [-0.329bb, +0.391bb], half-width 0.360bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/43s|BB|raise",
+        "when": {
+          "handClass": "43s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.293bb with interval [-0.142bb, +0.727bb], half-width 0.435bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/52s|BB|raise",
+        "when": {
+          "handClass": "52s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.200bb with interval [-0.486bb, +0.086bb], half-width 0.286bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/53s|BB|raise",
+        "when": {
+          "handClass": "53s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.329bb with interval [-0.721bb, +0.064bb], half-width 0.392bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/54s|BB|raise",
+        "when": {
+          "handClass": "54s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.040bb with interval [-0.509bb, +0.428bb], half-width 0.468bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/65o|BB|raise",
+        "when": {
+          "handClass": "65o",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.405bb with interval [-0.939bb, +0.128bb], half-width 0.534bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/65s|BB|raise",
+        "when": {
+          "handClass": "65s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.053bb with interval [-0.513bb, +0.408bb], half-width 0.460bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/66|BB|raise",
+        "when": {
+          "handClass": "66",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +2.537bb with interval [-0.207bb, +5.281bb], half-width 2.744bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/72s|BB|raise",
+        "when": {
+          "handClass": "72s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.352bb with interval [-0.759bb, +0.054bb], half-width 0.407bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/74s|BB|raise",
+        "when": {
+          "handClass": "74s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.371bb with interval [-1.011bb, +0.268bb], half-width 0.639bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/75s|BB|raise",
+        "when": {
+          "handClass": "75s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.194bb with interval [-0.812bb, +0.423bb], half-width 0.618bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/76s|BB|raise",
+        "when": {
+          "handClass": "76s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.146bb with interval [-0.506bb, +0.214bb], half-width 0.360bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/83s|BB|raise",
+        "when": {
+          "handClass": "83s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.435bb with interval [-1.002bb, +0.131bb], half-width 0.567bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/84s|BB|raise",
+        "when": {
+          "handClass": "84s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.326bb with interval [-0.736bb, +0.084bb], half-width 0.410bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/85s|BB|raise",
+        "when": {
+          "handClass": "85s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.324bb with interval [-0.653bb, +0.005bb], half-width 0.329bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/87s|BB|raise",
+        "when": {
+          "handClass": "87s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.124bb with interval [-0.687bb, +0.440bb], half-width 0.564bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/92s|BB|raise",
+        "when": {
+          "handClass": "92s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.402bb with interval [-1.008bb, +0.205bb], half-width 0.607bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/93s|BB|raise",
+        "when": {
+          "handClass": "93s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.289bb with interval [-0.745bb, +0.166bb], half-width 0.455bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/94s|BB|raise",
+        "when": {
+          "handClass": "94s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.135bb with interval [-0.876bb, +0.606bb], half-width 0.741bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/95s|BB|raise",
+        "when": {
+          "handClass": "95s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.479bb with interval [-1.287bb, +0.329bb], half-width 0.808bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/98s|BB|raise",
+        "when": {
+          "handClass": "98s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.170bb with interval [-0.606bb, +0.265bb], half-width 0.436bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/T9o|BB|raise",
+        "when": {
+          "handClass": "T9o",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.190bb with interval [-0.761bb, +0.382bb], half-width 0.572bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: mcError dominates — more SAMPLES"
+      },
+      {
+        "id": "unmeasured/T7s|BB|raise",
+        "when": {
+          "handClass": "T7s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.449bb with interval [-0.925bb, +0.026bb], half-width 0.476bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/T9s|BB|raise",
+        "when": {
+          "handClass": "T9s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.086bb with interval [-0.572bb, +0.401bb], half-width 0.487bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/JTo|BB|raise",
+        "when": {
+          "handClass": "JTo",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.052bb with interval [-0.585bb, +0.482bb], half-width 0.534bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/J2s|BB|raise",
+        "when": {
+          "handClass": "J2s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.364bb with interval [-0.738bb, +0.011bb], half-width 0.375bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/J6s|BB|raise",
+        "when": {
+          "handClass": "J6s",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.276bb with interval [-0.601bb, +0.050bb], half-width 0.326bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/JTs|BB|raise",
+        "when": {
+          "handClass": "JTs",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin -0.060bb with interval [-0.711bb, +0.592bb], half-width 0.652bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/KQo|BB|raise",
+        "when": {
+          "handClass": "KQo",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.092bb with interval [-0.675bb, +0.858bb], half-width 0.767bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      },
+      {
+        "id": "unmeasured/AQo|BB|raise",
+        "when": {
+          "handClass": "AQo",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "do": "fold",
+        "warrant": {
+          "class": "equity",
+          "claim": "NO SIGN ESTABLISHED: entry margin +0.028bb with interval [-0.602bb, +0.657bb], half-width 0.629bb > τ=0.25bb. Folding is declared because nothing supports entering, not because entering was shown to lose, under cp-stratified-flop-v1"
+        },
+        "note": "research queue: modelError dominates — more DATA"
+      }
+    ],
+    "residual": {
+      "do": "fold",
+      "rationale": "Every cell not named above is one the arithmetic actively REJECTED: its whole interval lies below zero, so entering loses money that folding does not. Folding is EV 0, which means this residual's EV share is zero by construction — the money does not come from the part nobody designed. The structurally unreachable spots (UTG facing a raise; folded-to-BB, where there is no entry decision) also land here, harmlessly: they never arise, so no query ever reaches this clause through them."
+    }
+  }
+}

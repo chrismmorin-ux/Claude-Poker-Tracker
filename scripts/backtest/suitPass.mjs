@@ -35,6 +35,22 @@
  * `spread` is the plain magnitude — max margin minus min across combos. Compared against τ it
  * answers the practical question: is the within-class variation large enough for a player to
  * care about, or is the class a fair summary of its members?
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * `spread` IS BIASED UPWARD, AND `signSplit` IS NOT. READ THEM ACCORDINGLY.
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * max-minus-min over a handful of NOISY estimates is a biased estimator of the true range: even
+ * if every combo of a class had exactly the same margin, the sampled maximum would land above it
+ * and the sampled minimum below, so `spread` would come out positive from Monte Carlo error
+ * alone. The bias grows with the number of combos, which means a 12-combo offsuit class looks
+ * more heterogeneous than a 6-combo pair for no reason but arithmetic.
+ *
+ * So `spreadExceedsTau` is a SCREEN, not a finding — it says "worth a look", and a large count
+ * of them is partly a statement about how many replicates were run. `signSplit` is the finding,
+ * because it asks the two combos' INTERVALS to establish opposite signs, and an interval that
+ * already accounts for the noise cannot be tripped by it. When the two numbers disagree, the
+ * conservative one is the one that means something.
  */
 
 import { BANDS, bandOf } from './entryMap.mjs';

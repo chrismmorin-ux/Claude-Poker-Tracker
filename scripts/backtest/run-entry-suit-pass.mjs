@@ -44,6 +44,16 @@ const FLOP_SAMPLES = Number(flag('flops', 6));
 const LIMIT = flag('limit', null) ? Number(flag('limit', null)) : null;
 const OUT = flag('out', '.artifacts/entry-map-suit-pass.json');
 
+/**
+ * A slice of the STRADDLING list, for running the pass in chunks.
+ *
+ * Indexes the straddling cells, not the full map — those are the only ones this pass touches.
+ * Each cell's seeds still come from its index in the FULL enumeration (see `indexOf` below), so
+ * a chunk boundary changes no input, exactly as in `run-entry-map.mjs`.
+ */
+const FROM = flag('from', null) === null ? 0 : Number(flag('from', null));
+const TO = flag('to', null) === null ? null : Number(flag('to', null));
+
 const main = async () => {
   const t0 = Date.now();
   const raw = JSON.parse(await readFile(MAP_PATH, 'utf8'));
@@ -52,7 +62,8 @@ const main = async () => {
 
   const tauBB = map.reporting.tauBB;
   const targets = straddlingCells(map);
-  const work = LIMIT ? targets.slice(0, LIMIT) : targets;
+  const sliceEnd = TO === null ? (LIMIT ? FROM + LIMIT : targets.length) : TO;
+  const work = targets.slice(FROM, sliceEnd);
 
   // The cell's index in the FULL map, not in the filtered list — seeds must match the identity
   // of the cell, so that re-running the pass after the band membership changes does not re-seed
@@ -124,6 +135,9 @@ const main = async () => {
     engineCommit: git.engineCommit,
     engineDirty: git.engineDirty,
     reporting: { mcReplicates: MC_REPLICATES, flopSamplesPerArchetype: FLOP_SAMPLES, tauBB },
+    // Which slice of the straddling list this file holds — a partial pass that did not say so
+    // would read as a complete one whose absent cells simply had nothing to report.
+    slice: { from: FROM, to: FROM + work.length, ofStraddling: targets.length },
     headline: suitPassHeadline(cells, tauBB),
     cells,
   };

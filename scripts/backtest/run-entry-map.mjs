@@ -53,6 +53,31 @@ const SEAT_BUCKET = flag('seats', '6max');
 const CELL_LIMIT = flag('hands', null) ? Number(flag('hands', null)) : null;
 const OUT_PATH = flag('out', '.artifacts/entry-map.json');
 
+/**
+ * A contiguous slice of the enumeration, for running the map in chunks.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * WHY A CHUNKED RUN IS THE SAME MAP, NOT AN APPROXIMATION OF ONE
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * Every cell's seeds come from `seedFor(i)` where `i` is its index in the STABLE enumeration —
+ * not from a running counter of work done. So a cell evaluated as the 3rd item of chunk 4 gets
+ * exactly the seeds it would have got as the 1,437th item of a single pass: the chunk boundary
+ * changes no INPUT to any cell.
+ *
+ * It does not make the output bit-identical, and the difference matters enough to name. The
+ * advisor reaches `monteCarloEquity`, which calls `Math.random()`, so no two evaluations of the
+ * same cell agree exactly — that is true within a single pass as much as across chunks, and it
+ * is precisely what the interval on every cell is there to quantify. What chunking guarantees
+ * is that a chunked map and a single-pass map are the SAME MEASUREMENT, differing only by the
+ * run-to-run noise the map already reports. It is not a claim that they are the same file.
+ *
+ * `--from`/`--to` index the FULL enumeration for the same reason. Making them relative to the
+ * filtered work list would reintroduce exactly the counter dependence the seeding avoids.
+ */
+const FROM = flag('from', null) === null ? 0 : Number(flag('from', null));
+const TO = flag('to', null) === null ? null : Number(flag('to', null));
+
 const main = async () => {
   const t0 = Date.now();
   const ev = await openEntryEvaluator({
@@ -63,9 +88,11 @@ const main = async () => {
   });
 
   const cells = enumerateCells(ev.handClasses);
-  const work = CELL_LIMIT ? cells.slice(0, CELL_LIMIT) : cells;
+  const sliceEnd = TO === null ? (CELL_LIMIT ? FROM + CELL_LIMIT : cells.length) : TO;
+  const work = cells.slice(FROM, sliceEnd);
 
-  console.log(`entry map: ${work.length} cells (${ev.handClasses.length} classes) · ` +
+  console.log(`entry map: ${work.length} cells [${FROM}, ${FROM + work.length}) of ${cells.length} ` +
+    `(${ev.handClasses.length} classes) · ` +
     `mc=${MC_REPLICATES} · flops/archetype=${FLOP_SAMPLES} · field=${FIELD_QUANTILES.length} quantiles · ` +
     `${MC_REPLICATES + FIELD_QUANTILES.length - 1} engine evaluations per cell`);
 
@@ -74,8 +101,11 @@ const main = async () => {
   let degenerate = 0;
   let unreachable = 0;
 
-  for (let i = 0; i < work.length; i++) {
-    const cell = work[i];
+  for (let w = 0; w < work.length; w++) {
+    const cell = work[w];
+    // The cell's index in the FULL enumeration — what the seeds are derived from, so a chunk
+    // boundary cannot change a single number.
+    const i = FROM + w;
 
     // Structurally unreachable spots get no number, ever. Recorded, never fabricated.
     if (!cell.reachable) {
@@ -116,6 +146,10 @@ const main = async () => {
     },
     field: ev.fieldStamp,
     domain: { gameType: 'cash', seats: [6, 9], stackDepthBB: [80, 200] },
+    // Which slice of the enumeration this file holds. A partial map that did not say so would
+    // read as a complete one whose missing cells simply had no answer — the exact conflation
+    // between "not covered" and "covered and empty" the Census exists to prevent.
+    slice: { from: FROM, to: FROM + work.length, ofTotal: cells.length },
     counts: {
       cells: results.length,
       unreachable,
