@@ -14,6 +14,7 @@ import { useSeatTendency } from '../../../contexts/TendencyContext';
 import { useActionAdvisor } from '../../../hooks/useActionAdvisor';
 import { RANGE_POSITIONS } from '../../../utils/rangeEngine';
 import { parseBlinds } from '../../../utils/potCalculator';
+import { resolveRakeConfig } from '../../../utils/rakeResolver';
 
 const MIN_HANDS_THRESHOLD = 20;
 
@@ -100,6 +101,19 @@ export const PlayerAnalysisPanel = () => {
     };
   }, [selectedPlayerId, playerTendency]);
 
+  /**
+   * The rake this analysis is priced under.
+   *
+   * This panel serves the MANUAL live table, so the venue is live by construction and the
+   * stake comes from the active session's game type — the same field `defaultPot` already
+   * reads. Until WS-333's follow-up, no rake reached this path at all: `evaluateGameTree`
+   * defaulted `rakeConfig` to null and every EV figure here omitted the drop.
+   */
+  const rake = useMemo(
+    () => resolveRakeConfig({ gameType: currentSession?.gameType, venue: currentSession?.venue || 'live' }),
+    [currentSession?.gameType, currentSession?.venue],
+  );
+
   const handleAnalyze = useCallback(() => {
     if (!canAnalyze || !villainRange) return;
     compute({
@@ -109,8 +123,9 @@ export const PlayerAnalysisPanel = () => {
       potSize: effectivePot,
       villainAction: villainAction !== 'check' ? villainAction : undefined,
       playerStats: selectedPlayerStats,
+      rakeConfig: rake.rakeConfig,
     });
-  }, [canAnalyze, villainRange, boardCards, heroCards, effectivePot, villainAction, selectedPlayerStats, compute]);
+  }, [canAnalyze, villainRange, boardCards, heroCards, effectivePot, villainAction, selectedPlayerStats, compute, rake.rakeConfig]);
 
   const updateBoardCard = useCallback((idx, val) => {
     setBoardCards(prev => { const next = [...prev]; next[idx] = val; return next; });

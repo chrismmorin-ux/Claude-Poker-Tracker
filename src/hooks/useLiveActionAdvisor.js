@@ -56,6 +56,11 @@ export { computeTrialCount };
  * @param {Object} tendencyMap - From useOnlineAnalysis
  * @param {Object} [options]
  * @param {Function} [options.equityFn] - Override equity computation (used for equity worker).
+ * @param {Object|null} [options.rakeConfig] - Resolved by `rakeResolver` from the session's
+ *   game type and captured blinds. Before this existed the hook read
+ *   `liveHandState.rakeConfig`, which NOTHING in the app ever wrote — so `estimateRake`
+ *   returned 0 on every live decision and every EV figure omitted the drop. The
+ *   `liveHandState` fallback is kept for the extension/test payloads that set it directly.
  * @param {Function} [options.onHandComplete] - Optional callback fired when a per-hand
  *   prediction is produced. Receives `{ handNumber, street, heroCards, villainSeat,
  *   prediction, modelVersion }`. Reserved for PMC Phase 5b hand-end audit capture.
@@ -63,7 +68,7 @@ export { computeTrialCount };
  * @returns {{ advice: Object|null, isComputing: boolean }}
  */
 export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) => {
-  const { equityFn, onHandComplete } = options;
+  const { equityFn, onHandComplete, rakeConfig: rakeConfigOption = null } = options;
   const [advice, setAdvice] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
   const lastComputeKey = useRef(null);
@@ -158,8 +163,10 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
     const rawPotSize = estimatePot(liveHandState);
     const adjustedPot = Math.max(0, rawPotSize - (villainBet || 0));
 
-    // Resolve rake config from live hand state or session game type
-    const rakeConfig = liveHandState.rakeConfig || null;
+    // Rake: the resolved session config wins, with the hand-state field as a fallback for
+    // payloads that carry one directly. A null here now means "no schedule for this game",
+    // which `rakeResolver` reports with a reason rather than leaving as a silent zero.
+    const rakeConfig = rakeConfigOption || liveHandState.rakeConfig || null;
 
     const playerStats = buildPlayerStats(villainData, villainPosition);
 
@@ -359,7 +366,10 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
     } finally {
       if (isCurrent(callId)) setIsComputing(false);
     }
-  }, [liveHandState, tendencyMap]);
+    // `rakeConfigOption` is in the deps because changing the rake changes every EV figure —
+    // leaving it out would show stale advice after a session's stakes are healed from the
+    // wire, which is exactly when the rake becomes known.
+  }, [liveHandState, tendencyMap, rakeConfigOption]);
 
   useEffect(() => {
     compute();

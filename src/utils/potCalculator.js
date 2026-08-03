@@ -407,22 +407,50 @@ export const calculateSidePots = (actionSequence, blinds, opts = {}) => {
 // =============================================================================
 
 /**
- * Estimate rake taken from a pot.
+ * Estimate the total drop taken from a pot — house rake PLUS any flat promo/jackpot drop.
  *
  * Returns 0 when: rakeConfig is null/undefined, or street is preflop
  * and noFlopNoDrop is true (the standard "no flop, no drop" rule).
- * Otherwise: min(potSize * pct, cap).
+ *
+ *     total = min(potSize * pct, cap)  +  (potSize >= dropThreshold ? jackpotDrop : 0)
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * WHY THE FLAT DROP IS A SEPARATE TERM, ADDED 2026-08-02.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * This function modelled `min(pot * pct, cap)` only, which cannot express what Chicago-area
+ * rooms actually take. Wind Creek Chicago Southland at 1/3 is **10% to $6 PLUS a $2 jackpot
+ * drop**; Rivers Des Plaines is 10% to $6 plus $1-2 for promos. The flat drop is not a
+ * rounding detail — it dominates at the pot sizes most hands actually reach:
+ *
+ *     $30 pot:  $3.00 house + $2 drop = $5.00  →  16.7% effective, not 10%
+ *     $60 pot:  $6.00 house + $2 drop = $8.00  →  13.3% effective
+ *     $200 pot: $6.00 house + $2 drop = $8.00  →   4.0% effective
+ *
+ * So the percentage headline understates the true tax on exactly the small pots that
+ * blind-defense decisions play for, which is the case WS-333 is measuring. A percentage-only
+ * model does not merely lose precision here; it loses the shape.
+ *
+ * NOT MODELLED, AND NAMED SO IT IS NOT MISTAKEN FOR ZERO: a jackpot drop is not pure tax.
+ * Some fraction returns to the player pool as jackpot equity. That fraction depends on the
+ * room's payout structure and hit rate, is not published, and is NOT estimated here — this
+ * function returns the money that LEAVES THE POT, which is the correct quantity for pot odds
+ * and EV at the table. A jackpot-equity rebate would be a separate, measured term.
  *
  * @param {number} potSize - Total pot at showdown
- * @param {object|null} rakeConfig - { pct: number (0-1), cap: number ($), noFlopNoDrop: boolean }
+ * @param {object|null} rakeConfig - `{ pct: number (0-1), cap: number ($),
+ *   noFlopNoDrop: boolean, jackpotDrop?: number ($), dropThreshold?: number ($) }`
  * @param {string} [street='flop'] - Current street
- * @returns {number} Estimated rake amount
+ * @returns {number} Estimated total drop
  */
 export const estimateRake = (potSize, rakeConfig, street = 'flop') => {
   if (!rakeConfig || potSize <= 0) return 0;
   if (street === 'preflop' && rakeConfig.noFlopNoDrop) return 0;
-  const { pct = 0, cap = Infinity } = rakeConfig;
-  return Math.min(potSize * pct, cap);
+  const { pct = 0, cap = Infinity, jackpotDrop = 0, dropThreshold = 0 } = rakeConfig;
+  const house = Math.min(potSize * pct, cap);
+  // Defaults keep every pre-existing config byte-identical: no jackpotDrop means no drop.
+  const drop = jackpotDrop > 0 && potSize >= dropThreshold ? jackpotDrop : 0;
+  return house + drop;
 };
 
 /**

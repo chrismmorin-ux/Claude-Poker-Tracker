@@ -34,6 +34,11 @@ export const useActionAdvisor = () => {
     playerStats,
     villainModel,
     trials = 2000,
+    // WS-333 follow-up: this advisor serves the MANUAL live table — the founder's actual
+    // 1/2 game — and never passed a rake config, so `evaluateGameTree` defaulted it to null
+    // and every EV figure omitted a $5-8 drop out of a pot often only $40. Resolve it with
+    // `rakeResolver.resolveRakeConfig` from the active session and pass it here.
+    rakeConfig = null,
   }) => {
     const callId = register();
     setIsComputing(true);
@@ -61,6 +66,7 @@ export const useActionAdvisor = () => {
         playerStats,
         villainModel,
         trials,
+        rakeConfig,
       });
 
       // Only update if this is still the latest call

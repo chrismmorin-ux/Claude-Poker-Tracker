@@ -33,6 +33,34 @@ const mockResult = {
   recommendations: [{ action: 'bet', ev: 45 }],
 };
 
+describe('useActionAdvisor — rake reaches the game tree (WS-333 follow-up)', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('forwards a resolved rakeConfig to evaluateGameTree', async () => {
+    // This hook serves the MANUAL live table and passed NO rake config at all, so
+    // `evaluateGameTree` defaulted it to null and every EV figure omitted the drop. A test
+    // that only checked the hook still returns advice would not have noticed.
+    evaluateGameTree.mockResolvedValue(mockResult);
+    const rakeConfig = { pct: 0.10, cap: 8, noFlopNoDrop: true };
+    const { result } = renderHook(() => useActionAdvisor());
+
+    await act(async () => { await result.current.compute({ ...validInput, rakeConfig }); });
+
+    expect(evaluateGameTree).toHaveBeenCalledWith(expect.objectContaining({ rakeConfig }));
+  });
+
+  it('passes null when no rake was resolved, rather than omitting the key', async () => {
+    // Omitting it would let the parameter silently revert to the evaluator's default and
+    // make "no rake schedule for this game" indistinguishable from "nobody wired it".
+    evaluateGameTree.mockResolvedValue(mockResult);
+    const { result } = renderHook(() => useActionAdvisor());
+
+    await act(async () => { await result.current.compute(validInput); });
+
+    expect(evaluateGameTree).toHaveBeenCalledWith(expect.objectContaining({ rakeConfig: null }));
+  });
+});
+
 describe('useActionAdvisor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
