@@ -1,7 +1,7 @@
 id: "ses-20260803-0146-ba4b0b2a"
-status: active
+status: "abandoned"
 started_at: "2026-08-03T01:46:11.180Z"
-ended_at: null
+ended_at: "2026-08-03T04:38:08Z"
 mode: auto
 last_heartbeat: "2026-08-03T04:11:08.933Z"
 pid: 28212
@@ -34,4 +34,13 @@ files_locked:
   - "scripts/backtest/run-strategy-profile.mjs"
   - "scripts/__tests__/strategyProfile.test.js"
   - ".claude/workstream/queue/WS-336.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-03.
+  Original start: 2026-08-03T01:46:11.180Z.
+  Last heartbeat: 2026-08-03T04:11:08.933Z.
 
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

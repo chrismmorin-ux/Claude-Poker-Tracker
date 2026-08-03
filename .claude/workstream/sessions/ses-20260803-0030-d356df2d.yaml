@@ -1,7 +1,7 @@
 id: "ses-20260803-0030-d356df2d"
-status: active
+status: "abandoned"
 started_at: "2026-08-03T00:30:05.923Z"
-ended_at: null
+ended_at: "2026-08-03T04:38:07Z"
 mode: auto
 last_heartbeat: "2026-08-03T01:39:54.771Z"
 pid: 28212
@@ -22,4 +22,15 @@ files_locked:
   - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
   - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-03.
+  Original start: 2026-08-03T00:30:05.923Z.
+  Last heartbeat: 2026-08-03T01:39:54.771Z.
 
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.
