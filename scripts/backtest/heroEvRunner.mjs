@@ -54,6 +54,13 @@ export const runHeroEv = async ({
   comboSamples = DEFAULT_COMBO_SAMPLES,
   trials = DEFAULT_TRIALS,
   rakeConfig = DEFAULT_RAKE_CONFIG,
+  // WS-322 / ADR-009. Both default to null so every existing caller and test keeps working;
+  // a run without them still measures, and its report says plainly that it produced no
+  // Result Card and must not be quoted.
+  dealBook = null,
+  replicationStamp = null,
+  surfaceId = 'engine-read',
+  fieldId = 'pool-mined-behavior-policy',
   log = () => {},
   // Called with a PARTIAL snapshot (`complete: false`) every 25 scored decisions. Default
   // no-op, so nothing changes for callers that do not want it.
@@ -223,6 +230,11 @@ export const runHeroEv = async ({
         poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
         rakeConfig, rakeIsModelled: true, maxDecisions,
       },
+      // Carried, not computed here — the runner measures, the report assembles the card.
+      dealBook,
+      replicationStamp,
+      surfaceId,
+      fieldId,
     };
   }
 };

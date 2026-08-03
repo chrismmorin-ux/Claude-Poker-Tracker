@@ -16,7 +16,9 @@ import { accumulateDecisions } from '../../src/utils/exploitEngine/decisionAccum
 import { GROUPS } from './partition.mjs';
 import { indexEvalPlayers } from './runner.mjs';
 import { buildPolicyTable, POLICY_HIERARCHY } from './behaviorPolicy.mjs';
-import { decisionGeometry, sizeBucketFor } from './decisionGeometry.mjs';
+import {
+  decisionGeometry, sizeBucketFor, sprFor, sprBandFor, closesAction,
+} from './decisionGeometry.mjs';
 
 const USER_ID = 'backtest';
 
@@ -25,12 +27,37 @@ const USER_ID = 'backtest';
  *
  * @returns {Promise<Object>} stamped policy table
  */
+/**
+ * Collect raw observations for one partition half.
+ *
+ * Extracted from `minePolicyObservations` (WS-333) so the geometry ablation can mine the
+ * EVAL half with the IDENTICAL derivation it mines the POOL half with. Scoring an ablation
+ * on decisions derived a second way would compare ladders AND derivations at once, and only
+ * one of those is the question.
+ */
+export const collectObservations = async ({
+  files,
+  poolPct = 50,
+  maxPlayers = Infinity,
+  maxHandsPerPlayer = Infinity,
+  group = GROUPS.POOL,
+  log = () => {},
+}) => {
+  const collected = await minePolicyObservations({
+    files, poolPct, maxPlayers, maxHandsPerPlayer, group, log, rawObservations: true,
+  });
+  return collected;
+};
+
 export const minePolicyObservations = async ({
   files,
   poolPct = 50,
   maxPlayers = Infinity,
   maxHandsPerPlayer = Infinity,
   stakes = ['*'],
+  group = GROUPS.POOL,
+  rawObservations = false,
+  hierarchy = POLICY_HIERARCHY,
   log = () => {},
 }) => {
   const { byPlayer, handsRead } = await indexEvalPlayers({
@@ -38,10 +65,12 @@ export const minePolicyObservations = async ({
     poolPct,
     maxPlayers,
     maxHandsPerPlayer,
-    group: GROUPS.POOL,          // <- the opposite half from the scored set
-    onProgress: ({ handsRead: h, players }) => log(`read ${h} hands, ${players} pool players`),
+    group,                        // POOL by default — the opposite half from the scored set
+    onProgress: ({ handsRead: h, players }) => log(`read ${h} hands, ${players} ${group} players`),
   });
-  log(`indexed ${byPlayer.size} POOL players from ${handsRead} hands`);
+  // Name the half actually mined — this said "POOL" unconditionally until WS-333 made the
+  // group a parameter, which would have made an EVAL pass look like a duplicate POOL pass.
+  log(`indexed ${byPlayer.size} ${group} players from ${handsRead} hands`);
 
   const observations = [];
   let profileFailures = 0;
@@ -72,6 +101,12 @@ export const minePolicyObservations = async ({
             street: ctx.street,
             posCategory: ctx.posCategory,
             sizeBucket: sizeBucketFor(geo.facingBetBB, geo.potBB),
+            // WS-333 geometry coordinates. Always mined, so a table built under any
+            // hierarchy can be compared against one built under another WITHOUT re-mining
+            // the corpus — the ablation is then a comparison of ladders over one
+            // observation set, not of two different observation sets.
+            sprBand: sprBandFor(sprFor(geo)),
+            closesAction: String(closesAction(ctx.hand, ctx.order, ctx.street, ctx.playerSeat)),
           });
         },
       });
@@ -80,7 +115,11 @@ export const minePolicyObservations = async ({
     }
   }
 
-  log(`collected ${observations.length} pool decisions`);
+  log(`collected ${observations.length} ${group} decisions`);
+
+  // The ablation wants the observations themselves, so it can build several ladders over ONE
+  // observation set rather than re-mining the corpus per arm.
+  if (rawObservations) return observations;
 
   const table = buildPolicyTable(observations, {
     poolPct,
@@ -90,10 +129,10 @@ export const minePolicyObservations = async ({
     profileFailures,
     accumulateFailures,
     geometryFailures,
-  });
+  }, { hierarchy });
 
   // Sanity: the hierarchy the table was built with must be the one queries will use.
-  if (table.provenance.hierarchy.join() !== POLICY_HIERARCHY.join()) {
+  if (table.provenance.hierarchy.join() !== hierarchy.join()) {
     throw new Error('behaviour-policy hierarchy mismatch between build and query');
   }
   return table;

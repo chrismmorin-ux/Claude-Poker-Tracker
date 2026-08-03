@@ -98,6 +98,16 @@ export const weightFor = (d, { weightCap = DEFAULT_WEIGHT_CAP } = {}) => {
  * Deterministic LCG. A backtest must reproduce exactly; an interval that moves between
  * identical runs is worse than no interval. Same generator as evCost.bootstrapMeanCI.
  */
+/**
+ * The bootstrap seed, named and exported (WS-322).
+ *
+ * It was already this value in two places as an inline default and was never written to any
+ * output file. A replication manifest has to record the seed a run ACTUALLY used, and the only
+ * way to do that without the manifest holding its own guess is for the seed to have a name
+ * something else can import.
+ */
+export const DEFAULT_BOOTSTRAP_SEED = 0x9e3779b9;
+
 const lcg = (seed) => {
   let state = seed >>> 0;
   return (mod) => {
@@ -122,7 +132,7 @@ const lcg = (seed) => {
  * @param {Function} statOf - (decisions) => number|null
  */
 export const clusterBootstrapCI = (byPlayer, statOf, {
-  resamples = 2000, alpha = 0.05, seed = 0x9e3779b9,
+  resamples = 2000, alpha = 0.05, seed = DEFAULT_BOOTSTRAP_SEED,
 } = {}) => {
   const players = [...byPlayer.keys()];
   const k = players.length;
@@ -180,7 +190,7 @@ export const estimateEdge = (decisions, {
   weightCap = DEFAULT_WEIGHT_CAP,
   resamples = 2000,
   alpha = 0.05,
-  seed = 0x9e3779b9,
+  seed = DEFAULT_BOOTSTRAP_SEED,
   label = null,
 } = {}) => {
   const scored = [];

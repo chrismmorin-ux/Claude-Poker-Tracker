@@ -14,8 +14,10 @@
  *      vanished edge, and the run says so rather than quoting the flattering arm.
  */
 
-import { estimateEdge, TREATMENT } from './ipsEstimator.mjs';
+import { estimateEdge, TREATMENT, DEFAULT_BOOTSTRAP_SEED } from './ipsEstimator.mjs';
 import { applyFoldShift } from './behaviorPolicy.mjs';
+import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
+import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
 
 const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
@@ -24,8 +26,26 @@ const CORPUS_CAVEAT =
 /**
  * Schema version of the emitted report. Bump on any breaking change to the shape.
  * Consumers should refuse a version they do not understand rather than duck-type it.
+ *
+ * v2 (WS-322) — ADDITIVE. The report gained a `resultCard` block conforming to the ADR-009
+ * Standard of Record. Every pre-existing field is unchanged and in the same place, so
+ * `model-readiness.mjs` and `scorecard-history.yaml` read exactly what they read before.
  */
-export const HERO_EV_SCHEMA_VERSION = 1;
+export const HERO_EV_SCHEMA_VERSION = 2;
+
+/**
+ * The estimand, stated in words.
+ *
+ * ADR-009's AS-710 turns on two instruments measuring THE SAME QUANTITY — corpus substitution
+ * at a one-decision horizon, and the population simulator over a full hand. Their agreement is
+ * what licenses a total-EV claim, and agreement is meaningless unless both name what they are
+ * estimating. The units subtlety is load-bearing and already documented in `renderHeroEvReport`:
+ * the outcome attached to a decision is the WHOLE HAND's net for hero, so these are hand-scale
+ * magnitudes, and reading them as a winrate overstates them by the decisions-per-hand factor.
+ */
+const HERO_EV_ESTIMAND =
+  'Expected hand value for hero in bb, attributed at the decision level, relative to '
+  + 'population-typical play on the same decision. NOT a per-decision increment and NOT a winrate.';
 
 /**
  * Minimum contributing PLAYERS before a confidence interval may be believed.
@@ -131,6 +151,70 @@ const passivePolicy = (piOurs) => {
 
 const withNet = (decisions, field) => decisions.map((d) => ({ ...d, netBB: d[field] }));
 
+/**
+ * Map this run onto a Result Card (ADR-009).
+ *
+ * Almost nothing here is new information — `treatment`, `admissibility` and the arms already
+ * existed and were already the right objects. What the Result Card adds is the MATCH (which
+ * surface, against which Deal Book, against which Field) and the replication manifest, which
+ * is what lets this figure be compared to another one and re-derived later.
+ *
+ * Returns `{ resultCard, resultCardProblems }` rather than throwing. A run that produced a
+ * real measurement must still write its artifact when the stamp is incomplete — a smoke run
+ * with no Deal Book is a legitimate thing to do — and the problems list says exactly why the
+ * card is not quotable. That mirrors how `admissibility` already works: compute the verdict,
+ * state the blockers, never silently suppress the arithmetic.
+ */
+const buildCardFor = (run, arms, headline) => {
+  const stamp = run.replicationStamp ?? null;
+  if (!stamp) {
+    return {
+      resultCard: null,
+      resultCardProblems: [
+        'no replication stamp on the run — this figure cannot be replicated and must not be '
+        + 'quoted. Pass a Deal Book and stamp via run-hero-ev.mjs to produce a Result Card.',
+      ],
+    };
+  }
+
+  try {
+    const manifest = buildReplicationManifest(stamp);
+    const resultCard = buildResultCard({
+      resultCardId: `RC-hero-ev-${stamp.dealBookHash.replace('sha256:', '').slice(0, 8)}-${stamp.engineCommit.slice(0, 8)}`,
+      match: {
+        surfaceId: run.surfaceId ?? 'engine-read',
+        dealBookId: run.dealBook?.dealBookId ?? null,
+        fieldId: run.fieldId ?? 'pool-mined-behavior-policy',
+      },
+      estimand: HERO_EV_ESTIMAND,
+      treatment: TREATMENT,
+      metrics: {
+        edgeBB: headline.edgeBB,
+        edgeCiLowBB: headline.edgeCiLowBB,
+        edgeCiHighBB: headline.edgeCiHighBB,
+        n: headline.n,
+        ess: headline.ess,
+        players: headline.players,
+        controlEdgeBB: arms.populationControl.edgeBB,
+        liveShiftedCiLowBB: arms.liveShifted.edgeCiLowBB,
+      },
+      // PLAYERS, not hands. The CI is a cluster bootstrap over players because decisions
+      // inside one player are not independent (POKER_THEORY 14.3).
+      clusterUnit: 'players',
+      admissibility: assessAdmissibility(run, arms),
+      manifest,
+    });
+    return { resultCard, resultCardProblems: [] };
+  } catch (err) {
+    // The card could not be built. Say why, in the artifact, rather than omitting it.
+    const partial = { ...stamp };
+    return {
+      resultCard: null,
+      resultCardProblems: [err?.message || String(err), ...resultCardProblems({ manifest: partial })],
+    };
+  }
+};
+
 export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}) => {
   const d = run.decisions;
   const opts = { weightCap };
@@ -191,11 +275,17 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
   // suppressing the number entirely would hide a trend that is worth watching across runs.
   gate.armsWouldPass = gate.corpusArmPasses && gate.liveShiftedArmPasses;
 
+  const card = buildCardFor(run, arms, headline);
+
   return {
     schemaVersion: HERO_EV_SCHEMA_VERSION,
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
     admissibility,
+    // ADR-009 Standard of Record (WS-322). Additive — everything below this line predates it
+    // and is unchanged.
+    resultCard: card.resultCard,
+    resultCardProblems: card.resultCardProblems,
     // Provenance, stamped so a downstream consumer can trace this artifact without
     // re-deriving it. Source ids are the promoted registry's (docs/provenance/).
     provenance: {
@@ -318,6 +408,22 @@ export const renderHeroEvReport = (r) => {
   if (Object.keys(c.policySkips || {}).length) L.push(`    policy skips: ${JSON.stringify(c.policySkips)}`);
   L.push(`    rake: ${r.generatedFrom.config.rakeConfig ? JSON.stringify(r.generatedFrom.config.rakeConfig) + ' (MODELLED — corpus records none)' : 'none'}`);
   L.push(`    runtime ${((r.generatedFrom.runtimeMs ?? 0) / 1000).toFixed(1)}s`);
+  L.push('  STANDARD OF RECORD (ADR-009)');
+  L.push('  ' + '─'.repeat(90));
+  if (r.resultCard) {
+    const m = r.resultCard.manifest;
+    L.push(`    Result Card ${r.resultCard.resultCardId}`);
+    L.push(`    engine ${m.engineCommit.slice(0, 12)}${m.engineDirty ? ' (DIRTY TREE — the commit does not identify the code that ran)' : ''}`);
+    L.push(`    deal book ${r.resultCard.match.dealBookId} ${m.dealBookHash.slice(0, 20)}…`);
+    L.push(`    cluster unit ${r.resultCard.clusterUnit}   seeds ${JSON.stringify(m.seeds)}`);
+    if (m.unseededSources.length) {
+      L.push(`    NOT bit-reproducible — ${m.unseededSources.length} unseeded source(s):`);
+      for (const s of m.unseededSources) L.push(`      - ${s.source} (${s.mechanism})`);
+    }
+  } else {
+    L.push('    *** NO RESULT CARD — this figure is not replicable and must not be quoted ***');
+    for (const p of (r.resultCardProblems ?? [])) L.push(`      - ${p}`);
+  }
   L.push('');
   L.push('─'.repeat(94));
   L.push('  ' + r.caveat);

@@ -61,9 +61,39 @@ export const DEFAULT_SHRINK_WEIGHT = 10;
 /** Uniform seed prior, so an entirely unobserved cell is flat rather than undefined. */
 const SEED_ALPHA = 1;
 
-const levelKey = (ctx, depth) => {
+/**
+ * Geometry-extended hierarchies (WS-333).
+ *
+ * `POLICY_HIERARCHY` stays the shipped default and is unchanged. These are the ARMS of the
+ * geometry ablation: whether decisions sharing pot-odds geometry pool across streets and
+ * positions is AS-711, and AS-711 has an ablation as its named falsifier — so the hierarchy
+ * is a parameter here rather than a decision made in a comment.
+ *
+ * Note both extended arms keep `sizeBucket` and append the new coordinates at the SPECIFIC
+ * end, exactly as `sizeBucket` itself was appended: the measured `HIERARCHY_ORDER` is
+ * imported, never re-declared, so a future re-measurement cannot leave the two out of step.
+ */
+export const GEOMETRY_DIMS = ['sprBand', 'closesAction'];
+
+/** Geometry appended to the shipped ladder — does geometry add anything to what we have? */
+export const POLICY_HIERARCHY_GEOMETRY = [...POLICY_HIERARCHY, ...GEOMETRY_DIMS];
+
+/**
+ * Geometry ALONE, with `street` and `posCategory` removed.
+ *
+ * This is the arm that actually tests the founder's claim: if structurally identical spots
+ * pool, this should not lose materially to the full ladder — and it buys far more decisions
+ * per cell. If it DOES lose, pooling bought power with bias and the key must stay split.
+ */
+export const POLICY_HIERARCHY_GEOMETRY_ONLY = [
+  ...HIERARCHY_ORDER.filter((d) => d !== 'street' && d !== 'posCategory'),
+  'sizeBucket',
+  ...GEOMETRY_DIMS,
+];
+
+const levelKey = (ctx, depth, hierarchy = POLICY_HIERARCHY) => {
   const parts = [ctx.facingAction ?? 'none'];
-  for (let i = 0; i < depth; i++) parts.push(String(ctx[POLICY_HIERARCHY[i]] ?? '*'));
+  for (let i = 0; i < depth; i++) parts.push(String(ctx[hierarchy[i]] ?? '*'));
   return parts.join('|');
 };
 
@@ -78,8 +108,8 @@ const levelKey = (ctx, depth) => {
  * @param {Object} [meta] - provenance detail merged into the stamp
  * @returns {Object} policy table
  */
-export const buildPolicyTable = (observations, meta = {}) => {
-  const levels = Array.from({ length: POLICY_HIERARCHY.length + 1 }, () => ({}));
+export const buildPolicyTable = (observations, meta = {}, { hierarchy = POLICY_HIERARCHY } = {}) => {
+  const levels = Array.from({ length: hierarchy.length + 1 }, () => ({}));
   let total = 0;
   const skipped = { unknownFacing: 0, actionNotInResponseSet: 0 };
 
@@ -89,8 +119,8 @@ export const buildPolicyTable = (observations, meta = {}) => {
     if (!responses) { skipped.unknownFacing++; continue; }
     if (!responses.includes(obs.action)) { skipped.actionNotInResponseSet++; continue; }
 
-    for (let depth = 0; depth <= POLICY_HIERARCHY.length; depth++) {
-      const key = levelKey(obs, depth);
+    for (let depth = 0; depth <= hierarchy.length; depth++) {
+      const key = levelKey(obs, depth, hierarchy);
       const cell = levels[depth][key] || (levels[depth][key] = {});
       cell[obs.action] = (cell[obs.action] || 0) + 1;
     }
@@ -100,7 +130,10 @@ export const buildPolicyTable = (observations, meta = {}) => {
   return {
     provenance: {
       partition: POLICY_PARTITION_STAMP,
-      hierarchy: POLICY_HIERARCHY,
+      // The table records the hierarchy it was BUILT with, and `queryPolicy` reads it back
+      // rather than assuming the module default — otherwise an ablation arm would be scored
+      // against level keys it never built.
+      hierarchy,
       shrinkWeight: DEFAULT_SHRINK_WEIGHT,
       observations: total,
       skipped,
@@ -178,8 +211,13 @@ export const queryPolicy = (table, ctx, { shrinkWeight } = {}) => {
   let deepestDepth = -1;
   let lastAppliedN = null;
 
-  for (let depth = 0; depth <= POLICY_HIERARCHY.length; depth++) {
-    const cell = table?.levels?.[depth]?.[levelKey(ctx, depth)];
+  // Read the hierarchy back off the table rather than assuming the module default: an
+  // ablation arm built under a different ladder must be QUERIED under that same ladder, or
+  // it would be scored against level keys it never built (WS-333).
+  const hierarchy = table?.provenance?.hierarchy ?? POLICY_HIERARCHY;
+
+  for (let depth = 0; depth <= hierarchy.length; depth++) {
+    const cell = table?.levels?.[depth]?.[levelKey(ctx, depth, hierarchy)];
     if (!cell) continue;
 
     let totalN = 0;

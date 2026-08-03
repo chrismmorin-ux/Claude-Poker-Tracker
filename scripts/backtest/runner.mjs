@@ -47,10 +47,16 @@ import {
 } from '../../src/utils/exploitEngine/villainDecisionModel.js';
 import {
   observationBucket,
-  getSPRZone,
   brierScore,
   argmaxAction,
 } from '../../src/utils/exploitEngine/calibrationMetrics.js';
+import {
+  decisionGeometry,
+  sizeBucketFor,
+  sprFor,
+  sprBandFor,
+  closesAction,
+} from './decisionGeometry.mjs';
 import { resolveStatPriors, canonicalStakeLabel } from '../../src/utils/exploitEngine/poolBaseline.js';
 import {
   buildPlayerStats,
@@ -127,55 +133,19 @@ const lineClassFor = (hand, playerSeat, timeline) => {
 };
 
 /**
- * Pot and faced-bet size in BIG BLINDS at a decision.
+ * Pot, faced bet, SPR band and size bucket at a decision.
  *
- * Needed for the fold-vs-bet EV bridge: a fold-probability error only converts
- * to money once you know the pot it was wrong about. Expressed in bb so results
- * are comparable across stakes.
- */
-const potAndBetBB = (hand, order, street) => {
-  const bt = hand._backtest || {};
-  const bb = bt.bb;
-  const pot = bt.potBeforeByOrder?.[order];
-  if (!Number.isFinite(bb) || bb <= 0 || !Number.isFinite(pot)) return {};
-
-  // The live bet this seat is answering: the last aggressive action before
-  // `order` on the same street.
-  let facedBet = null;
-  for (const e of hand.gameState.actionSequence) {
-    if (e.order >= order) break;
-    if (e.street !== street) continue;
-    if (e.action === PRIMITIVE_ACTIONS.BET || e.action === PRIMITIVE_ACTIONS.RAISE) {
-      facedBet = e.amount;
-    }
-  }
-
-  const potBB = pot / bb;
-  const facingBetBB = Number.isFinite(facedBet) ? facedBet / bb : null;
-
-  return { potBB, facingBetBB, sizeBucket: sizeBucketFor(facingBetBB, potBB) };
-};
-
-/**
- * Bet size as a fraction of the pot, bucketed on the WS-262 mining boundaries.
+ * WS-333: this module used to own a private `potAndBetBB` and a second copy of
+ * `sizeBucketFor`, which made it the THIRD notion of "the pot" in `scripts/`
+ * (alongside `decisionGeometry.mjs` and `mine-manifold.mjs`'s own walk). Both are
+ * gone; the geometry comes from the module that owns it. The parity test that
+ * held the two size-bucket copies in step is no longer needed for that pair —
+ * there is one copy — but it is kept pointed at the boundaries themselves.
  *
- * This is the grouping the EV bridge must use. Breakeven fold frequency is
- * `bet / (pot + bet)` — a pure function of bet-to-pot ratio — so a group with a
- * constant size bucket has a near-constant breakeven, and its empirical fold
- * rate is the conditional that actually decides whether an estimate error flips
- * hero's decision. Grouping by SPR instead mixes sizings whose breakevens differ
- * by a factor of three, then charges one group-average fold rate against every
- * pot in the group — which manufactures cost rather than measuring it.
+ * `sizeBucketFor` is re-exported because `heroEvPolicy.test.js` imports it from
+ * here; re-exporting keeps that import working without a second definition.
  */
-export const sizeBucketFor = (betBB, potBB) => {
-  if (!Number.isFinite(betBB) || !Number.isFinite(potBB) || potBB <= 0) return 'unknown';
-  const frac = betBB / potBB;
-  if (frac < 0.33) return '0-33';
-  if (frac < 0.66) return '33-66';
-  if (frac < 1.0) return '66-100';
-  if (frac < 1.5) return '100-150';
-  return '150+';
-};
+export { sizeBucketFor } from './decisionGeometry.mjs';
 
 /**
  * The segment and seat bucket a corpus player's Reference-tier priors resolve
@@ -211,12 +181,17 @@ const segmentFor = (hands) => {
   };
 };
 
-const sprZoneFor = (hand, order) => {
-  const bt = hand._backtest || {};
-  const pot = bt.potBeforeByOrder?.[order];
-  const stack = bt.stackBeforeByOrder?.[order];
-  if (!Number.isFinite(pot) || !Number.isFinite(stack) || pot <= 0) return 'unknown';
-  return getSPRZone(stack / pot);
+/**
+ * SPR zone at a decision.
+ *
+ * WS-333 moved the band boundaries to `pokerCore/sprBands` and the ratio itself to
+ * `decisionGeometry.sprFor`, which uses the SAME `stackBefore / potBefore` convention this
+ * function always used — so the `sprZone` slice is byte-identical to what it emitted before
+ * and no historical figure re-partitions.
+ */
+const sprZoneFor = (hand, order, street) => {
+  const geo = decisionGeometry(hand, order, street);
+  return sprBandFor(sprFor(geo));
 };
 
 // =============================================================================
@@ -314,16 +289,23 @@ export const scorePlayer = ({
 
           // Derived once and shared across arms — these depend on the hand and
           // the decision, never on which fallback ladder answered the query.
-          const potBet = potAndBetBB(ctx.hand, ctx.order, ctx.street);
+          const geo = decisionGeometry(ctx.hand, ctx.order, ctx.street);
+          const potBet = geo
+            ? { potBB: geo.potBB, facingBetBB: geo.facingBetBB }
+            : {};
           const sharedSlices = {
             street: ctx.street,
             lineClass: lineClassFor(ctx.hand, ctx.playerSeat, timeline),
-            sprZone: sprZoneFor(ctx.hand, ctx.order),
+            sprZone: sprZoneFor(ctx.hand, ctx.order, ctx.street),
             playersInPot: playersInPotAt(ctx.hand, ctx.order),
             stakeSegment: ctx.hand?._backtest?.stakeLabel ?? 'unknown',
             obsBucket: observationBucket(model.totalObservations),
             facingAction: ctx.facingAction,
-            sizeBucket: potBet.sizeBucket ?? 'unknown',
+            sizeBucket: geo ? sizeBucketFor(geo.facingBetBB, geo.potBB) : 'unknown',
+            // WS-333 geometry coordinates. Carried as slices so the ablation can pool on
+            // them and the scorecard can report per-cell n; they do NOT enter the situation
+            // key's identity.
+            closesAction: String(closesAction(ctx.hand, ctx.order, ctx.street, ctx.playerSeat)),
           };
 
           // Provenance for auditing a record back to its hand, plus the pot/bet

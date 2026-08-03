@@ -105,6 +105,45 @@ const main = async () => {
       weightCap: num(args['weight-cap'], 20),
     };
 
+    // ADR-009 / WS-322 — the Deal Book and the replication stamp.
+    //
+    // Built AFTER the --max-files slice, deliberately: the book must describe the hands the
+    // run actually saw, not the ones that matched the filter. A book built before slicing
+    // would hash a set the measurement never touched, which is a worse failure than no book
+    // at all because it would look correct.
+    const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
+    const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
+    const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
+    const { DEFAULT_BOOTSTRAP_SEED } = await loader.load('/scripts/backtest/ipsEstimator.mjs');
+
+    const dealBook = await buildDealBook({
+      files,
+      root: corpusRoot,
+      sliceSpec: {
+        root: corpusRoot,
+        sites: list(args.sites),
+        stakes: list(args.stakes),
+        maxFiles: Number.isFinite(maxFiles) ? maxFiles : null,
+        maxPlayers: int(args['max-players'], null),
+        maxHandsPerPlayer: int(args['max-hands-per-player'], null),
+      },
+      identity: args['hash-members'] ? 'content' : 'path+size',
+    });
+    console.log(`Deal Book ${dealBook.dealBookId} — ${dealBook.memberCount} file(s), ${dealBook.identity}, ${dealBook.contentHash.slice(0, 20)}…`);
+
+    const replicationStamp = await buildStampInput({
+      loader,
+      seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },
+      dealBookHash: dealBook.contentHash,
+      fieldVersion: behaviorPolicy?.provenance?.partition
+        ? `behavior-policy@${behaviorPolicy.provenance.partition}/${behaviorPolicy.provenance.observations ?? '?'}obs`
+        : null,
+      partition: `pool-train@${int(args['pool-pct'], 50)}`,
+    });
+    if (replicationStamp.engineDirty) {
+      console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
+    }
+
     // Partial-snapshot writer. A full pass runs for hours; before this, the artifact was
     // written only on return, so an interrupted run yielded nothing at all regardless of
     // how far it got (observed 2026-07-31: killed at 275/3000, zero output).
@@ -170,6 +209,8 @@ const main = async () => {
       comboSamples: int(args['combo-samples'], 10),
       trials: int(args.trials, 200),
       rakeConfig,
+      dealBook,
+      replicationStamp,
       log: (m) => console.log(`  ${m}`),
     });
     run.runtimeMs = Date.now() - started;
