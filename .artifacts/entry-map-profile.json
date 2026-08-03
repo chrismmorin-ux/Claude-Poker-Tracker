@@ -1,0 +1,602 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "scripts/backtest/strategyProfile.mjs",
+  "isResultCard": false,
+  "caveat": "MODEL SELF-REPORT, NOT A MEASUREMENT. Every figure is the same engine that produced each cell, integrated over how often each cell arises, so it cannot detect an error it was itself computed under. Not a Result Card; does not resolve a comparative claim under ADR-009. The independent number requires WS-326 (play it out against a responsive population) scored against WS-331 (the ceiling of what was available to win).",
+  "basedOn": {
+    "policyId": "cp-stratified-flop-v1",
+    "engineCommit": "a4206bb4f621e02b199a1aae08428cace3841f70",
+    "engineDirty": true,
+    "tauBB": 0.25,
+    "pool": {
+      "vpip": 0.2883540127493027,
+      "pfr": 0.13669229024111054
+    }
+  },
+  "headline": {
+    "entryRate": 0.03216561533839628,
+    "aggressiveRate": 0.02109636933815552,
+    "poolVpip": 0.2883540127493027,
+    "poolPfr": 0.13669229024111054,
+    "domainCoverage": 0.7841894261024992,
+    "forecastEdgeBB100": 6.5014796715328975,
+    "blindCostBB100": -16.666666666666664,
+    "walkBB100": 1.0963792017272294,
+    "absoluteForecastBB100": -9.068807793406538
+  },
+  "byPosition": {
+    "EARLY": {
+      "seats": 2,
+      "playersBefore": 0,
+      "spots": {
+        "foldedToHero": 1,
+        "limpedNoRaise": 0,
+        "facingRaise": 0
+      },
+      "domainCoverage": 1,
+      "unmodelledLimpedShare": 0,
+      "entryRate": 0.02714932126696833,
+      "aggressiveRate": 0.022624434389140274,
+      "forecastEdgeBB": 0.01844608304417892,
+      "postedBB": 0,
+      "walkBB": 0,
+      "absoluteBB": 0.01844608304417892
+    },
+    "MIDDLE": {
+      "seats": 2,
+      "playersBefore": 2,
+      "spots": {
+        "foldedToHero": 0.5064400111700196,
+        "limpedNoRaise": 0.23886019055911945,
+        "facingRaise": 0.254699798270861
+      },
+      "domainCoverage": 0.7611398094408806,
+      "unmodelledLimpedShare": 0.23886019055911945,
+      "entryRate": 0.025301163893539057,
+      "aggressiveRate": 0.011471310593763802,
+      "forecastEdgeBB": 0.039578845551662106,
+      "postedBB": 0,
+      "walkBB": 0,
+      "absoluteBB": 0.039578845551662106
+    },
+    "LATE": {
+      "seats": 3,
+      "playersBefore": 5,
+      "spots": {
+        "foldedToHero": 0.18252401954306977,
+        "limpedNoRaise": 0.2970195779042799,
+        "facingRaise": 0.5204564025526504
+      },
+      "domainCoverage": 0.7029804220957201,
+      "unmodelledLimpedShare": 0.2970195779042799,
+      "entryRate": 0.037181388404993174,
+      "aggressiveRate": 0.019911341864784576,
+      "forecastEdgeBB": 0.0800277423451012,
+      "postedBB": 0,
+      "walkBB": 0,
+      "absoluteBB": 0.0800277423451012
+    },
+    "SB": {
+      "seats": 1,
+      "playersBefore": 7,
+      "spots": {
+        "foldedToHero": 0.09243746649618913,
+        "limpedNoRaise": 0.2649664734192376,
+        "facingRaise": 0.6425960600845733
+      },
+      "domainCoverage": 0.7350335265807624,
+      "unmodelledLimpedShare": 0.2649664734192376,
+      "entryRate": 0.029243113258806012,
+      "aggressiveRate": 0.024396989125438192,
+      "forecastEdgeBB": 0.09801759031156443,
+      "postedBB": 0.5,
+      "walkBB": 0,
+      "absoluteBB": -0.40198240968843557
+    },
+    "BB": {
+      "seats": 1,
+      "playersBefore": 8,
+      "spots": {
+        "foldedToHero": 0.06578275210363377,
+        "limpedNoRaise": 0.24276682472355704,
+        "facingRaise": 0.6914504231728091
+      },
+      "domainCoverage": 0.6914504231728091,
+      "unmodelledLimpedShare": 0.24276682472355704,
+      "entryRate": 0.0438022892507662,
+      "aggressiveRate": 0.0375448193577996,
+      "forecastEdgeBB": 0.13098249589941074,
+      "postedBB": 1,
+      "walkBB": 0.09867412815545065,
+      "absoluteBB": -0.7703433759451386
+    }
+  },
+  "familyMargins": {
+    "pair": {
+      "n": 104,
+      "meanBB": 1.61093135860018
+    },
+    "connector-suited": {
+      "n": 64,
+      "meanBB": -0.147711293221555
+    },
+    "broadway-suited": {
+      "n": 80,
+      "meanBB": -0.22838530953745736
+    },
+    "gapper-suited": {
+      "n": 128,
+      "meanBB": -0.319528508366748
+    },
+    "broadway-offsuit": {
+      "n": 80,
+      "meanBB": -0.3324202926538866
+    },
+    "connector-offsuit": {
+      "n": 64,
+      "meanBB": -0.35206869655890677
+    },
+    "unconnected-suited": {
+      "n": 352,
+      "meanBB": -0.42549669759252473
+    },
+    "gapper-offsuit": {
+      "n": 128,
+      "meanBB": -0.5122168703903252
+    },
+    "unconnected-offsuit": {
+      "n": 352,
+      "meanBB": -0.5485891065219707
+    }
+  },
+  "pairGap": [
+    {
+      "spot": "BB|raise",
+      "pairedMean": 3.3701362147606173,
+      "unpairedMean": -0.5057965358087966,
+      "gapBB": 3.875932750569414,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "SB|raise",
+      "pairedMean": 2.7193930930285735,
+      "unpairedMean": -0.777374995760717,
+      "gapBB": 3.4967680887892905,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "LATE|raise",
+      "pairedMean": 2.4619564056070806,
+      "unpairedMean": -0.46557942053845924,
+      "gapBB": 2.9275358261455398,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "MIDDLE|raise",
+      "pairedMean": 2.0110816642169658,
+      "unpairedMean": -0.46716379461414775,
+      "gapBB": 2.4782454588311134,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "SB|none",
+      "pairedMean": 0.9741292568002057,
+      "unpairedMean": -0.08952537759700126,
+      "gapBB": 1.0636546343972069,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "LATE|none",
+      "pairedMean": 0.718675260846479,
+      "unpairedMean": -0.317734620524311,
+      "gapBB": 1.03640988137079,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "MIDDLE|none",
+      "pairedMean": 0.34300245083134406,
+      "unpairedMean": -0.3753451095803207,
+      "gapBB": 0.7183475604116647,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    },
+    {
+      "spot": "EARLY|none",
+      "pairedMean": 0.28907652271017936,
+      "unpairedMean": -0.37450565230999533,
+      "gapBB": 0.6635821750201747,
+      "n": {
+        "paired": 13,
+        "unpaired": 156
+      }
+    }
+  ],
+  "rankAgreement": [
+    {
+      "posCategory": "EARLY",
+      "facingAction": "none",
+      "n": 169,
+      "spearman": 0.2794339220898888,
+      "worstInversions": [
+        {
+          "cellId": "A5s|EARLY|none",
+          "handClass": "A5s",
+          "drop": 139,
+          "equity": 0.449,
+          "margin": -0.4599255932514692
+        },
+        {
+          "cellId": "ATo|EARLY|none",
+          "handClass": "ATo",
+          "drop": 132,
+          "equity": 0.504,
+          "margin": -0.428719950630901
+        },
+        {
+          "cellId": "A7o|EARLY|none",
+          "handClass": "A7o",
+          "drop": 128,
+          "equity": 0.429,
+          "margin": -0.4591426881237592
+        },
+        {
+          "cellId": "A2s|EARLY|none",
+          "handClass": "A2s",
+          "drop": 123,
+          "equity": 0.441,
+          "margin": -0.43567015190791164
+        },
+        {
+          "cellId": "A6o|EARLY|none",
+          "handClass": "A6o",
+          "drop": 120,
+          "equity": 0.417,
+          "margin": -0.4562478246774535
+        }
+      ]
+    },
+    {
+      "posCategory": "MIDDLE",
+      "facingAction": "none",
+      "n": 169,
+      "spearman": 0.30231397412357014,
+      "worstInversions": [
+        {
+          "cellId": "A8o|MIDDLE|none",
+          "handClass": "A8o",
+          "drop": 131,
+          "equity": 0.461,
+          "margin": -0.44526562083731
+        },
+        {
+          "cellId": "A7o|MIDDLE|none",
+          "handClass": "A7o",
+          "drop": 130,
+          "equity": 0.441,
+          "margin": -0.4681879458316245
+        },
+        {
+          "cellId": "A5o|MIDDLE|none",
+          "handClass": "A5o",
+          "drop": 127,
+          "equity": 0.432,
+          "margin": -0.4727580846140713
+        },
+        {
+          "cellId": "A6o|MIDDLE|none",
+          "handClass": "A6o",
+          "drop": 123,
+          "equity": 0.432,
+          "margin": -0.45922381366345216
+        },
+        {
+          "cellId": "A6s|MIDDLE|none",
+          "handClass": "A6s",
+          "drop": 118,
+          "equity": 0.463,
+          "margin": -0.43139143021135434
+        }
+      ]
+    },
+    {
+      "posCategory": "MIDDLE",
+      "facingAction": "raise",
+      "n": 169,
+      "spearman": 0.27051121038465586,
+      "worstInversions": [
+        {
+          "cellId": "A9o|MIDDLE|raise",
+          "handClass": "A9o",
+          "drop": 146,
+          "equity": 0.483,
+          "margin": -0.8968677473518653
+        },
+        {
+          "cellId": "ATo|MIDDLE|raise",
+          "handClass": "ATo",
+          "drop": 136,
+          "equity": 0.511,
+          "margin": -0.7424384085890985
+        },
+        {
+          "cellId": "A8o|MIDDLE|raise",
+          "handClass": "A8o",
+          "drop": 135,
+          "equity": 0.461,
+          "margin": -0.8502924848614396
+        },
+        {
+          "cellId": "AJo|MIDDLE|raise",
+          "handClass": "AJo",
+          "drop": 127,
+          "equity": 0.542,
+          "margin": -0.6709896760017339
+        },
+        {
+          "cellId": "A6s|MIDDLE|raise",
+          "handClass": "A6s",
+          "drop": 127,
+          "equity": 0.463,
+          "margin": -0.7547762047548643
+        }
+      ]
+    },
+    {
+      "posCategory": "LATE",
+      "facingAction": "none",
+      "n": 169,
+      "spearman": 0.21022606155170742,
+      "worstInversions": [
+        {
+          "cellId": "ATo|LATE|none",
+          "handClass": "ATo",
+          "drop": 142,
+          "equity": 0.552,
+          "margin": -0.38786733763440345
+        },
+        {
+          "cellId": "A8o|LATE|none",
+          "handClass": "A8o",
+          "drop": 136,
+          "equity": 0.506,
+          "margin": -0.3961684681361804
+        },
+        {
+          "cellId": "A7o|LATE|none",
+          "handClass": "A7o",
+          "drop": 132,
+          "equity": 0.488,
+          "margin": -0.3994835818803126
+        },
+        {
+          "cellId": "A9s|LATE|none",
+          "handClass": "A9s",
+          "drop": 128,
+          "equity": 0.542,
+          "margin": -0.3724490638469044
+        },
+        {
+          "cellId": "A5s|LATE|none",
+          "handClass": "A5s",
+          "drop": 126,
+          "equity": 0.504,
+          "margin": -0.38274929004026464
+        }
+      ]
+    },
+    {
+      "posCategory": "LATE",
+      "facingAction": "raise",
+      "n": 169,
+      "spearman": 0.24840083786569697,
+      "worstInversions": [
+        {
+          "cellId": "A8o|LATE|raise",
+          "handClass": "A8o",
+          "drop": 142,
+          "equity": 0.506,
+          "margin": -0.9928230925782188
+        },
+        {
+          "cellId": "A9o|LATE|raise",
+          "handClass": "A9o",
+          "drop": 141,
+          "equity": 0.527,
+          "margin": -0.8424756707664506
+        },
+        {
+          "cellId": "A7o|LATE|raise",
+          "handClass": "A7o",
+          "drop": 129,
+          "equity": 0.488,
+          "margin": -0.8683999418380491
+        },
+        {
+          "cellId": "A7s|LATE|raise",
+          "handClass": "A7s",
+          "drop": 124,
+          "equity": 0.512,
+          "margin": -0.7172818667077201
+        },
+        {
+          "cellId": "A6s|LATE|raise",
+          "handClass": "A6s",
+          "drop": 122,
+          "equity": 0.503,
+          "margin": -0.7272364955576723
+        }
+      ]
+    },
+    {
+      "posCategory": "SB",
+      "facingAction": "none",
+      "n": 169,
+      "spearman": 0.3166867644325154,
+      "worstInversions": [
+        {
+          "cellId": "A9o|SB|none",
+          "handClass": "A9o",
+          "drop": 138,
+          "equity": 0.509,
+          "margin": -0.14546683496384996
+        },
+        {
+          "cellId": "A7s|SB|none",
+          "handClass": "A7s",
+          "drop": 136,
+          "equity": 0.497,
+          "margin": -0.1478005537844856
+        },
+        {
+          "cellId": "A7o|SB|none",
+          "handClass": "A7o",
+          "drop": 129,
+          "equity": 0.465,
+          "margin": -0.16665171304691398
+        },
+        {
+          "cellId": "A5o|SB|none",
+          "handClass": "A5o",
+          "drop": 122,
+          "equity": 0.453,
+          "margin": -0.15380534841451268
+        },
+        {
+          "cellId": "A3o|SB|none",
+          "handClass": "A3o",
+          "drop": 118,
+          "equity": 0.436,
+          "margin": -0.17824223836833766
+        }
+      ]
+    },
+    {
+      "posCategory": "SB",
+      "facingAction": "raise",
+      "n": 169,
+      "spearman": 0.24492609507218413,
+      "worstInversions": [
+        {
+          "cellId": "ATo|SB|raise",
+          "handClass": "ATo",
+          "drop": 145,
+          "equity": 0.548,
+          "margin": -1.1043968109192344
+        },
+        {
+          "cellId": "A8o|SB|raise",
+          "handClass": "A8o",
+          "drop": 128,
+          "equity": 0.482,
+          "margin": -1.09003126561004
+        },
+        {
+          "cellId": "A5s|SB|raise",
+          "handClass": "A5s",
+          "drop": 125,
+          "equity": 0.484,
+          "margin": -1.0655260491253986
+        },
+        {
+          "cellId": "A4s|SB|raise",
+          "handClass": "A4s",
+          "drop": 125,
+          "equity": 0.48,
+          "margin": -1.0883692241338263
+        },
+        {
+          "cellId": "A5o|SB|raise",
+          "handClass": "A5o",
+          "drop": 125,
+          "equity": 0.453,
+          "margin": -1.2095725332521956
+        }
+      ]
+    },
+    {
+      "posCategory": "BB",
+      "facingAction": "raise",
+      "n": 169,
+      "spearman": 0.216111321565645,
+      "worstInversions": [
+        {
+          "cellId": "ATo|BB|raise",
+          "handClass": "ATo",
+          "drop": 150,
+          "equity": 0.573,
+          "margin": -0.901897385581106
+        },
+        {
+          "cellId": "A9o|BB|raise",
+          "handClass": "A9o",
+          "drop": 142,
+          "equity": 0.539,
+          "margin": -0.8717167884653625
+        },
+        {
+          "cellId": "ATs|BB|raise",
+          "handClass": "ATs",
+          "drop": 132,
+          "equity": 0.592,
+          "margin": -0.756841567015615
+        },
+        {
+          "cellId": "A5o|BB|raise",
+          "handClass": "A5o",
+          "drop": 127,
+          "equity": 0.48,
+          "margin": -0.9761940214383933
+        },
+        {
+          "cellId": "A6o|BB|raise",
+          "handClass": "A6o",
+          "drop": 121,
+          "equity": 0.476,
+          "margin": -0.937134841203409
+        }
+      ]
+    }
+  ],
+  "uncertainty": {
+    "mcDominant": 653,
+    "modelDominant": 699,
+    "byBand": {
+      "fringe-tight": {
+        "mcDominant": 29,
+        "modelDominant": 32
+      },
+      "clear-": {
+        "mcDominant": 541,
+        "modelDominant": 538
+      },
+      "unmeasured": {
+        "mcDominant": 39,
+        "modelDominant": 93
+      },
+      "clear+": {
+        "mcDominant": 44,
+        "modelDominant": 36
+      }
+    }
+  }
+}
