@@ -292,6 +292,16 @@ Supporting references (unique detail not in System Model):
 - `PERSISTENCE_OVERVIEW.md` — IndexedDB API summary
 - `INVARIANTS.md` — standalone invariant catalog with verification dates
 - `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
+- `docs/standard-of-record/VOCABULARY.md` — **the vocabulary for every strategy/EV claim** (ADR-009). Surface kinds, Strategy Card, Deal Book, Result Card, Decision Atom, warrants. Read before naming anything in this space; the terms already exist.
+
+## Standard of Record (ADR-009)
+**Any artefact making a *comparative* claim about strategy, model quality, or EV must resolve to a Result Card** — a registered surface run against a versioned Deal Book and Field, carrying a complete replication manifest (engine commit, Deal Book hash, partition, every seed, every load-bearing constant).
+
+This binds *comparative claims*, not every number. A debug count or an exploratory check is not a claim. **The trigger is a number someone could act on or cite.**
+
+Before measuring or reporting anything comparative: read `docs/standard-of-record/VOCABULARY.md`, and use `src/utils/standardOfRecord/` rather than inventing a shape. The mechanism this prevents is the one that let WS-291 survive for the life of the project — nothing forced two numbers onto the same axis, so a wrong number never had to meet a right one.
+
+Enforcement is staged: the loader rejects malformed Strategy Cards today; the repo-wide invariant ships advisory and flips to enforcing in WS-329.
 
 ## Poker Analysis Guardrail
 **Before editing ANY file in `src/utils/exploitEngine/` or `src/utils/rangeEngine/`:**

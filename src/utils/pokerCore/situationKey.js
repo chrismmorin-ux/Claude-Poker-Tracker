@@ -79,6 +79,28 @@ export const HERO_AXIS = 'preflopAggressor';
 export const HERO_AXES = Object.freeze([...IDENTITY_AXES, HERO_AXIS]);
 
 /**
+ * Hero's own holding, as one of the 169 rank-pair classes ('AA', 'AKs', 'JTo', ...).
+ *
+ * WHY THIS IS NOT AN IDENTITY AXIS, AND NEVER WILL BE. Every axis above describes the SPOT —
+ * the situation two different holdings can share. This one describes what hero is holding IN
+ * that spot, which is a different kind of fact: it is the QUERY, not the bucket. Putting it in
+ * `IDENTITY_AXES` would multiply every bucket by 169 and, worse, would change the serialized
+ * wire format that `heroLeaks` persists inside the composite primary key
+ * `[playerId, situationKey]` (IDB v22) — silently invalidating every stored leak, which is
+ * exactly what the append-only note on `IDENTITY_AXES` warns about.
+ *
+ * So it is neither keyed nor carried: `formatSituationKey` never emits it and
+ * `withCarriedContext` never attaches it. It exists solely so a DECLARED surface can MATCH on
+ * it — a Strategy Card that cannot say "AKo" cannot express a preflop chart at all, and the
+ * 169-cell Entry Map (WS-323) is precisely a preflop chart. See `MATCHABLE_AXES` in
+ * `standardOfRecord/strategyCard.js`, the one place this axis is legal.
+ *
+ * Values are the notations produced by `preflopEquity.handClassToNotation` — that function is
+ * the vocabulary, so there is no second spelling of a hand class to disagree with.
+ */
+export const HAND_AXIS = 'handClass';
+
+/**
  * Axes CARRIED with a decision but deliberately NOT part of bucket identity.
  * See the "carrying is not keying" note above before promoting any of these.
  */
@@ -87,6 +109,16 @@ export const CARRIED_AXES = Object.freeze([
   'playersRemaining', // per WS-274 this is WHO, not a count — resolve seats, do not tally
   'source',           // SRC-* id; registry requires provenance to survive the join
   'pool',             // stake + venue class; FSA cannot separate its Field surfaces without it
+  // ── WS-333 geometry coordinates ──────────────────────────────────────────────────────
+  // Added CARRIED, not keyed, for exactly the reason stated above: promoting a coordinate
+  // into identity re-partitions every historical measurement, so it must be MEASURED first.
+  // The measurement is `scripts/backtest/geometryAblation.mjs` (AS-711); promotion is a
+  // separate, later decision that arrives with a number attached.
+  'sBucket',          // bet-to-pot ratio bucket — the argument of the pot-odds identity
+  'closesAction',     // does MATCHING close the betting? SB's call does not; BB's does.
+                      // A geometry property, NOT a position label: SB and BB are both OOP
+                      // preflop and differ here, which is what makes it a real coordinate
+                      // rather than a rename of isIP (HIERARCHY_ORDER[1]).
 ]);
 
 const SEP = ':';

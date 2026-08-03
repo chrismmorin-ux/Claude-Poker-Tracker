@@ -19,6 +19,7 @@ import {
   IDENTITY_AXES,
   HERO_AXES,
   HERO_AXIS,
+  HAND_AXIS,
   CARRIED_AXES,
   SituationKeyError,
   formatSituationKey,
@@ -68,6 +69,30 @@ describe('wire format is frozen', () => {
       const parsed = parseSituationKey(key);
       expect(formatSituationKey(parsed)).toBe(key);
     }
+  });
+
+  // ── WS-323: HAND_AXIS is matchable, never keyed ────────────────────────────────────────
+  //
+  // The Entry Map needs a card to be able to say "AKo", which required a new axis. The whole
+  // safety of that addition rests on it staying OUT of the wire format: the moment a holding
+  // reaches the serialized key, every stored heroLeaks row under [playerId, situationKey] is
+  // orphaned. These three tests are what make that a checked property rather than a promise.
+  test('handClass is absent from both identity axis lists', () => {
+    expect(IDENTITY_AXES).not.toContain(HAND_AXIS);
+    expect(HERO_AXES).not.toContain(HAND_AXIS);
+    expect(CARRIED_AXES).not.toContain(HAND_AXIS);
+  });
+
+  test('supplying a handClass does NOT change the serialized key', () => {
+    expect(formatSituationKey({ ...VILLAIN_FIELDS, [HAND_AXIS]: 'AKo' })).toBe(VILLAIN_KEY);
+    expect(formatSituationKey({ ...VILLAIN_FIELDS, preflopAggressor: 'pfc', [HAND_AXIS]: 'AKo' }))
+      .toBe(HERO_KEY);
+  });
+
+  test('withCarriedContext does not attach a handClass', () => {
+    const ctx = withCarriedContext(VILLAIN_KEY, { [HAND_AXIS]: 'AKo', sprBand: 'mid' });
+    expect(ctx).not.toHaveProperty(HAND_AXIS);
+    expect(ctx.sprBand).toBe('mid');
   });
 });
 
