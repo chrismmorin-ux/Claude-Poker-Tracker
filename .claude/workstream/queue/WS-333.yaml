@@ -2,7 +2,7 @@ id: "WS-333"
 title: "Derive the floor from the blinds outward — pot odds x realization x rake as ONE identity, then normalize every decision by geometry so structurally identical spots pool"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -134,6 +134,46 @@ accept_criteria: |
     consumable by FSA's divergence instrument — not a new comparison path.
   - Every emitted rate carries its opportunity count (POKER_THEORY 14.2 form) and its
     conditioning set.
+  - PLAYERS-REMAINING IS A COORDINATE, NEVER A PRICE. It may index a geometry cell for
+    pooling; it may NOT be multiplied by a per-opponent constant to price anything. Pricing
+    resolves per seat via liveGameContext.buildSeatsToAct ->
+    preflopFoldResolver.resolveSeatFoldToRaise. Asserted by test, and by grep for any
+    `behindCount * <constant>` shape.
+  - Uses `villainRequiredEquity` from foldEquityCalculator for every pot-odds figure. Pot odds
+    are NOT re-derived inline from a bet fraction anywhere in the new code.
+  - Multiway defense uses `perDefenderMDF`, never the heads-up MDF applied per player.
+preflight_findings: |
+  FOUND DURING MANDATORY PRE-EDIT READ of exploitEngine/CLAUDE.md, 2026-08-02. Recorded before
+  implementation so the build does not rediscover them:
+
+  1. PLAYERS-REMAINING (WS-274 anti-pattern). "Players remaining means WHO, not how many.
+     Reducing the seats behind hero to a count and pricing them with one constant is the same
+     anti-pattern wearing a number instead of a label." preflopAdvisor previously shipped
+     `behindFoldRate = 0.85`, `reraiseRisk = behindCount * 0.04` while per-seat models existed
+     for every one of those seats. The geometry key may INDEX by players-remaining; the floor
+     may not PRICE by it.
+
+  2. TWO FORMULAS THAT LOOK ALIKE AND ARE NOT (POKER_THEORY 6.2 vs 6.3):
+         s / (1 + s)      BLUFFER's breakeven fold frequency
+         1 / (1 + s)      MDF — defender's minimum CONTINUATION FREQUENCY
+         s / (1 + 2s)     CALLER's required EQUITY (pot odds)
+     Frequency and equity are different quantities and the engine has a recorded defect from
+     conflating them. Facing a RAISE the geometry changes again: with pot P, villain bet B,
+     hero raising to R, villain needs (R - B) / (P + 2R). Use `villainRequiredEquity`; do not
+     re-derive inline.
+
+  3. MULTIWAY. `perDefenderMDF` already exists and its docstring states that applying the
+     heads-up MDF per player over-defends badly. The blinds base case is heads-up-ish but the
+     limped-pot and squeeze cases are not.
+
+  4. NO THRESHOLDS. `if (n >= K) use the specific estimate` is "a threshold label, the same
+     anti-pattern in another costume" and applies anywhere in this engine. The floor emits a
+     continuous margin; zone bands are reporting only (already in WS-323, restated here).
+
+  5. NO CONSTANT WHERE GAME STATE BELONGS. A structural computation over every combo has no
+     sample size and must never be blended against a pseudocount prior — that defect made a
+     real 0.220-0.817 signal arrive as 0.429-0.595, i.e. very nearly constant across every
+     situation the engine could see.
 effort: "L"
 files_involved:
   - "src/utils/exploitEngine/foldEquityCalculator.js"
@@ -163,3 +203,4 @@ status_note: |
   mechanism in realization and action-closure rather than price, and established that the
   geometry-normalization half is likely the fix for the statistical-power constraint binding
   every other instrument in this program.
+closed_by_event: "ev-1785697460059-cebd5b8b90f2"

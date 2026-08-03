@@ -2,7 +2,7 @@ id: "WS-322"
 title: "The Standard of Record — one vocabulary and one schema set for every strategy claim in the repo (Declared surface, Strategy Card, Decision Atom, Result Card)"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -109,3 +109,4 @@ status_note: |
   Filed 2026-08-02 from a founder design session on bridging poker statistics, game theory,
   and fear-linked perceived weakness. The session established that the strategy-tournament
   concept is not adjacent to FSA but is its missing Declared surface class.
+closed_by_event: "ev-1785689956540-3dea90859e94"

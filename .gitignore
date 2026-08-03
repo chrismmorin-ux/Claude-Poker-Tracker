@@ -109,3 +109,6 @@ out/
 .claude/workstream/tmp/
 .claude/.tmp-*.json
 .cwos-snapshots/
+
+# Transient sprint-composition scratch written by /next; not state of record.
+.claude/.tmp-sprint.json

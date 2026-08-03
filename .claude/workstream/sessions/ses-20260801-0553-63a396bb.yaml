@@ -1,7 +1,7 @@
 id: "ses-20260801-0553-63a396bb"
-status: active
+status: "abandoned"
 started_at: "2026-08-01T05:53:31.630Z"
-ended_at: null
+ended_at: "2026-08-02T08:56:55Z"
 mode: auto
 last_heartbeat: "2026-08-01T07:21:25.728Z"
 pid: 32508
@@ -11,3 +11,23 @@ agent_session_id: "63a396bb-f992-4e71-b5bf-a614ce28fbf0"
 # A session that never ran /session-start still needs an identity to claim under.
 claimed_items: []
 files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-02.
+  Original start: 2026-08-01T05:53:31.630Z.
+  Last heartbeat: 2026-08-01T07:21:25.728Z.
+
+  Git commits during this session (8):
+    - 89c1266 Recover closure provenance for 52 items (HomeBase WS-561)
+    - ec0602b fix(cwos): revive session liveness and stop git from laundering other sessions' work
+    - 078f8f0 chore: land uncommitted work carried in the tree from prior sessions
+    - add8fc4 feat(engine): holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE (WS-292)
+    - 980e6cf fix(vrn): recording died on finger-lift and after Chrome's auto-end
+    - 2af94c5 feat(vrn): add narration capture to the Hand Review walkthrough
+    - 4ff6a5e feat(vrn): voice reasoning notes — spoken reasoning bound to exact hand state
+    - 7eeb7ae fix(engine): a draw is a semi-bluff, not thin value (WS-312)
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

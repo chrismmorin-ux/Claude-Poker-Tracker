@@ -1,0 +1,252 @@
+id: strategy-of-record
+name: Strategy of Record
+schema_version: 4
+status: NEW
+
+contract: >
+  The founder can stop wondering whether a number from one session is comparable to a
+  number from another. Every claim this repo makes about strategy — "this play is better",
+  "the engine improved", "this read earns" — resolves to a Result Card produced by running
+  a declared Surface against a versioned Deal Book and Field, under stated leakage controls.
+  Without this program, each measurement invents its own instrument, its own slice, and its
+  own units, and the project keeps discovering that deep bugs went unmeasured for months
+  because nothing forced two numbers onto the same axis.
+
+capability_brief:
+  value: "One standard of comparison for every strategy claim in the repo — declared surfaces, versioned datasets, replicable Result Cards."
+  problems_prevented:
+    - "A falsified model surviving unmeasured because no instrument put belief next to outcome (WS-291 shipped on the live recommendation path for the life of the project)"
+    - "Two sessions producing incomparable numbers because each chose its own slice, horizon, and units"
+    - "An engine upgrade whose effect cannot be separated from a strategy change, because neither was pinned"
+    - "Captured-but-never-read instrumentation that looks like coverage and rots silently (the predictionAudit pattern)"
+    - "A strategy that prints against the pool and bleeds to regulars, with no number for its own exploitability"
+  cost:
+    activation: "~15 min for the baseline audit of existing measurement surfaces"
+    ongoing: "Periodic /pulse run strategy-of-record (14-day cadence) + a Result Card alongside any measurement work"
+  first_output:
+    - "Inventory of every measurement instrument currently in the repo and whether its output is replicable"
+    - "Gap list: claims made in docs/ that no Result Card supports"
+    - "The vocabulary register (Surface / Stack / Layer / Strategy Card / Deal Book / Field / Result Card / Ladder)"
+    - "Replication-manifest coverage: which instruments pin engine version, seeds, corpus hash, and partition"
+  activation_command: "/pulse run strategy-of-record baseline"
+  requires_user_input: false
+
+problem_classes:
+  - name: "Incomparable numbers"
+    description: "Two measurements that appear to answer the same question but rest on different slices, horizons, units, or opponent models."
+    examples:
+      - "bb/100 from a one-decision-horizon instrument compared against a whole-hand winrate"
+      - "a live claim weighted by the online corpus's situation distribution"
+      - "EV quoted without the continuation policy that produced it"
+    detection: "Any figure in docs/ or a session note without a Result Card reference; any two figures compared without matching Deal Book + Field + treatment stamps."
+
+  - name: "Unreplicable measurement"
+    description: "A result that cannot be reproduced because its inputs were not pinned."
+    examples:
+      - "Monte Carlo without a recorded seed"
+      - "a number produced before a constant changed, with no engine version recorded"
+      - "a corpus slice defined by ad-hoc filtering rather than a Deal Book hash"
+    detection: "Replication manifest missing or incomplete; re-running an instrument does not reproduce its stored Result Card byte-for-byte."
+
+  - name: "Unattributed divergence"
+    description: "Two surfaces differ and the difference cannot be localized to the layer that caused it."
+    examples:
+      - "a wrong recommendation traced no further than 'the engine said so'"
+      - "a mined table carrying a semantic mismatch two layers below the decision that consumed it"
+    detection: "A surface whose Stack is undeclared, or whose layers do not emit intermediate values into the Decision Atom."
+
+  - name: "Unenclosed strategy"
+    description: "A strategy asserted without accounting for every hand in its declared domain."
+    examples:
+      - "rules covering the interesting spots with an unexamined default carrying most of the EV"
+      - "abstentions silently dropped rather than counted"
+    detection: "Coverage Census missing, or residual-clause EV share unreported."
+
+  - name: "Instrumentation rot"
+    description: "Capture that ships and is never read — coverage in appearance only."
+    examples:
+      - "predictionAudit capture landing with no consumer"
+      - "atom fields added speculatively with no query exercising them"
+    detection: "Any captured field with no reader in the atoms self-check."
+
+requires_external_expertise: false
+expertise_type: ""
+expertise_cadence: ""
+
+scope:
+  file_patterns:
+    - "scripts/backtest/**"
+    - "src/utils/holdingKnowledge/**"
+    - "src/utils/predictionAudit/**"
+    - "src/utils/pokerCore/situationKey.js"
+    - "src/utils/exploitEngine/poolBaseline.js"
+    - "src/utils/exploitEngine/handhqReferencePool.js"
+    - "src/utils/exploitEngine/calibrationMetrics.js"
+    - "src/utils/exploitEngine/modelAudit.js"
+    - "docs/research/**"
+  invariants: []
+  anti_invariants:
+    - "A strategy claim published without a Result Card behind it"
+    - "A Result Card without a complete replication manifest"
+    - "A surface scored against data it was fitted to"
+    - "A captured atom field with no reader"
+  constraints: []
+
+tier: active
+
+tier_triggers:
+  watch: "Any measurement instrument exists in scope paths"
+  active: "A strategy claim reaches a founder-facing surface or a doc conclusion"
+  critical: "A published claim is found to rest on an unreplicable or leaked measurement"
+
+protocols:
+  baseline:
+    engine: eng-engine
+    focus: "Inventory every measurement instrument and score its replicability, comparability, and stack declaration"
+    problem_classes: all
+    outputs:
+      - baseline_report
+      - initial_findings
+      - problem_class_coverage
+
+  sweep:
+    engine: eng-engine
+    cadence_days: 14
+    focus: "Full review of all problem classes across measurement surfaces"
+    problem_classes: all
+    min_tier: active
+
+  delta:
+    engine: preflight
+    cadence_days: 7
+    focus: "Recent changes within scope — did any new measurement ship without a Result Card?"
+    method: "git diff against last_run_by_protocol.delta.date, filtered to scope file_patterns"
+    min_tier: watch
+
+  challenge:
+    engine: eng-engine
+    cadence_days: 30
+    focus: "Adversarial review — find the number that cannot be reproduced"
+    prompt_additions: >
+      You are running a CHALLENGE protocol on the repo's standard of comparison. For each
+      measurement instrument, attempt to BREAK its claim to comparability:
+      - Pick a published figure. Can you reproduce it from the recorded manifest alone?
+      - Find two figures compared in prose whose Deal Book, Field, or treatment differ.
+      - Find a surface whose Stack is undeclared, so divergence cannot be attributed.
+      - Find a captured field with no reader.
+      - Find a leakage channel the guard does not close.
+      Do NOT report instruments that are sound. Only report genuine breaks.
+    min_tier: active
+
+  blind_spot:
+    engine: eng-engine
+    cadence_days: 60
+    focus: "What kind of claim are we still making without measuring?"
+    prompt_additions: >
+      You are running a BLIND SPOT protocol. Review this program's history:
+      - Which problem classes have never produced a finding — clean, or unchecked?
+      - What claims reach the founder that no Result Card supports?
+      - Which surfaces exist in the repo but were never registered as surfaces?
+      - Has an anchor generation changed without a rebase re-run of prior cards?
+      Recommend scope expansions or new problem classes.
+    min_tier: critical
+
+accountability:
+  on_finding:
+    action: create_work_item
+    max_open_items: 10
+    priority_floor: 20
+    escalation:
+      stale_days: 14
+      escalate_to: session_start
+      escalate_priority_bump: 9
+
+  on_stale:
+    action: create_work_item
+    message: "Program 'Strategy of Record' has not been checked in {days} days. Run /pulse run strategy-of-record to clear."
+    block_sprint: false
+    stale_days: 30
+
+  on_tier_change:
+    action: notify_founder
+    auto_escalate: true
+    auto_deescalate: false
+
+assumptions:
+  - id: AS-SOR-1
+    statement: "Two instruments measuring the same quantity on the same Deal Book and Field will agree within stated confidence intervals."
+    basis: "Design intent of the agreement gate; not yet observed."
+    falsifier: "The simulator and the corpus substitution instrument disagree at the one-decision horizon outside CI."
+    status: untested
+
+  - id: AS-SOR-2
+    statement: "A declared, human-executable Strategy Card can be scored on the same axis as the shipped engine."
+    basis: "The teachable-arms probe already scores human-memorable rules against the engine on shared decisions."
+    falsifier: "No Card expressible in rules reaches enough decision coverage to produce a comparable Result Card."
+    status: partially-supported
+
+  - id: AS-SOR-3
+    statement: "The 2009 online corpus supports transfer to live 9-handed claims well enough to be worth stamping rather than refusing."
+    basis: "Open — this is the live-vs-online question FSA exists to answer."
+    falsifier: "The three Field surfaces diverge enough that no live claim survives an online-anchored measurement."
+    status: untested
+
+market_dynamics:
+  drivers:
+    - "Solver and population baselines shift over time; an anchor pinned to an engine version rots"
+    - "The founder's own play changes, moving the fringe and invalidating stale entry maps"
+  risks:
+    - "Anchor generations multiply and the ladder fragments if rebase re-runs are skipped"
+    - "Ceremony cost exceeds measurement value if every small change demands a full Result Card"
+  review_cadence_days: 90
+
+interconnections:
+  feeds_into:
+    - domain-correctness
+    - methodology-integrity
+  fed_by:
+    - data-provenance
+  blocks: []
+
+phase_relevance:
+  foundation: high
+  pre-launch: high
+  launch: medium
+  growth: medium
+  maturity: high
+
+last_run_by_protocol:
+  baseline:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  delta:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  sweep:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  challenge:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+  blind_spot:
+    date: null
+    engine: null
+    run_id: null
+    result: null
+
+created_at: "2026-08-02T00:00:00Z"
+created_by: founder-directive
+work_items_open: 10
+findings_open: 0
+
+
+cap_breach:
+  active: false

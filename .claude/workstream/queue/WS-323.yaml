@@ -2,7 +2,7 @@ id: "WS-323"
 title: "The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell declared surface, with the fringe measured rather than assumed"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -109,3 +109,4 @@ status_note: |
   Filed 2026-08-02. Founder proposed the entry question as a way to RECOVER hands the
   per-decision instrument discards; analysis showed it is also the cheapest fully-enclosed
   strategy the repo can build, and the natural Layer 1 of the Standard of Record.
+closed_by_event: "ev-1785728579816-bc3a072384b1"

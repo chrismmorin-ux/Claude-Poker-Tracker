@@ -1,7 +1,7 @@
 id: "ses-20260731-2337-89a32e7b"
-status: active
+status: "abandoned"
 started_at: "2026-07-31T23:37:25.990Z"
-ended_at: null
+ended_at: "2026-08-02T08:56:55Z"
 mode: auto
 last_heartbeat: "2026-08-01T00:24:11.652Z"
 pid: 20448
@@ -13,3 +13,27 @@ claimed_items:
   - "WS-310"
 
 files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-02.
+  Original start: 2026-07-31T23:37:25.990Z.
+  Last heartbeat: 2026-08-01T00:24:11.652Z.
+
+  Git commits during this session (10):
+    - 89c1266 Recover closure provenance for 52 items (HomeBase WS-561)
+    - ec0602b fix(cwos): revive session liveness and stop git from laundering other sessions' work
+    - 078f8f0 chore: land uncommitted work carried in the tree from prior sessions
+    - add8fc4 feat(engine): holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE (WS-292)
+    - 980e6cf fix(vrn): recording died on finger-lift and after Chrome's auto-end
+    - 2af94c5 feat(vrn): add narration capture to the Hand Review walkthrough
+    - 4ff6a5e feat(vrn): voice reasoning notes — spoken reasoning bound to exact hand state
+    - 7eeb7ae fix(engine): a draw is a semi-bluff, not thin value (WS-312)
+    - f4fa0fe CWOS kit upgrade to 3.8.5 — the CLAUDE.md preamble updates again
+    - 21a041d CWOS kit upgrade to 3.8.3 — restore local-modification detection
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

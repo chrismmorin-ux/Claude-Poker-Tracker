@@ -1,7 +1,7 @@
 id: "ses-20260730-1810-b39eed28"
-status: active
+status: "abandoned"
 started_at: "2026-07-30T18:10:33.420Z"
-ended_at: null
+ended_at: "2026-08-02T08:56:55Z"
 mode: auto
 last_heartbeat: "2026-07-30T21:08:50.235Z"
 pid: 10776
@@ -13,3 +13,38 @@ claimed_items:
   - "WS-307"
 
 files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-02.
+  Original start: 2026-07-30T18:10:33.420Z.
+  Last heartbeat: 2026-07-30T21:08:50.235Z.
+
+  Git commits during this session (22):
+    - 89c1266 Recover closure provenance for 52 items (HomeBase WS-561)
+    - ec0602b fix(cwos): revive session liveness and stop git from laundering other sessions' work
+    - 078f8f0 chore: land uncommitted work carried in the tree from prior sessions
+    - add8fc4 feat(engine): holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE (WS-292)
+    - 980e6cf fix(vrn): recording died on finger-lift and after Chrome's auto-end
+    - 2af94c5 feat(vrn): add narration capture to the Hand Review walkthrough
+    - 4ff6a5e feat(vrn): voice reasoning notes — spoken reasoning bound to exact hand state
+    - 7eeb7ae fix(engine): a draw is a semi-bluff, not thin value (WS-312)
+    - f4fa0fe CWOS kit upgrade to 3.8.5 — the CLAUDE.md preamble updates again
+    - 21a041d CWOS kit upgrade to 3.8.3 — restore local-modification detection
+    - 5a8866e chore(session): hero-EV run killed a third time at 650/1200 — record what it established
+    - 0e8b762 chore(session): verification PASS 13,239/0 — correct the two state files written while it was in flight
+    - 280795e chore(session): close ses-20260731-0504 — state, handoff, DEC-026..029, summary
+    - 45de0f9 docs(theory): §15 — all possible hands is the other denominator (founder), + WS-319/WS-320
+    - 9477c1c docs(theory): §14 — the hand is the denominator (founder)
+    - 4100cdc fix(readiness): a hero-EV report now states its own admissibility, and C3 respects it
+    - 8605f63 fix(backtest): partial snapshots must refuse to be read as a result
+    - 7eee07a refactor(pokerCore): one canonical situation key — 16 positional parse sites removed (WS-317)
+    - 7f39938 fix(backtest): hero-EV writes partial snapshots — an interrupted run kept nothing
+    - aa3193b docs(charter): Five-Surface Atlas — the comparison, and WS-317 the keystone it needs
+    - ... and 2 more
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

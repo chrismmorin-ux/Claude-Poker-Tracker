@@ -1,0 +1,31 @@
+id: "SPR-169"
+title: "Ship WS-333: Derive the floor from the blinds outward — pot odds x realization x rake as ONE identit"
+status: done
+approved_at: "2026-08-02T18:01:45.733Z"
+completed_at: "2026-08-02T19:04:19.997Z"
+completed_by_commit: "89c1266"
+program_focus: "strategy-of-record"
+
+goal: |
+  Ship WS-333: Derive the floor from the blinds outward — pot odds x realization x rake as ONE identity, then normalize every decision by geometry so structurally identical spots pool
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-02T18:01:45.733Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-333 selected (33 × no damping = 33).
+  Program cap-breach: design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-333"
+    title: "Derive the floor from the blinds outward — pot odds x realization x rake as ONE identity, then normalize every decision by geometry so structurally identical spots pool"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-08-02T19:04:19.997Z"
+
+created_at: "2026-08-02T18:01:45.733Z"

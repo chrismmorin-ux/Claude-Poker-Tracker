@@ -1,0 +1,18 @@
+id: "ses-20260802-0846-76e5ef2d"
+status: abandoned
+started_at: "2026-08-02T08:46:16.635Z"
+ended_at: "2026-08-02T08:58:01Z"
+mode: auto
+last_heartbeat: "2026-08-02T08:49:03Z"
+pid: 13736
+agent_session_id: "76e5ef2d-a1f8-4e32-addd-c4cf11a9107c"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+handoff_notes: |
+  Reaped by pid-liveness check: process was gone while heartbeat was still
+  inside session_abandon_timeout_hours, so timeout-based recovery could not see it.
+  Claims released back to backlog.

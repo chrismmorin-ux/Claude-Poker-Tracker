@@ -1,0 +1,204 @@
+id: "WS-335"
+title: "Compress the strategy to what a human can execute — a postflop interaction-class index plus a board-relative combo rank, authored as a Declared surface and scored against the engine it compresses"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER FRAMING 2026-08-02: "In mixing, we can apply frequencies by applying rules to suit
+  combos — like declaring a most-aggressive to most-aggressive ranking by suit. Requiring the
+  1:1 slope, but giving the ability to communicate frequency clearly. And there are only so
+  many enumerations of hole-card-board combinations... if you actually just simplify that to
+  arbitrary value and allow that to be a forced positive in aggressive actions... the
+  combinatorics for possible equity shapes are not that big and can probably be well studied,
+  that they might lend themselves toward being played differently." Follow-up: "This might
+  also just be a component in a larger strategy or it may be dominated." And: "It's at least
+  worth testing in comparison to other strategies."
+
+  THE OBJECT. Two mechanisms that compose into one deliverable: a strategy a human can execute
+  at the table, from memory, with no randomizer and no app — and which can be differenced
+  against the engine to say exactly what that portability costs.
+
+  PART A — THE COMBO-RANK EXECUTOR (the last mile; cannot be dominated).
+
+  Replace randomization with a declared total order over the combos of a hand class. A 25%
+  action is "the top 1 of 4 suited combos"; 1/3 of an offsuit class is "the top 4 of 12".
+  Grain available: 6 combos for pairs, 4 suited, 12 offsuit — roughly 8% resolution, adequate
+  for most mixed frequencies. The suit is not observable, so a deterministic rule leaks
+  nothing; this is not an approximation of mixing, it is an exact realization of it.
+
+  THE CORRECTION THAT IS LOAD-BEARING: an ABSOLUTE suit order is sound ONLY PREFLOP, where
+  suits are exchangeable. Postflop it silently correlates with the board — "always take the
+  spade combo" means on spade-heavy boards hero always holds the flush-draw/blocker member of
+  the class and on spade-void boards never. That is not a neutral 25% sample of the class; it
+  is a systematically biased one. The bias may be favourable or unfavourable but it is never
+  absent, so an arbitrary order is an unpriced decision. The order must be BOARD-RELATIVE —
+  defined by the combo's relation to the board (suit participating in the two-flush, suit
+  pairing a board card, backdoor-bearing, offsuit-to-board), never by suit identity.
+
+  Once board-relative and deliberately ordered, this stops being randomization and becomes
+  SELECTION, which strictly dominates sampling when the order is right. Solvers already do
+  this inside a class — bluffing the backdoor-equity combos, bluff-catching the blocker ones.
+  Convergence on observed solver behaviour is the evidence this half is not dominated.
+
+  KNOWN LIMIT OF THE "1:1 SLOPE", STATED UP FRONT. A single global order per node forces
+  raise / call / fold to occupy CONTIGUOUS blocks of it. Polarized ranges — raise the top and
+  the bottom, call the middle — are non-contiguous and are the common case, not the exotic
+  one. So one order per node cannot express them. Candidate resolutions: order per ACTION PAIR
+  rather than per node, or order by a scalar that is not strength (blocker value naturally
+  places nut-blockers adjacent to air). This must be resolved at design time, not discovered.
+
+  PART B — THE INTERACTION-CLASS INDEX (the substantive claim; CAN be dominated).
+
+  The founder's finiteness claim holds. Under suit isomorphism the 22,100 flops collapse to
+  1,755 strategically distinct boards, and hole-card-by-board interaction categories number in
+  the low hundreds. The repo already owns a 27-entry vocabulary for exactly this —
+  `rangeSegmenter.HAND_TYPES` (straightFlush ... nutFlush / secondFlush / weakFlush ...
+  topPairGood / topPairWeak ... airBackdoorFlush ... air). The enumeration is not the missing
+  piece. The ORDERING is.
+
+  WHERE IT DIES IF BUILT NAIVELY: "a forced positive in aggressive actions" is a THRESHOLD on
+  a total order. If that order is by HAND STRENGTH the construction is dominated, and dominated
+  in precisely the way this project's own doctrine already records — you bet the top and the
+  bottom and check the middle; fear pushes MEDIUM hands into passive lines
+  (`feedback_fear_drives_medium_hands_passive`). A strength threshold cannot emit a polarized
+  range at all. Any implementation that ranks classes by strength and cuts has already failed
+  and does not need measuring.
+
+  THE SAVE: order by EV-OF-AGGRESSION, not by strength. Thresholding on that is optimal by
+  construction, and the entire proposal reduces to one empirical question — IS THERE A
+  CLASS-LEVEL AGGRESSION-EV ORDERING STABLE ENOUGH ACROSS BOARDS TO BE MEMORIZED? That is
+  answerable, and it is the same shape of question WS-323's Entry Map answered for preflop.
+
+  PART C — WHY THEY ARE ONE OBJECT.
+
+  The class index sets WHICH classes act; the combo rank resolves the single MARGINAL class
+  fractionally. Two numbers per node — "classes 1..k always, class k+1 on the top j combos" —
+  reproduces an arbitrary mixed strategy exactly, deterministically, from memory. That is the
+  delivery optimization, and neither half delivers it alone.
+
+  PART D — WHERE THIS LIVES, AND WHY THAT IS NOT NEGOTIABLE.
+
+  This is a DECLARED surface (FSA / ADR-009 / WS-322) — authored deliberately, warranted,
+  enclosed, with a residual clause. It is the postflop sibling of WS-323's Entry Map. It is
+  NOT an engine change: `exploitEngine/CLAUDE.md` forbids bucket labels as decision inputs
+  wherever per-combo equity is available, and this construction is that anti-pattern exactly
+  if pointed at the engine. The engine keeps computing from equity / potOdds / SPR. This card
+  competes with the engine only on PORTABILITY — it is what the founder carries to the table
+  without the app — which places it squarely in the teachable-model lane where founder
+  permission already stands, CONDITIONAL on being run on the corpus and scored on the same
+  metric (`feedback_teachable_model_may_differ_if_scored`).
+
+  THE NUMBER THAT SETTLES IT: EV given up by (class index + combo rank) versus the engine's
+  per-combo policy, per situation, frequency-weighted. Small gap — the compression is nearly
+  free and becomes the delivery format for strategy generally. Large gap — it is dominated and
+  remains a teaching aid. Either result is worth having; today neither is known and the
+  question has never been posed as a measurement.
+accept_criteria: |
+  - A postflop HAND AXIS exists and is MATCHABLE-ONLY. `HAND_AXIS = 'handClass'` today carries
+    the 169 preflop rank-pair notations and has NO postflop analogue, so a Strategy Card
+    currently cannot express any postflop rule about hero's holding. The new axis follows the
+    same contract verbatim: never in `IDENTITY_AXES`, never emitted by `formatSituationKey`,
+    never attached by `withCarriedContext`, legal only in `MATCHABLE_AXES`.
+  - ONE vocabulary function produces the postflop class notation, mirroring the
+    `handClassToNotation` precedent ("there is no second spelling of a hand class to disagree
+    with"). No module spells an interaction class a second way.
+  - The combo rank is BOARD-RELATIVE and pure: (holding, board) -> rank within its class, with
+    no reference to absolute suit identity. A test asserts that permuting the suits of BOTH
+    holding and board leaves the rank unchanged, and that an absolute-suit implementation fails
+    that test.
+  - The action-contiguity limit is resolved EXPLICITLY, with the chosen resolution recorded and
+    a test showing the card can express a polarized (non-contiguous) raise range. Shipping a
+    single global per-node order without addressing this is a fail.
+  - The class ordering is by aggression EV and is MEASURED, not reasoned. Precedent is binding:
+    `HIERARCHY_ORDER` was established by ablation (WS-285) and a comment asserting an ordering
+    nobody had measured is a recorded defect in this repo three times over. The ordering ships
+    with the ablation that produced it.
+  - The card loads through `standardOfRecord/strategyCard.js` with a RESIDUAL CLAUSE and a
+    warrant per rule, and abstains explicitly outside its declared domain with the abstention
+    counted. Residual EV share is reported as a headline metric.
+  - The EV-loss-vs-engine figure is emitted per situation with frequency weighting, carries its
+    opportunity count (POKER_THEORY §14.2 form) and its conditioning set, and states its
+    effective sample — not its nominal one (the hero-EV ESS lesson: 35.7 effective from 250
+    nominal).
+  - Any surface-vs-surface comparative claim resolves to a Result Card and routes through FSA's
+    divergence instrument. NO second comparison path is built (FSA standing constraint).
+  - Stability of the ordering across boards is REPORTED, not assumed. If the ordering must be
+    re-derived per board cluster, the memorizability claim has failed and the ticket says so
+    rather than shipping a per-board table under a "compression" label.
+preflight_findings: |
+  FOUND DURING PRE-FILING READ, 2026-08-02. Recorded so the build does not rediscover them.
+
+  1. NO SUIT-ORDERING MACHINERY EXISTS. Grep across the repo for suit order / rank / priority /
+     lock returns zero hits. Part A is greenfield.
+
+  2. THE ENUMERATION ALREADY EXISTS AND IS IN THE WRONG DIRECTORY. `rangeSegmenter.HAND_TYPES`
+     (27 entries, strongest to weakest) is the vocabulary Part B needs. It lives in
+     `exploitEngine/`, and `pokerCore/CLAUDE.md` forbids `pokerCore` importing from either
+     engine — but `situationKey.js`, which must own the new axis, is in `pokerCore`. The
+     vocabulary therefore has to RELOCATE to `pokerCore`, not be imported across the boundary.
+     Precedent for exactly this move exists: `cardParser` / `rangeMatrix` / `handEvaluator` /
+     `boardTexture` were relocated from `exploitEngine` to `pokerCore` in RT-35.
+
+  3. HSP's 47 ARCHETYPES ARE A DIFFERENT AXIS AND DO NOT COVER THIS. `classifyArchetype` keys
+     on street x actionContext x position x potType x playersRemaining — it classifies the
+     NODE, not the hand-by-board interaction. The two are orthogonal and complementary; this
+     ticket supplies the missing second axis. Do not attempt to extend the archetype catalog.
+
+  4. `shapeLanguage/` IS NOT THIS AND MAY NOT BE USED. Its equity-shape classifier describes
+     the VILLAIN RANGE's distribution over an 8-bucket histogram, is hard-walled as
+     presentation-only, and `exploitEngine/` and `rangeEngine/` are forbidden from importing it
+     (grep target in `shapeLanguage/CLAUDE.md`). Different object, different direction.
+
+  5. THE BUCKET-LABEL ANTI-PATTERN APPLIES IF THIS IS POINTED AT THE ENGINE. "DO NOT use bucket
+     labels when per-combo equity is available... the logistic of equity ratio is always more
+     precise than a bucket lookup." That rule is correct and this ticket does not contest it.
+     The card is a Declared surface, evaluated as a surface; it never becomes an engine input.
+     Any PR that wires a class index into `gameTreeEvaluator` has misread the ticket.
+
+  6. 1,755 IS AN EXTERNAL COMBINATORIAL FACT, NOT A REPO MEASUREMENT. The isomorphic flop count
+     is standard and is cited here as motivation only. The count of strategically distinct
+     INTERACTION classes is the thing this ticket must actually measure; do not import a number
+     for it from anywhere.
+effort: "L"
+files_involved:
+  - "src/utils/pokerCore/situationKey.js"
+  - "src/utils/standardOfRecord/strategyCard.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+  - "src/utils/pokerCore/boardTexture.js"
+  - "scripts/backtest/heroEvRunner.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "MAY SPLIT AT DESIGN TIME. Part A (combo-rank executor) is small, self-contained, and cannot be dominated. Part B (class index) is large and carries the real risk. They were raised together by the founder as one delivery question and compose into one artifact, so recommend designing together; split execution if the postflop hand axis turns out to need migration work of its own."
+  - "WHAT MAY THE EV-LOSS MEASUREMENT USE? Comparing this card to the ENGINE is a paired per-decision EV difference and the existing hero-EV backtest path can express it. Comparing it to OTHER SURFACES is a surface divergence and belongs to FSA Phase 3, which does not exist yet. These are different measurements and the boundary is thin — resolve it before building, because FSA's standing constraint forbids a second comparison path and the failure mode is building one by accident under a different name."
+  - "WHAT ORDERS THE COMBO RANK WITHIN A CLASS? Blocker value, backdoor equity, and realized-equity-when-called are three defensible scalars and they disagree. Recommend measuring rather than choosing, on the same corpus and the same metric as the class ordering."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T00:00:00Z"
+status_note: |
+  Filed 2026-08-02 at founder direction ("it's at least worth testing in comparison to other
+  strategies"). Founder proposed two delivery optimizations: suit-ranked mixing and an indexed
+  enumeration of hole-card-by-board interactions, and asked explicitly whether either is merely
+  a component or is dominated. Analysis confirmed the first is a component that cannot be
+  dominated (the suit is unobservable, so determinism is free) subject to the order being
+  board-relative rather than absolute, and that the second is dominated IF AND ONLY IF ordered
+  by hand strength — which is the reading the phrase "forced positive" most naturally invites,
+  and is why the distinction is stated in the accept criteria rather than left to the build.
+  The pair composes into an exactly-executable form of any mixed strategy, which is the reason
+  to file them as one ticket.

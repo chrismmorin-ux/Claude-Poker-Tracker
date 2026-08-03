@@ -1,0 +1,31 @@
+id: "SPR-170"
+title: "Ship WS-323: The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell decla"
+status: done
+approved_at: "2026-08-02T21:57:08.945Z"
+completed_at: "2026-08-03T03:42:59.788Z"
+completed_by_commit: "3282215"
+program_focus: "strategy-of-record"
+
+goal: |
+  Ship WS-323: The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell declared surface, with the fringe measured rather than assumed
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-02T21:57:08.945Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-323 selected (32 × no damping = 32).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-323"
+    title: "The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell declared surface, with the fringe measured rather than assumed"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-03T03:42:59.788Z"
+
+created_at: "2026-08-02T21:57:08.945Z"

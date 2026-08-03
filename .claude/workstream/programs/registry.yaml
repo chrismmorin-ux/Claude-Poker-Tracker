@@ -172,3 +172,10 @@ programs:
     health_score: 4
     last_run_date: null
     founder_priority: 3
+  - id: strategy-of-record
+    name: Strategy of Record
+    status: NEW
+    tier: active
+    health_score: 0
+    last_run_date: null
+    founder_priority: 1

@@ -1,0 +1,51 @@
+id: "ses-20260802-2102-174c68a5"
+status: "abandoned"
+started_at: "2026-08-02T21:02:05.338Z"
+ended_at: "2026-08-03T04:33:51Z"
+mode: auto
+last_heartbeat: "2026-08-02T23:33:31.000Z"
+pid: 28212
+host: MorinComputer
+agent_session_id: "174c68a5-de0b-4900-871e-0495841da4f5"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-323"
+
+files_locked:
+  - "src/utils/pokerCore/situationKey.js"
+  - "src/utils/standardOfRecord/strategyCard.js"
+  - "src/utils/pokerCore/__tests__/situationKey.test.js"
+  - "src/utils/standardOfRecord/__tests__/strategyCard.test.js"
+  - "scripts/backtest/entryMap.mjs"
+  - "scripts/backtest/run-entry-map.mjs"
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "scripts/backtest/entryCensus.mjs"
+  - "scripts/backtest/__tests__/entryMap.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-03.
+  Original start: 2026-08-02T21:02:05.338Z.
+  Last heartbeat: 2026-08-02T23:33:31.000Z.
+
+  Git commits during this session (10):
+    - 5c91fb9 refactor(hash): lineage re-exports the shared content-hash primitives (WS-322)
+    - c2f4740 chore(kit): sync session-liveness and ownership machinery from HomeBase
+    - 7ed5321 docs(adr): ADR-009 — every comparative claim resolves to a Result Card
+    - 06d9400 feat(backtest): Deal Books, decision geometry, and the ablation harness
+    - 16bf753 feat(engine): derive the defensive floor from the blinds outward (WS-333)
+    - 24d14ae fix(rake): nothing ever wrote rakeConfig, so every live EV omitted the drop
+    - 910175f chore(workstream): file WS-336 — CP-2 and the second generation of the Entry Map
+    - 7e04d3e feat(engine): profile the declared strategy — what the Entry Map adds up to (WS-323 follow-on)
+    - 3282215 feat(engine): run the Entry Map, and the artifacts it produced (WS-323)
+    - a4206bb feat(engine): the Entry Map — "is this hand worth playing at all?", enumerated, intervalled, and declared (WS-323)
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

@@ -1,0 +1,37 @@
+id: "ses-20260803-0146-ba4b0b2a"
+status: active
+started_at: "2026-08-03T01:46:11.180Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-03T04:11:08.933Z"
+pid: 28212
+host: MorinComputer
+agent_session_id: "ba4b0b2a-6dff-4257-843f-d6cd79d1cee9"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/backtest/entryMap.mjs"
+  - "scripts/backtest/fringeMigration.mjs"
+  - "scripts/backtest/run-fringe-migration.mjs"
+  - "scripts/backtest/entryCard.mjs"
+  - "scripts/backtest/run-entry-card.mjs"
+  - "scripts/backtest/entryEvaluator.mjs"
+  - "scripts/backtest/run-entry-map.mjs"
+  - "scripts/backtest/suitPass.mjs"
+  - "scripts/backtest/run-entry-suit-pass.mjs"
+  - "scripts/__tests__/entryMapLoader.test.js"
+  - "scripts/__tests__/fringeMigration.test.js"
+  - "scripts/__tests__/entryCard.test.js"
+  - "scripts/__tests__/entryCensus.test.js"
+  - "scripts/backtest/mergeEntryMap.mjs"
+  - "scripts/backtest/run-merge-entry-map.mjs"
+  - "scripts/backtest/run-merge-suit-pass.mjs"
+  - "scripts/__tests__/mergeEntryMap.test.js"
+  - "scripts/backtest/strategyProfile.mjs"
+  - "scripts/backtest/run-strategy-profile.mjs"
+  - "scripts/__tests__/strategyProfile.test.js"
+  - ".claude/workstream/queue/WS-336.yaml"
+

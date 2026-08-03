@@ -1,0 +1,58 @@
+id: "ses-20260802-0850-2f6be7a0"
+status: "abandoned"
+started_at: "2026-08-02T08:50:43.505Z"
+ended_at: "2026-08-03T00:30:41Z"
+mode: auto
+last_heartbeat: "2026-08-02T19:55:52.495Z"
+pid: 28212
+host: MorinComputer
+agent_session_id: "2f6be7a0-9482-4cae-b4c3-583df2c8d9b3"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-322"
+  - "WS-333"
+
+files_locked:
+  - "src/utils/pokerCore/sprBands.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "scripts/backtest/decisionGeometry.mjs"
+  - "scripts/backtest/runner.mjs"
+  - "scripts/__tests__/decisionGeometryClosure.test.js"
+  - "src/utils/exploitEngine/seatPricing.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/unexploitableFloor.js"
+  - "src/utils/exploitEngine/__tests__/unexploitableFloor.test.js"
+  - "scripts/backtest/behaviorPolicy.mjs"
+  - "scripts/backtest/behaviorPolicyMiner.mjs"
+  - "scripts/backtest/geometryAblation.mjs"
+  - "scripts/backtest/run-geometry-ablation.mjs"
+  - "src/utils/pokerCore/situationKey.js"
+  - "src/utils/exploitEngine/calibrationMetrics.js"
+  - "scripts/backtest/deviationMap.mjs"
+  - "scripts/__tests__/geometryPooling.test.js"
+  - "src/utils/exploitEngine/__tests__/playersRemainingIsNotAPrice.test.js"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "src/utils/rakeResolver.js"
+  - "src/hooks/useLiveActionAdvisor.js"
+  - "src/contexts/OnlineAnalysisContext.jsx"
+  - "src/utils/__tests__/rakeResolver.test.js"
+  - "src/hooks/useActionAdvisor.js"
+  - "src/components/views/AnalysisView/PlayerAnalysisPanel.jsx"
+  - "src/hooks/__tests__/useActionAdvisor.test.js"
+  - "src/utils/potCalculator.js"
+  - "src/constants/rakeStructures.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-03.
+  Original start: 2026-08-02T08:50:43.505Z.
+  Last heartbeat: 2026-08-02T19:55:52.495Z.
+
+  Released 2 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

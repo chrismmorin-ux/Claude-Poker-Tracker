@@ -1,0 +1,25 @@
+id: "ses-20260803-0030-d356df2d"
+status: active
+started_at: "2026-08-03T00:30:05.923Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-03T01:39:54.771Z"
+pid: 28212
+host: MorinComputer
+agent_session_id: "d356df2d-acf0-4c5e-aff2-e5a390638c8c"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-301"
+
+files_locked:
+  - "src/utils/exploitEngine/__tests__/ws301Measure.test.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - ".claude/workstream/queue/WS-334.yaml"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+
