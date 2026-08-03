@@ -3,8 +3,8 @@ title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: ""
-claimed_at: ""
+claimed_by: ses-20260803-2222-7a07c65f
+claimed_at: "2026-08-03T22:41:21.773Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -85,3 +85,66 @@ status_note: |
 
   Related: WS-308 (prefers checking the nut flush to betting it) — likely shared root cause
   in check-line EV assembly.
+
+  ─────────────────────────────────────────────────────────────────────────────────
+  DIAGNOSIS 2026-08-03 (SPR-167). Stated before the fix, per accept criterion 1.
+  ─────────────────────────────────────────────────────────────────────────────────
+
+  THE TICKET'S SUSPECTED CAUSE WAS RULED OUT, NOT TUNED. Both suspicions were checked
+  against the code and both are already correct:
+    - The check-raise branch IS weighted by P(villain bets) —
+      `ev = pVillainBet * bestCREV + pVillainCheck * checkCheckEV` (gameTreeEvaluator.js).
+    - The villain-checks-behind branch IS valued as equity realisation —
+      `checkCheckEV = rolloutValue(heroEquity, potSize - rake, ...)`.
+
+  THE ACTUAL CAUSE: a guard that exists on one path and not on its twin.
+
+  Reproduced on A♠K♦6♠ vs top-25%, hero OOP, no villain model (probe:
+  `scripts/backtest/ws314Probe.mjs`; measured 33.2 / 32.8 / 24.1 vs the ticket's
+  33.7 / 32.8 / 23.6 — MC noise). Every hand's CALLED branch is deeply -EV:
+
+      hero            crEV    fold-branch    called-branch
+      J♦T♦            33.2    +150.0 @ .50   −58.1
+      8♦8♣            32.8    +150.0 @ .50   −60.8
+      5♦4♦            24.1    +150.0 @ .50   −78.0
+
+  So all three check-raises profit ONLY when villain folds. `bestResponseToAggression`
+  (gameTreeEquity.js) already refuses exactly this: `raiseReliesOnFoldEquity =
+  calledBranchEV < 0` and a speculative fold-equity raise is not recommendable without a
+  reliable model (FIND-029 / WS-247, founder-ratified DEC-022). The `check-raise` branch
+  in gameTreeEvaluator.js had NO such guard and returned its branch EV unconditionally.
+
+  The two paths price the SAME subtree — hero checks, villain bets, hero raises. Reached
+  via the `check` action it goes through the guarded `bestResponseToAggression` and prices
+  at ~8. Reached via the `check-raise` candidate it was unguarded and priced at ~33. One
+  decision node, two prices, differing only by which candidate reached it. That asymmetry
+  is the defect.
+
+  RULED OUT — the no-model fold constant is NOT the inflation. `vFoldToCR` fell back to a
+  hardcoded 0.50 while the canonical source for the same quantity is
+  `POPULATION_PRIORS.raise.fold = 0.55`. The literal is LOWER, so it was if anything
+  damping the branch. Aligned to the canonical prior anyway (a duplicated magic literal
+  for a quantity that has a single canonical source is the standing anti-pattern), and
+  bound to the same `hasReliableCRModel` predicate the guard uses so the two cannot drift.
+
+  WS-308 IS NOT A SHARED ROOT CAUSE — and its symptom no longer reproduces. Measured with
+  the pre-fix engine (git stash, identical run): nut flush on the WS-308 scenario ranks
+  bet 139.4 over check 110.9. The ticket recorded check 112 vs bet 77; the check number
+  still matches, the BET number moved, so the bet branch was repaired by later work
+  (WS-307 / WS-312 are the candidates) and not by this change. Post-fix is bit-comparable
+  (139.0 / 110.8), confirming WS-314's fix does not touch it — hero is IP in that
+  scenario, so no check-raise candidate is generated at all. WS-308 needs a premise check
+  before it is worked.
+
+  FIX: the EV-derived guard applied to the check-raise branch, plus a filter that drops
+  actions marked unrecommendable. This is NOT the FIND-029 shape: it keys on the called
+  branch's EV rather than hero equity, it runs AFTER the EV is computed rather than
+  gating candidate generation, and evidence of over-folding restores the play for every
+  hand — including 5♦4♦, which is correct, since §13.1 makes a no-showdown-value hand a
+  PREMIUM bluff candidate once there is a read to bluff into.
+
+  VERIFIED: 4 behavioural tests in `advisorAccuracy.test.js` (§1D). The two bug-direction
+  tests FAIL against the pre-fix engine; the two converse tests pass either way by
+  design — they guard against an over-fix, not the bug. Full suite 13,404 passed / 0
+  failed (563 files); exploitEngine 2,741 green including the pre-existing
+  "high equity always produces check-raise"; build clean.

@@ -76,3 +76,34 @@ status_note: |
   is an unambiguously wrong action, this one needs diagnosis first. Deliberately NOT
   bundled with WS-307: different branch of the tree, and bundling would let one diagnosis
   stand in for two.
+
+  ─────────────────────────────────────────────────────────────────────────────────
+  PREMISE CHECK 2026-08-03 (from SPR-167 / WS-314). READ BEFORE WORKING THIS.
+  ─────────────────────────────────────────────────────────────────────────────────
+
+  WS-314 asked whether these two share a root cause in check-line EV assembly. They do
+  NOT — and this ticket's symptom no longer reproduces.
+
+  Measured on the scenario as filed (nut flush A♠K♠ on Q♠7♠2♠, `fullRange()`, pot 100,
+  hero IP), against the PRE-WS-314 engine via git stash so the comparison isolates it:
+
+      pre-WS-314 :  bet 139.4  |  check 110.9  |  bet 109.0   → top action = bet
+      post-WS-314:  bet 139.0  |  check 110.8  |  bet 108.9   → top action = bet
+
+  The ticket recorded check EV 112 vs bet EV 77. The CHECK number still matches (110.9 ≈
+  112); the BET number moved 77 → 139. So the bet branch was repaired by work landed
+  after this ticket was filed — WS-307 (raise EV assuming unsupportable fold equity) and
+  WS-312 (draw misclassified as thin value) are the candidates — and not by WS-314, which
+  cannot affect this scenario at all: hero is IP here, so no check-raise candidate is
+  generated.
+
+  Consequently the `console.warn` in `advisorAccuracy.test.js` Scenario 1 is now dormant —
+  it fires only `if (result.recommendations[0].action === 'check')`, which is no longer
+  true. Accept criterion 2 ("betting is ranked at or above checking") already holds.
+
+  SUGGESTED DISPOSITION: this looks closeable as already-fixed (the WS-262 drift-correction
+  pattern), NOT as work to do. What remains genuinely open is accept criterion 4 — turning
+  Scenario 1's dormant `console.warn` into a real assertion, so the repair is pinned and
+  cannot silently regress. That is an S-effort regression guard, not the M-effort
+  diagnosis this ticket was scoped for. Confirm the measurement independently before
+  closing; do not take this note as sufficient evidence on its own.

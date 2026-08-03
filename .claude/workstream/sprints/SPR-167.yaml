@@ -1,0 +1,27 @@
+id: "SPR-167"
+title: "Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
+status: approved
+approved_at: "2026-08-03T22:41:21.773Z"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-03T22:41:21.773Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-314 selected (28 × no damping = 28).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-314"
+    title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-08-03T22:41:21.773Z"

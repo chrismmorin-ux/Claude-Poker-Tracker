@@ -1,15 +1,15 @@
 {
-  "composed_at": "2026-08-03T22:28:33.663Z",
-  "goal": "Ship WS-292: Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE",
+  "composed_at": "2026-08-03T22:41:16.835Z",
+  "goal": "Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-292",
-      "title": "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE",
+      "id": "WS-314",
+      "title": "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity",
       "raw_score": 28,
       "adjusted_score": 28,
-      "effort": "L",
+      "effort": "M",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
@@ -24,10 +24,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-292 selected (28 × no damping = 28).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\npriority_floor applied: WS-311 18→22.\nCap usage: 3 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-314 selected (28 × no damping = 28).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\nCap usage: 1.5 session(s) / 2 (5 items max).",
   "cap_used": {
     "items": 1,
-    "effort_sessions": 3,
+    "effort_sessions": 1.5,
     "ceremony": "standard"
   }
 }
