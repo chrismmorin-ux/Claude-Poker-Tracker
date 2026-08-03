@@ -28,6 +28,32 @@ The five shapes are **not five frames.** They are **one Equilibrium, three Field
 Read** — and noticing that is what turns a vague comparison into a measurement with a
 purpose.
 
+> **A sixth surface kind, added 2026-08-02 (ADR-009 / WS-322): `Declared`.**
+>
+> All five surfaces below are OBSERVED, FITTED, or IMPORTED. None can be **declared** —
+> authored deliberately, with stated reasons, and executed. That absence was the gap, and the
+> strategy-tournament idea the founder arrived at separately is not adjacent to this charter;
+> it is this charter's missing surface kind. A **Strategy Card** is a Declared surface.
+>
+> `Declared` is scored by **the same divergence instrument as the other four** (Phase 3 below).
+> **No second comparison path is permitted** — building a standalone tournament harness would
+> duplicate the divergence definition, which is the exact failure `decisionGeometry.mjs` warns
+> about. WS-322 therefore registered the surface kind and the schemas and built **no comparison
+> at all**, since Phase 3 does not exist yet and open question #2 (*what is `d`?*) is still open.
+>
+> Vocabulary and schemas: `docs/standard-of-record/VOCABULARY.md` · `src/utils/standardOfRecord/`.
+> The field is named `surface_kind`, not `surface_class` — see the register for why.
+>
+> **Declared surfaces registered so far.** WS-323's Entry Map (preflop, 169 cells) is the first
+> and currently the only one. WS-335 proposes the postflop sibling — an interaction-class index
+> plus a board-relative combo rank — and is the first Declared surface whose *purpose* is
+> compression: it exists to be differenced against the Read surface it compresses, so the price
+> of a strategy a human can execute unaided becomes a number. Note the standing constraint
+> below applies to it in full: its surface-vs-surface claim waits on Phase 3 and may not grow a
+> comparison path of its own. A postflop Declared surface is also currently *inexpressible* —
+> `HAND_AXIS` carries the 169 preflop notations and has no postflop analogue — so WS-335 is
+> partly a schema gap, not only a strategy proposal.
+
 | Founder's shape | What it actually is | Source | Pool |
 |---|---|---|---|
 | GTO, brute-forced | **Equilibrium** frame | SRC-013 — *does not exist yet* | pool-independent |
@@ -35,6 +61,7 @@ purpose.
 | Ignition capture | **Field** frame | SRC-005 | online, **current**, founder's stakes |
 | User input | **Field** frame | SRC-014 | **live 1/3, Wind Creek** |
 | Ours | **Read** frame | SRC-006/007/008 | whatever it was fitted to |
+| **A Strategy Card** | **Declared** frame | authored in-repo | whatever domain it declares |
 
 Three of the five are the *same kind of object measured on different populations*. That is
 the whole game:
@@ -223,3 +250,10 @@ Sequencing GTO last is deliberate: it is the only phase gated on an external art
 - **2026-07-31** — Chartered. Follows the provenance promotion (registry + chain map live,
   `prog-data-provenance` installed), which supplied the row-grain rule Phase 1 depends on and
   the source ids this project's surfaces are named by.
+- **2026-08-02** — WS-335 filed: the first *compression* Declared surface (postflop interaction-class
+  index + board-relative combo rank). Founder asked whether the idea was a component or dominated;
+  the answer split — the combo-rank half cannot be dominated (an unobservable suit makes determinism
+  free), the class-index half is dominated *iff* ordered by hand strength rather than by
+  aggression EV. Surfaced a schema gap while filing: no postflop hand axis exists, so no postflop
+  Declared surface is expressible today. Its headline claim — what portability costs in EV — is a
+  Phase 3 consumer and must not grow a comparison path of its own.
