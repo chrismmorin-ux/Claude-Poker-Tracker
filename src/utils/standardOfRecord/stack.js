@@ -46,12 +46,20 @@
  * WHAT THIS MODULE DELIBERATELY DOES NOT DO.
  * ─────────────────────────────────────────────────────────────────────────────────────
  *
- * It does not compare stacks, and it does not attribute divergence to a layer. Attribution
- * needs a divergence measure `d`, and FSA's open question #2 — KL versus EV-difference,
- * "decide in Phase 3, measure both" — is unanswered. `surfaceRegistry.js` refuses to build a
- * comparison path for the same reason, and ADR-009 guarantees there is only ever ONE such
- * path. Adding attribution here would create the second one AND settle the open question by
- * default rather than by measurement. It arrives with Phase 3, not before.
+ * It does not compare stacks and it does not attribute divergence to a layer. Attribution
+ * lives in `layerAttribution.js`, and the reason it is THERE rather than here is the reason
+ * this paragraph used to say it did not exist at all:
+ *
+ * Attribution needs a divergence measure `d`, and FSA's open question #2 — KL versus
+ * EV-difference, "decide in Phase 3, measure both" — is still unanswered. ADR-009 guarantees
+ * there is only ever ONE comparison path. So `layerAttribution.js` takes `d` as a REQUIRED
+ * ARGUMENT WITH NO DEFAULT: it decomposes whatever `d` yields and never chooses one. That
+ * adds a decomposition, not a second comparison path, and it leaves the open question exactly
+ * as open as it was — which is what letting it default here would have quietly ended.
+ *
+ * This module keeps the STRUCTURAL half only (`firstStructuralDivergence`): if one surface
+ * has no equity layer and the other does, they separate at `equity` and no measurement is
+ * needed to know it. The measured half needs `d` and therefore is not this module's.
  */
 
 /**

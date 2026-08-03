@@ -33,7 +33,11 @@ exploratory check is not a claim. The trigger is **a number someone could act on
 |---|---|
 | **Surface** | A function from game state to action distribution. Over the space of game states, that function is a surface. FSA's term, unchanged. |
 | **Surface kind** | `Equilibrium` \| `Field` \| `Read` \| `Declared`. See the naming note below — the field is `surface_kind`, **not** `surface_class`. |
-| **Stack** | The ordered layers composing a surface. Lets a divergence be attributed to the layer that caused it rather than to "the model". (WS-324) |
+| **Stack** | The ordered layers composing a surface: `range → equity → foldProbability → ev → action`. A surface may OMIT layers; it may not REORDER them, because "the first layer at which two stacks separate" is only meaningful against a fixed order. (WS-324) |
+| **Layer** | One element of a Stack — itself a function over game states, with its own inputs, its own named assumptions, and its own ways of being wrong. |
+| **Layer Probe** | Scores ONE layer against its own ground truth (`range` → revealed holding, `equity` → realized showdown, `foldProbability` → observed fold, `ev` → realized chips), independently of whether the recommendation downstream was any good. `action` has no ground truth and its probe refuses permanently. Probes refuse `hypothesized`-basis input, inheriting the holdingKnowledge rule. (WS-324) |
+| **Layer Attribution** | Decomposes a divergence between two surfaces BY LAYER — which step of the reasoning made them differ — orthogonally to FSA's decomposition BY SITUATION. Both sum to the same total. **Takes `d` as a required argument and never chooses one**: a decomposition of a divergence is not a definition of one, so FSA Phase 3 still owns `d`. (WS-324) |
+| **Layer Ablation** | Substituting a layer's recorded value to ask "what if this layer had been correct?". Evaluation-free, and therefore able to speak only to the substituted layer — every layer downstream was evaluated at the ORIGINAL input. Propagating requires layer functions **pinned** to the atom set's engine commit and replayed from its seeds, never the live engine. (WS-324) |
 | **Strategy Card** | A declared, enclosed, warranted rule set — i.e. a `Declared` surface. |
 | **Deal Book** | A versioned, seeded, content-hashed hand set: a corpus slice or a generated set. |
 | **Field** | Who occupies the other seats. |

@@ -184,10 +184,17 @@ describe('the forcing-function question list', () => {
     expect(FORCING_QUESTIONS.length).toBeGreaterThan(5);
   });
 
-  it('records the layer-attribution question as UNANSWERABLE rather than omitting it', () => {
+  it('records the still-open choice of `d` as UNANSWERABLE rather than omitting it', () => {
+    // This assertion used to name the layer-attribution question. WS-324 answered that one —
+    // by requiring `d` as an argument with no default, so a layer share is computable without
+    // anyone having decided WHICH `d` is right. The choice of `d` itself is what remains open,
+    // and it stays on this list until FSA Phase 3 measures it. The guard is unchanged in
+    // substance: an unanswerable question must be RECORDED, never quietly dropped, because
+    // the list is how the schema learns from its own gaps.
     const unanswered = FORCING_QUESTIONS.filter((q) => q.answerable === false);
     expect(unanswered.length).toBeGreaterThan(0);
     expect(unanswered[0].note).toMatch(/Phase 3/);
+    expect(unanswered.some((q) => /divergence measure/.test(q.question))).toBe(true);
   });
 
   it('names a field for every answerable question', () => {

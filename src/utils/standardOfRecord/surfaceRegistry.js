@@ -38,10 +38,16 @@
  * be built before the open question of what `d` even is (FSA open question #2 — KL versus
  * EV-difference, "decide in Phase 3, measure both") has been answered.
  *
- * WS-324 did not change this. It added the STACK — the declaration of what a surface is made
- * of — and the ability to score one layer against its own ground truth. It deliberately did
- * NOT add layer ATTRIBUTION (how much of the divergence between two surfaces a given layer
- * accounts for), because attribution needs `d` and `d` is still Phase 3's to decide.
+ * WS-324 did not change this, and it is worth being exact about why, because it DID add layer
+ * attribution (`layerAttribution.js`) and that could be misread as the second path.
+ *
+ * It is not one. Attribution takes `d` as a required argument with no default and decomposes
+ * whatever that `d` yields — by layer, and by situation, with the two decompositions asserted
+ * to sum to the same total. It never chooses `d`. So Phase 3 still owns the only decision that
+ * would create a comparison path, and it is still undecided (FSA open question #2 — KL versus
+ * EV-difference, "decide in Phase 3, measure both").
+ *
+ * The distinction to hold on to: a DECOMPOSITION of a divergence is not a DEFINITION of one.
  */
 
 import { stackProblems } from './stack.js';

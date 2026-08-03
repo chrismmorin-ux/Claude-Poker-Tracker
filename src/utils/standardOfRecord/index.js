@@ -75,6 +75,40 @@ export {
 } from './stack.js';
 
 export {
+  PROBE_REFUSALS,
+  PROBEABLE_LAYERS,
+  LAYER_PROBES,
+  probeRange,
+  probeEquity,
+  probeFoldProbability,
+  probeEv,
+  probeAction,
+  probeAtomLayer,
+  probeLayerOverAtoms,
+  probeAllLayers,
+} from './layerProbes.js';
+
+export {
+  localizeByLayer,
+  decomposeByLayerTelescoping,
+  decomposeByLayerShapley,
+  decomposeBySituation,
+  decompositionsAgree,
+  attributionGap,
+  firstMeasuredDivergence,
+  pairedMeanCI,
+  pairAtoms,
+  exactPairsOnly,
+} from './layerAttribution.js';
+
+export {
+  substituteLayer,
+  substitutionReach,
+  ablateLayer,
+  exactlyAblatable,
+} from './layerAblation.js';
+
+export {
   MATCHABLE_AXES,
   ABSTAIN_REASONS,
   desugarAction,
