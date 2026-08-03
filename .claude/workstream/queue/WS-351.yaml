@@ -1,0 +1,113 @@
+id: "WS-351"
+title: "Session recovery decides abandonment from heartbeat age alone and never checks whether the recorded pid is alive"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "kit-quality"
+capability: "core"
+program: "self-compliance"
+finding_id: ""
+description: |
+  FOUND 2026-08-03 while cleaning up after a host freeze (MorinComputer hard-hung at
+  11:55:50 local; forced power-off; reboot 12:12:54).
+
+  THE BUG. `runRecovery()` in kit/scripts/cwos-session-recovery.js classifies a session as
+  abandoned using ONLY heartbeat age:
+
+      const ageMs = heartbeatMs === null ? Infinity : (nowMs - heartbeatMs);
+      if (force || ageMs > timeoutMs) { abandoned.push(...) }
+
+  The session record already carries `pid` (written by cwos-session-register), and that field
+  is never read. Liveness is therefore inferred from a clock rather than observed from the OS.
+
+  THE TWO FAILURES THIS PRODUCES, BOTH SEEN TODAY IN ONE RUN:
+
+    1. FALSE NEGATIVE — a dead session stays "active". ses-20260803-1713-5167c910 registered
+       at 17:13:34Z, 40 seconds after the reboot, and its process (pid 21920) was already gone.
+       Because its heartbeat was ~12 minutes old and the timeout is hours, `--auto` skipped it
+       and reported success. The SessionStart hook then warned the NEXT session that another
+       session was "live in this repo" and told it to coordinate before editing shared files —
+       advice derived entirely from a process that did not exist.
+
+    2. FALSE POSITIVE — `--force` sweeps LIVE sessions. The documented escape hatch for case 1
+       is `--force` ("recover even if still within the abandon timeout"). Running it here:
+
+         session-recovery: 2 abandoned session(s) detected:
+           - ses-20260803-1713-5167c910 (0.2h stale)   <- genuinely dead
+           - ses-20260803-1714-5b348fc1 (0.1h stale)   <- the LIVE session running the command
+
+       `--force` would have marked the running session abandoned, released its claims, and
+       deleted `.current-session` out from under it. So the only tool offered for the false
+       negative is unsafe to run whenever any session is active — which, since the recovery is
+       invoked FROM a session, is always.
+
+  WHY IT MATTERS BEYOND TIDINESS. Recovery is what hands claimed work back to the queue
+  (`releaseClaimedItems`). A crashed session whose pid is dead but whose heartbeat is recent
+  keeps its claims fenced for the whole timeout window, and WS-564 already had to fix this
+  function once for fencing the queue after a crash. Same failure surface, different cause:
+  that fix corrected WHERE ownership is read, this one corrects WHETHER the owner is alive.
+
+  Today's cleanup had to be done by hand — edit the YAML, then emit the T15:session-end /
+  session-abandoned event through `makeEventEmitter()` directly, because the `cwos-event append`
+  CLI sets `payload.type` from its positional arg and there is no schema for this event type,
+  so the documented CLI path rejects the exact event the script itself emits internally. That
+  CLI/internal-API asymmetry is a second, smaller gap worth closing in the same pass.
+
+  FIX SHAPE. Treat a dead pid as decisive evidence of abandonment, independent of the clock,
+  and treat a live pid as decisive evidence AGAINST it — including under `--force`:
+
+    - abandoned if: pid is dead (regardless of heartbeat age), OR heartbeat age > timeout
+    - never abandoned if: pid is alive AND belongs to this host
+
+  Host matters: `host:` is recorded in the session file, and a pid from another machine says
+  nothing about a local process. Only apply the pid test when `host` matches the current
+  hostname; fall back to heartbeat age otherwise. On Windows, `process.kill(pid, 0)` is the
+  cheap liveness probe; guard for EPERM (process exists, not signalable) as ALIVE.
+
+  Pid reuse after a reboot is the one hazard — a recycled pid could look alive. Compare the
+  session's `started_at` against system boot time and treat any session that started before
+  the current boot as dead outright, which is both correct and the common crash case.
+accept_criteria: |
+  - A session whose recorded pid is dead and whose `host` matches this machine is recovered by
+    `--auto` immediately, with no dependence on the heartbeat timeout.
+  - A session whose recorded pid is ALIVE is never recovered, including under `--force`; a test
+    asserts that running recovery from inside a live session cannot abandon that session.
+  - Sessions whose `started_at` precedes the current system boot are treated as dead regardless
+    of pid liveness, so pid reuse across a reboot cannot resurrect a crashed session.
+  - The pid test is skipped when `host` does not match the current hostname, falling back to
+    heartbeat age; covered by a test with a foreign-host fixture.
+  - Regression test reproduces today's exact state — one dead-pid session ~12 min stale plus one
+    live-pid session — and asserts exactly the dead one is recovered.
+  - The SessionStart hook's "N other session(s) live in this repo" warning counts only sessions
+    that pass the liveness test, so it stops citing dead processes.
+  - `cwos-event append` can emit T15:session-end / session-abandoned with the same payload shape
+    the script emits internally, or the CLI documents that this event is internal-only.
+effort: "S"
+files_involved:
+  - "kit/scripts/cwos-session-recovery.js"
+  - "kit/scripts/cwos-session-register.js"
+  - "kit/scripts/cwos-event.js"
+  - "kit/scripts/core/schemas/payloads/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Should a dead pid recover the session silently, or surface it for confirmation? Silent matches the crash-cleanup purpose, but it makes recovery destructive on a false liveness read — which is why the boot-time check carries the weight rather than the pid probe alone."
+source:
+  type: incident
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-03-freeze-cleanup"
+created_at: "2026-08-03T17:30:00Z"
+status_note: |
+  Filed 2026-08-03 during cleanup after a host freeze. Both failure modes were observed in a
+  single recovery run on this repo, not reasoned about hypothetically — the dead session was
+  ses-20260803-1713-5167c910 and the live one was the session that filed this ticket.

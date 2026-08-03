@@ -1,0 +1,100 @@
+id: "WS-339"
+title: "Run reframe-engine on range-space structure — generative fan-out for more structural jumps, now that a worked example with a number exists"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-03: "Is this worth running through an engine to throw a lot of
+  perspectives and tokens at it? I want to see if we can't generate any comparable outside
+  the box thinking that makes a jump like this." Then: "Set up the fan out engine, and then
+  put it in the queue in the appropriate place." Then: "We probably need to deepen the
+  personas' context and make sure we have a game theorist, maybe a topographer, and the
+  right other ones, since we talk about things much differently than 'poker expert' and we
+  haven't updated personas in a long time."
+
+  SHIPPED IN THIS SESSION (the setup half):
+    - .claude/commands/reframe-engine.md — the engine
+    - .claude/workstream/engines/registry.yaml — registered
+    - Five new mathematically-native personas in .claude/agents/:
+        game-theorist        antisymmetry, intransitivity, best-response operators
+        geometer-topologist  what kind of object is this; coordinates, invariants, dimension
+        operator-analyst     write the pipeline as operators; spectra, fixed points
+        information-theorist sufficient statistics, compression w/ residual, human channel
+        estimation-theorist  identifiability, sample complexity, basis, leakage
+      Sixth seat is the existing research-scientist, as adversary.
+
+  THE GAP THESE PERSONAS CLOSE. Every prior persona in .claude/agents/ is an engineering or
+  product lens. Not one is mathematically native, which is why no existing engine could have
+  produced the WS-337 jump: nothing in the roster was staffed to notice that equity is an
+  antisymmetric bilinear form. The founder's framing is mathematical; the roster was not.
+
+  WHY IT IS QUEUED RATHER THAN ALREADY RUN. The engine's own "when NOT to run this" rule
+  says: not before a cheap decisive measurement that is already available. That measurement
+  (WS-337) has now RUN and produced real numbers, including one failed prediction. The run
+  is therefore well-posed in a way it would not have been an hour earlier — there is a worked
+  example, with a magnitude, a validated method, and a recorded failure to calibrate against.
+
+  WHAT TO RUN IT ON. Seed object: preflop/postflop range representation and the equity
+  operator. Seed material to hand the personas: WS-337's measured result (including the
+  75.2/24.8 transitive-intransitive split, the reconstruction-error table, the intransitivity
+  map, and the FAILED locator heuristic), plus the untested transform families raised in the
+  originating conversation and not yet examined:
+    - the nemesis operator N(B) = top-k(MB) and the orbit structure of its iteration
+    - the softmax/temperature family of counter-ranges as a PATH rather than two endpoints
+    - the equity-quantile reparameterization, of which linear/polarized/condensed are merely
+      the first three moments — the higher moments are unnamed and that is the actual gap
+    - the blocker quotient: the map from a range to its 52-vector card-removal footprint
+    - board classification by the spectrum of the board-specific operator, which would give
+      the board-cluster atlas a strategy-space axis instead of a card-label one
+
+  BINDING ON THE RUN: every proposal carries a falsifier and an engine-dependence label.
+  Engine-free proposals outrank engine-dependent ones of equal merit, because the engine is
+  not accuracy-validated and a measurement routed through it measures the engine.
+accept_criteria: |
+  - reframe-engine runs against the seed object with all six personas.
+  - Output is ranked by arbitrability first, and every surviving proposal carries: the
+    structural claim, what it predicts, the falsifier, the falsifier's rough cost, and an
+    explicit engine-free / engine-dependent label.
+  - Anything resolvable in under a day is flagged RESOLVE-NOW and actually run before a
+    ticket is filed for it — the WS-337 sequencing, repeated.
+  - Rejected proposals are recorded with reasons so they are not re-proposed.
+  - At least one proposal is carried to a real measurement, or the run is reported as having
+    produced none — a run that produces only unfalsifiable ideation is a FAILED run and must
+    be reported as such, not written up as insight.
+  - persona-validator passes on the five new personas.
+effort: "M"
+files_involved:
+  - ".claude/commands/reframe-engine.md"
+  - ".claude/agents/game-theorist.md"
+  - ".claude/agents/geometer-topologist.md"
+  - ".claude/agents/operator-analyst.md"
+  - ".claude/agents/information-theorist.md"
+  - ".claude/agents/estimation-theorist.md"
+  - ".claude/workstream/engines/registry.yaml"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Scale: default is one round of 6 personas x 3-5 proposals + cross-critique + synthesis (~15 agents). The exhaustive variant adds loop-until-dry rounds and 3-voter adversarial verify per survivor, which is several times the tokens. Recommend the default for the first run — the personas are new and unproven, and an expensive run against unproven personas mostly buys expensive noise."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-03"
+created_at: "2026-08-03T00:00:00Z"
+status_note: |
+  Filed 2026-08-03. The engine and personas are BUILT and registered; this item is the RUN
+  plus persona validation. Deliberately not auto-run: the engine's own gating rule requires
+  cheap decisive measurements to be taken first, and WS-337 was exactly that.

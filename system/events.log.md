@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785730215236-2f668fa4b16d"
-generated_content_hash: "01bebff654db4eff68c5b88f3d888932f4dc90c600eeb5fb7a768e9df7e5f374"
-generated_at: "2026-08-03T04:10:15.309Z"
+generated_from_event: "ev-1785735738233-e28aafd6d9a4"
+generated_content_hash: "552d778c2bf14ac9f9d4527140a4063d5b2eb010a19bacdc0e9d52c10338964b"
+generated_at: "2026-08-03T05:42:18.302Z"
 source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl", "2026-08-02.jsonl", "2026-08-03.jsonl"]
-event_count: 1510
+event_count: 1525
 ---
 # Events Log
 
@@ -14,8 +14,8 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 1021
-- Events recorded: 1510
+- Commands recorded: 1036
+- Events recorded: 1525
 - Source chunks: 23
 
 ## Command `auto:42416:1781030643103`
@@ -10716,3 +10716,153 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-03T04:10:15.236Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:7172:1785730338424`
+
+- Start: 2026-08-03T04:12:18.424Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:12:18.424Z | T15:session-end | session-registered | session_id="ses-20260803-0412-3e50b128", agent_session_id="3e50b128-e3bb-4afc-be55-76d2c"... |
+
+## Command `auto:19832:1785731631015`
+
+- Start: 2026-08-03T04:33:51.015Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:33:51.015Z | T15:session-end | session-abandoned | session_id="ses-20260802-2102-174c68a5", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `auto:9964:1785731887864`
+
+- Start: 2026-08-03T04:38:07.864Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:38:07.864Z | T15:session-end | session-abandoned | session_id="ses-20260803-0030-d356df2d", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `auto:9964:1785731888009`
+
+- Start: 2026-08-03T04:38:08.009Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:38:08.009Z | T15:session-end | session-abandoned | session_id="ses-20260803-0146-ba4b0b2a", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `auto:9964:1785731888136`
+
+- Start: 2026-08-03T04:38:08.136Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:38:08.136Z | T15:session-end | session-abandoned | session_id="ses-20260803-0258-7296443d", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `auto:9964:1785731888243`
+
+- Start: 2026-08-03T04:38:08.243Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:38:08.243Z | T15:session-end | session-abandoned | session_id="ses-20260803-0412-3e50b128", path=".claude/workstream/sessions/s"..., +1 more |
+
+## Command `auto:37484:1785733126171`
+
+- Start: 2026-08-03T04:58:46.171Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:58:46.171Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `cmd-pulserun-mscrejog623b9a0873ac`
+
+- Start: 2026-08-03T04:58:57.959Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:58:57.959Z | T11:vital-signs | /pulse | type="protocol_run_intent", program="launch", +4 more |
+
+## Command `auto:14764:1785733152236`
+
+- Start: 2026-08-03T04:59:12.236Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T04:59:12.236Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `cmd-sprintapprove-mscrk95af430d4453c69`
+
+- Start: 2026-08-03T05:03:24.240Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:03:24.240Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-171", +8 more |
+
+## Command `auto:33292:1785733769338`
+
+- Start: 2026-08-03T05:09:29.338Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:09:29.338Z | T15:session-end | session-registered | session_id="ses-20260803-0509-662dd4c4", agent_session_id="662dd4c4-d89e-4815-ab5d-96aa0"... |
+
+## Command `auto:40124:1785735737633`
+
+- Start: 2026-08-03T05:42:17.633Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:42:17.633Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:40124:1785735738063`
+
+- Start: 2026-08-03T05:42:18.063Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:42:18.063Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:40124:1785735738134`
+
+- Start: 2026-08-03T05:42:18.134Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:42:18.134Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:40124:1785735738233`
+
+- Start: 2026-08-03T05:42:18.233Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-03T05:42:18.233Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

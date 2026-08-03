@@ -1,0 +1,23 @@
+id: "ses-20260803-2128-4bee4c58"
+status: active
+started_at: "2026-08-03T21:28:04.269Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-03T21:28:25.242Z"
+pid: 7048
+host: MorinComputer
+agent_session_id: "4bee4c58-96c2-4a39-9222-bf31e1d3f8e0"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "src/utils/standardOfRecord/layerProbes.js"
+  - "src/utils/standardOfRecord/layerAttribution.js"
+  - "src/utils/standardOfRecord/layerAblation.js"
+  - "src/utils/standardOfRecord/__fixtures__/ws291AtomSet.js"
+  - "src/utils/standardOfRecord/__tests__/layerProbes.test.js"
+  - "src/utils/standardOfRecord/__tests__/layerAttribution.test.js"
+  - "src/utils/standardOfRecord/__tests__/layerAblation.test.js"
+

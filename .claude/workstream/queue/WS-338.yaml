@@ -1,0 +1,104 @@
+id: "WS-338"
+title: "Playability as an operator difference — construct it engine-free from a declared reference policy, and derive a memorizable per-hand metric"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-03: "I really like this idea of playability being the split
+  between equity and realized equity, and studying that object. We can expand this concept
+  and I can probably memorize a playability metric if it proves useful."
+
+  THE CONSTRUCTION. WS-337 established that all-in equity is an operator M with an exact
+  skew part S. Realized equity under some policy is a DIFFERENT operator, M_pi. Their
+  difference D = M_pi - M is not an error term — it IS playability, as a measurable object
+  rather than the folk adjustments POKER_THEORY §1.4 currently encodes as a lookup.
+
+  THE PROBLEM THIS MUST SOLVE FIRST. Realization requires a policy, and this repo's engine
+  is NOT accuracy-validated (founder, 2026-08-03). Routing M_pi through the engine yields a
+  measurement of the engine, not of poker. That is not a caveat to footnote; it would make
+  the resulting metric uninterpretable and un-memorizable, because it would change whenever
+  the engine changed.
+
+  THE FIX — two engine-free routes, in preference order.
+
+  ROUTE A (fully engine-free): RUNOUT-DEPTH OPERATORS. Build M at each showdown depth —
+  M_5 (river, = WS-337's matrix), M_4, M_3 (showdown at the flop), M_0 (preflop, no board).
+  Every one is pure combinatorics from pokerCore's evaluator; the existing script already
+  produces M_5 and generalizes by truncating the board. The differences between depths give
+  an engine-free notion of how much a hand's edge DEPENDS ON CARDS STILL TO COME — volatility,
+  which is a real component of playability and is currently nowhere in the repo. Skew
+  decomposition applies at every depth, so the transitive/intransitive split can be tracked
+  as a FUNCTION OF STREET. Strong prior worth testing: the intransitive share grows with
+  depth, i.e. the game gets more cyclic the more cards are still coming.
+
+  ROUTE B (policy-conditional, but NOT engine-dependent): a DECLARED REFERENCE POLICY —
+  a small, fully-specified, auditable rule (e.g. "check to showdown; fold on the flop when
+  per-combo equity < t"), with t declared. Results are conditional on a policy stated in
+  full, replicable by anyone, and stable across engine changes. This is exactly the
+  Standard-of-Record posture: a Declared surface, not a black box. Nothing about it invokes
+  exploitEngine.
+
+  EXPLICITLY OUT OF SCOPE FOR NOW: playability measured against the live engine's policy.
+  Revisit only once the engine is accuracy-validated, and label any such number as
+  conditional on the engine wherever it appears.
+
+  THE MEMORIZABLE ARTIFACT. The founder can hold a chart or a few scalars at a table, not a
+  matrix. Target: a per-hand-class playability scalar (or 2-vector), 169 values, presented as
+  a grid in the same shape players already memorize. Founder doctrine binds here — a
+  teachable method a player can execute outranks a right answer he cannot, BUT the teachable
+  version must be run on the corpus and scored on the SAME metric as the full version. A
+  simple rule is never dismissed for being simple and never promoted without a score.
+accept_criteria: |
+  - M is generated at showdown depths 0, 3, 4, 5 by the committed seeded script; each is
+    verified exactly skew after centring (max |S + S^T| < 1e-12).
+  - The transitive/intransitive split is reported per depth, with BOTH energy share and
+    reconstruction error, so the "does the game get more cyclic with depth" question is
+    answered with a number rather than argued.
+  - D = M_pi - M is constructed for at least one fully-declared reference policy, with the
+    policy specified completely enough for an independent party to reproduce it.
+  - No path in this work imports from exploitEngine/. Asserted by test, not by inspection.
+  - A 169-value playability grid is emitted as a committed artifact and rendered in the
+    familiar 13x13 shape.
+  - The memorizable version is SCORED: its decisions are compared against the full
+    computation on the corpus, same metric, and the gap is reported. A teachable rule ships
+    with its measured cost or does not ship.
+  - POKER_THEORY §1.4 is rewritten: realization stops being a lookup of hand-label
+    adjustments and cites this construction. §1.4 currently contradicts §7 (labels are
+    outputs, never inputs) and theory-gaps.draft.md Tier E already flags it as arguably
+    wrong today, independent of this ticket.
+effort: "L"
+files_involved:
+  - "scripts/research/build-equity-matrix.mjs"
+  - "scripts/research/spectrum.py"
+  - "src/utils/pokerCore/"
+  - ".claude/context/POKER_THEORY.md"
+  - "docs/domain/theory-gaps.draft.md"
+blocked_by:
+  - "WS-337"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Route A (runout-depth) is fully engine-free but measures VOLATILITY, which is a component of playability rather than the whole of it — it has no fold equity and no position. Route B adds those but buys them with a declared policy whose choice of t is a free parameter. Recommend shipping Route A first (it is nearly free given WS-337) and treating Route B as a second phase, so the engine-free result is banked before any policy assumption enters."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-03"
+created_at: "2026-08-03T00:00:00Z"
+status_note: |
+  Filed 2026-08-03 from a founder directive in the same session as WS-337. The original
+  sketch of this idea was engine-dependent; the founder then noted the engine is not
+  accuracy-validated. This ticket is the reformulation that survives that objection —
+  the engine-conditional version is explicitly deferred rather than quietly retained.

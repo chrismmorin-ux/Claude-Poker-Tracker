@@ -1,0 +1,24 @@
+id: "ses-20260803-1713-5167c910"
+status: abandoned
+started_at: "2026-08-03T17:13:34.331Z"
+ended_at: "2026-08-03T17:30:00Z"
+handoff_notes: |
+  Recovered manually. Registered at 17:13:34Z, 40s after the 2026-08-03 12:12:54
+  local reboot that followed the 11:55:50 hard freeze; pid 21920 was already gone.
+  No work was claimed (claimed_items empty), no lock file, no files touched.
+
+  Not caught by cwos-session-recovery --auto: that script decides abandonment from
+  heartbeat age ALONE and never checks whether the recorded pid is alive, so a
+  dead-but-recent session is invisible while --force would have swept the live
+  session running alongside it. Gap filed as WS-351.
+mode: auto
+last_heartbeat: "2026-08-03T17:13:34.331Z"
+pid: 21920
+host: "MorinComputer"
+agent_session_id: "5167c910-f77e-4188-8653-fffde3106ead"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []

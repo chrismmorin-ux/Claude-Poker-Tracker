@@ -1,0 +1,25 @@
+id: "ses-20260803-1836-7c216a94"
+status: "abandoned"
+started_at: "2026-08-03T18:36:16.245Z"
+ended_at: "2026-08-03T21:50:13Z"
+mode: auto
+last_heartbeat: "2026-08-03T18:36:16.245Z"
+pid: 23156
+host: "MorinComputer"
+agent_session_id: "7c216a94-57d2-400d-b8fd-0386a4386f7d"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-03.
+  Original start: 2026-08-03T18:36:16.245Z.
+  Last heartbeat: 2026-08-03T18:36:16.245Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

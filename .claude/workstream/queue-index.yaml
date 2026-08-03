@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 190
+total_items: 195
 by_status:
   decomposed: 1
   done: 66
   in_progress: 3
   deferred: 44
-  backlog: 57
+  backlog: 62
   dismissed: 1
   completed: 7
   review: 1
@@ -22,12 +22,13 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 71
+  domain-correctness: 74
   exploit-anchor-library: 8
   hero-state-primitive: 2
   input-ux: 3
-  kit-quality: 1
+  kit-quality: 2
   line-study-slice-widening: 11
+  methodology: 1
   monetization-and-pmf: 8
   performance: 1
   played-hand-review-protocol: 6
@@ -1829,5 +1830,52 @@ items:
     category: domain-correctness
     effort: L
     program: domain-correctness
+    capability: core
+
+  - id: "WS-337"
+    title: "The equity operator is antisymmetric — promote its skew decomposition to a first-class object, and publish the intransitivity map"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-338"
+    title: "Playability as an operator difference — construct it engine-free from a declared reference policy, and derive a memorizable per-hand metric"
+    status: backlog
+    priority_score: 26
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-337"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-339"
+    title: "Run reframe-engine on range-space structure — generative fan-out for more structural jumps, now that a worked example with a number exists"
+    status: backlog
+    priority_score: 24
+    category: methodology
+    effort: M
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-350"
+    title: "FSA Phase 3 — decide what divergence IS by measuring both candidates, then attribute it to the layer that caused it (WS-324 AC4)"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-324"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-351"
+    title: "Session recovery decides abandonment from heartbeat age alone and never checks whether the recorded pid is alive"
+    status: backlog
+    priority_score: 24
+    category: kit-quality
+    effort: S
+    program: self-compliance
     capability: core
 

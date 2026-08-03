@@ -3,16 +3,35 @@ status: "abandoned"
 started_at: "2026-08-03T04:12:18.409Z"
 ended_at: "2026-08-03T04:38:08Z"
 mode: auto
-last_heartbeat: "2026-08-03T04:13:02.150Z"
-pid: 28212
+last_heartbeat: "2026-08-03T17:13:41.251Z"
+pid: "21920"
 host: MorinComputer
 agent_session_id: "3e50b128-e3bb-4afc-be55-76d2c1f8f627"
 
 # Registered automatically by cwos-session-register (SessionStart hook, WS-533).
 # Registration is deliberately NOT dependent on anyone running /session-start —
 # that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
-claimed_items: []
-files_locked: []
+claimed_items:
+  - "WS-324"
+
+files_locked:
+  - ".claude/workstream/programs/prog-launch.yaml"
+  - "src/utils/standardOfRecord/stack.js"
+  - "src/utils/standardOfRecord/surfaceRegistry.js"
+  - "src/utils/standardOfRecord/index.js"
+  - "src/utils/standardOfRecord/__tests__/stack.test.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/decisionAtom.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "src/utils/standardOfRecord/__tests__/decisionAtom.test.js"
+  - "src/utils/standardOfRecord/fragility.js"
+  - "src/utils/standardOfRecord/comparisonCensus.js"
+  - "src/utils/standardOfRecord/__tests__/fragility.test.js"
+  - "src/utils/standardOfRecord/__tests__/comparisonCensus.test.js"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - ".claude/workstream/queue/WS-350.yaml"
+
 handoff_notes: |
   Session auto-recovered by cwos-session-recovery on 2026-08-03.
   Original start: 2026-08-03T04:12:18.409Z.

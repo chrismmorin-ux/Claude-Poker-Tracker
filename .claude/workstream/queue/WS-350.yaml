@@ -1,0 +1,111 @@
+id: "WS-350"
+title: "FSA Phase 3 — decide what divergence IS by measuring both candidates, then attribute it to the layer that caused it (WS-324 AC4)"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  DEFERRED FROM WS-324 (2026-08-03), deliberately and with the founder's decision on record.
+
+  WS-324 shipped the STACK — every surface declares its ordered layers, each layer emits its
+  intermediate into the Decision Atom, and layer probes score a layer independently against its
+  own ground truth. It did NOT ship AC4:
+
+    "Divergence between two surfaces decomposes by layer AND by situation, and the two
+     decompositions sum to the same total volume — asserted by test, not by inspection."
+
+  WHY IT WAS DEFERRED RATHER THAN ATTEMPTED. Attribution needs a divergence measure `d`, and
+  there is no `d`. FSA open question #2 — KL versus EV-difference, "decide in Phase 3, measure
+  both" — is unanswered. `surfaceRegistry.js` refuses to build any comparison path for exactly
+  this reason and records that ADR-009 guarantees there is only ever ONE such path. Building a
+  local divergence inside WS-324 would have created the second path the ADR forbids AND settled
+  the open question by default rather than by measurement. Two wrongs, for a criterion that
+  would then have LOOKED satisfied.
+
+  THE FOUNDER CONCERN THIS TICKET CARRIES. 2026-08-03: "I am a little scared that we're going
+  to generate data that supports a certain conclusion, only to discover an original theory
+  wasn't modeled properly, or a particular type of comparison wasn't made... there is an
+  overconfidence bias... this is statistics, which you can be great at, but it's blended with
+  decision modeling and a bunch of other concepts all at once... I worry we take too shallow a
+  look in many places."
+
+  Layer attribution is the DIRECT answer to that concern — "which step of the reasoning made
+  this wrong" is precisely the question, and everything WS-324 built is substrate for asking
+  it. The substrate is not the answer. This ticket is the answer, and it must not sit in
+  backlog on the theory that the substrate covers it.
+
+  WHAT TO BUILD:
+    1. MEASURE BOTH CANDIDATE MEASURES. Run KL and EV-difference on the same divergence volume,
+       on the same decisions, and report them as a pair. Do not pick first and justify after.
+       The named risk is that they RANK SURFACES DIFFERENTLY — if they do, that is a finding
+       about the estimand, not a tie to be broken by preference.
+    2. ONE comparison path. Whatever `d` becomes, it lives in exactly one module and every
+       comparative claim in the repo resolves through it. ADR-009's guarantee is unconditional.
+    3. DECOMPOSE BY LAYER. Given two surfaces that diverge, find the FIRST layer at which their
+       stacks separate and report how much of the total divergence volume that layer accounts
+       for. `stack.firstStructuralDivergence` already answers the cheap STRUCTURAL half (one
+       surface has no equity layer, the other does); this is the QUANTITATIVE half.
+    4. ASSERT THE TWO DECOMPOSITIONS SUM. By-layer and by-situation decompose the SAME total.
+       The test is that they sum to the same volume — asserted mechanically, because a
+       decomposition that silently loses mass is the failure mode that would make every
+       attribution number quietly wrong in the same direction.
+    5. REPRODUCE WS-291 FROM REAL ATOMS. WS-324 proved attribution localizes the range-layer
+       fault against a RECONSTRUCTED fixture, labelled as such. Once atoms accumulate from real
+       runs, re-run it against those and confirm the reconstruction was faithful.
+
+  THE THING TO REFUSE. Do not let "measure both" become "compute both and report the one that
+  agrees with the prior finding". Pre-register which measure is primary BEFORE running, record
+  the pre-registration in the Result Card, and if the other measure disagrees, that disagreement
+  is the headline result and not a footnote.
+accept_criteria: |
+  - KL and EV-difference are both computed on the same divergence volume and reported as a
+    pair, with the primary measure PRE-REGISTERED before the run and recorded in the Result
+    Card manifest.
+  - If the two measures rank surfaces differently, that disagreement is reported as a finding
+    with its own Result Card — never silently resolved by preference.
+  - Exactly ONE divergence module exists; a repo-wide check confirms no second comparison path
+    was introduced (same shape as the WS-329 scanner).
+  - Given two surfaces, attribution names the first layer at which they separate and the share
+    of total divergence volume that layer accounts for.
+  - By-layer and by-situation decompositions of the same divergence sum to the same total,
+    asserted by test rather than by inspection.
+  - The WS-291 attribution is re-run against REAL accumulated atoms and compared to the WS-324
+    reconstructed-fixture result; any discrepancy is reported, not smoothed.
+  - The `answerable: false` entry in schemas.FORCING_QUESTIONS for layer attribution flips to
+    true, naming the field that made it answerable.
+effort: "L"
+files_involved:
+  - "src/utils/standardOfRecord/stack.js"
+  - "src/utils/standardOfRecord/surfaceRegistry.js"
+  - "src/utils/standardOfRecord/layerProbes.js"
+  - "scripts/backtest/layerAblation.mjs"
+blocked_by:
+  - "WS-324"
+blocked_by_legacy: []
+enables:
+  - "WS-330"
+sprint_id: null
+decision_flags:
+  - "Is `d` KL or EV-difference? THE point of the ticket — resolve by measuring both on the same volume, not by argument. Pre-register the primary before running so the choice cannot be made after seeing which one flatters the prior finding."
+  - "Does divergence volume weight situations by frequency or treat every situation equally? Frequency-weighted matches what a player actually faces; unweighted surfaces rare-but-severe divergence that frequency weighting would bury. These answer different questions and the Result Card must say which one it measured."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-03"
+created_at: "2026-08-03T00:00:00Z"
+status_note: |
+  Filed 2026-08-03 during WS-324 execution as the explicit deferral target for AC4. Founder
+  chose "keep deferred, file it now" over pulling it into SPR-171, and asked that the WS-324
+  substrate carry a test asserting it stays attribution-ready so this sprint cannot harden
+  against Phase 3. That test lives in stack.test.js ("stays attribution-ready for Phase 3").
