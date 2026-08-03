@@ -1,0 +1,123 @@
+id: "WS-336"
+title: "CP-2 — a continuation policy that can barrel and check-raise, and the second generation of the Entry Map that proves it moved"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-08-02, NOT ASSERTED. WS-323 shipped the Entry Map and WS-323's follow-on
+  profile integrated it. The declared strategy under CP-1 (`cp-stratified-flop-v1`):
+
+    plays a hand                3.2%     the pool it sits against plays 28.8%
+    enters aggressively         2.1%     the pool raises 13.7%
+    edge over always-folding   +6.5 bb/100   positive BY CONSTRUCTION
+    blinds posted             -16.7 bb/100   no fold recovers this
+    walks won in the BB        +1.1 bb/100
+    IMPLIED WIN RATE           -9.1 bb/100
+
+  It is a nit that loses money. The cause is not spread across the model — three independent
+  measurements land on ONE mechanism:
+
+    1. Pairs beat unpaired hands in ALL EIGHT spots, from +0.66bb (EARLY first-in) to
+       +3.88bb (BB facing a raise). Every spot, no exceptions.
+    2. The worst-treated hands relative to their equity are ace-x in ALL EIGHT spots —
+       A9o, ATo, A8o, A7s recur in every list.
+    3. Spearman agreement between entry EV and equity is 0.21-0.32 across all eight spots.
+
+  Read together: THE MAP RANKS HANDS BY WHETHER THEY WILL FLOP A PAIR, NOT BY HOW STRONG
+  THEY ARE. AKo at 65% equity against an opener is folded; 22 at 50% is played. That is what
+  a postflop policy that cannot fire a second barrel, cannot check-raise, and check-folds air
+  for EV 0 does to a preflop map: every hand that must win WITHOUT a made hand is priced at
+  zero, so it can never recover the money invested preflop.
+
+  CP-1's `knownBias` field already stated this qualitatively. The profile is the first time
+  the size of it has been visible, and the size is the whole strategy.
+
+  WHAT THIS TICKET IS. Build CP-2: a continuation policy that can continue without a made
+  hand. Barrelling across streets, check-raise as a hero action, and enough depth that a line
+  is priced rather than truncated. Then re-run the SAME 1,690 cells under it and run the
+  fringe-migration report CP-1 -> CP-2.
+
+  WHY THE SECOND GENERATION IS PART OF THE TICKET AND NOT A FOLLOW-UP. The migration report
+  shipped in WS-323 and is currently inert: it has one generation to look at. Its whole
+  premise is that the same cells are recomputed under a later policy and joined, so "unpaired
+  hands climbing out of clear-" is the direct, pre-stated observable for this work. A CP-2
+  that shipped without its map would leave the instrument idle and the claim unscored.
+
+  RELATED WORK THAT BECOMES COMPONENTS RATHER THAN ISOLATED FIXES. WS-314 (check-raise ranks
+  first for every weak hand) and WS-316 (a check-back and a check are pooled into one action)
+  are both defects in exactly the machinery CP-2 needs to be correct. WS-334 (the depth-2/3
+  subsystem never runs on the live path) is the depth half. Sequencing them under this
+  ticket's observable turns three bug reports into one coherent generation.
+
+  THE ADJACENT GAP, NAMED AND DELIBERATELY NOT IN SCOPE. The declared domain covers 78.4% of
+  real first decisions. It models folded-to-hero and facing-a-raise; between them sits LIMPED
+  TO HERO, roughly 25-30% of decisions from LATE onward, which the map does not model at all.
+  That is a DOMAIN gap, not a POLICY gap, and mixing it into this ticket would confound the
+  migration report — cells appearing for the first time are not cells that migrated. It needs
+  its own item.
+accept_criteria: |
+  - CP-2 is registered as a continuation policy with its own id and its own `knownBias`
+    statement. A map computed under it is never diffed against a CP-1 map as though the same
+    quantity had merely been re-estimated; the migration report labels it `policy-change`.
+  - PREDICTIONS ARE REGISTERED BEFORE THE RUN, in the WS-327 style: the expected direction and
+    rough magnitude for each of the five measures below, written down and committed before
+    CP-2's map is computed. A run whose prediction was not pre-registered does not count.
+  - The Entry Map is re-run over the SAME 1,690 cells with the same domain, tau and Field, so
+    the migration report's cell-set check passes without a rebase.
+  - The fringe-migration report runs CP-1 -> CP-2 and reports, per band transition, how many
+    cells moved and how many moved MEASURABLY (delta beyond its own interval). Cells that moved
+    within their interval are reported as movement-not-established, never counted as progress.
+  - The strategy profile is re-run and reported side by side with the CP-1 baseline above, on
+    all five measures: entry rate, aggressive rate, pair-vs-unpaired gap per spot, Spearman
+    agreement with equity per spot, and implied win rate.
+  - A NULL OR NEGATIVE RESULT IS A PUBLISHABLE OUTCOME and closes the ticket the same way a
+    positive one does. "CP-2 barrels and the map did not move" would be a finding about where
+    the entry EV actually comes from, and burying it would be the failure this whole apparatus
+    exists to prevent.
+  - The blind-cost line is carried in every win-rate figure. An edge-over-folding number
+    reported on its own is refused: it is positive by construction and has the wrong sign.
+  - CP-2's own `knownBias` is stated as honestly as CP-1's was. A policy that claims no known
+    bias has not been examined.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "scripts/backtest/entryMap.mjs"
+  - "scripts/backtest/entryEvaluator.mjs"
+  - "scripts/backtest/strategyProfile.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-327"
+sprint_id: null
+decision_flags:
+  - "Does CP-2 extend preflopFlopEV in place, or ship as a parallel policy module selected by id? In place is less code and keeps one path; parallel keeps CP-1 computable so the two generations can be re-run against each other after later engine changes, which is what makes the migration report durable rather than a one-shot. Recommend parallel."
+  - "Do WS-314 (check-raise ranking) and WS-316 (check-back vs check pooling) get fixed inside this ticket or landed first as separate items? Landing them first gives two smaller verifiable steps but produces intermediate generations nobody will score; folding them in makes one large ticket with one clean observable."
+  - "Should the limped-to-hero spot be added to the declared domain before or after CP-2? Adding it first means the migration report compares maps with different cell sets and needs a rebase; adding it after means the CP-2 comparison is clean but the coverage hole persists one generation longer. Recommend after, as its own item."
+source:
+  type: founder-directive
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-02"
+created_at: "2026-08-02T23:10:00Z"
+status_note: |
+  Filed 2026-08-02 after the founder asked to measure the stake before moving it. The
+  measurement changed the recommended sequencing: the original plan was to build the
+  population simulator (WS-326) next and get an independent number. The profile made that
+  unnecessary as a first step — a 3.2% VPIP against a 28.8% pool is disqualifying on its
+  face, and the cause is single and identified. Fixing the cause first yields TWO generations
+  for one measurement build, and the fringe-migration instrument that ships idle today is
+  exactly what compares them.

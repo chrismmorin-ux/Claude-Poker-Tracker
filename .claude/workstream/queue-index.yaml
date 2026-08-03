@@ -2,27 +2,27 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 175
+total_items: 190
 by_status:
   decomposed: 1
-  done: 62
+  done: 66
   in_progress: 3
   deferred: 44
-  backlog: 46
+  backlog: 57
   dismissed: 1
   completed: 7
   review: 1
   blocked: 10
 
 by_category:
-  architecture: 1
-  correctness: 1
-  data-integrity: 1
+  architecture: 3
+  correctness: 2
+  data-integrity: 3
   data-isolation: 1
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 61
+  domain-correctness: 71
   exploit-anchor-library: 8
   hero-state-primitive: 2
   input-ux: 3
@@ -1508,7 +1508,7 @@ items:
 
   - id: "WS-301"
     title: "A single depth-2 evaluation measured 8.5s in-harness while the whole-evaluation budget is 150ms"
-    status: backlog
+    status: done
     priority_score: 28
     category: performance
     effort: M
@@ -1683,6 +1683,151 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-322"
+    title: "The Standard of Record — one vocabulary and one schema set for every strategy claim in the repo (Declared surface, Strategy Card, Decision Atom, Result Card)"
+    status: done
+    priority_score: 34
+    category: architecture
+    effort: L
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-323"
+    title: "The Entry Map — 'is this hand worth playing at all?' as a fully enclosed 169-cell declared surface, with the fringe measured rather than assumed"
+    status: done
+    priority_score: 32
+    category: domain-correctness
+    effort: M
+    blocked_by: ["WS-322"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-324"
+    title: "Declare the Stack beneath every surface — attribute divergence to the LAYER that caused it, so a fault two layers down is catchable"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-322"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-325"
+    title: "Audit the Mass Data Field (MDF / SRC-012) stack — every layer from raw PHH to served prior, with its assumptions, using the known foldTo3Bet semantic mismatch as the worked example"
+    status: backlog
+    priority_score: 29
+    category: data-integrity
+    effort: M
+    blocked_by: ["WS-324"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-326"
+    title: "Population simulator seated from the mined behaviour policy — full hands, seat entry/exit — gated on reproducing the corpus instrument at the one-decision horizon"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-322"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-327"
+    title: "Adversarial declared-surface rounds — second author sees the first's card, alternating revisions, EV delta PRE-REGISTERED before every run"
+    status: backlog
+    priority_score: 26
+    category: domain-correctness
+    effort: M
+    blocked_by: ["WS-323", "WS-326"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-328"
+    title: "Over-capture by design — Decision Atom store, Coverage Census including the zeros, the Ladder, and anchor-generation rebase; every field ships with a reader"
+    status: backlog
+    priority_score: 28
+    category: data-integrity
+    effort: M
+    blocked_by: ["WS-322"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-329"
+    title: "Make the Standard of Record binding repo-wide — INV + check script so any new measurement ships a replicable Result Card, not a loose number"
+    status: backlog
+    priority_score: 30
+    category: architecture
+    effort: M
+    blocked_by: ["WS-328"]
+    program: strategy-of-record
+    capability: governance
+
+  - id: "WS-330"
+    title: "The standing disclaimer and suspected-fault register — what this system can honestly claim, and where the fault is most likely to be, ranked with falsifiers"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: M
+    blocked_by: ["WS-324"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-331"
+    title: "The pier posts — Pool Best Response as the computable ceiling of exploitation, held out to stop it fitting noise, and the two-post coordinate system every strategy is positioned in"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-322"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-332"
+    title: "Validation strands — several independent verdicts on the SAME node, compared centrally; disagreement becomes the audit queue and each strand earns a track record"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: L
+    blocked_by: ["WS-328", "WS-331"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-333"
+    title: "Derive the floor from the blinds outward — pot odds x realization x rake as ONE identity, then normalize every decision by geometry so structurally identical spots pool"
+    status: done
+    priority_score: 33
+    category: domain-correctness
+    effort: L
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-334"
+    title: "The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked"
+    status: backlog
+    priority_score: 30
+    category: correctness
+    effort: L
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-335"
+    title: "Compress the strategy to what a human can execute — a postflop interaction-class index plus a board-relative combo rank, authored as a Declared surface and scored against the engine it compresses"
+    status: backlog
+    priority_score: 26
+    category: domain-correctness
+    effort: L
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-336"
+    title: "CP-2 — a continuation policy that can barrel and check-raise, and the second generation of the Entry Map that proves it moved"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: L
     program: domain-correctness
     capability: core
 
