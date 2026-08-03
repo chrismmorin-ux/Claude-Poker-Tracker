@@ -366,6 +366,16 @@ engines:
       - report
     description: "Map dependency graph, test coverage gaps, and shared interfaces before refactoring — zero impact guaranteed"
 
+  reframe-engine:
+    skill_path: .claude/commands/reframe-engine.md
+    category: analysis
+    impact: changes-state
+    trigger: manual
+    outputs:
+      - work-item
+      - report
+    description: "Generative structural fan-out — mathematically-native lenses propose REFRAMINGS of a domain object, each with a falsifier and an engine-dependence label. Produces candidate jumps, not critiques."
+
   research-review:
     skill_path: .claude/commands/research-review.md
     category: analysis
