@@ -20,4 +20,10 @@ files_locked:
   - "src/utils/standardOfRecord/__tests__/layerProbes.test.js"
   - "src/utils/standardOfRecord/__tests__/layerAttribution.test.js"
   - "src/utils/standardOfRecord/__tests__/layerAblation.test.js"
+  - "src/utils/standardOfRecord/index.js"
+  - "src/utils/standardOfRecord/stack.js"
+  - "src/utils/standardOfRecord/surfaceRegistry.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "src/utils/standardOfRecord/__tests__/decisionAtom.test.js"
 

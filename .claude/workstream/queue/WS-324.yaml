@@ -2,9 +2,9 @@ id: "WS-324"
 title: "Declare the Stack beneath every surface — attribute divergence to the LAYER that caused it, so a fault two layers down is catchable"
 legacy_id: ""
 type: improvement
-status: backlog
-claimed_by: ses-20260803-0412-3e50b128
-claimed_at: "2026-08-03T05:03:24.187Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
 completed_at: null
 completion_commit: null
@@ -107,3 +107,4 @@ status_note: |
   Filed 2026-08-02. Founder asked for the reasoning layers behind a decision to be surfaced
   so a fault two layers down is catchable. Analysis showed this is a second decomposition of
   FSA's divergence volume, orthogonal to its by-situation decomposition.
+closed_by_event: "ev-1785795051111-3d007b22f69a"

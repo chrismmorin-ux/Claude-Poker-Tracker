@@ -1,7 +1,9 @@
 id: "SPR-171"
 title: "Ship WS-324: Declare the Stack beneath every surface — attribute divergence to the LAYER that caused"
-status: approved
+status: done
 approved_at: "2026-08-03T05:03:24.187Z"
+completed_at: "2026-08-03T22:11:00.501Z"
+completed_by_commit: "ec29f7d"
 program_focus: "strategy-of-record"
 
 goal: |
@@ -23,6 +25,7 @@ items:
     title: "Declare the Stack beneath every surface — attribute divergence to the LAYER that caused it, so a fault two layers down is catchable"
     mode: plan-first
     effort: L
-    status: pending
+    status: done
+    completed_at: "2026-08-03T22:10:51.088Z"
 
 created_at: "2026-08-03T05:03:24.187Z"

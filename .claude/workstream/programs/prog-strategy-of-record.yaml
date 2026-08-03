@@ -244,15 +244,9 @@ last_run_by_protocol:
 
 created_at: "2026-08-02T00:00:00Z"
 created_by: founder-directive
-work_items_open: 11
+work_items_open: 10
 findings_open: 0
 
 
 cap_breach:
-  active: true
-  work_items_open: 11
-  findings_open: 0
-  max_open_items: 10
-  priority_floor: 20
-  ratio: 1.1
-  since: "2026-08-03"
+  active: false

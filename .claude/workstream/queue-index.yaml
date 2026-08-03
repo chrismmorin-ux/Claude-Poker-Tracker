@@ -5,10 +5,10 @@
 total_items: 195
 by_status:
   decomposed: 1
-  done: 66
+  done: 67
   in_progress: 3
   deferred: 44
-  backlog: 62
+  backlog: 61
   dismissed: 1
   completed: 7
   review: 1
@@ -1708,7 +1708,7 @@ items:
 
   - id: "WS-324"
     title: "Declare the Stack beneath every surface — attribute divergence to the LAYER that caused it, so a fault two layers down is catchable"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: L
