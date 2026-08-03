@@ -2,7 +2,7 @@ id: "WS-310"
 title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
 legacy_id: ""
 type: design
-status: backlog
+status: deferred
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -159,3 +159,7 @@ status_note: |
 
   NOT A CHARTER YET. If the gate confirms and the follow-up design is large, this should
   become a project file in .claude/projects/ rather than growing further as a ticket.
+deferred_at: "2026-08-03"
+defer_reason: "Acceptance criteria open with a hard mining gate over the 21.6M-hand HandHQ corpus, which lives outside the repo at C:/Users/chris/data/phh-dataset (see scripts/backtest/corpusFiles.mjs) and is unreachable from a remote container clone. The ticket forbids starting design work before the gate reports, so nothing here is executable without the corpus."
+resume_condition: "A session running on the founder's local machine with the HandHQ corpus mounted, so scripts/backtest mining can execute the turn-continuation-by-nut-change gate."
+transitioned_by_event: "ev-1785796107687-ade43ed33dd7"
