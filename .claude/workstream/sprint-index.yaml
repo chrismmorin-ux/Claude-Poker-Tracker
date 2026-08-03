@@ -570,3 +570,12 @@ sprints:
     created_at: "2026-08-01T16:54:07.134Z"
     completed_at: "2026-08-01T17:32:03.991Z"
 
+  - id: "SPR-167"
+    title: "Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-08-03T22:41:21.773Z"
+    completed_at: "2026-08-03T23:01:06.473Z"
+

@@ -254,6 +254,10 @@ friction_log:
     detail: "cwos-next.js done never stamps completed_at / completion_commit on queue items created from the standard ticket template. The patch logic guards on field PRESENCE (`if (!/^completed_at:/m.test(patched))`) but the template pre-declares `completed_at: null` and `completion_commit: null`, so the guard sees the field, skips the write, and the null survives closure. Measured across this repo's queue: 42 of 69 done items carry completed_at:null; the 27 stamped ones predate the template or were hand-fixed. Closure is still fully recoverable — the item_closed event carries the timestamp and state/queue.json materializes correctly — so this is a provenance gap in the editable surface, not lost data. Also affects closed_by_event only incidentally (that one appends unconditionally). Noticed while closing WS-269."
     component: cwos-next-done
     workaround: "None applied — out of scope for WS-269 (the sprint in flight) and non-blocking. Kit fix: change the three guards from presence to value checks (treat `null`/empty as unstamped) and patch in place rather than inserting, e.g. replace `^completed_at:.*$` when the captured value is null. Worth a backfill pass over the 42 stale items at the same time."
+    recurrences:
+      - date: "2026-08-03"
+        session_id: "ses-20260803-2222-7a07c65f"
+        note: "Reproduced exactly as diagnosed when closing WS-314 (SPR-167): `done` wrote status:done and appended closed_by_event, but left completed_at:null, completion_commit:null and sprint_id:null. Filled by hand this time (completed_at from the sprint's completed_at, completion_commit 63036b6, sprint_id SPR-167) rather than left null, so this item does not join the 42. The diagnosis in `detail` is confirmed correct — the template pre-declares the fields and the presence-guard skips them. Still non-blocking; still worth the kit fix plus a backfill."
 
 # Pre-existing entry (kept for context):
 # Entry format:

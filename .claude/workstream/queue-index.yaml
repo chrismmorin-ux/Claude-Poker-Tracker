@@ -5,10 +5,10 @@
 total_items: 174
 by_status:
   decomposed: 1
-  done: 60
+  done: 61
   in_progress: 3
   deferred: 45
-  backlog: 46
+  backlog: 45
   dismissed: 1
   completed: 7
   review: 1
@@ -1616,7 +1616,7 @@ items:
 
   - id: "WS-314"
     title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
-    status: backlog
+    status: done
     priority_score: 28
     category: domain-correctness
     effort: M

@@ -1,7 +1,9 @@
 id: "SPR-167"
 title: "Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
-status: approved
+status: done
 approved_at: "2026-08-03T22:41:21.773Z"
+completed_at: "2026-08-03T23:01:06.473Z"
+completed_by_commit: "63036b6"
 program_focus: "domain-correctness"
 
 goal: |
@@ -22,6 +24,7 @@ items:
     title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-08-03T23:01:06.473Z"
 
 created_at: "2026-08-03T22:41:21.773Z"

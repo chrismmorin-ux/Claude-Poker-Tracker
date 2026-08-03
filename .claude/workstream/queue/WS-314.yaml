@@ -2,12 +2,12 @@ id: "WS-314"
 title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260803-2222-7a07c65f
-claimed_at: "2026-08-03T22:41:21.773Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-03T23:01:06.473Z"
+completion_commit: "63036b6"
 priority_score: 28.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -69,7 +69,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: null
+sprint_id: "SPR-167"
 decision_flags: []
 source:
   type: measurement
@@ -148,3 +148,4 @@ status_note: |
   design — they guard against an over-fix, not the bug. Full suite 13,404 passed / 0
   failed (563 files); exploitEngine 2,741 green including the pre-existing
   "high equity always produces check-raise"; build clean.
+closed_by_event: "ev-1785798066483-fdb5fe847092"
