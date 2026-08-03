@@ -50,7 +50,15 @@ const DEFAULT_TIMEOUT_HOURS = 4;
 // duplicated (rather than extracted to a shared helper) because each hook
 // script needs to write this BEFORE any require-chain work that could fail —
 // factoring into lib would defeat that purpose.
-const LIVENESS_FIELDS = ['last_heartbeat_hook_at', 'last_session_recovery_hook_at'];
+// Must stay in step with cwos-heartbeat.js: both scripts rewrite this file whole,
+// so a field missing from EITHER list is dropped whenever the other one fires.
+// WS-564 added last_heartbeat_hook_fired_at (entrypoint proof, distinct from the
+// outcome stamp).
+const LIVENESS_FIELDS = [
+  'last_heartbeat_hook_at',
+  'last_heartbeat_hook_fired_at',
+  'last_session_recovery_hook_at',
+];
 
 function stampHookLiveness(wsDir, fieldName, verbose) {
   try {
@@ -70,8 +78,13 @@ function stampHookLiveness(wsDir, fieldName, verbose) {
     const body =
       '# Auto-maintained by cwos-heartbeat.js and cwos-session-recovery.js.\n' +
       '# Read by cwos-verify.js INV-026 to detect silently-failing hooks.\n' +
-      '# Stamp is written at the START of each hook run to prove the script\n' +
-      '# entrypoint executed, independent of any business-logic crashes.\n' +
+      '#\n' +
+      '# *_fired_at  the script entrypoint ran. Written FIRST, so a crash between\n' +
+      '#             require and the work is still visible.\n' +
+      '# *_at        the work actually happened (a session heartbeat advanced).\n' +
+      '#             Written last. WS-564: stamping this at entry meant a hook that\n' +
+      '#             resolved nobody still certified liveness, and INV-026 read\n' +
+      '#             GREEN over data that had been dead for two days.\n' +
       LIVENESS_FIELDS
         .filter(f => values[f])
         .map(f => `${f}: "${values[f]}"`)
@@ -307,6 +320,21 @@ function recoverSession(wsDir, session, opts) {
   }
 }
 
+/**
+ * Hand this session's claims back so a crash cannot fence the queue forever.
+ *
+ * THE GUARD USED TO BE `status === 'claimed'`, WHICH NOTHING EVER WRITES (WS-564).
+ * cwos-claims says so in its own header — "WHAT THIS DELIBERATELY DOES NOT DO. It
+ * does not change `status`", because a new status value would flow into every
+ * reducer and candidate filter. Claims live in `claimed_by` / `claimed_at`. So
+ * this loop matched nothing, released nothing, and reported recovery as complete:
+ * eight abandoned records in claude-poker-tracker still held WS-300, WS-276,
+ * WS-307 and WS-310 after recovery had supposedly cleared them.
+ *
+ * Ownership is now tested where it is actually recorded, and `status` is left
+ * alone — a `done` item cannot be contended, and nothing else about the item's
+ * lifecycle is this function's business.
+ */
 function releaseClaimedItems(wsDir, sessionId, claimedIds) {
   if (!claimedIds || claimedIds.length === 0) return;
   const queueDir = path.join(wsDir, 'queue');
@@ -314,15 +342,11 @@ function releaseClaimedItems(wsDir, sessionId, claimedIds) {
     const itemPath = path.join(queueDir, `${id}.yaml`);
     if (!fs.existsSync(itemPath)) continue;
     const content = fs.readFileSync(itemPath, 'utf8');
-    const statusMatch = content.match(/^status:\s*(\S+)/m);
-    // Only release items that are still claimed by this session and not done.
-    if (statusMatch && statusMatch[1] === 'claimed') {
-      patchYAMLFile(itemPath, {
-        status: 'backlog',
-        claimed_by: '',
-        claimed_at: '',
-      });
-    }
+    const claimedBy = (content.match(/^claimed_by:\s*(.*)$/m) || [])[1];
+    const owner = String(claimedBy || '').trim().replace(/^["']|["']$/g, '');
+    if (!owner || owner === 'null' || owner === '~') continue;   // nothing held
+    if (sessionId && owner !== sessionId) continue;              // someone else's
+    patchYAMLFile(itemPath, { claimed_by: '', claimed_at: '' });
   }
 }
 

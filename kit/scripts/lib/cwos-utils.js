@@ -179,6 +179,10 @@ function parseMapping(lines, i, baseIndent, target, warnings) {
       // Inline array
       target[key] = parseInlineArray(afterColon);
       i++;
+    } else if (afterColon.startsWith('{')) {
+      // Inline (flow) mapping — WS-560, gap 2 of FIND-YAML-parser-robustness.
+      target[key] = parseInlineMapping(afterColon);
+      i++;
     } else {
       // Scalar value
       target[key] = parseScalar(afterColon);
@@ -297,11 +301,88 @@ function readBlockSequence(lines, start, seqIndent, warnings) {
   return { arr, nextLine: i };
 }
 
+// Split a flow-collection body on its TOP-LEVEL commas, honouring nesting and
+// quotes. A naive `.split(',')` breaks `["a, b"]` into two entries and
+// `{a: {b: 1, c: 2}}` into three. WS-560.
+function splitFlowEntries(inner) {
+  const parts = [];
+  let depth = 0, inSingle = false, inDouble = false, start = 0;
+  for (let i = 0; i < inner.length; i++) {
+    const c = inner[i];
+    if (inDouble) { if (c === '"') inDouble = false; continue; }
+    if (inSingle) { if (c === "'") inSingle = false; continue; }
+    if (c === '"') { inDouble = true; continue; }
+    if (c === "'") { inSingle = true; continue; }
+    if (c === '[' || c === '{') depth++;
+    else if (c === ']' || c === '}') depth--;
+    else if (c === ',' && depth === 0) { parts.push(inner.slice(start, i)); start = i + 1; }
+  }
+  parts.push(inner.slice(start));
+  return parts.map(s => s.trim()).filter(s => s !== '');
+}
+
+// Index of the `:` separating key from value in a flow-mapping entry — the
+// first one at depth 0 and outside quotes, so `{url: "http://x"}` and
+// `{a: {b: 1}}` both split at the right place.
+function flowColonIndex(entry) {
+  let depth = 0, inSingle = false, inDouble = false;
+  for (let i = 0; i < entry.length; i++) {
+    const c = entry[i];
+    if (inDouble) { if (c === '"') inDouble = false; continue; }
+    if (inSingle) { if (c === "'") inSingle = false; continue; }
+    if (c === '"') { inDouble = true; continue; }
+    if (c === "'") { inSingle = true; continue; }
+    if (c === '[' || c === '{') depth++;
+    else if (c === ']' || c === '}') depth--;
+    else if (c === ':' && depth === 0) return i;
+  }
+  return -1;
+}
+
+// A flow value may itself be a collection, so recurse before falling back to
+// scalar coercion.
+function parseFlowValue(text) {
+  const t = text.trim();
+  if (t.startsWith('[')) return parseInlineArray(t);
+  if (t.startsWith('{')) return parseInlineMapping(t);
+  return parseScalar(t);
+}
+
+/**
+ * Parse a single-line flow mapping: `{}`, `{a: 1, b: two}`, `{a: {b: 1}}`.
+ *
+ * WS-560 — gap 2 of FIND-YAML-parser-robustness. Before this, parseYAML had a
+ * branch for inline `[...]` but none for `{...}`, so every flow mapping fell
+ * through to parseScalar and became the literal STRING of its own source text.
+ * `tiers: {}` produced `"{}"`, which is truthy, is not an object, and passes
+ * any `if (x)` guard while failing every `typeof x === 'object'` test.
+ *
+ * The blast radius was wide and silent: `{}` appears in kit/templates/
+ * cwos-config.yaml, cwos-onboarding.yaml, kit/data/archetypes.yaml and the
+ * engine registry, so it shipped to every adopted repo. capability-detect's
+ * detectGovernance() reads `last_run_by_protocol.baseline.date` and returned
+ * false for any repo whose program YAMLs used flow style — nutrition converted
+ * 17 program files to block style as a workaround rather than fix this.
+ */
+function parseInlineMapping(text) {
+  const inner = text.trim().replace(/^\{/, '').replace(/\}$/, '').trim();
+  const out = {};
+  if (inner === '') return out;
+  for (const entry of splitFlowEntries(inner)) {
+    const idx = flowColonIndex(entry);
+    if (idx === -1) continue; // malformed entry — skip rather than corrupt the map
+    const key = entry.slice(0, idx).trim().replace(/^(["'])(.*)\1$/, '$2');
+    if (key === '') continue;
+    out[key] = parseFlowValue(entry.slice(idx + 1));
+  }
+  return out;
+}
+
 function parseInlineArray(text) {
   // Remove brackets
-  const inner = text.replace(/^\[/, '').replace(/\]$/, '').trim();
+  const inner = text.trim().replace(/^\[/, '').replace(/\]$/, '').trim();
   if (inner === '') return [];
-  return inner.split(',').map(s => parseScalar(s.trim()));
+  return splitFlowEntries(inner).map(parseFlowValue);
 }
 
 // Strip a trailing inline comment from a scalar/flow line. YAML rules:
@@ -527,6 +608,84 @@ function patchYAMLFile(filePath, patches) {
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ─── Value-aware scalar upsert (WS-561) ─────────────────────────────────────
+
+/**
+ * Is a raw YAML scalar (the text after `key:`) semantically UNSET?
+ *
+ * WS-561: the five closure-write sites each hand-rolled `!/^key:/m.test(text)`
+ * to mean "this field needs filling". That asks whether the KEY is present,
+ * not whether it has a VALUE — so an item scaffolding `completed_at: null`
+ * while open matched the regex, the guard went false, and the timestamp was
+ * never written while the CLI reported success. 104 items across two repos
+ * closed with null provenance that way.
+ *
+ * The asymmetry that shapes this function: over-matching (treating a real
+ * value as unset) OVERWRITES founder data; under-matching merely reproduces
+ * the original bug. So every form below is an explicit, enumerated YAML null —
+ * nothing is inferred.
+ *
+ * Quoted "null" / 'null' is deliberately NOT unset. It is a real string value
+ * — almost certainly a data-quality problem worth seeing — and folding it into
+ * the fill path would silently destroy the evidence of it.
+ */
+function isUnsetYAMLScalar(raw) {
+  if (raw === undefined || raw === null) return true;
+  const v = String(raw).trim();
+  if (v === '') return true;                       // `key:` with nothing after it
+  if (v === '~') return true;                      // YAML null shorthand
+  if (v === 'null' || v === 'Null' || v === 'NULL') return true;
+  return false;                                    // includes "null" and 'null'
+}
+
+/**
+ * Insert-or-fill a top-level scalar field, leaving real values untouched.
+ *
+ *   key absent            → insert (after `afterKey` when given, else append)
+ *   key present, unset    → replace the value in place
+ *   key present, real     → return content unchanged (idempotence)
+ *
+ * Returns { content, action: 'inserted' | 'filled' | 'unchanged' }.
+ *
+ * Line endings: the inserted line copies the ending of the line it anchors to,
+ * so a CRLF file does not acquire a lone LF (or vice versa). Mixed endings are
+ * common here — multiple tools and two OSes touch these files.
+ *
+ * Anchoring is `^`-with-`m` on a NON-INDENTED key, so a `completed_at:` living
+ * inside a block scalar (`description: |`) or a nested map cannot be mistaken
+ * for the top-level field. The old sites matched indented text too.
+ */
+function upsertYAMLScalarField(content, key, value, opts = {}) {
+  const k = escapeRegex(key);
+  // Top-level only: no leading whitespace before the key.
+  const present = new RegExp(`^${k}:([^\\r\\n]*)$`, 'm');
+  const m = content.match(present);
+
+  if (m) {
+    if (!isUnsetYAMLScalar(m[1])) return { content, action: 'unchanged' };
+    return {
+      content: content.replace(present, `${key}: ${formatScalar(value)}`),
+      action: 'filled',
+    };
+  }
+
+  const line = `${key}: ${formatScalar(value)}`;
+  const afterKey = opts.after ? escapeRegex(opts.after) : null;
+  if (afterKey) {
+    const anchor = new RegExp(`^${afterKey}:[^\\r\\n]*(\\r?\\n|$)`, 'm');
+    const am = content.match(anchor);
+    if (am) {
+      const eol = am[1] && am[1].length ? am[1] : '\n';
+      return {
+        content: content.replace(anchor, `${am[0].replace(/\r?\n$/, '')}${eol}${line}${eol}`),
+        action: 'inserted',
+      };
+    }
+  }
+  const eol = /\r\n/.test(content) ? '\r\n' : '\n';
+  return { content: content.trimEnd() + eol + line + eol, action: 'inserted' };
 }
 
 // ─── File I/O ───────────────────────────────────────────────────────────────
@@ -940,7 +1099,15 @@ function makeEventEmitter() {
   try { ({ appendEvent } = require('../core/events')); } catch { /* events.js missing or harness-mode */ }
   return function emitEvent(track, tag, payload) {
     if (!appendEvent) return;
-    try { appendEvent({ source_track: track, track_tag: tag, payload: payload || {} }); } catch { /* swallow per AS-23 */ }
+    try { appendEvent({ source_track: track, track_tag: tag, payload: payload || {} }); }
+    catch (err) {
+      // WS-532: AS-23 says a shadow-log failure must not break the host
+      // command. A worktree refusal is not a failure — it is a deliberate
+      // policy stop, and this emitter is the path 20+ scripts use, so
+      // swallowing here would mute the guard almost everywhere it matters.
+      if (err && err.code === 'CWOS_WORKTREE_WRITE_REFUSED') throw err;
+      /* swallow per AS-23 */
+    }
   };
 }
 
@@ -1139,6 +1306,8 @@ module.exports = {
   parseYAML,
   serializeYAML,
   patchYAMLFile,
+  upsertYAMLScalarField,
+  isUnsetYAMLScalar,
   readYAMLFile,
   writeFileAtomic,
   SafeWriteError,

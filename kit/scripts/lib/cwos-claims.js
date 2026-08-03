@@ -25,12 +25,26 @@
  * Liveness is read from the session YAML's `last_heartbeat` (maintained by
  * `cwos-heartbeat.js`), and a session whose file is missing entirely is dead by
  * definition.
+ *
+ * EVERY LIVENESS TEST IS SCOPED TO A MACHINE (WS-564). `.claude/workstream/sessions/` is
+ * TRACKED, so a session record written on CM-NODE1 arrives on G16 by git pull. Until this
+ * was fixed there was no `host` field at all, yet the pid and boot-time tests ran against
+ * the LOCAL process table and the LOCAL `os.uptime()`. Both directions were wrong on the
+ * founder's laptop + phone + dispatched-node setup: a pid collision read a dead remote
+ * session as alive and fenced the queue, and — far worse — the boot-time proof declared
+ * every remote session whose heartbeat predated THIS machine's last boot to be dead, which
+ * on hardware that loses power routinely is the normal case. That is claim-stealing while
+ * the other machine is still working. So: proofs that are only valid locally are gated on
+ * `host === os.hostname()`, and a foreign (or unknown) host degrades to heartbeat-only,
+ * which is the direction that costs a stale warning rather than someone's work.
  */
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { readYAMLFile, writeFileAtomic, withFileLock, patchYAMLFile } = require('./cwos-utils');
+const {
+  readYAMLFile, writeFileAtomic, withFileLock, patchYAMLFile, upsertYAMLScalarField,
+} = require('./cwos-utils');
 
 /** A claim older than this from a non-heartbeating session is reclaimable. */
 const STALE_MINUTES = 90;
@@ -52,16 +66,45 @@ function bootTimeMs() {
   try { return Date.now() - (os.uptime() * 1000); } catch { return null; }
 }
 
+/** This machine's identity, as stamped on session records. Never throws. */
+function localHost() {
+  try { return os.hostname(); } catch { return null; }
+}
+
 /**
- * Is a recorded pid still running?
+ * Was `recordHost` written by THIS machine?
+ *
+ * A record with no host at all is treated as foreign, not as local. That is the
+ * conservative reading: records predating WS-564 carry no host, and assuming they
+ * are local re-enables the boot-time test against a heartbeat that may have been
+ * written on another machine — the claim-stealing direction. Records self-heal on
+ * the owning machine's next heartbeat (touchSession stamps the host), so the
+ * unknown case is transient by construction.
+ */
+function isLocalHost(recordHost, opts = {}) {
+  const here = opts.host !== undefined ? opts.host : localHost();
+  if (!recordHost || !here) return false;
+  return String(recordHost).trim().toLowerCase() === String(here).trim().toLowerCase();
+}
+
+/**
+ * Is a recorded pid still running ON THIS MACHINE?
  *
  * signal 0 tests existence without delivering anything. EPERM means the process
  * exists but is owned by someone else — still existence. Returns null when the
  * question cannot be answered, which callers must NOT read as "dead": a missing
  * answer is exactly the fail-open shape this module warns about elsewhere.
+ *
+ * `recordHost` is mandatory in spirit even though it is optional in signature: a
+ * pid is only meaningful against the process table that issued it. Asked about a
+ * foreign host, this returns null (unknowable) rather than consulting the local
+ * table, where pid 4242 belongs to something entirely unrelated. Omitting the
+ * argument preserves the legacy local-only reading for callers that have already
+ * established the record is local.
  */
-function isPidAlive(pid) {
+function isPidAlive(pid, recordHost, opts = {}) {
   if (!Number.isInteger(pid) || pid <= 0) return null;
+  if (recordHost !== undefined && !isLocalHost(recordHost, opts)) return null;
   try { process.kill(pid, 0); return true; }
   catch (err) {
     if (err && err.code === 'EPERM') return true;
@@ -128,6 +171,11 @@ function minutesSinceHeartbeat(sessionFile, now = Date.now()) {
  *      reboot, so this outranks any timer. On a machine that loses power routinely
  *      this is the common case, and the 90-minute timer alone got it wrong: a dead
  *      session fenced off its claims for up to 90 minutes after every crash.
+ *      APPLIES ONLY TO SESSIONS RECORDED ON THIS HOST (WS-564). `sessions/` is a
+ *      tracked directory, so records arrive from other machines by git pull, and
+ *      "predates MY last boot" says nothing whatever about a process on CM-NODE1.
+ *      Applying it anyway declared live remote sessions dead and released their
+ *      claims mid-work.
  *   2. Otherwise, the staleness window.
  *
  * WHY PID LIVENESS IS *NOT* A DEATH TEST, despite being tempting. The pid on a
@@ -150,10 +198,12 @@ function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now()
     const status = String(doc.status || '').toLowerCase();
     if (status && status !== 'active') return false;
 
-    const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
-    const beat = doc.last_heartbeat || doc.started_at;
-    const beatMs = beat ? Date.parse(String(beat).replace(/^"|"$/g, '')) : NaN;
-    if (Number.isFinite(beatMs) && boot != null && beatMs < boot) return false; // (1)
+    if (isLocalHost(doc.host, opts)) {
+      const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
+      const beat = doc.last_heartbeat || doc.started_at;
+      const beatMs = beat ? Date.parse(String(beat).replace(/^"|"$/g, '')) : NaN;
+      if (Number.isFinite(beatMs) && boot != null && beatMs < boot) return false; // (1)
+    }
 
     return minutesSinceHeartbeat(file, now) <= staleMinutes;                     // (2)
   }
@@ -190,9 +240,48 @@ function listLiveSessions(wsDir, selfId = null, opts = {}) {
     out.push({
       id,
       pid: doc.pid != null ? Number(doc.pid) : null,
+      host: doc.host || null,
+      foreign_host: !isLocalHost(doc.host, opts),
       last_heartbeat: doc.last_heartbeat || null,
       claimed_items: Array.isArray(doc.claimed_items) ? doc.claimed_items : [],
+      files_locked: Array.isArray(doc.files_locked) ? doc.files_locked : [],
       mode: doc.mode || null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Records that SAY `status: active` but have not heartbeated inside `staleMinutes`.
+ *
+ * This is the population that makes every concurrency signal unusable in both
+ * directions (WS-564). Heartbeat-trusting checks read them as absent and hand out a
+ * confident all-clear; heartbeat-independent checks count them and fence the queue
+ * forever. claude-poker-tracker held eight of these from 2026-07-30, several holding
+ * claims, while `cwos-session-recovery` had not run since. Neither reading is usable
+ * — so the population itself has to be surfaced rather than silently interpreted.
+ */
+function staleActiveSessions(wsDir, opts = {}) {
+  const staleMinutes = opts.staleMinutes || STALE_MINUTES;
+  const now = opts.now || Date.now();
+  const sessDir = path.join(wsDir, 'sessions');
+  let files = [];
+  try { files = fs.readdirSync(sessDir).filter((f) => f.endsWith('.yaml')); } catch { return []; }
+
+  const out = [];
+  for (const f of files) {
+    const doc = readSessionDoc(path.join(sessDir, f));
+    if (!doc || String(doc.status || '').toLowerCase() !== 'active') continue;
+    const id = doc.id || f.replace(/\.yaml$/, '');
+    if (opts.selfId && id === opts.selfId) continue;
+    const mins = minutesSinceHeartbeat(path.join(sessDir, f), now);
+    if (mins <= staleMinutes) continue;
+    out.push({
+      id,
+      host: doc.host || null,
+      last_heartbeat: doc.last_heartbeat || null,
+      minutes_stale: Number.isFinite(mins) ? Math.round(mins) : null,
+      claimed_items: Array.isArray(doc.claimed_items) ? doc.claimed_items : [],
     });
   }
   return out;
@@ -207,42 +296,103 @@ function listLiveSessions(wsDir, selfId = null, opts = {}) {
  * tracks for hooks, and it is what let the registry rot unnoticed from 2026-05-15
  * to 2026-07-26.
  *
- * @returns {{ok: boolean, reason: string|null}}
+ * TWO QUESTIONS, NOT ONE (WS-564). The original check asked only "is REGISTRATION
+ * happening", over a 14-day window. In claude-poker-tracker on 2026-08-02 that
+ * answered yes — sessions were registering fine — while the Stop hook that advances
+ * `last_heartbeat` had been dead for two days. So `isSessionLive` filtered every
+ * peer out as not-live, `listLiveSessions` returned [], and this function said
+ * ok:true. Three sessions were concurrently editing the repo. Both green, both
+ * wrong, and the all-clear propagated into `/next`'s conflict gate.
+ *
+ * Registration recency and heartbeat currency are independent failures and are now
+ * measured separately. A registry can only be believed when BOTH hold: records are
+ * being created, and the active ones are proving they are still alive.
+ *
+ * @returns {{ok, reason, active_count, stale_active, newest_record_age_days,
+ *            heartbeat_age_minutes}}
  */
 function registryHealth(wsDir, opts = {}) {
+  const base = {
+    active_count: 0, stale_active: [], newest_record_age_days: null, heartbeat_age_minutes: null,
+  };
   const sessDir = path.join(wsDir, 'sessions');
   if (!fs.existsSync(sessDir)) {
-    return { ok: false, reason: 'no sessions/ directory — nothing has ever registered' };
+    return { ...base, ok: false, reason: 'no sessions/ directory — nothing has ever registered' };
   }
   let files = [];
   try { files = fs.readdirSync(sessDir).filter((f) => f.endsWith('.yaml')); } catch {
-    return { ok: false, reason: 'sessions/ is unreadable' };
+    return { ...base, ok: false, reason: 'sessions/ is unreadable' };
   }
   if (files.length === 0) {
-    return { ok: false, reason: 'sessions/ is empty — registration is not happening' };
+    return { ...base, ok: false, reason: 'sessions/ is empty — registration is not happening' };
   }
+
+  const now = opts.now || Date.now();
 
   // Newest record by heartbeat/start. If the freshest entry is ancient, the
   // registry is not being fed even though files exist.
   let newest = 0;
+  let newestBeat = 0;
+  let activeCount = 0;
   for (const f of files) {
     const doc = readSessionDoc(path.join(sessDir, f));
     if (!doc) continue;
     const t = Date.parse(String(doc.last_heartbeat || doc.started_at || '').replace(/^"|"$/g, ''));
     if (Number.isFinite(t) && t > newest) newest = t;
+    if (String(doc.status || '').toLowerCase() !== 'active') continue;
+    activeCount++;
+    // Heartbeat currency is asked of `last_heartbeat` ALONE. Falling back to
+    // started_at here would let a freshly-registered session that never beats
+    // again certify the hook as working — the exact substitution that made the
+    // 14-day window read healthy while the hook was dead.
+    const hb = Date.parse(String(doc.last_heartbeat || '').replace(/^"|"$/g, ''));
+    if (Number.isFinite(hb) && hb > newestBeat) newestBeat = hb;
   }
-  if (!newest) return { ok: false, reason: 'no session record carries a usable timestamp' };
+  if (!newest) return { ...base, ok: false, reason: 'no session record carries a usable timestamp' };
+
+  const out = {
+    ...base,
+    active_count: activeCount,
+    stale_active: staleActiveSessions(wsDir, opts).map((s) => s.id),
+    newest_record_age_days: (now - newest) / 86400000,
+    heartbeat_age_minutes: newestBeat ? (now - newestBeat) / 60000 : null,
+  };
 
   const maxAgeDays = opts.maxAgeDays != null ? opts.maxAgeDays : 14;
-  const ageDays = ((opts.now || Date.now()) - newest) / 86400000;
-  if (ageDays > maxAgeDays) {
+  if (out.newest_record_age_days > maxAgeDays) {
     return {
+      ...out,
       ok: false,
-      reason: `newest session record is ${Math.floor(ageDays)}d old (max ${maxAgeDays}d) — `
+      reason: `newest session record is ${Math.floor(out.newest_record_age_days)}d old (max ${maxAgeDays}d) — `
             + 'registration has stopped; treat "no other session" as UNKNOWN, not all-clear',
     };
   }
-  return { ok: true, reason: null };
+
+  // Currency is only a question when something claims to be active. A repo whose
+  // sessions have all been closed properly has nothing to keep current.
+  const maxBeatMinutes = opts.maxHeartbeatMinutes != null ? opts.maxHeartbeatMinutes : 120;
+  if (activeCount > 0) {
+    if (out.heartbeat_age_minutes == null) {
+      return {
+        ...out,
+        ok: false,
+        reason: `${activeCount} session(s) marked active and not one carries a last_heartbeat — `
+              + 'the Stop hook has never run here; liveness is UNKNOWN, not all-clear',
+      };
+    }
+    if (out.heartbeat_age_minutes > maxBeatMinutes) {
+      return {
+        ...out,
+        ok: false,
+        reason: `${activeCount} session(s) marked active, freshest heartbeat is `
+              + `${Math.floor(out.heartbeat_age_minutes / 60)}h${Math.floor(out.heartbeat_age_minutes % 60)}m old `
+              + `(max ${maxBeatMinutes}m) — the Stop hook is not advancing liveness, so every peer `
+              + 'filters out as not-live and "no conflicts" means UNKNOWN, not none',
+      };
+    }
+  }
+
+  return { ...out, ok: true, reason: null };
 }
 
 /**
@@ -289,8 +439,12 @@ function findByAgentSessionId(wsDir, agentId) {
  * same shape `/session-end` and `cwos-session-recovery` already read. It is deliberately
  * not a substitute for `/session-start`'s richer record.
  */
-function resolveSessionId(wsDir, { create = true, clock = null } = {}) {
-  const agentId = agentSessionIdFromEnv();
+function resolveSessionId(wsDir, { create = true, clock = null, agentId: agentIdOverride = null } = {}) {
+  // A hook process is handed the harness id on stdin rather than in the environment;
+  // it passes that in here so there is ONE resolver instead of a second, subtly
+  // different copy per hook. cwos-heartbeat.js had such a copy and fell through to
+  // the pointer, which is why it beat the wrong session under concurrency (WS-564).
+  const agentId = agentIdOverride || agentSessionIdFromEnv();
   const mine = findByAgentSessionId(wsDir, agentId);
   if (mine) return mine.id;
 
@@ -325,6 +479,11 @@ function resolveSessionId(wsDir, { create = true, clock = null } = {}) {
       // CLAUDE_PID is the actual Claude process; process.pid here is this
       // short-lived script. Diagnostic only either way — see isSessionLive.
       `pid: ${process.env.CLAUDE_PID || process.pid}`,
+      // The machine that owns this record. Without it, every pid and boot-time
+      // test on a git-synced session file is asked of the wrong process table
+      // (WS-564). Recorded at mint AND re-stamped on every heartbeat, so a record
+      // that moves machines corrects itself rather than staying wrong.
+      `host: "${localHost() || ''}"`,
       // Written so the NEXT invocation finds this record by identity instead of
       // minting a second one for the same session.
       `agent_session_id: "${agentId || ''}"`,
@@ -342,17 +501,55 @@ function resolveSessionId(wsDir, { create = true, clock = null } = {}) {
   return id;
 }
 
-/** Touch `last_heartbeat` so this session reads as live to everyone else. */
+/**
+ * Touch `last_heartbeat` so this session reads as live to everyone else.
+ *
+ * Stamps `host` in the same write. The process doing the touching is, by
+ * definition, running on the machine that owns the session, so this is the one
+ * place the host can be established without guessing — and it makes the field
+ * self-healing for records minted before WS-564 and for a repo that has just been
+ * pulled onto a different machine.
+ *
+ * @returns {boolean} whether a record was actually advanced. Callers that treat a
+ * no-op as success are how a liveness stamp outlives the liveness it certifies.
+ */
 function touchSession(wsDir, id, clock = null) {
-  if (!id) return;
+  if (!id) return false;
   for (const name of [`${id}.yaml`, `session-${id}.yaml`]) {
     const file = path.join(wsDir, 'sessions', name);
     if (!fs.existsSync(file)) continue;
     try {
-      patchYAMLFile(file, { last_heartbeat: (clock ? new Date(clock) : new Date()).toISOString() });
+      patchOrInsert(file, {
+        last_heartbeat: (clock ? new Date(clock) : new Date()).toISOString(),
+        host: localHost() || '',
+      }, 'pid');
+      return true;
     } catch { /* best-effort: liveness is an optimisation, never a hard dependency */ }
-    return;
+    return false;
   }
+  return false;
+}
+
+/**
+ * Set scalar fields on a session record, INSERTING keys the record does not have.
+ *
+ * `patchYAMLFile` alone silently drops a patch whose key is absent — the WS-561
+ * shape, and fatal here: every record minted before WS-564 lacks `host`, so a
+ * plain patch would report success and stamp nothing, leaving liveness judged
+ * against the wrong machine forever. Insert-if-missing is what makes the field
+ * self-healing instead of requiring a migration.
+ */
+function patchOrInsert(file, patches, afterKey) {
+  patchYAMLFile(file, patches); // replaces keys that are already present
+  let content = fs.readFileSync(file, 'utf8');
+  let changed = false;
+  for (const [k, v] of Object.entries(patches)) {
+    const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`^${esc}:`, 'm').test(content)) continue;
+    content = upsertYAMLScalarField(content, k, v, { after: afterKey }).content;
+    changed = true;
+  }
+  if (changed) writeFileAtomic(file, content);
 }
 
 /** Read one queue item's claim fields without parsing the whole document. */
@@ -455,31 +652,122 @@ function releaseItems(wsDir, itemIds) {
 
 /** Keep the session's own `claimed_items` list in step, for session-recovery to read. */
 function mirrorIntoSession(wsDir, sessionId, itemIds) {
-  if (!itemIds || itemIds.length === 0) return;
+  mergeIntoSessionList(wsDir, sessionId, 'claimed_items', itemIds);
+}
+
+/**
+ * Union `values` into a top-level list field on a session record.
+ *
+ * One implementation for `claimed_items` and `files_locked`. The second field
+ * existed in the schema from adoption with ZERO writers anywhere in the kit —
+ * the same shape WS-533 diagnosed for `claimed_by` ("nothing ever ACQUIRED one"),
+ * except that fix stopped at items and never reached files. INV-069 now asserts
+ * this function has live callers, because a field with a writer that later loses
+ * it looks identical to one that never had it.
+ */
+function mergeIntoSessionList(wsDir, sessionId, key, values) {
+  if (!sessionId || !values || values.length === 0) return [];
   for (const name of [`${sessionId}.yaml`, `session-${sessionId}.yaml`]) {
     const file = path.join(wsDir, 'sessions', name);
     if (!fs.existsSync(file)) continue;
     try {
-      const raw = fs.readFileSync(file, 'utf8');
-      const existing = new Set();
-      const block = raw.match(/^claimed_items:\s*(\[\]|\n(?:\s+-\s+.*\n?)*)/m);
-      if (block && block[1] && block[1] !== '[]') {
-        for (const m of block[1].matchAll(/-\s+"?([A-Za-z]+-\d+)"?/g)) existing.add(m[1]);
-      }
-      for (const id of itemIds) existing.add(id);
-      const rendered = `claimed_items:\n${[...existing].map((i) => `  - "${i}"`).join('\n')}\n`;
-      const next = /^claimed_items:/m.test(raw)
-        ? raw.replace(/^claimed_items:\s*(\[\]|\n(?:\s+-\s+.*\n?)*)/m, rendered)
-        : raw.trimEnd() + '\n' + rendered;
-      writeFileAtomic(file, next);
-    } catch { /* best-effort */ }
-    return;
+      return withFileLock(file + '.lock', () => {
+        const raw = fs.readFileSync(file, 'utf8');
+        const existing = readListField(raw, key);
+        const merged = [...new Set([...existing, ...values.map(String)])];
+        const rendered = `${key}:\n${merged.map((i) => `  - "${i}"`).join('\n')}\n`;
+        const block = new RegExp(`^${key}:\\s*(\\[\\]|\\n(?:\\s+-\\s+.*\\n?)*)`, 'm');
+        const next = new RegExp(`^${key}:`, 'm').test(raw)
+          ? raw.replace(block, rendered)
+          : raw.trimEnd() + '\n' + rendered;
+        writeFileAtomic(file, next);
+        return merged;
+      }, { ownerLabel: `session:${key}`, maxWaitMs: 5000 });
+    } catch { return []; /* best-effort: bookkeeping never blocks the work */ }
   }
+  return [];
+}
+
+/** Entries of a simple `key:\n  - "value"` list, from raw YAML text. */
+function readListField(raw, key) {
+  const block = raw.match(new RegExp(`^${key}:\\s*(\\[\\]|\\n(?:\\s+-\\s+.*\\n?)*)`, 'm'));
+  if (!block || !block[1] || block[1].trim() === '[]') return [];
+  return [...block[1].matchAll(/^\s+-\s+"?([^"\n]+?)"?\s*$/gm)].map((m) => m[1]);
+}
+
+/**
+ * Record that this session is working on `files` (repo-relative, posix separators).
+ *
+ * ADVISORY, LIKE CLAIMS. Nothing is prevented by holding a lock; what changes is
+ * that ownership becomes COMPUTED instead of inferred. The reporting repo's git
+ * guard had to infer it from `mtime < session start` — a real proof, but a
+ * one-sided one: it cannot see a session that started before ours and edited after
+ * we began. That gap is precisely what a per-file record closes.
+ *
+ * @returns {string[]} the session's full lock set after the merge.
+ */
+function lockFiles(wsDir, sessionId, files) {
+  const clean = (files || [])
+    .map((f) => String(f).split('\\').join('/').replace(/^\.\//, '').trim())
+    .filter(Boolean);
+  return mergeIntoSessionList(wsDir, sessionId, 'files_locked', clean);
+}
+
+/**
+ * Every file lock currently held, keyed by holder.
+ *
+ * `live` is reported per holder rather than filtered out here: a dead session's
+ * locks are still evidence about who wrote what is sitting in the tree, and the
+ * caller decides whether that should block (it should not) or explain (it should).
+ */
+function listFileLocks(wsDir, opts = {}) {
+  const sessDir = path.join(wsDir, 'sessions');
+  let names = [];
+  try { names = fs.readdirSync(sessDir).filter((f) => f.endsWith('.yaml')); } catch { return []; }
+
+  const out = [];
+  for (const n of names) {
+    const file = path.join(sessDir, n);
+    let raw;
+    try { raw = fs.readFileSync(file, 'utf8'); } catch { continue; }
+    const doc = readSessionDoc(file);
+    if (!doc || String(doc.status || '').toLowerCase() !== 'active') continue;
+    const id = doc.id || n.replace(/\.yaml$/, '');
+    const files = readListField(raw, 'files_locked');
+    if (!files.length) continue;
+    out.push({
+      session_id: id,
+      host: doc.host || null,
+      live: isSessionLive(wsDir, id, opts.staleMinutes || STALE_MINUTES, opts.now || Date.now(), opts),
+      files,
+    });
+  }
+  return out;
+}
+
+/**
+ * Which of `files` are held by a DIFFERENT session, and by whom.
+ *
+ * @returns {Array<{file, session_id, live, host}>}
+ */
+function findFileLockConflicts(wsDir, mySessionId, files, opts = {}) {
+  const want = new Set((files || []).map((f) => String(f).split('\\').join('/').replace(/^\.\//, '')));
+  const out = [];
+  for (const holder of listFileLocks(wsDir, opts)) {
+    if (holder.session_id === mySessionId) continue;
+    for (const f of holder.files) {
+      if (!want.has(f)) continue;
+      out.push({ file: f, session_id: holder.session_id, live: holder.live, host: holder.host });
+    }
+  }
+  return out;
 }
 
 module.exports = {
   STALE_MINUTES,
   bootTimeMs,
+  localHost,
+  isLocalHost,
   isPidAlive,
   readSessionPointer,
   readSessionDoc,
@@ -488,12 +776,17 @@ module.exports = {
   resolveSessionId,
   isSessionLive,
   listLiveSessions,
+  staleActiveSessions,
   registryHealth,
   minutesSinceHeartbeat,
   touchSession,
   readClaim,
+  readListField,
   listQueueIds,
   findClaimConflicts,
   claimItems,
   releaseItems,
+  lockFiles,
+  listFileLocks,
+  findFileLockConflicts,
 };

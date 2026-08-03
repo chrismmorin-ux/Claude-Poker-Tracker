@@ -38,9 +38,12 @@ require('./lib/preflight');
 const fs = require('fs');
 const path = require('path');
 const { cliGate } = require('./lib/cli');
-const { findWorkstreamDir, writeFileAtomic, patchYAMLFile, withFileLock } = require('./lib/cwos-utils');
+const { findWorkstreamDir, writeFileAtomic, patchYAMLFile, withFileLock, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const {
   listLiveSessions, registryHealth, touchSession, findByAgentSessionId,
+  staleActiveSessions, localHost,
 } = require('./lib/cwos-claims');
 
 const CLI = {
@@ -99,6 +102,12 @@ function register(wsDir, agentId, pid) {
       // short-lived hook, useless the moment it exits. Diagnostic only — liveness
       // is decided by heartbeat vs boot time, never by this. See cwos-claims.
       `pid: ${pid}`,
+      // WS-564: which machine that pid belongs to. `sessions/` is tracked, so
+      // records travel between nodes by git pull — without this, the pid above
+      // and the boot-time proof in cwos-claims are both evaluated against
+      // whichever machine happens to be reading, and a live session on another
+      // node reads as dead and has its claims taken.
+      `host: "${localHost() || ''}"`,
       // The harness id is the join key. Keep it: it is what makes re-fires
       // idempotent and what distinguishes concurrent sessions from each other.
       `agent_session_id: "${agentId || ''}"`,
@@ -111,6 +120,10 @@ function register(wsDir, agentId, pid) {
       '',
     ].join('\n'));
   }
+
+  // WS-560 (INV-028): session registration is the fact every claim-conflict
+  // and liveness decision is built on (WS-533). It must leave a trace.
+  emitEvent('T15:session-end', 'session-registered', { session_id: id, agent_session_id: agentId || null });
 
   // Legacy pointer, best-effort and lock-guarded. Not the identity of record.
   try {
@@ -145,9 +158,10 @@ function main() {
 
   const others = listLiveSessions(wsDir, self.id);
   const health = registryHealth(wsDir);
+  const stale = staleActiveSessions(wsDir, { selfId: self.id });
 
   if (values.json) {
-    process.stdout.write(JSON.stringify({ self, others, registry: health }) + '\n');
+    process.stdout.write(JSON.stringify({ self, others, registry: health, stale_active: stale }) + '\n');
     return 0;
   }
   if (values.quiet) return 0;
@@ -159,7 +173,8 @@ function main() {
     lines.push(`⚠ ${others.length} other session(s) live in this repo:`);
     for (const o of others) {
       const claims = o.claimed_items.length ? ` — claims ${o.claimed_items.join(', ')}` : '';
-      lines.push(`  - ${o.id} (pid ${o.pid == null ? '?' : o.pid})${claims}`);
+      const where = o.foreign_host ? ` on ${o.host || 'an unknown host'}` : '';
+      lines.push(`  - ${o.id} (pid ${o.pid == null ? '?' : o.pid})${where}${claims}`);
     }
     lines.push('  Coordinate before editing shared files, or work in a separate worktree.');
   }
@@ -168,6 +183,22 @@ function main() {
   if (!health.ok) {
     lines.push(`⚠ session registry unhealthy: ${health.reason}`);
     lines.push('  Until fixed, "no other session" means UNKNOWN, not none.');
+  }
+
+  // WS-564: records that SAY active but stopped heartbeating. They are what makes
+  // every concurrency signal unusable in both directions — filtered out as
+  // not-live by anything that trusts heartbeats, counted forever by anything that
+  // does not. Recovery is supposed to clear them; when it is not running, the
+  // population is the symptom that says so.
+  if (stale.length) {
+    lines.push(`⚠ ${stale.length} session(s) marked active but not heartbeating:`);
+    for (const s of stale.slice(0, 6)) {
+      const held = s.claimed_items.length ? ` holding ${s.claimed_items.join(', ')}` : '';
+      const age = s.minutes_stale == null ? 'no heartbeat' : `${Math.floor(s.minutes_stale / 60)}h stale`;
+      lines.push(`  - ${s.id} (${age})${held}`);
+    }
+    if (stale.length > 6) lines.push(`  - ... and ${stale.length - 6} more`);
+    lines.push('  Clear with: node kit/scripts/cwos-session-recovery.js --auto');
   }
 
   if (lines.length) process.stdout.write(lines.join('\n') + '\n');
