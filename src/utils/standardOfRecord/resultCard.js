@@ -26,6 +26,7 @@ import {
   checkAgainstSchema,
 } from './schemas.js';
 import { manifestProblems } from './manifest.js';
+import { fragilityCaveat } from './fragility.js';
 
 /**
  * Legal cluster units.
@@ -54,6 +55,12 @@ export const CLUSTER_UNITS = Object.freeze(['sessions', 'players']);
  * @param {Object} input.manifest - a replication manifest from manifest.js
  * @param {Object|null} [input.census]
  * @param {Object|null} [input.warrantAttribution]
+ * @param {string|null} [input.atomSetHash] - the atom set this card was computed from
+ * @param {number|null} [input.atomCount]
+ * @param {number|null} [input.anchorGeneration]
+ * @param {Object|null} [input.fragility] - margin-to-flip, from fragility.buildFragility
+ * @param {Object|null} [input.flipRegister] - reversal history, from fragility.buildFlipRegister
+ * @param {Object|null} [input.comparisonCensus] - contrasts drawn vs merely possible
  */
 export const buildResultCard = ({
   resultCardId,
@@ -66,6 +73,12 @@ export const buildResultCard = ({
   manifest,
   census = null,
   warrantAttribution = null,
+  atomSetHash = null,
+  atomCount = null,
+  anchorGeneration = null,
+  fragility = null,
+  flipRegister = null,
+  comparisonCensus = null,
 } = {}) => {
   const card = {
     schemaVersion: SOR_SCHEMA_VERSIONS.resultCard,
@@ -79,6 +92,12 @@ export const buildResultCard = ({
     manifest,
     census,
     warrantAttribution,
+    atomSetHash,
+    atomCount,
+    anchorGeneration,
+    fragility,
+    flipRegister,
+    comparisonCensus,
   };
   const problems = resultCardProblems(card);
   if (problems.length) {
@@ -125,9 +144,40 @@ export const resultCardProblems = (card) => {
     );
   }
 
+  // A flip history joins on WHAT WAS MEASURED. A register carrying a different estimand than
+  // the card is comparing reversal counts across two different questions, which produces a
+  // number that looks like stability evidence and is not.
+  if (card.flipRegister && card.flipRegister.estimand !== card.estimand) {
+    problems.push(
+      `resultCard.flipRegister.estimand ("${card.flipRegister.estimand}") does not match ` +
+      `resultCard.estimand ("${card.estimand}") — a reversal history only means something ` +
+      'against the same measured quantity (AS-710)',
+    );
+  }
+
   problems.push(...manifestProblems(card.manifest ?? {}));
   return problems;
 };
+
+/**
+ * The caveat this card must carry when quoted, or null when there is genuinely nothing to say.
+ *
+ * THIS IS THE READER for `fragility` and `flipRegister`. Per WS-328's anti-rot rule, a captured
+ * field ships with a query that reads it, written at capture time — and the reason those two
+ * fields exist at all is the founder's observation that decision nodes flip repeatedly and
+ * that overconfidence creeps in where statistics blends with decision modelling. A flip count
+ * stored but never rendered would reproduce that exact failure inside the mechanism built to
+ * prevent it.
+ */
+export const cardCaveat = (card) => fragilityCaveat(card?.flipRegister, card?.fragility);
+
+/**
+ * True when this card should not be quoted without its caveat.
+ *
+ * Separated from `cardCaveat` so a surface can DECIDE to show something (a badge, an
+ * interstitial) without first rendering the prose.
+ */
+export const needsCaveat = (card) => cardCaveat(card) !== null;
 
 /** Convenience predicate. Prefer `resultCardProblems` when you want to tell the user why. */
 export const isValidResultCard = (card) => resultCardProblems(card).length === 0;

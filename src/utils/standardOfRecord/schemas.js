@@ -35,11 +35,31 @@
  */
 export const SOR_SCHEMA_VERSIONS = Object.freeze({
   strategyCard: 1,
-  decisionAtom: 1,
+  decisionAtom: 2,
   coverageCensus: 1,
-  resultCard: 1,
+  comparisonCensus: 1,
+  resultCard: 2,
   dealBookManifest: 1,
   fieldManifest: 1,
+});
+
+/**
+ * READER DEPTH — what a reader of a captured field can actually conclude from it.
+ *
+ * The anti-rot rule ("every captured field ships a reader") proves a field is QUERIED. It
+ * does not prove the query was the right one: a reader that prints a distribution satisfies
+ * the gate completely while supporting no inference at all. That is the predictionAudit
+ * failure moved one level up — from "is it read" to "is it understood" — and a green tick
+ * that hides it is worse than no tick.
+ *
+ * So a reader declares its depth, and `atomsSelfCheck` reports the mix rather than a boolean.
+ * `descriptive` is a legitimate and common answer; it is only dangerous when it is invisible.
+ */
+export const READER_DEPTHS = Object.freeze({
+  /** Reports the field's distribution or presence. Supports no claim on its own. */
+  DESCRIPTIVE: 'descriptive',
+  /** Supports or refutes a named claim, with an admissibility rule behind it. */
+  INFERENTIAL: 'inferential',
 });
 
 /**
@@ -105,7 +125,60 @@ const DECISION_ATOM_FIELDS = [
     note: 'Realized result once known. Null while the atom is still a prediction — the join, not the record.' },
   { name: 'skipReason', type: 'string|null', since: 1, required: false,
     note: 'Why this decision was unscorable. Counted, never silently dropped — a skip is data.' },
+
+  // ── v2 (WS-328): over-capture by design. ───────────────────────────────────────────────
+  // Every field below ships with the FUTURE QUESTION it answers, because a field that cannot
+  // name its question is speculation rather than instrumentation. `atomsSelfCheck` enforces
+  // that each also ships with a reader — the discipline that stops this becoming the next
+  // predictionAudit (captured, never queried, rotted silently).
+  { name: 'alternativeScores', type: 'object|null', since: 2, required: false,
+    note: 'Score of EVERY alternative under the card\'s model. Answers "how close was this?" — decision margin, and near-ties are where strategies differ and models are fragile.' },
+  { name: 'rulesMatchedAndLost', type: 'array', since: 2, required: false,
+    note: 'Rules that matched but ranked below the one that fired. Answers rule-level ablation WITHOUT a re-run — the ruleId alone cannot say what almost happened.' },
+  { name: 'beliefState', type: 'object|null', since: 2, required: false,
+    note: 'Range per live opponent at the decision. Expensive to recompute and the input to the belief-vs-truth join; this is the layer-1 intermediate WS-291 needed and never had.' },
+  { name: 'truth', type: 'object|null', since: 2, required: false,
+    note: 'Ground truth when showdown reveals, CARRYING ITS `basis`. Joined at write time via holdingKnowledge. Without basis a hypothesized branch could be scored against a revealed hand — a category error, not a miscalibration.' },
+  { name: 'seeds', type: 'object', since: 2, required: false,
+    note: 'Every seed this decision depended on — deal, Monte Carlo, combo sampling. Answers exact replay and retroactive pairing. A default never recorded is reproducible only by luck.' },
+  { name: 'actorSeat', type: 'number|null', since: 2, required: false,
+    note: 'WHICH SEAT decided. Present so villain decisions are atoms too: how a table plays back differently against card A vs card B is a first-class result, and hero-only logging makes it unreachable.' },
+  { name: 'actorRole', type: 'string|null', since: 2, required: false,
+    note: '"hero" or "villain". The cheap discriminator for the above — a query should not have to infer role from seat identity.' },
+  { name: 'wallTimeMs', type: 'number|null', since: 2, required: false,
+    note: 'Answers "is this card affordable to run?" — a strategy too slow to execute is a different kind of wrong from one that loses chips.' },
+  { name: 'tokens', type: 'number|null', since: 2, required: false,
+    note: 'Tokens spent when the decision was AI-authored. Null for a mechanical surface. Same affordability question, different currency.' },
 ];
+
+/**
+ * THE FORCING-FUNCTION QUESTION LIST (WS-328).
+ *
+ * Stored WITH the schema on purpose. Each entry is a question someone will want to ask of an
+ * OLD run, and the field that makes it answerable. The list is how the schema learns from its
+ * own gaps: when a question turns out to be unanswerable, APPEND it here with
+ * `answerable: false`, and that entry is the specification for the next field.
+ *
+ * This exists because the cost asymmetry is not symmetric. Capturing an extra field costs
+ * bytes. NOT capturing it costs a re-run — and by then the engine has moved, so the re-run
+ * does not reproduce the old number and the comparison being attempted is lost entirely. The
+ * loss is total, not partial.
+ */
+export const FORCING_QUESTIONS = Object.freeze([
+  { question: 'How close was this decision?', field: 'alternativeScores', answerable: true },
+  { question: 'What would rule-level ablation say, without a re-run?', field: 'rulesMatchedAndLost', answerable: true },
+  { question: 'Which rules fired vs the residual clause?', field: 'ruleId', answerable: true },
+  { question: 'What is EV by warrant class?', field: 'warrant', answerable: true },
+  { question: 'What did we believe each opponent held here?', field: 'beliefState', answerable: true },
+  { question: 'What did they actually hold, and was the belief observed or hypothesized?', field: 'truth', answerable: true },
+  { question: 'Can this exact decision be replayed bit-for-bit?', field: 'seeds', answerable: true },
+  { question: 'Does the table play back differently against card A vs card B?', field: 'actorSeat', answerable: true },
+  { question: 'Why is 4-bet coverage thin?', field: 'skipReason', answerable: true },
+  { question: 'Is this card affordable to run?', field: 'wallTimeMs', answerable: true },
+  { question: 'Does this card earn more against a table that has been together two hours?', field: 'seatOccupancyTimeline', answerable: true, note: 'On the atom SET manifest, not the atom — occupancy is a property of the table over time, not of one decision.' },
+  { question: 'Which contexts did we never reach at all?', field: 'coverageCensus.cells', answerable: true, note: 'The zeros. Answerable only because the census emits them.' },
+  { question: 'How much of the divergence between two surfaces does a given layer account for?', field: null, answerable: false, note: 'UNANSWERABLE TODAY. Needs a divergence measure `d`; FSA open question #2 (KL vs EV-difference) is undecided, and ADR-009 permits exactly one comparison path. Deferred to FSA Phase 3 — WS-324 AC4.' },
+]);
 
 /**
  * A COVERAGE CENSUS — the record of what was HIT, including contexts hit ZERO times.
@@ -197,6 +270,51 @@ const RESULT_CARD_FIELDS = [
     note: 'Coverage census for this run when one was computed. Null until WS-328 builds the computation.' },
   { name: 'warrantAttribution', type: 'object|null', since: 1, required: false,
     note: 'EV split by warrant class, and the residual clause\'s share. Required by WS-327; the slot exists now so the schema does not have to change then.' },
+
+  // ── v2 (WS-328): the atom set this card was computed from. ─────────────────────────────
+  { name: 'atomSetHash', type: 'string|null', since: 2, required: false,
+    note: 'Content hash of the atom set. Referenced BY HASH, never by path: the card is the anchor and stays valid when the store moves, and the atoms are what let you ask NEW questions of an OLD run.' },
+  { name: 'atomCount', type: 'number|null', since: 2, required: false,
+    note: 'How many atoms the hash resolves to. Stated so a truncated or partially-written set is detectable — a short read must not read as a small sample.' },
+  { name: 'anchorGeneration', type: 'number|null', since: 2, required: false,
+    note: 'Which Deal Book generation this card stands on. The Ladder REFUSES to compare across generations that have not been rebased; without this field that refusal is unenforceable and the Ladder silently fragments.' },
+
+  // ── v2 anti-shallowness (founder directive 2026-08-03). ────────────────────────────────
+  // These exist because capture-with-a-reader proves a field was QUERIED, not that the query
+  // was the RIGHT one. Each field below targets a specific way a confident number can still
+  // be wrong: an unmade comparison, an unrecorded reversal, or an unstated margin.
+  { name: 'fragility', type: 'object|null', since: 2, required: false,
+    note: 'MARGIN TO FLIP — how far each load-bearing constant or assumption would have to move to REVERSE this conclusion. A result reported without it invites the reader to treat a knife-edge and a robust finding as the same claim.' },
+  { name: 'flipRegister', type: 'object|null', since: 2, required: false,
+    note: 'How many times the conclusion on this estimand has REVERSED, and when. A fourth reversal must not read like a first-time finding. Flipping under new evidence is healthy; flipping unrecorded is not.' },
+  { name: 'comparisonCensus', type: 'object|null', since: 2, required: false,
+    note: 'Which contrasts were RUN vs merely POSSIBLE. The coverage census makes unreached situations visible; this makes undrawn comparisons visible. Without it "that comparison was never made" is indistinguishable from "that comparison was made and found nothing".' },
+];
+
+/**
+ * A COMPARISON CENSUS — the contrasts that COULD have been drawn, and which actually were.
+ *
+ * The Coverage Census answers "which situations did we never reach". This answers the
+ * question one level up: "which comparisons did we never make". They are different negative
+ * spaces and the second is the one that hides a wrong conclusion, because an unmade
+ * comparison leaves no trace at all — there is no empty row to notice.
+ *
+ * Founder directive 2026-08-03: the worry is generating data that supports a conclusion and
+ * only later discovering that a particular type of comparison was never made. This object is
+ * that worry made checkable.
+ */
+const COMPARISON_CENSUS_FIELDS = [
+  { name: 'schemaVersion', type: 'number', since: 1, required: true, note: 'Per-object version.' },
+  { name: 'axis', type: 'string', since: 1, required: true,
+    note: 'What kind of contrast this censuses — "surface" | "layer" | "generation" | "field". Stated so two censuses are not silently unioned across axes.' },
+  { name: 'possible', type: 'array', since: 1, required: true,
+    note: 'Every contrast the available artifacts MAKE POSSIBLE. The denominator, enumerated rather than counted, so an unmade comparison is nameable and not just missing.' },
+  { name: 'drawn', type: 'array', since: 1, required: true,
+    note: 'The contrasts actually run, each pointing at the Result Card that ran it. A contrast claimed without a card is not drawn.' },
+  { name: 'notDrawn', type: 'array', since: 1, required: true,
+    note: 'THE POINT OF THE OBJECT. Possible minus drawn, each with a reason where one is known. Computed and stored rather than left to be derived, so it survives into any report that quotes the census.' },
+  { name: 'blockedReasons', type: 'object', since: 1, required: true,
+    note: 'Why a possible contrast was not drawn — "no shared deal book", "generations not rebased", "not attempted". Distinguishes cannot-be-drawn from was-not-drawn, which have opposite implications for a conclusion.' },
 ];
 
 /**
@@ -231,6 +349,7 @@ export const SOR_SCHEMAS = Object.freeze({
   strategyCard: Object.freeze(STRATEGY_CARD_FIELDS),
   decisionAtom: Object.freeze(DECISION_ATOM_FIELDS),
   coverageCensus: Object.freeze(COVERAGE_CENSUS_FIELDS),
+  comparisonCensus: Object.freeze(COMPARISON_CENSUS_FIELDS),
   dealBookManifest: Object.freeze(DEAL_BOOK_MANIFEST_FIELDS),
   fieldManifest: Object.freeze(FIELD_MANIFEST_FIELDS),
   resultCard: Object.freeze(RESULT_CARD_FIELDS),

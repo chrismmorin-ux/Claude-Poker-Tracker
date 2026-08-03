@@ -37,7 +37,14 @@
  * divergence function here would create exactly the second path the ADR forbids, and it would
  * be built before the open question of what `d` even is (FSA open question #2 — KL versus
  * EV-difference, "decide in Phase 3, measure both") has been answered.
+ *
+ * WS-324 did not change this. It added the STACK — the declaration of what a surface is made
+ * of — and the ability to score one layer against its own ground truth. It deliberately did
+ * NOT add layer ATTRIBUTION (how much of the divergence between two surfaces a given layer
+ * accounts for), because attribution needs `d` and `d` is still Phase 3's to decide.
  */
+
+import { stackProblems } from './stack.js';
 
 /**
  * The four surface kinds.
@@ -77,12 +84,20 @@ export const SURFACE_ORIGINS = Object.freeze({
 /**
  * Build a surface registry entry.
  *
- * `stack` is accepted and stored but NOT yet required. WS-324 ("Declare the Stack") is the
- * ticket that makes an unstacked surface unregistrable — and its own acceptance criterion is
- * that such a surface "cannot be registered, it is not merely warned about". Enforcing it
- * here, before the layer vocabulary exists, would reject every surface in the repo including
- * the ones already shipping. So the slot exists now, the refusal arrives with the thing that
- * can satisfy it, and this comment records that the gap is intentional rather than forgotten.
+ * `stack` is REQUIRED as of WS-324. A surface that does not declare what it is made of
+ * cannot be registered — it is not merely warned about.
+ *
+ * The reason the refusal is a throw rather than a warning is the failure it exists to
+ * prevent. WS-291 was a falsified range model on the live recommendation path that survived
+ * unmeasured for the life of the project: a layer-1 fault presenting as layer-5 symptoms,
+ * undiagnosable because nothing scored the layers independently. A warning would let the
+ * next such surface register anyway, and the whole value of the declaration is that it is
+ * unskippable. `surfaceId` and `surfaceKind` already fail this way; `stack` joins them.
+ *
+ * This slot was reserved by WS-322 and left permissive on purpose, because enforcing it
+ * before the layer vocabulary existed would have rejected every surface in the repo. The
+ * vocabulary now exists in `stack.js`, so the refusal arrives with the thing that can
+ * satisfy it — as planned.
  */
 export const buildSurfaceEntry = ({
   surfaceId,
@@ -100,12 +115,19 @@ export const buildSurfaceEntry = ({
       `surfaceKind "${surfaceKind}" is not one of ${SURFACE_KINDS.join(' | ')}`,
     );
   }
+  const problems = stackProblems(stack);
+  if (problems.length > 0) {
+    throw new Error(
+      `surface "${surfaceId}" cannot be registered without a valid stack (WS-324): `
+      + `${problems.join('; ')}`,
+    );
+  }
   return {
     surfaceId,
     surfaceKind,
     origin: SURFACE_ORIGINS[surfaceKind],
     sources: [...sources],
-    stack,
+    stack: Object.freeze([...stack]),
     pool,
     contentHash,
   };

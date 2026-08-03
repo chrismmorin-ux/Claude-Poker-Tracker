@@ -9,7 +9,12 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { buildResultCard, resultCardProblems, isValidResultCard, CLUSTER_UNITS } from '../resultCard.js';
+import {
+  buildResultCard, resultCardProblems, isValidResultCard, CLUSTER_UNITS,
+  cardCaveat, needsCaveat,
+} from '../resultCard.js';
+import { buildFlipRegister, buildFragility, buildMargin } from '../fragility.js';
+import { buildComparisonCensus, censusSummary, contrastKey } from '../comparisonCensus.js';
 import { buildReplicationManifest, manifestProblems, knownDivergence, REQUIRED_CONSTANTS } from '../manifest.js';
 import { StandardOfRecordError } from '../schemas.js';
 
@@ -158,9 +163,98 @@ describe('buildResultCard', () => {
 
   it('leaves census and warrantAttribution null until their tickets land', () => {
     const card = buildResultCard(cardInput());
-    // WS-328 computes the census; WS-327 computes warrant attribution. The slots exist now so
-    // the schema does not change when they do.
+    // WS-327 computes warrant attribution. The slot exists now so the schema does not change
+    // when it does.
     expect(card.census).toBeNull();
     expect(card.warrantAttribution).toBeNull();
+  });
+});
+
+/**
+ * The anti-shallowness fields, and their READER (founder directive 2026-08-03).
+ *
+ * A flip count stored but never rendered would reproduce, inside the mechanism built to
+ * prevent overconfidence, the exact failure it exists to prevent. So the reader is tested
+ * alongside the field.
+ */
+describe('fragility, flip register, and the caveat that reads them', () => {
+  it('carries the atom set by hash and the anchor generation', () => {
+    const card = buildResultCard({
+      ...cardInput(),
+      atomSetHash: 'sha256:' + 'b'.repeat(64),
+      atomCount: 41823,
+      anchorGeneration: 2,
+    });
+    expect(card.atomSetHash).toMatch(/^sha256:/);
+    expect(card.atomCount).toBe(41823);
+    expect(card.anchorGeneration).toBe(2);
+  });
+
+  it('refuses a flip register whose estimand does not match the card', () => {
+    const problems = resultCardProblems({
+      ...buildResultCard(cardInput()),
+      flipRegister: buildFlipRegister({ estimand: 'something else', currentDirection: 'supports' }),
+    });
+    expect(problems.some((p) => /does not match/.test(p))).toBe(true);
+  });
+
+  it('accepts a flip register on the same estimand', () => {
+    const input = cardInput();
+    const card = buildResultCard({
+      ...input,
+      flipRegister: buildFlipRegister({ estimand: input.estimand, currentDirection: 'supports' }),
+    });
+    expect(isValidResultCard(card)).toBe(true);
+  });
+
+  it('RENDERS a caveat when the conclusion has reversed before', () => {
+    const input = cardInput();
+    const card = buildResultCard({
+      ...input,
+      flipRegister: buildFlipRegister({
+        estimand: input.estimand,
+        priorConclusions: [{ direction: 'supports' }, { direction: 'refutes' }],
+        currentDirection: 'supports',
+      }),
+    });
+    expect(needsCaveat(card)).toBe(true);
+    expect(cardCaveat(card)).toMatch(/REVERSED 2 time\(s\)/);
+  });
+
+  it('RENDERS a caveat when the result is a knife edge', () => {
+    const input = cardInput();
+    const card = buildResultCard({
+      ...input,
+      fragility: buildFragility({
+        margins: [buildMargin({ name: 'PRIOR_WEIGHT', value: 10, flipsAt: 10.3, sweptRange: [5, 20] })],
+      }),
+    });
+    expect(cardCaveat(card)).toMatch(/knife edge/);
+    expect(cardCaveat(card)).toMatch(/PRIOR_WEIGHT/);
+  });
+
+  it('needs no caveat for a stable, robust result', () => {
+    const input = cardInput();
+    const card = buildResultCard({
+      ...input,
+      flipRegister: buildFlipRegister({ estimand: input.estimand, currentDirection: 'supports' }),
+      fragility: buildFragility({
+        margins: [buildMargin({ name: 'PRIOR_WEIGHT', value: 10, flipsAt: 40, sweptRange: [5, 60] })],
+      }),
+    });
+    expect(needsCaveat(card)).toBe(false);
+    expect(cardCaveat(card)).toBeNull();
+  });
+
+  it('carries a comparison census naming the contrasts nobody drew', () => {
+    const card = buildResultCard({
+      ...cardInput(),
+      comparisonCensus: buildComparisonCensus({
+        axis: 'surface',
+        members: ['srf-A', 'srf-B', 'srf-C'],
+        drawn: [{ contrast: contrastKey('srf-A', 'srf-B'), resultCardId: 'RC-1' }],
+      }),
+    });
+    expect(censusSummary(card.comparisonCensus).notAttempted).toBe(2);
   });
 });

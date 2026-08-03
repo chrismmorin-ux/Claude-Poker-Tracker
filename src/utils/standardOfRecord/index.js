@@ -12,9 +12,39 @@ export {
   SOR_SCHEMA_VERSIONS,
   SOR_SCHEMAS,
   MANIFEST_SCHEMA,
+  FORCING_QUESTIONS,
+  READER_DEPTHS,
   StandardOfRecordError,
   checkAgainstSchema,
 } from './schemas.js';
+
+export {
+  CONCLUSION_DIRECTIONS,
+  buildMargin,
+  buildFragility,
+  buildFlipRegister,
+  fragilityCaveat,
+} from './fragility.js';
+
+export {
+  COMPARISON_AXES,
+  BLOCK_REASONS,
+  contrastKey,
+  enumeratePossible,
+  buildComparisonCensus,
+  censusSummary,
+} from './comparisonCensus.js';
+
+export {
+  VALUE_KINDS,
+  ATOM_BASIS,
+  buildLayerEmission,
+  samplesFull,
+  buildAtomTruth,
+  buildDecisionAtom,
+  buildAtomSetManifest,
+  buildOccupancySpan,
+} from './decisionAtom.js';
 
 export {
   WARRANT_CLASSES,
@@ -31,6 +61,18 @@ export {
   isSurfaceKind,
   buildSurfaceEntry,
 } from './surfaceRegistry.js';
+
+export {
+  STACK_LAYERS,
+  TERMINAL_LAYER,
+  LAYER_GROUND_TRUTH,
+  layerIndex,
+  isStackLayer,
+  buildLayer,
+  stackProblems,
+  isValidStack,
+  firstStructuralDivergence,
+} from './stack.js';
 
 export {
   MATCHABLE_AXES,
@@ -54,4 +96,6 @@ export {
   buildResultCard,
   resultCardProblems,
   isValidResultCard,
+  cardCaveat,
+  needsCaveat,
 } from './resultCard.js';

@@ -37,10 +37,18 @@ const SHIPPED_FIELDS = {
     schemaVersion: 'number', atomId: 'string', situationKey: 'string', carried: 'object',
     surfaceId: 'string', action: 'object', ruleId: 'string|null', warrant: 'string|null',
     layers: 'array', outcome: 'object|null', skipReason: 'string|null',
+    // v2 (WS-328)
+    alternativeScores: 'object|null', rulesMatchedAndLost: 'array', beliefState: 'object|null',
+    truth: 'object|null', seeds: 'object', actorSeat: 'number|null', actorRole: 'string|null',
+    wallTimeMs: 'number|null', tokens: 'number|null',
   },
   coverageCensus: {
     schemaVersion: 'number', domain: 'object', cells: 'array',
     totalContexts: 'number', hitContexts: 'number', abstentions: 'number',
+  },
+  comparisonCensus: {
+    schemaVersion: 'number', axis: 'string', possible: 'array', drawn: 'array',
+    notDrawn: 'array', blockedReasons: 'object',
   },
   dealBookManifest: {
     schemaVersion: 'number', dealBookId: 'string', kind: 'string', sliceSpec: 'object',
@@ -55,6 +63,10 @@ const SHIPPED_FIELDS = {
     schemaVersion: 'number', resultCardId: 'string', match: 'object', estimand: 'string',
     treatment: 'string', metrics: 'object', clusterUnit: 'string', admissibility: 'object',
     manifest: 'object', census: 'object|null', warrantAttribution: 'object|null',
+    // v2 (WS-328)
+    atomSetHash: 'string|null', atomCount: 'number|null', anchorGeneration: 'number|null',
+    // v2 anti-shallowness (founder directive 2026-08-03)
+    fragility: 'object|null', flipRegister: 'object|null', comparisonCensus: 'object|null',
   },
 };
 
