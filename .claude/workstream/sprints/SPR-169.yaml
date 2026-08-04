@@ -1,0 +1,28 @@
+id: "SPR-169"
+title: "Ship WS-292: Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to b"
+status: approved
+approved_at: "2026-08-04T00:22:19.711Z"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-292: Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-04T00:22:19.711Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-292 selected (28 × no damping = 28).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-292"
+    title: "Holding-knowledge primitive — join what we BELIEVE about a seat to what turned out to be TRUE"
+    mode: plan-first
+    effort: L
+    status: pending
+
+created_at: "2026-08-04T00:22:19.711Z"
