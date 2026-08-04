@@ -1,0 +1,87 @@
+id: "WS-357"
+title: "Depth-3's inner river loop has no budget check — one uninterruptible chunk, and the time budget cannot bound it"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-04 while tightening WS-334. Verified in source.
+
+  `computeDepth3BarrelEV`'s flop branch checks the time budget between OUTER turn-card
+  iterations only (gameTreeDepth2.js:1010):
+
+      for (const { card: turnCard, weight: turnWeight } of turnCards) {
+        if (startTime && flopTotalWeight > 0 && Date.now() - startTime > timeBudgetMs) { bailedOut = true; break; }
+
+  The INNER river loop (gameTreeDepth2.js:1067-1089) has no check at all. Each outer
+  iteration runs `DEPTH3_RIVER_CARDS` rivers, and each river runs one
+  `computePerComboCheckEV` plus one `computePerComboEV` per sizing fraction from
+  `textureSizingFractions`, each looping up to `DEPTH3_MAX_COMBOS`. That entire block runs
+  to completion regardless of the budget.
+
+  WHY IT MATTERS FOR WS-334. The budget therefore does not bound wall time — it bounds
+  only how many outer iterations are ATTEMPTED. Raising the budget, or moving its start
+  past `buildEvaluationContext`, changes when the outer check fires and does nothing to the
+  size of the uninterruptible chunk. Any option that makes depth-3 reachable makes this
+  chunk reachable with it.
+
+  These functions are declared `async` but contain no `await` inside the loops, so the
+  block is synchronous start-to-finish on a single-threaded runtime. While it runs, React
+  cannot re-render and touch events queue. On the founder's Galaxy A22 — materially slower
+  than the desktop these costs were measured on — that is a visible freeze mid-hand, at a
+  live table, on the device this is built for.
+
+  WS-301 measured 8.5s for a single depth-2 call against the 150ms budget and gave the
+  depth-2 entry points a between-runout bailout. This is the path that bailout did not
+  reach. Treating "WS-301 bounded depth-2/3" as settled is the dangerous assumption here.
+accept_criteria: |
+  - The inner river loop observes the same budget the outer loop does, and a partial river
+    average is renormalised against the weight actually accumulated — the idiom the outer
+    loops already use (`flopTotalWeight`, `bailedOut`), not a new one.
+  - Decide how partial results propagate. `gameTreeEvaluator.js:1131` already blends on
+    `depth3Result.completed` (0.90 vs 0.70); a river-level bailout is a THIRD state
+    between complete and absent, and the blend must account for it deliberately rather
+    than inheriting whichever flag is nearest.
+  - A test asserts that with a budget small enough to trip mid-river, the call returns
+    within a bounded multiple of the budget rather than running to completion. It must
+    FAIL against the current code (WS-309 rule).
+  - Worst-case wall time is measured under CPU throttling representative of the A22 — not
+    on the dev desktop. State the throttle factor used. WS-334 accept criterion 3 requires
+    the device assumption be stated; this is where the number comes from.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-334"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — is a bounded-but-partial depth-3 answer better than no depth-3 answer? A river
+    loop cut short samples fewer rivers, which biases toward whichever rivers the
+    stratified sampler drew first. That may be worse than depth-2, not better. The
+    alternative is to make the whole depth-3 attempt all-or-nothing: check the budget
+    BEFORE entering, and skip cleanly if the remaining budget cannot cover it. Cheaper to
+    reason about and it keeps the blend honest.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334-tightening"
+created_at: "2026-08-04T18:20:00Z"
+status_note: |
+  Sequenced before WS-334 because WS-334 makes this path reachable. Fixing reachability
+  first ships an unbounded synchronous block to the founder's phone.
+closed_by_event: "ev-1785873568632-e4d9740c0b0e"

@@ -1,0 +1,89 @@
+id: "WS-356"
+title: "The stage ledger reports `ran: true` for a stage that threw — WS-334's own bug, reincarnated one layer down"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-04 while tightening WS-334. Verified in source, not inferred.
+
+  `gateStage` (gameTreeEvaluator.js:744-751) sets `ran` from the GATE outcome alone:
+
+      const blockedBy = Object.entries(conditions).filter(([, ok]) => !ok).map(([name]) => name);
+      if (isTimeBudgetExceeded()) blockedBy.push('budget');
+      const ran = blockedBy.length === 0;
+
+  It is called in the `if (...)` position, so it records its verdict BEFORE the stage body
+  runs. Every depth-2/3 body then wraps its work in a try/catch that swallows to a warning
+  and keeps the depth-1 estimate — e.g. gameTreeEvaluator.js:899-925:
+
+      if (gateStage('callDepth2', { ... })) {
+        try { ...; callCandidate.depth2 = true; }
+        catch (e) { console.warn?.('[GameTree] call depth-2 failed:', e?.message); }
+      }
+
+  Same shape at every refinement site. So a stage whose gate opens and whose body THROWS
+  is recorded as `ran: true, blockedBy: []`, and `treeMetadata.depthReached` — built from
+  `stages.filter(s => s.ran)` — reports depth-2 for an evaluation that returned depth-1.
+
+  WHY THIS BLOCKS WS-334. WS-334's whole finding is that a silent degrade is
+  indistinguishable from work that ran, and its stage ledger was shipped to close exactly
+  that. The ledger closes it for the BUDGET degrade and leaves it open for the ERROR
+  degrade. Turning depth-2/3 on without fixing this means the first exception on a
+  previously-unexercised input shape produces months of depth-1 advice labelled depth-2 —
+  the original bug, one layer down, with the instrument built to catch it looking away.
+
+  The exposure is not hypothetical. Depth-2/3 has never executed in production, and its
+  unit tests omit `cache`, `villainHolding`, `modelSituation` and `startTime`, so the code
+  is about to meet real object graphs for the first time. An exception is a likely first
+  outcome, not an edge case.
+
+  The catch blocks also violate .claude/rules/error-handling.md on their own terms: they
+  log `e?.message` with no stack and no input context, so even the warning that does fire
+  is not diagnosable.
+accept_criteria: |
+  - A stage that throws is distinguishable in `treeMetadata` from one that was gated and
+    from one that completed. Prefer recording the outcome AFTER the body rather than
+    widening `blockedBy`, so "was allowed to run" and "actually produced a result" stay
+    separate facts rather than being merged into one flag.
+  - `depthReached` / `callDepth2` / `betDepth2` derive from work COMPLETED, never from the
+    gate verdict. WS-334 already made this correction once for the street-derived version;
+    this is the same correction for the error path.
+  - A test injects a throwing depth-2 call and asserts the ledger does NOT claim the stage
+    ran. It must FAIL against the current code (WS-309 rule).
+  - The catch blocks log with enough context to diagnose — at minimum the stage name, the
+    street, and the error stack. A warning that cannot be acted on is a comment with extra
+    steps (exploitEngine/CLAUDE.md).
+  - Decide explicitly whether a depth-2/3 exception should stay silent at all. It is
+    currently invisible to the founder and to `/verify`; a swallowed exception in the
+    engine's deepest reasoning path may warrant surfacing rather than warning.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-334"
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334-tightening"
+created_at: "2026-08-04T18:20:00Z"
+status_note: |
+  Sequenced before WS-334 because it is the instrument WS-334's result will be read
+  through. Fixing reachability first would mean turning on depth-2/3 with no reliable way
+  to tell whether it is running.
+closed_by_event: "ev-1785873568556-78179850347c"

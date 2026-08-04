@@ -1,0 +1,128 @@
+id: "WS-355"
+title: "Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where card numbers belong, and bestFiveFromSeven silently ignores them"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-08-04 while sizing WS-334's option (a). Live since commit eb477235
+  (2026-07-30, WS-276/307). Affects EVERY flop and turn evaluation at depth-1 — this is
+  not a depth-2/3 problem and does not wait on WS-334.
+
+  THE MECHANISM. `stratifiedSample` (gameTreeSampling.js:91) returns `{card, weight}`
+  OBJECTS — the weights are load-bearing for the stratification. `buildRunouts`
+  (gameTreeEquity.js:395-423) consumes that return value as though it were raw card
+  numbers, splicing the objects straight into board arrays:
+
+      for (const turn of stratifiedSample(board, [], turnSamples)) {
+        const board4 = [...board, turn];              // <- object, not a card
+        for (const river of stratifiedSample(board4, [], riverSamples)) {
+          runouts.push([turn, river]);                // <- objects
+        }
+      }
+
+  `bestFiveFromSeven` does NOT throw on this. Verified directly: a 7-card array with two
+  objects in it returns the identical score to the 5 valid cards alone (9175040 both ways).
+  It silently drops them.
+
+  CONSEQUENCE. On the flop and the turn, every one of the 8 sampled "runouts" inside
+  `computeVillainEquityVsPerceived` evaluates the SAME bare board. No runout is ever
+  applied. `villainEquityVsPerceived` is therefore current-made-hand-strength only —
+  villain's equity computed as if the hand ended on the flop. The river path
+  (board.length === 5) does not use runouts and is correct.
+
+  Two further defects fall out of the same line, both currently masked: `board4` carries
+  an object into the next `stratifiedSample`, so (i) `used.has(c)` never matches it and
+  the turn card is not excluded from the river deck — a river can duplicate the turn —
+  and (ii) `board.map(c => c >> 2)` yields NaN, so `maxBoardRank` is NaN and the
+  overcard/blank categorisation degrades for the river draw.
+
+  MEASURED IMPACT — J♥T♥9♦ vs a top-40% range, shipped vs a corrected implementation:
+
+  | villain bucket | n | shipped | corrected | error |
+  |---|---|---|---|---|
+  | **draw** | 37 | 0.029 | 0.396 | **-0.367** |
+  | strong | 23 | 0.164 | 0.307 | -0.144 |
+  | marginal | 141 | 0.109 | 0.207 | -0.098 |
+  | air | 67 | 0.024 | 0.083 | -0.059 |
+  | nuts | 42 | 0.589 | 0.569 | +0.020 |
+
+  mean |shipped - corrected| = 0.171. A nut flush draw with a gutshot (A♥K♥) is credited
+  0.0397 where the corrected value is ~0.40. Made hands survive; every DRAW is valued at
+  approximately zero, because a draw that never sees a runout has no equity.
+
+  WHY IT MATTERS BEYOND THE NUMBER. `villainDecisionEquity` (gameTreeEquity.js:584) reads
+  this quantity, and it is the input to every villain fold/call decision via
+  `comboCallFilter` / `comboBetFilter`. Understated villain equity means villain is
+  modelled as folding far more than they do. Per exploitEngine/CLAUDE.md: "inflated fold
+  equity does not make the engine timid — it makes it RECKLESS, because every villain hand
+  wrongly folded is a hand the bluff gets paid by." The bias is concentrated exactly on
+  draws, i.e. on the wet boards where fold equity is hardest to read.
+
+  It also inverts WS-307's own stated purpose. That change exists so villain decisions run
+  on villain's view rather than hero's cards; scoring every draw at zero substitutes a
+  different wrong quantity for the one it removed.
+
+  FAMILY. Third instance of the shape already in exploitEngine/CLAUDE.md: a value that
+  looks plausible with nothing asserting it. WS-285 was a comment asserting an unmeasured
+  ordering; WS-300 was a comment naming hands the indices did not encode; this is a
+  function signature nothing type-checked. `bestFiveFromSeven` silently ignoring non-numeric
+  entries is what turned a crash into five days of quiet wrong answers.
+accept_criteria: |
+  - `buildRunouts` unwraps `.card`, and the turn card is excluded from the river deck.
+    Decide explicitly whether the discarded stratification `weight` should weight each
+    runout in `perceivedEquityWithRunouts` — today every runout is counted equally, which
+    is what stratified sampling's weights exist to correct. Record the choice either way.
+  - A test asserts every element of `buildRunouts`' output is a NUMBER, not an object.
+    It must FAIL against the current code (WS-309 rule).
+  - A behavioural test asserts a strong draw on a wet board receives materially non-zero
+    `villainEquityVsPerceived` — the falsifier for this whole class. Assert the CONVERSE
+    too: made hands must not move much, or the fix has changed more than the defect.
+  - `bestFiveFromSeven` no longer silently accepts non-card input on this path — either it
+    validates, or the call sites do. A silent ignore is what made this survive; do not
+    leave that property in place while fixing only today's caller.
+  - The depth-1 EV delta from this correction is captured BEFORE any WS-334 estimator
+    change lands, so the two are not confounded. `scripts/backtest/dumpGameTreeEV.mjs`
+    already exists for exactly this before/after diff.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeSampling.js"
+  - "src/utils/pokerCore/handEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-334"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — do the stratification weights apply to the runout average? `stratifiedSample`
+    computes a per-card probability weight so a sampled category represents its true deck
+    share. `perceivedEquityWithRunouts` averages runouts uniformly and discards that
+    weight. Unweighted stratified sampling over-represents guaranteed-coverage categories
+    (each non-empty category gets at least one draw regardless of its deck share), which
+    biases toward flush-completing and pairing cards on wet boards. Fixing the object bug
+    without deciding this leaves a smaller version of the same error.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334-tightening"
+created_at: "2026-08-04T18:20:00Z"
+status_note: |
+  Found 2026-08-04 while measuring WS-334's cost split to size its option (a). Not a
+  latency finding — it is the correctness bug that sat underneath the latency one. WS-334
+  is sequenced behind it because WS-334's accept criteria call for measuring a depth-1 vs
+  depth-2 accuracy delta, and that measurement is worthless taken against a depth-1
+  baseline whose villain-equity input scores every draw at zero.
+closed_by_event: "ev-1785873568389-5e344ef28fce"

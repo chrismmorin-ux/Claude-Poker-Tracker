@@ -1,0 +1,43 @@
+id: "SPR-174"
+title: "Ship WS-355: Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where "
+status: done
+approved_at: "2026-08-04T18:21:02.014Z"
+completed_at: "2026-08-04T19:59:28.357Z"
+completed_by_commit: "24b652a5"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-355: Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where card numbers belong, and bestFiveFromSeven silently ignores them
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-04T18:21:02.014Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-355 selected (33 × no damping = 33).
+  Program cap-breach: design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-355"
+    title: "Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where card numbers belong, and bestFiveFromSeven silently ignores them"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-08-04T19:59:28.357Z"
+  - id: "WS-356"
+    title: "The stage ledger reports `ran: true` for a stage that threw — WS-334's own bug, reincarnated one layer down"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-08-04T19:59:28.357Z"
+  - id: "WS-357"
+    title: "Depth-3's inner river loop has no budget check — one uninterruptible chunk, and the time budget cannot bound it"
+    mode: plan-first
+    effort: S
+    status: done
+    completed_at: "2026-08-04T19:59:28.357Z"
+
+created_at: "2026-08-04T18:21:02.014Z"
