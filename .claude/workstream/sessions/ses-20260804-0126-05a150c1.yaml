@@ -1,9 +1,9 @@
 id: "ses-20260804-0126-05a150c1"
-status: active
+status: completed
 started_at: "2026-08-04T01:26:17.085Z"
-ended_at: null
+ended_at: "2026-08-04T04:55:00Z"
 mode: auto
-last_heartbeat: "2026-08-04T04:44:58Z"
+last_heartbeat: "2026-08-04T04:45:40Z"
 pid: "509"
 agent_session_id: "05a150c1-3985-5673-85a9-115556783c26"
 
@@ -12,3 +12,115 @@ agent_session_id: "05a150c1-3985-5673-85a9-115556783c26"
 # that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
 claimed_items: []
 files_locked: []
+
+branch: "claude/3bet-range-co-button-hda1mw"
+commits:
+  - "d4339a5 — P-1a: dash spans in parseRangeString"
+  - "1be6d9d — P-1b: open sizings are bb multiples, not pot multiples"
+  - "10a1b3e, 72bc10d, 383b670 — session bookkeeping"
+
+handoff_notes: |
+  HOW THIS STARTED. A plain question — "walk me through the 3-bet range vs a CO
+  open from the button." The answer I gave was sourced from the WRONG LAYER:
+  `archetypeRanges.js` is drill content, imported only by PostflopDrillsView, and
+  its own header says it is "not consumed by the exploit/range engines." The live
+  engine has no concept of a 3-bet range at all. The founder then asked for a
+  provenance audit separating engine-sourced claims from LLM-sourced ones, which
+  became the real work.
+
+  ITEMS COMPLETED
+  - P-1a (d4339a5): `parseRangeString` silently dropped every dash span. 22 such
+    tokens in archetypeRanges.js alone; BB_vs_BTN was missing 244 combos (every
+    pocket pair below QQ, every weak suited ace, EVERY offsuit ace). Unrecognized
+    tokens now throw; weight handling stays lenient (pinned by existing tests).
+  - P-1b (1be6d9d): PREFLOP_RAISE_SIZES carries two unit conventions with nothing
+    saying so. The iso branch read bb multiples; the open branch read the same
+    table as POT multiples, so a constant labelled "2.5bb EP open" produced 3.75bb.
+    Added `resolveBigBlind` as the single choke point S1 will fill.
+
+  ITEMS REMAINING — none claimed, none in progress. No active sprint.
+
+  KEY FINDINGS (each measured, not inferred)
+  1. `spr` is NEVER passed on the preflop path — zero occurrences in
+     preflopAdvisor.js. Every preflop EV silently assumes SPR_ZONES.HIGH.
+  2. `getSPRZone` buckets everything >=13 as DEEP, so 100bb and 200bb produce
+     BYTE-IDENTICAL ranges. Blocks the founder's 3-stack-depth requirement; the
+     fix is continuous interpolation (precedent already in gameTreeConstants.js).
+  3. Preflop blockers CANCEL BY CONSTRUCTION. foldThroughPerCombo calibrates
+     against a hero-dead deck, so AKs and 32o give the same fold-through
+     (measured delta 1.8e-4 at 3 seats). The engine cannot tell A5s from 65s as a
+     bluff — the one comparison bluff selection exists to make.
+  4. 4-bet frequency was NEVER MINED despite a 13.4M/20.6M-hand corpus. The six
+     extracted stats have no `fourBet`/`foldTo4Bet`. WS-270's P1 is
+     consequence-argued (soundly — see its "WHY THIS OUTRANKS ITS FREQUENCY"
+     section) but NOT frequency-derived, and `priority_score: 16.0` has no
+     computing formula anywhere in .claude/.
+  5. `.claude/projects/gut-range.md` was chartered 2026-07-29 and never started.
+     The plan EXECUTES it rather than duplicating it. Its measured defect
+     analysis (grids vs scalars off by up to 12x; scenario sums of 0.777 and
+     1.154) is correct and is the reason the work is worth doing.
+  6. Two drill tests were VACUOUS — they passed specific-suit combo notation
+     ('AhKh,KhQh,...') to a 169-cell hand-class parser, so the range was empty
+     and both asserted over zero combos. Only surfaced because tokens now throw.
+
+  DECISIONS RECORDED: DEC-030 (v1 = RFI-only, executes the GUT charter),
+  DEC-031 (tau IS the rec-vs-reg axis; polarization derived, never labelled),
+  DEC-032 (generated ranges are a prior, not a lookup), DEC-033 (published charts
+  score as a guide with a divergence registry, never a gate), DEC-034
+  (confidence propagates as the MINIMUM along the path), DEC-035
+  (parseRangeString rejects unrecognized tokens).
+
+  NEXT RECOMMENDED ACTION
+  P0 — hand-vs-range preflop equity, DECOMPOSED. `preflopEquity.js:508` throws
+  NotImplementedError on the range branch. Per the charter this blocks
+  everything: the ranking function, the domination cost, and the fixed point all
+  need it. Decomposed (hitRate / conditionalWin per made-hand bucket), not just a
+  mean — that is what sees KJo crushed by AJ/KQ/AK while its mean looks fine.
+
+  Cheap high-value alternative if a smaller bite is wanted: mine `fourBet` /
+  `foldTo4Bet` out of the HandHQ corpus via the existing
+  `scripts/generate-handhq-reference.mjs`. Converts WS-270's priority from
+  asserted to measured, and answers empirically whether the live pool 4-bet
+  bluffs at all — the single fact the whole v2 ladder's validity rests on.
+
+  Plan file: /root/.claude/plans/reactive-singing-marble.md
+
+context_notes: |
+  UNRESOLVED / CARRY FORWARD
+
+  - DEC-034 must be written into `.claude/projects/gut-range.md` BEFORE any of
+    the v2 pinned-subgame ladder is built. The charter does not currently contain
+    it, and it is the constraint that keeps the ladder from reintroducing WS-302's
+    "a starting belief of zero is not a prior, it is a permanent verdict" at the
+    node level. The existing consequence-weighted gate is LOCAL — a thin pin
+    several rungs down can currently feed a read that presents as confident on
+    its own local evidence. Confidence must be min-along-path.
+
+  - Two uncertainties need to stay separated in that work: estimation error
+    shrinks as n/(n+PRIOR_WEIGHT); EXECUTION variance never shrinks at any n,
+    because a measured frequency is an aggregate over player states. That is why
+    a fully hard pin is never correct even at infinite n.
+
+  - FOLLOW-ON NOT ACTED ON: the range-advantage framework thresholds were
+    calibrated while ranges were truncated by the dash bug. They may be tuned to
+    compensate for a defect that no longer exists. Worth reviewing before
+    scoring generated ranges against anything.
+
+  - UNDOCUMENTED DIVERGENCE: archetypeRanges.js claims a "GTO Wizard /
+    PokerCoaching 9-max cash 100bb" baseline but runs noticeably tighter.
+    POKER_THEORY section 9 documents five divergences; BTN_vs_CO is not among
+    them. Should be registered under DEC-033's registry.
+
+  - DOC DRIFT found while mapping (not fixed): CLAUDE.md says "8 reducers ...
+    IndexedDB v13"; actual is 14 reducers (12 wired into useAppState) and
+    DB_VERSION = 27 with 25 stores. PERSISTENCE_OVERVIEW.md is ~4 months past
+    its 60-day staleness threshold and still lists 7 stores.
+
+  - The founder's own stack depths: at 1/3 a $400 buy-in is ~133bb and a
+    $700-1500 stack is ~233-500bb. Real play sits BETWEEN and ABOVE the two upper
+    solved depths, so 200bb is the load-bearing one and upward extrapolation
+    matters more than the 100bb point. GAME_TYPES carries an implicit
+    buyInDefault = 100 x bb that does not describe this game.
+
+  - `slow-unit` vitest project was NOT run this session (4 drillContent equity
+    files, 5-15 min each). Everything else is green.
