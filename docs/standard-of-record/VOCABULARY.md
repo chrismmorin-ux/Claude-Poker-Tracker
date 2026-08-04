@@ -53,6 +53,12 @@ exploratory check is not a claim. The trigger is **a number someone could act on
 | **Exploitation efficiency** | A strategy's edge over the Field as a fraction of PBR's edge over the Field — *of the money available beyond playing like the field, how much did we get*. A ratio of **edges**, never of raw values: raw values are dominated by the Field's own baseline and would sit near 1.0 for any two strategies. Not clamped — below 0 (loses to the field) and above 1 (beat the one-step ceiling) are both real readings. A standard Result Card field. (WS-331) |
 | **Exploitation premium** | `EV(PBR) − EV(Equilibrium)` — how much money exists *specifically because the pool is bad*, as opposed to because hero plays solid poker. Currently **unavailable** and reported as such: the lower post (SRC-013) does not exist, and chart-derived substitutes are refused by a throw, not a warning. (WS-331) |
 | **Position** | What a strategy resolves to instead of a number: exploitation efficiency (x) plus its own exploitability (y). The builder **refuses a bare scalar**. Only the Field's y is measured today — it *is* PBR's edge, by construction; every other surface's needs the WS-326 simulator and ships `null` with that reason. (WS-331) |
+| **Disclaimer** | The standing statement of the **estimand** — what was substituted, over what horizon, against which opponents, on which population, in what units, with what cluster unit. Not boilerplate and not modesty: it is what a Result Card MEANS, and `DISCLAIMER_TREATMENT` is it in one reusable line. (WS-330) |
+| **Suspected-Fault Register** | The **ranked** list of where the fault most likely is. Each entry carries a mechanism, a site, what it contaminates, a **falsifier**, and a status. Ranked by **expected damage = probability × contamination breadth** (founder, 2026-08-04) with both components shown — not by probability alone, which buries the unlikely-but-total entries. A flat caveat list is read once and ignored; a register with falsifiers is a work queue. (WS-330) |
+| **Fault site** | Where a fault lives: a Stack layer, or one of `corpus` \| `instrument` \| `statistics` \| `process`. Not every fault is layer-local — a stale corpus is not a bug in the equity layer — and forcing one into a layer slot means it gets looked for where it is not. (WS-330) |
+| **Contamination** | Which results an entry would taint. Carried **twice**: as prose for a human, and as a `matches(card)` predicate over fields a Result Card already carries. The predicate ships WITH the entry so a new card is classified the moment it exists — asking card authors to declare their own exposure is the pattern that rotted three times already. (WS-330) |
+| **`suspect-pending-review`** | The flag a Result Card carries once a fault it depended on is **confirmed**. It does **not** mean the card is wrong — it means the conclusion rested on something now shown to be faulty and nobody has re-checked it. The action it asks for is a re-check, not a retraction. This is the retroactive invalidation trail WS-291 did not have. (WS-330) |
+| **Register version** | `FR-1+<content hash>`, stamped into every `manifest.disclaimerRegisterVersion`. The hash is what makes it honest: edit any entry and the version changes whether or not anyone remembered to bump anything. Same argument as stamping `contentHash` in the Strategy Card loader. (WS-330) |
 
 ### The four surface kinds
 
@@ -125,6 +131,7 @@ place so an existing reader gets `null` rather than a crash.
 | Deal Book manifest | 1 | ″ |
 | Field manifest | 1 | ″ |
 | Result Card | 1 | ″ |
+| Fault entry | 1 | ″ (WS-330) |
 
 Enforced by `src/utils/standardOfRecord/__tests__/schemas.test.js`, which pins a baseline of
 every shipped field. The companion CI grep gate — modelled on `scripts/check-idb-additive.sh` —
@@ -148,6 +155,7 @@ unreplicable.
 | `unseededSources` | Randomness the run could **not** seed. An empty array is a *positive claim* of bit-reproducibility. |
 | `constants` | Minimum set: `PRIOR_WEIGHT`, `ACTION_TAU_FRACTION`, `MIN_CONTINUATION_WEIGHT`. A floor, not a schema — stamp whatever else a run depends on. |
 | `knownDivergences` | Where a stamped value is known to have a shadow copy elsewhere. `agrees: null` means the shadow could not be read, which is not the same as disagreement. |
+| `disclaimerRegisterVersion` | Which [suspected-fault register](DISCLAIMER-AND-FAULT-REGISTER.md) the run stood under. **A card without one is invalid** — confirming a fault later could not otherwise tell which prior results it invalidates. One deliberate asymmetry: the schema field stays optional so `checkAgainstSchema` can still *parse* a legacy card, because the flagger has to open an old card in order to flag it. Validation tightens; reading does not. (WS-330) |
 
 ### Transfer risk: rake-driven conclusions (WS-333)
 

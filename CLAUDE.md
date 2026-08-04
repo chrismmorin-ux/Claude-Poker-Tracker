@@ -293,6 +293,7 @@ Supporting references (unique detail not in System Model):
 - `INVARIANTS.md` — standalone invariant catalog with verification dates
 - `POKER_THEORY.md` — **MANDATORY before editing `rangeEngine/` or `exploitEngine/`**
 - `docs/standard-of-record/VOCABULARY.md` — **the vocabulary for every strategy/EV claim** (ADR-009). Surface kinds, Strategy Card, Deal Book, Result Card, Decision Atom, warrants. Read before naming anything in this space; the terms already exist.
+- `docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md` — **what the numbers can honestly claim, and the ranked list of where the fault most likely is** (WS-330). §1 is one page in plain language. Read before quoting any figure.
 
 ## Standard of Record (ADR-009)
 **Any artefact making a *comparative* claim about strategy, model quality, or EV must resolve to a Result Card** — a registered surface run against a versioned Deal Book and Field, carrying a complete replication manifest (engine commit, Deal Book hash, partition, every seed, every load-bearing constant).
@@ -300,6 +301,13 @@ Supporting references (unique detail not in System Model):
 This binds *comparative claims*, not every number. A debug count or an exploratory check is not a claim. **The trigger is a number someone could act on or cite.**
 
 Before measuring or reporting anything comparative: read `docs/standard-of-record/VOCABULARY.md`, and use `src/utils/standardOfRecord/` rather than inventing a shape. The mechanism this prevents is the one that let WS-291 survive for the life of the project — nothing forced two numbers onto the same axis, so a wrong number never had to meet a right one.
+
+**Before quoting any figure from this system, read `docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md` §1** — one page, plain language, what the numbers can honestly claim. §3 is the *ranked* list of where the fault most likely is, each entry with a falsifier. Two rules follow from it:
+
+- **Every Result Card stamps `manifest.disclaimerRegisterVersion`** (`registerVersion()` from `faultRegister.js`). A card without one is invalid — `manifestProblems` rejects it. That stamp is what lets a fault confirmed tomorrow find the results that depended on it yesterday.
+- **Confirming or retiring a register entry requires recorded evidence**, enforced in code. Confirming returns every prior Result Card it contaminates, flagged `suspect-pending-review`. Entries never quietly disappear.
+
+The top-ranked entry is that the founder's game is **live 9-handed 1/2–1/3** while the corpus is **online 2009** — so any live claim anchored on it is *transferred, not measured*. Say so when reporting one.
 
 Enforcement is staged: the loader rejects malformed Strategy Cards today; the repo-wide invariant ships advisory and flips to enforcing in WS-329.
 

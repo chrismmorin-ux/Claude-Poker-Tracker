@@ -135,6 +135,11 @@ protocols:
       - Find a surface whose Stack is undeclared, so divergence cannot be attributed.
       - Find a captured field with no reader.
       - Find a leakage channel the guard does not close.
+      - Find a Result Card with no disclaimerRegisterVersion — it cannot be retroactively
+        flagged when a fault it stood on is confirmed (WS-330).
+      - Run the falsifier of the top-ranked untested entry in
+        docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md and either confirm it with
+        evidence or retire it with evidence. An entry that is never run is a caveat again.
       Do NOT report instruments that are sound. Only report genuine breaks.
     min_tier: active
 
@@ -148,6 +153,11 @@ protocols:
       - What claims reach the founder that no Result Card supports?
       - Which surfaces exist in the repo but were never registered as surfaces?
       - Has an anchor generation changed without a rebase re-run of prior cards?
+      - Which suspected faults are MISSING from the register? It was seeded from faults
+        observable in the repo on 2026-08-04; a fault nobody has thought to write down is
+        exactly the shape WS-291 had.
+      - Run registerSelfCheck over the current Result Cards: which matchers discriminate
+        nothing? A contamination claim no card can test is not yet evidence.
       Recommend scope expansions or new problem classes.
     min_tier: critical
 
@@ -244,9 +254,15 @@ last_run_by_protocol:
 
 created_at: "2026-08-02T00:00:00Z"
 created_by: founder-directive
-work_items_open: 10
+work_items_open: 12
 findings_open: 0
 
 
 cap_breach:
-  active: false
+  active: true
+  work_items_open: 12
+  findings_open: 0
+  max_open_items: 10
+  priority_floor: 20
+  ratio: 1.2
+  since: "2026-08-04"

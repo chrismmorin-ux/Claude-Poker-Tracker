@@ -1,0 +1,73 @@
+id: "WS-353"
+title: "Falsify FAULT-temporal-staleness — July 2009 — sixteen years of population drift"
+legacy_id: ""
+type: investigation
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.9
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+fault_id: "FAULT-temporal-staleness"
+description: |
+  EMITTED FROM THE SUSPECTED-FAULT REGISTER (WS-330), register version FR-1+d4c7809e77b7, on 2026-08-04.
+  Rank 2 of the register by expected damage.
+
+  RANKING (expected damage = probability x contamination breadth):
+    probability      0.9  — Drift over sixteen years is near-certain in direction. Which cells moved, and by how much, is entirely unmeasured.
+    breadth (prior)  0.85
+    breadth (obs)    no Result Cards to measure against yet
+    expected damage  0.765
+    evidence weight  0.000 — how much of the breadth is measured rather than declared
+
+  SITE: corpus
+  STATUS AT EMISSION: untested
+
+  MECHANISM.
+  The corpus is sixteen years old. Population tendencies have moved. Weak pseudocounts limit
+  how far a stale prior can pull a posterior, but that is a MITIGATION, not a control: it
+  bounds the damage without measuring it.
+
+  WHAT IT CONTAMINATES.
+  Every prior mined from the corpus, and every claim that leans on one.
+
+  WHY THIS IS A TICKET AND NOT A CAVEAT. The register entry carries a falsifier, which is a
+  statement of what would settle the question. That is what the accept criteria below are.
+  Closing this item means the falsifier was RUN — either the entry gets confirmed (and every
+  prior Result Card it contaminates is flagged suspect-pending-review) or it gets retired with
+  the measurement as evidence. It does not close by being read.
+accept_criteria: |
+  - Run the falsifier:
+    Fit the same priors on SRC-005 (Ignition, current) and compare against the 2009 values cell
+    by cell. The per-cell gap is the drift; cells that agree are stable and can be quoted
+    without the era caveat.
+  - Record the outcome as evidence on the register entry, then either confirmFault() or
+    retireFault() it in src/utils/standardOfRecord/faultRegister.js. Both require evidence.
+  - If CONFIRMED: report the Result Cards flagged suspect-pending-review by the confirmation,
+    and say whether each conclusion survives.
+  - Update the ranked table in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md — the
+    drift test asserts it matches the module.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: fault-register
+  created_by: ai
+  finding_id: ""
+  run_id: "FR-1+d4c7809e77b7"
+created_at: "2026-08-04T00:00:00Z"
+status_note: |
+  Emitted by scripts/standardOfRecord/emit-fault-items.mjs. Deduped on fault_id — this entry
+  had no existing queue item at emission time. Re-running the emitter will not file it again.

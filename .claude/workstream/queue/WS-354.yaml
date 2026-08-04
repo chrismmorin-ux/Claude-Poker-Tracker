@@ -1,0 +1,74 @@
+id: "WS-354"
+title: "Falsify FAULT-modelled-rake — Modelled rake — the corpus records none, so every figure assumes a schedule"
+legacy_id: ""
+type: investigation
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.6
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+fault_id: "FAULT-modelled-rake"
+description: |
+  EMITTED FROM THE SUSPECTED-FAULT REGISTER (WS-330), register version FR-1+d4c7809e77b7, on 2026-08-04.
+  Rank 3 of the register by expected damage.
+
+  RANKING (expected damage = probability x contamination breadth):
+    probability      0.9  — The assumption is certain to be present. Whether it changes a given conclusion is the open part, and WS-333 already measured one spot where it does.
+    breadth (prior)  0.8
+    breadth (obs)    no Result Cards to measure against yet
+    expected damage  0.720
+    evidence weight  0.000 — how much of the breadth is measured rather than declared
+
+  SITE: instrument
+  STATUS AT EMISSION: untested
+
+  MECHANISM.
+  The corpus contains no rake. Every EV figure therefore carries an ASSUMED schedule, and the
+  assumption does not transfer: measured on the same spot, live 1/2 (10%, $8 cap) needs +4.8pp
+  of extra defending equity where the 2009 online corpus (5%, $3 cap) needs +2.3pp. A
+  rake-driven conclusion measured online understates the live effect by about half.
+
+  WHAT IT CONTAMINATES.
+  Every bb-denominated EV figure, and marginal calls most of all.
+
+  WHY THIS IS A TICKET AND NOT A CAVEAT. The register entry carries a falsifier, which is a
+  statement of what would settle the question. That is what the accept criteria below are.
+  Closing this item means the falsifier was RUN — either the entry gets confirmed (and every
+  prior Result Card it contaminates is flagged suspect-pending-review) or it gets retired with
+  the measurement as evidence. It does not close by being read.
+accept_criteria: |
+  - Run the falsifier:
+    Sweep the rake schedule across the live and online configurations and report the conclusion
+    under each. A conclusion that survives both is rake-robust and can be quoted without the
+    schedule; one that flips must state which pool it was measured on.
+  - Record the outcome as evidence on the register entry, then either confirmFault() or
+    retireFault() it in src/utils/standardOfRecord/faultRegister.js. Both require evidence.
+  - If CONFIRMED: report the Result Cards flagged suspect-pending-review by the confirmation,
+    and say whether each conclusion survives.
+  - Update the ranked table in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md — the
+    drift test asserts it matches the module.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: fault-register
+  created_by: ai
+  finding_id: ""
+  run_id: "FR-1+d4c7809e77b7"
+created_at: "2026-08-04T00:00:00Z"
+status_note: |
+  Emitted by scripts/standardOfRecord/emit-fault-items.mjs. Deduped on fault_id — this entry
+  had no existing queue item at emission time. Re-running the emitter will not file it again.

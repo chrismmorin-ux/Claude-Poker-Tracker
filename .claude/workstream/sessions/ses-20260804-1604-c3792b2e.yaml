@@ -1,0 +1,33 @@
+id: "ses-20260804-1604-c3792b2e"
+status: active
+started_at: "2026-08-04T16:04:29.392Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-04T16:08:28.840Z"
+pid: 28516
+host: MorinComputer
+agent_session_id: "c3792b2e-f3ea-4a05-a1b8-a91e16193e16"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-330"
+
+files_locked:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "src/utils/standardOfRecord/manifest.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "src/utils/standardOfRecord/index.js"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - "scripts/__tests__/heroEvResultCard.test.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+  - "src/utils/standardOfRecord/__tests__/faultRegister.test.js"
+  - "scripts/standardOfRecord/emit-fault-items.mjs"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "CLAUDE.md"
+  - "system/constraints.md"
+  - ".claude/workstream/programs/prog-strategy-of-record.yaml"
+

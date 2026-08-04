@@ -20,6 +20,7 @@
 import { execFileSync } from 'node:child_process';
 
 import { knownDivergence } from '../../src/utils/standardOfRecord/manifest.js';
+import { registerVersion } from '../../src/utils/standardOfRecord/faultRegister.js';
 
 /**
  * Engine identity: the commit, and whether the tree was dirty.
@@ -150,7 +151,12 @@ export const buildStampInput = async ({
     seeds,
     unseededSources: [...unseededSources],
     constants,
-    disclaimerRegisterVersion: null, // WS-330 creates the register; null until it exists.
+    // WS-330. NOT a hand-maintained string: `registerVersion()` is the epoch plus a content
+    // hash over the register body, so editing any entry changes what a run stamps whether or
+    // not anyone remembered to bump anything. That is what makes the stamp usable in the other
+    // direction — when a fault is later CONFIRMED, the cards that stood under the register
+    // containing it can be found.
+    disclaimerRegisterVersion: await registerVersion(),
     knownDivergences,
   };
 };

@@ -41,6 +41,7 @@ export const SOR_SCHEMA_VERSIONS = Object.freeze({
   resultCard: 2,
   dealBookManifest: 1,
   fieldManifest: 1,
+  faultEntry: 1,
 });
 
 /**
@@ -342,9 +343,41 @@ const MANIFEST_FIELDS = [
   { name: 'constants', type: 'object', since: 1, required: true,
     note: 'Load-bearing constants read from their DEFINITION sites. Minimum set per ADR-009: PRIOR_WEIGHT, ACTION_TAU_FRACTION, MIN_CONTINUATION_WEIGHT.' },
   { name: 'disclaimerRegisterVersion', type: 'string|null', since: 1, required: false,
-    note: 'Which disclaimer register the run stood under. Null until WS-330 creates one.' },
+    note: 'Which disclaimer + suspected-fault register the run stood under (WS-330). `required` stays FALSE here on purpose while manifestProblems rejects a missing one: the flagger has to be able to PARSE a legacy card in order to flag it, so validation tightens and reading does not.' },
   { name: 'knownDivergences', type: 'array', since: 1, required: false,
     note: 'Places the stamped value is known to disagree with a shadow copy elsewhere in the tree. Recording it beats silently picking one.' },
+];
+
+/**
+ * A FAULT ENTRY — one row of the suspected-fault register (WS-330).
+ *
+ * Registered here, rather than left as a loose shape in `faultRegister.js`, because a Result
+ * Card stamps the register VERSION and that stamp is only meaningful if the thing it versions
+ * has a stable shape. A register whose entries could be retyped would let an old card name a
+ * version whose entries no longer mean what they meant.
+ */
+const FAULT_ENTRY_FIELDS = [
+  { name: 'faultId', type: 'string', since: 1, required: true,
+    note: 'Stable identity, greppable, and the key the queue emitter dedupes on so re-running it emits nothing new.' },
+  { name: 'title', type: 'string', since: 1, required: true, note: 'Short enough to read in a ranked table.' },
+  { name: 'site', type: 'string', since: 1, required: true,
+    note: 'Where the fault lives — a stack layer, or one of corpus | instrument | statistics | process. Not every fault is layer-local, and forcing one into a layer slot means it gets looked for where it is not.' },
+  { name: 'mechanism', type: 'string', since: 1, required: true,
+    note: 'The PATH by which it goes wrong. "The model may be off" is a worry; a mechanism is an entry.' },
+  { name: 'contaminates', type: 'string', since: 1, required: true,
+    note: 'Which results this would taint, for a human. The prose half of the contamination claim, and the half the version hash covers.' },
+  { name: 'matches', type: 'function', since: 1, required: true,
+    note: 'The machine half — a predicate over a Result Card, reading fields the card already carries. Ships WITH the entry so the reader and the claim arrive together, which is the anti-rot rule that keeps this from becoming another predictionAudit.' },
+  { name: 'falsifier', type: 'string', since: 1, required: true,
+    note: 'The measurement that would settle it. Required: an entry with no falsifier can never leave `untested`, which turns the register back into the caveat list it replaces.' },
+  { name: 'probability', type: 'number', since: 1, required: true, note: 'Declared P(this fault is real), 0..1. Half of the ranking.' },
+  { name: 'probabilityBasis', type: 'string', since: 1, required: true,
+    note: 'WHY that number, so it can be argued with. A bare probability nobody can dispute is a constant chosen by taste — which is itself an entry in this register.' },
+  { name: 'priorBreadth', type: 'number', since: 1, required: true,
+    note: 'Declared share of results affected, used until enough Result Cards exist to measure it. Blended with the observed share under pseudocount shrinkage.' },
+  { name: 'status', type: 'string', since: 1, required: true, note: 'untested | partially-supported | confirmed | retired.' },
+  { name: 'evidence', type: 'array', since: 1, required: true,
+    note: 'REQUIRED non-empty for confirmed and retired. Confirming without evidence lets a hunch invalidate every prior result; retiring without evidence lets an inconvenient entry be tidied away.' },
 ];
 
 /** Every registered object type, by name. */
@@ -356,6 +389,7 @@ export const SOR_SCHEMAS = Object.freeze({
   dealBookManifest: Object.freeze(DEAL_BOOK_MANIFEST_FIELDS),
   fieldManifest: Object.freeze(FIELD_MANIFEST_FIELDS),
   resultCard: Object.freeze(RESULT_CARD_FIELDS),
+  faultEntry: Object.freeze(FAULT_ENTRY_FIELDS),
 });
 
 /** The nested manifest shape, registered separately so it is guarded by the same test. */

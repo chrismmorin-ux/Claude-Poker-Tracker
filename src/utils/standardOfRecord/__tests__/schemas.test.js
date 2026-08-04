@@ -68,6 +68,12 @@ const SHIPPED_FIELDS = {
     // v2 anti-shallowness (founder directive 2026-08-03)
     fragility: 'object|null', flipRegister: 'object|null', comparisonCensus: 'object|null',
   },
+  faultEntry: {
+    faultId: 'string', title: 'string', site: 'string', mechanism: 'string',
+    contaminates: 'string', matches: 'function', falsifier: 'string',
+    probability: 'number', probabilityBasis: 'string', priorBreadth: 'number',
+    status: 'string', evidence: 'array',
+  },
 };
 
 const MANIFEST_SHIPPED_FIELDS = {

@@ -47,7 +47,7 @@ export const REQUIRED_CONSTANTS = Object.freeze([
  * @param {Object} input.seeds - every seed used, by name
  * @param {Array} input.unseededSources - randomness the run could not seed; [] claims determinism
  * @param {Object} input.constants - load-bearing constants, read from their definition sites
- * @param {string|null} [input.disclaimerRegisterVersion] - null until WS-330 creates one
+ * @param {string} input.disclaimerRegisterVersion - `registerVersion()` from faultRegister.js
  * @param {Array} [input.knownDivergences] - see below
  */
 export const buildReplicationManifest = ({
@@ -124,6 +124,24 @@ export const manifestProblems = (manifest) => {
         `manifest.constants.${name} is missing — ADR-009 names it in the minimum constant set`,
       );
     }
+  }
+
+  // WS-330. A card that cannot name the register version it stood under cannot be
+  // retroactively flagged when one of that register's entries is confirmed — which is the
+  // entire mechanism WS-291 needed and did not have.
+  //
+  // NOTE THE DELIBERATE ASYMMETRY with the field descriptor, which stays `required: false`.
+  // Validation tightens here; PARSING does not, because `checkAgainstSchema` is what the
+  // flagger uses to open an existing card, and a rule that made legacy cards unreadable would
+  // mean the cards most likely to be contaminated are exactly the ones the mechanism cannot
+  // open. A card missing this is invalid to PUBLISH and still legible to AUDIT.
+  if (!manifest.disclaimerRegisterVersion) {
+    problems.push(
+      'manifest.disclaimerRegisterVersion is missing — every Result Card must name the '
+      + 'suspected-fault register version it was produced under, or confirming a fault later '
+      + 'cannot tell which prior results it invalidates. Stamp `registerVersion()` from '
+      + 'src/utils/standardOfRecord/faultRegister.js',
+    );
   }
   return problems;
 };

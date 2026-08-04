@@ -27,6 +27,11 @@ const manifestInput = () => ({
   seeds: { clusterBootstrap: 0x9e3779b9 },
   unseededSources: [],
   constants: { PRIOR_WEIGHT: 10, ACTION_TAU_FRACTION: 0.3, MIN_CONTINUATION_WEIGHT: 0.05 },
+  // A literal rather than `await registerVersion()`, so this fixture stays synchronous and does
+  // not re-pin itself every time an entry is edited. The real stamp is asserted where it
+  // matters — `faultRegister.test.js` checks the version is content-derived, and
+  // `replicationStamp` is the production caller.
+  disclaimerRegisterVersion: 'FR-1+000000000000',
 });
 
 const cardInput = () => ({

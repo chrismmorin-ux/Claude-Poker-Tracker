@@ -168,7 +168,10 @@ const stampFixture = () => ({
   seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },
   unseededSources: [{ source: 'src/utils/pokerCore/monteCarloEquity.js', mechanism: 'Math.random()' }],
   constants: { PRIOR_WEIGHT: 10, ACTION_TAU_FRACTION: { check: 1 }, MIN_CONTINUATION_WEIGHT: 0.05 },
-  disclaimerRegisterVersion: null,
+  // WS-330: a Result Card must name the register version it stood under, so a fault confirmed
+  // later can find the results that depended on it. A literal keeps this fixture stable across
+  // register edits; `replicationStamp.buildStampInput` supplies the real value in production.
+  disclaimerRegisterVersion: 'FR-1+000000000000',
   knownDivergences: [],
 });
 

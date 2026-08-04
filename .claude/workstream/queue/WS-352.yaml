@@ -1,0 +1,74 @@
+id: "WS-352"
+title: "Falsify FAULT-population-mismatch — Population mismatch — live claims anchored on an online corpus"
+legacy_id: ""
+type: investigation
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.6
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+fault_id: "FAULT-population-mismatch"
+description: |
+  EMITTED FROM THE SUSPECTED-FAULT REGISTER (WS-330), register version FR-1+d4c7809e77b7, on 2026-08-04.
+  Rank 1 of the register by expected damage.
+
+  RANKING (expected damage = probability x contamination breadth):
+    probability      0.95  — Near-certain as a STRUCTURAL fact — the populations genuinely differ. What is uncertain is the magnitude, not the existence.
+    breadth (prior)  0.9
+    breadth (obs)    no Result Cards to measure against yet
+    expected damage  0.855
+    evidence weight  0.000 — how much of the breadth is measured rather than declared
+
+  SITE: corpus
+  STATUS AT EMISSION: untested
+
+  MECHANISM.
+  The founder's real game is LIVE 9-handed 1/2-1/3. The corpus is ONLINE 6-max and full-ring.
+  The repo's own founder-ratified rule is that live and online are DISTINCT populations that
+  are never merged. So every live-facing claim anchored on this corpus is TRANSFERRED, not
+  measured, and nothing in the number says so.
+
+  WHAT IT CONTAMINATES.
+  Any live-facing recommendation validated on the Mass Data Field.
+
+  WHY THIS IS A TICKET AND NOT A CAVEAT. The register entry carries a falsifier, which is a
+  statement of what would settle the question. That is what the accept criteria below are.
+  Closing this item means the falsifier was RUN — either the entry gets confirmed (and every
+  prior Result Card it contaminates is flagged suspect-pending-review) or it gets retired with
+  the measurement as evidence. It does not close by being read.
+accept_criteria: |
+  - Run the falsifier:
+    Measure the same estimand on SRC-014 (live 1/3) and on SRC-012. If the two agree within
+    their intervals on a shared spot set, transfer is supported for that spot class; if they
+    diverge, every transferred claim of that shape is wrong by the measured gap.
+  - Record the outcome as evidence on the register entry, then either confirmFault() or
+    retireFault() it in src/utils/standardOfRecord/faultRegister.js. Both require evidence.
+  - If CONFIRMED: report the Result Cards flagged suspect-pending-review by the confirmation,
+    and say whether each conclusion survives.
+  - Update the ranked table in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md — the
+    drift test asserts it matches the module.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: fault-register
+  created_by: ai
+  finding_id: ""
+  run_id: "FR-1+d4c7809e77b7"
+created_at: "2026-08-04T00:00:00Z"
+status_note: |
+  Emitted by scripts/standardOfRecord/emit-fault-items.mjs. Deduped on fault_id — this entry
+  had no existing queue item at emission time. Re-running the emitter will not file it again.

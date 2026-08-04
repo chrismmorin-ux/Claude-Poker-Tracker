@@ -12,6 +12,10 @@ These are non-negotiable boundaries.
 |----|-----------|--------|-------|
 | HC-001 | <!-- e.g., "Must run on Node 18+" --> | <!-- e.g., "hosting provider" --> | |
 | HC-002 | <!-- e.g., "Budget: $0/month infrastructure" --> | <!-- e.g., "project scope" --> | |
+| HC-010 | Every comparative claim resolves to a Result Card carrying a complete replication manifest, including the suspected-fault register version it stood under. A card without one is invalid. | ADR-009 / WS-330 | Enforced by `manifestProblems`. Staged repo-wide enforcement flips in WS-329. |
+| HC-011 | Live and online are **distinct populations and are never merged.** Any live claim anchored on the 2009 online corpus is TRANSFERRED, not measured, and must say so. | Founder-ratified | Top-ranked entry in the fault register (`FAULT-population-mismatch`). |
+
+**The measurement constraints live in the register, not here.** `docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md` holds what this system can honestly claim (§1–2) and the ranked list of where the fault most likely is (§3), each entry with a falsifier and a status. It is versioned and stamped into every Result Card; duplicating it into this file would create a second copy to drift.
 
 ## Working Assumptions
 
