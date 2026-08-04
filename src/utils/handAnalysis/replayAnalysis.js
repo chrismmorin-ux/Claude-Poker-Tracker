@@ -9,6 +9,9 @@
 import { getPositionName, getRangePositionCategory, isInPosition } from '../positionUtils';
 import { parseBoard, parseAndEncode, getCardsForStreet } from '../pokerCore/cardParser';
 import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
+import {
+  holdingKnowledgeAt, revealedHolding, hasRevealedHolding,
+} from '../pokerCore/holdingKnowledge';
 // RT-35: These 4 symbols are injected via deps parameter to analyzeTimelineAction
 // to avoid handAnalysis → exploitEngine import (INV-08 violation).
 // Defaults provide graceful degradation when deps are not supplied.
@@ -565,22 +568,29 @@ export const analyzeTimelineAction = async ({
     });
 
     // Showdown labeling
-    const seatShowdown = showdownCards[seat] || showdownCards[Number(seat)];
-    if (seatShowdown && Array.isArray(seatShowdown) && seatShowdown.length === 2) {
-      const s0 = parseAndEncode(seatShowdown[0]);
-      const s1 = parseAndEncode(seatShowdown[1]);
-      if (s0 >= 0 && s1 >= 0) {
-        const opponentSeat = heroSeat && String(heroSeat) !== seat
-          ? String(heroSeat) : null;
-        if (opponentSeat && seatRanges[opponentSeat]) {
-          try {
-            const sdResult = await handVsRange(
-              [s0, s1], seatRanges[opponentSeat], board, { trials: 500 }
-            );
-            actionClass = classifyAction(sdResult.equity, action, { moe: sdResult.ciHalf });
-          } catch (e) {
-            // Non-critical
-          }
+    //
+    // WS-292: the third copy of the belief/truth join, now read through the primitive. This
+    // is a legitimate SCORING use — the hand is over, and classifying what the action turned
+    // out to be is exactly what revealed cards are for. It stays a named `revealedHolding`
+    // call so an auditor can enumerate every place ground truth enters a computation.
+    const seatHolding = holdingKnowledgeAt({
+      range: rangeAtPoint,
+      board,
+      revealed: showdownCards[seat] || showdownCards[Number(seat)],
+      seat,
+      street,
+    });
+    if (hasRevealedHolding(seatHolding)) {
+      const opponentSeat = heroSeat && String(heroSeat) !== seat
+        ? String(heroSeat) : null;
+      if (opponentSeat && seatRanges[opponentSeat]) {
+        try {
+          const sdResult = await handVsRange(
+            revealedHolding(seatHolding), seatRanges[opponentSeat], board, { trials: 500 }
+          );
+          actionClass = classifyAction(sdResult.equity, action, { moe: sdResult.ciHalf });
+        } catch (e) {
+          // Non-critical
         }
       }
     }
