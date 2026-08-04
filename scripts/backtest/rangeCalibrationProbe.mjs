@@ -34,7 +34,10 @@ import {
 } from '../../src/utils/exploitEngine/postflopNarrower.js';
 import { buildBaselineRange } from '../../src/utils/exploitEngine/preflopAdvisor.js';
 import { enumerateCombos, decodeIndex } from '../../src/utils/pokerCore/rangeMatrix.js';
-import { parseAndEncode, encodeCard, cardRank } from '../../src/utils/pokerCore/cardParser.js';
+import { encodeCard, cardRank } from '../../src/utils/pokerCore/cardParser.js';
+import {
+  holdingKnowledgeAt, revealedHolding, hasRevealedHolding, narrowedWith,
+} from '../../src/utils/pokerCore/holdingKnowledge.js';
 import { comboStrengthPercentile } from '../../src/utils/pokerCore/handEvaluator.js';
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
 import { TAU_FRACTION } from '../../src/utils/pokerCore/softWeights.js';
@@ -191,8 +194,13 @@ export const runRangeCalibrationProbe = async ({
   });
   log(`indexed ${byPlayer.size} players from ${handsRead} hands`);
 
-  const acting = { all: mkStat(), byStreet: {}, byAction: {}, byStrength: {}, bySite: {} };
-  const villain = { all: mkStat(), byStreet: {}, byAction: {} };
+  const acting = { all: mkStat(), byStreet: {}, byAction: {}, byStrength: {}, bySite: {}, byNarrowings: {} };
+  const villain = { all: mkStat(), byStreet: {}, byAction: {}, byNarrowings: {} };
+  // WS-292: showdowns that were PRESENT but unusable. Previously each of the three join
+  // sites dropped these silently, so "how much ground truth did we throw away?" had no
+  // answer. A non-zero count here is a corpus-quality signal, and a zero count is what
+  // proves this refactor left the scored decision set unchanged.
+  const dropped = { unparseable: 0, 'board-collision': 0 };
   const chained = { 1: mkStat(), 2: mkStat(), 3: mkStat() };
   // WS-291: sweep the logistic softness on the villain-side narrowing so the parameter
   // is chosen by measured discrimination rather than by taste.
@@ -279,20 +287,28 @@ export const runRangeCalibrationProbe = async ({
           if (!board || board.length < 3) return;
 
           // ---- 1. acting seat: the range the accumulator tracks ----
-          const hRaw = sd[String(ctx.playerSeat)];
-          if (hRaw && ctx.rangeBefore) {
-            const hole = hRaw.map(parseAndEncode);
-            if (!hole.some((c) => c < 0)) {
-              const r = scoreRange(ctx.rangeBefore, board, hole);
-              if (r) {
-                revealedActing++;
-                push(acting.all, r);
-                push(at(acting.byStreet, ctx.street), r);
-                push(at(acting.byAction, ctx.action), r);
-                push(at(acting.bySite, site), r);
-                const band = strengthBand(comboStrengthPercentile(hole[0], hole[1], board));
-                push(at(acting.byStrength, band), r);
-              }
+          //
+          // WS-292: read through the holding-knowledge record the accumulator now emits
+          // rather than re-pulling the showdown and re-parsing it here. This probe had its
+          // own copy of that join, replayAnalysis had a third, and none of them counted the
+          // samples they dropped — so a malformed showdown was invisible everywhere.
+          const holding = ctx.holding;
+          if (holding?.provenance?.revealDropped) dropped[holding.provenance.revealDropped]++;
+          if (hasRevealedHolding(holding)) {
+            // The explicit ask. Legitimate here because this is a SCORING channel: the
+            // question is whether the range that stood at the decision covered the hand,
+            // and the range is never corrected by the answer.
+            const hole = revealedHolding(holding);
+            const r = scoreRange(holding.range, board, hole);
+            if (r) {
+              revealedActing++;
+              push(acting.all, r);
+              push(at(acting.byStreet, ctx.street), r);
+              push(at(acting.byAction, ctx.action), r);
+              push(at(acting.bySite, site), r);
+              push(at(acting.byNarrowings, String(holding.provenance.narrowingCount)), r);
+              const band = strengthBand(comboStrengthPercentile(hole[0], hole[1], board));
+              push(at(acting.byStrength, band), r);
             }
           }
 
@@ -304,117 +320,129 @@ export const runRangeCalibrationProbe = async ({
           const vSeat = ctx.opponentSeat;
           const vRaw = vSeat != null ? sd[String(vSeat)] : null;
           if (vRaw) {
-            const vHole = vRaw.map(parseAndEncode);
-            if (!vHole.some((c) => c < 0)) {
-              // the villain's last action on this street, before hero's decision
-              let vAction = null;
-              for (const e of hand.gameState.actionSequence) {
-                if (e.order >= ctx.order) break;
-                if (e.street !== ctx.street) continue;
-                if (String(e.seat) === String(vSeat)) vAction = e.action;
+            // the villain's last action on this street, before hero's decision
+            let vAction = null;
+            for (const e of hand.gameState.actionSequence) {
+              if (e.order >= ctx.order) break;
+              if (e.street !== ctx.street) continue;
+              if (String(e.seat) === String(vSeat)) vAction = e.action;
+            }
+            if (vAction) {
+              const vPos = getRangePositionCategory(Number(vSeat), hand.gameState.dealerButtonSeat);
+              const base = buildBaselineRange(null, null, vPos);
+              // WS-292: the villain seat gets a record too, against the PRE-narrowing
+              // baseline. The accumulator only tracks the acting seat, so this join is
+              // built here — but through the primitive, so the reveal is validated once
+              // (unparseable and board-colliding are both counted rather than dropped
+              // silently) and the sweeps below share one extraction instead of three.
+              const vKnown = holdingKnowledgeAt({
+                range: base, board, revealed: vRaw, seat: vSeat, street: ctx.street,
+              });
+              if (vKnown.provenance.revealDropped) dropped[vKnown.provenance.revealDropped]++;
+              if (!hasRevealedHolding(vKnown)) return;
+              const vHole = revealedHolding(vKnown);
+              let narrowed;
+              try {
+                narrowed = narrowByBoard(base, vAction, board, []);
+              } catch { narrowed = null; }
+              if (narrowed) {
+                // One cut, by one action — recorded so a consumer can tell this range
+                // from the thrice-cut ones the chaining block below produces.
+                const vNarrowed = narrowedWith(vKnown, vAction, narrowed);
+                const r = scoreRange(vNarrowed.range, board, vHole);
+                if (r) {
+                  revealedVillain++;
+                  push(villain.all, r);
+                  push(at(villain.byStreet, ctx.street), r);
+                  push(at(villain.byAction, vAction), r);
+                  push(at(villain.byNarrowings, String(vNarrowed.provenance.narrowingCount)), r);
+                }
               }
-              if (vAction) {
-                const vPos = getRangePositionCategory(Number(vSeat), hand.gameState.dealerButtonSeat);
-                const base = buildBaselineRange(null, null, vPos);
-                let narrowed;
+              // ---- 3b. softness sweep on the same decision ----
+              for (const t of Object.keys(tauArms)) {
                 try {
-                  narrowed = narrowByBoard(base, vAction, board, []);
-                } catch { narrowed = null; }
-                if (narrowed) {
-                  const r = scoreRange(narrowed, board, vHole);
-                  if (r) {
-                    revealedVillain++;
-                    push(villain.all, r);
-                    push(at(villain.byStreet, ctx.street), r);
-                    push(at(villain.byAction, vAction), r);
-                  }
-                }
-                // ---- 3b. softness sweep on the same decision ----
-                for (const t of Object.keys(tauArms)) {
-                  try {
-                    const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
-                    const r = scoreRange(nt, board, vHole);
-                    if (r) push(tauArms[t], r);
-                  } catch { /* skip arm */ }
-                }
+                  const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
+                  const r = scoreRange(nt, board, vHole);
+                  if (r) push(tauArms[t], r);
+                } catch { /* skip arm */ }
+              }
 
-                // ---- 3a2. per-action softness sweep on the SAME decision ----
-                // Bucketed by vAction: every arm for a given action is scored on the same
-                // set of decisions as every other arm for that action (the whole point of
-                // the instrument), but arms for different actions are naturally scored on
-                // different decision sets, since they're keyed by the action itself.
-                for (const t of Object.keys(actionTauArms)) {
-                  try {
-                    const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
-                    const r = scoreRange(nt, board, vHole);
-                    if (r) push(at(actionTauArms[t], vAction), r);
-                  } catch { /* skip arm */ }
-                }
+              // ---- 3a2. per-action softness sweep on the SAME decision ----
+              // Bucketed by vAction: every arm for a given action is scored on the same
+              // set of decisions as every other arm for that action (the whole point of
+              // the instrument), but arms for different actions are naturally scored on
+              // different decision sets, since they're keyed by the action itself.
+              for (const t of Object.keys(actionTauArms)) {
+                try {
+                  const nt = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
+                  const r = scoreRange(nt, board, vHole);
+                  if (r) push(at(actionTauArms[t], vAction), r);
+                } catch { /* skip arm */ }
+              }
 
-                // ---- 3c. floor sweep on the SAME decision ----
-                // Same decisions for every arm, so the arms are differenced per decision
-                // rather than each being scored on its own set — the selection effect
-                // exploitEngine/CLAUDE.md names for the fallback-level table.
-                for (const f of Object.keys(floorArms)) {
-                  try {
-                    const nf = narrowByBoard(base, vAction, board, [], { continuationFloor: Number(f) });
-                    const r = scoreRange(nf, board, vHole);
-                    if (r) push(floorArms[f], r);
-                  } catch { /* skip arm */ }
-                }
+              // ---- 3c. floor sweep on the SAME decision ----
+              // Same decisions for every arm, so the arms are differenced per decision
+              // rather than each being scored on its own set — the selection effect
+              // exploitEngine/CLAUDE.md names for the fallback-level table.
+              for (const f of Object.keys(floorArms)) {
+                try {
+                  const nf = narrowByBoard(base, vAction, board, [], { continuationFloor: Number(f) });
+                  const r = scoreRange(nf, board, vHole);
+                  if (r) push(floorArms[f], r);
+                } catch { /* skip arm */ }
+              }
 
-                // ---- 3d. preflop support sweep on the SAME decision (WS-302) ----
-                // The baseline range itself is rebuilt per arm; narrowing is left at its
-                // shipped settings so this arm prices the PREFLOP change alone.
-                for (const s of Object.keys(supportArms)) {
-                  try {
-                    const bs = buildBaselineRange(null, null, vPos, { supportLambda: Number(s) });
-                    const ns = narrowByBoard(bs, vAction, board, []);
-                    const r = scoreRange(ns, board, vHole);
-                    if (r) push(supportArms[s], r);
-                  } catch { /* skip arm */ }
-                }
+              // ---- 3d. preflop support sweep on the SAME decision (WS-302) ----
+              // The baseline range itself is rebuilt per arm; narrowing is left at its
+              // shipped settings so this arm prices the PREFLOP change alone.
+              for (const s of Object.keys(supportArms)) {
+                try {
+                  const bs = buildBaselineRange(null, null, vPos, { supportLambda: Number(s) });
+                  const ns = narrowByBoard(bs, vAction, board, []);
+                  const r = scoreRange(ns, board, vHole);
+                  if (r) push(supportArms[s], r);
+                } catch { /* skip arm */ }
+              }
 
-                // ---- 3. chaining: what gameTreeDepth2 does inside one evaluation ----
-                if (narrowed) {
-                  let cur = base;
-                  for (let depth = 1; depth <= 3; depth++) {
-                    try { cur = narrowByBoard(cur, 'call', board, []); } catch { break; }
-                    const r = scoreRange(cur, board, vHole);
-                    if (r) push(chained[depth], r);
-                  }
+              // ---- 3. chaining: what gameTreeDepth2 does inside one evaluation ----
+              if (narrowed) {
+                let cur = base;
+                for (let depth = 1; depth <= 3; depth++) {
+                  try { cur = narrowByBoard(cur, 'call', board, []); } catch { break; }
+                  const r = scoreRange(cur, board, vHole);
+                  if (r) push(chained[depth], r);
                 }
+              }
 
-                // ---- 3e. depth-tempered chaining sweep on the SAME decision ----
-                // At depth k (1-indexed), softness = TAU_FRACTION * kappa^(k-1). kappa=1.0
-                // reproduces the `chained` block above exactly — the correctness check on
-                // the plumbing.
-                for (const kappa of Object.keys(depthTauArms)) {
-                  const kappaNum = Number(kappa);
-                  let curD = base;
-                  for (let depth = 1; depth <= 3; depth++) {
-                    const tauFraction = TAU_FRACTION * Math.pow(kappaNum, depth - 1);
-                    try { curD = narrowByBoard(curD, 'call', board, [], { tauFraction }); } catch { break; }
-                    const r = scoreRange(curD, board, vHole);
-                    if (r) push(depthTauArms[kappa][depth], r);
-                  }
+              // ---- 3e. depth-tempered chaining sweep on the SAME decision ----
+              // At depth k (1-indexed), softness = TAU_FRACTION * kappa^(k-1). kappa=1.0
+              // reproduces the `chained` block above exactly — the correctness check on
+              // the plumbing.
+              for (const kappa of Object.keys(depthTauArms)) {
+                const kappaNum = Number(kappa);
+                let curD = base;
+                for (let depth = 1; depth <= 3; depth++) {
+                  const tauFraction = TAU_FRACTION * Math.pow(kappaNum, depth - 1);
+                  try { curD = narrowByBoard(curD, 'call', board, [], { tauFraction }); } catch { break; }
+                  const r = scoreRange(curD, board, vHole);
+                  if (r) push(depthTauArms[kappa][depth], r);
                 }
+              }
 
-                // ---- 3f. strength-quintile sweep on the SAME decision (WS-303) ----
-                // quintile is computed once per decision (it depends on the true hand and
-                // the PRE-narrowing range, not on tau); every tau arm for this decision is
-                // scored into the SAME quintile bucket, so arms differ only in narrowing.
-                if (Object.keys(strengthQuintileArms).length) {
-                  const pct = rangeEquityPercentile(base, board, [], vHole);
-                  if (pct != null) {
-                    const quintile = quintileOf(pct);
-                    for (const t of Object.keys(strengthQuintileArms)) {
-                      try {
-                        const nq = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
-                        const r = scoreRange(nq, board, vHole);
-                        if (r) push(at(atMap(strengthQuintileArms[t], vAction), quintile), r);
-                      } catch { /* skip arm */ }
-                    }
+              // ---- 3f. strength-quintile sweep on the SAME decision (WS-303) ----
+              // quintile is computed once per decision (it depends on the true hand and
+              // the PRE-narrowing range, not on tau); every tau arm for this decision is
+              // scored into the SAME quintile bucket, so arms differ only in narrowing.
+              if (Object.keys(strengthQuintileArms).length) {
+                const pct = rangeEquityPercentile(base, board, [], vHole);
+                if (pct != null) {
+                  const quintile = quintileOf(pct);
+                  for (const t of Object.keys(strengthQuintileArms)) {
+                    try {
+                      const nq = narrowByBoard(base, vAction, board, [], { tauFraction: Number(t) });
+                      const r = scoreRange(nq, board, vHole);
+                      if (r) push(at(atMap(strengthQuintileArms[t], vAction), quintile), r);
+                    } catch { /* skip arm */ }
                   }
                 }
               }
@@ -430,18 +458,21 @@ export const runRangeCalibrationProbe = async ({
   );
 
   return {
-    scanned: { decisions, revealedActing, revealedVillain, players: byPlayer.size, handsRead },
+    scanned: { decisions, revealedActing, revealedVillain, players: byPlayer.size, handsRead, dropped },
     acting: {
       all: summarize(acting.all),
       byStreet: mapSummary(acting.byStreet),
       byAction: mapSummary(acting.byAction),
       byStrength: mapSummary(acting.byStrength),
       bySite: mapSummary(acting.bySite),
+      // keyed by how many times the scored range had already been cut (WS-292)
+      byNarrowings: mapSummary(acting.byNarrowings),
     },
     villain: {
       all: summarize(villain.all),
       byStreet: mapSummary(villain.byStreet),
       byAction: mapSummary(villain.byAction),
+      byNarrowings: mapSummary(villain.byNarrowings),
     },
     chained: mapSummary(chained),
     tauSweep: mapSummary(tauArms),
