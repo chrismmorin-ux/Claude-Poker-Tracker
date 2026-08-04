@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 174
+total_items: 175
 by_status:
   decomposed: 1
   done: 61
   in_progress: 3
   deferred: 45
-  backlog: 45
+  backlog: 46
   dismissed: 1
   completed: 7
   review: 1
@@ -22,7 +22,7 @@ by_category:
   design: 1
   design-comprehension: 10
   documentation: 1
-  domain-correctness: 60
+  domain-correctness: 61
   exploit-anchor-library: 8
   hero-state-primitive: 2
   input-ux: 3
@@ -1620,6 +1620,7 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    sprint_id: "SPR-167"
     program: domain-correctness
     capability: core
 
@@ -1672,6 +1673,15 @@ items:
     title: "Does the study ladder separate? Run the slowplay test again on limp / 3bet / cbet rates — the axes that failed for lack of power should pass here"
     status: backlog
     priority_score: 28
+    category: domain-correctness
+    effort: M
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-321"
+    title: "handSignificance weakness matching is INERT — buildQuickSituationKeys emits 4-axis keys that never parse, so both branches score 0 for every hand"
+    status: backlog
+    priority_score: 24
     category: domain-correctness
     effort: M
     program: domain-correctness

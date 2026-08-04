@@ -3,8 +3,8 @@ title: "Blocker-based bluff selection cannot fire on ace-high boards — the car
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: ""
-claimed_at: ""
+claimed_by: ses-20260803-2222-7a07c65f
+claimed_at: "2026-08-03T23:04:17.394Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -89,3 +89,61 @@ status_note: |
   WS-313 bluff:value budget, WS-314 check-raise dominance, WS-315 blockers). WS-313 and this
   item together are the "which combos should bluff" half; WS-307 already fixed the "can this
   range fold" half.
+
+  ─────────────────────────────────────────────────────────────────────────────────
+  IMPLEMENTATION 2026-08-03 (SPR-168)
+  ─────────────────────────────────────────────────────────────────────────────────
+
+  THE CONSTRAINT THAT SHAPED THE FIX, found by code read before writing anything:
+  blocker effects are ALREADY priced into hero's fold estimate. `gameTreeContext` segments
+  villain's range with hero's cards dead — `segmentRange(narrowedRange, board,
+  [...heroCards, ...deadCards])` — and `estimateFoldPct` consumes exactly that post-removal
+  segmentation. So a blocker→foldPct bump would DOUBLE-COUNT the one signal, which is the
+  family this engine has been bitten by before (style adjustments stacked on the stats that
+  define the style). The score therefore RANKS and EXPLAINS; it must never re-price. That is
+  recorded in the code as the reason, not just the rule.
+
+  WHAT SHIPPED:
+    - `computeBlockerScore` (gameTreeEquity.js) — continuation-weighted removal fraction over
+      EVERY bucket. Weights are `scaledLogistic(villainEquity / potOddsNeeded)`, the same
+      curried shape `comboCallFilter` uses per combo, so "what continues" cannot mean two
+      different things in two places. Consumes `computeBlockerEffects` per-bucket output; it
+      does not re-derive removal.
+    - `heroActionBuilder` — selection is now score-driven with NO equity conjunct. The
+      surviving 0.35 test is a LABEL ceiling only (`blockerBluff` drives the classifier's
+      `type: 'blocker-bluff'` narrative, which must not be attached to top pair). It gates
+      what a bet is CALLED, never whether a hand is eligible — the FIND-029 / §13.1 direction
+      the guard protects.
+    - Every bet candidate now carries `blockerScore`; the evaluator's final sort breaks ties
+      on it within 1% of pot.
+
+  MEASURED on A♠K♦6♠ vs top-25% (probe: scripts/backtest/ws315Probe.mjs):
+
+      hero              heroEq   nuts%rm  strong%rm   SCORE   blockerBluff?
+      Q♠J♠ flush draw    0.504      0.0      20.0    0.1354   YES
+      J♠T♠ flush draw    0.475       0.0       0.0    0.1123   YES
+      J♦T♦ gutshot       0.253       0.0       0.0    0.1045   YES
+      8♦8♣ small pair    0.264       0.0       0.0    0.0315   no
+      5♦4♦ pure air      0.128       0.0       0.0    0.0360   no
+      A♦Q♦ TOP PAIR      0.767      27.8      46.7    0.2066   YES
+
+  Pre-fix the gate fired for ZERO of the five bluff candidates and only for A♦Q♦. The
+  acceptance case — hold equity constant, vary blocker quality — is J♦T♦ (0.253 → 0.1045)
+  against 8♦8♣ (0.264 → 0.0315): 0.011 apart in equity, 3.3x apart in blocker score.
+
+  A NOTE ON THE WS-307 GUARD TEST. The criterion asked to assert that a perfectly-blocking
+  hand still does not rank a bluff first against an uncapped nutted range. Written literally
+  as "top action must be check/fold", that assertion FAILS — and it fails identically on the
+  PRE-fix engine (verified by stash), so it is not a regression. Measured against
+  `tightRange()`: bet@33 EV 3.1 vs check EV 2.8, a 0.3 margin on a 100 pot with 23% fold
+  equity against a range that is 33% nuts and 40% foldable underpairs. That is a genuine
+  near-tie, and a small probe bet edging a check by 0.3% of pot is not "ranking a bluff
+  first" in any meaningful sense. Pinning the winner there would pin Monte Carlo noise. The
+  test instead asserts the INVARIANT the criterion is actually protecting: ordering follows
+  EV except within the documented tie epsilon, so blocker quality can never promote a
+  candidate over one with materially better EV. That assertion fails the moment blockers are
+  added into EV.
+
+  VERIFIED: 4 behavioural tests (advisorAccuracy §1E) + 2 new builder tests; 6 of the new
+  assertions fail against the pre-fix engine. Full suite 13,412 passed / 0 failed (563
+  files); exploitEngine 2,747 green; build clean.

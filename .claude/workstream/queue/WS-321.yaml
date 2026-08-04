@@ -1,0 +1,100 @@
+id: "WS-321"
+title: "handSignificance weakness matching is INERT — buildQuickSituationKeys emits 4-axis keys that never parse, so both branches score 0 for every hand"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND during WS-318 (SPR-168) and DELIBERATELY NOT FIXED THERE — reviving a dead scoring
+  input changes hand-significance for every hand, and WS-318 is an S-effort semantics ticket
+  whose own change was measured. Shipping an unmeasured revival inside it would have made
+  neither verifiable. Same reasoning WS-318 itself was split out of WS-317.
+
+  THE DEFECT. `handSignificance.buildQuickSituationKeys` builds:
+
+      keys.push(`${entry.street}:unknown:${posCategory}:${primitive}`);
+
+  That is FOUR axes. A real situation key has SEVEN (villain) or EIGHT (hero):
+
+      street : texture : posCategory : isAgg : isIP : facingAction : contextAction [: pfa]
+
+  `tryParseSituationKey('flop:unknown:LATE:bet')` returns **null** (verified). Both weakness
+  branches guard on the parse and bail:
+
+      const heroParsed = tryParseSituationKey(hk);
+      if (!heroParsed) return false;
+
+  So `heroWeaknessMatch` and `villainWeaknessRevealed` are **0 for every hand**, always.
+  `heroWeaknessMatch` is one of four equally-weighted terms in the hero-learning factor
+  (weight 0.40), and `villainWeaknessRevealed` feeds villain intelligence (weight 0.35) — so
+  hand significance has been scored with two inputs pinned to zero.
+
+  IT WAS ALSO DEAD BEFORE WS-317, by a different mechanism. The pre-migration code compared
+  positionally: quick-key index 3 is a PRIMITIVE ACTION ('bet'), weakness-key index 3 is
+  `isAgg` ('agg'/'def'). Those two value spaces are disjoint, so the comparison could never
+  be true. WS-317 changed the failure from "compares incomparable values" to "fails to
+  parse". Neither ever matched. This has never worked.
+
+  HOW IT SURVIVED. `handSignificance.test.js:136` asserts
+
+      expect(withWeakness.factors.heroLearning)
+        .toBeGreaterThanOrEqual(withoutWeakness.factors.heroLearning);
+
+  `toBeGreaterThanOrEqual` passes when the two are EQUAL, which is exactly what happens when
+  the match never fires. The test named the behaviour it meant to protect and then asserted
+  something that cannot fail. Same family as the dormant `console.warn` in advisorAccuracy
+  (WS-308) and the `it.todo` red lines: a check that enforces nothing.
+
+  NOTE — texture is not the obstacle. WS-318 settled the match axes as street + isAgg +
+  contextAction, and `texture` is NOT among them. So a 7-axis quick key carrying
+  `texture: 'unknown'` would match fine. What the builder genuinely lacks is `isAgg` and
+  `facingAction`, both of which are derivable from the action sequence it already walks.
+accept_criteria: |
+  - `buildQuickSituationKeys` emits keys that `parseSituationKey` accepts. Prefer `parse`
+    over `tryParse` at the construction site so a malformed key fails loudly at its source
+    rather than silently disabling a scoring term downstream.
+  - `isAgg` and `facingAction` are DERIVED from the action sequence, not defaulted to a
+    constant. A constant would make the term fire uniformly, which is a different way of
+    carrying no information.
+  - MEASURE THE REVIVAL before shipping: report how many hands change significance score and
+    by how much, over a real hand set. Two inputs going from always-0 to sometimes-1 will
+    move the ranking of the review queue, which is founder-visible.
+  - `handSignificance.test.js:136` becomes a real assertion (strictly greater, on a fixture
+    where the weakness genuinely matches) — the vacuous `toBeGreaterThanOrEqual` is the
+    reason this survived and must not survive the fix.
+  - A test asserts a constructed quick key round-trips through `parseSituationKey`.
+effort: "M"
+files_involved:
+  - "src/utils/handAnalysis/handSignificance.js"
+  - "src/utils/handAnalysis/__tests__/handSignificance.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Reviving this changes hand-significance scores and therefore the review-queue ordering the founder sees. Ship the revival, or leave the terms at zero and remove them from the weighting so the factor weights mean what they say? A term pinned to 0 inside a 4-way average is silently a 3-way average with a 25% dead weight."
+source:
+  type: bug-found-during-work
+  created_by: ai
+  finding_id: ""
+  run_id: "SPR-168"
+created_at: "2026-08-03T23:30:00Z"
+status_note: |
+  Filed 2026-08-03 from WS-318 (SPR-168). WS-318 routed all three weakness-match sites
+  through the shared `weaknessMatchesSituation` predicate, so the semantics are now correct
+  and consistent — but at these two sites the predicate is unreachable. This is the
+  shipped-but-inert failure mode the engine has hit before (WS-276's `perceivedHeroRange`
+  shipped correct and unreachable for months because no call site passed it).
+
+  The third site, `heroAnalysis.matchHeroWeakness`, is LIVE and did receive WS-318's
+  behaviour change — it is fed canonical keys.

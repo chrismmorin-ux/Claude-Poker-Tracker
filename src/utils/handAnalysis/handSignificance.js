@@ -13,7 +13,7 @@
 import { BETTING_STREETS } from '../../constants/gameConstants';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
 import { getRangePositionCategory } from '../positionUtils';
-import { tryParseSituationKey } from '../pokerCore/situationKey';
+import { tryParseSituationKey, weaknessMatchesSituation } from '../pokerCore/situationKey';
 
 /**
  * Build approximate situationKeys from action sequence without full board texture.
@@ -117,20 +117,14 @@ export const computeHandSignificance = (hand, heroPlayerId, tendencyMap) => {
     const heroWeaknesses = heroTendency?.weaknesses;
     if (heroWeaknesses && heroWeaknesses.length > 0) {
       const heroKeys = buildQuickSituationKeys(hand, heroSeat, buttonSeat);
-      // Matches on street + isAgg. ⚠ The comment used to say "same street + action" and the
-      // variables were named hAction/wAction, but axis 3 is isAgg ('agg'/'def') — NOT the
-      // action. Same defect as heroAnalysis.matchHeroWeakness, duplicated here; behaviour
-      // preserved under WS-317 and the semantics filed as WS-318.
+      // WS-318: one shared predicate — street + isAgg + contextAction. This and the villain
+      // branch below were copies of the same idea as heroAnalysis.matchHeroWeakness and had
+      // all three drifted into comparing isAgg while calling it the action.
       heroWeaknessMatch = heroKeys.some(hk => {
         const heroParsed = tryParseSituationKey(hk);
         if (!heroParsed) return false;
         return heroWeaknesses.some(w =>
-          w.situationKeys?.some(sk => {
-            const wParsed = tryParseSituationKey(sk);
-            return !!wParsed
-              && wParsed.street === heroParsed.street
-              && wParsed.isAgg === heroParsed.isAgg;
-          })
+          w.situationKeys?.some(sk => weaknessMatchesSituation(sk, heroParsed))
         );
       }) ? 1 : 0;
     }
@@ -156,18 +150,12 @@ export const computeHandSignificance = (hand, heroPlayerId, tendencyMap) => {
     // Weakness match
     if (!villainWeaknessRevealed && tendency?.weaknesses?.length > 0) {
       const villainKeys = buildQuickSituationKeys(hand, seat, buttonSeat);
-      // Same street + isAgg match as the hero branch above — see the note there; the
-      // variables were likewise named for an action they do not hold (WS-318).
+      // Same shared predicate as the hero branch above (WS-318).
       if (villainKeys.some(vk => {
         const villainParsed = tryParseSituationKey(vk);
         if (!villainParsed) return false;
         return tendency.weaknesses.some(w =>
-          w.situationKeys?.some(sk => {
-            const wParsed = tryParseSituationKey(sk);
-            return !!wParsed
-              && wParsed.street === villainParsed.street
-              && wParsed.isAgg === villainParsed.isAgg;
-          })
+          w.situationKeys?.some(sk => weaknessMatchesSituation(sk, villainParsed))
         );
       })) {
         villainWeaknessRevealed = 1;

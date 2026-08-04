@@ -3,8 +3,8 @@ title: "Weakness matching compares aggressor-status while calling it the action 
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: ""
-claimed_at: ""
+claimed_by: ses-20260803-2222-7a07c65f
+claimed_at: "2026-08-03T23:04:17.394Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -94,3 +94,61 @@ status_note: |
   now carry the honest name (`isAgg`, `heroIsAgg`) and each site has a comment pointing here.
   Priority is P1 rather than P0 because it degrades a secondary matching feature rather than
   the engine's EV path — but the wrong string is on screen today.
+
+  ─────────────────────────────────────────────────────────────────────────────────
+  DECISION + IMPLEMENTATION 2026-08-03 (SPR-168)
+  ─────────────────────────────────────────────────────────────────────────────────
+
+  FOUNDER DECISION: rule (c) — a weakness matches on SAME STREET, SAME ROLE, SAME ACTION.
+  Recorded as `WEAKNESS_MATCH_AXES` in pokerCore/situationKey.js with the reasoning, so the
+  next reader finds the decision at the definition rather than in a ticket.
+
+  Why not the alternatives:
+    (b) street + isAgg — what the code did, by accident. A weakness recorded on a river CHECK
+        matched a river BET. That is not a weakness match in any poker sense; the leak is
+        about what hero DID.
+    (a) street + contextAction — matches the original naming, but drops role, so a leak
+        recorded while aggressive would match a spot where hero was DEFENDING. Same action,
+        different mistake.
+
+  QUANTIFIED BEFORE SHIPPING (probe: scripts/backtest/ws318Probe.mjs). HONEST LIMIT: this is
+  a STRUCTURAL enumeration of the 720-key space, NOT corpus-weighted — the criterion asked
+  for a real hand set and the corpus is not reachable from this environment. It measures the
+  shape of the change exactly; the real-world frequency weighting (the distribution of
+  contextAction within a street×isAgg cell) is what would scale it and remains unmeasured.
+
+      rule                                  matching pairs   vs current
+      b: street + isAgg (was)                      86,400        100.0%
+      a: street + contextAction                    34,560         40.0%
+      c: street + isAgg + contextAction  (CHOSEN)  17,280         20.0%
+
+  The narrowing to 20% was chosen knowingly: matching on role alone was firing patterns at
+  the founder that the evidence did not support.
+
+  ONE SHARED PREDICATE. `weaknessMatchesSituation` in pokerCore/situationKey.js — the module
+  that owns what a spot IS. All three sites route through it; none re-implements the
+  comparison, which is how they diverged for months.
+
+  COPY FIXED. `describeSituation` replaces `${street} ${isAgg} spots` — which rendered as
+  "in flop agg spots", not a phrase a poker player uses, and it was on screen. Now reads
+  "as the aggressor on the flop, betting".
+
+  ⚠ TWO OF THE THREE SITES ARE INERT — FILED AS WS-321, NOT FIXED HERE.
+  `handSignificance.buildQuickSituationKeys` emits FOUR-axis keys
+  (`flop:unknown:LATE:bet`), which `tryParseSituationKey` returns null for (verified). Both
+  weakness branches guard on the parse and bail, so `heroWeaknessMatch` and
+  `villainWeaknessRevealed` have been 0 for EVERY hand — and were equally dead before WS-317
+  by a different mechanism (comparing a primitive action against 'agg'/'def', disjoint value
+  spaces). It survived because `handSignificance.test.js:136` asserts
+  `toBeGreaterThanOrEqual`, which passes when the two sides are EQUAL — exactly what happens
+  when the match never fires. Reviving it changes hand-significance scores and the
+  review-queue ordering the founder sees, so it needs its own measurement rather than being
+  folded into an S-effort semantics ticket. Same split reasoning WS-318 got from WS-317.
+
+  The third site, `heroAnalysis.matchHeroWeakness`, is LIVE and did receive the change.
+
+  VERIFIED: near-miss test asserts a river-check weakness no longer matches a river bet AND
+  that the same action still matches (narrowed, not broken); copy test asserts the new
+  phrasing and the absence of " agg spots". WS-317's deliberately-pinned assertion
+  ("MATCHES even when the action differs... THIS is the assertion that must flip") has been
+  flipped. Full suite 13,412 passed / 0 failed; build clean.

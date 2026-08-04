@@ -1,15 +1,29 @@
 {
-  "composed_at": "2026-08-03T22:41:16.835Z",
-  "goal": "Ship WS-314: Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity",
+  "composed_at": "2026-08-03T23:04:12.528Z",
+  "goal": "Ship WS-315: Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair",
   "program_focus": "domain-correctness",
   "override_class": null,
   "items": [
     {
-      "id": "WS-314",
-      "title": "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity",
-      "raw_score": 28,
-      "adjusted_score": 28,
+      "id": "WS-315",
+      "title": "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair",
+      "raw_score": 27,
+      "adjusted_score": 27,
       "effort": "M",
+      "program": "domain-correctness",
+      "source_class": "untagged",
+      "blocked_by_note": null,
+      "soft_block_factor": 1,
+      "source_damping": 1,
+      "mode": "plan-first",
+      "queue_item_known": true
+    },
+    {
+      "id": "WS-318",
+      "title": "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended",
+      "raw_score": 26,
+      "adjusted_score": 26,
+      "effort": "S",
       "program": "domain-correctness",
       "source_class": "untagged",
       "blocked_by_note": null,
@@ -24,10 +38,10 @@
     "status": "passed",
     "matches": []
   },
-  "composition_notes": "Anchor: WS-314 selected (28 × no damping = 28).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\nCap usage: 1.5 session(s) / 2 (5 items max).",
+  "composition_notes": "Anchor: WS-315 selected (27 × no damping = 27).\nProgram cap-breach: design (priority_floor applied to candidates from these programs).\nCap usage: 2 session(s) / 2 (5 items max).",
   "cap_used": {
-    "items": 1,
-    "effort_sessions": 1.5,
+    "items": 2,
+    "effort_sessions": 2,
     "ceremony": "standard"
   }
 }

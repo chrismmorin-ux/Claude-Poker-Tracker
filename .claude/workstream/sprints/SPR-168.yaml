@@ -1,0 +1,32 @@
+id: "SPR-168"
+title: "Ship WS-315: Blocker-based bluff selection cannot fire on ace-high boards — the cards that block vil"
+status: approved
+approved_at: "2026-08-03T23:04:17.394Z"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-315: Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-03T23:04:17.394Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-315 selected (27 × no damping = 27).
+  Program cap-breach: design (priority_floor applied to candidates from these programs).
+  Cap usage: 2 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-315"
+    title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
+    mode: plan-first
+    effort: M
+    status: pending
+  - id: "WS-318"
+    title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
+    mode: plan-first
+    effort: S
+    status: pending
+
+created_at: "2026-08-03T23:04:17.394Z"

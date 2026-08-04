@@ -188,7 +188,9 @@ describe('matchHeroWeakness', () => {
     ])).toBeNull();
   });
 
-  it('matches weakness on street + aggressor-status, across differing texture/position', () => {
+  it('matches on street + role + action, across differing texture/position', () => {
+    // WS-318 rule (c). Texture and position are deliberately NOT match axes — a leak is
+    // about the spot's role and the action, not the exact board or seat.
     const weaknesses = [{
       label: 'Calling station on flop',
       situationKeys: [KEY({ texture: 'wet', pos: 'MIDDLE' }), KEY({ pos: 'EARLY' })],
@@ -199,6 +201,39 @@ describe('matchHeroWeakness', () => {
     expect(result.weakness.label).toBe('Calling station on flop');
     expect(result.matchCount).toBe(5);
     expect(result.message).toContain('flop');
+  });
+
+  it('WS-318 THE NEAR-MISS: same street and role, DIFFERENT action → no match', () => {
+    // This single case is the whole difference between the rules the ticket weighed.
+    // Under the old behaviour (street + isAgg) a weakness recorded on a river CHECK matched
+    // a river BET. Under rule (c) it must not: the leak is about what hero DID.
+    const weaknesses = [{
+      label: 'Gives up on the river',
+      situationKeys: [KEY({ street: 'river', isAgg: 'agg', facing: 'none', ctx: 'check' })],
+      sampleSize: 4,
+    }];
+    const riverBet = KEY({ street: 'river', isAgg: 'agg', facing: 'none', ctx: 'bet' });
+    expect(matchHeroWeakness(riverBet, weaknesses)).toBeNull();
+
+    // ...and the SAME action on the same street with the same role still matches, so the
+    // rule has narrowed the match rather than broken it.
+    const riverCheck = KEY({ street: 'river', isAgg: 'agg', facing: 'none', ctx: 'check' });
+    expect(matchHeroWeakness(riverCheck, weaknesses)).not.toBeNull();
+  });
+
+  it('WS-318: the user-visible message names the role and action, not raw axis values', () => {
+    // Was: "in flop agg spots" — not a phrase a poker player uses, and it was on screen.
+    const weaknesses = [{
+      label: 'Over-cbets',
+      situationKeys: [KEY({ street: 'flop', isAgg: 'agg', facing: 'none', ctx: 'bet' })],
+      sampleSize: 7,
+    }];
+    const result = matchHeroWeakness(
+      KEY({ street: 'flop', isAgg: 'agg', facing: 'none', ctx: 'bet' }), weaknesses,
+    );
+    expect(result).not.toBeNull();
+    expect(result.message).toContain('as the aggressor on the flop, betting');
+    expect(result.message).not.toContain(' agg spots');
   });
 
   it('returns null when the street differs', () => {
@@ -219,18 +254,18 @@ describe('matchHeroWeakness', () => {
     expect(matchHeroWeakness(KEY({ isAgg: 'def' }), weaknesses)).toBeNull();
   });
 
-  it('MATCHES even when the action differs — the WS-318 case, pinned as current behaviour', () => {
-    // Same street, same isAgg, DIFFERENT contextAction. This matches today because the
-    // comparison is on isAgg. If WS-318 moves the semantic to contextAction, THIS is the
-    // assertion that must flip — it is the entire difference between the two readings.
+  it('does NOT match when the action differs — the WS-318 assertion, now flipped', () => {
+    // WS-317 wrote this to pin the old behaviour and said explicitly: "If WS-318 moves the
+    // semantic to contextAction, THIS is the assertion that must flip." Founder chose rule
+    // (c) — street + isAgg + contextAction — on 2026-08-03, so it has flipped.
+    //
+    // Same street, same isAgg, DIFFERENT contextAction. Matched before; must not now.
     const weaknesses = [{
       label: 'Different action, same role',
       situationKeys: [KEY({ ctx: 'vsRaise', facing: 'raise' })],
       sampleSize: 7,
     }];
-    const result = matchHeroWeakness(KEY({ ctx: 'vsBet', facing: 'bet' }), weaknesses);
-    expect(result).not.toBeNull();
-    expect(result.weakness.label).toBe('Different action, same role');
+    expect(matchHeroWeakness(KEY({ ctx: 'vsBet', facing: 'bet' }), weaknesses)).toBeNull();
   });
 
   it('skips weaknesses with no situationKeys', () => {

@@ -199,3 +199,72 @@ export const withCarriedContext = (key, carried = {}) => {
   }
   return { situationKey: key, ...context };
 };
+
+/**
+ * Axes on which a recorded WEAKNESS is considered to match a decision (WS-318).
+ *
+ * THE DECISION (founder, 2026-08-03): a weakness matches on **same street, same role, same
+ * action** — rule (c) of the three the ticket put up. The two rejected alternatives are not
+ * cosmetic variants:
+ *
+ *   (b) street + isAgg — what the code did, by ACCIDENT rather than by decision. Three sites
+ *       destructured the key positionally as `const [actionStreet, , , actionType] = ...`;
+ *       axis 3 is `isAgg` ('agg'/'def'), not an action. So a weakness recorded on a river
+ *       CHECK matched a river BET, which is not a weakness match in any poker sense — the
+ *       leak is about what you DID.
+ *   (a) street + contextAction — matches the original naming, but drops role, so a leak
+ *       recorded while aggressive would match a spot where hero was DEFENDING. Same action,
+ *       different mistake.
+ *
+ * Measured before shipping (structural enumeration of the 720-key space, not corpus-weighted
+ * — the corpus is not reachable from this environment): matching pairs fall to 20% of the
+ * previous rule, and 40% of rule (a). That is a real narrowing and it was chosen knowingly:
+ * matching on role alone was firing patterns at hero that the evidence did not support.
+ *
+ * ONE definition, exported, because the three call sites are copies of one idea and diverged
+ * silently for months. Do not re-inline it.
+ */
+export const WEAKNESS_MATCH_AXES = Object.freeze(['street', 'isAgg', 'contextAction']);
+
+/**
+ * True when a recorded weakness key describes the same kind of spot as a decision key.
+ *
+ * Accepts either raw key strings or already-parsed records, because callers have both and
+ * re-parsing inside a nested `.some()` loop is the shape that made this expensive before.
+ * An unparseable key matches nothing rather than throwing: these feed display helpers, and
+ * the pre-WS-317 code never threw on a malformed key.
+ *
+ * @param {string|object|null} weaknessKey
+ * @param {string|object|null} decisionKey
+ * @returns {boolean}
+ */
+export const weaknessMatchesSituation = (weaknessKey, decisionKey) => {
+  const w = typeof weaknessKey === 'string' ? tryParseSituationKey(weaknessKey) : weaknessKey;
+  const d = typeof decisionKey === 'string' ? tryParseSituationKey(decisionKey) : decisionKey;
+  if (!w || !d) return false;
+  return WEAKNESS_MATCH_AXES.every(axis => w[axis] === d[axis]);
+};
+
+/**
+ * Human-readable description of the spot a weakness match fired in (WS-318).
+ *
+ * Replaces `${street} ${isAgg} spots`, which rendered as "in flop agg spots" — not a phrase
+ * a poker player would use, and it was on screen. Names the role and the action instead.
+ */
+const ACTION_PHRASE = Object.freeze({
+  check: 'checking',
+  bet: 'betting',
+  call: 'calling',
+  raise: 'raising',
+  fold: 'folding',
+});
+
+export const describeSituation = (key) => {
+  const parsed = typeof key === 'string' ? tryParseSituationKey(key) : key;
+  if (!parsed) return 'this spot';
+  const role = parsed.isAgg === 'agg' ? 'as the aggressor' : 'as the defender';
+  const phrase = ACTION_PHRASE[parsed.contextAction];
+  return phrase
+    ? `${role} on the ${parsed.street}, ${phrase}`
+    : `${role} on the ${parsed.street}`;
+};
