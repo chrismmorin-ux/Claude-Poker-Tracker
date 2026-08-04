@@ -5,10 +5,10 @@
 total_items: 175
 by_status:
   decomposed: 1
-  done: 61
+  done: 63
   in_progress: 3
   deferred: 45
-  backlog: 46
+  backlog: 44
   dismissed: 1
   completed: 7
   review: 1
@@ -1626,7 +1626,7 @@ items:
 
   - id: "WS-315"
     title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
-    status: backlog
+    status: done
     priority_score: 27
     category: domain-correctness
     effort: M
@@ -1653,7 +1653,7 @@ items:
 
   - id: "WS-318"
     title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
-    status: backlog
+    status: done
     priority_score: 26
     category: domain-correctness
     effort: S

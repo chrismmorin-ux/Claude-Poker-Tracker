@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785799970317-0b1251a6dca7"
-generated_content_hash: "d00fd1fda9962c4d1575a7ba8ae433675e714f9d252a56ec0a8c80740200878e"
-generated_at: "2026-08-03T23:32:50.347Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-03.jsonl"]
-event_count: 1400
+generated_from_event: "ev-1785801768015-040ce36713e1"
+generated_content_hash: "90e92efb904ed44c54be839868a3af13fd665ef5c6a719ac692a15e9c35d05e6"
+generated_at: "2026-08-04T00:02:48.046Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-03.jsonl", "2026-08-04.jsonl"]
+event_count: 1407
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 942
-- Events recorded: 1400
-- Source chunks: 21
+- Commands recorded: 943
+- Events recorded: 1407
+- Source chunks: 22
 
 ## Command `auto:42416:1781030643103`
 
@@ -9895,3 +9895,19 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-03T23:32:50.317Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-itemclosed-msdw9ikd41e98dfc8066`
+
+- Start: 2026-08-04T00:02:47.486Z
+- Events: 7
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T6:reconcile-findings, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-04T00:02:47.486Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-315", +3 more |
+| 2 | 2026-08-04T00:02:47.555Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-318", +3 more |
+| 3 | 2026-08-04T00:02:47.589Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-168", +4 more |
+| 4 | 2026-08-04T00:02:47.710Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+| 5 | 2026-08-04T00:02:47.962Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+| 6 | 2026-08-04T00:02:47.983Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 7 | 2026-08-04T00:02:48.015Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |

@@ -2,12 +2,12 @@ id: "WS-315"
 title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260803-2222-7a07c65f
-claimed_at: "2026-08-03T23:04:17.394Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-04T00:02:47.478Z"
+completion_commit: "b879769"
 priority_score: 27.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -76,7 +76,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: null
+sprint_id: "SPR-168"
 decision_flags: []
 source:
   type: measurement
@@ -147,3 +147,4 @@ status_note: |
   VERIFIED: 4 behavioural tests (advisorAccuracy §1E) + 2 new builder tests; 6 of the new
   assertions fail against the pre-fix engine. Full suite 13,412 passed / 0 failed (563
   files); exploitEngine 2,747 green; build clean.
+closed_by_event: "ev-1785801767486-a77861cfa291"

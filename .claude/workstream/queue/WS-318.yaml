@@ -2,12 +2,12 @@ id: "WS-318"
 title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260803-2222-7a07c65f
-claimed_at: "2026-08-03T23:04:17.394Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-04T00:02:47.478Z"
+completion_commit: "b879769"
 priority_score: 26.0
 priority_label: "P1"
 category: "domain-correctness"
@@ -80,7 +80,7 @@ files_involved:
 blocked_by: []
 blocked_by_legacy: []
 enables: []
-sprint_id: null
+sprint_id: "SPR-168"
 decision_flags:
   - "What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision."
 source:
@@ -152,3 +152,4 @@ status_note: |
   phrasing and the absence of " agg spots". WS-317's deliberately-pinned assertion
   ("MATCHES even when the action differs... THIS is the assertion that must flip") has been
   flipped. Full suite 13,412 passed / 0 failed; build clean.
+closed_by_event: "ev-1785801767555-ccb5ff542006"
