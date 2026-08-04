@@ -49,12 +49,32 @@ export const STORAGE_KEYS = {
   // rebuild is now the one and only sidebar. `DEBUG_DIAGNOSTICS` gates 0.7
   // diagnostics link (SR-6.10) and 4.3 model audit panel (SR-6.14).
   SETTINGS_DEBUG_DIAGNOSTICS: 'settings.debugDiagnostics',
+  // Point the "launch app" path at the local dev server instead of prod.
+  // Default false. Before WS-358 the target was inferred from manifest
+  // `update_url`, which is absent on every unpacked install — so the link
+  // always resolved to localhost:5173 and never worked for the founder.
+  SETTINGS_USE_DEV_APP: 'settings.useDevApp',
+  // Durable hand journal (chrome.storage.local — survives browser close).
+  // The session queue is the delivery hot path; this is the crash/close
+  // safety net that lets un-ACKed hands be replayed on next startup.
+  HAND_JOURNAL: 'ignition_hand_journal',
+  // Monotonic count of journal entries evicted by the cap without ever being
+  // ACKed by the app — i.e. actual, permanent hand loss. Surfaced, not silent.
+  HAND_JOURNAL_DROPPED: 'ignition_hand_journal_dropped',
 };
 
 // Default values for settings keys. Single source of truth — options page
 // and side-panel boot both read through this map.
 export const SETTINGS_DEFAULTS = Object.freeze({
   [/* keep in sync with STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS */ 'settings.debugDiagnostics']: false,
+  [/* keep in sync with STORAGE_KEYS.SETTINGS_USE_DEV_APP */ 'settings.useDevApp']: false,
+});
+
+// Where the React app lives. Single source of truth — side panel and SW
+// auto-open both resolve through APP_URLS + the SETTINGS_USE_DEV_APP flag.
+export const APP_URLS = Object.freeze({
+  PROD: 'https://poker-tracker-68b97.web.app',
+  DEV: 'http://localhost:5173',
 });
 
 // Session storage keys — used for SW-independent hand delivery and state
@@ -69,6 +89,10 @@ export const SESSION_KEYS = {
   // it can surface a one-shot "reload the Ignition tab" banner. Expected after
   // every extension reload because old content scripts can't rejoin the new SW.
   EXTENSION_JUST_UPDATED: 'extension_just_updated',
+  // How many Ignition tabs the SW reloaded for itself on install/update.
+  // Lets the side panel report "already fixed" instead of asking the founder
+  // to click a repair button mid-hand.
+  EXTENSION_TABS_AUTO_RELOADED: 'extension_tabs_auto_reloaded',
 };
 
 // Extension version — extracted here so all contexts can import without

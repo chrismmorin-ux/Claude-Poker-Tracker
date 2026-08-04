@@ -75,14 +75,24 @@ injectTokens();
 (() => {
   'use strict';
 
-  // App URL — use prod if extension is from web store, else localhost dev server
-  // Appends #online to deep-link directly to the Online Play view
+  // App URL — prod by default; dev server only when explicitly opted in via
+  // the options page (settings.useDevApp).
+  //
+  // WS-358: this previously keyed off `chrome.runtime.getManifest().update_url`,
+  // which is only present on Chrome Web Store installs. Every unpacked install
+  // — the founder's only install path — therefore resolved to localhost:5173,
+  // so "Launch Poker Tracker →" opened a dead tab and had never once worked.
+  // Inferring intent from an install-channel artefact was the bug; an explicit
+  // setting is the fix.
   const APP_URL_PROD = 'https://poker-tracker-68b97.web.app';
   const APP_URL_DEV = 'http://localhost:5173';
-  const getAppUrl = () => {
-    const base = chrome.runtime.getManifest?.()?.update_url ? APP_URL_PROD : APP_URL_DEV;
-    return `${base}#online`;
-  };
+  let _useDevApp = false;
+  const getAppUrl = () => `${_useDevApp ? APP_URL_DEV : APP_URL_PROD}#online`;
+  try {
+    chrome.storage.local.get('settings.useDevApp').then((r) => {
+      _useDevApp = r?.['settings.useDevApp'] === true;
+    }).catch(() => {});
+  } catch (_) { /* storage unavailable — prod default stands */ }
 
   // Infrastructure vars (timers, async locks — not renderable state).
   // All renderable state lives exclusively in coordinator._state.
@@ -2063,16 +2073,31 @@ injectTokens();
   });
 
   // One-shot "extension updated" banner. SW flags EXTENSION_JUST_UPDATED on
-  // install/update; we surface a recovery banner pointing the user at the
-  // Ignition tab (old content scripts are orphaned until reload) and clear
-  // the flag so the banner doesn't re-fire on next side-panel open.
+  // install/update and clears the flag on read so it doesn't re-fire.
+  //
+  // WS-358: the SW now reloads orphaned Ignition tabs itself before setting
+  // the flag, so this banner reports a completed repair instead of assigning
+  // one. It only asks for a manual reload in the case the SW could not act on
+  // (no matching tab found at install time — e.g. the table was opened after).
   (async () => {
     try {
-      const res = await chrome.storage.session?.get(SESSION_KEYS.EXTENSION_JUST_UPDATED);
+      const res = await chrome.storage.session?.get([
+        SESSION_KEYS.EXTENSION_JUST_UPDATED,
+        SESSION_KEYS.EXTENSION_TABS_AUTO_RELOADED,
+      ]);
       if (res && res[SESSION_KEYS.EXTENSION_JUST_UPDATED]) {
-        coordinator.set('recoveryMessage', 'Extension updated — reload any open Ignition tabs to resume capture.');
+        const reloaded = res[SESSION_KEYS.EXTENSION_TABS_AUTO_RELOADED] || 0;
+        coordinator.set(
+          'recoveryMessage',
+          reloaded > 0
+            ? `Extension updated — ${reloaded} Ignition tab${reloaded === 1 ? '' : 's'} reloaded automatically. Capture is live.`
+            : 'Extension updated — capture is live on any Ignition tab opened from now on.',
+        );
         coordinator.dispatch('recoveryBanner', 'contextDead');
-        await chrome.storage.session.remove(SESSION_KEYS.EXTENSION_JUST_UPDATED);
+        await chrome.storage.session.remove([
+          SESSION_KEYS.EXTENSION_JUST_UPDATED,
+          SESSION_KEYS.EXTENSION_TABS_AUTO_RELOADED,
+        ]);
       }
     } catch (_) { /* storage.session may be unavailable in tests/offline */ }
   })();

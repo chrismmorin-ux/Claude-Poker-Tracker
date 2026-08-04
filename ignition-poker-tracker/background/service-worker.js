@@ -9,9 +9,9 @@
  *   - Serving popup/side-panel queries
  */
 
-import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION } from '../shared/constants.js';
+import { MSG, STORAGE_KEYS, SESSION_KEYS, SESSION_KEYS as STORAGE_KEYS_SESSION, PROTOCOL_VERSION, EXTENSION_VERSION, APP_URLS } from '../shared/constants.js';
 import * as errors from '../shared/error-reporter.js';
-import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands } from '../shared/storage-writer.js';
+import { enqueueHand, appendSidePanelHand, writeLiveContext, getQueueLength, writeConnectionState, getQueuedHands, dequeueHands, restoreJournalToQueue } from '../shared/storage-writer.js';
 import { validateMessage } from '../shared/message-schemas.js';
 import { validateHandForRelay } from '../shared/wire-schemas.js';
 import { deepFreeze } from '../shared/freeze-utils.js';
@@ -224,6 +224,11 @@ chrome.runtime.onConnect.addListener((port) => {
           if (msg.status) {
             lastPipelineStatus = msg.status;
             chrome.storage.session.set({ pipeline_status_cache: msg.status }).catch(() => {});
+            // A table is live and nothing is draining the hand queue. Open the
+            // app ourselves (background tab, no focus steal) — buffered hands
+            // are on a 500-deep cap and the founder should never have to think
+            // about that while in a hand.
+            if (msg.status.tableCount > 0 && !appBridgePort) ensureAppTabOpen();
             // Forward to side panel so it tracks active tables in real time
             pushToSidePanel({
               type: 'push_pipeline_status',
@@ -534,19 +539,140 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ===========================================================================
+// SEAMLESS STARTUP (WS-358)
+// ===========================================================================
+//
+// Everything here exists to remove manual steps from table time. The founder
+// plays real money; any action the extension can take for itself must not be
+// delegated to a human mid-hand. Diagnostics are for the developer, not for
+// the player, and must never sit on the critical path.
+
+const IGNITION_TAB_PATTERNS = [
+  'https://*.ignitioncasino.eu/*',
+  'https://*.ignitioncasino.net/*',
+];
+
+/** Resolve the app origin, honouring the explicit dev-server opt-in. */
+const resolveAppBase = async () => {
+  try {
+    const r = await chrome.storage.local.get(STORAGE_KEYS.SETTINGS_USE_DEV_APP);
+    return r?.[STORAGE_KEYS.SETTINGS_USE_DEV_APP] === true ? APP_URLS.DEV : APP_URLS.PROD;
+  } catch (_) {
+    return APP_URLS.PROD;
+  }
+};
+
+// One auto-open per SW lifetime per app base. Without this guard a flapping
+// bridge port would spawn a tab on every pipeline_status tick.
+let _appTabOpenAttempted = false;
+
+/**
+ * Ensure the React app is open in some tab, opening it in the background if
+ * not. The app is what drains the hand queue — without it, capture buffers
+ * and eventually evicts. It is therefore infrastructure, not an optional
+ * companion, and the extension should not ask a human to launch it mid-hand.
+ */
+const ensureAppTabOpen = async () => {
+  if (_appTabOpenAttempted) return;
+  _appTabOpenAttempted = true;
+  try {
+    const base = await resolveAppBase();
+    const existing = await chrome.tabs.query({ url: `${base}/*` });
+    if (existing.length > 0) return;
+    // active:false — never steal focus from the table. The app works fine
+    // in a background tab; the bridge content script runs regardless.
+    await chrome.tabs.create({ url: `${base}#online`, active: false });
+    console.log('[SW] Auto-opened app tab (background):', base);
+  } catch (e) {
+    // Non-fatal: the side panel still offers a manual launch link.
+    _appTabOpenAttempted = false;
+    errors.report('startup', e, { op: 'ensureAppTabOpen' });
+  }
+};
+
+/**
+ * Reload any open Ignition tab after an extension install/update.
+ *
+ * Content scripts attached before the reload are orphaned — their ports are
+ * dead and capture is silently stopped until the tab reloads. Previously this
+ * surfaced as a banner asking the founder to click "Reload Ignition Page",
+ * i.e. the extension detected its own broken state and delegated the repair
+ * to a human who might be in a hand. It can just fix itself.
+ */
+const reloadOrphanedIgnitionTabs = async () => {
+  try {
+    const tabs = await chrome.tabs.query({ url: IGNITION_TAB_PATTERNS });
+    for (const tab of tabs) {
+      try {
+        await chrome.tabs.reload(tab.id, { bypassCache: false });
+      } catch (e) {
+        errors.report('startup', e, { op: 'reloadIgnitionTab', tabId: tab.id });
+      }
+    }
+    if (tabs.length > 0) console.log(`[SW] Reloaded ${tabs.length} orphaned Ignition tab(s)`);
+    return tabs.length;
+  } catch (e) {
+    errors.report('startup', e, { op: 'reloadOrphanedIgnitionTabs' });
+    return 0;
+  }
+};
+
+/** One click on the toolbar icon opens the HUD — no popup, no right-click hunt. */
+const wireSidePanelBehavior = () => {
+  try {
+    chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true })
+      .catch(e => errors.report('startup', e, { op: 'setPanelBehavior' }));
+  } catch (e) {
+    errors.report('startup', e, { op: 'setPanelBehavior' });
+  }
+};
+
+/** Replay any un-ACKed hands the journal is holding from a previous browser session. */
+const replayJournal = async () => {
+  try {
+    const { restored, dropped } = await restoreJournalToQueue();
+    if (restored > 0) {
+      console.log(`[SW] Restored ${restored} un-synced hand(s) from durable journal`);
+      // Queue is non-empty and un-synced — the app needs to be open to drain it.
+      ensureAppTabOpen();
+    }
+    if (dropped > 0) {
+      errors.report('storage', new Error(`${dropped} hand(s) permanently lost to journal cap`), {
+        op: 'replayJournal', dropped,
+      });
+    }
+  } catch (e) {
+    errors.report('startup', e, { op: 'replayJournal' });
+  }
+};
+
+wireSidePanelBehavior();
+replayJournal();
+
+chrome.runtime.onStartup.addListener(() => {
+  wireSidePanelBehavior();
+  replayJournal();
+});
+
+// ===========================================================================
 // LIFECYCLE
 // ===========================================================================
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[SW] Poker Session Notes installed:', details.reason);
 
+  wireSidePanelBehavior();
+
   if (details.reason === 'update' || details.reason === 'install') {
-    // Signal the side panel to surface a one-shot "reload the Ignition tab"
-    // banner. After extension reload, content scripts already attached to
-    // open tabs are orphaned — their ports die, capture stops until the tab
-    // reloads. Flag is cleared by side-panel on read.
+    // Self-repair the orphaned-content-script state rather than asking the
+    // founder to. The side panel still consumes EXTENSION_JUST_UPDATED, but
+    // only to explain what happened — the reload has already been done.
+    const reloaded = await reloadOrphanedIgnitionTabs();
     try {
-      await chrome.storage.session?.set({ [SESSION_KEYS.EXTENSION_JUST_UPDATED]: Date.now() });
+      await chrome.storage.session?.set({
+        [SESSION_KEYS.EXTENSION_JUST_UPDATED]: Date.now(),
+        [SESSION_KEYS.EXTENSION_TABS_AUTO_RELOADED]: reloaded,
+      });
     } catch (e) {
       errors.report('storage', e, { op: 'set_extension_just_updated' });
     }

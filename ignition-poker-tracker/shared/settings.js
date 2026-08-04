@@ -20,6 +20,7 @@ import { STORAGE_KEYS, SETTINGS_DEFAULTS } from './constants.js';
 
 export const SETTINGS_KEYS = Object.freeze([
   STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS,
+  STORAGE_KEYS.SETTINGS_USE_DEV_APP,
 ]);
 
 /**
@@ -71,5 +72,6 @@ function normalize(raw) {
   };
   return {
     debugDiagnostics: get(STORAGE_KEYS.SETTINGS_DEBUG_DIAGNOSTICS),
+    useDevApp: get(STORAGE_KEYS.SETTINGS_USE_DEV_APP),
   };
 }

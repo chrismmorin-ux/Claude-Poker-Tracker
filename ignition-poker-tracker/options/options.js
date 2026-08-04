@@ -47,6 +47,13 @@ async function init() {
     flashStatus(`Debug diagnostics ${e.target.checked ? 'on' : 'off'}`);
   });
 
+  el('useDevApp').checked = settings.useDevApp;
+
+  el('useDevApp').addEventListener('change', async (e) => {
+    await writeSetting(STORAGE_KEYS.SETTINGS_USE_DEV_APP, e.target.checked);
+    flashStatus(e.target.checked ? 'App target: localhost:5173' : 'App target: live app');
+  });
+
   // --- Raw frame capture ---
   el('captureRawFrames').checked = await isCaptureEnabled();
 

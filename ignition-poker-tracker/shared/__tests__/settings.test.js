@@ -61,7 +61,7 @@ describe('shared/settings — debugDiagnostics flag', () => {
 
   it('returns default when storage is empty', async () => {
     const s = await settings.loadSettings();
-    expect(s).toEqual({ debugDiagnostics: false });
+    expect(s).toEqual({ debugDiagnostics: false, useDevApp: false });
   });
 
   it('reads stored value when present', async () => {
@@ -69,7 +69,7 @@ describe('shared/settings — debugDiagnostics flag', () => {
       'settings.debugDiagnostics': true,
     });
     const s = await settings.loadSettings();
-    expect(s).toEqual({ debugDiagnostics: true });
+    expect(s).toEqual({ debugDiagnostics: true, useDevApp: false });
   });
 
   it('observeSettings fires on debugDiagnostics flip', async () => {
@@ -78,7 +78,35 @@ describe('shared/settings — debugDiagnostics flag', () => {
     await chromeStub.storage.local.set({ 'settings.debugDiagnostics': true });
     // observer is async — yield to the microtask queue
     await Promise.resolve(); await Promise.resolve();
-    expect(cb).toHaveBeenCalledWith({ debugDiagnostics: true });
+    expect(cb).toHaveBeenCalledWith({ debugDiagnostics: true, useDevApp: false });
+  });
+
+  // WS-358: the app target must default to prod. It was previously inferred
+  // from manifest `update_url`, which is absent on unpacked installs — so the
+  // launch link resolved to a dev server that was not running and had never
+  // worked for the founder. Defaulting to prod is the load-bearing assertion.
+  it('defaults the app target to prod, not the dev server', async () => {
+    const s = await settings.loadSettings();
+    expect(s.useDevApp).toBe(false);
+  });
+
+  it('honours an explicit dev-server opt-in', async () => {
+    await chromeStub.storage.local.set({ 'settings.useDevApp': true });
+    const s = await settings.loadSettings();
+    expect(s.useDevApp).toBe(true);
+  });
+
+  it('observeSettings fires on useDevApp flip', async () => {
+    const cb = vi.fn();
+    settings.observeSettings(cb);
+    await chromeStub.storage.local.set({ 'settings.useDevApp': true });
+    await Promise.resolve(); await Promise.resolve();
+    expect(cb).toHaveBeenCalledWith({ debugDiagnostics: false, useDevApp: true });
+  });
+
+  it('writeSetting accepts the useDevApp key', async () => {
+    await settings.writeSetting('settings.useDevApp', true);
+    expect(chromeStub._store['settings.useDevApp']).toBe(true);
   });
 
   it('ignores unrelated local-storage changes', async () => {

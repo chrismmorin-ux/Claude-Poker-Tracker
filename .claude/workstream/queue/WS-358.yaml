@@ -1,0 +1,117 @@
+id: "WS-358"
+title: "Capture required four manual steps at the table and lost every un-synced hand on browser close — extension made the founder its operator"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P0"
+category: "correctness"
+capability: "ignition-extension"
+program: "engineering"
+finding_id: ""
+description: |
+  FOUND 2026-08-04 by the founder, mid-session, playing real money. Reported as:
+  "the hands I'm playing are actually money hands. Doing something else, particularly
+  things that don't add value to the hand I'm in, are difficult."
+
+  Three defects, one root cause: diagnostics and repair work sat on the critical path,
+  and the extension delegated to a human what it could do for itself.
+
+  1. LAUNCH LINK NEVER WORKED (side-panel.js:82-85). getAppUrl resolved the app target
+     from `chrome.runtime.getManifest().update_url`, a field Chrome populates only for
+     Web Store installs. Every unpacked install — the founder's only install path —
+     therefore resolved to http://localhost:5173, a dev server not running. The
+     "Launch Poker Tracker →" affordance opened a dead tab and had never once worked
+     in any session. Inferring user intent from an install-channel artefact was the bug.
+
+  2. SILENT UNBOUNDED HAND LOSS (storage-writer.js). The delivery queue lived only in
+     chrome.storage.session, which Chrome wipes on browser close. The app tab is what
+     drains that queue. So a session played without the app open buffered every hand
+     into volatile storage and lost all of it at exit, with no warning at any point.
+     Compounding it, MAX_QUEUE was 100 with oldest-first eviction — hand 101 silently
+     destroyed hand 1 mid-session. The "App not open" chip was the only signal, and it
+     read as an optional-companion nag rather than a countdown on the founder's data.
+     This is the defect with real cost: money-hand data, unrecoverable.
+
+  3. SELF-DETECTED BREAKAGE DELEGATED TO A HUMAN. On extension install/update, content
+     scripts attached to open Ignition tabs are orphaned and capture stops. The SW knew
+     this had happened — it set EXTENSION_JUST_UPDATED — and rendered a banner asking
+     the founder to click "Reload Ignition Page", possibly mid-hand. The SW had both
+     the host permission and the tab list needed to do it itself.
+
+  Net at-table cost before this fix: pin icon, right-click → open side panel, notice
+  "App not open", click a link that silently fails, manually navigate to the app,
+  notice the recovery banner, click reload. Four-plus attention-taking steps, several
+  of them during hands, to reach a state the extension could have reached alone.
+accept_criteria: |
+  - App target defaults to prod and is never inferred from install channel. Dev server is
+    an explicit opt-in setting. A test asserts the prod default. [DONE]
+  - A captured hand survives browser close without the app ever being opened, and syncs on
+    a later session. Durable journal in chrome.storage.local, write-through on enqueue,
+    released only on app ACK, replayed on SW startup. [DONE]
+  - Hand loss is never silent. Journal cap breach increments a counter and reports an
+    error rather than splicing quietly. [DONE]
+  - The app is opened by the extension when a table goes live and nothing is draining the
+    queue — background tab, no focus steal. [DONE]
+  - Orphaned Ignition tabs are reloaded by the SW itself on install/update; the banner
+    reports the completed repair instead of assigning one. [DONE]
+  - Toolbar icon opens the sidebar in one click. Diagnostics move off the critical path.
+    [DONE]
+  - Tests cover the browser-close replay path specifically — it is the one that destroyed
+    real data. [DONE — shared/__tests__/storage-writer-journal.test.js, 8 tests]
+effort: "M"
+files_involved:
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/shared/constants.js"
+  - "ignition-poker-tracker/shared/settings.js"
+  - "ignition-poker-tracker/background/service-worker.js"
+  - "ignition-poker-tracker/side-panel/side-panel.js"
+  - "ignition-poker-tracker/options/options.html"
+  - "ignition-poker-tracker/options/options.js"
+  - "ignition-poker-tracker/manifest.json"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    RECORDED — the durable journal lives in chrome.storage.local, not .session.
+    chrome.storage.session defaults to TRUSTED_CONTEXTS, so content scripts cannot read
+    it; .local has no equivalent control, so our own ISOLATED-world content scripts on the
+    casino origin can read the journal. Casino PAGE scripts still cannot — chrome.storage
+    is not exposed to page JS at all. Traded that narrow widening for durability of
+    money-hand data. Revisit if the threat model changes.
+  - |
+    RECORDED — auto-opening a tab is an unprompted side effect. Guarded to one attempt per
+    SW lifetime, opened with active:false so it never steals focus from the table. The
+    alternative (keep asking the founder) is what caused the incident.
+  - |
+    OPEN — MAX_QUEUE raised 100 → 500 and MAX_JOURNAL set to 5000. Both are guesses, not
+    measurements. Nobody has characterised the founder's real session length in hands, so
+    the headroom is unvalidated. Worth deriving from actual session data once the journal
+    has accumulated some.
+  - |
+    OPEN — the popup was removed from the toolbar-icon path (default_popup deleted so
+    openPanelOnActionClick works). Its counters and Export Hands moved behind the options
+    page. If Export turns out to be something the founder reaches for often, it needs a
+    home on the sidebar rather than two clicks into Settings.
+source:
+  type: founder-report
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-04T20:30:00Z"
+status_note: |
+  Written after the fix, from a live founder report during a money session — not composed
+  from the queue. Filed so the three defects and the two open decisions above are on the
+  record rather than living only in commit history.
+
+  NOT VERIFIED AGAINST A LIVE TABLE. Build passes and the full extension suite is green
+  (2387 tests, 84 files, +12 new), but nothing here was exercised against a real Ignition
+  session — the founder was mid-session and reloading the extension would have cost live
+  capture. First real-table session should confirm the hand count advances end-to-end.
