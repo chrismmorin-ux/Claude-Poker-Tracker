@@ -13,16 +13,16 @@
       ],
       "villainAction": "donk",
       "narrowAction": "bet",
-      "totalCombos": 79,
-      "totalWeight": 52.8,
+      "totalCombos": 95,
+      "totalWeight": 56.76,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 5.6412,
-        "strong": 41.6704,
+        "nuts": 5.2482,
+        "strong": 38.7674,
         "marginal": 0,
-        "draw": 13.792,
-        "air": 38.8964
+        "draw": 14.5728,
+        "air": 41.4116
       }
     },
     {
@@ -38,16 +38,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 79,
-      "totalWeight": 52.79,
+      "totalCombos": 93,
+      "totalWeight": 63.13,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.7825,
-        "strong": 19.2268,
-        "marginal": 0,
+        "nuts": 1.4905,
+        "strong": 16.078,
+        "marginal": 6.215,
         "draw": 0,
-        "air": 78.9907
+        "air": 76.2165
       }
     },
     {
@@ -63,16 +63,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 79,
-      "totalWeight": 30.83,
+      "totalCombos": 93,
+      "totalWeight": 33.52,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 9.7247,
-        "strong": 76.2956,
-        "marginal": 0,
+        "nuts": 8.9428,
+        "strong": 70.1607,
+        "marginal": 6.0632,
         "draw": 0,
-        "air": 13.9796
+        "air": 14.8333
       }
     },
     {
@@ -87,16 +87,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 79,
-      "totalWeight": 44.65,
+      "totalCombos": 94,
+      "totalWeight": 55.69,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.6891,
-        "strong": 22.1939,
-        "marginal": 0,
-        "draw": 5.6829,
-        "air": 70.4341
+        "nuts": 1.3544,
+        "strong": 17.7963,
+        "marginal": 3.2322,
+        "draw": 8.7025,
+        "air": 68.9147
       }
     },
     {
@@ -111,16 +111,16 @@
       ],
       "villainAction": "checkraise",
       "narrowAction": "bet",
-      "totalCombos": 79,
-      "totalWeight": 43.47,
+      "totalCombos": 94,
+      "totalWeight": 46.87,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 6.8988,
-        "strong": 54.4652,
-        "marginal": 0,
-        "draw": 3.6909,
-        "air": 34.945
+        "nuts": 6.3977,
+        "strong": 50.5091,
+        "marginal": 3.3321,
+        "draw": 4.4057,
+        "air": 35.3554
       }
     },
     {
@@ -134,16 +134,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 28,
-      "totalWeight": 14.3,
-      "isCapped": true,
+      "totalCombos": 126,
+      "totalWeight": 74.15,
+      "isCapped": false,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0,
-        "strong": 17.339,
-        "marginal": 20.5341,
-        "draw": 12.4249,
-        "air": 49.7019
+        "nuts": 2.3837,
+        "strong": 10.3874,
+        "marginal": 47.471,
+        "draw": 2.3967,
+        "air": 37.3611
       }
     },
     {
@@ -159,16 +159,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 28,
-      "totalWeight": 17.05,
+      "totalCombos": 119,
+      "totalWeight": 75.36,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 6.8238,
-        "strong": 16.4805,
-        "marginal": 19.9078,
+        "nuts": 7.9054,
+        "strong": 11.1843,
+        "marginal": 38.0901,
         "draw": 0,
-        "air": 56.7879
+        "air": 42.8202
       }
     },
     {
@@ -183,16 +183,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 28,
-      "totalWeight": 16.75,
-      "isCapped": true,
+      "totalCombos": 122,
+      "totalWeight": 72.21,
+      "isCapped": false,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0,
-        "strong": 15.653,
-        "marginal": 18.8705,
-        "draw": 14.9676,
-        "air": 50.5088
+        "nuts": 3.8191,
+        "strong": 10.893,
+        "marginal": 43.7856,
+        "draw": 3.472,
+        "air": 38.0303
       }
     },
     {
@@ -207,16 +207,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 28,
-      "totalWeight": 14.91,
-      "isCapped": true,
-      "isWeaklyCapped": true,
+      "totalCombos": 122,
+      "totalWeight": 57.87,
+      "isCapped": false,
+      "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 0,
-        "strong": 38.9943,
-        "marginal": 31.4005,
-        "draw": 11.2547,
-        "air": 18.3505
+        "nuts": 20.7312,
+        "strong": 30.1399,
+        "marginal": 27.605,
+        "draw": 2.8997,
+        "air": 18.6242
       }
     },
     {
@@ -230,16 +230,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 442,
-      "totalWeight": 278.08,
+      "totalCombos": 657,
+      "totalWeight": 418.29,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.0443,
-        "strong": 1.7537,
-        "marginal": 27.8915,
+        "nuts": 0.9571,
+        "strong": 2.0494,
+        "marginal": 29.3139,
         "draw": 0,
-        "air": 69.3105
+        "air": 67.6796
       }
     },
     {
@@ -255,16 +255,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 410,
-      "totalWeight": 265.69,
+      "totalCombos": 611,
+      "totalWeight": 402.99,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.1947,
-        "strong": 4.641,
-        "marginal": 44.3558,
+        "nuts": 1.5837,
+        "strong": 4.042,
+        "marginal": 42.77,
         "draw": 0,
-        "air": 49.8085
+        "air": 51.6044
       }
     },
     {
@@ -280,16 +280,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 410,
-      "totalWeight": 265.69,
+      "totalCombos": 611,
+      "totalWeight": 402.99,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.1947,
-        "strong": 4.641,
-        "marginal": 44.3558,
+        "nuts": 1.5837,
+        "strong": 4.042,
+        "marginal": 42.77,
         "draw": 0,
-        "air": 49.8085
+        "air": 51.6044
       }
     },
     {
@@ -305,16 +305,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 410,
-      "totalWeight": 173.06,
+      "totalCombos": 611,
+      "totalWeight": 234.06,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 5.177,
-        "strong": 18.176,
-        "marginal": 67.3526,
+        "nuts": 8.9521,
+        "strong": 17.139,
+        "marginal": 63.1096,
         "draw": 0,
-        "air": 9.2944
+        "air": 10.7993
       }
     },
     {
@@ -329,16 +329,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 437,
-      "totalWeight": 289.26,
+      "totalCombos": 645,
+      "totalWeight": 426.3,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.9963,
-        "strong": 1.9716,
-        "marginal": 30.2151,
-        "draw": 0.9096,
-        "air": 65.9074
+        "nuts": 1.0775,
+        "strong": 2.2285,
+        "marginal": 32.1703,
+        "draw": 2.9426,
+        "air": 61.5811
       }
     },
     {
@@ -353,16 +353,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 437,
-      "totalWeight": 172.47,
+      "totalCombos": 645,
+      "totalWeight": 243.46,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 5.1878,
-        "strong": 7.8606,
-        "marginal": 69.1965,
-        "draw": 0.7711,
-        "air": 16.9841
+        "nuts": 7.3701,
+        "strong": 9.1325,
+        "marginal": 62.1863,
+        "draw": 3.5999,
+        "air": 17.7112
       }
     },
     {
@@ -376,16 +376,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 304,
-      "totalWeight": 202.9,
+      "totalCombos": 486,
+      "totalWeight": 323.92,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0,
-        "strong": 2.8297,
-        "marginal": 15.784,
-        "draw": 0.9121,
-        "air": 80.4742
+        "nuts": 0.3225,
+        "strong": 2.9146,
+        "marginal": 23.0509,
+        "draw": 0.5713,
+        "air": 73.1407
       }
     },
     {
@@ -400,16 +400,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 280,
-      "totalWeight": 175.12,
+      "totalCombos": 455,
+      "totalWeight": 292.94,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 1.6041,
-        "strong": 3.2271,
-        "marginal": 35.9993,
-        "draw": 3.0219,
-        "air": 56.1476
+        "nuts": 1.4796,
+        "strong": 3.2162,
+        "marginal": 36.6918,
+        "draw": 1.8065,
+        "air": 56.8059
       }
     },
     {
@@ -423,14 +423,14 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 504,
-      "totalWeight": 311.3,
+      "totalCombos": 723,
+      "totalWeight": 452.66,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.714,
-        "strong": 26.8691,
-        "marginal": 72.4169,
+        "nuts": 0.5664,
+        "strong": 24.9757,
+        "marginal": 74.4579,
         "draw": 0,
         "air": 0
       }
@@ -448,14 +448,14 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 487,
-      "totalWeight": 319.93,
+      "totalCombos": 692,
+      "totalWeight": 456.49,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.9774,
-        "strong": 32.5569,
-        "marginal": 66.4657,
+        "nuts": 1.2784,
+        "strong": 31.5108,
+        "marginal": 67.2107,
         "draw": 0,
         "air": 0
       }
@@ -472,14 +472,14 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 497,
-      "totalWeight": 318.9,
+      "totalCombos": 709,
+      "totalWeight": 457.92,
       "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 0.7098,
-        "strong": 28.8745,
-        "marginal": 70.4157,
+        "nuts": 0.8165,
+        "strong": 27.5615,
+        "marginal": 71.6221,
         "draw": 0,
         "air": 0
       }
@@ -495,16 +495,16 @@
       ],
       "villainAction": "check",
       "narrowAction": "check",
-      "totalCombos": 91,
-      "totalWeight": 50.06,
-      "isCapped": false,
+      "totalCombos": 99,
+      "totalWeight": 56.21,
+      "isCapped": true,
       "isWeaklyCapped": true,
       "bucketPct": {
-        "nuts": 2.0486,
-        "strong": 22.158,
+        "nuts": 1.8242,
+        "strong": 19.7309,
         "marginal": 0,
-        "draw": 20.2504,
-        "air": 55.543
+        "draw": 20.7706,
+        "air": 57.6743
       }
     },
     {
@@ -520,16 +520,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 91,
-      "totalWeight": 32.85,
+      "totalCombos": 99,
+      "totalWeight": 34.97,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 60.1681,
-        "strong": 22.8663,
+        "nuts": 58.0327,
+        "strong": 21.4778,
         "marginal": 0,
         "draw": 0,
-        "air": 16.9656
+        "air": 20.4894
       }
     },
     {
@@ -544,16 +544,16 @@
       ],
       "villainAction": "bet",
       "narrowAction": "bet",
-      "totalCombos": 91,
-      "totalWeight": 44.51,
+      "totalCombos": 99,
+      "totalWeight": 45.53,
       "isCapped": false,
       "isWeaklyCapped": false,
       "bucketPct": {
-        "nuts": 6.7243,
-        "strong": 51.9553,
+        "nuts": 6.5744,
+        "strong": 50.7971,
         "marginal": 0,
-        "draw": 16.5759,
-        "air": 24.7445
+        "draw": 16.7637,
+        "air": 25.8647
       }
     }
   ],

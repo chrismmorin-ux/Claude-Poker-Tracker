@@ -158,7 +158,11 @@ describe('enumerateBucketCombos — JT6 canonical examples (roundtable scenario)
     // Any combos that DO fall into flushDraw must have the correct handType;
     // the classifier decides which specific combos qualify (e.g. pure flush
     // draws may be classified as overcards/comboDraw by rangeSegmenter).
-    const range = parseRangeString('AhKh,KhQh,QhJh,Jh4h');
+    // Hand-class notation, not specific-suit combos: parseRangeString returns a
+    // 169-cell class grid that cannot represent a suit. These were written as
+    // 'AhKh,KhQh,...', which the parser silently dropped — the range was empty
+    // and both tests below passed vacuously over zero combos.
+    const range = parseRangeString('AKs,KQs,QJs,J4s');
     const out = enumerateBucketCombos({ bucketId: 'flushDraw', board, range });
     for (const c of out.combos) {
       expect(['nutFlushDraw', 'nonNutFlushDraw']).toContain(c.handType);
@@ -166,7 +170,11 @@ describe('enumerateBucketCombos — JT6 canonical examples (roundtable scenario)
   });
 
   it('flushDraw + nutFlushDraw are consistent — nut is a subset of the aggregate', () => {
-    const range = parseRangeString('AhKh,KhQh,QhJh,Jh4h');
+    // Hand-class notation, not specific-suit combos: parseRangeString returns a
+    // 169-cell class grid that cannot represent a suit. These were written as
+    // 'AhKh,KhQh,...', which the parser silently dropped — the range was empty
+    // and both tests below passed vacuously over zero combos.
+    const range = parseRangeString('AKs,KQs,QJs,J4s');
     const all = enumerateBucketCombos({ bucketId: 'flushDraw', board, range });
     const nutOnly = enumerateBucketCombos({ bucketId: 'nutFlushDraw', board, range });
     expect(all.sampleSize).toBeGreaterThanOrEqual(nutOnly.sampleSize);
