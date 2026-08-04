@@ -44,8 +44,17 @@ purpose.
 > Vocabulary and schemas: `docs/standard-of-record/VOCABULARY.md` · `src/utils/standardOfRecord/`.
 > The field is named `surface_kind`, not `surface_class` — see the register for why.
 >
-> **Declared surfaces registered so far.** WS-323's Entry Map (preflop, 169 cells) is the first
-> and currently the only one. WS-335 proposes the postflop sibling — an interaction-class index
+> **Declared surfaces registered so far.** WS-323's Entry Map (preflop, 169 cells) was the
+> first. WS-331 added the second — **Pool Best Response (`pool-best-response`)**, the max-EV
+> response to the mined Field. It is Declared rather than Field because it is a rule someone
+> *authored* ("take the max-EV action against the measured field") that happens to consume a
+> Field; registering it as a Field would assert the pool plays this way, and it emphatically
+> does not. It is the **upper pier post**: every strategy's edge as a fraction of PBR's edge is
+> its *exploitation efficiency*, which is what turns a bare bb figure into a position. PBR is
+> held out by construction (fit on POOL, evaluated on EVAL, refused otherwise) and carries a
+> standing warning that it is maximally exploitable and must never be played.
+>
+> WS-335 proposes the postflop sibling — an interaction-class index
 > plus a board-relative combo rank — and is the first Declared surface whose *purpose* is
 > compression: it exists to be differenced against the Read surface it compresses, so the price
 > of a strategy a human can execute unaided becomes a number. Note the standing constraint
@@ -62,6 +71,7 @@ purpose.
 | User input | **Field** frame | SRC-014 | **live 1/3, Wind Creek** |
 | Ours | **Read** frame | SRC-006/007/008 | whatever it was fitted to |
 | **A Strategy Card** | **Declared** frame | authored in-repo | whatever domain it declares |
+| **Pool Best Response** | **Declared** frame (WS-331) | derived from SRC-012 | the Field it best-responds to |
 
 Three of the five are the *same kind of object measured on different populations*. That is
 the whole game:
@@ -147,6 +157,14 @@ real population attached, not a theoretical worry.
 
 *Proposed as a seventh gate criterion. Adding one makes the gate stricter, so it does not
 collide with "thresholds are not editable to open the gate" — but it is still a `/decide`.*
+
+**Status after WS-331.** Half of this axis now has a number, and the half that does not is
+explicit about why. The **pool's** exploitability is measured: it *is* PBR's edge, by
+construction — a best response to the pool wins exactly what the pool is exploitable for. Every
+other surface's own exploitability requires playing a best response *against it*, which needs
+the population simulator (WS-326), so `heroEvReport` emits it as `null` with that reason rather
+than omitting the axis. Positions are refused as bare scalars (`strategyPosition.buildPosition`
+throws), which is what keeps the unmeasured coordinate visible instead of forgotten.
 
 ---
 

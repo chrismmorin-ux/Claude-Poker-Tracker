@@ -18,6 +18,9 @@ import { estimateEdge, TREATMENT, DEFAULT_BOOTSTRAP_SEED } from './ipsEstimator.
 import { applyFoldShift } from './behaviorPolicy.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
 import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
+import { PBR_SHRINK_SWEEP, PBR_WARNING, PBR_SCOPE } from './poolBestResponse.mjs';
+import { exploitationPremium } from './equilibriumPost.mjs';
+import { buildPositions, exploitationEfficiency } from './strategyPosition.mjs';
 
 const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
@@ -30,8 +33,13 @@ const CORPUS_CAVEAT =
  * v2 (WS-322) — ADDITIVE. The report gained a `resultCard` block conforming to the ADR-009
  * Standard of Record. Every pre-existing field is unchanged and in the same place, so
  * `model-readiness.mjs` and `scorecard-history.yaml` read exactly what they read before.
+ *
+ * v3 (WS-331) — ADDITIVE. The report gained the two pier posts: a `pbr` arm (the ceiling of
+ * exploitation), `pbrSweep` (its shrinkage curve), `positions` (every strategy as a 2D
+ * location rather than a scalar), and `premium` (which reports an honest ABSENCE until the
+ * Equilibrium post SRC-013 exists). Every pre-existing field is unchanged and in place.
  */
-export const HERO_EV_SCHEMA_VERSION = 2;
+export const HERO_EV_SCHEMA_VERSION = 3;
 
 /**
  * The estimand, stated in words.
@@ -165,7 +173,7 @@ const withNet = (decisions, field) => decisions.map((d) => ({ ...d, netBB: d[fie
  * card is not quotable. That mirrors how `admissibility` already works: compute the verdict,
  * state the blockers, never silently suppress the arithmetic.
  */
-const buildCardFor = (run, arms, headline) => {
+const buildCardFor = (run, arms, headline, pbr = null) => {
   const stamp = run.replicationStamp ?? null;
   if (!stamp) {
     return {
@@ -176,6 +184,8 @@ const buildCardFor = (run, arms, headline) => {
       ],
     };
   }
+
+  const efficiency = exploitationEfficiency(headline.edgeBB, pbr?.edgeBB ?? null);
 
   try {
     const manifest = buildReplicationManifest(stamp);
@@ -197,6 +207,13 @@ const buildCardFor = (run, arms, headline) => {
         players: headline.players,
         controlEdgeBB: arms.populationControl.edgeBB,
         liveShiftedCiLowBB: arms.liveShifted.edgeCiLowBB,
+        // WS-331 — a STANDARD Result Card field, so any two cards can be compared on the
+        // fraction of available edge captured rather than on raw bb, which is not comparable
+        // across Deal Books. Null carries its reason; a bare null would read as "not
+        // measured" when it may mean "the ceiling itself was not resolvable on this run".
+        pbrEdgeBB: pbr?.edgeBB ?? null,
+        exploitationEfficiency: efficiency.value,
+        exploitationEfficiencyUnavailableReason: efficiency.reason,
       },
       // PLAYERS, not hands. The CI is a cluster bootstrap over players because decisions
       // inside one player are not independent (POKER_THEORY 14.3).
@@ -251,6 +268,45 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
     ),
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  // WS-331 — THE UPPER POST.
+  //
+  // PBR enters as one more `piOurs` remap through the SAME `estimateEdge` every other arm
+  // uses. That is not a convenience: ADR-009 guarantees the Declared surface is scored by the
+  // same instrument as the other four kinds and that no second comparison path is permitted.
+  // A bespoke PBR estimator would have been that second path.
+  //
+  // `null` when the run predates WS-331 or when no decision produced a ceiling — the arm is
+  // then absent rather than zero, because a ceiling of zero and no ceiling at all are
+  // different claims and `exploitationEfficiency` treats them differently.
+  // ─────────────────────────────────────────────────────────────────────────────────────
+  const pbrDecisions = d.filter((x) => x.piPbr);
+  const pbr = pbrDecisions.length
+    ? estimateEdge(
+      pbrDecisions.map((x) => ({ ...x, piOurs: x.piPbr })),
+      { ...opts, label: 'PBR ceiling (NEVER PLAY)' },
+    )
+    : null;
+  if (pbr) arms.pbr = pbr;
+
+  // THE SHRINKAGE CURVE, not a point. A best response to a MEASURED model exploits that
+  // model's estimation noise as readily as its real tendencies, so an uncorrected ceiling is
+  // inflated and every strategy scored against it looks worse than it is. Regularizing the
+  // population model harder must shrink PBR's edge; HOW FAST is the measurement of how much
+  // of the ceiling was ever real. Each point is scored through `estimateEdge` like any other
+  // arm, so the curve is directly comparable to the headline.
+  const pbrSweep = PBR_SHRINK_SWEEP.map((w) => {
+    const rows = d.filter((x) => x.piPbrBySweep?.[w]);
+    if (!rows.length) return { shrinkWeight: w, arm: null };
+    return {
+      shrinkWeight: w,
+      arm: estimateEdge(
+        rows.map((x) => ({ ...x, piOurs: x.piPbrBySweep[w] })),
+        { ...opts, label: `PBR @ shrink=${w}` },
+      ),
+    };
+  }).filter((r) => r.arm !== null);
+
   const headline = arms.engineRaked;
   const admissibility = assessAdmissibility(run, arms);
 
@@ -275,13 +331,33 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
   // suppressing the number entirely would hide a trend that is worth watching across runs.
   gate.armsWouldPass = gate.corpusArmPasses && gate.liveShiftedArmPasses;
 
-  const card = buildCardFor(run, arms, headline);
+  const card = buildCardFor(run, arms, headline, pbr);
+
+  // EVERY STRATEGY AS A POSITION, NEVER A SCALAR. The builder refuses a bare number, so this
+  // is the shape enforced rather than a shape recommended. One coordinate — own
+  // exploitability — is honestly null for everything but the field, whose exploitability IS
+  // PBR's edge by construction.
+  const positions = buildPositions(arms, pbr);
+
+  // THE PREMIUM, AND WHY IT IS NULL. EV(PBR) - EV(Equilibrium) is the number that would say
+  // how much money exists specifically because the pool is bad, as opposed to because hero
+  // plays solid poker. The lower post does not exist (SRC-013), so the premium is reported as
+  // an absence with its reason. `exploitationPremium` also REFUSES chart-derived substitutes,
+  // which is the one way this could quietly start returning a number that means something
+  // else.
+  const premium = exploitationPremium({ pbrEdgeBB: pbr?.edgeBB ?? null });
 
   return {
     schemaVersion: HERO_EV_SCHEMA_VERSION,
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
     admissibility,
+    // WS-331 — the pier posts. Additive; everything that predates this is unchanged.
+    pbrSweep,
+    positions,
+    premium,
+    pbrWarning: PBR_WARNING,
+    pbrScope: PBR_SCOPE,
     // ADR-009 Standard of Record (WS-322). Additive — everything below this line predates it
     // and is unchanged.
     resultCard: card.resultCard,
@@ -324,6 +400,73 @@ const renderArm = (a) => {
   return `  ${String(a.label).padEnd(42)} ${bb(a.edgeBB).padStart(8)} bb   ${ci.padStart(20)}   n=${String(a.n).padStart(5)}  ESS=${String(a.ess).padStart(7)}`;
 };
 
+const eff = (x) => (x === null || x === undefined ? '—' : `${(x * 100).toFixed(1)}%`);
+
+/**
+ * The pier-post block (WS-331).
+ *
+ * Ordered so the reader meets the WARNING before the ceiling's number. A ceiling printed
+ * first and disclaimed second is a ceiling that gets quoted without its disclaimer, and PBR
+ * is maximally exploitable by construction — reading it as advice is the one misreading that
+ * costs real money.
+ *
+ * Absent on a pre-WS-331 artifact, and absent rather than zeroed on a run that produced no
+ * ceiling: "no ceiling was resolvable" and "the ceiling is zero" are different claims.
+ */
+const renderPiers = (r) => {
+  const L = [];
+  if (!r.arms?.pbr && !(r.pbrSweep ?? []).length) return L;
+
+  L.push('  PIER POSTS — where does this strategy SIT? (WS-331)');
+  L.push('  ' + '─'.repeat(90));
+  L.push(`    !! ${r.pbrWarning}`);
+  L.push(`    scope: ${r.pbrScope}`);
+  L.push('');
+
+  for (const p of (r.positions ?? [])) {
+    L.push(`    ${String(p.label).padEnd(34)} edge ${bb(p.edgeBB).padStart(8)} bb   `
+      + `captured ${eff(p.exploitationEfficiency).padStart(7)}   `
+      + `exploitability ${bb(p.ownExploitabilityBB).padStart(8)}`);
+    // The reasons are printed, not merely stored. A null coordinate a reader can SEE is a
+    // different object from one that was never mentioned — that difference is the whole
+    // reason this is a position rather than a number.
+    if (p.efficiencyUnavailableReason) L.push(`      · x: ${p.efficiencyUnavailableReason}`);
+    if (p.exploitabilityUnavailableReason) L.push(`      · y: ${p.exploitabilityUnavailableReason}`);
+  }
+  L.push('');
+
+  const prem = r.premium;
+  if (prem) {
+    L.push('    EXPLOITATION PREMIUM — money that exists BECAUSE the pool is bad');
+    if (prem.value === null) {
+      L.push(`      NOT AVAILABLE — ${prem.reason}`);
+      L.push(`      upper post ${bb(prem.upperBB)} bb, lower post — (${prem.sourceId})`);
+    } else {
+      L.push(`      ${bb(prem.value)} bb  =  PBR ${bb(prem.upperBB)} − Equilibrium ${bb(prem.lowerBB)}`);
+    }
+    L.push('');
+  }
+
+  const sweep = r.pbrSweep ?? [];
+  if (sweep.length) {
+    L.push('    SHRINKAGE SWEEP — how much of the ceiling is SIGNAL vs FITTED NOISE');
+    L.push('    A ceiling that decays as the population model is regularized was fitted to');
+    L.push('    noise. One that holds is real. Read the curve, never one point.');
+    for (const s of sweep) {
+      const a = s.arm;
+      if (!a.n) {
+        L.push(`      shrink ${String(s.shrinkWeight).padStart(4)}   no scorable decisions`);
+        continue;
+      }
+      const ci = a.edgeCiLowBB === null ? 'CI —' : `[${bb(a.edgeCiLowBB)}, ${bb(a.edgeCiHighBB)}]`;
+      L.push(`      shrink ${String(s.shrinkWeight).padStart(4)}   edge ${bb(a.edgeBB).padStart(8)} bb   `
+        + `${ci.padStart(20)}   n=${String(a.n).padStart(5)}  ESS=${String(a.ess).padStart(7)}`);
+    }
+    L.push('');
+  }
+  return L;
+};
+
 export const renderHeroEvReport = (r) => {
   const L = [];
   L.push('');
@@ -344,7 +487,10 @@ export const renderHeroEvReport = (r) => {
   for (const key of ['engineRaked', 'engineUnraked', 'passive', 'liveShifted', 'populationControl']) {
     L.push(renderArm(r.arms[key]));
   }
+  if (r.arms.pbr) L.push(renderArm(r.arms.pbr));
   L.push('');
+
+  L.push(...renderPiers(r));
 
   const h = r.arms.engineRaked;
   L.push('  WEIGHT DIAGNOSTICS (headline arm)');
@@ -406,6 +552,15 @@ export const renderHeroEvReport = (r) => {
   L.push(`    walk-forward assertions: ${r.generatedFrom.integrity.decisionsChecked ?? '—'}`);
   if (Object.keys(c.outcomeUnresolved || {}).length) L.push(`    outcomes unresolved: ${JSON.stringify(c.outcomeUnresolved)}`);
   if (Object.keys(c.policySkips || {}).length) L.push(`    policy skips: ${JSON.stringify(c.policySkips)}`);
+  // Read, not merely captured. A ceiling scored on FEWER decisions than the engine arm is a
+  // biased comparison — `exploitationEfficiency` would be a ratio over two different decision
+  // sets — so the count that would reveal it has to reach the page.
+  if (Object.keys(c.pbrSkips || {}).length) L.push(`    PBR skips: ${JSON.stringify(c.pbrSkips)}`);
+  if (r.integrity?.pbr || r.generatedFrom.integrity?.pbr) {
+    const p = r.generatedFrom.integrity.pbr;
+    L.push(`    PBR: ${p.surfaceId} fit on ${p.fitPartition}, evaluated on ${p.evaluatedOn} `
+      + `(held out: ${p.heldOut}, poolPct ${p.poolPct})`);
+  }
   L.push(`    rake: ${r.generatedFrom.config.rakeConfig ? JSON.stringify(r.generatedFrom.config.rakeConfig) + ' (MODELLED — corpus records none)' : 'none'}`);
   L.push(`    runtime ${((r.generatedFrom.runtimeMs ?? 0) / 1000).toFixed(1)}s`);
   L.push('  STANDARD OF RECORD (ADR-009)');

@@ -29,6 +29,15 @@
  * leaving coverage to luck at the small K the engine's cost forces. It is also exactly
  * reproducible, which a backtest requires.
  *
+ * WS-331 — THIS PASS NOW SERVES TWO POLICIES. Alongside `actions`, it returns `perCombo`:
+ * the sampled combos with the equity `evaluateGameTree` computed for each. Pool Best Response
+ * (`poolBestResponse.mjs`) consumes exactly that and needs no engine call of its own.
+ *
+ * The sharing is not only a saving. Because both policies marginalize over the SAME combos
+ * with the SAME equities, they share their `range` and `equity` layers (WS-324 `stack.js`) and
+ * differ only at `ev` and `action` — so comparing them isolates the decision rule instead of
+ * quietly re-measuring the equity model underneath it.
+ *
  * WHAT V1 DOES NOT DO — the villain is at POPULATION baseline, not personalized. The
  * per-villain model is already scored by C1 (58.7% accuracy, WS-285); C3 asks about the
  * DECISION SPINE (POKER_THEORY 6.1-6.4 plus sizing and multiway) that sits between a
@@ -182,6 +191,13 @@ export const heroPolicyAt = async ({
   let outOfSet = 0;
   let used = 0;
 
+  // WS-331. The equity the engine computes per combo is exactly what a best response to the
+  // FIELD needs, and it is already paid for here. Carrying it out means PBR marginalizes over
+  // the SAME sampled combos with the SAME equities, so the two policies differ only in their
+  // decision rule — sampling a second time would compare them over two different ranges while
+  // looking like it compared their advice.
+  const perCombo = [];
+
   for (const combo of combos) {
     let result;
     try {
@@ -214,6 +230,13 @@ export const heroPolicyAt = async ({
       continue;
     }
 
+    // Recorded BEFORE the recommendation is inspected. A combo whose engine advice falls
+    // outside the corpus response set still has a perfectly good equity, and dropping it here
+    // would silently narrow PBR's range to "the combos the engine had an opinion about".
+    if (Number.isFinite(result?.heroEquity)) {
+      perCombo.push({ sampleWeight: combo.sampleWeight, heroEquity: result.heroEquity });
+    }
+
     const top = result?.recommendations?.[0];
     if (!top) { engineErrors++; continue; }
 
@@ -230,6 +253,11 @@ export const heroPolicyAt = async ({
       reason: engineErrors > 0
         ? POLICY_SKIP_REASONS.ENGINE_ERROR
         : POLICY_SKIP_REASONS.ACTION_OUT_OF_SET,
+      // Returned even on the failure path: PBR can still be scored at a node where the
+      // engine had no admissible recommendation, and refusing to hand back equities we
+      // already computed would make the ceiling's decision set a subset of the engine's —
+      // which would flatter the engine on exactly the spots it could not handle.
+      perCombo,
     };
   }
 
@@ -241,5 +269,5 @@ export const heroPolicyAt = async ({
   const actions = {};
   for (const a of responses) actions[a] = counts[a] / used;
 
-  return { ok: true, actions, samples: combos.length, engineErrors, outOfSet };
+  return { ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo };
 };
