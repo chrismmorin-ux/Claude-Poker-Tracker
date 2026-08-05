@@ -26,9 +26,29 @@
  * reconciliation (table + excluded === corpus) rather than commenting it. A future
  * mining run with different totals fails here instead of shipping a header that quietly
  * stops being true.
+ *
+ * TWO DIFFERENT FOLD QUANTITIES ARE EMITTED, UNDER NAMES THAT CANNOT BE SWAPPED (WS-371).
+ *
+ *   `stats.foldTo3Bet`            P(fold | a raise preceded this seat's FIRST preflop
+ *                                 action). Denominator `facedRaisePreflop`. Mostly
+ *                                 fold-to-an-OPEN. This is what the app computes and what
+ *                                 the name misdescribes.
+ *   `HANDHQ_OPENER_FACING_3BET`   P(fold | this seat RAISED and was then 3-bet).
+ *                                 Denominator = opens that faced a 3-bet. The quantity the
+ *                                 name `foldTo3Bet` claims.
+ *
+ * On the same corpus and the same seat buckets they read 82.3% and 48.4% — a 33.9pp gap.
+ * The generator ASSERTS the signature of the broad one (`foldTo3Bet.n === threeBet.n`,
+ * true in all 14 rows because both count the same opportunity) so that a re-mine which
+ * changes the semantics fails here rather than silently redefining every consumer.
+ *
+ * It also emits `HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD` — the miner's directly measured
+ * BETWEEN-PLAYER mean and sd for the broad quantity. Detectors judge one player, so a
+ * detector threshold has to be derived against the distribution over PLAYERS, not against
+ * the hand-weighted table mean (in which multitabling regulars dominate).
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -38,6 +58,26 @@ const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'utils', 
 // Allowlists — fixed order for deterministic output.
 const SEAT_BUCKETS = ['6max', 'full'];
 const STATS = ['vpip', 'pfr', 'threeBet', 'cbet', 'foldToCbet', 'foldTo3Bet'];
+
+/**
+ * The conditioning set of every emitted stat, as DATA rather than prose (WS-371).
+ *
+ * A rate without its conditioning set is not a number anyone can act on: 82.3% and 48.4%
+ * are both true of these same hands and these same players and differ only in what was
+ * conditioned on. `foldTo3Bet` is the one whose key does not match its conditional, and it
+ * is kept only because `poolBaseline.STAT_COUNT_FIELDS` binds to that key; consumers read
+ * it through `preflopFoldQuantities.js`, which names it correctly.
+ */
+const STAT_CONDITIONING = {
+  vpip: 'dealt in preflop',
+  pfr: 'dealt in preflop',
+  threeBet: 'a raise preceded this seat\'s first preflop action',
+  cbet: 'was preflop aggressor and saw the flop',
+  foldToCbet: 'faced a flop c-bet',
+  foldTo3Bet: 'a raise preceded this seat\'s first preflop action — NOT "was 3-bet". '
+    + 'Denominator is facedRaisePreflop, so this is fold-vs-ANY-preflop-raise and is '
+    + 'dominated by folding to an open. For fold-vs-3-bet see HANDHQ_OPENER_FACING_3BET.',
+};
 
 // Mined labels are buy-in denominated (25NL = $25 max buy-in = $0.10/$0.25 blinds).
 // `canonical` matches poolBaseline.canonicalStakeLabel output for the blind pair.
@@ -99,6 +139,114 @@ const entries = STAKE_MAP.map(({ minedLabel, blinds, canonical }) => {
   }
   return { bb: blinds[1], canonical, minedLabel, buckets };
 });
+
+// ---------------------------------------------------------------------------
+// The definitional signature of the BROAD fold quantity (WS-371).
+//
+// `threeBet` and `foldTo3Bet` are the two branches of ONE opportunity — "a raise preceded
+// this seat's first preflop action" — so they share a denominator exactly. That equality
+// is the machine-checkable statement of what `foldTo3Bet` actually measures. If a re-mine
+// ever breaks it, the semantics changed and every consumer needs re-auditing, so fail here
+// rather than ship a table whose rows quietly mean something new.
+// ---------------------------------------------------------------------------
+for (const e of entries) {
+  for (const bucket of SEAT_BUCKETS) {
+    const s = e.buckets[bucket].stats;
+    if (s.foldTo3Bet.n !== s.threeBet.n) {
+      fail(
+        `${bucket}/${e.minedLabel}: foldTo3Bet.n (${s.foldTo3Bet.n}) !== threeBet.n (${s.threeBet.n}). `
+        + 'These share the facedRaisePreflop denominator by construction. A difference means the '
+        + 'miner changed the foldTo3Bet conditioning set — re-audit weaknessDetector, '
+        + 'villainObservations, preflopFoldResolver and poolBaseline before regenerating.',
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Per-site families the combine step does not carry per seat bucket (WS-371).
+//
+// `combined.json` holds `open3b` only corpus-wide, i.e. pooled across ALL dealt-in counts
+// including the `hu` and `short` buckets this table excludes — so quoting it beside these
+// rows would repeat the WS-325 scope error in a new place. The per-site files DO carry
+// `open3b` and `overdispersion` per seat bucket, and their per-stat (k, n) reconcile
+// EXACTLY with `combined.json`, which is asserted below before either family is used.
+// ---------------------------------------------------------------------------
+const MINED_LABELS = STAKE_MAP.map((s) => s.minedLabel);
+const siteFileRe = new RegExp(`^[A-Z]+-(${MINED_LABELS.join('|')})\\.json$`);
+const siteFiles = readdirSync(dirname(INPUT)).filter((f) => siteFileRe.test(f)).sort();
+if (!siteFiles.length) fail(`no per-site mining files (SITE-<stake>.json) beside ${INPUT}`);
+
+const zeroNarrow = () => ({ n: 0, fold: 0, call: 0, fourBet: 0 });
+const narrow = Object.fromEntries(SEAT_BUCKETS.map((b) => [b, zeroNarrow()]));
+const spreadRows = Object.fromEntries(SEAT_BUCKETS.map((b) => [b, []]));
+const siteCheck = {}; // `${bucket}/${label}` → { hands, stats: { stat: {k, n} } }
+
+for (const file of siteFiles) {
+  const label = file.replace(/^[A-Z]+-/, '').replace(/\.json$/, '');
+  const site = JSON.parse(readFileSync(join(dirname(INPUT), file), 'utf8'));
+  for (const bucket of SEAT_BUCKETS) {
+    const v = site[bucket];
+    if (!v) continue;
+    const key = `${bucket}/${label}`;
+    const acc = siteCheck[key] || (siteCheck[key] = { hands: 0, stats: Object.fromEntries(STATS.map((s) => [s, { k: 0, n: 0 }])) });
+    acc.hands += v.hands || 0;
+    for (const stat of STATS) {
+      const c = v.stats?.[stat];
+      if (c) { acc.stats[stat].k += c.k; acc.stats[stat].n += c.n; }
+    }
+    const o3 = v.open3b;
+    if (o3) {
+      narrow[bucket].n += o3.open_faced_3bet || 0;
+      narrow[bucket].fold += o3.fold || 0;
+      narrow[bucket].call += o3.call || 0;
+      narrow[bucket].fourBet += o3.fourbet || 0;
+    }
+    const od = v.overdispersion?.foldTo3Bet;
+    if (od && od.players > 0) spreadRows[bucket].push(od);
+  }
+}
+
+// Scope check: the per-site sums must BE the table, or the two families below describe a
+// different population than the rows they ship beside.
+for (const e of entries) {
+  for (const bucket of SEAT_BUCKETS) {
+    const acc = siteCheck[`${bucket}/${e.minedLabel}`];
+    if (!acc) fail(`per-site files carry no ${bucket}/${e.minedLabel}; cannot verify scope`);
+    if (acc.hands !== e.buckets[bucket].hands) {
+      fail(`${bucket}/${e.minedLabel}: per-site hands ${acc.hands} !== combined ${e.buckets[bucket].hands}`);
+    }
+    for (const stat of STATS) {
+      const a = acc.stats[stat];
+      const c = e.buckets[bucket].stats[stat];
+      if (a.k !== c.k || a.n !== c.n) {
+        fail(`${bucket}/${e.minedLabel}/${stat}: per-site (${a.k}, ${a.n}) !== combined (${c.k}, ${c.n})`);
+      }
+    }
+  }
+}
+
+for (const bucket of SEAT_BUCKETS) {
+  if (narrow[bucket].n <= 0) fail(`${bucket}: no open3b (opener-facing-3bet) observations`);
+  if (!spreadRows[bucket].length) fail(`${bucket}: no overdispersion.foldTo3Bet segments`);
+}
+
+/**
+ * Pool per-segment between-player moments by the law of total variance, weighted by the
+ * player count each segment measured. Within-segment spread plus the spread BETWEEN
+ * segment means — dropping the second term would understate the field.
+ */
+const poolSpread = (rows) => {
+  const players = rows.reduce((s, r) => s + r.players, 0);
+  const mean = rows.reduce((s, r) => s + r.players * r.mean, 0) / players;
+  const variance = rows.reduce((s, r) => s + r.players * (r.sd_between ** 2 + (r.mean - mean) ** 2), 0) / players;
+  return { players, mean, sdBetween: Math.sqrt(variance) };
+};
+const round6 = (x) => Math.round(x * 1e6) / 1e6;
+const spread = Object.fromEntries(SEAT_BUCKETS.map((b) => {
+  const p = poolSpread(spreadRows[b]);
+  return [b, { players: p.players, mean: round6(p.mean), sdBetween: round6(p.sdBetween), segments: spreadRows[b].length }];
+}));
 
 // Row-count reconciliation (WS-325). The combine step upstream already dropped `hu` and
 // `short`, so this generator cannot recompute them — but it CAN refuse to emit a table
@@ -168,9 +316,14 @@ const module_ = `/**
  *     regulars dominate. The WS-262 research recommends PLAYER-weighted numbers for
  *     seeding and the two differ materially (25NL 6max VPIP: 28.6% hand-weighted vs
  *     ~0.37-0.41 player-weighted). Nothing downstream records which one it received.
- *   - foldTo3Bet mirrors the app's CURRENT stat semantics (folds facing ANY preflop
- *     raise — the WS-236/WS-254 definitional quirk). If WS-254 changes the app
- *     definition, re-mine with matched semantics and regenerate.
+ *   - \`stats.foldTo3Bet\` IS NOT FOLD-TO-A-3-BET (WS-236/WS-254/WS-371). It mirrors the
+ *     app's stat, whose denominator is \`facedRaisePreflop\`, so it answers "how often does
+ *     this seat fold when a raise is already in front of them" — mostly folding to an OPEN.
+ *     The key survives only because \`poolBaseline.STAT_COUNT_FIELDS\` binds to it; read it
+ *     through \`preflopFoldQuantities.js\`, never by that name. The quantity the name claims
+ *     is \`HANDHQ_OPENER_FACING_3BET\` below, and the two differ by 33.9pp on these very
+ *     hands (82.3% vs 48.4%). Every conditioning set is declared in
+ *     \`HANDHQ_REFERENCE_META.statConditioning\`.
  */
 
 const deepFreeze = (obj) => {
@@ -193,8 +346,85 @@ export const HANDHQ_REFERENCE_META = deepFreeze({
   seatBucketDefinition: ${JSON.stringify(SEAT_BUCKET_DEFINITION)},
   /** Raw count sums, so multitabling regulars dominate. See WS-262 caveat 6. */
   weighting: 'hand-weighted',
+  /**
+   * What each stat is CONDITIONED ON (WS-371). A rate without its conditioning set is not
+   * a number anyone can act on, and one of these keys does not match its own conditional.
+   */
+  statConditioning: ${JSON.stringify(STAT_CONDITIONING, null, 2).replace(/\n/g, '\n  ')},
   research: 'docs/research/mass-pool-data-2026-07-25.md',
   generator: 'scripts/generate-handhq-reference.mjs',
+});
+
+/**
+ * FOLD VS A 3-BET, AFTER THIS SEAT OPENED — the quantity \`stats.foldTo3Bet\` is named for
+ * and does not measure (WS-371).
+ *
+ * Conditioning set: this seat RAISED preflop and a later seat 3-bet them. Denominator is
+ * that opportunity, not \`facedRaisePreflop\`. Same corpus, same 6max/full seat buckets and
+ * same 27 site x stake segments as the rows above, so the two are directly comparable:
+ *
+ *     fold vs any preflop raise   22,867,051 / 27,800,827 = 82.3%   (stats.foldTo3Bet)
+ *     fold vs a 3-bet after open     609,756 /  1,260,802 = 48.4%   (this export)
+ *
+ * A 33.9pp gap on identical hands, differing only in what was conditioned on. Anything
+ * priced against the first number as though it were the second is pricing fold equity that
+ * is not there.
+ *
+ * \`residual\` is opens that faced a 3-bet and resolved without a recorded fold/call/4-bet
+ * (opener already all-in, or a truncated hand). Declared rather than silently folded into
+ * a denominator.
+ *
+ * NOT PER STAKE by design here: the per-stake cells are thin enough at the top stakes
+ * (n = 19,840 at 600NL full) that they would invite over-reading, and no consumer resolves
+ * this quantity per stake today. The spread is real and recorded: 6max runs 41.6% (25NL) to
+ * 55.4% (1000NL).
+ *
+ * ONLINE 2009. A live 9-handed 1/2-1/3 reading taken from this is TRANSFERRED, not measured.
+ */
+export const HANDHQ_OPENER_FACING_3BET = deepFreeze({
+  conditioning: 'this seat raised preflop, then faced a 3-bet',
+  /** No app-side counter produces this yet — \`extract3BetStats\` does not split it out. */
+  appStatField: null,
+  seatBuckets: ${JSON.stringify(
+    Object.fromEntries(SEAT_BUCKETS.map((b) => [b, {
+      n: narrow[b].n,
+      fold: narrow[b].fold,
+      call: narrow[b].call,
+      fourBet: narrow[b].fourBet,
+      residual: narrow[b].n - narrow[b].fold - narrow[b].call - narrow[b].fourBet,
+    }])),
+    null,
+    2,
+  ).replace(/\n/g, '\n  ')},
+  pooled: ${JSON.stringify({
+    n: SEAT_BUCKETS.reduce((s, b) => s + narrow[b].n, 0),
+    fold: SEAT_BUCKETS.reduce((s, b) => s + narrow[b].fold, 0),
+    call: SEAT_BUCKETS.reduce((s, b) => s + narrow[b].call, 0),
+    fourBet: SEAT_BUCKETS.reduce((s, b) => s + narrow[b].fourBet, 0),
+    residual: SEAT_BUCKETS.reduce((s, b) => s + (narrow[b].n - narrow[b].fold - narrow[b].call - narrow[b].fourBet), 0),
+  }, null, 2).replace(/\n/g, '\n  ')},
+});
+
+/**
+ * BETWEEN-PLAYER distribution of \`stats.foldTo3Bet\` — measured, not derived (WS-371).
+ *
+ * From the miner's own \`overdispersion\` block: for every site x stake x seat bucket it
+ * recorded the mean and standard deviation ACROSS PLAYERS with n >= 30 preflop
+ * opportunities. Pooled here by the law of total variance, weighted by player count.
+ *
+ * WHY A DETECTOR MUST USE THIS AND NOT THE TABLE MEAN. The rows above are hand-weighted,
+ * so a multitabling regular counts thousands of times and one recreational player once.
+ * A weakness rule judges ONE PLAYER, so the question "is this player unusual" has to be
+ * asked against the distribution over players. The two means differ materially — 82.3%
+ * hand-weighted against 75.8% player-weighted — and only the second has a spread attached.
+ *
+ * The implied prior weight, mean(1-mean)/sd^2 - 1, is 8.0 — independent corroboration of
+ * the \`PER_STAT_PRIOR_WEIGHT.foldTo3Bet = 10\` that WS-262 measured by method of moments.
+ */
+export const HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD = deepFreeze({
+  conditioning: ${JSON.stringify(STAT_CONDITIONING.foldTo3Bet.split(' — ')[0])},
+  playerMinN: 30,
+  seatBuckets: ${JSON.stringify(spread, null, 2).replace(/\n/g, '\n  ')},
 });
 
 /** Ascending by big blind — nearest-stake resolution scans this order (ties → lower). */

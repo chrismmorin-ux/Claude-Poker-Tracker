@@ -305,12 +305,15 @@ name: "Live cash pool — Wind Creek 1/3 (founder-recorded hands + sessions)"
 type: internal_db
 surface_class: internal_db
 source_evidence:
-  - file: src/utils/persistence/handsStorage.js
-    lines: "414-446"
-    note: "manual hands leave source undefined — live hands are currently identified by ABSENCE of a source stamp"
+  - file: src/utils/persistence/handProvenance.js
+    lines: "1-320"
+    note: "WS-368 — every hand is stamped at construction with source + a structured provenance object carrying venue and stake; the channel is baked into each constructor, not passed as an argument"
+  - file: src/utils/persistence/migrations.js
+    lines: "migrateV28"
+    note: "IDB v28 — pre-stamping rows become source:'unknown', NOT 'live'; they stay out of the live arm"
 trust_tier: T3
 confidence: Medium
-review_notes: "ADDED 2026-07-31. Registered because it is about to carry weight it has never carried before, and because it has a defect today. DEFECT: live hands are distinguished only by `source` being UNDEFINED (SRC-001 stamps 'ignition' for online and nothing for manual). Absence-as-identity does not survive a third source, and this repo is about to have several — a live hand and an un-stamped import are indistinguishable. Give live capture a positive stamp INCLUDING VENUE AND STAKE before any new ingest path lands. WHY IT MATTERS DISPROPORTIONATELY: nothing was mined from this pool, so it is the only test set in the repo that a corpus-mined prior cannot leak into — which makes it the statistically cleanest validation target for a hero-EV claim, not merely the most personally relevant one. WEAKNESS: volume. It is the smallest source by orders of magnitude, so it earns its keep as an unbiased CORRECTION to a corpus-derived shape rather than as a standalone estimate. Note volume and relevance are DIFFERENT AXES and must not be collapsed into one 'quality' score: SRC-012 is high-volume/low-relevance, SRC-014 is low-volume/high-relevance, and a single scalar would hide exactly the trade being made."
+review_notes: "ADDED 2026-07-31. Registered because it is about to carry weight it has never carried before, and because it has a defect today. DEFECT — RESOLVED 2026-08-05 by WS-368 (IDB v28): live hands were distinguished only by `source` being UNDEFINED (SRC-001 stamped 'ignition' for online and nothing for manual), so a live hand and an un-stamped import were indistinguishable and the import path was actively producing the latter. Live capture now carries a positive stamp INCLUDING VENUE AND STAKE (read from the active session record), imports are stamped 'import' with the file's claim preserved as evidence rather than truth, and `getHandsBySource('live')` returns the live subset instead of []. IMPORTANT LIMIT ON THE HISTORICAL DATA: rows recorded before v28 are stamped 'unknown', not 'live' — they are genuinely ambiguous (some may be imports) and were NOT converted, so the selectable live arm starts at the v28 boundary and any pre-v28 volume is unattributed. STILL OPEN: (a) the session store keeps absence-as-identity (`sessionsFilter.js` reads `source !== 'ignition'`) — deliberately deferred, rationale recorded in that file; (b) SRC-014 remains unreachable by the offline harness, which is the second WS-352 blocker and a separate ticket; (c) the `falsifierBlockers` entry in `standardOfRecord/faultRegister.js` has NOT been cleared by this change. WHY IT MATTERS DISPROPORTIONATELY: nothing was mined from this pool, so it is the only test set in the repo that a corpus-mined prior cannot leak into — which makes it the statistically cleanest validation target for a hero-EV claim, not merely the most personally relevant one. WEAKNESS: volume. It is the smallest source by orders of magnitude, so it earns its keep as an unbiased CORRECTION to a corpus-derived shape rather than as a standalone estimate. Note volume and relevance are DIFFERENT AXES and must not be collapsed into one 'quality' score: SRC-012 is high-volume/low-relevance, SRC-014 is low-volume/high-relevance, and a single scalar would hide exactly the trade being made."
 last_verified: 2026-07-31
 ```
 
@@ -362,7 +365,7 @@ last_verified: 2026-07-31
 | F5 | Prediction ledger is a field, not a store | **OPEN** — capture ships, nothing reads it |
 | F6 | Villain model has no persisted version/timestamp | **OPEN** — confirmed absent in `villainDecisionModel.js` |
 | F7 | HUD parallel stats engine, no sample shown | **OPEN** |
-| — | Live hands identified by ABSENCE of a source stamp | **OPEN, newly raised** — see SRC-014; fix before the next ingest path |
+| — | Live hands identified by ABSENCE of a source stamp | **CLOSED for hands** — WS-368 / IDB v28 shipped 2026-08-05: positive stamp with venue + stake at construction, imports separated, pre-v28 rows marked `unknown` (never `live`). Residual: sessions still read the negation (deferred, see `sessionsFilter.js`); the `faultRegister.js` blocker is not yet cleared |
 | — | Two PnL computation sites | **OPEN, newly raised** — see SRC-003 |
 
 ## Maintenance

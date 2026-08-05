@@ -78,6 +78,94 @@ Two consequences, and the first one corrects this document's own first draft:
 Until WS-284 resolves it, **no result from this harness should be cited as
 evidence for or against the WS-263 Reference import.**
 
+### Finding 0 — RESOLVED (2026-08-05, WS-284). The channel is severed at `derivePercentages`
+
+**Reproduced first.** Two arms over the same reduced corpus (FTP only, 40 eval
+players, 1,242 scored decisions — the mechanism is scale-free, and the full
+1,756-file pair had already been run in July): the ENTIRE scorecard is identical
+— `overall`, `calibration`, `fallbackQuality`, every slice, `evCost`. The sole
+difference between the two output files is the `integrity.referenceMode`
+provenance stamp. log-loss 0.7488940035672199 both ways.
+
+**It is not the "silently dropped table" case.** Instrumented directly:
+`resolveReferenceCounts('online/0.25-0.5', 'full')` resolves the mined 50NLH row,
+and the blended priors move a long way from the founder estimate —
+
+| stat | founder estimate | with POOL reference |
+|---|---|---|
+| vpip | 0.250 | **0.198** |
+| pfr | 0.150 | **0.089** |
+| threeBet | 0.070 | **0.031** |
+| cbet | 0.550 | **0.603** |
+| foldToCbet | 0.450 | **0.558** |
+| foldTo3Bet | 0.550 | **0.866** |
+
+**The value then dies one step later.** `derivePercentages(stats, statPriors)`
+returns RAW `k/n` point estimates; the prior enters only the additive `intervals`
+field. `classifyStyle` reads `vpip / pfr / af` — the raw estimates — so the style
+label cannot move, and `style` is the *only* route the six scalars have into
+`buildVillainDecisionModel`. On a 40-hand training prefix the two arms produce
+identical percentages, identical style, and an identical
+`queryActionDistribution` output. Nothing was dropped; the channel simply does
+not exist.
+
+So the ticket's "likely benign explanation" holds — **with one finding it did not
+anticipate**: the Reference tier is not merely out of scope for this measurement,
+it cannot reach the villain decision model *in production either*
+(`analysisPipeline.js` runs the identical two lines). Its live production
+consumers are the displayed credible intervals and `generateExploits`' Bayesian
+deviation tests, both of which take `statPriors` directly. Whether the style
+classification *should* be made on the shrunk posterior rather than a raw
+small-sample frequency is a real §11.5 question — a hard threshold on an unshrunk
+40-hand rate is the anti-pattern this engine has recorded three times — but it is
+an engine behaviour change requiring its own measurement, and is deliberately NOT
+made here.
+
+**What changed instead** (accept-criterion (a) — make the flag falsifiable):
+`scripts/backtest/statPriorScore.mjs` scores the decision class the six scalars
+actually feed, on the same two-level split. At each checkpoint the belief
+`p̂ = (k_train + α)/(n_train + α + β)` is scored as Bernoulli log-loss against the
+villain's realised rates in the NEXT window; the baseline is the same computation
+under the static founder estimate. With `--reference none` the resolved prior *is*
+the founder estimate, so **lift is exactly 0.0%** — inertness is now a number in
+the output, not something a human has to catch by diffing two runs.
+
+**Measured, same reduced corpus, both arms** (436 walk-forward windows, 11,433
+Bernoulli trials). *The villain-action scorecard is byte-identical between these
+two arms — as it must be; nothing on that path changed.*
+
+| stat | trials | log-loss | founder baseline | lift |
+|---|---|---|---|---|
+| **foldTo3Bet** | 1,432 | 0.4157 | 0.4428 | **+6.1%** |
+| **threeBet** | 1,432 | 0.1682 | 0.1751 | **+4.0%** |
+| foldToCbet | 119 | 0.6850 | 0.6905 | +0.8% |
+| cbet | 222 | 0.6890 | 0.6921 | +0.4% |
+| pfr | 4,114 | 0.3876 | 0.3885 | +0.2% |
+| vpip | 4,114 | 0.5040 | 0.5047 | +0.1% |
+| **OVERALL** | 11,433 | **0.41448** | 0.41945 | **+1.2%** |
+
+With `--reference none`: log-loss 0.41945, **lift 0.0% on every row**, 0 of 436
+windows with priors differing from the founder estimate.
+
+The two stats that move are the two where the founder estimate was furthest from
+the mined field (foldTo3Bet 0.55 vs 0.87, threeBet 0.07 vs 0.03) — which is what
+this instrument is for, and is the first evidence in this document that bears on
+the WS-263 import at all. It says the import predicts *this* population's
+held-out players better than the founder's live-1/2 guess does; per the fault
+register's top entry, that is **transferred, not measured**, for live play.
+
+`assertReferenceTierLive` makes it stronger than a report: a run that supplies a
+POOL table and does not move that score **throws**. The leakage guard's 19
+adversarial tests are re-pointed rather than deleted — channel 1 now defends a
+measurement that would move if the table were mined from the players it scores —
+and `LeakageGuard.assertStatWindow` extends the walk-forward assertion to the new
+scored unit.
+
+**Consequence 1 above stands unchanged.** The 2.9% → 1.7% move was entirely the
+corpus change. Nothing in this document's villain-action numbers is evidence for
+or against the WS-263 import, and the new scorecard is where that question is now
+asked.
+
 ## Finding 1 — the model's entire edge is in unopened spots
 
 *HandHQ online cash, July 2009; live generalisation unproven.*
@@ -418,8 +506,12 @@ Shipped as POKER_THEORY §11.5.
 
 1. ~~**Re-run with `--sweep`**~~ — superseded by Finding 3d, which measured the
    ordering question directly rather than through reordering arms under a gate.
-2. ~~Isolate the Reference tier~~ — **DONE this session, see Finding 0.** The
-   tier is inert in this measurement; follow-up is WS-284.
+2. ~~Isolate the Reference tier~~ — **DONE. WS-284 closed it 2026-08-05**: the
+   tier is inert in the villain-action measurement *by construction* (the six
+   scalar priors never reach `queryActionDistribution`), and now has its own
+   falsifiable scorecard. Residual, deliberately not taken: `classifyStyle` reads
+   RAW percentages, so the tier cannot reach the villain decision model in
+   production either — an engine change needing its own measurement.
 3. **Fold-estimate correction** is now the highest-value engine change the
    instrument can point at (WS-283).
 4. Still one stake (50NL) and one era (July 2009). Heads-up tables excluded.
