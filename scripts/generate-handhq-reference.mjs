@@ -42,10 +42,19 @@
  * true in all 14 rows because both count the same opportunity) so that a re-mine which
  * changes the semantics fails here rather than silently redefining every consumer.
  *
- * It also emits `HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD` — the miner's directly measured
- * BETWEEN-PLAYER mean and sd for the broad quantity. Detectors judge one player, so a
- * detector threshold has to be derived against the distribution over PLAYERS, not against
- * the hand-weighted table mean (in which multitabling regulars dominate).
+ * It also emits the miner's directly measured BETWEEN-PLAYER mean and sd for three of the
+ * stats. Detectors judge one player, so a detector threshold has to be derived against the
+ * distribution over PLAYERS, not against the hand-weighted table mean (in which multitabling
+ * regulars dominate).
+ *
+ *   `HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD`  foldTo3Bet   (WS-371)
+ *   `HANDHQ_THREE_BET_SPREAD`              threeBet     (WS-376)
+ *   `HANDHQ_FOLD_TO_CBET_SPREAD`           foldToCbet   (WS-376)
+ *
+ * All three come from the SAME `overdispersion` block that was already mined, pooled by the
+ * SAME `poolSpread` routine — so WS-376 needed no re-mine, and the fact that re-running
+ * `poolSpread` over `foldTo3Bet` still reproduces WS-371's published 72.95/79.80 is the
+ * check that the other two are on the same footing.
  */
 
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
@@ -58,6 +67,14 @@ const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'utils', 
 // Allowlists — fixed order for deterministic output.
 const SEAT_BUCKETS = ['6max', 'full'];
 const STATS = ['vpip', 'pfr', 'threeBet', 'cbet', 'foldToCbet', 'foldTo3Bet'];
+
+/**
+ * The stats whose BETWEEN-PLAYER spread is emitted (WS-371 for the first, WS-376 for the
+ * other two). Every stat in `STATS` carries an `overdispersion` block in the per-site files;
+ * only the ones a detector threshold is derived from are emitted, so that adding an export
+ * here is a deliberate edit rather than a blind fan-out over external JSON keys (NEV-12).
+ */
+const SPREAD_STATS = ['foldTo3Bet', 'threeBet', 'foldToCbet'];
 
 /**
  * The conditioning set of every emitted stat, as DATA rather than prose (WS-371).
@@ -179,7 +196,9 @@ if (!siteFiles.length) fail(`no per-site mining files (SITE-<stake>.json) beside
 
 const zeroNarrow = () => ({ n: 0, fold: 0, call: 0, fourBet: 0 });
 const narrow = Object.fromEntries(SEAT_BUCKETS.map((b) => [b, zeroNarrow()]));
-const spreadRows = Object.fromEntries(SEAT_BUCKETS.map((b) => [b, []]));
+const spreadRows = Object.fromEntries(
+  SPREAD_STATS.map((s) => [s, Object.fromEntries(SEAT_BUCKETS.map((b) => [b, []]))]),
+);
 const siteCheck = {}; // `${bucket}/${label}` → { hands, stats: { stat: {k, n} } }
 
 for (const file of siteFiles) {
@@ -202,8 +221,10 @@ for (const file of siteFiles) {
       narrow[bucket].call += o3.call || 0;
       narrow[bucket].fourBet += o3.fourbet || 0;
     }
-    const od = v.overdispersion?.foldTo3Bet;
-    if (od && od.players > 0) spreadRows[bucket].push(od);
+    for (const stat of SPREAD_STATS) {
+      const od = v.overdispersion?.[stat];
+      if (od && od.players > 0) spreadRows[stat][bucket].push(od);
+    }
   }
 }
 
@@ -228,7 +249,9 @@ for (const e of entries) {
 
 for (const bucket of SEAT_BUCKETS) {
   if (narrow[bucket].n <= 0) fail(`${bucket}: no open3b (opener-facing-3bet) observations`);
-  if (!spreadRows[bucket].length) fail(`${bucket}: no overdispersion.foldTo3Bet segments`);
+  for (const stat of SPREAD_STATS) {
+    if (!spreadRows[stat][bucket].length) fail(`${bucket}: no overdispersion.${stat} segments`);
+  }
 }
 
 /**
@@ -243,10 +266,17 @@ const poolSpread = (rows) => {
   return { players, mean, sdBetween: Math.sqrt(variance) };
 };
 const round6 = (x) => Math.round(x * 1e6) / 1e6;
-const spread = Object.fromEntries(SEAT_BUCKETS.map((b) => {
-  const p = poolSpread(spreadRows[b]);
-  return [b, { players: p.players, mean: round6(p.mean), sdBetween: round6(p.sdBetween), segments: spreadRows[b].length }];
-}));
+const spread = Object.fromEntries(SPREAD_STATS.map((stat) => [stat, Object.fromEntries(
+  SEAT_BUCKETS.map((b) => {
+    const p = poolSpread(spreadRows[stat][b]);
+    return [b, {
+      players: p.players,
+      mean: round6(p.mean),
+      sdBetween: round6(p.sdBetween),
+      segments: spreadRows[stat][b].length,
+    }];
+  }),
+)]));
 
 // Row-count reconciliation (WS-325). The combine step upstream already dropped `hu` and
 // `short`, so this generator cannot recompute them — but it CAN refuse to emit a table
@@ -424,7 +454,43 @@ export const HANDHQ_OPENER_FACING_3BET = deepFreeze({
 export const HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD = deepFreeze({
   conditioning: ${JSON.stringify(STAT_CONDITIONING.foldTo3Bet.split(' — ')[0])},
   playerMinN: 30,
-  seatBuckets: ${JSON.stringify(spread, null, 2).replace(/\n/g, '\n  ')},
+  seatBuckets: ${JSON.stringify(spread.foldTo3Bet, null, 2).replace(/\n/g, '\n  ')},
+});
+
+/**
+ * BETWEEN-PLAYER distribution of \`stats.threeBet\` — measured, not derived (WS-376).
+ *
+ * Same \`overdispersion\` block, same law-of-total-variance pooling, same n >= 30 player gate
+ * as the export above. Emitted because \`V-PF-RARELY-3BETS-VS-PF-RAISE\` fires BELOW a bar and
+ * the bar has to come from the player distribution, not the hand-weighted rows (4.45%).
+ *
+ * READ THE SHAPE, NOT JUST THE MOMENTS. This quantity is bounded at 0, right-skewed, and its
+ * sd is roughly its mean, so mean - 1sd is 0.85% (6max) and 0.04% (full) — the second is
+ * below the smallest rate any finite sample can express. A symmetric mean +/- k*sd bar is the
+ * wrong instrument here; \`preflopFoldQuantities.js\` moment-matches a Beta to these numbers
+ * and takes a percentile instead. The moments are what is measured; the bar is derived from
+ * them there, where the derivation is written down.
+ */
+export const HANDHQ_THREE_BET_SPREAD = deepFreeze({
+  conditioning: ${JSON.stringify(STAT_CONDITIONING.threeBet)},
+  playerMinN: 30,
+  seatBuckets: ${JSON.stringify(spread.threeBet, null, 2).replace(/\n/g, '\n  ')},
+});
+
+/**
+ * BETWEEN-PLAYER distribution of \`stats.foldToCbet\` — measured, not derived (WS-376).
+ *
+ * SAMPLE DEPTH IS MATERIALLY THINNER THAN THE PREFLOP SPREADS, and that is a property of the
+ * gate rather than of the corpus: clearing n >= 30 FLOP C-BETS FACED is much harder than
+ * clearing n >= 30 preflop opportunities, so this rests on ~19k players against ~106k for
+ * \`foldTo3Bet\`. The sd is correspondingly less well determined. Quote \`players\` beside any
+ * bar derived from it; do not fall back to the hand-weighted table, which answers a
+ * different question (it weights a multitabling regular thousands of times).
+ */
+export const HANDHQ_FOLD_TO_CBET_SPREAD = deepFreeze({
+  conditioning: ${JSON.stringify(STAT_CONDITIONING.foldToCbet)},
+  playerMinN: 30,
+  seatBuckets: ${JSON.stringify(spread.foldToCbet, null, 2).replace(/\n/g, '\n  ')},
 });
 
 /** Ascending by big blind — nearest-stake resolution scans this order (ties → lower). */
