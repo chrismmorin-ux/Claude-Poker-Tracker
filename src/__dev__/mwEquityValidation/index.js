@@ -18,6 +18,7 @@ import { buildOpeningRange } from './derivation';
 import { compareToReference } from './comparator';
 import { formatDivergenceReport } from './divergenceReport';
 import { PREFLOP_CHARTS } from '../../utils/pokerCore/rangeMatrix';
+import { HERO_EQUITY_KEY } from './strengthPercentile';
 
 const help = () => {
   // eslint-disable-next-line no-console
@@ -62,7 +63,10 @@ const run = async (position, userOpts = {}) => {
   const reference = PREFLOP_CHARTS[position];
   if (!reference) throw new Error(`No PREFLOP_CHARTS reference for position '${position}'`);
 
-  const comparison = compareToReference(derivedEV, reference);
+  const heroEquityKey = HERO_EQUITY_KEY[position];
+  if (!heroEquityKey) throw new Error(`No HERO_EQUITY_KEY mapping for position '${position}'`);
+
+  const comparison = compareToReference(derivedEV, reference, heroEquityKey);
   const report = formatDivergenceReport({ position, config, comparison, scenarioProbs });
 
   const elapsedMs = Math.round(performance.now() - start);

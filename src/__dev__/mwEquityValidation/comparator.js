@@ -9,7 +9,7 @@
  */
 
 import { decodeIndex, rangeWidth } from '../../utils/pokerCore/rangeMatrix';
-import { handStrengthTier } from './scenarios/heroResponse';
+import { strengthPercentile } from './strengthPercentile';
 
 const RANK_CHARS = '23456789TJQKA';
 
@@ -30,9 +30,13 @@ const comboCount = (idx) => {
  *
  * @param {Float64Array} derivedEV - 169 cells of EV(open) in BB
  * @param {Float64Array} referenceWeights - 169 cells of solver-chart weights (0..1)
+ * @param {string} heroPosition - EQUITY_VS_OPEN key for the strength sort; see
+ *   `HERO_EQUITY_KEY`. Required rather than defaulted: the strength score is
+ *   position-conditioned (WS-367), and a silent default would sort a UTG run by a BTN
+ *   ordering with nothing to show for it.
  * @returns {Object} comparison report
  */
-export const compareToReference = (derivedEV, referenceWeights) => {
+export const compareToReference = (derivedEV, referenceWeights, heroPosition) => {
   let tp = 0, fp = 0, fn = 0, tn = 0; // combo-weighted counts
   const missing = []; // in reference, not derived
   const extra = [];   // in derived, not reference
@@ -70,9 +74,10 @@ export const compareToReference = (derivedEV, referenceWeights) => {
     }
   }
 
-  // Sort missing by reference weight × strength tier (most-confident misses first)
+  // Sort missing by reference weight × strength percentile (most-confident misses first)
   missing.sort((a, b) =>
-    (b.refWeight * handStrengthTier(b.idx)) - (a.refWeight * handStrengthTier(a.idx))
+    (b.refWeight * strengthPercentile(b.idx, heroPosition))
+    - (a.refWeight * strengthPercentile(a.idx, heroPosition))
   );
   // Sort extra by EV (most-confidently-extra first)
   extra.sort((a, b) => b.ev - a.ev);

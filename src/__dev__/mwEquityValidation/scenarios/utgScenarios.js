@@ -32,7 +32,16 @@ import {
   heroResponseToFiveBetJam,
   VILLAIN_RESPONSE_TO_FOURBET,
 } from './heroResponse';
+import { HERO_EQUITY_KEY } from '../strengthPercentile';
 import { hashScenarioRanges } from '../cache';
+
+/**
+ * Hero opens from UTG, so hero's strength is scored against an EARLY opening range.
+ * Single named constant rather than a literal at each call site — the strength score is
+ * position-conditioned (WS-367) and a scenario file that disagreed with itself about hero's
+ * seat would be silently wrong.
+ */
+const HERO_POSITION = HERO_EQUITY_KEY.UTG;
 
 /**
  * 5-scenario probability mass given UTG opens.
@@ -124,7 +133,7 @@ const evResponseToThreeBet = async ({
     const eqVsCall4Bet = await huEquityCached(idx, heroCards, threeBetRange, opts, cache);
     const evVillainCalls = eqVsCall4Bet * fbCtx.potIfVillainCalls4Bet - fbCtx.heroFourBetCost;
 
-    const fiveBetResp = heroResponseToFiveBetJam(idx);
+    const fiveBetResp = heroResponseToFiveBetJam(idx, HERO_POSITION);
     let evVillainJams;
     if (fiveBetResp.call > 0) {
       const eqVsJam = await huEquityCached(idx, heroCards, threeBetRange, opts, cache);
@@ -168,7 +177,7 @@ export const evaluateUtgScenarios = async (idx, ranges, opts, cache) => {
     idx, heroCards,
     threeBetRange: ranges.threeBettorRange,
     isSqueeze: false,
-    response: heroResponseToThreeBet(idx),
+    response: heroResponseToThreeBet(idx, HERO_POSITION),
     opts, cache,
   });
 
@@ -186,7 +195,7 @@ export const evaluateUtgScenarios = async (idx, ranges, opts, cache) => {
     idx, heroCards,
     threeBetRange: ranges.threeBettorRange,
     isSqueeze: true,
-    response: heroResponseToSqueeze(idx),
+    response: heroResponseToSqueeze(idx, HERO_POSITION),
     opts, cache,
   });
 

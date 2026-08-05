@@ -27,7 +27,16 @@ import {
   heroResponseToFiveBetJam,
   VILLAIN_RESPONSE_TO_FOURBET,
 } from './heroResponse';
+import { HERO_EQUITY_KEY } from '../strengthPercentile';
 import { hashScenarioRanges } from '../cache';
+
+/**
+ * Hero opens from BTN, so hero's strength is scored against a LATE opening range.
+ * Single named constant rather than a literal at each call site — the strength score is
+ * position-conditioned (WS-367) and a scenario file that disagreed with itself about hero's
+ * seat would be silently wrong.
+ */
+const HERO_POSITION = HERO_EQUITY_KEY.BTN;
 
 /**
  * Joint probability table for (SB action, BB action) given BTN open.
@@ -153,7 +162,7 @@ const evResponseToThreeBet = async ({
     const evVillainCalls = eqVsCall4Bet * fbCtx.potIfVillainCalls4Bet - fbCtx.heroFourBetCost;
 
     // Villain 5-bet jams → heroResponseToFiveBetJam decides
-    const fiveBetResp = heroResponseToFiveBetJam(idx);
+    const fiveBetResp = heroResponseToFiveBetJam(idx, HERO_POSITION);
     let evVillainJams;
     if (fiveBetResp.call > 0) {
       const eqVsJam = await huEquityCached(idx, heroCards, threeBetRange, opts, cache);
@@ -218,7 +227,7 @@ export const evaluateBtnScenario = async (idx, sbAction, bbAction, ranges, opts,
       threeBetRange: ranges.bbThreeBet,
       deadFolders: ['SB'],
       isSqueeze: false,
-      response: heroResponseToThreeBet(idx),
+      response: heroResponseToThreeBet(idx, HERO_POSITION),
       opts, cache,
     });
   }
@@ -230,7 +239,7 @@ export const evaluateBtnScenario = async (idx, sbAction, bbAction, ranges, opts,
       threeBetRange: ranges.sbThreeBet,
       deadFolders: ['BB'],
       isSqueeze: false,
-      response: heroResponseToThreeBet(idx),
+      response: heroResponseToThreeBet(idx, HERO_POSITION),
       opts, cache,
     });
   }
@@ -242,7 +251,7 @@ export const evaluateBtnScenario = async (idx, sbAction, bbAction, ranges, opts,
       threeBetRange: ranges.bbThreeBet,
       deadFolders: [], // SB called (R is in pot), BB 3-bet (S in pot); no folded blinds yet
       isSqueeze: true, // adds R to call/4bet pots after caller folds 3-bet
-      response: heroResponseToSqueeze(idx),
+      response: heroResponseToSqueeze(idx, HERO_POSITION),
       opts, cache,
     });
   }
@@ -254,7 +263,7 @@ export const evaluateBtnScenario = async (idx, sbAction, bbAction, ranges, opts,
       threeBetRange: ranges.sbThreeBet,
       deadFolders: ['BB'],
       isSqueeze: false,
-      response: heroResponseToThreeBet(idx),
+      response: heroResponseToThreeBet(idx, HERO_POSITION),
       opts, cache,
     });
   }

@@ -43,7 +43,7 @@ export const formatDivergenceReport = ({ position, config, comparison, scenarioP
   lines.push(`- **MC trials per scenario-class:** ${config.mcTrials}`);
   lines.push(`- **MC convergence threshold:** ${config.mcConvergenceThreshold}`);
   lines.push(`- **Range-behind model source:** \`getPopulationPrior(positionBucket, action)\` from \`src/utils/rangeEngine/populationPriors.js\``);
-  lines.push(`- **3-bet response model:** \`heroResponseToThreeBet\` (3-tier strength bucket per WS-168 plan)`);
+  lines.push(`- **3-bet response model:** \`heroResponseToThreeBet\` (3-tier strength bucket per WS-168 plan, thresholded on the combo-weighted equity percentile — \`src/__dev__/mwEquityValidation/strengthPercentile.js\`, WS-367)`);
   lines.push('');
 
   // 2. Scenario probabilities used
