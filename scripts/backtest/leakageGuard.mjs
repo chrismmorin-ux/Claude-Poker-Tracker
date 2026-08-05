@@ -28,6 +28,15 @@
  *
  * Violations THROW. A harness that silently downgrades a leak to a warning
  * produces exactly the number this ticket exists to prevent.
+ *
+ * WHAT CHANNEL 1 ACTUALLY DEFENDS (WS-284, 2026-08-05). For the life of WS-273
+ * it defended nothing measurable: the villain-action scorecard was bit-identical
+ * with and without a reference table, because the six scalar priors the tier
+ * feeds never reach `queryActionDistribution` (see `statPriorScore.mjs` for the
+ * severed path). A guard over a channel no reported number depends on is not
+ * merely idle — it reads as evidence of rigour the numbers do not have. The
+ * WS-284 stat-prior scorecard is the measurement channel 1 now protects, and
+ * `assertReferenceTierLive` fails any run in which the tier is inert again.
  */
 
 import { GROUPS, partitionOf, DEFAULT_POOL_PCT } from './partition.mjs';
@@ -98,6 +107,29 @@ export const validateReferenceTable = (reference, poolPct = DEFAULT_POOL_PCT) =>
 };
 
 /**
+ * Channel-2 ordering check, shared by every scored unit (a decision, a stat
+ * window). One implementation so a new scored unit cannot accidentally ship a
+ * weaker version of the walk-forward rule.
+ */
+const assertOrdering = ({ playerId, trainEndIdx, handIdx }, unit) => {
+  if (!Number.isInteger(trainEndIdx) || !Number.isInteger(handIdx)) {
+    throw new LeakageError(
+      'Backtest refused: walk-forward indices must be integers.',
+      { playerId, trainEndIdx, handIdx },
+    );
+  }
+  if (handIdx < trainEndIdx) {
+    throw new LeakageError(
+      `Backtest refused: ${unit} for ${playerId} came from hand index ` +
+      `${handIdx}, but the model trained on hands [0, ${trainEndIdx}). The model ` +
+      'would be predicting a hand it had already seen.',
+      { playerId, trainEndIdx, handIdx },
+    );
+  }
+  return true;
+};
+
+/**
  * Guard instance for a single run. Tracks what it has checked so the run can
  * report its own integrity rather than asserting it.
  */
@@ -113,6 +145,7 @@ export class LeakageGuard {
     this.referenceProvenance = validated.provenance;
     this.checkedPlayers = new Set();
     this.checkedDecisions = 0;
+    this.checkedStatWindows = 0;
   }
 
   /**
@@ -146,21 +179,34 @@ export class LeakageGuard {
    * @param {number} params.handIdx
    */
   assertWalkForward({ playerId, trainEndIdx, handIdx }) {
-    if (!Number.isInteger(trainEndIdx) || !Number.isInteger(handIdx)) {
-      throw new LeakageError(
-        'Backtest refused: walk-forward indices must be integers.',
-        { playerId, trainEndIdx, handIdx },
-      );
-    }
-    if (handIdx < trainEndIdx) {
-      throw new LeakageError(
-        `Backtest refused: scored decision for ${playerId} came from hand index ` +
-        `${handIdx}, but the model trained on hands [0, ${trainEndIdx}). The model ` +
-        'would be predicting a hand it had already seen.',
-        { playerId, trainEndIdx, handIdx },
-      );
-    }
+    assertOrdering({ playerId, trainEndIdx, handIdx }, 'scored decision');
     this.checkedDecisions++;
+    return true;
+  }
+
+  /**
+   * Channel 2, for the WS-284 Reference-tier instrument.
+   *
+   * `statPriorScore.mjs` scores a whole WINDOW of hands rather than a single
+   * decision: the belief formed from hands [0, trainEndIdx) is scored against the
+   * realised rates over [handIdx, …). Same ordering requirement, different unit —
+   * so it gets its own assertion and its own counter rather than being folded
+   * into `decisionsChecked`, which would make the integrity report lie about how
+   * many decisions a run scored.
+   *
+   * This is the assertion that finally has something to defend. Until WS-284 the
+   * reference table could not influence any reported number, so no leakage
+   * through it was observable; the stat-prior scorecard moves if the table is
+   * mined from the players it scores.
+   *
+   * @param {Object} params
+   * @param {string} params.playerId
+   * @param {number} params.trainEndIdx - exclusive end of the training prefix
+   * @param {number} params.handIdx     - first hand of the scored window
+   */
+  assertStatWindow({ playerId, trainEndIdx, handIdx }) {
+    assertOrdering({ playerId, trainEndIdx, handIdx }, 'scored stat window');
+    this.checkedStatWindows++;
     return true;
   }
 
@@ -171,6 +217,7 @@ export class LeakageGuard {
       referenceMode: this.referenceMode,
       evalPlayersChecked: this.checkedPlayers.size,
       decisionsChecked: this.checkedDecisions,
+      statWindowsChecked: this.checkedStatWindows,
     };
   }
 }

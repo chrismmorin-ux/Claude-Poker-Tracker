@@ -155,16 +155,60 @@ describe('LeakageGuard — channel 2: walk-forward', () => {
   });
 });
 
+describe('LeakageGuard — channel 2: walk-forward over a scored STAT WINDOW', () => {
+  // WS-284. The stat-prior instrument scores a window of hands rather than a
+  // single decision, and it is the ONLY scored output the reference table can
+  // reach — so the ordering rule has to hold here too, or channel 1's whole
+  // defence has a hole exactly where it finally matters.
+  const guard = () => new LeakageGuard({ reference: cleanReference() });
+
+  it('admits a window that starts at the end of the training prefix', () => {
+    expect(guard().assertStatWindow({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 15 }))
+      .toBe(true);
+  });
+
+  it('REFUSES a window that overlaps the hands the belief was formed from', () => {
+    expect(() => guard().assertStatWindow({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 14 }))
+      .toThrow(/had already seen/);
+  });
+
+  it('REFUSES non-integer indices rather than coercing them', () => {
+    expect(() => guard().assertStatWindow({ playerId: evalPlayer, trainEndIdx: 15, handIdx: null }))
+      .toThrow(/must be integers/);
+  });
+
+  it('counts stat windows SEPARATELY from decisions', () => {
+    // Folding them into decisionsChecked would make the integrity report
+    // overstate how many decisions the run actually scored.
+    const g = guard();
+    g.assertWalkForward({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 20 });
+    g.assertStatWindow({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 15 });
+    g.assertStatWindow({ playerId: evalPlayer, trainEndIdx: 25, handIdx: 25 });
+    expect(g.summary().decisionsChecked).toBe(1);
+    expect(g.summary().statWindowsChecked).toBe(2);
+  });
+});
+
 describe('LeakageGuard — integrity report', () => {
+  // WHICH CHANNEL DO THESE 19 TESTS GUARD? (WS-284 asked, and the honest answer
+  // for WS-273's lifetime was "none that any reported number depended on" — the
+  // villain-action scorecard was bit-identical with and without a reference
+  // table.) They are RE-POINTED, not deleted: the reference table's live consumer
+  // in this harness is now the WS-284 stat-prior scorecard, which moves when the
+  // table changes and would move further if the table were mined from the players
+  // it scores. `statPriorScore.assertReferenceTierLive` fails any run in which
+  // that stops being true, so the guard cannot drift back into ceremony unnoticed.
   it('embeds enough to prove the run was clean', () => {
     const g = new LeakageGuard({ reference: cleanReference() });
     g.assertEvalPlayer(evalPlayer);
     g.assertWalkForward({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 20 });
+    g.assertStatWindow({ playerId: evalPlayer, trainEndIdx: 15, handIdx: 15 });
     expect(g.summary()).toEqual({
       poolPct: DEFAULT_POOL_PCT,
       referenceMode: 'pool-train',
       evalPlayersChecked: 1,
       decisionsChecked: 1,
+      statWindowsChecked: 1,
     });
   });
 });

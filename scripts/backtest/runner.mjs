@@ -14,6 +14,13 @@
  * prior on the identical decision. The number that means anything is the LIFT
  * over that prior — a raw log-loss is uninterpretable on its own.
  *
+ * SECOND INSTRUMENT (WS-284): the six scalar stat priors the Reference tier feeds
+ * — vpip, pfr, threeBet, cbet, foldToCbet, foldTo3Bet — are scored separately, in
+ * `statPriorScore.mjs`, against the same walk-forward windows. They are NOT inputs
+ * to the action distribution above, which is why `--reference` was bit-identical
+ * on this scorecard for the life of WS-273. Two instruments on one pass; each says
+ * what it measures, and neither is quoted for the other.
+ *
  * ─────────────────────────────────────────────────────────────────────────────
  * THE TWO-LEVEL SPLIT (founder-approved 2026-07-26)
  *
@@ -57,7 +64,12 @@ import {
   sprBandFor,
   closesAction,
 } from './decisionGeometry.mjs';
-import { resolveStatPriors, canonicalStakeLabel } from '../../src/utils/exploitEngine/poolBaseline.js';
+import { canonicalStakeLabel } from '../../src/utils/exploitEngine/poolBaseline.js';
+import {
+  scoreStatPriorWindow,
+  buildStatPriorScorecard,
+  assertReferenceTierLive,
+} from './statPriorScore.mjs';
 import {
   buildPlayerStats,
   derivePercentages,
@@ -69,7 +81,7 @@ import { PRIMITIVE_ACTIONS } from '../../src/constants/primitiveActions.js';
 
 import { iterAppHands } from './phhAdapter.mjs';
 import { partitionOf, GROUPS, DEFAULT_POOL_PCT } from './partition.mjs';
-import { LeakageGuard } from './leakageGuard.mjs';
+import { LeakageGuard, LeakageError } from './leakageGuard.mjs';
 import { HIERARCHY_VARIANTS, hierarchyOptionsFor } from './hierarchyVariants.mjs';
 
 /** Minimum hands a player needs before the first checkpoint. Mirrors modelAudit. */
@@ -201,7 +213,8 @@ const sprZoneFor = (hand, order, street) => {
 /**
  * Score one EVAL player by walking forward through their hands.
  *
- * @returns {{ records: Array, checkpoints: number, skippedCheckpoints: number }}
+ * @returns {{ recordsByArm: Map, statRecords: Array, checkpoints: number,
+ *             skippedCheckpoints: number, statWindows: number, divergedStatWindows: number }}
  */
 export const scorePlayer = ({
   playerId,
@@ -222,13 +235,51 @@ export const scorePlayer = ({
   const { segmentKey, seatBucket } = segmentFor(hands);
 
   const recordsByArm = new Map(arms.map(a => [a.name, []]));
+  const statRecords = [];
   let checkpoints = 0;
   let skippedCheckpoints = 0;
+  let statWindows = 0;
+  let divergedStatWindows = 0;
 
   for (let cp = minTrainHands; cp < hands.length; cp += checkpointInterval) {
     const trainHands = hands.slice(0, cp);
     const testHands = hands.slice(cp, cp + checkpointInterval);
     if (testHands.length === 0) break;
+
+    // ---- WS-284: score the six scalar priors the Reference tier feeds ----
+    //
+    // Deliberately AHEAD of the model build and not conditional on it. These
+    // priors do not reach the action distribution below — `derivePercentages`
+    // returns raw k/n point estimates and the prior survives only in
+    // `pct.intervals`, which nothing downstream of `classifyStyle` reads — so
+    // they need their own instrument, and that instrument must not inherit the
+    // range engine's skips as a selection effect on which checkpoints it sees.
+    //
+    // The scored window is [cp, cp+interval), strictly after the prefix the
+    // belief was formed from: asserted, not assumed. The catch re-throws
+    // LeakageError, because a guard whose refusal is downgraded to a skipped
+    // checkpoint is not a guard.
+    let trainStats;
+    let statWindow;
+    try {
+      guard.assertStatWindow({ playerId, trainEndIdx: cp, handIdx: cp });
+      trainStats = buildPlayerStats(playerId, trainHands);
+      statWindow = scoreStatPriorWindow({
+        playerId,
+        trainStats,
+        testStats: buildPlayerStats(playerId, testHands),
+        segmentKey,
+        seatBucket,
+        referenceTable,
+      });
+    } catch (e) {
+      if (e instanceof LeakageError) throw e;
+      skippedCheckpoints++;
+      continue;
+    }
+    statWindows++;
+    if (statWindow.priorsDiverged) divergedStatWindows++;
+    for (const r of statWindow.records) statRecords.push({ ...r, playerId, trainEndIdx: cp });
 
     // ---- build the model from the PAST ONLY ----
     let model;
@@ -243,26 +294,21 @@ export const scorePlayer = ({
       // a corpus villain, so the blend is founder estimate → Reference tier.
       // `excludePlayerId` still passes the leave-one-out guard explicitly even
       // though the reference tier sits outside it — the POOL/EVAL partition is
-      // what actually keeps this villain out of its own prior.
-      const statPriors = referenceTable
-        ? resolveStatPriors({
-          poolIndex: null,
-          segmentKey,
-          excludePlayerId: playerId,
-          referenceTable,
-          seatBucket,
-        })
-        : null;
+      // what actually keeps this villain out of its own prior. Resolved once,
+      // above, by the WS-284 instrument — one resolution, so the priors scored
+      // there are provably the priors the model ran on.
+      const statPriors = statWindow.priors;
 
       // Percentages and style are what the app feeds the model
       // (analysisPipeline.js steps 1-2). Passing `{}` here — as this runner
       // originally did — silently scored a model with NO stats and NO style,
       // which disables the style-conditioned priors entirely and is not the
       // configuration that ships.
-      const pct = derivePercentages(buildPlayerStats(playerId, trainHands), statPriors);
+      const pct = derivePercentages(trainStats, statPriors);
       const style = classifyStyle(pct);
       model = buildVillainDecisionModel(trainSummary, { ...pct, style });
-    } catch {
+    } catch (e) {
+      if (e instanceof LeakageError) throw e;
       skippedCheckpoints++;
       continue;
     }
@@ -345,12 +391,16 @@ export const scorePlayer = ({
           }
         },
       });
-    } catch {
+    } catch (e) {
+      // `assertWalkForward` fires from inside the onDecision callback, so this
+      // catch used to downgrade a channel-2 leak to a skipped checkpoint — the
+      // guard would refuse and the run would carry on and report a number.
+      if (e instanceof LeakageError) throw e;
       skippedCheckpoints++;
     }
   }
 
-  return { recordsByArm, checkpoints, skippedCheckpoints };
+  return { recordsByArm, statRecords, checkpoints, skippedCheckpoints, statWindows, divergedStatWindows };
 };
 
 // =============================================================================
@@ -453,9 +503,12 @@ export const runBacktest = async ({
     log(`${byPlayer.size} eval players indexed, ${eligible.length} with > ${minTrainHands} hands.`);
 
     const recordsByArm = new Map(scoringArms.map(a => [a.name, []]));
+    const statRecords = [];
     let checkpoints = 0;
     let skippedCheckpoints = 0;
     let scoredPlayers = 0;
+    let statWindows = 0;
+    let divergedStatWindows = 0;
 
     log(`Scoring ${scoringArms.length} arm(s) in a single pass: ${scoringArms.map(a => a.name).join(', ')}`);
 
@@ -471,8 +524,11 @@ export const runBacktest = async ({
         const target = recordsByArm.get(name);
         for (const r of recs) target.push(r);
       }
+      for (const r of out.statRecords) statRecords.push(r);
       checkpoints += out.checkpoints;
       skippedCheckpoints += out.skippedCheckpoints;
+      statWindows += out.statWindows;
+      divergedStatWindows += out.divergedStatWindows;
       scoredPlayers++;
       if (scoredPlayers % 25 === 0) {
         const n = recordsByArm.get(scoringArms[0].name).length;
@@ -482,11 +538,21 @@ export const runBacktest = async ({
 
     const primary = recordsByArm.get(scoringArms[0].name);
 
+    // WS-284. The Reference tier's own scorecard, and the gate that stops this
+    // harness ever again reporting a run in which `--reference` changed nothing.
+    const statPriorScorecard = buildStatPriorScorecard(statRecords, {
+      referenceMode: guard.referenceMode,
+      windows: statWindows,
+      divergedWindows: divergedStatWindows,
+    });
+    assertReferenceTierLive(statPriorScorecard);
+
     return {
       // Backward-compatible single-arm view (the first arm).
       records: primary,
       recordsByArm: Object.fromEntries(recordsByArm),
       arms: scoringArms.map(a => ({ name: a.name, kind: a.kind ?? null, dim: a.dim ?? null })),
+      statPriorScorecard,
       integrity: guard.summary(),
       counters: {
         handsRead,

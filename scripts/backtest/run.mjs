@@ -17,6 +17,13 @@
  *                             into every scored hand. Produce a POOL table with
  *                             scripts/backtest/mine-pool-reference.py.
  *
+ *                             WS-284: this flag moves the REFERENCE-TIER
+ *                             scorecard (the six scalar stat priors), not the
+ *                             villain-action scorecard — the tier is not an input
+ *                             to the action distribution. Both are printed. A run
+ *                             that passes a table and does not move the first
+ *                             scorecard now FAILS rather than passing quietly.
+ *
  * OPTIONS
  *   --corpus-root <path>      default C:/Users/chris/data/phh-dataset/data/handhq
  *   --sites PS,FTP            filter by site
@@ -92,8 +99,10 @@ const main = async () => {
   const loader = await openLoader(process.cwd());
   try {
     const { runBacktest } = await loader.load('/scripts/backtest/runner.mjs');
-    const { buildScorecard, renderScorecard, compareScorecards, buildAblationReport, renderAblation } =
+    const { buildScorecard, renderScorecard, compareScorecards, buildAblationReport, renderAblation, CORPUS_CAVEAT } =
       await loader.load('/scripts/backtest/reporter.mjs');
+    const { renderStatPriorScorecard } =
+      await loader.load('/scripts/backtest/statPriorScore.mjs');
 
     const baseOpts = {
       files,
@@ -129,7 +138,9 @@ const main = async () => {
         }),
       );
 
-      const out = { ablation, shippedScorecard: shippedCard, perArm };
+      console.log(renderStatPriorScorecard(run.statPriorScorecard, CORPUS_CAVEAT));
+
+      const out = { ablation, shippedScorecard: shippedCard, perArm, statPriorScorecard: run.statPriorScorecard };
       if (typeof args.out === 'string') {
         mkdirSync(dirname(args.out), { recursive: true });
         writeFileSync(args.out, JSON.stringify(out, null, 1));
@@ -143,16 +154,24 @@ const main = async () => {
       : [args.hierarchy || HIERARCHY_VARIANTS.SHIPPED];
 
     const cards = [];
+    // WS-284: the Reference-tier scorecard is a property of the corpus pass, not
+    // of the hierarchy variant (the six scalar priors never touch the ladder), so
+    // one is kept from the first variant rather than printed per arm.
+    let statCard = null;
     for (const variant of variants) {
       log(`\n── hierarchy variant: ${variant} ──`);
       const run = await runBacktest({ ...baseOpts, hierarchyVariant: variant });
       const card = buildScorecard(run);
       cards.push(card);
+      if (!statCard) statCard = run.statPriorScorecard;
       console.log(renderScorecard(card));
     }
 
+    if (statCard) console.log(renderStatPriorScorecard(statCard, CORPUS_CAVEAT));
+
     const output = {
       scorecards: cards,
+      statPriorScorecard: statCard,
       comparisons: cards.length > 1
         ? cards.slice(1).map(c => compareScorecards(cards[0], c))
         : [],

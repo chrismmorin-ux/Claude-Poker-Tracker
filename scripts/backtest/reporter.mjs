@@ -89,7 +89,8 @@ export const renderScorecard = (card) => {
   L.push(`    reference tier      ${generatedFrom.integrity.referenceMode}`);
   L.push(`    partition           poolPct=${generatedFrom.integrity.poolPct} (eval players scored only)`);
   L.push(`    eval players        ${generatedFrom.integrity.evalPlayersChecked}`);
-  L.push(`    walk-forward checks ${generatedFrom.integrity.decisionsChecked}`);
+  L.push(`    walk-forward checks ${generatedFrom.integrity.decisionsChecked} decisions, ` +
+    `${generatedFrom.integrity.statWindowsChecked ?? 0} stat windows (WS-284)`);
   L.push('');
 
   L.push('  RUN');
