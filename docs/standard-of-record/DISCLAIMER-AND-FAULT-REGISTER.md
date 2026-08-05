@@ -96,7 +96,7 @@ convention. Entries never quietly disappear.
 | # | Fault | Site | P | Breadth | Exp. damage | Status |
 |---|---|---|---|---|---|---|
 | 1 | `FAULT-population-mismatch` — live claims anchored on an online corpus | corpus | 0.95 | 0.90 | **0.855** | untested · **falsifier blocked** |
-| 2 | `FAULT-temporal-staleness` — July 2009, sixteen years of drift | corpus | 0.90 | 0.85 | **0.765** | untested |
+| 2 | `FAULT-temporal-staleness` — July 2009, sixteen years of drift | corpus | 0.90 | 0.85 | **0.765** | untested · **falsifier blocked** |
 | 3 | `FAULT-modelled-rake` — the corpus records none, so every figure assumes a schedule | instrument | 0.90 | 0.80 | **0.720** | untested |
 | 4 | `FAULT-static-field-overstatement` — a Field that never adapts inflates aggression | instrument | 0.85 | 0.70 | **0.595** | untested |
 | 5 | `FAULT-masked-hole-cards` — range-marginalized advice, not cards-known | range | 0.99 | 0.50 | **0.495** | untested |
@@ -158,6 +158,63 @@ item at rank 1 forever.
 > is pure prior. Six Result Cards now exist; against them this entry's *observed* breadth is 3/6
 > and its `evidenceWeight` 0.375. Deciding which cards constitute the canonical set for a
 > published ranking is a separate, unmade decision.
+
+### The rank-2 falsifier could not be run either, and what it produced instead (WS-353)
+
+`FAULT-temporal-staleness` says the corpus is old and the population has moved. Its falsifier is:
+*fit the same priors on SRC-005 (Ignition, current) and compare against the 2009 values cell by
+cell.* It was **run on 2026-08-05 and found unrunnable**. The 2009 arm is already in hand — it
+*is* `HANDHQ_REFERENCE_STAKES`. All three blockers are on the SRC-005 arm:
+
+1. **SRC-005 has no artefact any harness can read.** Two export paths exist and neither yields the
+   hands. The extension popup export dumps the volatile *capture buffer*, and the only artefact it
+   has ever produced on this machine (2026-06-19) contains **zero hands**. The app's
+   `exportAllData` / `downloadBackup` is a founder-driven browser download with no on-disk
+   instance and no node-side adapter from an app hand record to a mined `(k, n)` cell.
+2. **"Cell by cell" presupposes an index both arms share, and they do not.** The 2009 values are
+   7 stakes × {6max, full} × 6 stats pooled over six networks. SRC-005 is one network at the
+   founder's stake, recorded in the provenance registry as 0.02/0.05 — *below* the mined 25NL
+   floor. Every per-cell gap would carry a stake step and a site step alongside the era step, and
+   none of the three separates.
+3. **No per-cell gap is readable without a null, and the only null this corpus supplies is
+   nineteen days long.** See below.
+
+**The nineteen-day null — a real measurement of a smaller question.** The corpus records
+`day/month/year` on every hand, so the pool's cells can be blocked by day and the **same
+population** differenced against itself across the span it actually covers. That was done, using
+the *unchanged* mining function that produced the shipped 2009 cells, and it is recorded as
+`WITHIN_CORPUS_DRIFT_2009`:
+
+| | |
+|---|---|
+| Span | PS 2009-07-01…07-20 (20 days, contiguous); FTP 2009-07-01…07-19 (10 days, non-contiguous) — **19 days** |
+| Scope | **50NL only** — one of the seven stakes the 2009 cells cover, and the only one materialized on disk |
+| Cells | 24 (2 sites × {6max, full} × 6 stats), 1,065,871 hands; per-cell denominators 41,941 → 2,172,157 |
+| Cluster unit | **days**, never hands |
+| Fitted drift over the span | median **0.40 pp**, max **2.58 pp**; 4 of 24 cells' day-clustered intervals exclude zero |
+| Daily overdispersion vs binomial | median **χ²/df = 4.35**, max **36.3** (VPIP) |
+| Weekday/weekend gap | up to **0.95 pp** — comparable to the whole nineteen-day fitted drift |
+
+**What that licenses:** a floor. The same population, same stake, same month moves a cell by up to
+2.58 pp, and *who is logged in on a given day* moves it more than sampling does. **A cross-era
+per-cell gap under roughly one point is inside what this population does with no era change at
+all**, and must not be quoted as drift.
+
+**What it does not license: anything about 2026.** Nineteen days is not sixteen years, and the
+slope is *refuted by its own extrapolation* — carried linearly over the 6,230 days to 2026-08-05
+the median slope gives 132 pp of change and the maximum gives 895 pp, both impossible for a
+proportion. This is why the measurement is **not** recorded as the entry's `evidence`: that field
+gates confirmation and retirement, and a three-week number must never be able to settle a
+sixteen-year question. It sits beside the entries in the hashed register body instead, so moving
+the null moves the version.
+
+The entry therefore stays **`untested`** — not confirmed, not retired, wording and probability and
+breadth unchanged.
+
+> **Two for two.** The top two entries by expected damage are both `corpus` entries, and both of
+> their falsifiers are now blocked on the arm naming a population the founder actually plays.
+> That is the pattern `blockedFalsifiers()` exists to make countable: the register's most damaging
+> claims are precisely the ones the repo currently has no second population to score.
 
 **Mechanisms, falsifiers, and evidence live in the code**, one per entry, in
 `src/utils/standardOfRecord/faultRegister.js`. They are there rather than here because each

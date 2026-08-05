@@ -40,6 +40,7 @@ import {
   canonicalRegisterBody,
   registerVersion,
   blockedFalsifiers,
+  WITHIN_CORPUS_DRIFT_2009,
 } from '../faultRegister.js';
 import { STACK_LAYERS } from '../stack.js';
 
@@ -554,5 +555,95 @@ describe('falsifierBlockers — an entry that says why its own test cannot be ru
 
   it('leaves every runnable entry unblocked, so the field discriminates', () => {
     expect(blockedFalsifiers().length).toBeLessThan(SUSPECTED_FAULTS.length);
+  });
+});
+
+// ── a second falsifier that cannot be run, and the null it produced instead (WS-353) ────
+
+/**
+ * WS-353 ran the rank-2 entry's falsifier — fit the same priors on SRC-005 (Ignition, current)
+ * and difference against the 2009 values cell by cell — and found it unrunnable for three
+ * reasons, all on the SRC-005 arm.
+ *
+ * What it DID produce is `WITHIN_CORPUS_DRIFT_2009`: the corpus differenced against itself
+ * across the nineteen days it actually spans. These tests exist because that measurement is the
+ * exact shape of thing that gets quietly promoted into an answer to the sixteen-year question.
+ * They pin it to its own horizon, keep it out of `evidence`, and make sure its refusal to
+ * license 2026 is DATA the module carries rather than a caveat in a report nobody reopens.
+ */
+describe('FAULT-temporal-staleness — blocked, and the nineteen-day null (WS-353)', () => {
+  const entry = () => SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-temporal-staleness');
+
+  it('reports the entry as blocked on the SRC-005 arm, and keeps it untested', () => {
+    const row = blockedFalsifiers().find((r) => r.faultId === 'FAULT-temporal-staleness');
+    expect(row, 'WS-353 found the rank-2 falsifier unrunnable').toBeTruthy();
+    expect(row.status).toBe('untested');
+    expect(row.blockers.length).toBeGreaterThan(0);
+    for (const b of row.blockers) expect(b).toMatch(/UNBLOCKED BY:/);
+    expect(row.blockers.join(' ')).toMatch(/SRC-005/);
+  });
+
+  it('leaves the entry evidence-free — a nineteen-day null is not evidence about sixteen years', () => {
+    // The whole hazard of this ticket in one assertion. A within-corpus measurement IS a
+    // measurement, and `evidence` is the field that gates confirmation and retirement. Putting
+    // it there would let a future reader settle a sixteen-year question with a three-week number.
+    expect(entry().evidence).toEqual([]);
+  });
+
+  it('keeps probability, breadth and wording untouched — being unable to run a test is not a result', () => {
+    expect(entry().probability).toBe(0.9);
+    expect(entry().priorBreadth).toBe(0.85);
+    expect(entry().falsifier).toMatch(/SRC-005 \(Ignition, current\)/);
+    expect(entry().falsifier).toMatch(/cell by cell/);
+  });
+
+  it('states the measurement\'s span and stake, so nobody can read it as corpus-wide', () => {
+    expect(WITHIN_CORPUS_DRIFT_2009.spanDays).toBe(19);
+    expect(WITHIN_CORPUS_DRIFT_2009.sourceId).toBe('SRC-012');
+    expect(WITHIN_CORPUS_DRIFT_2009.stakes).toMatch(/50NLH ONLY/);
+    expect(WITHIN_CORPUS_DRIFT_2009.cells).toBe(24);
+    expect(WITHIN_CORPUS_DRIFT_2009.handsScored).toBeGreaterThan(0);
+    expect(WITHIN_CORPUS_DRIFT_2009.minCellDenominator).toBeGreaterThan(0);
+  });
+
+  it('refuses to license 2026 IN THE DATA, not in a comment', () => {
+    expect(WITHIN_CORPUS_DRIFT_2009.doesNotLicense).toMatch(/2026/);
+    expect(WITHIN_CORPUS_DRIFT_2009.doesNotLicense).toMatch(/extrapolat/i);
+    expect(WITHIN_CORPUS_DRIFT_2009.licenses).toMatch(/null/i);
+  });
+
+  it('is clustered on days, never hands — the repo rule, applied to its own null', () => {
+    expect(WITHIN_CORPUS_DRIFT_2009.clusterUnit).toBe('days');
+    expect(WITHIN_CORPUS_DRIFT_2009.clusterUnit).not.toBe('hands');
+  });
+
+  it('is frozen, so the null cannot be edited by whoever is quoting a gap against it', () => {
+    // `toBeDefined` first on purpose. `Object.isFrozen(undefined)` is TRUE, so without it this
+    // assertion passes when the constant does not exist — a check that cannot fail, which is
+    // `FAULT-degenerate-signal` committed inside the test guarding the register that names it.
+    expect(WITHIN_CORPUS_DRIFT_2009).toBeDefined();
+    expect(Object.isFrozen(WITHIN_CORPUS_DRIFT_2009)).toBe(true);
+  });
+
+  it('is inside the hashed register body — moving the null moves the version', () => {
+    // Presence in the canonical body IS the hash claim: `registerVersion` hashes the whole body.
+    // Asserted through a leaf value so a missing key fails rather than comparing undefined
+    // against undefined.
+    expect(canonicalRegisterBody()).toHaveProperty('withinCorpusDrift.spanDays', 19);
+    expect(canonicalRegisterBody().withinCorpusDrift).toEqual(WITHIN_CORPUS_DRIFT_2009);
+  });
+
+  it('the doc records the blocked status too, so the two cannot drift', () => {
+    const DOC = fileURLToPath(new URL('../../../../docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md', import.meta.url));
+    const md = readFileSync(DOC, 'utf8');
+    const table = md.split('<!-- RANKED-REGISTER:BEGIN -->')[1].split('<!-- RANKED-REGISTER:END -->')[0];
+    const row = table.split('\n').find((l) => l.includes('FAULT-temporal-staleness'));
+    expect(row, 'the ranked table must carry the entry').toBeTruthy();
+    expect(row).toMatch(/falsifier blocked/);
+    // And every module-level blocked entry must be marked blocked in the table, not just this one.
+    for (const b of blockedFalsifiers()) {
+      const r = table.split('\n').find((l) => l.includes(b.faultId));
+      expect(r, `${b.faultId} is blocked in the module`).toMatch(/falsifier blocked/);
+    }
   });
 });

@@ -124,6 +124,76 @@ export const isFaultSite = (site) => FAULT_SITES.includes(site);
 export const SUSPECT_PENDING_REVIEW = 'suspect-pending-review';
 
 /**
+ * The corpus's own within-span drift, measured by WS-353 on 2026-08-05.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * READ `doesNotLicense` BEFORE `medianAbsDriftPP`.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * `FAULT-temporal-staleness` asks what SIXTEEN YEARS did to the population. Its written
+ * falsifier answers that by fitting the same priors on SRC-005 and differencing cell by cell,
+ * and that falsifier could not be run (see the entry's `falsifierBlockers`).
+ *
+ * What CAN be run is a strictly smaller question the same corpus answers on its own: the hands
+ * carry `day/month/year`, so the pool's cells can be blocked by day and the SAME population
+ * differenced against itself across the span it actually covers. That is a real measurement of
+ * a real quantity. It is not a smaller version of the falsifier, and it is not evidence for or
+ * against the entry — which is why it lives here as its own record rather than in the entry's
+ * `evidence`, the field that gates confirmation and retirement.
+ *
+ * What it is FOR: a per-cell gap is unreadable without a null. This supplies one — the size of
+ * gap this population produces with NO era change at all — at a nineteen-day horizon and at one
+ * stake. Any future cross-era gap smaller than this is not drift; it is who logged in.
+ *
+ * Stat semantics are the canonical ones: the measurement ran `phh_miner.mine_hand` UNCHANGED
+ * (the same function that produced the shipped 2009 cells) and added only the day blocking, so
+ * the numbers below and the values in `HANDHQ_REFERENCE_STAKES` are the same quantities.
+ *
+ * Clustered on DAYS, never hands — the interval on each cell's slope comes from the spread
+ * ACROSS days, so day-level composition (who was logged in, weekend vs weekday, traffic) is
+ * inside the interval rather than hidden under it.
+ */
+export const WITHIN_CORPUS_DRIFT_2009 = Object.freeze({
+  measuredBy: 'WS-353, 2026-08-05',
+  sourceId: 'SRC-012',
+  span: 'PS 2009-07-01..2009-07-20 (20 days present, contiguous); '
+    + 'FTP 2009-07-01..2009-07-19 (10 days present, non-contiguous)',
+  spanDays: 19,
+  stakes: '50NLH ONLY — one of the seven stakes the 2009 cells cover, and the only one '
+    + 'materialized on disk at C:/Users/chris/data/phh-dataset/data/handhq',
+  sites: Object.freeze(['PS', 'FTP']),
+  cells: 24,
+  cellIndex: '2 sites x {6max, full} x {vpip, pfr, threeBet, foldTo3Bet, cbet, foldToCbet}',
+  handsScored: 1065871,
+  minCellDenominator: 41941,
+  maxCellDenominator: 2172157,
+  clusterUnit: 'days',
+  medianAbsDriftPP: 0.40,
+  maxAbsDriftPP: 2.58,
+  medianAbsSlopePPPerDay: 0.0212,
+  maxAbsSlopePPPerDay: 0.1436,
+  cellsWhoseIntervalExcludesZero: 4,
+  medianDailyDispersion: 4.35,
+  maxDailyDispersion: 36.3,
+  weekdayWeekendGapMaxPP: 0.95,
+  licenses:
+    'A NULL, at a nineteen-day horizon and at 50NL. The same population, same stake, same '
+    + 'month, moves a cell by a median 0.40pp and up to 2.58pp; its daily rates are 4.35x '
+    + '(median) to 36x overdispersed against binomial; and the weekday/weekend gap alone '
+    + 'reaches 0.95pp, comparable to the whole nineteen-day fitted drift. A cross-era per-cell '
+    + 'gap under roughly one point is therefore inside what this population does with NO era '
+    + 'change, and must not be quoted as drift.',
+  doesNotLicense:
+    'ANYTHING ABOUT 2026. Nineteen days is not sixteen years, and the slope has no '
+    + 'extrapolative content — it is refuted by its own extrapolation. Carried linearly over '
+    + 'the 6,230 days from the corpus midpoint to 2026-08-05, the MEDIAN slope gives 132pp of '
+    + 'change and the maximum gives 895pp; both are impossible for a proportion. The direction '
+    + 'of a nineteen-day slope is also not the direction of a sixteen-year one: this window '
+    + 'contains three weekends and no meta shift. Reporting any figure here as a drift estimate '
+    + 'for the founder\'s era would be exactly the substitution this register exists to catch.',
+});
+
+/**
  * Version epoch. Bumped BY HAND only on a structural change to what an entry means.
  *
  * The full version is this plus a content hash (see `registerVersion`), so an edit to any entry
@@ -275,6 +345,13 @@ export const buildFaultEntry = ({
  * it must keep meaning "a measurement exists". Writing "we could not measure it" into the field
  * whose whole job is to prove something WAS measured would let a future entry be confirmed on
  * the record of its own failure to be tested. Blocked and settled are opposite states.
+ *
+ * WS-353 then ran the rank-2 entry's falsifier and found the SAME shape: the arm that is already
+ * mined is fine, and the arm naming a source the founder actually plays on is unreachable. Two
+ * for two on the top two entries is worth reading as a finding in itself — the register's most
+ * damaging entries are the ones about the corpus, and the corpus is precisely where the repo has
+ * no second population it can score. `blockedFalsifiers()` is what makes that pattern countable
+ * rather than something a reader would have to notice twice.
  *
  * Hence the rule below: an entry may not be `confirmed` or `retired` while it declares its
  * falsifier is blocked. Settling an entry whose named test cannot be run means something EASIER
@@ -677,6 +754,49 @@ export const SUSPECTED_FAULTS = Object.freeze([
       'Drift over sixteen years is near-certain in direction. Which cells moved, and by how '
       + 'much, is entirely unmeasured.',
     priorBreadth: 0.85,
+    // WS-353 ran this falsifier on 2026-08-05. It is UNRUNNABLE, and stays `untested` for that
+    // reason rather than being settled by a substitute. The 2009 arm is in hand — it IS
+    // `HANDHQ_REFERENCE_STAKES`, already mined. Every blocker is on the SRC-005 arm, and the
+    // third one is the interesting one: it is the only blocker in this register that a
+    // measurement has partially addressed (`WITHIN_CORPUS_DRIFT_2009`), and the measurement
+    // narrowed it without clearing it, because the horizon it fixes is nineteen days.
+    falsifierBlockers: [
+      'SRC-005 HAS NO ARTEFACT ANY HARNESS CAN READ. Two export paths exist and neither yields '
+      + 'the hands the falsifier needs. The extension popup export '
+      + '(ignition-poker-tracker/popup/popup.js:160) dumps the volatile CAPTURE BUFFER, not the '
+      + 'persisted store, and the only artefact it has ever produced on this machine '
+      + '(~/Downloads/ignition-hands-1781851220916.json, 2026-06-19) contains ZERO hands. The '
+      + 'app path, exportAllData / downloadBackup (src/utils/exportUtils.js:32,83), is a '
+      + 'founder-driven browser download with no on-disk instance, and there is no node-side '
+      + 'adapter from an app hand record to a mined (k,n) cell — the 2009 cells came from '
+      + 'phh_miner.py over PHH files while the app counts through buildPlayerStats / '
+      + 'STAT_COUNT_FIELDS in the browser. UNBLOCKED BY: a committed SRC-005 export-to-Deal-Book '
+      + 'adapter emitting the six (k,n) pairs per stake x seat bucket through the SAME stat '
+      + 'definitions the 2009 mine used, so "the same priors" is a checked claim rather than a '
+      + 'second implementation of six definitions.',
+      '"CELL BY CELL" PRESUPPOSES AN INDEX BOTH ARMS SHARE, AND THEY DO NOT. The 2009 values are '
+      + '7 stakes (25NL-1000NL) x {6max, full} x 6 stats pooled over SIX networks. SRC-005 is ONE '
+      + 'network at the founder\'s stake, which the provenance registry records as 0.02/0.05 — '
+      + 'BELOW the mined 25NL floor, with the gap noted there explicitly. Nearest-stake '
+      + 'resolution would therefore put a STAKE step inside every per-cell gap alongside the era '
+      + 'step, with SITE confounded on top of both, and none of the three can be separated from '
+      + 'one site at one stake. UNBLOCKED BY: reading off the SRC-005 export which stake x '
+      + 'seat-bucket cells actually carry hands, restricting the comparison to cells populated on '
+      + 'BOTH arms, and stating in advance that site remains confounded because it cannot be '
+      + 'broken by this design.',
+      'NO PER-CELL GAP IS READABLE WITHOUT A NULL, AND THE ONLY NULL THIS CORPUS SUPPLIES IS '
+      + 'NINETEEN DAYS LONG. WS-353 measured the corpus\'s own within-span drift — see '
+      + 'WITHIN_CORPUS_DRIFT_2009: same population, same stake, 24 cells, median fitted drift '
+      + '0.40pp and max 2.58pp over 18-19 days, daily rates 4.35x (median) to 36x overdispersed '
+      + 'against binomial, weekday/weekend gap up to 0.95pp. So a cross-era gap under roughly one '
+      + 'point is inside what this population does with NO era change at all. That fixes the '
+      + 'floor at NINETEEN DAYS and at 50NL; the floor at sixteen years is unknown and cannot be '
+      + 'obtained from a corpus spanning three weeks, and the nineteen-day slope must not be '
+      + 'extrapolated to get it. Also unstated: the minimum SRC-005 n per cell at which a null '
+      + 'would be readable. UNBLOCKED BY: stating BEFORE any SRC-005 comparison both the minimum '
+      + 'per-cell gap that counts as drift and the minimum SRC-005 per-cell n at which "no gap" '
+      + 'means anything.',
+    ],
   }),
 
   buildFaultEntry({
@@ -1155,6 +1275,10 @@ export const canonicalRegisterBody = (faults = SUSPECTED_FAULTS) => ({
   epoch: REGISTER_EPOCH,
   disclaimer: THE_DISCLAIMER,
   treatment: DISCLAIMER_TREATMENT,
+  // Hashed for the same reason `falsifierBlockers` is: it is a claim about what this register
+  // can currently settle. A reader holding an old Result Card needs to be able to tell that the
+  // null a drift claim was read against has moved. Not an entry, so it sits beside them.
+  withinCorpusDrift: WITHIN_CORPUS_DRIFT_2009,
   entries: faults.map((e) => ({
     faultId: e.faultId,
     title: e.title,
