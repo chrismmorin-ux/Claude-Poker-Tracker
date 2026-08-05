@@ -18,6 +18,7 @@
 
 import React from 'react';
 import { useUI } from '../../contexts';
+import { FluidView } from '../ui/FluidView';
 import { getLesson } from '../../utils/skillAssessment/lessonRegistry';
 
 export const LessonDetailView = ({ scale }) => {
@@ -26,73 +27,81 @@ export const LessonDetailView = ({ scale }) => {
 
   if (!lesson) {
     return (
-      <div className="p-4 text-gray-400" data-testid="lesson-detail-missing">
-        <button
-          type="button"
-          onClick={closeLessonDetail}
-          className="text-cyan-400 text-sm"
-        >
-          ← Back
-        </button>
-        <div className="mt-4">
-          Lesson not found{lessonConceptId ? `: ${lessonConceptId}` : ''}.
+      <FluidView>
+        <div className="p-4 text-gray-400" data-testid="lesson-detail-missing">
+          <button
+            type="button"
+            onClick={closeLessonDetail}
+            className="text-cyan-400 text-sm"
+          >
+            ← Back
+          </button>
+          <div className="mt-4">
+            Lesson not found{lessonConceptId ? `: ${lessonConceptId}` : ''}.
+          </div>
         </div>
-      </div>
+      </FluidView>
     );
   }
 
+  // Lesson prose is unbounded in length, so this surface MUST scroll inside the
+  // page lock (index.css pins html/body/#root to 100dvh overflow:hidden). Before
+  // FluidView it was a bare padded div — anything past the fold was clipped with
+  // no scrollbar.
   return (
-    <div className="p-4 max-w-3xl mx-auto" data-testid="lesson-detail-view">
-      <button
-        type="button"
-        onClick={closeLessonDetail}
-        className="text-cyan-400 text-sm mb-4"
-      >
-        ← Back
-      </button>
-      <h1
-        className="text-white text-2xl font-semibold mb-1"
-        data-testid="lesson-title"
-      >
-        {lesson.meta.title}
-      </h1>
-      <div className="text-gray-500 text-xs mb-6" data-testid="lesson-meta">
-        Tier {lesson.meta.tier ?? '—'} · {lesson.meta.conceptId}
-        {lesson.meta.citation?.source ? ` · ${lesson.meta.citation.source}` : ''}
+    <FluidView>
+      <div className="p-4 max-w-3xl mx-auto" data-testid="lesson-detail-view">
+        <button
+          type="button"
+          onClick={closeLessonDetail}
+          className="text-cyan-400 text-sm mb-4"
+        >
+          ← Back
+        </button>
+        <h1
+          className="text-white text-2xl font-semibold mb-1"
+          data-testid="lesson-title"
+        >
+          {lesson.meta.title}
+        </h1>
+        <div className="text-gray-500 text-xs mb-6" data-testid="lesson-meta">
+          Tier {lesson.meta.tier ?? '—'} · {lesson.meta.conceptId}
+          {lesson.meta.citation?.source ? ` · ${lesson.meta.citation.source}` : ''}
+        </div>
+
+        {lesson.sections.exposition && (
+          <section className="mb-6" data-testid="lesson-section-exposition">
+            <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
+              Exposition
+            </h2>
+            <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+              {lesson.sections.exposition}
+            </div>
+          </section>
+        )}
+
+        {lesson.sections.workedExample && (
+          <section className="mb-6" data-testid="lesson-section-workedExample">
+            <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
+              Worked Example
+            </h2>
+            <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+              {lesson.sections.workedExample}
+            </div>
+          </section>
+        )}
+
+        {lesson.sections.successCriteria && (
+          <section data-testid="lesson-section-successCriteria">
+            <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
+              Success Criteria
+            </h2>
+            <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+              {lesson.sections.successCriteria}
+            </div>
+          </section>
+        )}
       </div>
-
-      {lesson.sections.exposition && (
-        <section className="mb-6" data-testid="lesson-section-exposition">
-          <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
-            Exposition
-          </h2>
-          <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-            {lesson.sections.exposition}
-          </div>
-        </section>
-      )}
-
-      {lesson.sections.workedExample && (
-        <section className="mb-6" data-testid="lesson-section-workedExample">
-          <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
-            Worked Example
-          </h2>
-          <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-            {lesson.sections.workedExample}
-          </div>
-        </section>
-      )}
-
-      {lesson.sections.successCriteria && (
-        <section data-testid="lesson-section-successCriteria">
-          <h2 className="text-indigo-400 text-sm font-semibold mb-2 uppercase tracking-wide">
-            Success Criteria
-          </h2>
-          <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-            {lesson.sections.successCriteria}
-          </div>
-        </section>
-      )}
-    </div>
+    </FluidView>
   );
 };

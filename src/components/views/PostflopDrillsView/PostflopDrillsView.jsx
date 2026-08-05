@@ -84,8 +84,10 @@ export const PostflopDrillsView = ({ scale }) => {
           </div>
         </div>
 
-        {/* Mode content */}
-        <div className="flex-1 px-8 pt-6 pb-6 overflow-hidden">
+        {/* Mode content — overflow-y-auto, not overflow-hidden: modes that don't
+            manage their own scroll (Line) are taller than the ~560px left inside
+            the fixed 720px canvas, and hidden clipped them with no scrollbar. */}
+        <div className="flex-1 px-8 pt-6 pb-6 overflow-y-auto">
           {activeTab === 'line'      && <LineMode />}
           {activeTab === 'explorer'  && <ExplorerMode />}
           {activeTab === 'estimate'  && <EstimateMode />}

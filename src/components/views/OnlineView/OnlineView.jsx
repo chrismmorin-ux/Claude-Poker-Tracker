@@ -11,6 +11,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useSyncBridge, useOnlineSession, useAnalysisContext } from '../../../contexts';
 import { useToast } from '../../../contexts/ToastContext';
 import { ScaledContainer } from '../../ui/ScaledContainer';
+import { LAYOUT } from '../../../constants/gameConstants';
 import VillainProfileModal from '../../ui/VillainProfileModal';
 import VersionMismatchModal from '../../ui/VersionMismatchModal';
 import { writeReloadFlag } from '../../../utils/versionMismatchStorage';
@@ -100,7 +101,13 @@ export const OnlineView = ({ scale }) => {
 
   return (
     <ScaledContainer scale={scale}>
-      <div className="p-3 max-w-[1600px] text-[#e0e0e0]">
+      {/* Bounded canvas + own scrollbar. Without a fixed height the content grew
+          past the 1600x720 box and ScaledContainer's outer overflow-hidden clipped
+          it with no way to scroll. Same pattern as Stats/Analysis. */}
+      <div
+        className="p-3 text-[#e0e0e0] overflow-y-auto"
+        style={{ width: `${LAYOUT.TABLE_WIDTH}px`, height: `${LAYOUT.TABLE_HEIGHT}px` }}
+      >
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-lg font-bold m-0 text-[#d4a847]">

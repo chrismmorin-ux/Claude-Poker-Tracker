@@ -87,8 +87,12 @@ export const PreflopDrillsView = ({ scale }) => {
           </div>
         </div>
 
-        {/* Mode content */}
-        <div className="flex-1 px-8 pt-6 pb-6 overflow-hidden">
+        {/* Mode content — overflow-y-auto, not overflow-hidden: modes that don't
+            manage their own scroll (Estimate, Framework) are taller than the
+            ~560px left inside the fixed 720px canvas, and hidden clipped them
+            with no scrollbar. flex-1 + non-visible overflow zeroes the flex
+            auto-min-height, so this bounds correctly. */}
+        <div className="flex-1 px-8 pt-6 pb-6 overflow-y-auto">
           {activeTab === 'shape' && <ShapeMode />}
           {activeTab === 'recipe' && <RecipeMode />}
           {activeTab === 'explorer' && <ExplorerMode />}

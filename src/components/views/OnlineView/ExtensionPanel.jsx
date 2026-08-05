@@ -116,7 +116,12 @@ export const ExtensionPanel = () => {
       <style dangerouslySetInnerHTML={{ __html: PANEL_ANIMATIONS }} />
 
       <div
-        className="w-[400px] h-screen flex flex-col relative overflow-hidden font-display antialiased border-l border-r"
+        // h-dvh, not h-screen: this panel is also routable inside the app
+        // (SCREEN.EXTENSION / #extension). On mobile h-screen (100vh) is the
+        // LARGE viewport, so it overshoots the visible area under the 100dvh
+        // page lock and pushes the bottom of the scroll region below the fold.
+        // In the extension side panel the two are identical, so nothing changes there.
+        className="w-[400px] h-dvh flex flex-col relative overflow-hidden font-display antialiased border-l border-r"
         style={{
           background: SURFACE.body,
           borderLeftColor: BORDER.default,
