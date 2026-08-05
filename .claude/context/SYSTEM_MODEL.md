@@ -129,16 +129,40 @@ corpus hands against it measures memorisation. `scripts/backtest/leakageGuard.mj
 refuses to run without an explicitly stamped POOL-partition table or an explicit
 opt-out. See `docs/research/engine-backtest-baseline-2026-07-26.md`.
 
-### 2.3 Game Tree Evaluation Flow
+### 2.3 Game Tree Evaluation Flow — TWO-PHASE since WS-334 (2026-08-04)
 
 ```
 useLiveActionAdvisor → gameTreeEvaluator.evaluateGameTree()
+  PHASE 1 — mandatory, unbudgeted (~400ms flop / ~200ms turn, desktop)
+  → buildEvaluationContext (narrow → segment → shared-runout equity → fold estimates)
   → villainDecisionModel.buildVillainModel() (style-conditioned priors)
-  → gameTreeDepth2.evaluateDepth2() (bet/check/raise branches)
   → foldEquityCalculator (blocker-aware, fold curve fit)
   → preflopFlopEV (stratified flop sampling, archetype-weighted)
-  → Produces: { bestAction, ev, reasoning, flopBreakdown, confidence }
+  → onFastResult(depth-1 answer)   ← founder acts on this
+  → yield a macrotask so the host can PAINT
+  PHASE 2 — optional, budgeted by `refinementBudgetMs` (default 2000ms)
+  → gameTreeDepth2 (call / check-check / bet-call / raise-response / check-raise / depth-3)
+  → awaited return value = refined answer
+  → Produces: { bestAction, ev, reasoning, flopBreakdown, confidence, treeMetadata.latency }
 ```
+
+**The architectural point.** There are now TWO clocks. Context building is mandatory work
+with no faster alternative, so budgeting it decided nothing; refinement is optional work
+whose omission degrades the answer, which is what a budget is for. Before WS-334 a single
+150ms clock started before context building and was spent before the first refinement gate
+ran — so **no depth-2/3 stage executed on any live evaluation for the life of the project**,
+while `treeMetadata.depth` reported 2 because it was derived from the street. `depthReached`
+now reports work actually done, and `treeMetadata.latency` carries per-stage
+ran/partial/gated/no-candidate/error plus `weightConsumed`.
+
+Depth-2's EV outputs have never been validated in production and are under investigation —
+**WS-361**. Full refinement measured up to 26s on a wet flop, so at the 2000ms default most
+stages return marked partials.
+
+Recorded as **DEC-036** (`system/decisions.md`), which carries the rejected alternatives —
+notably that cutting context cost could never have made depth-2 fit, since the 361ms is
+trials-independent — and the open items: no production caller wires `onFastResult` yet
+(design Gates 1 + 4), and `refinementBudgetMs = 2000` was chosen on desktop, not on the S22.
 
 ### 2.4 Range Profile Lifecycle
 
@@ -225,7 +249,7 @@ New player observed → populationPriors.js creates default profile
 |------|------|-----------|--------|------------|
 | IndexedDB migrations (`database.js`, `migrations.js`) | Schema change drops/corrupts data | Medium | **Critical** — permanent data loss | Versioned migrations, backup before destructive ops |
 | `bayesianUpdater.js` | Numerical instability (underflow/overflow in log-likelihood) | Low | High — corrupted range profiles | Clamping, normalization after each update |
-| `gameTreeEvaluator.js` | Combinatorial explosion in depth-2/3 branches | Medium | Medium — UI freeze or timeout | Time budget (`timeBudgetMs`), depth bailout, combo limit |
+| `gameTreeEvaluator.js` | Combinatorial explosion in depth-2/3 branches | Medium | Medium — UI freeze or timeout | Refinement budget (`refinementBudgetMs`) + per-stage cap, mid-loop bailout with `weightConsumed` reporting, combo limit. Before WS-334 the mitigation was so aggressive it disabled the feature entirely and said nothing. |
 | `gameTreeEvaluator.js` | Softmax overflow in mixed strategy (Math.exp on small temperature) | Low | Medium — NaN mixFrequency, corrupted recommendations | Resolved RT-12: `stableSoftmax()` in `mathUtils.js` |
 | `popup.js` | innerHTML without escaping (connId, state fields) | Low | Medium — XSS in extension context | Resolved RT-15: all values wrapped in `escapeHtml()` |
 | `useShowdownCardSelection.js` | Auto-advance logic with multiple players + partial card entry | High | Medium — wrong card assignments | Extensive edge case tests |
@@ -339,7 +363,7 @@ New player observed → populationPriors.js creates default profile
 | Total stored hands | ~2,000 | 20,000 | 200,000 | `getAllHands()` full scan; needs cursor pagination |
 | Players tracked | ~50 | 500 | 5,000 | `usePlayerTendencies` iterates all; needs lazy loading |
 | Range profile size | ~200 KB per player | 2 MB total | 20 MB total | IndexedDB storage OK; memory if all loaded |
-| Game tree eval time | ~50ms (depth-2) | N/A (per-hand) | N/A | Time budget caps at configurable ms |
+| Game tree eval time | ~400ms fast answer (flop, desktop); +2000ms refinement | N/A (per-hand) | N/A | WS-334: two clocks. Fast phase unbudgeted (mandatory work); refinement capped by `refinementBudgetMs`, per stage by `MAX_STAGE_SHARE`. Full depth measured up to 26s on a wet flop. |
 | Concurrent sessions | 1 | 1 | 1 | Architecture assumes single active session |
 
 ### 7.2 Known Bottlenecks
@@ -409,7 +433,7 @@ New player observed → populationPriors.js creates default profile
 | ID | Assumption | Risk if Wrong | How to Validate |
 |----|-----------|---------------|----------------|
 | A-01 | Users have < 500 tracked opponents | Performance degrades — getAllHands/usePlayerTendencies do full scans | Check largest IndexedDB player count in production |
-| A-02 | Game tree depth-2 is sufficient for most decisions | Sub-optimal advice in complex multi-street spots | Compare depth-2 vs depth-3 EV on benchmark hands |
+| A-02 | Game tree depth-2 is sufficient for most decisions | Sub-optimal advice in complex multi-street spots | Compare depth-2 vs depth-3 EV on benchmark hands. **Was untestable until WS-334** — depth-2 never ran. First measurement: `WS334_REFINEMENT_MS=0 node scripts/backtest/dumpGameTreeEV.mjs` vs default; depth-2 moves call +26.7%, raise +18.0%, check -11.7%, flips 1 of 8 top actions. |
 | A-03 | Population priors from Bayesian engine are reasonable starting points | Wrong initial range estimates for first ~10 hands vs a new player | Track showdown prediction accuracy over time |
 | A-04 | Users record actions during live play (not retrospectively) | UI optimized for real-time entry may frustrate post-session review | User behavior observation |
 | A-05 | Mobile Chrome on Android is the primary runtime | Desktop browser differences (viewport, touch, memory) may cause issues | Track user agent distribution if analytics added |
