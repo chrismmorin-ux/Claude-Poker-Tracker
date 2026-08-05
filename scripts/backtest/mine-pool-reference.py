@@ -174,6 +174,13 @@ def main():
             "bb": entry["bb"],
             "canonical": entry["canonical"],
             "minedLabel": label,
+            # WS-373 — WHICH POPULATION this row describes. The accumulation above sums
+            # raw k and n across players, so a 40,000-hand regular carries 40x the weight
+            # of a 1,000-hand recreational: this is the average HAND dealt, not the
+            # average PLAYER. Stamped per row because poolBaseline.referenceWeightingFor
+            # reads it off the matched row, and a consumer that receives a prior with no
+            # declared basis REFUSES the run rather than assuming one.
+            "weighting": "hand-weighted",
             "buckets": {b: {"hands": v["hands"], "stats": v["stats"]} for b, v in usable.items()},
         })
 

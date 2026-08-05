@@ -22,6 +22,7 @@ import {
   buildStatPriorScorecard,
   assertReferenceTierLive,
   assertPriorEvidenceVisible,
+  assertPriorWeightingDeclared,
   renderStatPriorScorecard,
 } from '../backtest/statPriorScore.mjs';
 import { STAT_PRIORS } from '../../src/utils/exploitEngine/bayesianConfidence';
@@ -35,6 +36,9 @@ const REFERENCE_TABLE = [{
   bb: 0.5,
   canonical: '0.25-0.5',
   minedLabel: '50NLH',
+  // WS-373 — the basis the miner now stamps on every row it writes. Raw count sums, so
+  // this is the average HAND dealt, not the average PLAYER.
+  weighting: 'hand-weighted',
   buckets: {
     full: {
       hands: 417174,
@@ -241,10 +245,11 @@ describe('buildStatPriorScorecard', () => {
  * between-player overdispersion, WS-262), so it cannot and must not encode the
  * difference — which is exactly why the difference has to travel beside it.
  */
-const rowWithN = (n) => [{
+const rowWithN = (n, weighting = 'hand-weighted') => [{
   bb: 0.5,
   canonical: '0.25-0.5',
   minedLabel: '50NLH',
+  ...(weighting == null ? {} : { weighting }),   // WS-373; null → an UNDECLARED table
   buckets: {
     full: {
       hands: n,
@@ -356,5 +361,92 @@ describe('WS-374 — a consumer must be able to tell a 13.5M-hand prior from a 3
     expect(out).toContain('EVIDENCE BEHIND THE SERVED PRIOR');
     expect(out).toContain(String(CORPUS_N));
     expect(out).toContain('50NLH');
+  });
+});
+
+// =============================================================================
+// WS-373 — THE SERVED PRIOR MUST CARRY WHICH POPULATION IT DESCRIBES
+//
+// WS-374 made a run able to say HOW MUCH data its priors rest on. This is the other
+// half of the same discard: WHAT that data is a sample of. On the shipped table the same
+// six stats read 28.6% VPIP hand-weighted and roughly 0.37-0.41 player-weighted — a
+// 9-12pp gap on the most load-bearing preflop stat, i.e. the difference between "the pool
+// is tight" and "the pool is loose". A consumer holding 0.286 with no declared basis
+// cannot tell which of those two claims it just made.
+//
+// These tests assert only that the basis is RECORDED and that an undeclared one is
+// REFUSED. Which basis SHOULD be served is an open founder decision — hand-weighted
+// answers "the average hand dealt", player-weighted answers "the average opponent", and
+// the engine may need both. Nothing here picks one.
+// =============================================================================
+
+describe('WS-373 — a consumer must be able to tell WHICH POPULATION a prior describes', () => {
+  it('the served alpha/beta ALONE carry no basis — same numbers, different populations', () => {
+    // The defect, stated as an identity: relabelling the basis moves nothing in the prior,
+    // so the prior cannot be the place a consumer reads it from.
+    const hand = windowWith(rowWithN(CORPUS_N, 'hand-weighted')).priors.vpip;
+    const player = windowWith(rowWithN(CORPUS_N, 'player-weighted')).priors.vpip;
+    expect(hand.alpha).toBe(player.alpha);
+    expect(hand.beta).toBe(player.beta);
+    // ...and yet the two describe different populations, which only the evidence says.
+    expect(hand.evidence.weighting).toBe('hand-weighted');
+    expect(player.evidence.weighting).toBe('player-weighted');
+  });
+
+  it('the CONSUMER distinguishes them — the scorecard reports the basis per stat', () => {
+    // FAILS AGAINST HEAD: no basis reaches the records, so both scorecards report the
+    // same nothing and the two populations are indistinguishable at the consumer.
+    const hand = cardWith(rowWithN(CORPUS_N, 'hand-weighted'));
+    const player = cardWith(rowWithN(CORPUS_N, 'player-weighted'));
+    for (const stat of SCORED_STATS) {
+      const h = hand.perStat.find(r => r.stat === stat).evidence;
+      const p = player.perStat.find(r => r.stat === stat).evidence;
+      expect(h.weightings).toEqual(['hand-weighted']);
+      expect(p.weightings).toEqual(['player-weighted']);
+      expect(h.referenceWeightings).toEqual(['hand-weighted']);
+      expect(h.undeclaredWeightingWindows).toBe(0);
+    }
+  });
+
+  it('counts the windows whose basis was never declared, so a null cannot read as absent', () => {
+    const card = cardWith(rowWithN(CORPUS_N, null));
+    const e = card.perStat.find(r => r.stat === 'vpip').evidence;
+    expect(e.windowsWithReference).toBeGreaterThan(0);   // there IS a reference stage
+    expect(e.weightings).toEqual([]);                    // ...that would not say what of
+    expect(e.undeclaredWeightingWindows).toBe(e.windowsWithReference);
+  });
+
+  it('REFUSES a run whose priors came from a table that declares no weighting', () => {
+    // The guard, and it is the point of the ticket's mechanical half: assuming a basis is
+    // the failure. A run that cannot name its basis stops.
+    expect(() => assertPriorWeightingDeclared(cardWith(rowWithN(CORPUS_N)))).not.toThrow();
+
+    const undeclared = cardWith(rowWithN(CORPUS_N, null));
+    expect(() => assertPriorWeightingDeclared(undeclared)).toThrow(/WEIGHTING BASIS is undeclared/);
+    // And it rides the existing gate, so every current caller enforces it with no edit.
+    expect(() => assertReferenceTierLive(undeclared)).toThrow(/WS-373/);
+  });
+
+  it('accepts a run with NO reference stage — there is no basis to declare', () => {
+    // The guard must not fire on the disabled arm, where the prior is the founder estimate
+    // and no population was aggregated at all.
+    const w = windowWith(null);
+    const card = buildStatPriorScorecard(w.records, {
+      referenceMode: 'pool-train', windows: 1, divergedWindows: 0,
+    });
+    // WS-374's gate owns that case and reports it in its own words; this one stays quiet.
+    expect(() => assertPriorWeightingDeclared(card)).not.toThrow();
+  });
+
+  it('surfaces the basis to a reader, and prints UNDECLARED loudly rather than blank', () => {
+    const declared = renderStatPriorScorecard(cardWith(rowWithN(CORPUS_N)), '');
+    expect(declared).toContain('weighting');
+    expect(declared).toContain('hand-weighted');
+    // The standing note: what the two bases mean, and that choosing is still open.
+    expect(declared).toContain('OPEN');
+    expect(declared).toContain('TRANSFERRED');
+
+    const undeclared = renderStatPriorScorecard(cardWith(rowWithN(CORPUS_N, null)), '');
+    expect(undeclared).toContain('UNDECLARED');
   });
 });

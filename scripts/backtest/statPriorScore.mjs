@@ -179,6 +179,14 @@ export const scoreStatPriorWindow = ({
       poolN: pool ? pool.n : null,
       poolPlayers: pool ? pool.players : null,
       poolLimitedBy: pool ? pool.limitedBy : null,
+      // ── WS-373: WHICH POPULATION the prior describes ──
+      // Per stage as well as overall, because the two stages can disagree: a
+      // player-weighted reference blended under a hand-weighted founder pool is a real
+      // future state, and the aggregate reads 'mixed' rather than picking one.
+      priorWeighting: ev ? ev.weighting ?? null : null,
+      referenceWeighting: ref ? ref.weighting ?? null : null,
+      poolWeighting: pool ? pool.weighting ?? null : null,
+      referenceWeightingDeclared: ref ? typeof ref.weighting === 'string' : null,
     });
   }
 
@@ -230,6 +238,16 @@ const summariseEvidence = (records) => {
     poolNMax: poolNs.length ? Math.max(...poolNs) : null,
     poolLimitedBy: distinct(records, 'poolLimitedBy'),
     priorPseudocount: records.length ? records[0].priorPseudocount : null,
+    // ── WS-373 ──
+    // `distinct` drops nulls, so an undeclared basis would vanish from these lists and
+    // read as "no reference stage" rather than "a reference stage that would not say".
+    // The counter is what separates them, and it is what the guard tests.
+    weightings: distinct(records, 'priorWeighting'),
+    referenceWeightings: distinct(records, 'referenceWeighting'),
+    poolWeightings: distinct(records, 'poolWeighting'),
+    undeclaredWeightingWindows: records.filter(
+      (r) => r.referenceN != null && r.referenceWeightingDeclared !== true,
+    ).length,
   };
 };
 
@@ -332,6 +350,50 @@ export const assertPriorEvidenceVisible = (card) => {
   return true;
 };
 
+/**
+ * REGRESSION GATE — WS-373. A prior must say WHICH POPULATION it describes.
+ *
+ * `assertPriorEvidenceVisible` proves the run can say HOW MUCH data its priors rest on.
+ * This proves it can say WHAT THAT DATA IS A SAMPLE OF, which is a different question and
+ * a larger one: on the shipped table the same six stats read 28.6% VPIP hand-weighted and
+ * roughly 0.37–0.41 player-weighted. A 9–12pp gap on the most load-bearing preflop stat is
+ * not a refinement — it is the difference between "the pool is tight" and "the pool is
+ * loose", and a consumer holding 0.286 with no declared basis cannot tell which claim it
+ * just made.
+ *
+ * The failure this refuses is the one that shipped: `HANDHQ_REFERENCE_META.weighting` has
+ * existed since WS-325 and stopped at the table, so every consumer downstream was
+ * ASSUMING a basis. Assuming is the failure; a run that cannot name its basis must stop.
+ *
+ * Note what this gate does NOT do: it does not require any PARTICULAR weighting. Which
+ * basis is correct for serving priors is an open founder decision (WS-373) and the two
+ * bases answer different questions — see the weighting block in `poolBaseline.js`. This
+ * asserts only that the answer is recorded, not what it is.
+ *
+ * @param {Object} card - from buildStatPriorScorecard
+ */
+export const assertPriorWeightingDeclared = (card) => {
+  if (card.referenceMode !== 'pool-train') return true;
+  if (!card.perStat || card.perStat.length === 0) return true;
+
+  for (const r of card.perStat) {
+    const e = r.evidence || {};
+    if (!e.windowsWithReference) continue;   // no reference stage → nothing to declare
+    if (e.undeclaredWeightingWindows) {
+      throw new Error(
+        `Backtest refused: stat "${r.stat}" was scored against a reference prior whose ` +
+        `WEIGHTING BASIS is undeclared in ${e.undeclaredWeightingWindows} of ` +
+        `${e.windowsWithReference} windows (WS-373). A rate of 0.286 means one thing if it ` +
+        'is the average HAND dealt and another if it is the average PLAYER — the shipped ' +
+        'table differs by 9-12pp on VPIP between the two. Stamp `weighting` on the table ' +
+        'rows (scripts/backtest/mine-pool-reference.py emits it) rather than letting the ' +
+        'consumer assume one.',
+      );
+    }
+  }
+  return true;
+};
+
 export const assertReferenceTierLive = (card) => {
   if (card.referenceMode !== 'pool-train') return true;
 
@@ -364,6 +426,10 @@ export const assertReferenceTierLive = (card) => {
   // rest on anything. Folding it in means every existing caller enforces both. It runs
   // LAST so the more specific WS-284 diagnoses keep their own messages.
   assertPriorEvidenceVisible(card);
+  // WS-373 rides the same gate for the same reason, and runs after the evidence check:
+  // "how much data" is a prerequisite for "a sample of what", so a run missing both
+  // should hear about the missing evidence first.
+  assertPriorWeightingDeclared(card);
   return true;
 };
 
@@ -412,7 +478,7 @@ export const renderStatPriorScorecard = (card, caveat = '') => {
   // difference reaches a reader.
   L.push('');
   L.push('  EVIDENCE BEHIND THE SERVED PRIOR — the prior\'s strength is capped, its n is not.');
-  L.push('  stat          pseudo   reference n (min–max)   row / bucket        bound by');
+  L.push('  stat          pseudo   reference n (min–max)   row / bucket        bound by   weighting');
   for (const r of card.perStat) {
     const e = r.evidence || {};
     const span = e.referenceNMin == null
@@ -421,11 +487,20 @@ export const renderStatPriorScorecard = (card, caveat = '') => {
         ? String(e.referenceNMin)
         : `${e.referenceNMin}–${e.referenceNMax}`);
     const row = [...(e.referenceRows || []), ...(e.referenceBuckets || [])].join(' / ') || '—';
+    // WS-373. UNDECLARED is printed loudly rather than blank: a blank reads as "not
+    // applicable", and the whole defect was a basis nobody noticed was missing.
+    const wt = (e.weightings || []).length ? e.weightings.join(',') : (e.windowsWithReference ? 'UNDECLARED' : '—');
     L.push(
       `    ${r.stat.padEnd(12)}${num(e.priorPseudocount, 1).padStart(6)}   ${span.padStart(21)}` +
-      `   ${row.padEnd(19)} ${(e.referenceLimitedBy || []).join(',') || '—'}`,
+      `   ${row.padEnd(19)} ${((e.referenceLimitedBy || []).join(',') || '—').padEnd(10)} ${wt}`,
     );
   }
+  // The basis is not a footnote — it is what the numbers above are numbers ABOUT.
+  L.push('');
+  L.push('  WEIGHTING BASIS (WS-373). hand-weighted = the average HAND dealt, so high-volume');
+  L.push('  players dominate; player-weighted = the average PLAYER. They answer different');
+  L.push('  questions and differ by 9-12pp on VPIP. Which one SHOULD be served is an OPEN');
+  L.push('  founder decision. All figures are ONLINE 2009 — TRANSFERRED to live, not measured.');
   if (card.perStat.some(r => r.evidence && r.evidence.windowsWithPool)) {
     for (const r of card.perStat) {
       const e = r.evidence || {};

@@ -25,6 +25,7 @@ import { dirname } from 'node:path';
 
 import { bandOf, loadEntryMap } from './entryMap.mjs';
 import { openEntryEvaluator, seedFor } from './entryEvaluator.mjs';
+import { REFERENCE_FIELD_CORPUS } from './leakageGuard.mjs';
 import {
   SUIT_PASS_SCHEMA_VERSION,
   formatCombo,
@@ -79,6 +80,10 @@ const main = async () => {
     seatBucket: map.field?.seatBucket ?? '6max',
     flopSamples: FLOP_SAMPLES,
     mcReplicates: MC_REPLICATES,
+    // WS-375. Declared, not assumed: this run reads the SHIPPED all-corpus
+    // aggregates as its FIELD and scores no corpus hand. The guard refuses
+    // every scoring assertion under this declaration.
+    reference: REFERENCE_FIELD_CORPUS,
   });
 
   const cells = [];
