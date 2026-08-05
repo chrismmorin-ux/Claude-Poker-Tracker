@@ -36,6 +36,52 @@ export const C = (n, k) => {
   return Math.round(result);
 };
 
+// ---------- Card removal (combo counts) ---------- //
+
+/** Population count of a 4-bit suit mask. */
+const popcount4 = (m) => (m & 1) + ((m >> 1) & 1) + ((m >> 2) & 1) + ((m >> 3) & 1);
+
+/**
+ * How many 2-card combos of a 169-grid hand class survive card removal.
+ *
+ * Card removal is not optional bookkeeping when weighting a range: the two
+ * cards hero holds change the combinatorics of every class in the villain
+ * range, and unevenly. Hero holding A♠K♠ leaves AA with 3 combos instead of 6
+ * and AKs with 3 instead of 4, but leaves 72o at its full 12. Weighting a range
+ * by the unblocked counts is the blocker effect, silently mis-stated.
+ *
+ * Suits are passed as 4-bit masks (bit `s` set = a card of that rank and suit
+ * is already dead) rather than card objects, keeping this module pure
+ * arithmetic. Closed form, no enumeration:
+ *
+ *   pair     C(live, 2)                       where live = 4 − |deadHigh|
+ *   suited   |live(high) ∩ live(low)|         one combo per suit alive in both
+ *   offsuit  |live(high)|·|live(low)| − |live(high) ∩ live(low)|
+ *            (all ordered rank-tagged suit pairs, minus the same-suit ones,
+ *             which are the suited combos and belong to the other class)
+ *
+ * The result depends only on WHICH RANKS the dead cards occupy relative to this
+ * class, so it is invariant to which suit representative of the blocking hand
+ * was chosen — the property that makes a class-level range weighting exact.
+ *
+ * @param {boolean} isPair
+ * @param {boolean} suited        ignored when isPair
+ * @param {number} [deadHighSuits=0]  4-bit mask, suits of the HIGH rank already dead
+ * @param {number} [deadLowSuits=0]   4-bit mask, suits of the LOW rank already dead
+ * @returns {number} combos remaining (0..12)
+ */
+export const comboCountAfterRemoval = (isPair, suited, deadHighSuits = 0, deadLowSuits = 0) => {
+  const liveHigh = ~deadHighSuits & 0xF;
+  if (isPair) {
+    const live = popcount4(liveHigh);
+    return (live * (live - 1)) / 2;
+  }
+  const liveLow = ~deadLowSuits & 0xF;
+  const bothSuits = popcount4(liveHigh & liveLow);
+  if (suited) return bothSuits;
+  return popcount4(liveHigh) * popcount4(liveLow) - bothSuits;
+};
+
 // ---------- Rule of 4 and 2 ---------- //
 
 /**

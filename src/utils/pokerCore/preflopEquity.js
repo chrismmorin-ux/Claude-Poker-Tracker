@@ -1,17 +1,26 @@
 /**
  * preflopEquity.js — Exact preflop all-in equity.
  *
- * v1 implements hand-vs-hand via exhaustive C(48,5) board enumeration. Hand A is
+ * Hand-vs-hand is computed by exhaustive C(48,5) board enumeration. Hand A is
  * fixed at canonical suits and all valid hand-B combos are averaged, producing
  * the same all-suit-averaged equity that published tables (Twodimes, PokerStove)
  * report. Results are deterministic and cached by canonical matchup key.
  *
- * The `computeEquity(targetA, targetB)` dispatcher is designed to accept range
- * targets in v2 without any caller changes; those branches currently throw
- * NotImplementedError with a clear message.
+ * `computeEquity(targetA, targetB)` also accepts RANGE targets on either or both
+ * sides (WS-305). That path is implemented in `equityDecomposition.js` — see
+ * `decomposeVsRange` there for the weighting, the exactness argument, and the
+ * measured error bound. It uses no sampling and no `Math.random`; identical
+ * inputs give bit-identical outputs.
+ *
+ * WHAT THE NUMBER IS. All of it is ALL-IN equity through a complete five-card
+ * runout: the mean over every board, with runout variance fully real and fully
+ * integrated out. That is the right quantity preflop and the wrong one on the
+ * river, where equity is a showdown-outcome distribution instead. The per-bucket
+ * decomposition is what preserves the shape the mean integrates away.
  */
 
 import { encodeCard, TOTAL_CARDS } from './cardParser';
+import { decomposeVsRange } from './equityDecomposition';
 
 // ---------- Fast 7-card evaluator (private) ---------- //
 //
@@ -363,6 +372,55 @@ const enumerateAllBoards = (handACards, bCombos) => {
   return tallies;
 };
 
+/**
+ * GROUND-TRUTH REFERENCE — per-combo exact equity of ONE specific hero holding
+ * against an explicit list of specific villain combos, by full C(48,5) board
+ * enumeration. Every villain combo is kept SEPARATE; nothing is averaged.
+ *
+ * This is the object a class-level range aggregation is validated against, and
+ * it is the reason the "measured, not assumed" error bound in the module
+ * docblock is measured. It costs one 2.1M-board sweep plus 1.71M evaluations
+ * per villain combo, so a full 1326-combo range takes minutes — it is a
+ * reference, not a production path. Use `computeEquity` with a range target for
+ * anything that has to be fast.
+ *
+ * @param {number[]|Int8Array} heroCards  exactly two encoded cards
+ * @param {Array<[number, number]>} villainCombos  combos to score; any that
+ *        share a card with hero are dropped (they are impossible, not zero-weight)
+ * @returns {Array<{card1, card2, win, tie, lose, boards, equity}>} one row per
+ *          surviving villain combo, hero's perspective, in input order
+ */
+export const enumerateHeroVsCombosExact = (heroCards, villainCombos) => {
+  if (!heroCards || heroCards.length !== 2) {
+    throw new Error('enumerateHeroVsCombosExact: heroCards must be exactly two encoded cards');
+  }
+  const valid = [];
+  for (const c of villainCombos) {
+    if (c[0] === heroCards[0] || c[0] === heroCards[1] ||
+        c[1] === heroCards[0] || c[1] === heroCards[1]) {
+      continue;
+    }
+    valid.push(c);
+  }
+  if (valid.length === 0) return [];
+  const tallies = enumerateAllBoards(heroCards, valid);
+  return valid.map((c, i) => {
+    const win = tallies[i * 3];
+    const tie = tallies[i * 3 + 1];
+    const lose = tallies[i * 3 + 2];
+    const boards = win + tie + lose;
+    return {
+      card1: c[0],
+      card2: c[1],
+      win,
+      tie,
+      lose,
+      boards,
+      equity: boards > 0 ? (win + tie * 0.5) / boards : 0,
+    };
+  });
+};
+
 // ---------- Hand-vs-hand exact equity ---------- //
 
 /**
@@ -455,10 +513,12 @@ export const getEquityCacheSize = () => equityCache.size;
  */
 
 /**
- * Compute exact preflop all-in equity between two targets.
+ * Compute exact preflop all-in equity between two targets, from A's perspective.
  *
- * v1: hand-vs-hand fully implemented. Range branches throw NotImplementedError.
- * v2 will fill in the range paths without changing callers.
+ * Hand vs hand returns the scalar shape below. If EITHER side is a range the
+ * call is delegated to `decomposeVsRange`, which returns that same shape plus
+ * `buckets` and `decomposition` — the per-element breakdown a scalar destroys.
+ * Read `equity` alone and a range result is a drop-in for a hand result.
  *
  * @param {EquityTarget} targetA
  * @param {EquityTarget} targetB
@@ -505,10 +565,13 @@ export const computeEquity = (targetA, targetB, options = {}) => {
   }
 
   if (targetA.type === 'range' || targetB.type === 'range') {
-    throw new NotImplementedError(
-      'Range targets are not yet supported — v2 feature. ' +
-      'v1 supports only { type: "hand", notation: "AKs" } targets.',
-    );
+    // Delegated to equityDecomposition because a range result IS the
+    // decomposition — the mean is summed out of it, never the other way round.
+    // The import is circular (equityDecomposition imports this module's
+    // primitives) but resolves at CALL time, not module-evaluation time:
+    // neither module touches the other at top level, so both are fully
+    // initialised before anything here runs.
+    return decomposeVsRange(targetA, targetB, options);
   }
 
   throw new Error(

@@ -9,11 +9,14 @@ import {
   getEquityCacheSize,
   NotImplementedError,
   evaluate7,
+  enumerateHeroVsCombosExact,
 } from '../preflopEquity';
 import { bestFiveFromSeven } from '../handEvaluator';
 import { encodeCard } from '../cardParser';
 import { handVsRange } from '../monteCarloEquity';
-import { createRange, rangeIndex } from '../rangeMatrix';
+import { createRange, rangeIndex, parseRangeString, decodeIndex } from '../rangeMatrix';
+import { BUCKETS, clearRangePairCache } from '../equityDecomposition';
+import { comboCountAfterRemoval } from '../combinatorics';
 
 // --- evaluate7 correctness vs bestFiveFromSeven --- //
 // evaluate7 is our dedicated 7-card fast path. It must produce IDENTICAL scores
@@ -197,11 +200,20 @@ describe('preflopEquity — invariants', () => {
     clearEquityCache();
   });
 
-  test('throws on range target (v1 hand-only)', () => {
+  test('range targets no longer throw NotImplementedError (WS-305)', () => {
+    const r = new Float64Array(169);
+    r[rangeIndex(12, 12, false)] = 1.0; // AA
+    expect(() => computeEquity(
+      { type: 'range', range: r },
+      { type: 'hand', notation: 'AA' },
+    )).not.toThrow(NotImplementedError);
+  }, 30000);
+
+  test('an all-zero range is refused rather than silently treated as empty', () => {
     expect(() => computeEquity(
       { type: 'range', range: new Float64Array(169) },
       { type: 'hand', notation: 'AA' },
-    )).toThrow(NotImplementedError);
+    )).toThrow(/no positive propensity/i);
   });
 
   test('throws on missing type', () => {
@@ -330,6 +342,268 @@ describe('preflopEquity — monte carlo cross-check', () => {
       expect(Math.abs(exactR.equity - mcR.equity)).toBeLessThanOrEqual(mcR.ciHalf + 0.01);
     }, 30000);
   }
+});
+
+/**
+ * WS-305 — hand/range-vs-range, DECOMPOSED.
+ *
+ * The correctness bar here is full enumeration, not agreement with another
+ * estimator: preflop hand-vs-range equity has an exact answer, and
+ * `enumerateHeroVsCombosExact` computes it per villain combo with nothing
+ * averaged. Every assertion below is deterministic — no sampling anywhere on
+ * this path, so there is no seed to record and no tolerance to negotiate.
+ *
+ * Test order matters for wall time, not for correctness: `rangePairCache` is
+ * module state, so the tight range is enumerated once and every later test in
+ * this block reads it back as arithmetic.
+ */
+describe('preflopEquity — range targets (WS-305)', () => {
+  // 2.6% of hands. Tight enough that domination is the dominant effect, small
+  // enough (4 classes) that a cold run is seconds rather than minutes.
+  const TIGHT = 'QQ+,AKs';
+
+  const rangeTarget = (str) => ({ type: 'range', range: parseRangeString(str) });
+  const handTarget = (notation) => ({ type: 'hand', notation });
+
+  /** Every specific 2-card combo a range covers, tagged with its class. */
+  const rangeCombos = (str) => {
+    const grid = parseRangeString(str);
+    const out = [];
+    for (let i = 0; i < 169; i++) {
+      if (!(grid[i] > 0)) continue;
+      const { rank1, rank2, suited, isPair } = decodeIndex(i);
+      const handClass = { rankHigh: rank1, rankLow: rank2, suited: isPair ? false : suited, pair: isPair };
+      const notation = handClassToNotation(handClass);
+      for (const combo of enumerateHandCombos(handClass)) {
+        out.push({ combo, notation, propensity: grid[i] });
+      }
+    }
+    return out;
+  };
+
+  test('aggregate equity equals full per-combo enumeration', () => {
+    const hero = 'AKo';
+    const result = computeEquity(handTarget(hero), rangeTarget(TIGHT));
+
+    // Ground truth: hero's actual cards against every villain combo separately.
+    const heroCards = enumerateHandCombos(parseHandClass(hero))[0];
+    const tagged = rangeCombos(TIGHT).filter(({ combo }) => (
+      combo[0] !== heroCards[0] && combo[0] !== heroCards[1] &&
+      combo[1] !== heroCards[0] && combo[1] !== heroCards[1]
+    ));
+    const rows = enumerateHeroVsCombosExact(heroCards, tagged.map((t) => t.combo));
+    expect(rows).toHaveLength(tagged.length);
+
+    let num = 0, den = 0;
+    for (let i = 0; i < rows.length; i++) {
+      num += tagged[i].propensity * rows[i].equity;
+      den += tagged[i].propensity;
+    }
+    const referenceMean = num / den;
+
+    // Exact, not approximate: agreement is at floating-point rounding.
+    expect(Math.abs(result.equity - referenceMean)).toBeLessThan(1e-12);
+
+    // Per-CLASS, the same: each element equals the mean of its own combos.
+    const byClass = new Map();
+    rows.forEach((row, i) => {
+      const key = tagged[i].notation;
+      if (!byClass.has(key)) byClass.set(key, []);
+      byClass.get(key).push(row.equity);
+    });
+    let maxClassErr = 0;
+    let maxComboSpread = 0;
+    for (const el of result.decomposition.elements) {
+      const eqs = byClass.get(el.notation);
+      expect(eqs).toBeDefined();
+      // Card removal, checked against enumeration rather than trusted.
+      expect(el.comboCount).toBe(eqs.length);
+      const mean = eqs.reduce((a, b) => a + b, 0) / eqs.length;
+      maxClassErr = Math.max(maxClassErr, Math.abs(mean - el.equity));
+      maxComboSpread = Math.max(maxComboSpread, Math.max(...eqs) - Math.min(...eqs));
+    }
+    // eslint-disable-next-line no-console
+    console.log(
+      `${hero} vs [${TIGHT}]: equity ${(result.equity * 100).toFixed(4)}% vs reference ` +
+      `${(referenceMean * 100).toFixed(4)}% | max per-class err ${maxClassErr.toExponential(2)} | ` +
+      `widest within-class per-combo spread ${(maxComboSpread * 100).toFixed(2)}pp`,
+    );
+    expect(maxClassErr).toBeLessThan(1e-12);
+    // The spread is REAL — it is what a 169-grid cannot represent, and it is
+    // exactly zero only if suit interaction does not exist. Assert it is not.
+    expect(maxComboSpread).toBeGreaterThan(0);
+  }, 120000);
+
+  test('the mean is summed out of the decomposition, not computed beside it', () => {
+    const r = computeEquity(handTarget('AKo'), rangeTarget(TIGHT));
+    const fromBuckets = r.buckets.reduce((sum, b) => sum + b.equityShare, 0);
+    expect(fromBuckets).toBe(r.equity);
+    expect(r.winRate + r.tieRate + r.loseRate).toBeCloseTo(1, 12);
+    // Element weights partition the whole; nothing is dropped.
+    const shareSum = r.decomposition.elements.reduce((s, e) => s + e.weightShare, 0);
+    expect(shareSum).toBeCloseTo(1, 12);
+  }, 60000);
+
+  test('deterministic across cleared caches — identical inputs, identical bits', () => {
+    clearRangePairCache();
+    const a = computeEquity(handTarget('AKo'), rangeTarget(TIGHT));
+    clearRangePairCache();
+    const b = computeEquity(handTarget('AKo'), rangeTarget(TIGHT));
+    expect(b.equity).toBe(a.equity);
+    expect(b.winRate).toBe(a.winRate);
+    expect(b.tieRate).toBe(a.tieRate);
+    for (let i = 0; i < a.buckets.length; i++) {
+      expect(b.buckets[i].hitRate).toBe(a.buckets[i].hitRate);
+      expect(b.buckets[i].winShare).toBe(a.buckets[i].winShare);
+      expect(b.buckets[i].conditionalWin).toBe(a.buckets[i].conditionalWin);
+    }
+    // Cached and uncached paths must agree exactly, not merely closely.
+    const uncached = computeEquity(handTarget('AKo'), rangeTarget(TIGHT), { useCache: false });
+    expect(uncached.equity).toBe(a.equity);
+  }, 180000);
+
+  test('decomposition surfaces domination that the mean hides (KJo vs AQo)', () => {
+    const kjo = computeEquity(handTarget('KJo'), rangeTarget(TIGHT));
+    const aqo = computeEquity(handTarget('AQo'), rangeTarget(TIGHT));
+    const kjoTP = kjo.buckets[BUCKETS.TOP_PAIR_OR_OVERPAIR];
+    const aqoTP = aqo.buckets[BUCKETS.TOP_PAIR_OR_OVERPAIR];
+    // eslint-disable-next-line no-console
+    console.log(
+      `vs [${TIGHT}] — KJo mean ${(kjo.equity * 100).toFixed(2)}% TP/OP conditionalWin ` +
+      `${(kjoTP.conditionalWin * 100).toFixed(2)}% | AQo mean ${(aqo.equity * 100).toFixed(2)}% ` +
+      `TP/OP conditionalWin ${(aqoTP.conditionalWin * 100).toFixed(2)}%`,
+    );
+    // The point of the ticket: when KJo makes top pair against a tight range it
+    // is dominated far more often than AQo is, and a scalar equity cannot say so.
+    expect(kjoTP.conditionalWin).toBeLessThan(aqoTP.conditionalWin - 0.03);
+  }, 180000);
+
+  test('card removal is applied per villain class, not assumed uniform', () => {
+    // AKo holds one ace and one king, so it blocks AA, KK and AKs unevenly and
+    // leaves QQ untouched. Those counts are the blocker effect.
+    const r = computeEquity(handTarget('AKo'), rangeTarget(TIGHT));
+    const byNotation = Object.fromEntries(r.decomposition.elements.map((e) => [e.notation, e]));
+    expect(byNotation.QQ.comboCount).toBe(6);   // untouched
+    expect(byNotation.KK.comboCount).toBe(3);   // one king gone -> C(3,2)
+    expect(byNotation.AA.comboCount).toBe(3);   // one ace gone  -> C(3,2)
+    expect(byNotation.AKs.comboCount).toBe(2);  // two of the four suits dead
+    // Weight is comboCount x propensity — QQ carries twice AA's weight here
+    // even though both sit at propensity 1. That asymmetry IS the blocker.
+    expect(byNotation.QQ.weightShare).toBeCloseTo(2 * byNotation.AA.weightShare, 12);
+  }, 60000);
+
+  test('grid weights are propensities, never renormalised into a distribution', () => {
+    const base = parseRangeString(TIGHT);
+    const halved = parseRangeString(TIGHT);
+    for (let i = 0; i < 169; i++) halved[i] *= 0.5;
+
+    const a = computeEquity(handTarget('AKo'), { type: 'range', range: base });
+    const b = computeEquity(handTarget('AKo'), { type: 'range', range: halved });
+    // Uniform rescaling cannot move equity...
+    expect(b.equity).toBe(a.equity);
+    // ...but the raw mass is reported, not silently normalised away.
+    expect(a.decomposition.villain.propensityMass).toBe(4);
+    expect(b.decomposition.villain.propensityMass).toBe(2);
+
+    // A NON-uniform change must move it: down-weighting AA raises hero's equity.
+    const lessAces = parseRangeString(TIGHT);
+    lessAces[rangeIndex(12, 12, false)] = 0.25;
+    const c = computeEquity(handTarget('AKo'), { type: 'range', range: lessAces });
+    expect(c.equity).toBeGreaterThan(a.equity);
+  }, 60000);
+
+  test('range-vs-hand mirrors hand-vs-range, and range-vs-range is closed', () => {
+    const hvr = computeEquity(handTarget('AKo'), rangeTarget(TIGHT));
+    const rvh = computeEquity(rangeTarget(TIGHT), handTarget('AKo'));
+    expect(hvr.equity + rvh.equity).toBeCloseTo(1, 12);
+    // The informative axis flips with the question being asked.
+    expect(hvr.decomposition.axis).toBe('villain');
+    expect(rvh.decomposition.axis).toBe('hero');
+    expect(rvh.decomposition.elements).toHaveLength(4);
+
+    const rvr = computeEquity(rangeTarget(TIGHT), rangeTarget('TT+,AQs+,AKo'));
+    const flipped = computeEquity(rangeTarget('TT+,AQs+,AKo'), rangeTarget(TIGHT));
+    expect(rvr.equity + flipped.equity).toBeCloseTo(1, 12);
+    expect(rvr.decomposition.axis).toBe('hero');
+  }, 300000);
+
+  test('malformed range targets are refused, not coerced', () => {
+    expect(() => computeEquity(handTarget('AA'), { type: 'range', range: new Float64Array(168) }))
+      .toThrow(/169-element grid/);
+    const negative = parseRangeString(TIGHT);
+    negative[0] = -1;
+    expect(() => computeEquity(handTarget('AA'), { type: 'range', range: negative }))
+      .toThrow(/negative/);
+    const nan = parseRangeString(TIGHT);
+    nan[0] = NaN;
+    expect(() => computeEquity(handTarget('AA'), { type: 'range', range: nan }))
+      .toThrow(/not finite/);
+  });
+});
+
+describe('combinatorics — comboCountAfterRemoval (WS-305)', () => {
+  /** Brute-force count by enumerating combos and dropping any that use a dead card. */
+  const bruteForce = (villainNotation, heroNotation) => {
+    const heroCards = enumerateHandCombos(parseHandClass(heroNotation))[0];
+    return enumerateHandCombos(parseHandClass(villainNotation)).filter((c) => (
+      c[0] !== heroCards[0] && c[0] !== heroCards[1] &&
+      c[1] !== heroCards[0] && c[1] !== heroCards[1]
+    )).length;
+  };
+
+  const viaFormula = (villainNotation, heroNotation) => {
+    const v = parseHandClass(villainNotation);
+    const heroCards = enumerateHandCombos(parseHandClass(heroNotation))[0];
+    const mask = (rank) => heroCards.reduce(
+      (m, c) => ((c >> 2) === rank ? m | (1 << (c & 3)) : m), 0,
+    );
+    return comboCountAfterRemoval(v.pair, v.suited, mask(v.rankHigh), mask(v.rankLow));
+  };
+
+  test('unblocked counts are 6 / 4 / 12', () => {
+    expect(comboCountAfterRemoval(true, false, 0, 0)).toBe(6);
+    expect(comboCountAfterRemoval(false, true, 0, 0)).toBe(4);
+    expect(comboCountAfterRemoval(false, false, 0, 0)).toBe(12);
+  });
+
+  test('matches brute-force enumeration across every blocking shape', () => {
+    const villains = ['AA', 'KK', '77', 'AKs', 'AKo', 'A5s', 'QJs', 'QJo', '76s', '76o'];
+    const heroes = ['AKs', 'AKo', 'AA', 'KK', '76s', '76o', 'QJo', 'T9s'];
+    for (const v of villains) {
+      for (const h of heroes) {
+        expect(`${v}|${h}=${viaFormula(v, h)}`).toBe(`${v}|${h}=${bruteForce(v, h)}`);
+      }
+    }
+  });
+
+  test('is invariant to which suit representative does the blocking', () => {
+    // The property that licenses class-level range weighting: the count depends
+    // on which RANKS are dead, never on which suits they wore.
+    const villain = parseHandClass('AKo');
+    const suitedAce = comboCountAfterRemoval(villain.pair, villain.suited, 0b0001, 0b0010);
+    const otherSuits = comboCountAfterRemoval(villain.pair, villain.suited, 0b0100, 0b1000);
+    expect(suitedAce).toBe(otherSuits);
+    expect(suitedAce).toBe(7);
+  });
+});
+
+describe('preflopEquity — enumerateHeroVsCombosExact reference (WS-305)', () => {
+  test('keeps every villain combo separate and drops impossible ones', () => {
+    const heroCards = enumerateHandCombos(parseHandClass('AKs'))[0];
+    const villainCombos = enumerateHandCombos(parseHandClass('AA'));
+    const rows = enumerateHeroVsCombosExact(heroCards, villainCombos);
+    // Hero holds one ace, so 3 of AA's 6 combos are impossible, not zero-weight.
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.boards).toBe(1712304); // C(48,5)
+      expect(row.win + row.tie + row.lose).toBe(row.boards);
+      expect(row.equity).toBeGreaterThan(0);
+      expect(row.equity).toBeLessThan(0.25);
+    }
+    // Deterministic and order-preserving.
+    const again = enumerateHeroVsCombosExact(heroCards, villainCombos);
+    expect(again.map((r) => r.equity)).toEqual(rows.map((r) => r.equity));
+  }, 60000);
 });
 
 describe('preflopEquity — performance', () => {

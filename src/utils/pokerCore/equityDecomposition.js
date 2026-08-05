@@ -36,6 +36,8 @@ import {
   enumerateHandCombos,
   handClassToNotation,
 } from './preflopEquity';
+import { decodeIndex, rangeIndex } from './rangeMatrix';
+import { comboCountAfterRemoval } from './combinatorics';
 
 // Bucket IDs. Ordered weakest → strongest so stacked-bar UIs render
 // naturally (weakest on left).
@@ -339,4 +341,400 @@ export const decomposeHandVsHand = (handA, handB, options = {}) => {
   }
 
   return result;
+};
+
+// ==================================================================== //
+// Hand/range-vs-range decomposition (WS-305)
+// ==================================================================== //
+//
+// WHAT THIS RETURNS, AND WHY IT IS NOT A MEAN.
+//
+// A scalar equity against a range is a summary that destroys the thing worth
+// knowing. KJo holds respectable average equity against a tight range while
+// being crushed by AJ/KQ/AK and comfortable against 22-99; the mean cannot see
+// that, and realization is worst precisely in the branch where the hand DOES
+// connect. So the object returned here is the DECOMPOSITION — every element of
+// the ranged side kept separate, each with its own equity and its own made-hand
+// bucket profile. `equity` is summed OUT of that object (literally: the sum of
+// per-bucket `equityShare`), never the other way round.
+//
+// EXACTNESS. Class-level aggregation was expected to force a suit-averaging
+// approximation. It does not, and the reason is worth stating because it is the
+// argument that licenses the whole fast path:
+//
+//   1. `decomposeHandVsHand(a, b)` is the exact uniform average over (valid b
+//      combo, board) pairs for a fixed representative of class a.
+//   2. That value is identical for EVERY representative of class a, because a
+//      suit permutation maps one representative to another and carries the set
+//      of valid b combos bijectively onto the new valid set, preserving equity.
+//   3. A 169-grid cannot express suit preference — it weights all combos within
+//      a class equally, by construction.
+//   4. Expectation is linear, so weighting exact class conditionals by their
+//      exact combo counts gives the exact answer over the full combo pair set.
+//
+// Therefore the only thing (1)-(4) give up is the ability to represent a range
+// that IS suit-skewed ("villain has hearts here"), which a 169-grid never could.
+//
+// MEASURED, NOT ASSUMED (2026-08-05, this machine, three hero-vs-range cases
+// validated combo-by-combo against `enumerateHeroVsCombosExact`; the assertion
+// is kept live in `__tests__/preflopEquity.test.js`):
+//
+//   AKo vs QQ+,AKs        (14 combos)  KJo vs TT+,AQs+,AKo  (40)  76s vs JJ+,AKs (28)
+//   aggregate vs full enumeration   max |err| 5.6e-17  — one ulp, i.e. exact
+//   per-CLASS equity                max |err| 5.6e-17  — one ulp, i.e. exact
+//
+// What is NOT zero is the per-combo spread WITHIN a class, which the class mean
+// averages over: max 2.78pp, mean 0.63pp, widest on 76s vs AKs (suit interaction
+// between hero's suited holding and the range's suited combos, exactly where it
+// was predicted). That spread is real and is not lost — `decomposeVsRange`
+// reports the class mean because a 169-grid weights those combos equally by
+// construction, and `enumerateHeroVsCombosExact` exposes the individual combos
+// for anything that needs them.
+//
+// PROPENSITIES ARE NOT A DISTRIBUTION. Grid weights are propensities —
+// P(action | hand) — not probability mass, and they are never normalised here.
+// The weighting is stated rather than hidden: an element's weight is
+// `liveComboCount x propensity`, `weightShare` is the only normalised figure
+// reported, and `propensityMass` is exposed raw so no caller has to reconstruct
+// it by renormalising.
+//
+// CARD REMOVAL IS THE POINT. Hero's two cards change the live combo count of
+// every class in the villain range, unevenly — that is what a blocker IS, and a
+// per-combo decomposition exists to expose it. Counts come from
+// `comboCountAfterRemoval`, in closed form, per (hero class, villain class) pair.
+//
+// DETERMINISM. No sampling, no `Math.random`, on any path reachable from here.
+
+const GRID_SIZE = 169;
+
+/** 4-bit mask of the suits in `cards` that carry rank `rank`. */
+const suitMaskForRank = (cards, rank) => {
+  let mask = 0;
+  for (let i = 0; i < cards.length; i++) {
+    if ((cards[i] >> 2) === rank) mask |= 1 << (cards[i] & 3);
+  }
+  return mask;
+};
+
+/** Combos of a class in a full deck: 6 / 4 / 12. */
+const baseComboCount = (hc) => comboCountAfterRemoval(hc.pair, hc.suited, 0, 0);
+
+/**
+ * Normalise an EquityTarget into the list of classes it covers.
+ * A hand target is a one-element list at propensity 1, so both sides go through
+ * exactly the same weighting arithmetic and there is no hand-only special case.
+ */
+const expandTarget = (target, label) => {
+  if (!target || typeof target !== 'object') {
+    throw new Error(`${label}: expected an EquityTarget object`);
+  }
+  if (target.type === 'hand') {
+    const handClass = parseHandClass(target.notation);
+    return [{
+      index: rangeIndex(handClass.rankHigh, handClass.rankLow, handClass.suited),
+      notation: handClassToNotation(handClass),
+      handClass,
+      propensity: 1,
+    }];
+  }
+  if (target.type !== 'range') {
+    throw new Error(`${label}: unknown target type "${target.type}"`);
+  }
+  const grid = target.range;
+  if (!grid || typeof grid.length !== 'number' || grid.length !== GRID_SIZE) {
+    throw new Error(
+      `${label}: range target needs a ${GRID_SIZE}-element grid, got ` +
+      `${grid && typeof grid.length === 'number' ? grid.length : String(grid)}`,
+    );
+  }
+  const out = [];
+  for (let i = 0; i < GRID_SIZE; i++) {
+    const propensity = grid[i];
+    if (!Number.isFinite(propensity)) {
+      throw new Error(`${label}: range[${i}] is not finite (${propensity})`);
+    }
+    if (propensity < 0) {
+      throw new Error(`${label}: range[${i}] is negative (${propensity}) — propensities cannot be < 0`);
+    }
+    if (propensity === 0) continue;
+    const { rank1, rank2, suited, isPair } = decodeIndex(i);
+    const handClass = {
+      rankHigh: rank1,
+      rankLow: rank2,
+      suited: isPair ? false : suited,
+      pair: isPair,
+    };
+    out.push({ index: i, notation: handClassToNotation(handClass), handClass, propensity });
+  }
+  if (out.length === 0) {
+    throw new Error(`${label}: range target carries no positive propensity anywhere`);
+  }
+  return out;
+};
+
+// Compact class-pair cache. Deliberately separate from `decompositionCache`
+// above: that one holds rich objects for the live UI and is capped at 200, and
+// a range sweep touching thousands of pairs would evict it into uselessness.
+// This one stores only the four per-board rates per bucket — 40 doubles, ~320
+// bytes a pair — so the full 169x169 ordered matrix fits in ~9MB. Once warm,
+// every further range query on those classes is arithmetic. That is what makes
+// a fixed-point iteration (GUT P3) affordable; see the cost note in the header.
+const RANGE_PAIR_CACHE_LIMIT = 30000;
+const rangePairCache = new Map();
+
+export const clearRangePairCache = () => { rangePairCache.clear(); };
+export const getRangePairCacheSize = () => rangePairCache.size;
+
+/**
+ * Per-board rates for one ORDERED class pair, as [hitRate, winShare, tieShare,
+ * loseShare] per bucket. Hero-specific, hence ordered.
+ */
+const classPairRates = (hero, villain, stats, useCache) => {
+  const key = `${hero.notation}|${villain.notation}`;
+  if (useCache) {
+    const cached = rangePairCache.get(key);
+    if (cached) {
+      stats.classPairsCached++;
+      return cached;
+    }
+  }
+  // useCache:false keeps the 200-entry live-UI cache above untouched.
+  const d = decomposeHandVsHand(hero.handClass, villain.handClass, { useCache: false });
+  const rates = new Float64Array(BUCKET_COUNT * 4);
+  for (let b = 0; b < BUCKET_COUNT; b++) {
+    const bucket = d.buckets[b];
+    const base = b * 4;
+    rates[base] = bucket.hitRate;
+    rates[base + 1] = bucket.winShare;
+    rates[base + 2] = bucket.tieShare;
+    rates[base + 3] = bucket.loseShare;
+  }
+  if (useCache) {
+    if (rangePairCache.size >= RANGE_PAIR_CACHE_LIMIT) {
+      rangePairCache.delete(rangePairCache.keys().next().value);
+    }
+    rangePairCache.set(key, rates);
+  }
+  stats.classPairsComputed++;
+  stats.boardsEnumerated += d.boardsEnumerated;
+  return rates;
+};
+
+/** Turn weighted [hit, win, tie, lose] accumulators into the public bucket rows. */
+const bucketsFromAccumulator = (acc, totalWeight) => {
+  const buckets = [];
+  for (let b = 0; b < BUCKET_COUNT; b++) {
+    const base = b * 4;
+    const hitRate = totalWeight > 0 ? acc[base] / totalWeight : 0;
+    const winShare = totalWeight > 0 ? acc[base + 1] / totalWeight : 0;
+    const tieShare = totalWeight > 0 ? acc[base + 2] / totalWeight : 0;
+    const loseShare = totalWeight > 0 ? acc[base + 3] / totalWeight : 0;
+    const equityShare = winShare + 0.5 * tieShare;
+    buckets.push({
+      id: b,
+      label: BUCKET_LABELS[b],
+      shortLabel: BUCKET_SHORT[b],
+      hitRate,
+      winShare,
+      tieShare,
+      loseShare,
+      equityShare,
+      conditionalWin: hitRate > 0 ? winShare / hitRate : 0,
+      conditionalEquity: hitRate > 0 ? equityShare / hitRate : 0,
+    });
+  }
+  return buckets;
+};
+
+/** The mean, summed OUT of the decomposition. Never computed independently. */
+const totalsFromBuckets = (buckets) => {
+  let winRate = 0, tieRate = 0, loseRate = 0, equity = 0;
+  for (const b of buckets) {
+    winRate += b.winShare;
+    tieRate += b.tieShare;
+    loseRate += b.loseShare;
+    equity += b.equityShare;
+  }
+  return { equity, winRate, tieRate, loseRate };
+};
+
+/**
+ * Decomposed preflop all-in equity where either or both sides may be a range.
+ *
+ * Reported from targetA's perspective; `buckets` are A's made-hand buckets.
+ *
+ * @param {{type:'hand'|'range', notation?:string, range?:ArrayLike<number>}} targetA
+ * @param {{type:'hand'|'range', notation?:string, range?:ArrayLike<number>}} targetB
+ * @param {Object} [options]
+ * @param {boolean} [options.useCache=true]  reuse/populate the class-pair cache
+ * @returns {{
+ *   equity: number, winRate: number, tieRate: number, loseRate: number,
+ *   exact: true,
+ *   buckets: Array<Object>,          // same row shape as decomposeHandVsHand
+ *   decomposition: {
+ *     axis: 'hero'|'villain',        // which side `elements` enumerates
+ *     weighting: string,             // stated, not implied
+ *     totalWeight: number,
+ *     hero: { classes, liveCombos, propensityMass },
+ *     villain: { classes, liveCombos, propensityMass },
+ *     elements: Array<{
+ *       index, notation,
+ *       propensity,                  // RAW grid value — a propensity, not a probability
+ *       comboCount,                  // this class's live combos after card removal
+ *       opposingLiveCombos,          // propensity-weighted live combos it faces (blocker effect)
+ *       weight, weightShare,
+ *       equity, winRate, tieRate, loseRate,
+ *       buckets: Array<Object>
+ *     }>
+ *   },
+ *   classPairsEvaluated: number, classPairsComputed: number, classPairsCached: number,
+ *   boardsEnumerated: number, elapsedMs: number
+ * }}
+ */
+export const decomposeVsRange = (targetA, targetB, options = {}) => {
+  const { useCache = true } = options;
+  const start = performance.now();
+
+  const heroSide = expandTarget(targetA, 'targetA');
+  const villainSide = expandTarget(targetB, 'targetB');
+
+  const stats = { classPairsComputed: 0, classPairsCached: 0, boardsEnumerated: 0 };
+
+  // `elements` enumerates the ranged side that carries the interesting
+  // variation. Hand-vs-range: the villain range (what hero is up against).
+  // Anything else: hero's own classes — which of hero's hands are dominated is
+  // the ranking question, and with a single villain hand the villain axis is
+  // one trivial row.
+  const axis = (targetA.type === 'hand' && targetB.type === 'range') ? 'villain' : 'hero';
+  const elementSide = axis === 'hero' ? heroSide : villainSide;
+
+  const grand = new Float64Array(BUCKET_COUNT * 4);
+  let grandWeight = 0;
+
+  const elemAcc = elementSide.map(() => new Float64Array(BUCKET_COUNT * 4));
+  const elemWeight = new Float64Array(elementSide.length);
+  const elemCombos = new Float64Array(elementSide.length);
+  const elemOpposing = new Float64Array(elementSide.length);
+
+  // Hero's side is dealt first, so nothing removes cards from it; its live
+  // count is just its class combos. The villain side's live count IS
+  // removal-adjusted, and is exact only when hero is a single class — with a
+  // ranged hero the removal differs per pair, so the reported figure is the
+  // unblocked total and the per-pair truth lives in each element's
+  // `opposingLiveCombos`.
+  let heroLiveCombos = 0;
+  for (const hero of heroSide) heroLiveCombos += baseComboCount(hero.handClass);
+
+  let villainLiveCombos = 0;
+  if (heroSide.length === 1) {
+    const heroCards0 = enumerateHandCombos(heroSide[0].handClass)[0];
+    for (const villain of villainSide) {
+      villainLiveCombos += comboCountAfterRemoval(
+        villain.handClass.pair,
+        villain.handClass.suited,
+        suitMaskForRank(heroCards0, villain.handClass.rankHigh),
+        suitMaskForRank(heroCards0, villain.handClass.rankLow),
+      );
+    }
+  } else {
+    for (const villain of villainSide) villainLiveCombos += baseComboCount(villain.handClass);
+  }
+
+  for (let ai = 0; ai < heroSide.length; ai++) {
+    const hero = heroSide[ai];
+    const heroCards = enumerateHandCombos(hero.handClass)[0];
+    const heroCombos = baseComboCount(hero.handClass);
+
+    for (let bi = 0; bi < villainSide.length; bi++) {
+      const villain = villainSide[bi];
+      const villainCombos = comboCountAfterRemoval(
+        villain.handClass.pair,
+        villain.handClass.suited,
+        suitMaskForRank(heroCards, villain.handClass.rankHigh),
+        suitMaskForRank(heroCards, villain.handClass.rankLow),
+      );
+      // Zero means hero physically holds every card of that class — it is
+      // impossible, not merely unlikely, so it leaves the sum entirely.
+      if (villainCombos === 0) continue;
+
+      const weight = heroCombos * hero.propensity * villainCombos * villain.propensity;
+      if (!(weight > 0)) continue;
+
+      const rates = classPairRates(hero, villain, stats, useCache);
+
+      const ei = axis === 'hero' ? ai : bi;
+      const acc = elemAcc[ei];
+      for (let k = 0; k < BUCKET_COUNT * 4; k++) {
+        const contribution = weight * rates[k];
+        grand[k] += contribution;
+        acc[k] += contribution;
+      }
+      grandWeight += weight;
+      elemWeight[ei] += weight;
+
+      if (axis === 'villain') {
+        elemCombos[ei] = villainCombos;
+        elemOpposing[ei] += heroCombos * hero.propensity;
+      } else {
+        elemCombos[ei] = heroCombos;
+        elemOpposing[ei] += villainCombos * villain.propensity;
+      }
+    }
+  }
+
+  if (grandWeight <= 0) {
+    throw new Error('decomposeVsRange: no live combo pairs between the two targets');
+  }
+
+  const buckets = bucketsFromAccumulator(grand, grandWeight);
+  const totals = totalsFromBuckets(buckets);
+
+  const elements = elementSide.map((el, i) => {
+    const w = elemWeight[i];
+    const elBuckets = bucketsFromAccumulator(elemAcc[i], w);
+    const elTotals = totalsFromBuckets(elBuckets);
+    return {
+      index: el.index,
+      notation: el.notation,
+      propensity: el.propensity,
+      comboCount: elemCombos[i],
+      opposingLiveCombos: elemOpposing[i],
+      weight: w,
+      weightShare: w / grandWeight,
+      equity: elTotals.equity,
+      winRate: elTotals.winRate,
+      tieRate: elTotals.tieRate,
+      loseRate: elTotals.loseRate,
+      buckets: elBuckets,
+    };
+  });
+
+  const propensityMass = (side) => side.reduce((sum, el) => sum + el.propensity, 0);
+
+  return {
+    ...totals,
+    exact: true,
+    buckets,
+    decomposition: {
+      axis,
+      weighting: 'weight = liveComboCount x propensity; propensities are NOT normalised',
+      totalWeight: grandWeight,
+      hero: {
+        classes: heroSide.length,
+        liveCombos: heroLiveCombos,
+        propensityMass: propensityMass(heroSide),
+      },
+      villain: {
+        classes: villainSide.length,
+        liveCombos: villainLiveCombos,
+        propensityMass: propensityMass(villainSide),
+      },
+      elements,
+    },
+    classPairsEvaluated: stats.classPairsComputed + stats.classPairsCached,
+    classPairsComputed: stats.classPairsComputed,
+    classPairsCached: stats.classPairsCached,
+    boardsEnumerated: stats.boardsEnumerated,
+    elapsedMs: Math.round(performance.now() - start),
+  };
 };
