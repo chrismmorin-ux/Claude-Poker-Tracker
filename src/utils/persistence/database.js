@@ -47,7 +47,7 @@ import { runMigrations } from './migrations';
 // =============================================================================
 
 export const DB_NAME = 'PokerTrackerDB';
-export const DB_VERSION = 27;
+export const DB_VERSION = 28;
 
 export { GUEST_USER_ID };
 export const STORE_NAME = 'hands';

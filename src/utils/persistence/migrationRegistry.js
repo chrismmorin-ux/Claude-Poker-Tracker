@@ -34,6 +34,10 @@ export const KNOWN_PROGRAM_IDS = [
   'domain-correctness',
   'methodology-integrity',
   'launch',
+  // Added WS-368 (v28). Present in .claude/workstream/programs/registry.yaml
+  // since the data-quality program was created; this list had simply never
+  // needed it because no migration was owned by that program before.
+  'data-quality',
 ];
 
 /**
@@ -438,6 +442,20 @@ export const MIGRATION_REGISTRY = [
     shippedAt: '2026-06-05',
     migrationFn: 'migrateV27',
     notes: 'WS-190 / SPR-107. Skip-on-fresh-install (oldVersion > 0 guard). Additive only. Mirrors v25 predictionAudit cursor-walk pattern, BUT skips its cursor pass when oldVersion < 25 to avoid a concurrent same-store cursor clobbering migrateV25 (legacy pre-v25 hands then carry reviewTag=undefined, treated as untagged by all reads).',
+  },
+  {
+    version: 28,
+    name: 'Positive hand provenance (source + provenance) on hands',
+    description:
+      'Data migration: gives every hand a positive provenance identity. Rows with no `source` are stamped source=\'unknown\' with reason=recorded-before-provenance-stamping — NOT \'live\'. Rows already carrying a trustworthy scalar source (pre-v28 Ignition hands) keep that channel and gain the structured `provenance` object backfilled from it. New hands are stamped at construction by handProvenance.js constructors.',
+    storesAdded: [],
+    storesChanged: ['hands'],
+    storesRemoved: [],
+    owner: { program: 'data-quality', project: 'WS-368' },
+    shippedAt: null,
+    migrationFn: 'migrateV28',
+    notes:
+      'WS-368, unblocking the SRC-014 arm of FAULT-population-mismatch. Skip-on-fresh-install (oldVersion > 0 guard). THE DECISION THAT MATTERS: existing unstamped rows are genuinely AMBIGUOUS — probably live on this device, but exportUtils.importAllData routed imports through saveHand (which stamped nothing) so some may not be, and nothing distinguishes them. They are stamped \'unknown\', which is a true statement about those rows; \'live\' would be a guess wearing the costume of data, and would irreversibly manufacture the population the register\'s rank-1 falsifier is supposed to measure. CURSOR ORDERING (load-bearing): migrateV28 is the LAST hands-store walk queued in runMigrations, so per IDB request ordering its put for each record lands after any put from migrateV25/migrateV27 on that record — its write wins. It therefore re-applies their predictionAudit/reviewTag defaults in the same put so a stale snapshot cannot drop them. Side effect: pre-v25 upgrades now get reviewTag=null, which migrateV27 had deliberately left undefined.',
   },
 ];
 

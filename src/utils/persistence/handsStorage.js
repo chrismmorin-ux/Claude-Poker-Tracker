@@ -20,6 +20,7 @@ import {
 
 import {
   getActiveSession,
+  getSessionById,
   getSessionHandCount,
 } from './sessionsStorage';
 
@@ -28,28 +29,48 @@ import {
   logValidationErrors,
 } from './validation';
 
+import {
+  HAND_SOURCES,
+  isHandSource,
+  liveHandProvenance,
+  ignitionHandProvenance,
+  importedHandProvenance,
+} from './handProvenance';
+
 // =============================================================================
 // HAND CRUD OPERATIONS
 // =============================================================================
 
 /**
- * Save a hand to the database
- * Auto-links hand to active session if one exists
- * Calculates sessionHandNumber for display (1-based index within session)
- * @param {Object} handData - Hand data containing gameState, cardState, and optional seatPlayers
- * @param {string} userId - User ID (defaults to 'guest')
+ * Shared writer for the session-linked hand paths (`saveHand`,
+ * `saveImportedHand`). Counts the session's existing hands and adds the record
+ * in ONE readwrite transaction (RT-39: prevents the TOCTOU race on
+ * sessionHandNumber).
+ *
+ * PROVENANCE IS NOT A PARAMETER OF THE PUBLIC API (WS-368). This helper takes
+ * a `stamp` produced by a `handProvenance.js` constructor, and each public
+ * entry point supplies exactly one constructor. There is no code path that
+ * reaches an `objectStore.add` on `hands` without a stamp, and no caller can
+ * choose the wrong channel because no caller names a channel.
+ *
+ * The stamp is spread AFTER `...handData`, so a `source` / `provenance` riding
+ * along inside the incoming payload cannot survive. That single ordering is
+ * what closes the import contamination vector: a file claiming its hands are
+ * live cannot make them live.
+ *
+ * @param {Object} params
+ * @param {Object} params.handData
+ * @param {string} params.userId
+ * @param {number|null} params.sessionId
+ * @param {{source: string, provenance: Object}} params.stamp
+ * @param {string} params.context - caller name, for logs
  * @returns {Promise<number>} The auto-generated handId
  */
-export const saveHand = async (handData, userId = GUEST_USER_ID) => {
+const persistHandRecord = async ({ handData, userId, sessionId, stamp, context }) => {
   let validationFailure = null;
   try {
-    // Get active session to auto-link hand (for this user)
-    const activeSession = await getActiveSession(userId);
-    const sessionId = activeSession?.sessionId || null;
-
     const timestamp = Date.now();
 
-    // RT-39: Atomic count + add in single readwrite transaction to prevent TOCTOU race
     return await atomicTx([STORE_NAME], (stores, tx, setResult) => {
       const objectStore = stores[STORE_NAME];
 
@@ -68,11 +89,13 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
           sessionId,
           sessionHandNumber,
           handDisplayId,
+          // Last spread wins — see the contamination note above.
+          ...stamp,
         };
 
         const validation = validateHandRecord(handRecord);
         if (!validation.valid) {
-          logValidationErrors('saveHand', validation.errors);
+          logValidationErrors(context, validation.errors);
           validationFailure = new Error(`Invalid hand data: ${validation.errors.join(', ')}`);
           tx.abort();
           return;
@@ -82,7 +105,7 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
         const addRequest = objectStore.add(handRecord);
         addRequest.onsuccess = (event) => {
           setResult(event.target.result);
-          log(`Hand saved successfully (ID: ${event.target.result}, displayId: ${handDisplayId})`);
+          log(`Hand saved successfully (ID: ${event.target.result}, displayId: ${handDisplayId}, source: ${handRecord.source})`);
         };
       };
 
@@ -98,9 +121,70 @@ export const saveHand = async (handData, userId = GUEST_USER_ID) => {
     if (err?.name === 'QuotaExceededError') {
       logError('Storage quota exceeded. Please clear old hands.');
     }
-    logError('Error in saveHand:', err);
+    logError(`Error in ${context}:`, err);
     throw err;
   }
+};
+
+/**
+ * Save a hand recorded AT THE TABLE by the founder — the live / manual-entry
+ * path. Auto-links to the active session and derives the hand's venue and
+ * stake from that session record (WS-368: the stamp carries population
+ * identity, because every comparative claim this repo makes is a claim about a
+ * population).
+ *
+ * This function stamps `source: 'live'` unconditionally. That is deliberate:
+ * it is the ONLY function that may, and it takes no channel argument, so the
+ * live set cannot be joined by accident. Hands from the extension go through
+ * `saveOnlineHand`; hands from a backup file go through `saveImportedHand`.
+ *
+ * @param {Object} handData - Hand data containing gameState, cardState, and optional seatPlayers
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<number>} The auto-generated handId
+ */
+export const saveHand = async (handData, userId = GUEST_USER_ID) => {
+  // Fetched for the session link AND for venue/stake. One read, both uses —
+  // the active session is where the founder actually declared them, so the
+  // stamp states a fact rather than defaulting one.
+  const activeSession = await getActiveSession(userId);
+  return persistHandRecord({
+    handData,
+    userId,
+    sessionId: activeSession?.sessionId || null,
+    stamp: liveHandProvenance(activeSession),
+    context: 'saveHand',
+  });
+};
+
+/**
+ * Save a hand that arrived through the backup-import path (WS-368).
+ *
+ * Split out of `saveHand` because routing imports through the live writer was
+ * the contamination vector: `exportUtils.importAllData` called `saveHand`,
+ * which stamped nothing, so every imported hand became a member of "live" by
+ * construction and nothing anywhere could detect it.
+ *
+ * Two behavioural differences from `saveHand`, both required by what an import
+ * IS:
+ *   - Stamps `source: 'import'`, preserving whatever the file claimed under
+ *     `provenance.original` as evidence rather than truth.
+ *   - Uses the sessionId the caller computed (importAllData remaps old session
+ *     ids to new ones) instead of consulting the active session. An imported
+ *     hand belongs to the session it was imported with, not to whatever the
+ *     founder happens to have open.
+ *
+ * @param {Object} handData - Hand payload from the backup file, with sessionId already remapped
+ * @param {string} userId - User ID
+ * @returns {Promise<number>} The auto-generated handId
+ */
+export const saveImportedHand = async (handData, userId = GUEST_USER_ID) => {
+  return persistHandRecord({
+    handData,
+    userId,
+    sessionId: handData?.sessionId ?? null,
+    stamp: importedHandProvenance(handData),
+    context: 'saveImportedHand',
+  });
 };
 
 /**
@@ -413,7 +497,8 @@ export const handExists = async (handId) => {
 /**
  * Save a hand from online play (Ignition extension).
  * Unlike saveHand(), does NOT auto-link to active session — uses provided sessionId.
- * Adds source: 'ignition' and generates display IDs.
+ * Stamps `source: 'ignition'` plus the structured provenance object and
+ * generates display IDs.
  *
  * @param {Object} handData - Hand record from extension (gameState, cardState, seatPlayers)
  * @param {number} sessionId - Online session ID (from getOrCreateOnlineSession)
@@ -429,6 +514,11 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
       sessionHandNumber = existingCount + 1;
     }
 
+    // The online session carries the table's real stakes once the wire capture
+    // has seen a blinds frame (sessionsStorage.normalizeStakes). Read it so the
+    // ignition stamp states the same population identity the live stamp does.
+    const session = sessionId ? await getSessionById(sessionId) : null;
+
     const timestamp = handData.timestamp || Date.now();
     const handDisplayId = sessionId
       ? `S${sessionId}-H${sessionHandNumber}`
@@ -442,7 +532,8 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
       sessionId,
       sessionHandNumber,
       handDisplayId,
-      source: 'ignition',
+      // Last spread wins — an extension payload cannot claim another channel.
+      ...ignitionHandProvenance(session),
     };
 
     // Keep captureId for dedup, strip extension-only capturedAt
@@ -471,14 +562,39 @@ export const saveOnlineHand = async (handData, sessionId, userId = GUEST_USER_ID
 };
 
 /**
- * Get all hands for a specific source (e.g., 'ignition', 'live')
- * Uses the source index added in v12 migration.
+ * Get all hands for a specific provenance channel.
  *
- * @param {string} source - Data source ('live' | 'ignition')
+ * WHAT WAS WRONG (WS-368). The filter — `h.source === source` — was always
+ * correct. What was wrong was that nothing ever WROTE `'live'`, so this
+ * function's documented contract ("'live' | 'ignition'") and its behaviour
+ * disagreed: called with `'live'` it returned [] on a database full of live
+ * hands, silently, forever. Documented API, zero results, no error. That is
+ * the shape the blocker took in practice, and it is why the fix is at the
+ * write side rather than here.
+ *
+ * Two changes on the read side:
+ *   - The doc now names the whole closed set, including `'unknown'` (rows the
+ *     v28 migration could not attribute) and `'import'`.
+ *   - An unrecognised channel THROWS instead of returning []. A typo used to
+ *     be indistinguishable from an empty result, which is how a broken
+ *     selector stays broken; a wrong question should be loud.
+ *
+ * `'unknown'` is never folded into any other channel. Those rows may be live,
+ * may be imported, may be manually entered — treating them as live is exactly
+ * the guess that would manufacture the population the fault register's
+ * falsifier exists to measure.
+ *
+ * @param {'live'|'ignition'|'import'|'unknown'} source - provenance channel
  * @param {string} userId - User ID
  * @returns {Promise<Object[]>} Array of hand records
+ * @throws {Error} if `source` is not a known channel
  */
 export const getHandsBySource = async (source, userId = GUEST_USER_ID) => {
+  if (!isHandSource(source)) {
+    throw new Error(
+      `getHandsBySource: unknown source ${JSON.stringify(source)} — expected one of: ${HAND_SOURCES.join(', ')}`,
+    );
+  }
   try {
     // Use userId index and filter by source in memory
     // (compound index userId_source would be ideal but source index is new)

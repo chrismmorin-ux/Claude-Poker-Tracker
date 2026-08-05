@@ -8,6 +8,7 @@
  */
 
 import { logger } from '../errorHandler';
+import { handProvenanceProblems } from './handProvenance';
 
 const MODULE_NAME = 'persistence/validation';
 
@@ -73,6 +74,14 @@ export const validateHandRecord = (handRecord) => {
       errors.push('seatPlayers must be an object');
     }
   }
+
+  // Provenance (WS-368) — REQUIRED, not optional. A hand with no source is a
+  // hand whose population is unknowable, and every comparative claim this repo
+  // makes is a claim about a population. This check is the belt; the braces are
+  // in handProvenance.js, where the channel is baked into each constructor's
+  // identity so no writer can produce a record without one (repo doctrine:
+  // prefer unrepresentable to validated).
+  errors.push(...handProvenanceProblems(handRecord));
 
   return { valid: errors.length === 0, errors };
 };

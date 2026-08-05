@@ -143,13 +143,20 @@ describe('migrateV27 — concurrent-cursor hazard mitigation (pre-v25 → v27)',
     // Seed at v24 so the single upgrade runs BOTH migrateV25 and migrateV27.
     // v27 must skip its cursor to avoid clobbering v25's predictionAudit write.
     await seedHandsAtVersion(24, [makeLegacyHand(1)]);
-    await getDB(); // 24 → 27 in one transaction
+    await getDB(); // 24 → 28 in one transaction
     const hands = await readAllHands();
     expect(hands).toHaveLength(1);
     // v25 default survives (not clobbered by v27's stale-snapshot put):
     expect(hands[0].predictionAudit).toBeNull();
-    // v27 deliberately left reviewTag unset; consumers treat undefined as untagged:
-    expect(hands[0].reviewTag).toBeUndefined();
+    // v27 itself still skips its cursor here — that behaviour is unchanged.
+    //
+    // WS-368 UPDATE: this used to assert `undefined`, pinning the gap v27's
+    // skip left behind. migrateV28 now runs last over the same store and, since
+    // its put wins the ordering race, it re-applies BOTH earlier defaults in its
+    // own write. reviewTag therefore lands as null on this path too. Consumers
+    // read `hand.reviewTag?.tagged`, so undefined and null were always
+    // equivalent to them — this is the outcome v27 wanted and could not have.
+    expect(hands[0].reviewTag).toBeNull();
   });
 });
 

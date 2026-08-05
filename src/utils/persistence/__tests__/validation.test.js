@@ -24,12 +24,19 @@ import {
   logValidationErrors,
   validateWithLogging,
 } from '../validation';
+import { liveHandProvenance } from '../handProvenance';
 import { logger } from '../../errorHandler';
 
 // =============================================================================
 // HELPERS
 // =============================================================================
 
+// WS-368: a valid hand record now REQUIRES a positive provenance stamp. This
+// fixture previously omitted it, which meant every "valid record" case here was
+// quietly asserting that a hand with no knowable population was acceptable.
+// The stamp is built by a handProvenance.js constructor rather than written by
+// hand, so the fixture cannot drift from what the writers actually produce.
+// Rejection of an unstamped record is covered in handProvenance.test.js.
 const makeValidHand = () => ({
   timestamp: Date.now(),
   gameState: {
@@ -41,6 +48,7 @@ const makeValidHand = () => ({
     communityCards: ['Ah', 'Kd', '2c', null, null],
     holeCards: ['Js', 'Ts'],
   },
+  ...liveHandProvenance({ venue: 'Wind Creek', gameType: '1/3' }),
 });
 
 const makeValidSession = () => ({

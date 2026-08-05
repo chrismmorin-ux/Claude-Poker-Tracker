@@ -10,11 +10,12 @@ import {
   getAllSessions,
   getAllPlayers,
   clearAllHands,
-  saveHand,
+  saveImportedHand,
   createSession,
   createPlayer,
   deleteSession,
   deletePlayer,
+  GUEST_USER_ID,
 } from './persistence/index';
 
 // Current export version - increment when schema changes
@@ -183,10 +184,19 @@ export const clearAllData = async () => {
 /**
  * Import data from a backup file
  *
+ * WS-368: imported hands go through `saveImportedHand`, not `saveHand`. Routing
+ * them through the live writer was the contamination vector — `saveHand`
+ * stamped no source, so every imported hand joined the "live" set by
+ * construction and nothing anywhere could detect it. An imported hand is now
+ * positively `source: 'import'`, with whatever the file claimed preserved under
+ * `provenance.original` as evidence rather than truth.
+ *
  * @param {Object} importData - Validated import data
+ * @param {string} [userId] - User ID to import under (threaded from useAuth by
+ *   the caller; hands are user-scoped and must not silently land on 'guest')
  * @returns {Promise<{ success: boolean, counts: Object, errors: string[] }>}
  */
-export const importAllData = async (importData) => {
+export const importAllData = async (importData, userId = GUEST_USER_ID) => {
   const errors = [];
   const counts = { hands: 0, sessions: 0, players: 0 };
 
@@ -227,11 +237,11 @@ export const importAllData = async (importData) => {
     for (const hand of importData.data.hands || []) {
       try {
         const { handId, sessionId, ...handData } = hand;
-        await saveHand({
+        await saveImportedHand({
           ...handData,
           // Map to new sessionId if exists, otherwise null
           sessionId: sessionId ? (sessionIdMap[sessionId] || null) : null,
-        });
+        }, userId);
         counts.hands++;
       } catch (err) {
         errors.push(`Failed to import hand: ${err.message}`);

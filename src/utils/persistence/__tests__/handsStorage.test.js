@@ -25,6 +25,7 @@ vi.mock('../../errorHandler', () => ({
 import { initDB } from '../database';
 import {
   saveHand,
+  saveImportedHand,
   loadLatestHand,
   loadHandById,
   getAllHands,
@@ -601,7 +602,7 @@ describe('getHandsBySource', () => {
 
     // Save one online (ignition) hand
     await saveOnlineHand(createValidHandData(), null, 'guest');
-    // Save one regular (live) hand — source field will be absent
+    // Save one regular hand — positively stamped source: 'live' since WS-368
     await saveHand(createValidHandData(), 'guest');
 
     const ignitionHands = await getHandsBySource('ignition', 'guest');
@@ -634,6 +635,110 @@ describe('getHandsBySource', () => {
 
     const result = await getHandsBySource('ignition', 'guest');
     expect(result).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WS-368 — positive provenance at the point of creation
+// ---------------------------------------------------------------------------
+
+describe('WS-368: getHandsBySource("live") returns the live hands', () => {
+  it('returns live hands instead of the empty array it always used to return', async () => {
+    await initDB();
+    await saveHand(createValidHandData(), 'guest');
+    await saveHand(createValidHandData(), 'guest');
+    await saveOnlineHand(createValidHandData(), null, 'guest');
+
+    const live = await getHandsBySource('live', 'guest');
+    expect(live).toHaveLength(2);
+    live.forEach((h) => expect(h.source).toBe('live'));
+  });
+
+  it('the documented parameter set and the real behaviour now agree', async () => {
+    await initDB();
+    await saveHand(createValidHandData(), 'guest');
+    await saveOnlineHand(createValidHandData(), null, 'guest');
+    await saveImportedHand(createValidHandData(), 'guest');
+
+    expect(await getHandsBySource('live', 'guest')).toHaveLength(1);
+    expect(await getHandsBySource('ignition', 'guest')).toHaveLength(1);
+    expect(await getHandsBySource('import', 'guest')).toHaveLength(1);
+    expect(await getHandsBySource('unknown', 'guest')).toHaveLength(0);
+  });
+
+  it('throws on an unrecognised channel rather than returning [] silently', async () => {
+    await initDB();
+    await saveHand(createValidHandData(), 'guest');
+    await expect(getHandsBySource('Live', 'guest')).rejects.toThrow(/unknown source/);
+    await expect(getHandsBySource(undefined, 'guest')).rejects.toThrow(/unknown source/);
+  });
+
+  it('still isolates by user', async () => {
+    await initDB();
+    await saveHand(createValidHandData(), 'guest');
+    await saveHand(createValidHandData(), 'other-user');
+    expect(await getHandsBySource('live', 'guest')).toHaveLength(1);
+  });
+});
+
+describe('WS-368: the stamp is written where the record is constructed', () => {
+  it('saveHand writes source: "live" plus the structured object', async () => {
+    await initDB();
+    const handId = await saveHand(createValidHandData(), 'guest');
+    const hand = await loadHandById(handId);
+    expect(hand.source).toBe('live');
+    expect(hand.provenance.channel).toBe('live');
+    expect(typeof hand.provenance.schemaVersion).toBe('number');
+  });
+
+  it('saveOnlineHand writes source: "ignition" plus the structured object', async () => {
+    await initDB();
+    const handId = await saveOnlineHand(createValidHandData(), null, 'guest');
+    const hand = await loadHandById(handId);
+    expect(hand.source).toBe('ignition');
+    expect(hand.provenance.channel).toBe('ignition');
+  });
+
+  it('saveImportedHand writes source: "import" — imports never join the live set', async () => {
+    await initDB();
+    const handId = await saveImportedHand(createValidHandData(), 'guest');
+    const hand = await loadHandById(handId);
+    expect(hand.source).toBe('import');
+    expect(await getHandsBySource('live', 'guest')).toHaveLength(0);
+  });
+
+  it('a payload claiming to be live cannot make itself live', async () => {
+    await initDB();
+    // The exact contamination shape: a backup file whose hands say source:'live'.
+    const handId = await saveImportedHand(
+      createValidHandData({ source: 'live', provenance: { channel: 'live', venue: 'Wind Creek' } }),
+      'guest',
+    );
+    const hand = await loadHandById(handId);
+    expect(hand.source).toBe('import');
+    expect(hand.provenance.original.source).toBe('live');
+    expect(await getHandsBySource('live', 'guest')).toHaveLength(0);
+  });
+
+  it('the same claim cannot survive the live writer either', async () => {
+    await initDB();
+    const handId = await saveHand(
+      createValidHandData({ source: 'ignition', provenance: { channel: 'ignition' } }),
+      'guest',
+    );
+    const hand = await loadHandById(handId);
+    expect(hand.source).toBe('live');
+    expect(hand.provenance.channel).toBe('live');
+  });
+
+  it('saveImportedHand keeps the sessionId the caller remapped', async () => {
+    await initDB();
+    const handId = await saveImportedHand(
+      createValidHandData({ sessionId: 42 }),
+      'guest',
+    );
+    const hand = await loadHandById(handId);
+    expect(hand.sessionId).toBe(42);
   });
 });
 

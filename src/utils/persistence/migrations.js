@@ -45,6 +45,10 @@ import {
 } from './database';
 import { seedPerceptionPrimitives } from '../anchorLibrary/perceptionPrimitiveSeed';
 import { buildDefaultRefresherConfig } from './refresherDefaults';
+import {
+  unknownHandProvenance,
+  backfillHandProvenance,
+} from './handProvenance';
 
 // =============================================================================
 // SCHEMA-ONLY MIGRATIONS
@@ -1116,6 +1120,108 @@ const migrateV27 = (db, transaction, oldVersion) => {
   };
 };
 
+/**
+ * v28: positive hand provenance — `source` + `provenance` on hands (WS-368).
+ *
+ * WHAT THIS DOES TO EXISTING ROWS, AND WHY IT IS THE ONLY HONEST ANSWER.
+ *
+ * Rows written before this migration fall into two kinds:
+ *
+ *   (a) `source` already set to a known channel — in practice `'ignition'`,
+ *       positively stamped by saveOnlineHand since v12. That channel is a
+ *       recorded fact, so it is KEPT and merely gains the structured
+ *       `provenance` object, flagged `backfilled: true` so a later reader can
+ *       tell a reconstruction from a stamp taken at write time.
+ *
+ *   (b) `source` absent. These are AMBIGUOUS. On this device they are probably
+ *       live — but `exportUtils.importAllData` routed every imported hand
+ *       through `saveHand`, which stamped nothing, so some of them may have
+ *       arrived from a backup file, and nothing distinguishes the two. They are
+ *       stamped `'unknown'`.
+ *
+ * Stamping (b) as `'live'` would be the convenient reading and it is the one
+ * thing this migration must not do. FAULT-population-mismatch — the rank-1
+ * entry of the suspected-fault register — is precisely the question of whether
+ * the founder's live population matches the online-2009 corpus every figure is
+ * anchored on. Writing 'live' onto rows we cannot attribute would MANUFACTURE
+ * the population the falsifier is supposed to measure, and would do it
+ * irreversibly: once the ambiguity is overwritten it cannot be recovered.
+ * "Unknown" is a true statement about those rows. "Live" is a guess wearing the
+ * costume of data.
+ *
+ * CURSOR ORDERING (load-bearing — read before changing runMigrations order).
+ * migrateV25 and migrateV27 also walk cursors over `hands`. Two openCursor
+ * walks on one store inside a single upgrade transaction interleave per the IDB
+ * request-ordering spec, and a stale-snapshot put from one silently clobbers
+ * the other's field write. v27 solved this for itself by SKIPPING when v25
+ * co-runs — acceptable there because `reviewTag: undefined` reads as untagged
+ * everywhere. It is NOT acceptable here: `source: undefined` is the exact
+ * illegal state being removed, so this pass may never skip.
+ *
+ * So instead of yielding, v28 wins. Its openCursor is the LAST one queued (it
+ * is called last in runMigrations), which means for every record its put is
+ * processed after any put v25/v27 issued for that record. Because its own
+ * snapshot of a record may therefore be stale, it re-applies their defaults in
+ * the same put — `predictionAudit: null` and `reviewTag: null` — so winning the
+ * race cannot cost either field. Both checks are `=== undefined` guards, so a
+ * populated value is never touched.
+ *
+ * Side effect worth stating: on a pre-v25 upgrade, legacy hands now come out
+ * with `reviewTag: null` rather than the `undefined` v27 deliberately left.
+ * Every consumer reads `hand.reviewTag?.tagged`, so both behave identically.
+ */
+const migrateV28 = (db, transaction) => {
+  log('Upgrading to v28: positive hand provenance (source + provenance) on hands records (WS-368)');
+
+  // Skip on fresh install (no hands store yet — v0 → v28 path). New hands are
+  // stamped at construction by handProvenance.js; there is nothing to backfill.
+  if (!db.objectStoreNames.contains(STORE_NAME)) return;
+
+  const handsStore = transaction.objectStore(STORE_NAME);
+  const cursor = handsStore.openCursor();
+  let stamped = 0;
+  let unknown = 0;
+
+  cursor.onsuccess = (e) => {
+    const c = e.target.result;
+    if (!c) {
+      log(`v28 migration: provenance stamped on ${stamped} hand(s) (${unknown} unattributable → source 'unknown')`);
+      return;
+    }
+    const hand = c.value;
+    let changed = false;
+
+    if (hand.provenance === undefined || hand.provenance === null) {
+      // backfillHandProvenance READS the channel off the row; it returns null
+      // when there is nothing trustworthy to read, which is the (b) case.
+      const stamp = backfillHandProvenance(hand.source)
+        ?? unknownHandProvenance({ observedSource: hand.source ?? null });
+      hand.source = stamp.source;
+      hand.provenance = stamp.provenance;
+      changed = true;
+      stamped += 1;
+      if (stamp.source === 'unknown') unknown += 1;
+    }
+
+    // Re-apply the defaults owned by v25 / v27 — see the cursor-ordering note.
+    if (hand.predictionAudit === undefined) {
+      hand.predictionAudit = null;
+      changed = true;
+    }
+    if (hand.reviewTag === undefined) {
+      hand.reviewTag = null;
+      changed = true;
+    }
+
+    if (changed) c.update(hand);
+    c.continue();
+  };
+
+  cursor.onerror = (e) => {
+    logError('v28 hands cursor failed:', e.target.error);
+  };
+};
+
 /** v13: Normalize seatActions strings to arrays in-place (one-time, replaces per-load normalization) */
 const migrateV13 = (db, transaction) => {
   log('Upgrading to v13: Normalizing seatActions strings to arrays');
@@ -1263,6 +1369,17 @@ export const runMigrations = (db, transaction, oldVersion) => {
   // WS-190 / SPR-107). Forward-only backfill: legacy hands set to null. Mirrors
   // v25 predictionAudit cursor-walk pattern.
   if (oldVersion < 27 && oldVersion > 0) migrateV27(db, transaction, oldVersion);
+
+  // v28: positive hand provenance — source + provenance on hands (additive;
+  // WS-368). Unstamped legacy rows become source:'unknown', NEVER 'live' —
+  // they are ambiguous and guessing would manufacture the population
+  // FAULT-population-mismatch's falsifier exists to measure.
+  //
+  // MUST STAY LAST among hands-store walks. migrateV28 relies on being the
+  // final openCursor queued against `hands` so its put wins over v25/v27 for
+  // every record (it re-applies their defaults to compensate). Moving this call
+  // above either of them reintroduces the clobber v27 documents.
+  if (oldVersion < 28 && oldVersion > 0) migrateV28(db, transaction);
 
   // Registry summary — logs which versions were applied this upgrade. A stale
   // registry surfaces here (entries.length === 0 on upgrade is a red flag).

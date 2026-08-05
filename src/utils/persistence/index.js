@@ -29,6 +29,8 @@ export const createPersistenceLogger = (moduleName) => ({
 // Hand CRUD operations
 export {
   saveHand,
+  saveImportedHand,
+  getHandsBySource,
   loadLatestHand,
   loadHandById,
   getAllHands,
