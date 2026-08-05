@@ -1,0 +1,68 @@
+id: "WS-321"
+title: "The HandHQ corpus root is a hardcoded G16 Windows path — no corpus job can run on any other machine"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 62.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "engineering"
+finding_id: ""
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/corpusFiles.mjs"
+description: |
+  `scripts/backtest/corpusFiles.mjs:18`:
+
+      export const DEFAULT_CORPUS_ROOT = 'C:/Users/chris/data/phh-dataset/data/handhq';
+
+  A hardcoded absolute Windows path on the G16, with no environment override. Every corpus
+  consumer resolves through it — the WS-273 backtest harness, the mining passes, hero-EV,
+  calibration. On any machine that is not the G16 they all fail at discovery.
+
+  This is now load-bearing. CM-NODE1 is the fleet's always-on job runner (HomeBase
+  fleet/registry.yaml), `/fleet-run cm-node1 "<task>"` shipped and was live-verified
+  2026-07-24, and HomeBase WS-608 wants exactly these corpus jobs scheduled there. This
+  one constant is why none of them can run.
+
+  It is also why they cannot run in CI, in a container, or on the second laptop when that
+  exits triage — the constraint is not node1-specific, node1 is just the first machine to
+  hit it.
+
+  Note the corpus is deliberately OUTSIDE the repo: a blobless sparse clone of phh-dataset
+  with the git pack retained, so directories re-materialise via `git sparse-checkout add`
+  with no re-download. That design is fine and should not change — the fix is that its
+  LOCATION must be discoverable rather than assumed.
+accept_criteria: |
+  - `CORPUS_ROOT` (or equivalently named) environment variable overrides the default, and
+    is what the fleet/node path uses. The G16 default may remain as a fallback so nothing
+    on the cockpit changes.
+  - A missing or unreadable corpus root fails with a message naming the path it tried and
+    the variable to set — not an empty file list. An empty discovery result silently
+    scoring zero hands is the failure mode to avoid; a harness that reports "0 hands, all
+    good" is the same false-green class as HomeBase WS-572.
+  - Documented wherever the backtest harness is documented, including the sparse-checkout
+    re-materialisation step, so a second machine can be brought up from the notes alone.
+  - Verified by running one discovery on a non-default root.
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: bug-found-during-work
+  created_by: ai
+  finding_id: ""
+  run_id: "ses-20260805-1801-ed38c311"
+created_at: "2026-08-05T21:45:00Z"
+status_note: |
+  Filed 2026-08-05 while scoping HomeBase WS-608 (put the corpus jobs on CM-NODE1). Found
+  by reading corpusFiles.mjs, not by running anything — the failure has never been observed
+  because no corpus job has ever been attempted off the G16.
