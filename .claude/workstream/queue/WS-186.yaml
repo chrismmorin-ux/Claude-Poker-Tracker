@@ -94,6 +94,7 @@ accept_criteria:
     seat ID."
 
 effort: "L"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "docs/design/audits/YYYY-MM-DD-entry-table-rotation.md (NEW)"
   - "docs/design/surfaces/table-rotation.md (NEW)"

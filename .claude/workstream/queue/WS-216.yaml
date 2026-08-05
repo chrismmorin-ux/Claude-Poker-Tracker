@@ -24,6 +24,7 @@ accept_criteria:
   - "One test imports gameReducer + persistence + tendency calculation and passes real dispatch output through the full chain"
   - "Asserts at least VPIP/PFR correctness on the reloaded hand"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/reducers/gameReducer.js
   - src/hooks/usePersistence.js

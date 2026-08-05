@@ -30,6 +30,7 @@ accept_criteria:
   - "bucketQueryUtils.test.js fixtures use 0-100 units with a contract-pinning assertion"
   - "decisionAccumulator → villainDecisionModel /100 conversion exercised with real producer output"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/rangeEngine/index.js
   - src/utils/exploitEngine/rangeRules.js

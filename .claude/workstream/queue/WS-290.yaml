@@ -59,6 +59,7 @@ accept_criteria: |
   - Learning state is tracked as state, never surfaced as a tier or a rank.
   - Any in-app surface passes Design Program Gate 1 and Gate 4 before production code.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/skillAssessment/"
   - "src/utils/exploitEngine/calibrationMetrics.js"

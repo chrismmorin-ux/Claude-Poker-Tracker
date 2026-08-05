@@ -67,6 +67,7 @@ accept_criteria: |
     the pre-fix engine.
   - No sizing change ships in this item — sizing follows the class and is WS-314's concern.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/actionClassifier.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

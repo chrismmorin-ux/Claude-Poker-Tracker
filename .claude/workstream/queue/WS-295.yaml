@@ -71,6 +71,7 @@ accept_criteria: |
   - Live/online transfer caveat carried: a magnitude mined from the 2009 corpus
     is evidence about the estimator's shape, never a live-game constant.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/heroEvRunner.mjs"
   - "scripts/backtest/ipsEstimator.mjs"

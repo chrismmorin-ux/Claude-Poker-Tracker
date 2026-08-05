@@ -61,6 +61,7 @@ accept_criteria: |
   - A /decide records whether range calibration becomes a gate criterion, with the
     threshold and the reason. Not added silently.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/rangeCalibrationProbe.mjs"
   - "scripts/backtest/run-range-calibration.mjs"

@@ -57,6 +57,7 @@ accept_criteria: |
     tests updated where behavior legitimately shifts.
   - No regression in the full src/utils engine suite + extension suite.
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/utils/tendencyCalculations.js"
   - "ignition-poker-tracker/shared/stats-engine.js"

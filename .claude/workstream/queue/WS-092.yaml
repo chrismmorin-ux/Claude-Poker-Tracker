@@ -19,6 +19,7 @@ accept_criteria:
   - "✓ tests updated"
   - "✓ LSW-A1 audit category-C row resolved"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Structurally blocked on external solver access — verifying the JT-on-T96ss-3BP equity claim requires either a GTO Wizard subscription or a direct PioSOLVER run to produce a definitive equity-distribution number (currently approximated at 37-44% via combinatorial review per LSW-A1 row #3). Until founder secures solver access, the work cannot ship to acceptance. Promoted to structured field 2026-05-17 SPR-086 (WS-092 hygiene) so /next Step 2-prereq dampens score (P=15 × 0.25 = 3.75) rather than surfacing as a clean ship-ready candidate. Clear this note once solver access lands."

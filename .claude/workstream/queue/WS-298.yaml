@@ -53,6 +53,7 @@ accept_criteria: |
     corrections applied separately, with the divergence quantified.
   - §12.5 updated with the measured behaviour if it differs from the derivation.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/icmEngine/riskPremium.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

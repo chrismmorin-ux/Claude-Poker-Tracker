@@ -69,6 +69,7 @@ accept_criteria: |
   - Re-run the WS-287 hero-EV pass; C6's clean-run counter is knowingly reset and
     that reset is recorded, not discovered later.
 effort: "L"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/utils/exploitEngine/riskAnalysis.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

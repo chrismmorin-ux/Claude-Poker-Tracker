@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Tabs (summary / claims ledger / counterfactual tree / drill card / full artifact). Progressive disclosure. Match confidence. Audit-state propagation from linked artifact. Effort: L."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-067"

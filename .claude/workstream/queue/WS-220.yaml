@@ -23,6 +23,7 @@ description: |
 accept_criteria:
   - "3 consecutive full-suite runs green with no RangeLabExplorer timeout"
 effort: "S"
+runs_on: "g16"        # touches UI files
 files_involved:
   - src/components/views/PostflopDrillsView/__tests__/RangeLabExplorer.test.jsx
 blocked_by: []

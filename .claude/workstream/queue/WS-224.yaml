@@ -30,6 +30,7 @@ accept_criteria:
   - "A raw frame dump (one complete hand minimum, with folds) committed under ignition-poker-tracker/spike-data/ or shared/__tests__/fixtures/"
   - "ws-replay-seam.test.js replays the captured dump (reconstruction encoder kept as a secondary fixture or removed)"
 effort: "S"
+runs_on: "g16"        # touches UI files
 files_involved:
   - ignition-poker-tracker/side-panel/__tests__/ws-replay-seam.test.js
   - ignition-poker-tracker/content/capture-websocket-probe.js

@@ -36,6 +36,7 @@ accept_criteria: |
     (gameTreeEvaluator / exploit generation).
   - No production UX code in this ticket.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/research/mass-pool-data-2026-07-25.md"
   - "src/utils/exploitEngine/"

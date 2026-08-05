@@ -17,6 +17,7 @@ accept_criteria:
   - "Test-mode functional"
   - "webhook plumbing"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Pending MPMF Gate 4 design (no Gate 4 ticket exists in queue yet — must be authored first per design framework guardrail) and Q7 legal-scoping verdict (WS-027). Until Gate 4 surface specs land + processor choice is ratified, this cannot ship."

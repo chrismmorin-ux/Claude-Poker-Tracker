@@ -119,6 +119,7 @@ accept_criteria: |
   - Backtest and app agree: scripts/backtest/ and src/utils/ must key spots the same way, or
     the FSA comparison is between two coordinate systems rather than two surfaces.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/decisionAccumulator.js"
   - "src/utils/exploitEngine/villainDecisionModel.js"

@@ -49,6 +49,7 @@ accept_criteria: |
     start) — decision note in the commit or /decide if trade-offs emerge.
   - exploitEngine + persistence suites green.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/persistence/sessionsStorage.js"
   - "src/utils/exploitEngine/poolBaseline.js"

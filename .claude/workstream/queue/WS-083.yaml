@@ -17,6 +17,7 @@ description: |
 accept_criteria:
   - "Audit + owner decision on WIP tabs' fate. Est. 3–4 sessions. Gate 2 for drills."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

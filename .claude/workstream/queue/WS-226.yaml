@@ -46,6 +46,7 @@ accept_criteria: |
      test suite green; full smart-test-runner green.
   4. SYSTEM_MODEL.md persistence section updated to document the helper pattern.
 effort: M
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/persistence/database.js
   - src/utils/persistence/handsStorage.js

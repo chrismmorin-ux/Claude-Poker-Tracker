@@ -100,6 +100,7 @@ accept_criteria:
   - "Update WS-189 status to fully done (Phase 1 + Phase 2 both shipped)."
 
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/hooks/useAutoSeatSelection.js (enforce INV-SEAT-SELECTION-4 override contract)"
   - "src/hooks/useGameHandlers.js (enforce INV-SEAT-SELECTION-3 head-of-queue tap-to-record)"

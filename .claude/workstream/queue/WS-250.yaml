@@ -29,6 +29,7 @@ accept_criteria: |
   - Confidence-surfacing + range-advantage-sizing verified in the live advisor.
   - Timing tells: scope a data-model change for time-to-act (defer behind sizing-tell).
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/villainProfileBuilder.js"
   - "src/utils/exploitEngine/gameTreeEquity.js"

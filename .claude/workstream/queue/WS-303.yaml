@@ -116,6 +116,7 @@ accept_criteria: |
     and the corpus is showdown-selected, so this is a weak-power null, not proof of absence.
     See POKER_THEORY 11.8.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/postflopNarrower.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

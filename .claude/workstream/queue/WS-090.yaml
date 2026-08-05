@@ -17,6 +17,7 @@ description: |
 accept_criteria:
   - "✓ Either §9.x divergence entry shipped OR `STREETS` enum extended with preflop semantics + tests"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

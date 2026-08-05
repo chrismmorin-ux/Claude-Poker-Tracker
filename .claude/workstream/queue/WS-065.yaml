@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "`surfaces/postflop-drills.md` updated with Pre-Session mode addition + interaction spec + mobile decision."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-063"

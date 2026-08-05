@@ -54,6 +54,7 @@ accept_criteria: |
     validates each dev-seed archetype against the same validator createPlayer
     uses, rather than only exercising it by hand.
 effort: "S"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "src/__dev__/seedRangeTestData.js"
   - "src/utils/persistence/playersStorage.js"

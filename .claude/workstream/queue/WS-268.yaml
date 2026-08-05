@@ -43,6 +43,7 @@ accept_criteria: |
   - SYSTEM_MODEL.md mentions the pool-baseline prior path and the invariants
     pointer is corrected; last-verified stamp advanced.
 effort: "S"
+runs_on: "phone"        # small, prose/config only
 files_involved:
   - ".claude/context/POKER_THEORY.md"
   - ".claude/context/SYSTEM_MODEL.md"

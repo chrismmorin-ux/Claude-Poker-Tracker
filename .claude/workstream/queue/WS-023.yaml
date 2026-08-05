@@ -25,6 +25,7 @@ accept_criteria:
   - "4 scenarios green"
   - "engine-drift fails CI"
 effort: "S"
+runs_on: "phone"        # small, prose/config only
 files_involved: []
 blocked_by: []
 blocked_by_legacy:

@@ -30,6 +30,7 @@ accept_criteria:
   - "Low-sample behavior verified: prior-dominated profiles do not fire frequency-threshold rules"
   - "Seam test from WS-214 extended to cover the corrected criterion"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/exploitEngine/rangeRules.js
   - src/utils/rangeEngine/index.js

@@ -132,6 +132,7 @@ accept_criteria: |
   - POKER_THEORY.md gains a hero-range / perceived-range / bluff:value section;
     version + changelog bumped.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/rangeEngine/rangeProfile.js"
   - "src/utils/exploitEngine/villainDecisionModel.js"

@@ -41,6 +41,7 @@ accept_criteria: |
   - No behavior change to any existing read path when the field is absent.
   - Documented capture-availability matrix (live/online vs manual replay).
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/constants/gameConstants.js"
   - "src/reducers"

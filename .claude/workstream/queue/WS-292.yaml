@@ -65,6 +65,7 @@ accept_criteria: |
     refactor plus an accessor. Verified by the exploitEngine suite staying green and the
     WS-273 harness reproducing its baseline exactly.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/decisionAccumulator.js"
   - "src/utils/exploitEngine/gameTreeContext.js"

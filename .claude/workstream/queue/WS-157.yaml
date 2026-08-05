@@ -51,6 +51,7 @@ accept_criteria:
   - "If hand-author: v3 archetype list + tickets created"
   - "If hybrid: split criteria documented (which combinations get which treatment)"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/HERO_STATE_DESIGN.md (resolve §7.3)"
   - "src/utils/heroState/heroStateReplayUtils.js (instrument, possibly)"

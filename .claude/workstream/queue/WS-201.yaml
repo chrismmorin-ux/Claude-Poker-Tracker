@@ -50,6 +50,7 @@ accept_criteria:
   - "Recommendation: auto v2 / hybrid / user-only — with rationale"
   - "Forbidden patterns documented: bucket-as-input, persona-as-label, etc."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/research/psd-mood-detection.md (NEW)"
   - "src/utils/sessionStats/__tests__/moodDetection.test.js (NEW, if implementation candidate authored)"

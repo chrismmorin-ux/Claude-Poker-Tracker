@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "≥5 of 15 personas validated or explicitly kept PROTO. Est. 1 session."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

@@ -39,6 +39,7 @@ accept_criteria:
   - "Hat-field flat-string → envelope read-shim (deferred or implemented; binding TBD)"
   - "Tests + Playwright visual regression"
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/components/views/PlayerEditorView/AgeDecadeRadio.jsx (NEW)"
   - "src/components/views/PlayerEditorView/PaletteChipsInput.jsx (NEW; reused by Wardrobe/Jewelry/Logo)"

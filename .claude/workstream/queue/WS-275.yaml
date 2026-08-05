@@ -88,6 +88,7 @@ accept_criteria: |
     explicitly labeled as unmeasured founder estimates with a follow-up.
   - POKER_THEORY.md gains a non-stationarity section; version + changelog bumped.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/rangeEngine/bayesianUpdater.js"
   - "src/utils/rangeEngine/rangeProfile.js"

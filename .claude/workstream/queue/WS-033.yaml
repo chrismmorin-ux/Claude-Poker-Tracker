@@ -17,6 +17,7 @@ accept_criteria:
   - "Events flowing"
   - "persona-inference dashboard + frustration dashboard"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Pending MPMF Gate 4 surface S6 (analytics event schema spec, not yet ticketed) and Q8 verdict (analytics-vendor decision). Cannot ship instrumentation without the schema spec + vendor ratification."

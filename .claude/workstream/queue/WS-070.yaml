@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "HE-17 consumer side. Feature-flagged rollout. Effort: S-M."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-067"

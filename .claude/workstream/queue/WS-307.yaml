@@ -108,6 +108,7 @@ accept_criteria: |
     the bluff's PROFITABILITY is villain-range-side, and both must clear.
   - `advisorAccuracy` Scenario 3's `console.warn` becomes a real assertion or is removed.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/gameTreeEquity.js"
   - "src/utils/exploitEngine/foldEquityCalculator.js"

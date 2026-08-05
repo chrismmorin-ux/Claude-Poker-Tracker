@@ -37,6 +37,7 @@ accept_criteria:
   - "Tab switch no longer silently destroys in-progress drill state — either a warn-on-unsaved-progress guard or per-tab state preservation, with a test."
   - "False-friend Explorer labels diverged (preflop Equity Lookup / postflop Range Lab); change log + any nav references updated."
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "docs/design/surfaces/postflop-drills.md"
   - "docs/design/surfaces/preflop-drills.md"

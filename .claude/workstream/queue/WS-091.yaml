@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "✓ Audit's category-B P0/P1 findings show all items shipped or explicitly waived with reasoning"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

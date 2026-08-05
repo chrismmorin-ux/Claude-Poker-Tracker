@@ -34,6 +34,7 @@ accept_criteria:
   - "STEP 2: a pool-baseline deriver computes the empirical Field aggregate from observed hands, blended with the estimate by sample weight (hierarchical), with the no-self-shrinkage guard enforced."
   - "Step-1 is pure attribution (no numeric change). Step-2 changes baselines only as real pool data accumulates, always weighted by how much data backs each number."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/bayesianConfidence.js"
   - "src/utils/rangeEngine/populationPriors.js"

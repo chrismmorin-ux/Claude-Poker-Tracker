@@ -66,6 +66,7 @@ accept_criteria: |
   - A short note in the exploitEngine test README (or CLAUDE.md anti-patterns) on the
     index convention: index 0 is 22, index 168 is AA.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
   - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"

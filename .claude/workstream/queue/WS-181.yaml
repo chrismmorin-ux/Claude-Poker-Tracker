@@ -114,6 +114,7 @@ accept_criteria:
     only."
 
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "docs/design/audits/YYYY-MM-DD-entry-vce.md (NEW)"
   - "docs/design/surfaces/voice-card-entry.md (NEW)"

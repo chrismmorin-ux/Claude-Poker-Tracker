@@ -17,6 +17,7 @@ accept_criteria:
   - "Surface artifacts for Z0–Z4"
   - "heuristic cross-mapping. Est. 3–4 sessions."
 effort: "M"
+runs_on: "g16"        # needs visual verification
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

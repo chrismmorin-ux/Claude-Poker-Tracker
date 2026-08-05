@@ -32,6 +32,7 @@ accept_criteria:
   - "Roundtable explicitly addresses the parallel preflop/postflop tab structure and whether the tab set is coherent or fragmented for the drilling persona."
   - "Any findings promoted to the design program queue as scoped follow-up items."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

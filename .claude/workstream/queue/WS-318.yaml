@@ -74,6 +74,7 @@ accept_criteria: |
     DIFFERENT contextAction must match under (b) and not under (a). That single case is the
     whole difference and pins whichever is chosen.
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/handAnalysis/heroAnalysis.js"
   - "src/utils/handAnalysis/handSignificance.js"

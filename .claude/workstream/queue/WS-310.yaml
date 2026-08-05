@@ -117,6 +117,7 @@ accept_criteria: |
     per-villain observation; this is a projection. Conflating them manufactures reads
     the data says do not exist.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "scripts/backtest/mine-intent-splits.py"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

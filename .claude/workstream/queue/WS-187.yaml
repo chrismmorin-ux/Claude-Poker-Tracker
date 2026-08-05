@@ -75,6 +75,7 @@ accept_criteria:
     note if the inversion has implications for picker filter design."
 
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "docs/decisions/YYYY-MM-DD-avatar-photo-primary.md (NEW)"
   - "src/components/ui/IdentityAvatar.jsx (consult `surface` prop OR new wrapper)"

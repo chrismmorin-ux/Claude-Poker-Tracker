@@ -62,6 +62,7 @@ accept_criteria: |
   - Behavioural test covering both directions, failing against the pre-fix engine.
   - If the root cause is shared with WS-308, note it in both items and fix once.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/heroActionBuilder.js"

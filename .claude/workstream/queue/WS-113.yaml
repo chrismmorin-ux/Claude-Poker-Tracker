@@ -17,6 +17,7 @@ description: |
 accept_criteria:
   - "`render-street-card.js:97–103` — blank Z3 body during DEALING, not just shimmer frame. Owner verifies: during DEALING no prior-hand advice visible"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

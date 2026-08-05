@@ -46,6 +46,7 @@ accept_criteria:
   - "Benchmark before/after recorded in HERO_STATE_DESIGN.md §7.6"
   - "Existing tests green"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/HERO_STATE_DESIGN.md (resolve §7.6)"
   - "src/utils/heroState/buildHeroState.js (potentially)"

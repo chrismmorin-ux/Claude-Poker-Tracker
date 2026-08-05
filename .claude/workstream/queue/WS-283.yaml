@@ -62,6 +62,7 @@ accept_criteria: |
   - POKER_THEORY 11.1 (personalized fold-curve hierarchy) updated if the fitted
     shape changes.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/villainModelData.js"
   - "src/utils/exploitEngine/foldEquityCalculator.js"

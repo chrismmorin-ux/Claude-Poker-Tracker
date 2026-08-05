@@ -40,6 +40,7 @@ accept_criteria:
   - "KNOWN GAP test in rangeExploitSeam.test.js flipped to a firing assertion"
   - "Sibling range-profile rules audited for width-vs-frequency intent; one-line comment per rule documenting which contract it reads"
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/exploitEngine/rangeRules.js
   - src/utils/exploitEngine/__tests__/rangeExploitSeam.test.js

@@ -60,6 +60,7 @@ accept_criteria: |
   - Reviewed for the live/online divergences already catalogued in POKER_THEORY 9;
     where corpus evidence is online and play is live, the lesson says so.
 effort: "XL"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "docs/domain/CURRICULUM.md"
   - ".claude/context/POKER_THEORY.md"

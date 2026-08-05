@@ -17,6 +17,7 @@ accept_criteria:
   - "Q3=C defers"
   - "reopens on Q3 re-verdict (Phase 2+) + Q7 legal scoping complete"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

@@ -62,6 +62,7 @@ accept_criteria: |
   - Rake-inclusive: §11.3 already threads rake through EV, so an edge that vanishes
     under rake must be reported as vanishing.
 effort: "XL"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/runner.mjs"
   - "scripts/backtest/evCost.mjs"

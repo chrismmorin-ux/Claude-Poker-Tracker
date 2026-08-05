@@ -50,6 +50,7 @@ accept_criteria:
   - "DS-68 authored in jtbd/domains/drills-and-study.md (non-gamified framing, autonomy-bound)."
   - "between-hands-driller situational persona authored; scored-trainer-grinder documented as a surface-level non-goal."
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

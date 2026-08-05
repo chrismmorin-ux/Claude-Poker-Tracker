@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "4 YELLOW cards reformulated + shipped with per-card fidelity review"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy:

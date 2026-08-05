@@ -66,6 +66,7 @@ accept_criteria: |
     in `gameTreeEvaluator`, `gameTreeDepth2`, `item24Improvements`, `item27Improvements` —
     27 call sites total; report which were already discriminating.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
   - "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js"

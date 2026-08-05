@@ -18,6 +18,7 @@ accept_criteria:
   - "✓ all 8 line audits walked through dim-8 with closure verdicts"
   - "✓ disagreements routed to F/G batches"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

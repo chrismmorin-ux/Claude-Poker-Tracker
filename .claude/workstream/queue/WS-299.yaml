@@ -60,6 +60,7 @@ accept_criteria: |
     decision; the extension's added bias is stated the way the one-decision
     horizon already is.
 effort: "XL"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "scripts/backtest/heroPolicy.mjs"
   - "scripts/backtest/ipsEstimator.mjs"

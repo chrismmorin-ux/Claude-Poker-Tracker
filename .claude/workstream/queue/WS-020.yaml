@@ -19,6 +19,7 @@ accept_criteria:
   - "single persistence-hook load"
   - "cross-surface-write visibility in 1 render tick"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy:

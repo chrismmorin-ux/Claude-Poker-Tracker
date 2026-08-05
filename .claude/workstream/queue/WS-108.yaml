@@ -17,6 +17,7 @@ description: |
 accept_criteria:
   - "Independent 200 ms windows reset on reconnect → 400 ms worst case. Deferred — mitigated in practice once RT-68 ships"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

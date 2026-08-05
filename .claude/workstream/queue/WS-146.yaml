@@ -147,6 +147,7 @@ accept_criteria:
   - "Each shipped rule: leakRules/<rule-id>.js + tests + solver baseline entries + catalog status updated to SHIPPED"
   - "Catalog completion metric updates ('X of Y leak types shipped')"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/skillAssessment/leakRules/ (additions)"
   - "src/utils/skillAssessment/solverBaselines.js (additions)"

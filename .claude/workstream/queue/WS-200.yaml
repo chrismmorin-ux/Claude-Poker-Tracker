@@ -49,6 +49,7 @@ accept_criteria:
   - "Touch targets ≥44 DOM-px at Galaxy A22 baseline DPR"
   - "Orientation-change behavior specified (state preservation)"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/design/surfaces/postflop-drills.md (potentially modified)"
   - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"
