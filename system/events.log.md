@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785529883587-7fbd5f772e92"
-generated_content_hash: "a851c54d230cdf2e19b0a531851bf8303f037e7ce0f4707e644e1dbcf71bd57d"
-generated_at: "2026-07-31T20:31:23.636Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1375
+generated_from_event: "ev-1785952889664-3171446f529b"
+generated_content_hash: "b4b78f529490c874fc480cbe20c2313b5042898b9083d51d06ac1638a906be2b"
+generated_at: "2026-08-05T18:01:29.709Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-05.jsonl"]
+event_count: 1379
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 922
-- Events recorded: 1375
-- Source chunks: 20
+- Commands recorded: 926
+- Events recorded: 1379
+- Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
 
@@ -9690,3 +9690,43 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T20:31:23.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:3643:1785952889103`
+
+- Start: 2026-08-05T18:01:29.103Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-05T18:01:29.103Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:3643:1785952889587`
+
+- Start: 2026-08-05T18:01:29.587Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-05T18:01:29.587Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:3643:1785952889613`
+
+- Start: 2026-08-05T18:01:29.613Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-05T18:01:29.613Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:3643:1785952889665`
+
+- Start: 2026-08-05T18:01:29.664Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-05T18:01:29.664Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
