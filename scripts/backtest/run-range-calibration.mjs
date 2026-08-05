@@ -28,6 +28,25 @@
  *                                                  where the true hand sits in villain's
  *                                                  pre-narrowing range equity distribution,
  *                                                  split by action, at tau 0.3/1.0/20
+ *
+ *   PER-PLAYER WIDTH (WS-321) — a DIFFERENT run, not another sweep on the one above:
+ *     --per-player-width               fit a per-player width multiplier on
+ *                                      ACTION_TAU_FRACTION and score it out of sample. Runs
+ *                                      TWO corpus passes (POOL for the population value, EVAL
+ *                                      for the per-player fit) with a walk-forward split
+ *                                      inside each EVAL player and a second CALIB/HELDOUT
+ *                                      split across EVAL players for the shrinkage constant.
+ *     --train-frac 0.5                 share of each player's hands used to FIT; the rest is
+ *                                      scored and never seen by the fit.
+ *     --calib-pct 50                   share of EVAL players used to choose k. The headline
+ *                                      is reported on the other half.
+ *     --out / --card                   as above; the card is RC-per-player-width-*.
+ *
+ *     Example (deep per player rather than wide across players, which is what a per-player
+ *     quantity needs):
+ *       node scripts/backtest/run-range-calibration.mjs --stakes 50NLH \
+ *         --per-player-width --max-files 600 --max-players 150 \
+ *         --out out/per-player-width.json --card out/per-player-width-card.json
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -127,6 +146,69 @@ const main = async () => {
     });
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
+    }
+
+    // ── WS-321: per-player width. A separate estimand, a separate Result Card, and a
+    //    separate partition discipline (two passes, walk-forward inside each EVAL player),
+    //    so it branches here rather than becoming another column on the sweep above.
+    if (args['per-player-width']) {
+      const {
+        runPerPlayerWidthProbe, perPlayerWidthVerdict,
+        renderPerPlayerWidth, buildPerPlayerWidthCard,
+      } = await loader.load('/scripts/backtest/rangeCalibrationProbe.mjs');
+
+      const result = await runPerPlayerWidthProbe({
+        files,
+        poolPct,
+        maxPlayers: int(args['max-players'], Infinity),
+        maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
+        trainFrac: args['train-frac'] === undefined ? 0.5 : Number(args['train-frac']),
+        calibPct: int(args['calib-pct'], 50),
+        log: (m) => console.log(`  ${m}`),
+      });
+      const verdict = perPlayerWidthVerdict(result);
+      console.log(renderPerPlayerWidth(result, verdict));
+
+      // The partition string is stated in full and asymmetrically, because it IS asymmetric
+      // and a single `pool-train@50` would assert a discipline only part of the run has.
+      const widthStamp = {
+        ...replicationStamp,
+        partition:
+          `population:pool@poolPct=${poolPct}; per-player:eval@poolPct=${poolPct} `
+          + `walk-forward trainFrac=${result.config.trainFrac}; `
+          + `k chosen on eval-calib@calibPct=${result.config.calibPct}, `
+          + 'headline on the disjoint eval-heldout',
+      };
+      let card = null;
+      let cardProblems = [];
+      try {
+        ({ resultCard: card } = buildPerPlayerWidthCard({
+          result, verdict, replicationStamp: widthStamp, dealBook, poolPct,
+        }));
+        console.log(`\n  Result Card ${card.resultCardId}`);
+        console.log(`    engine ${card.manifest.engineCommit.slice(0, 12)}`
+          + `${card.manifest.engineDirty ? ' (DIRTY — the commit does not identify the code that ran)' : ''}`);
+        console.log(`    deal book ${card.match.dealBookId}  ${String(card.manifest.dealBookHash).slice(0, 24)}…`);
+        console.log(`    register ${card.manifest.disclaimerRegisterVersion}   cluster unit ${card.clusterUnit}`);
+        console.log(`    ADMISSIBLE: ${card.admissibility.admissible ? 'yes' : 'NO'}`);
+        for (const b of card.admissibility.blockers) console.log(`      BLOCKER  - ${b}`);
+        for (const w of card.admissibility.warnings) console.log(`      warning  - ${w}`);
+      } catch (err) {
+        cardProblems = [err?.message || String(err)];
+        console.log(`\n  Result Card REFUSED: ${cardProblems[0]}`);
+      }
+
+      if (typeof args.out === 'string') {
+        mkdirSync(dirname(args.out), { recursive: true });
+        writeFileSync(args.out, JSON.stringify({ resultCard: card, cardProblems, result }, null, 2));
+        console.log(`\nWrote ${args.out}`);
+        if (typeof args.card === 'string' && card) {
+          mkdirSync(dirname(args.card), { recursive: true });
+          writeFileSync(args.card, JSON.stringify(card, null, 2));
+          console.log(`Wrote ${args.card}`);
+        }
+      }
+      return;
     }
 
     const started = Date.now();

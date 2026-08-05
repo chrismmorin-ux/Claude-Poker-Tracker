@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-per-player-width-790a6ffd-5853ae0a",
+  "match": {
+    "surfaceId": "engine-read",
+    "dealBookId": "handhq-allsites-50NLH-790a6ffd",
+    "fieldId": "population-chart-baseline"
+  },
+  "estimand": "Whether the softness of postflop range narrowing is a property of the PLAYER as well as of the action: the out-of-sample gain, in nats of log P(true holding) per revealed decision, of a per-player width multiplier on ACTION_TAU_FRACTION over the single population width, measured on held-out EVAL players and paired on identical decisions.",
+  "treatment": "read-only parameter sweep · no substitution and no counterfactual · every width arm scored on the SAME decisions and differenced per decision · the range is a population baseline for the acting seat's position narrowed once by that seat's own observed action, so arms differ in nothing but the width · POPULATION width fitted on POOL players only; per-player widths fitted on a temporal PREFIX of each EVAL player's own hands and scored on the SUFFIX; the shrinkage constant k chosen on a CALIB half of EVAL players and the headline reported on the disjoint HELDOUT half · every figure is conditional on the holding having been REVEALED, and the showdown filter is ACTION-DEPENDENT (folds reveal at 0.0%), so a per-player width is measured on the branches that player did not fold, not on their range · population is online 6-max/full-ring July 2009, so any claim about live 9-handed 1/2-1/3 is TRANSFERRED, not measured.",
+  "metrics": {
+    "perPlayerMinusPopulationNatsPerDecision": 0,
+    "headlineSe": 0,
+    "headlineArm": "unshrunk (k = 0)",
+    "unshrunkPerPlayerMinusPopulationNatsPerDecision": -0.025167884318802368,
+    "unshrunkSe": 0.008603705852967923,
+    "unshrunkPlayersMovedOffPopulation": 25,
+    "headlineCiLow": -0.0420308379281532,
+    "headlineCiHigh": -0.008304930709451534,
+    "verdict": "per-player width does NOT beat the population width out of sample",
+    "populationWidthMultiplier": 1.2252976604300825,
+    "populationWidthN": 1862,
+    "populationNarrowingWorthNats": 0.11366012268979087,
+    "populationNarrowingWorthSe": 0.010905740881306839,
+    "chosenShrinkageK": "Infinity",
+    "playersSignal": 24,
+    "playersNegativeSignal": 1,
+    "playersNoSignalObservedZero": 4,
+    "playersUnderpoweredCannotTell": 62,
+    "playersTotal": 91,
+    "heldoutPlayers": 41,
+    "heldoutPlayersScored": 38,
+    "heldoutTestDecisions": 624,
+    "heldoutPlayersMovedOffPopulation": 0,
+    "poolRevealedDecisions": 1862,
+    "evalRevealedDecisions": 2557,
+    "rawWidthMedian": 1.2186754878970318,
+    "rawWidthP25": 0.4225906114379282,
+    "rawWidthP75": 2.409609276080053,
+    "rawWidthPlayersWithEstimate": 70,
+    "rawWidthPlayersNoEstimate": 21,
+    "rawWidthEdgePinned": 26,
+    "rawWidthEdgePinnedShare": 0.37142857142857144,
+    "medianRevealedPerPlayer": 13,
+    "showdownConditional": true,
+    "foldRevealRate": 0
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "admissible": true,
+    "blockers": [],
+    "warnings": [
+      "62 of 91 players (68.1%) are UNDERPOWERED: their own evidence could not have resolved even a population-sized effect. A null over this population is a weak-power null (§11.8), not proof that width is not a property of a player.",
+      "SHOWDOWN SELECTION IS ACTION-DEPENDENT and is NOT corrected away. Folds reveal at 0.0%, so every per-player width is fitted on the branches that player did not fold. Two players' widths are therefore not measured on comparable slices of their ranges.",
+      "CORPUS-MINED PRIOR: the baseline range is built from populationPriors, mined from this corpus. That channel is open here as it is for every arm of this instrument, and it is identical across width arms, so it cannot favour the per-player arm over the population arm — but it does inflate both against an out-of-corpus baseline.",
+      "buildRangeProfile runs over ALL of a player's hands and so selects WHICH decisions exist, including in the TEST suffix. It does not enter the scored range (arms are built from the population baseline) and it is identical across arms, so the paired contrast is unaffected — recorded because an undeclared use of the suffix is how walk-forward guarantees rot.",
+      "POPULATION: online 6-max/full-ring 50NL, July 2009. The founder's game is live 9-handed 1/2-1/3. Any live claim anchored on this figure is TRANSFERRED, not measured."
+    ],
+    "clusters": 38,
+    "clusterUnit": "players"
+  },
+  "manifest": {
+    "engineCommit": "5853ae0a966bc1417214cdd193215a21f7c33a4e",
+    "engineDirty": true,
+    "dealBookHash": "sha256:790a6ffdf3dc8980df4ae430f6e65da41c34cfcf82486750dc4c76d8ea00fd93",
+    "fieldVersion": "population-chart-baseline (buildBaselineRange, DEFAULT_CONTINUATION_RATES)",
+    "partition": "population:pool@poolPct=50; per-player:eval@poolPct=50 walk-forward trainFrac=0.5; k chosen on eval-calib@calibPct=50, headline on the disjoint eval-heldout",
+    "seeds": {},
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05
+    },
+    "disclaimerRegisterVersion": "FR-1+8c4e65578ca2",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null
+}
