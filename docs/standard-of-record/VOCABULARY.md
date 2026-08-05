@@ -38,13 +38,22 @@ exploratory check is not a claim. The trigger is **a number someone could act on
 | **Layer Probe** | Scores ONE layer against its own ground truth (`range` → revealed holding, `equity` → realized showdown, `foldProbability` → observed fold, `ev` → realized chips), independently of whether the recommendation downstream was any good. `action` has no ground truth and its probe refuses permanently. Probes refuse `hypothesized`-basis input, inheriting the holdingKnowledge rule. (WS-324) |
 | **Layer Attribution** | Decomposes a divergence between two surfaces BY LAYER — which step of the reasoning made them differ — orthogonally to FSA's decomposition BY SITUATION. Both sum to the same total. **Takes `d` as a required argument and never chooses one**: a decomposition of a divergence is not a definition of one, so FSA Phase 3 still owns `d`. (WS-324) |
 | **Layer Ablation** | Substituting a layer's recorded value to ask "what if this layer had been correct?". Evaluation-free, and therefore able to speak only to the substituted layer — every layer downstream was evaluated at the ORIGINAL input. Propagating requires layer functions **pinned** to the atom set's engine commit and replayed from its seeds, never the live engine. (WS-324) |
+| **Divergence** (`d`) | How far apart two surfaces are. **THE one comparison path** ADR-009 permits, in `src/utils/standardOfRecord/divergence.js` and nowhere else — a repo-wide scan in its test file asserts there is no second. **Unsigned**: a divergence says how far apart, never which is better. That second question is an *edge* and `estimateEdge` in the hero-EV arm already owns it; conflating them is how a divergence figure gets read as a winrate. (WS-350) |
+| **The two candidate `d`s** | FSA open question #2 said "KL versus EV-difference — decide in Phase 3, **measure both**", and both ship. `kl` = KL(reference ‖ candidate) over the action distribution, in **nats**: how differently do they *behave*. `ev-difference` = \|EV_A − EV_B\| in the atom's EV units: how much *money* separates them. **They are not on the same scale** and `comparableByMagnitude: false` rides in every payload — what is compared is their **ordering** over surfaces. (WS-350) |
+| **Pre-registration** | The declaration, made and timestamped *before* a run, of which measure is primary and which weighting is reported. `measureBoth` **refuses to run without one**. The refusal is the mechanism: computing both and then reporting whichever agreed with the prior finding is indistinguishable, in the output, from having chosen honestly. Stamped verbatim into `resultCard.metrics.divergence.preRegistration`. (WS-350) |
+| **Divergence volume** | The set of paired decisions a divergence figure is computed over. Enforced to be **identical for both measures**: a decision missing either one is excluded from *both* and counted by reason. Scoring KL on the rows that had actions and EV-difference on the rows that had EVs would put the two numbers on two different sets, and the comparison would then be measuring the sets. (WS-350) |
+| **Weighting** | `frequency` (every decision counts once — what a player actually faces) vs `uniform` (every *situation* counts once — surfaces rare-but-severe divergence that frequency weighting buries). Both are computed on every run; they answer different questions, and the card declares which is primary. (WS-350) |
+| **`KL_FLOOR`** | The probability floor under KL, `1e-6`. Load-bearing: `heroPolicy` applies no smoothing, so a flipped argmax against a hard zero contributes ≈ `ln(1/floor)` nats — the floor *sets the magnitude* of every KL figure. It is stamped into `manifest.constants` and **swept** into a `fragility` margin. A KL figure published without its floor swept is a setting, not a measurement. EV-difference has no equivalent knob, which is itself a difference between the two candidates. (WS-350) |
 | **Strategy Card** | A declared, enclosed, warranted rule set — i.e. a `Declared` surface. |
 | **Deal Book** | A versioned, seeded, content-hashed hand set: a corpus slice or a generated set. |
 | **Field** | Who occupies the other seats. |
 | **Match** | Strategy Card × Deal Book × Field → Result Card. |
 | **Result Card** | The standardized scorecard plus its replication manifest. |
 | **Decision Atom** | One row per decision. **Aggregates are VIEWS over atoms, never the record.** |
-| **Census** | The coverage record, *including contexts hit zero times*. |
+| **Census** | The coverage record, *including contexts hit zero times*. **A zero is not one fact but three** (WS-328), and the census refuses to collapse them: `observed-zero` (examined, nothing occurred), `unexamined` (never looked at — carries a reason from a closed enum), `dropped` (reached, then discarded). Examination is **declared, never inferred**: a builder that read the hit map and called everything else a zero could not represent "we never looked" at all, which is how a coverage GAP comes to read as a measured ABSENCE. `src/utils/standardOfRecord/coverageCensus.js`. |
+| **Atom set** | A finalized, append-only, content-addressed batch of atoms, living **outside git** and referenced from a Result Card by `atomSetHash` alone — never by path, so relocating the store cannot invalidate a card. `resolveAtomSet` returns an explicit failure reason (`not-found` \| `hash-mismatch` \| `truncated` \| `unreadable`) rather than an empty list: a missing store and a run with no decisions must not produce the same confident zero. `scripts/backtest/atomStore.mjs`. (WS-328) |
+| **Atoms self-check** | The standing check that every captured field has at least one **reader**, run after every Match. Enforced by SCHEMA DIFF, not discipline — add a field to `SOR_SCHEMAS.decisionAtom` without registering a reader and the next run fails. Each reader declares a `READER_DEPTHS` value and the check reports the MIX, because proving a field is *queried* does not prove the query was the right one. `scripts/backtest/atomsSelfCheck.mjs`. (WS-328) |
+| **Anchor generation** | Which Deal Book a Result Card stands on. The anchor is **Deal Book + Field + metric definitions**; the engine version is an INPUT recorded on the card, never part of the anchor, so an engine upgrade is a re-run whose delta is attributable to the upgrade. A new Deal Book is a new generation, and every prior card is re-run onto it so the Ladder **rebases rather than resets**. `ladder.assertComparable` throws across unrebased generations, because a fragmented ladder is visually indistinguishable from a sound one. (WS-328) |
 | **Ladder** | The persistent comparison across all Result Cards. |
 | **Warrant** | Why a rule says what it says: `equity` \| `structure` \| `read` \| `fear`. |
 | **Residual clause** | A Card's declared fallback for states its named rules do not reach. |
@@ -134,16 +143,20 @@ place so an existing reader gets `null` rather than a crash.
 | Object | Version | Defined in |
 |---|---|---|
 | Strategy Card | 1 | `src/utils/standardOfRecord/schemas.js` |
-| Decision Atom | 1 | ″ |
-| Coverage Census | 1 | ″ |
+| Decision Atom | 2 | ″ |
+| Coverage Census | 2 | ″ |
 | Deal Book manifest | 1 | ″ |
 | Field manifest | 1 | ″ |
 | Result Card | 1 | ″ |
 | Fault entry | 1 | ″ (WS-330) |
 
 Enforced by `src/utils/standardOfRecord/__tests__/schemas.test.js`, which pins a baseline of
-every shipped field. The companion CI grep gate — modelled on `scripts/check-idb-additive.sh` —
-is **WS-329's**, which is where the standard becomes binding.
+every shipped field, AND by `scripts/check-sor-additive.sh` (WS-328) — the sibling of
+`scripts/check-idb-additive.sh`, diffing the live schemas against
+`scripts/standardOfRecord/schema-baseline.json` and failing on any removal or retype. It
+delegates to node rather than grepping because, unlike `deleteObjectStore(`, deleting a field
+descriptor leaves no token to search for. The repo-wide invariant that scans docs and session
+notes for unresolved figures remains **WS-329's**, which is where the standard becomes binding.
 
 ---
 
@@ -208,6 +221,11 @@ Carlo noise, not exactly. Do not read a small difference between two Result Card
 
 ## What WS-322 deliberately did NOT build
 
+> **CLOSED by WS-350 (2026-08-05).** FSA Phase 3 landed. `src/utils/standardOfRecord/divergence.js`
+> is the one comparison path, and open question #2 was answered *by measuring both candidates on
+> the same volume* rather than by choosing one. The paragraph below is kept as written because it
+> records why the gap existed for three tickets, which is the more useful fact.
+
 **No comparison path.** FSA Phase 3 — the divergence instrument — does not exist in code; Phase 1
 (the situation key, `src/utils/pokerCore/situationKey.js`) is the only phase that does. ADR-009's
 guarantee is that `Declared` is scored by the *same* instrument as the other four and that no
@@ -218,7 +236,9 @@ the divergence function `d`?* KL versus EV-difference, "decide in Phase 3, measu
 been answered.
 
 Also not built here, and owned elsewhere: the Decision Atom **store** and the Census
-**computation** (WS-328), the population simulator (WS-326), the 169-cell Entry Map (WS-323),
+**computation** (WS-328 — **both now shipped**: `scripts/backtest/atomStore.mjs`,
+`src/utils/standardOfRecord/coverageCensus.js`, `scripts/backtest/atomsSelfCheck.mjs` and
+`scripts/backtest/ladder.mjs`, exercised end to end by `scripts/backtest/run-atoms.mjs`), the population simulator (WS-326), the 169-cell Entry Map (WS-323),
 stack-registration refusal (WS-324), the derived-fear detector (WS-327), and flipping the
 invariant from advisory to enforcing (WS-329).
 

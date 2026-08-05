@@ -129,10 +129,7 @@ the same estimand on SRC-012 (online 2009) and on SRC-014 (the founder's live 1/
 SRC-012 arm is measurable today. The SRC-014 arm is not, for three separate reasons, each
 recorded as a `falsifierBlockers` entry in the module:
 
-1. **SRC-014 has no positive identity.** Live hands are distinguished only by `source` being
-   *undefined* — the online path stamps `source: 'ignition'`, the manual path stamps nothing. The
-   live subset therefore cannot be selected, and an un-stamped import is indistinguishable from a
-   live hand. Already an open finding in `docs/provenance/data-source-registry.md`.
+1. ~~**SRC-014 has no positive identity.**~~ **CLEARED 2026-08-05 (WS-368 accept criterion 7).** See below.
 2. **SRC-014 is unreachable by the harness.** It is browser IndexedDB on the founder's device
    with no export path; SRC-012 is scored by node scripts over an on-disk corpus root. No harness
    can currently read both arms.
@@ -153,6 +150,33 @@ into the register version, so clearing one is a recorded change and not a quiet 
 and here is what would change that" route to **different work** — the first to an analyst, the
 second to whoever owns the ingest path. A queue that cannot tell them apart re-emits an unrunnable
 item at rank 1 forever.
+
+### Clearing one blocker is not settling an entry (WS-368 AC-7)
+
+Blocker 1 above is **cleared**. WS-368 (commit `3befa26d`) gave every hand a positive provenance
+identity: a closed set `{live, ignition, import, unknown}` in
+`src/utils/persistence/handProvenance.js`, stamped **at construction** on every write path, with
+the stamp spread after the payload so a caller cannot forge one. `getHandsBySource('live')` is now
+a real selector — the exact capability the blocker said did not exist.
+
+Three things this **does not** do, all recorded in the entry's `clearedBlockers[0].note` rather
+than left to a reader's memory:
+
+- **Blockers 2 and 3 still hold.** There is no export path from browser IndexedDB reachable by the
+  node harness that scores SRC-012, and no volume floor has been stated. The entry stays
+  **blocked**, stays **`untested`**, and still may not be confirmed or retired.
+- **The mechanism is not the data.** Migration v28 stamps every pre-existing row `unknown`, never
+  `live`, because those rows are genuinely ambiguous and a guess would manufacture the very
+  population the falsifier is supposed to measure. So the selectable live set starts **empty** and
+  grows only from hands played after 2026-08-05.
+- **Clearing is evidence-gated, like confirming.** `clearFalsifierBlocker` requires the blocker
+  text verbatim, at least one piece of recorded evidence, and a `note` stating what the clearance
+  does *not* cover. The cleared blocker is **preserved**, not deleted — `clearedBlockers` is hashed
+  into the register version alongside `falsifierBlockers`, so a reader of an old Result Card can
+  see not only that the register moved but which way and on whose authority.
+
+`registerVersion()`: `FR-1+e3867c10fc2a` → `FR-1+8c4e65578ca2`. Existing card stamps are untouched
+— they correctly record what they were produced under.
 
 > **Note on the figures above.** The table is computed with **no card set**, so its breadth column
 > is pure prior. Six Result Cards now exist; against them this entry's *observed* breadth is 3/6
@@ -290,6 +314,25 @@ a legacy card. The flagger has to be able to open an old card in order to flag i
 that made legacy cards unreadable would lock the mechanism out of exactly the cards most likely
 to be contaminated. **Validation tightens; reading does not.**
 
+**And the version must have the right *shape*, not merely be present (WS-353 follow-up).** The check used
+to be truthiness, which rejects `null`, `''` and an absent key but accepts any non-empty string —
+`'unknown'`, `'v1'`, a hand-typed near-miss. The stamp exists for one purpose, to be **joined**
+back to a register version when a fault is confirmed, and a value that cannot be joined is worse
+than none: `null` says the card cannot name its register, while `'unknown'` claims it can. The
+pattern (`REGISTER_VERSION_PATTERN`, `FR-<epoch>+<12 lowercase hex>`) lives in `faultRegister.js`
+beside the function that mints it, so the checker cannot drift from the producer, and it matches
+any epoch — a validator pinned to `FR-1` would reject every card minted the day after a bump.
+
+**Cards produced before WS-330 are not back-filled.** `out/hero-ev-pbr.json`'s
+`RC-hero-ev-2d765568-c56405ee` carries `disclaimerRegisterVersion: null`; it was written on
+2026-08-04 at 00:14 from engine commit `c56405ee`, and WS-330 — which added *both* the
+requirement and the stamp — landed at 11:42 that day. Its stored `resultCardProblems: []` is a
+verdict computed under the old rules; re-run `resultCardProblems` on it today and it is rejected.
+The register version that run stood under is genuinely unrecoverable, so nothing plausible is
+written into the field, for the same reason migration v28 stamps ambiguous hands `unknown` rather
+than `live`. The card stays invalid-to-publish, stays legible to audit, and is **regenerated by
+re-running the harness**, not patched.
+
 ---
 
 ## 6. The register as a work queue
@@ -321,6 +364,12 @@ If the falsifier **cannot be run today**, add `falsifierBlockers` — one non-em
 blocker, each naming what blocks it *and* what would unblock it (`UNBLOCKED BY: …`). A bare
 "blocked" routes to nobody. Do not put "we could not measure it" in `evidence`: that field gates
 confirmation and retirement and must keep meaning *a measurement exists*.
+
+When a blocker later stops being true, **clear it with `clearFalsifierBlocker`** rather than
+deleting the string. It demands the blocker text verbatim, at least one piece of recorded
+evidence, and a `note` stating what the clearance does *not* cover; the cleared blocker moves to
+`clearedBlockers`, which is hashed alongside `falsifierBlockers`. Clearing does **not** touch
+`status` — clearing the last blocker makes the falsifier runnable, it does not run it.
 
 Then update §3's table — a test asserts the table lists exactly the module's fault IDs in ranked
 order, so the two cannot drift.

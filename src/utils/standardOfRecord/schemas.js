@@ -36,7 +36,7 @@
 export const SOR_SCHEMA_VERSIONS = Object.freeze({
   strategyCard: 1,
   decisionAtom: 2,
-  coverageCensus: 1,
+  coverageCensus: 2,
   comparisonCensus: 1,
   resultCard: 2,
   dealBookManifest: 1,
@@ -180,7 +180,16 @@ export const FORCING_QUESTIONS = Object.freeze([
   { question: 'Which contexts did we never reach at all?', field: 'coverageCensus.cells', answerable: true, note: 'The zeros. Answerable only because the census emits them.' },
   { question: 'How much of the divergence between two surfaces does a given layer account for?', field: 'layers', answerable: true, note: 'ANSWERABLE as of WS-324, without settling FSA open question #2. `layerAttribution.js` takes `d` as a REQUIRED argument with no default and decomposes whatever it yields — by layer and by situation, asserted to sum to the same total. A decomposition of a divergence is not a definition of one, so Phase 3 still owns the choice of `d`.' },
   { question: 'Which layer is wrong, independently of whether the recommendation was?', field: 'layers', answerable: true, note: 'ANSWERABLE as of WS-324 via `layerProbes.js`, for the four layers with a ground truth source. This is the question nothing could ask while WS-291 was live: a layer-1 fault presenting as layer-5 symptoms, undiagnosable because nothing scored the layers independently.' },
-  { question: 'Which divergence measure `d` is the right one — KL, or EV-difference?', field: null, answerable: false, note: 'UNANSWERABLE TODAY, and deliberately left so. FSA open question #2 says "decide in Phase 3, measure both". WS-324 made the layer question answerable WITHOUT answering this one, by requiring `d` as an argument with no default — so the choice stays open until someone measures it, rather than being settled by whichever call site happened to be written first. This is the entry to delete when Phase 3 lands.' },
+  { question: 'Which divergence measure `d` is the right one — KL, or EV-difference?', field: 'resultCard.metrics.divergence', answerable: true, note: 'ANSWERABLE as of WS-350, and the answer is NOT "one of them". `divergence.js` is the single comparison path FSA Phase 3 owed ADR-009; it computes BOTH candidates on the SAME paired volume, refuses to run without a pre-registered primary, and stamps the pair plus the pre-registration into `resultCard.metrics.divergence`. That field is what made the question answerable: a card carrying only the primary would let a run report whichever measure agreed with its prior finding and look identical to an honest one. The measures are NOT comparable by magnitude (nats vs chips) — `comparableByMagnitude: false` rides in the payload — so what is compared is their ORDERING over surfaces, and a disagreement there is reported as the finding. NOTE the entry is kept rather than deleted: the schema is additive-only, and a reader of an OLD atom set needs to know this question was once unanswerable.' },
+  // ── WS-328 additions. The first three became answerable; the last two are the LIST LEARNING
+  // FROM ITS OWN GAPS — questions this work found it could NOT answer, appended per the rule
+  // above, each one the specification for a later field or a later instrument.
+  { question: 'Was this context examined and empty, or never examined at all?', field: 'coverageCensus.examination', answerable: true, note: 'ANSWERABLE as of WS-328. The v1 census emitted a hit count per cell, which separates hit from not-hit and nothing else — a zero could equally mean examined-and-empty, never-examined, or dropped-by-a-bug. `examination` is DECLARED and never inferred, so a never-looked cell is a positively-marked row rather than an absence.' },
+  { question: 'Which contexts did the instrument reach and then DISCARD?', field: 'coverageCensus.cells[].status', answerable: true, note: 'ANSWERABLE as of WS-328 via the `dropped` status, which carries the atom-level skipReason. Previously a drop and a genuine zero were the same empty cell.' },
+  { question: 'Do the atoms this Result Card was computed from still exist, and are they the ones it used?', field: 'resultCard.atomSetHash', answerable: true, note: 'ANSWERABLE as of WS-328. `atomStore.resolveAtomSet` returns an explicit reason — not-found, hash-mismatch, truncated — rather than an empty list. A card without its atoms is still a valid anchor; a card that SILENTLY lost them would let a re-derivation run on a different set.' },
+  { question: 'Does a bold card make the table play back differently toward us?', field: 'actorSeat', answerable: false, note: 'NOT ANSWERABLE, and the earlier `actorSeat` entry above over-claims it — kept rather than edited, because additive-only applies to this list too and a reader of an old atom set needs to see what was believed at the time. Villain atoms from the 2009 corpus are a RECORDING: those villains never saw our card, so their actions cannot respond to it. Capturing actorSeat is necessary and not sufficient; the sufficient condition is a RESPONSIVE Field, which is WS-326\'s simulator. Until then the founder premise that a bold strategy changes others\' behaviour toward us is untestable on this instrument, and any number suggesting otherwise is measuring something else.' },
+  { question: 'What did the surface score for each alternative at a HERO node in a replayed corpus hand?', field: 'alternativeScores', answerable: false, note: 'NOT ANSWERABLE on the corpus. `phhAdapter` sets `gameState.mySeat = null` because a corpus hand has no hero, so every reconstructed decision is actorRole "villain" and the hero branch of `reconstructPredictionAudit` is never taken. The field is populated on LIVE captures, where mySeat exists. The specification this implies: either a hero-seat assignment pass over corpus hands, or accepting that hero-side alternativeScores is a live-only field and saying so wherever it is quoted.' },
+
   { question: 'What if layer N had been correct — without re-running an engine that has since moved?', field: 'seeds', answerable: true, note: 'PARTIALLY. `layerAblation.js` substitutes from stored atoms with zero evaluation, but can only speak to the substituted layer itself — every layer downstream was evaluated at the ORIGINAL input. Propagating needs layer functions PINNED to this atom set\'s engine commit and replayed from these seeds. `substitutionReach` returns which layers a given substitution can and cannot answer for, rather than letting a caller assume it reached the action.' },
 ]);
 
@@ -202,6 +211,17 @@ const COVERAGE_CENSUS_FIELDS = [
   { name: 'hitContexts', type: 'number', since: 1, required: true, note: 'Numerator.' },
   { name: 'abstentions', type: 'number', since: 1, required: true,
     note: 'Decisions where the card declared itself out of domain. Explicitly counted per WS-322 — never silently skipped.' },
+
+  // ── v2 (WS-328): the never-looked cells, made representable. ───────────────────────────
+  // v1 emitted a hit count per cell, which distinguishes "hit" from "not hit" and NOTHING
+  // else. A cell at zero could still mean three different things — examined and empty, never
+  // examined, or examined and dropped by a bug — and those license opposite conclusions.
+  { name: 'examination', type: 'object', since: 2, required: true,
+    note: 'The DECLARED examined set: {mode, examinedContexts, unexaminedReason, basis}. Required and never inferred — inferring examination from observation makes "we never looked" structurally unrepresentable, which is the defect, not the design. mode "exhaustive" is a POSITIVE CLAIM that the run covered the reachable domain, in the same spirit as an empty manifest.unseededSources.' },
+  { name: 'statusCounts', type: 'object', since: 2, required: true,
+    note: 'Cells by status — hit | observed-zero | unexamined | dropped | unreachable | unattributable. Stated so a report cannot print a single coverage percentage that silently folds a coverage GAP into a measured ABSENCE.' },
+  { name: 'axes', type: 'array', since: 2, required: true,
+    note: 'The ordered axes the contexts were enumerated from. Ordered because the context key is positional, and two censuses whose axes were declared in different orders must not be silently unioned.' },
 ];
 
 /**

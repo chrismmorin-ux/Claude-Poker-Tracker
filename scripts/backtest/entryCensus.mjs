@@ -37,15 +37,51 @@
  *                    never shown. This is the bucket the ticket's premise assumed was empty.
  *   zero-hit       — reachable, attributable in principle, simply not observed in this slice.
  *                    A genuine research queue.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * WHAT THIS RUN EXAMINED — declared, because v1 let it be inferred (WS-328)
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ *
+ * v1 emitted `hits: 0` on every cell and `hitContexts: 0`, which a reader can only read one
+ * way: we looked at 1,352 reachable cells and none of them occurred. That is not what happened.
+ * NO CELL WAS EVER EXAMINED. This run scans the corpus for one thing — whether a preflop
+ * decision carries a cell attribution at all — and the answer is that a folded hand never does,
+ * so nothing here ever attempts to place a decision in a cell. A zero produced by a routine
+ * that cannot produce a non-zero is not a measurement.
+ *
+ * So the examined set is declared EMPTY, in `enumerated` mode, with reason
+ * `instrument-cannot-evaluate`: hole cards are masked at deal, and this is a permanent property
+ * of the corpus rather than a scope choice someone could undo by scanning more files. Every
+ * reachable cell is therefore `unexamined`, and the census now says "we never looked" where it
+ * used to say "we looked and found none" — opposite facts, and the second one was false.
+ *
+ * The pooled attribution counts stay in `corpusAttribution` rather than becoming per-cell
+ * `unattributable` rows, for the reason the whole module exists: the decisions that HAPPENED
+ * cannot be assigned to a named cell, so spreading them over cells would invent the very
+ * attribution the finding says is unavailable.
+ *
+ * This is the same failure shape as WS-368 (absence-as-identity), and it gets the same remedy:
+ * positive identity for the never-looked case.
  */
 
 import { readFile } from 'node:fs/promises';
 
 import { discoverCorpusFiles } from './corpusFiles.mjs';
 import { enumerateCells, POS_CATEGORIES, FACING_ACTIONS } from './entryMap.mjs';
+import {
+  buildCoverageCensus,
+  coverageCensusProblems,
+  declareExamination,
+  UNEXAMINED_REASONS,
+} from '../../src/utils/standardOfRecord/coverageCensus.js';
+import { SOR_SCHEMA_VERSIONS } from '../../src/utils/standardOfRecord/schemas.js';
 
-/** Schema version of the Coverage Census object — see `standardOfRecord/schemas.js`. */
-export const CENSUS_SCHEMA_VERSION = 1;
+/**
+ * Schema version of the Coverage Census object — see `standardOfRecord/schemas.js`.
+ * Derived rather than restated so this census cannot drift a version behind the schema it
+ * answers to.
+ */
+export const CENSUS_SCHEMA_VERSION = SOR_SCHEMA_VERSIONS.coverageCensus;
 
 const ACTION_RE = /^(p\d+) (f|cc|cbr)/;
 const DEAL_RE = /^d dh (p\d+) (\S+)$/;
@@ -135,35 +171,93 @@ export const buildEntryCensus = async (handClasses, { root, maxFiles = null } = 
   const all = enumerateCells(handClasses);
   const reachable = all.filter((c) => c.reachable);
 
-  // Every reachable cell is reported, hit count included. No corpus decision can currently be
-  // attributed to one — that is the finding, and it is recorded as a per-cell zero rather than
-  // as an absent row, so the map's coverage claim cannot be read as better than it is.
-  const cells = all.map((c) => ({
-    cellId: c.cellId,
-    handClass: c.handClass,
-    posCategory: c.posCategory,
-    facingAction: c.facingAction,
-    reachable: c.reachable,
-    unreachableReason: c.unreachableReason,
-    hits: 0,
-  }));
-
   const pct = (a, b) => (b ? Number(((100 * a) / b).toFixed(2)) : null);
 
-  return {
-    schemaVersion: CENSUS_SCHEMA_VERSION,
+  /**
+   * The ordered axes the domain was enumerated from. Order is load-bearing twice over: the
+   * context key is positional (`AA|EARLY|raise`), and it must keep matching `entryMap`'s own
+   * `cellId` so the map and its census join on cell identity rather than on a coincidence.
+   */
+  const axes = [
+    { name: 'handClass', levels: [...handClasses] },
+    { name: 'posCategory', levels: [...POS_CATEGORIES] },
+    { name: 'facingAction', levels: [...FACING_ACTIONS] },
+  ];
+
+  const unreachable = {};
+  for (const c of all) if (!c.reachable) unreachable[c.cellId] = c.unreachableReason;
+
+  /**
+   * NOTHING WAS EXAMINED, and this is where the run says so.
+   *
+   * The scan above measures whether a preflop decision can be attributed to a cell at all. It
+   * never places one, because a folded hand carries no holding — so no cell in the domain was
+   * looked at, and an empty examined set is the honest declaration. Claiming `exhaustive` here
+   * would assert this run covered the reachable domain, which is exactly the sentence the
+   * measurement refutes.
+   */
+  const examination = declareExamination({
+    mode: 'enumerated',
+    contexts: [],
+    unexaminedReason: UNEXAMINED_REASONS.INSTRUMENT_CANNOT_EVALUATE,
+    basis:
+      `Scanned ${chosen.length} of ${files.length} corpus files and classified ` +
+      `${tally.decisions} preflop first decisions. ${tally.folds} were folds, of which ` +
+      `${tally.foldsAttributable} carry a hole-card attribution — hole cards are masked at ` +
+      'deal and surface only at showdown, so a fold can never be assigned to one of the 169 ' +
+      'classes at any sample size. This is a permanent property of the instrument, not a ' +
+      'scope choice: scanning more files cannot change it. The revealed subset of entries ' +
+      `(${tally.entriesAttributable} of ${tally.entries}) is showdown-selected toward hands ` +
+      'that got called down and is deliberately NOT used to populate cells, so no cell in the ' +
+      'domain was examined by this run.',
+  });
+
+  // Unreachable cells stay enumerated and keep their reason; every reachable cell comes back
+  // `unexamined`, which is the correction — v1 returned them as zeros.
+  const base = buildCoverageCensus({
     domain: {
       gameType: 'cash', seats: [6, 9], stackDepthBB: [80, 200],
       handClasses: handClasses.length,
       posCategories: POS_CATEGORIES,
       facingActions: FACING_ACTIONS,
     },
+    axes,
+    hits: {},
+    examination,
+    unreachable,
+    abstentions: 0,
+  });
+
+  // Re-emitted in `enumerateCells` order, carrying BOTH shapes: the census status fields a
+  // Coverage Census reader expects, and the entry-map cell identity the fringe-migration
+  // report joins on. Same rows, same count — an ordering, not a filter.
+  const byKey = new Map(base.cells.map((c) => [c.contextKey, c]));
+  const cells = all.map((c) => {
+    const censusCell = byKey.get(c.cellId);
+    if (!censusCell) {
+      // A cell with no census row would come back statusless, i.e. an absence again. Refuse
+      // instead: it means `entryMap`'s cellId and the declared axes have drifted apart.
+      throw new Error(
+        `entryCensus: cell "${c.cellId}" has no row in the enumerated domain — entryMap's cell `
+        + 'identity and the declared axes disagree',
+      );
+    }
+    return ({
+    ...censusCell,
+    cellId: c.cellId,
+    handClass: c.handClass,
+    posCategory: c.posCategory,
+    facingAction: c.facingAction,
+    reachable: c.reachable,
+    unreachableReason: c.unreachableReason,
+    });
+  });
+
+  const census = {
+    ...base,
     cells,
-    totalContexts: all.length,
     reachableContexts: reachable.length,
     unreachableContexts: all.length - reachable.length,
-    hitContexts: 0,
-    abstentions: 0,
 
     /**
      * The measurement that corrected the ticket's premise. `foldsAttributable` is the number
@@ -188,4 +282,13 @@ export const buildEntryCensus = async (handClasses, { root, maxFiles = null } = 
         'and not as the map\'s evidence.',
     },
   };
+
+  // The returned object is not the builder's output — cells were re-emitted in entryMap order
+  // — so the builder's well-formedness guarantee does not carry over. Re-check it here, since
+  // a check that only runs on the shape nobody ships is not a check.
+  const problems = coverageCensusProblems(census);
+  if (problems.length > 0) {
+    throw new Error(`entryCensus is not a well-formed Coverage Census: ${problems.join('; ')}`);
+  }
+  return census;
 };

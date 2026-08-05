@@ -1,0 +1,542 @@
+{
+  "strategyCard": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "cardId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "rationale",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "domain",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "rules",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "residual",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "contentHash",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "surfaceKind",
+        "type": "string",
+        "since": 1
+      }
+    ]
+  },
+  "decisionAtom": {
+    "version": 2,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "atomId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "situationKey",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "carried",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "surfaceId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "action",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "ruleId",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "warrant",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "layers",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "outcome",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "skipReason",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "alternativeScores",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "rulesMatchedAndLost",
+        "type": "array",
+        "since": 2
+      },
+      {
+        "name": "beliefState",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "truth",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "seeds",
+        "type": "object",
+        "since": 2
+      },
+      {
+        "name": "actorSeat",
+        "type": "number|null",
+        "since": 2
+      },
+      {
+        "name": "actorRole",
+        "type": "string|null",
+        "since": 2
+      },
+      {
+        "name": "wallTimeMs",
+        "type": "number|null",
+        "since": 2
+      },
+      {
+        "name": "tokens",
+        "type": "number|null",
+        "since": 2
+      }
+    ]
+  },
+  "coverageCensus": {
+    "version": 2,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "domain",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "cells",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "totalContexts",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "hitContexts",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "abstentions",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "examination",
+        "type": "object",
+        "since": 2
+      },
+      {
+        "name": "statusCounts",
+        "type": "object",
+        "since": 2
+      },
+      {
+        "name": "axes",
+        "type": "array",
+        "since": 2
+      }
+    ]
+  },
+  "comparisonCensus": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "axis",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "possible",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "drawn",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "notDrawn",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "blockedReasons",
+        "type": "object",
+        "since": 1
+      }
+    ]
+  },
+  "dealBookManifest": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "dealBookId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "sliceSpec",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "members",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "memberCount",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "seeds",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "contentHash",
+        "type": "string",
+        "since": 1
+      }
+    ]
+  },
+  "fieldManifest": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "fieldId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "surfaceKind",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "sources",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "partition",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "responsive",
+        "type": "boolean",
+        "since": 1
+      },
+      {
+        "name": "observations",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "version",
+        "type": "string|null",
+        "since": 1
+      }
+    ]
+  },
+  "resultCard": {
+    "version": 2,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "resultCardId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "match",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "estimand",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "treatment",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "metrics",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "clusterUnit",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "admissibility",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "manifest",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "census",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "warrantAttribution",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "atomSetHash",
+        "type": "string|null",
+        "since": 2
+      },
+      {
+        "name": "atomCount",
+        "type": "number|null",
+        "since": 2
+      },
+      {
+        "name": "anchorGeneration",
+        "type": "number|null",
+        "since": 2
+      },
+      {
+        "name": "fragility",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "flipRegister",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "comparisonCensus",
+        "type": "object|null",
+        "since": 2
+      }
+    ]
+  },
+  "faultEntry": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "faultId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "site",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "mechanism",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "contaminates",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "matches",
+        "type": "function",
+        "since": 1
+      },
+      {
+        "name": "falsifier",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "probability",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "probabilityBasis",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "priorBreadth",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "status",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "evidence",
+        "type": "array",
+        "since": 1
+      }
+    ]
+  },
+  "__manifest": {
+    "version": null,
+    "fields": [
+      {
+        "name": "engineCommit",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "engineDirty",
+        "type": "boolean",
+        "since": 1
+      },
+      {
+        "name": "dealBookHash",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "fieldVersion",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "partition",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "seeds",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "unseededSources",
+        "type": "array",
+        "since": 1
+      },
+      {
+        "name": "constants",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "disclaimerRegisterVersion",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "knownDivergences",
+        "type": "array",
+        "since": 1
+      }
+    ]
+  }
+}

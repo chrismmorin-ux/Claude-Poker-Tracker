@@ -184,17 +184,28 @@ describe('the forcing-function question list', () => {
     expect(FORCING_QUESTIONS.length).toBeGreaterThan(5);
   });
 
-  it('records the still-open choice of `d` as UNANSWERABLE rather than omitting it', () => {
-    // This assertion used to name the layer-attribution question. WS-324 answered that one —
-    // by requiring `d` as an argument with no default, so a layer share is computable without
-    // anyone having decided WHICH `d` is right. The choice of `d` itself is what remains open,
-    // and it stays on this list until FSA Phase 3 measures it. The guard is unchanged in
-    // substance: an unanswerable question must be RECORDED, never quietly dropped, because
-    // the list is how the schema learns from its own gaps.
-    const unanswered = FORCING_QUESTIONS.filter((q) => q.answerable === false);
-    expect(unanswered.length).toBeGreaterThan(0);
-    expect(unanswered[0].note).toMatch(/Phase 3/);
-    expect(unanswered.some((q) => /divergence measure/.test(q.question))).toBe(true);
+  it('the choice of `d` is now ANSWERABLE, and the entry names the field that made it so', () => {
+    // WS-324 recorded this question as unanswerable and this assertion guarded that it stayed
+    // recorded rather than being quietly dropped. WS-350 answered it — by MEASURING both
+    // candidates on the same volume rather than picking one — so the guard flips with it.
+    //
+    // The entry is KEPT, not deleted. The list is additive-only for the same reason the schema
+    // is: a reader opening an atom set captured before Phase 3 needs to know this question was
+    // once unanswerable, and an entry that vanished would make the gap unrecoverable.
+    const q = FORCING_QUESTIONS.find((x) => /divergence measure/.test(x.question));
+    expect(q, 'the choice-of-`d` question was dropped from the list instead of flipped').toBeTruthy();
+    expect(q.answerable).toBe(true);
+    // AC7: it must name the field. `metrics.divergence` carries BOTH measures plus the
+    // pre-registration — a card carrying only the primary would not answer the question.
+    expect(q.field).toBe('resultCard.metrics.divergence');
+    expect(q.note).toMatch(/WS-350/);
+    expect(q.note).toMatch(/BOTH/);
+  });
+
+  it('an unanswerable entry, if any remains, still records WHY rather than being dropped', () => {
+    for (const q of FORCING_QUESTIONS.filter((x) => x.answerable === false)) {
+      expect(q.note, `"${q.question}" is unanswerable but says nothing about why`).toBeTruthy();
+    }
   });
 
   it('names a field for every answerable question', () => {

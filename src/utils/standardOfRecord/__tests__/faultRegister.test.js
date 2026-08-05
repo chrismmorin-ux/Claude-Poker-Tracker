@@ -40,6 +40,9 @@ import {
   canonicalRegisterBody,
   registerVersion,
   blockedFalsifiers,
+  clearFalsifierBlocker,
+  isRegisterVersionShape,
+  REGISTER_VERSION_PATTERN,
   WITHIN_CORPUS_DRIFT_2009,
 } from '../faultRegister.js';
 import { STACK_LAYERS } from '../stack.js';
@@ -645,5 +648,174 @@ describe('FAULT-temporal-staleness — blocked, and the nineteen-day null (WS-35
       const r = table.split('\n').find((l) => l.includes(b.faultId));
       expect(r, `${b.faultId} is blocked in the module`).toMatch(/falsifier blocked/);
     }
+  });
+});
+
+// ── clearing a blocker, and NOT thereby settling the entry (WS-368 AC-7) ──────────────────────
+
+/**
+ * WS-368 (commit 3befa26d) built what the FIRST of FAULT-population-mismatch's three blockers
+ * asked for: a closed provenance set stamped at construction on every hand write path, so
+ * `getHandsBySource('live')` is a real selector. That blocker stopped being true while the
+ * register went on asserting it.
+ *
+ * The hazard this block guards is the collapse of "one of three cleared" into "the entry came
+ * unblocked" on a later reading. Two blockers still stand, the entry is still `untested`, and
+ * the mechanism existing is not the same claim as the data existing.
+ */
+describe('clearedBlockers — one of three, recorded, and not a settlement (WS-368 AC-7)', () => {
+  const entry = () => SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-population-mismatch');
+
+  const B1 = 'ARM A IS UNSELECTABLE. UNBLOCKED BY: a positive identity.';
+  const B2 = 'ARM A IS UNREACHABLE. UNBLOCKED BY: an export.';
+
+  const blocked = (over = {}) => buildFaultEntry({
+    faultId: 'FAULT-fixture-clearing',
+    title: 'fixture',
+    site: 'corpus',
+    mechanism: 'a stated path by which it goes wrong',
+    contaminates: 'some cards',
+    matches: () => false,
+    falsifier: 'measure the thing',
+    probability: 0.5,
+    probabilityBasis: 'stated so it can be argued with',
+    priorBreadth: 0.5,
+    falsifierBlockers: [B1, B2],
+    ...over,
+  });
+
+  it('clears the identity blocker off the real entry and leaves the other two standing', () => {
+    const row = blockedFalsifiers().find((r) => r.faultId === 'FAULT-population-mismatch');
+    expect(row, 'the entry must STILL be blocked').toBeTruthy();
+    expect(row.blockers).toHaveLength(2);
+    expect(row.clearedCount).toBe(1);
+    expect(row.blockers.join(' ')).toMatch(/UNREACHABLE BY THE HARNESS/);
+    expect(row.blockers.join(' ')).toMatch(/NO VOLUME FLOOR/);
+    // The cleared one is gone from the blocking list, not merely annotated inside it.
+    expect(row.blockers.join(' ')).not.toMatch(/HAS NO POSITIVE IDENTITY/);
+  });
+
+  it('keeps the entry untested, evidence-free, and unsettleable', () => {
+    expect(entry().status).toBe('untested');
+    expect(entry().evidence).toEqual([]);
+    expect(() => confirmFault({ faultId: 'FAULT-population-mismatch', evidence: ['a commit'] }))
+      .toThrow(/not available while falsifierBlockers is non-empty/);
+    expect(() => retireFault({ faultId: 'FAULT-population-mismatch', evidence: ['a commit'] }))
+      .toThrow(/not available while falsifierBlockers is non-empty/);
+  });
+
+  it('preserves the cleared blocker VERBATIM with the commit that cleared it', () => {
+    const [cleared] = entry().clearedBlockers;
+    expect(cleared.blocker).toMatch(/SRC-014 HAS NO POSITIVE IDENTITY/);
+    expect(cleared.blocker).toMatch(/UNBLOCKED BY:/);
+    expect(cleared.clearedBy.join(' ')).toMatch(/3befa26d/);
+    expect(cleared.at).toBe('2026-08-05');
+  });
+
+  it('states in DATA what the clearance does not cover, including that the live set is empty', () => {
+    // The three things a reader in a hurry collapses, asserted separately so an edit that drops
+    // one fails here rather than in six months.
+    const note = entry().clearedBlockers[0].note;
+    expect(note, 'the other blockers still hold').toMatch(/still (blocked|hold)/i);
+    expect(note, 'mechanism is not data').toMatch(/empty/i);
+    expect(note, 'no guess was written onto old rows').toMatch(/unknown/i);
+  });
+
+  it('refuses a clearance with no evidence — same bar as confirmation, mirrored', () => {
+    expect(faultEntryProblems({
+      ...blocked(),
+      falsifierBlockers: [],
+      clearedBlockers: [{ blocker: B1, clearedBy: [], at: '2026-08-05', note: 'identity only' }],
+    })).toContainEqual(expect.stringContaining('may not be cleared on assertion alone'));
+  });
+
+  it('refuses a clearance with no note — a limitless clearance reads as an unblocked entry', () => {
+    expect(faultEntryProblems({
+      ...blocked(),
+      falsifierBlockers: [],
+      clearedBlockers: [{ blocker: B1, clearedBy: ['commit abc'], at: '2026-08-05', note: '  ' }],
+    })).toContainEqual(expect.stringContaining('WHAT THIS DOES NOT CLEAR'));
+  });
+
+  it('refuses a blocker held as both cleared and blocking', () => {
+    expect(faultEntryProblems({
+      ...blocked(),
+      clearedBlockers: [{ blocker: B1, clearedBy: ['commit abc'], at: '2026-08-05', note: 'identity only' }],
+    })).toContainEqual(expect.stringContaining('ALSO still listed in falsifierBlockers'));
+  });
+
+  it('clearFalsifierBlocker demands the blocker text verbatim', () => {
+    expect(() => clearFalsifierBlocker({
+      faults: [blocked()], faultId: 'FAULT-fixture-clearing', blocker: 'ARM A IS UNSELECTABLE',
+      evidence: ['commit abc'], note: 'identity only',
+    })).toThrow(/does not declare that blocker verbatim/);
+  });
+
+  it('returns what is STILL blocked, so a partial clearance cannot read as a full one', () => {
+    const faults = [blocked()];
+    const out = clearFalsifierBlocker({
+      faults,
+      faultId: 'FAULT-fixture-clearing',
+      blocker: B1,
+      evidence: ['commit abc — built the selector'],
+      note: 'covers identity only; the export path is untouched',
+      at: '2026-08-05',
+    });
+    expect(out.stillBlocked).toBe(true);
+    expect(out.remainingBlockers).toEqual([B2]);
+    expect(out.entry.status).toBe('untested');
+    expect(out.entry.clearedBlockers).toHaveLength(1);
+    // A NEW register — the input entry is frozen and untouched.
+    expect(faults[0].falsifierBlockers).toHaveLength(2);
+  });
+
+  it('refuses assertion-only clearance and note-less clearance', () => {
+    const args = {
+      faults: [blocked()], faultId: 'FAULT-fixture-clearing', blocker: B1,
+    };
+    expect(() => clearFalsifierBlocker({ ...args, evidence: [], note: 'x' }))
+      .toThrow(/requires evidence/);
+    expect(() => clearFalsifierBlocker({ ...args, evidence: ['commit abc'], note: '' }))
+      .toThrow(/what it does NOT clear/);
+  });
+
+  it('is inside the hashed register body — clearing a blocker moves the version', async () => {
+    const base = [blocked()];
+    const { faults: after } = clearFalsifierBlocker({
+      faults: base,
+      faultId: 'FAULT-fixture-clearing',
+      blocker: B1,
+      evidence: ['commit abc'],
+      note: 'identity only',
+      at: '2026-08-05',
+    });
+    expect(canonicalRegisterBody(after).entries[0].clearedBlockers).toHaveLength(1);
+    expect(await registerVersion(base)).not.toBe(await registerVersion(after));
+  });
+
+  it('leaves the register as a whole well-formed', () => {
+    expect(registerProblems()).toEqual([]);
+  });
+});
+
+// ── the register version's SHAPE, which is what a card stamp is checked against (WS-353 follow-up) ──
+
+describe('registerVersion shape — the join key, not just a non-empty string', () => {
+  it('mints something matching its own published pattern', async () => {
+    const v = await registerVersion();
+    expect(v).toMatch(REGISTER_VERSION_PATTERN);
+    expect(isRegisterVersionShape(v)).toBe(true);
+  });
+
+  it.each([null, undefined, '', 'unknown', 'v1', 'FR-1', 'FR-1+', 'FR-1+ABCDEF012345', 'FR-1+e3867c10fc2'])(
+    'rejects %s as a register version',
+    (value) => {
+      expect(isRegisterVersionShape(value)).toBe(false);
+    },
+  );
+
+  it('accepts a future epoch, because bumping the epoch is a legal change', () => {
+    expect(isRegisterVersionShape('FR-2+000000000000')).toBe(true);
+    expect(isRegisterVersionShape('FR-12+8c4e65578ca2')).toBe(true);
   });
 });

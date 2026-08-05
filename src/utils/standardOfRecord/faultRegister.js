@@ -278,6 +278,9 @@ export const DISCLAIMER_TREATMENT =
  * @param {string[]} [input.evidence] - required for `confirmed` and `retired`
  * @param {string[]} [input.falsifierBlockers] - why the falsifier CANNOT BE RUN TODAY, and what
  *   would unblock it. See the block comment above `faultEntryProblems`.
+ * @param {Array} [input.clearedBlockers] - blockers that USED to be on this entry and no longer
+ *   are, each carrying the evidence that cleared it and what it did NOT clear. See
+ *   `clearFalsifierBlocker`.
  */
 export const buildFaultEntry = ({
   faultId,
@@ -293,6 +296,7 @@ export const buildFaultEntry = ({
   status = 'untested',
   evidence = [],
   falsifierBlockers = [],
+  clearedBlockers = [],
 } = {}) => {
   const entry = {
     faultId,
@@ -308,6 +312,10 @@ export const buildFaultEntry = ({
     status,
     evidence: [...evidence],
     falsifierBlockers: [...falsifierBlockers],
+    clearedBlockers: clearedBlockers.map((c) => Object.freeze({
+      ...c,
+      clearedBy: [...(c?.clearedBy ?? [])],
+    })),
   };
   const problems = faultEntryProblems(entry);
   if (problems.length) {
@@ -358,6 +366,34 @@ export const buildFaultEntry = ({
  * was substituted — which is exactly the move this whole apparatus exists to prevent. Clearing
  * the blocker first is not a formality; it is the author stating, in a hashed field, that the
  * test that was supposed to settle this is the test that settled it.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * WHY `clearedBlockers` EXISTS (WS-368 accept criterion 7).
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * WS-368 built the thing the first blocker on the rank-1 entry asked for — a positive, closed
+ * provenance set on every hand — so that blocker stopped being true while the register went on
+ * asserting it. The obvious move is to delete the string. That is the wrong move twice over.
+ *
+ * First, DELETION LOSES THE CLAIM. Blockers are hashed, so removing one moves the version and a
+ * reader of an old Result Card can see that SOMETHING moved — but not what, and not on what
+ * authority. The clearing of a blocker is exactly as much a claim about what this register can
+ * settle as the raising of one, and it is a claim that should have to name its evidence. The
+ * bar is the same as `confirmFault`'s and for the same reason.
+ *
+ * Second, CLEARING ONE BLOCKER IS NOT SETTLING AN ENTRY, and the difference is where the damage
+ * would be. FAULT-population-mismatch carried three: identity, harness reachability, volume
+ * floor. WS-368 answered the first. Its own commit message says so and says the other two are
+ * untouched. An entry that recorded "a blocker was cleared" without recording WHAT IS STILL
+ * BLOCKED reads, six months later, as an entry that came unblocked — which would license
+ * confirming it on the strength of a test still nobody can run. So `note` is required and is
+ * the field where the author states what the clearance does NOT cover.
+ *
+ * Third, MECHANISM IS NOT DATA. WS-368's migration stamps every pre-existing row `unknown`
+ * rather than guessing `live`, which is correct and means the selectable live set starts EMPTY
+ * and grows only from new play. The blocker "the subset cannot be selected" is genuinely
+ * cleared; "there is a live arm to measure" is not, and never was this blocker's claim. That
+ * distinction lives in `note` too, because it is precisely the one a reader in a hurry collapses.
  */
 export const faultEntryProblems = (entry) => {
   const problems = [];
@@ -428,6 +464,49 @@ export const faultEntryProblems = (entry) => {
       );
     }
   }
+
+  if (!Array.isArray(entry.clearedBlockers)) {
+    problems.push('clearedBlockers must be an array (empty means no blocker was ever cleared)');
+  } else {
+    for (const c of entry.clearedBlockers) {
+      if (c === null || typeof c !== 'object' || Array.isArray(c)) {
+        problems.push('every clearedBlocker must be an object { blocker, clearedBy, at, note }');
+        continue;
+      }
+      if (typeof c.blocker !== 'string' || !c.blocker.trim()) {
+        problems.push(
+          'clearedBlocker.blocker must repeat the blocker text VERBATIM as it stood — a cleared '
+          + 'blocker summarised into a phrase cannot be checked against what was actually raised',
+        );
+      }
+      if (!Array.isArray(c.clearedBy) || c.clearedBy.length === 0
+        || c.clearedBy.some((e) => typeof e !== 'string' || !e.trim())) {
+        // Same bar as confirmation, and for the same reason in reverse: raising a blocker costs
+        // nothing, so clearing one on assertion alone would let the register be quietly unblocked
+        // down to the entries someone wants to settle.
+        problems.push(
+          'clearedBlocker.clearedBy must name at least one piece of recorded evidence (a commit, '
+          + 'a measurement) — a blocker may not be cleared on assertion alone',
+        );
+      }
+      if (typeof c.at !== 'string' || !c.at.trim()) {
+        problems.push('clearedBlocker.at must carry the date the blocker was cleared');
+      }
+      if (typeof c.note !== 'string' || !c.note.trim()) {
+        problems.push(
+          'clearedBlocker.note is required and must state WHAT THIS DOES NOT CLEAR — a clearance '
+          + 'with no stated limit reads later as an entry that came unblocked',
+        );
+      }
+      if (Array.isArray(entry.falsifierBlockers) && entry.falsifierBlockers.includes(c.blocker)) {
+        problems.push(
+          `clearedBlocker "${String(c.blocker).slice(0, 40)}…" is ALSO still listed in `
+          + 'falsifierBlockers. A blocker is cleared or it is blocking; holding both makes the '
+          + 'blocked/unblocked distinction unreadable',
+        );
+      }
+    }
+  }
   return problems;
 };
 
@@ -496,17 +575,15 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'is the magnitude, not the existence.',
     priorBreadth: 0.9,
     // WS-352 ran this falsifier on 2026-08-05. It is UNRUNNABLE, and stays `untested` for that
-    // reason rather than being settled by a substitute. All three blockers are about the LIVE
+    // reason rather than being settled by a substitute. All three blockers were about the LIVE
     // arm; the SRC-012 arm is measurable today (scripts/backtest reads 1,756 HandHQ files). A
     // two-arm comparison with one unavailable arm has no reduced form — the gap between the
     // populations is the entire estimand, so there is no partial credit to bank here.
+    //
+    // Accept criterion 7 of WS-368 (commit 3befa26d) cleared the FIRST of the three. TWO REMAIN, so the
+    // entry is still blocked, still `untested`, and still may not be confirmed or retired. The
+    // cleared one is preserved in `clearedBlockers` below with what it did and did not cover.
     falsifierBlockers: [
-      'SRC-014 HAS NO POSITIVE IDENTITY. Live hands are distinguished only by `source` being '
-      + "UNDEFINED — `saveOnlineHand` stamps source:'ignition' (handsStorage.js:444) and the "
-      + 'manual path stamps nothing. So the live subset cannot be SELECTED, and an un-stamped '
-      + 'import is indistinguishable from a live hand. Already an open finding in '
-      + 'docs/provenance/data-source-registry.md. UNBLOCKED BY: a positive source stamp on live '
-      + 'capture carrying venue and stake.',
       'SRC-014 IS UNREACHABLE BY THE HARNESS. It is browser IndexedDB on the founder\'s device '
       + 'with no export path in the repo; SRC-012 is scored by node scripts over an on-disk '
       + 'corpus root. No harness can currently read both arms, so "the same estimand on both" '
@@ -517,6 +594,48 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'unreadable, indistinguishable between "transfer holds" and "the live arm had no power". '
       + 'UNBLOCKED BY: stating the minimum live n PER SPOT CLASS at which the comparison could '
       + 'resolve, before any live data is collected against it.',
+    ],
+    clearedBlockers: [
+      {
+        blocker:
+          'SRC-014 HAS NO POSITIVE IDENTITY. Live hands are distinguished only by `source` being '
+          + "UNDEFINED — `saveOnlineHand` stamps source:'ignition' (handsStorage.js:444) and the "
+          + 'manual path stamps nothing. So the live subset cannot be SELECTED, and an un-stamped '
+          + 'import is indistinguishable from a live hand. Already an open finding in '
+          + 'docs/provenance/data-source-registry.md. UNBLOCKED BY: a positive source stamp on live '
+          + 'capture carrying venue and stake.',
+        clearedBy: [
+          'commit 3befa26d (WS-368) — src/utils/persistence/handProvenance.js defines a CLOSED set '
+          + "{live, ignition, import, unknown}. Every write path stamps at construction: saveHand "
+          + 'reads venue and stake off the active session, saveOnlineHand off the online session, '
+          + 'and a new saveImportedHand closes the import vector that exportUtils previously routed '
+          + 'through saveHand unstamped. The stamp is spread AFTER ...handData in the record '
+          + 'literal, so a payload claiming source:"live" cannot survive any writer, and '
+          + 'validateHandRecord rejects an unstamped record. `getHandsBySource("live")` is therefore '
+          + 'a real selector: the exact capability this blocker said did not exist.',
+          'commit 3befa26d — IndexedDB migration v28 stamps every pre-existing unstamped row '
+          + "`unknown` with reason recorded-before-provenance-stamping, NEVER `live`, preserving "
+          + 'the pre-migration value under observedSource. That is what makes the selector '
+          + 'trustworthy rather than merely present: no row acquires a live identity it did not earn.',
+          'Verified at HEAD 2026-08-05: 265 tests in persistence/__tests__/handProvenance.test.js '
+          + 'and 228 in migrationV28.test.js, the latter seeding a v27 database and asserting '
+          + '`unknown` explicitly-not-`live` and that getHandsBySource("live") stays empty for them.',
+        ],
+        at: '2026-08-05',
+        note:
+          'CLEARS IDENTITY AND NOTHING ELSE. The other two blockers on this entry are untouched '
+          + 'and still hold: there is no export path from browser IndexedDB reachable by the node '
+          + 'harness that scores SRC-012, and no volume floor has been stated, so a null would '
+          + 'still be unreadable between "transfer holds" and "no power". The entry stays BLOCKED '
+          + 'and stays `untested`. '
+          + 'AND THE MECHANISM IS NOT THE DATA. Because v28 stamps existing rows `unknown` rather '
+          + 'than guessing, the selectable live set starts EMPTY and grows only from hands played '
+          + 'after 2026-08-05. "The live subset can now be selected" is true; "there is a live arm '
+          + 'to measure" is not yet true, and this clearance does not assert it. '
+          + 'Session-level provenance is deliberately still absent (see sessionsFilter.js) — '
+          + 'sessions already state venue, gameType and stakes positively, so nothing measurable '
+          + 'turns on it.',
+      },
     ],
   }),
 
@@ -1245,7 +1364,75 @@ export const blockedFalsifiers = (faults = SUSPECTED_FAULTS) => faults
     title: f.title,
     status: f.status,
     blockers: [...f.falsifierBlockers],
+    // Reported alongside, because "1 of 3 cleared" and "3 of 3 still standing" route to the
+    // same ticket today but mean different things about how far the data path has come.
+    clearedCount: (f.clearedBlockers ?? []).length,
   }));
+
+/**
+ * Clear ONE blocker off an entry, naming the evidence that cleared it.
+ *
+ * Returns a NEW register. Entries are frozen, and the clearance is a version change rather than
+ * a mutation — same shape as `confirmFault`, same evidence bar, and for the mirror-image reason:
+ * confirmation without evidence lets a hunch invalidate prior results; unblocking without
+ * evidence lets an entry be walked toward settlement one quiet edit at a time.
+ *
+ * `blocker` must match an existing blocker VERBATIM. Matching on a prefix or a fuzzy phrase would
+ * let a clearance land on a blocker the author was not looking at.
+ *
+ * The entry's status is NOT touched. Clearing the last blocker makes the falsifier runnable; it
+ * does not run it, and it does not settle anything.
+ *
+ * @param {Object} input
+ * @param {Array} [input.faults]
+ * @param {string} input.faultId
+ * @param {string} input.blocker - the blocker text, verbatim
+ * @param {string[]} input.evidence - REQUIRED and non-empty
+ * @param {string} input.note - REQUIRED: what this clearance does NOT cover
+ * @param {string} [input.at]
+ */
+export const clearFalsifierBlocker = ({
+  faults = SUSPECTED_FAULTS, faultId, blocker, evidence = [], note = '', at = null,
+} = {}) => {
+  const target = faults.find((f) => f.faultId === faultId);
+  if (!target) throw new Error(`fault register: no entry with faultId "${faultId}"`);
+  if (!(target.falsifierBlockers ?? []).includes(blocker)) {
+    throw new Error(
+      `fault register: "${faultId}" does not declare that blocker verbatim. A clearance must name `
+      + 'the exact blocker it clears, or it can land on one nobody was looking at.',
+    );
+  }
+  if (!Array.isArray(evidence) || evidence.length === 0) {
+    throw new Error(
+      `fault register: clearing a blocker on "${faultId}" requires evidence. Raising a blocker `
+      + 'costs nothing, so clearing one on assertion alone is how a register gets quietly unblocked.',
+    );
+  }
+  if (typeof note !== 'string' || !note.trim()) {
+    throw new Error(
+      `fault register: clearing a blocker on "${faultId}" requires a note stating what it does NOT `
+      + 'clear. One of three cleared is not an entry that came unblocked.',
+    );
+  }
+
+  const cleared = buildFaultEntry({
+    ...target,
+    falsifierBlockers: target.falsifierBlockers.filter((b) => b !== blocker),
+    clearedBlockers: [
+      ...(target.clearedBlockers ?? []),
+      { blocker, clearedBy: [...evidence], at: at ?? new Date().toISOString().slice(0, 10), note },
+    ],
+  });
+
+  return {
+    faults: faults.map((f) => (f.faultId === faultId ? cleared : f)),
+    entry: cleared,
+    // The whole point of the return value: what is STILL blocked. A caller that reads only
+    // `entry` can mistake a partial clearance for a full one.
+    remainingBlockers: [...cleared.falsifierBlockers],
+    stillBlocked: cleared.falsifierBlockers.length > 0,
+  };
+};
 
 /** Problems across the whole register. Empty means every entry is well-formed and unique. */
 export const registerProblems = (faults = SUSPECTED_FAULTS) => {
@@ -1295,6 +1482,10 @@ export const canonicalRegisterBody = (faults = SUSPECTED_FAULTS) => ({
     // and removing one is a claim that the falsifier became runnable — both are exactly the kind
     // of change a reader of an old Result Card needs to be able to detect.
     falsifierBlockers: e.falsifierBlockers,
+    // Hashed for the SAME reason, from the other side. Removing a blocker already moves the
+    // version; carrying the removal's evidence in the hashed body is what lets a reader tell
+    // WHICH way the register moved and on whose authority, rather than only that it moved.
+    clearedBlockers: e.clearedBlockers,
   })),
 });
 
@@ -1311,3 +1502,27 @@ export const registerVersion = async (faults = SUSPECTED_FAULTS) => {
   const hash = await hashObject(canonicalRegisterBody(faults));
   return `${REGISTER_EPOCH}+${hash.replace('sha256:', '').slice(0, 12)}`;
 };
+
+/**
+ * The shape `registerVersion` mints, as a checkable pattern. `FR-<epoch>+<12 lowercase hex>`.
+ *
+ * IT LIVES HERE, BESIDE THE MINTER, ON PURPOSE — the same argument `manifestProblems` and
+ * `buildReplicationManifest` already make: a checker that can disagree with its producer is
+ * worse than no checker. `manifest.js` imports this rather than re-declaring the shape.
+ *
+ * WHY A SHAPE CHECK AT ALL (WS-353 follow-up). `manifestProblems` checked only that the field was
+ * TRUTHY. That catches `null`, `''` and an absent key — but it passes any non-empty string,
+ * including `'unknown'`, `'v1'`, or a hand-typed near-miss. The stamp exists for exactly one
+ * purpose: to be JOINED back to a register version when a fault is later confirmed, so the
+ * results that stood on it can be found. A string that cannot be joined satisfies a presence
+ * check while delivering none of that — and it is worse than `null`, because `null` announces
+ * that the card cannot name its register and an unjoinable string quietly claims that it can.
+ *
+ * `\d+` rather than a literal `1`: bumping the epoch is a legal, expected change, and a
+ * validator pinned to today's epoch would reject every card minted the day after.
+ */
+export const REGISTER_VERSION_PATTERN = /^FR-\d+\+[0-9a-f]{12}$/;
+
+/** True when `value` has the shape `registerVersion()` mints. Shape only — not a join. */
+export const isRegisterVersionShape = (value) =>
+  typeof value === 'string' && REGISTER_VERSION_PATTERN.test(value);

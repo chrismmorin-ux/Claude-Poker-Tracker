@@ -8,6 +8,7 @@ import { dirname } from 'node:path';
 
 import { openLoader } from './loader.mjs';
 import { buildEntryCensus } from './entryCensus.mjs';
+import { censusCoverage } from '../../src/utils/standardOfRecord/coverageCensus.js';
 
 const argv = process.argv.slice(2);
 const flag = (n, d) => { const i = argv.indexOf(`--${n}`); return i === -1 ? d : argv[i + 1]; };
@@ -28,5 +29,14 @@ console.log(`preflop first decisions: ${a.decisions.toLocaleString()}`);
 console.log(`  folds:   ${a.folds.toLocaleString()}  attributable to a cell: ${a.foldsAttributable.toLocaleString()} (${a.foldsAttributablePct}%)`);
 console.log(`  entries: ${a.entries.toLocaleString()}  attributable to a cell: ${a.entriesAttributable.toLocaleString()} (${a.entriesAttributablePct}%)`);
 console.log(`contexts: ${census.totalContexts} total · ${census.reachableContexts} reachable · ${census.unreachableContexts} structurally unreachable`);
-console.log(`hit contexts: ${census.hitContexts}`);
+
+// NOT a single coverage percentage. "hit contexts: 0" on its own read as "we looked at every
+// reachable cell and none occurred", which this run never did — see the census's examination
+// declaration. Each figure below carries the conditional it is conditional ON.
+const cov = censusCoverage(census);
+console.log(`examination: ${cov.examinationMode} · ${census.examination.examinedContexts} contexts examined`);
+console.log(`  ${cov.neverLookedGivenReachable.k}/${cov.neverLookedGivenReachable.n} — ${cov.neverLookedGivenReachable.conditional}`);
+console.log(`  ${cov.observedZeroGivenExamined.k}/${cov.observedZeroGivenExamined.n} — ${cov.observedZeroGivenExamined.conditional}`);
+console.log(`  ${cov.hitGivenExamined.k}/${cov.hitGivenExamined.n} — ${cov.hitGivenExamined.conditional}`);
+console.log(`  reason everything is unexamined: ${census.examination.unexaminedReason}`);
 console.log(`\nwrote ${OUT}`);

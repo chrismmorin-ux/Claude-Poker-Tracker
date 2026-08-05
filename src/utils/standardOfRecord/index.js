@@ -36,6 +36,20 @@ export {
 } from './comparisonCensus.js';
 
 export {
+  CELL_STATUSES,
+  UNEXAMINED_REASONS,
+  EXAMINATION_MODES,
+  CONTEXT_KEY_SEP,
+  enumerateContexts,
+  declareExamination,
+  buildCoverageCensus,
+  coverageCensusProblems,
+  censusCoverage,
+  neverLooked,
+  observedZeros,
+} from './coverageCensus.js';
+
+export {
   VALUE_KINDS,
   ATOM_BASIS,
   buildLayerEmission,
@@ -96,10 +110,32 @@ export {
   decompositionsAgree,
   attributionGap,
   firstMeasuredDivergence,
+  shareOfTotal,
+  attributeFirstLayer,
   pairedMeanCI,
   pairAtoms,
   exactPairsOnly,
 } from './layerAttribution.js';
+
+// THE one comparison path (WS-350). ADR-009 permits exactly one; see divergence.js.
+export {
+  DIVERGENCE_MEASURES,
+  DIVERGENCE_WEIGHTINGS,
+  VOLUME_EXCLUSIONS,
+  MEASURE_UNITS,
+  KL_FLOOR,
+  KL_DIRECTION,
+  buildSurfaceOutput,
+  outputOfAtom,
+  klDivergence,
+  evDifference,
+  divergenceFn,
+  preRegisterPrimary,
+  measureBoth,
+  rankSurfaces,
+  pairwiseSeparation,
+  klFloorSweep,
+} from './divergence.js';
 
 export {
   substituteLayer,

@@ -1,0 +1,1403 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-layer-divergence-aa3f0447-1389589e",
+  "match": {
+    "surfaceId": "sfc-depth1 vs sfc-depth2-fast vs sfc-depth2-full",
+    "dealBookId": "handhq-allsites-50NLH-aa3f0447",
+    "fieldId": "pool-mined-behavior-policy"
+  },
+  "estimand": "Divergence between the shipped depth-1 advice surface and two depth-2/3-refined advice surfaces, at one hero decision, measured under BOTH candidate definitions of `d` on the SAME paired decisions: KL(reference||candidate) over the range-marginalized action distribution (nats), and |EV_reference - EV_candidate| over the engine's own stated EV (engine chips). NOT an edge: both measures are unsigned distances, so neither says which surface is better. Reported per decision (frequency-weighted) and per situation (uniform-weighted), with the primary PRE-REGISTERED before the run.",
+  "treatment": "ONE hero decision is replaced by the surface under test; the rest of the hand plays out as recorded. Population: online 6-max and full-ring, July 2009 (SRC-011/012). The founder's game is LIVE 9-handed 1/2-1/3, a distinct population — any live claim here is TRANSFERRED, not measured (FAULT-population-mismatch, register rank 1). Advice is RANGE-MARGINALIZED: the value of the advice averaged over hands hero COULD hold, not the hand hero held. Rake is MODELLED; the corpus records none.",
+  "metrics": {
+    "divergence": {
+      "preRegistration": {
+        "primary": "ev-difference",
+        "weighting": "frequency",
+        "rationale": "EV-difference is pre-registered PRIMARY because the estimand this repo acts on is money: ADR-009 binds \"comparative claims about strategy, model quality, or EV\", and a surface that behaves differently at no cost has not changed the thing being claimed. KL is reported beside it, on the same volume, because it is the measure that would catch a surface whose behaviour changed everywhere while its own EV model happened to value both choices identically — which is exactly what a self-grading instrument (FAULT-self-grading-circularity) would look like from the inside. If the two rank the candidates differently, that disagreement is the headline of this run.",
+        "at": "2026-08-05T06:45:55.457Z",
+        "secondary": [
+          "kl"
+        ],
+        "klFloor": 0.000001,
+        "klDirection": "KL(reference || candidate)"
+      },
+      "comparableByMagnitude": false,
+      "klDirection": "KL(reference || candidate)",
+      "weightingReported": "frequency",
+      "bySurface": {
+        "sfc-depth2-fast": {
+          "volume": {
+            "n": 80,
+            "nPaired": 80,
+            "nSituations": 62,
+            "excluded": {},
+            "sameVolume": true
+          },
+          "kl": {
+            "frequency": {
+              "mean": 0.4536847673426473,
+              "n": 80,
+              "sd": 1.8023545012355595,
+              "ci": [
+                0.05872642327973421,
+                0.8486431114055604
+              ],
+              "admissible": true,
+              "weighting": "frequency"
+            },
+            "uniform": {
+              "mean": 0.5381588318040248,
+              "n": 62,
+              "sd": 2.0309549391184025,
+              "ci": [
+                0.03261302281261025,
+                1.0437046407954393
+              ],
+              "admissible": true,
+              "weighting": "uniform"
+            },
+            "units": "nats",
+            "max": 13.815510557964274,
+            "zeroRows": 40
+          },
+          "ev-difference": {
+            "frequency": {
+              "mean": 2.2452795761336994,
+              "n": 80,
+              "sd": 5.514455537619893,
+              "ci": [
+                1.0368712269139129,
+                3.453687925353486
+              ],
+              "admissible": true,
+              "weighting": "frequency"
+            },
+            "uniform": {
+              "mean": 2.4955405516757208,
+              "n": 62,
+              "sd": 5.770797316564937,
+              "ci": [
+                1.059072247167354,
+                3.932008856184088
+              ],
+              "admissible": true,
+              "weighting": "uniform"
+            },
+            "units": "EV units of the atom (engine chips unless the card states otherwise)",
+            "max": 30.797545941860378,
+            "zeroRows": 0
+          }
+        },
+        "sfc-depth2-full": {
+          "volume": {
+            "n": 80,
+            "nPaired": 80,
+            "nSituations": 62,
+            "excluded": {},
+            "sameVolume": true
+          },
+          "kl": {
+            "frequency": {
+              "mean": 0.4148664044635894,
+              "n": 80,
+              "sd": 1.8099930114827762,
+              "ci": [
+                0.018234198041034988,
+                0.8114986108861438
+              ],
+              "admissible": true,
+              "weighting": "frequency"
+            },
+            "uniform": {
+              "mean": 0.5037065002513331,
+              "n": 62,
+              "sd": 2.0389421934602683,
+              "ci": [
+                -0.003827498079048919,
+                1.0112404985817152
+              ],
+              "admissible": false,
+              "weighting": "uniform"
+            },
+            "units": "nats",
+            "max": 13.815510557964274,
+            "zeroRows": 64
+          },
+          "ev-difference": {
+            "frequency": {
+              "mean": 2.2703293642607796,
+              "n": 80,
+              "sd": 5.157867368224779,
+              "ci": [
+                1.1400618429414824,
+                3.400596885580077
+              ],
+              "admissible": true,
+              "weighting": "frequency"
+            },
+            "uniform": {
+              "mean": 2.4806485470577115,
+              "n": 62,
+              "sd": 5.341432112569443,
+              "ci": [
+                1.15105793600565,
+                3.810239158109773
+              ],
+              "admissible": true,
+              "weighting": "uniform"
+            },
+            "units": "EV units of the atom (engine chips unless the card states otherwise)",
+            "max": 29.038295056463742,
+            "zeroRows": 0
+          }
+        }
+      },
+      "ranking": {
+        "klOrder": [
+          "sfc-depth2-fast",
+          "sfc-depth2-full"
+        ],
+        "evOrder": [
+          "sfc-depth2-full",
+          "sfc-depth2-fast"
+        ],
+        "ranksAgree": false,
+        "swaps": [
+          {
+            "surfaceId": "sfc-depth2-fast",
+            "klRank": 1,
+            "evRank": 2
+          },
+          {
+            "surfaceId": "sfc-depth2-full",
+            "klRank": 2,
+            "evRank": 1
+          }
+        ],
+        "allOrders": {
+          "kl/frequency": [
+            "sfc-depth2-fast",
+            "sfc-depth2-full"
+          ],
+          "kl/uniform": [
+            "sfc-depth2-fast",
+            "sfc-depth2-full"
+          ],
+          "ev-difference/frequency": [
+            "sfc-depth2-full",
+            "sfc-depth2-fast"
+          ],
+          "ev-difference/uniform": [
+            "sfc-depth2-fast",
+            "sfc-depth2-full"
+          ]
+        },
+        "pairwiseSeparation": {
+          "sfc-depth2-fast vs sfc-depth2-full": {
+            "pair": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "n": 80,
+            "kl": {
+              "mean": 0.03881836287905797,
+              "n": 80,
+              "sd": 0.0783984459411309,
+              "ci": [
+                0.021638545942496274,
+                0.055998179815619664
+              ],
+              "admissible": true,
+              "differenceOf": "sfc-depth2-fast - sfc-depth2-full"
+            },
+            "ev-difference": {
+              "mean": -0.025049788127080596,
+              "n": 80,
+              "sd": 0.6634379098477018,
+              "ci": [
+                -0.17043203012352473,
+                0.12033245386936355
+              ],
+              "admissible": false,
+              "differenceOf": "sfc-depth2-fast - sfc-depth2-full"
+            },
+            "rowsDiffering": {
+              "kl": 25,
+              "ev-difference": 67
+            }
+          }
+        }
+      },
+      "klFloorSweep": {
+        "floors": [
+          1e-9,
+          1e-8,
+          1e-7,
+          0.000001,
+          0.00001,
+          0.0001,
+          0.001,
+          0.01
+        ],
+        "sweptRange": [
+          1e-9,
+          0.01
+        ],
+        "baselineFloor": 0.000001,
+        "baselineOrder": [
+          "sfc-depth2-fast",
+          "sfc-depth2-full"
+        ],
+        "flipsAt": null,
+        "points": [
+          {
+            "floor": 1e-9,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 1e-8,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 1e-7,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 0.000001,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 0.00001,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 0.0001,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 0.001,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          },
+          {
+            "floor": 0.01,
+            "klOrder": [
+              "sfc-depth2-fast",
+              "sfc-depth2-full"
+            ],
+            "ranksAgree": false
+          }
+        ]
+      }
+    },
+    "attribution": {
+      "contrast": "sfc-depth1 vs sfc-depth2-full",
+      "firstLayer": "ev",
+      "firstLayerFrom": "localization",
+      "structuralLayer": null,
+      "localizedLayer": "ev",
+      "measuredLayer": null,
+      "shareOfTotal": null,
+      "shareInstrument": null,
+      "shareAvailable": false,
+      "shareUnavailableReason": "no summing decomposition was supplied — a share requires layer functions PINNED to the atom set's engine commit and replayed from its seeds, which an evaluation-free localization deliberately does not have",
+      "localization": {
+        "instrument": "localization",
+        "sumsToTotal": false,
+        "n": 80,
+        "layers": {
+          "range": {
+            "mean": 0,
+            "n": 80,
+            "sd": 0,
+            "ci": [
+              0,
+              0
+            ],
+            "admissible": false,
+            "layer": "range"
+          },
+          "equity": {
+            "mean": 0,
+            "n": 80,
+            "sd": 0,
+            "ci": [
+              0,
+              0
+            ],
+            "admissible": false,
+            "layer": "equity"
+          },
+          "ev": {
+            "mean": 2.2703293642607796,
+            "n": 80,
+            "sd": 5.157867368224779,
+            "ci": [
+              1.1400618429414824,
+              3.400596885580077
+            ],
+            "admissible": true,
+            "layer": "ev"
+          },
+          "action": {
+            "mean": 0.1,
+            "n": 80,
+            "sd": 0.24552965223488216,
+            "ci": [
+              0.046195942696870204,
+              0.1538040573031298
+            ],
+            "admissible": true,
+            "layer": "action"
+          }
+        },
+        "firstDivergentLayer": "ev"
+      },
+      "bySituation": {
+        "primaryMeasure": "ev-difference",
+        "total": 2.2703293642607796,
+        "n": 80,
+        "shares": {
+          "flop:dry:LATE:def:ip:none:check": {
+            "situationKey": "flop:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.03165016978939095,
+            "share": 0.00039562712236738685
+          },
+          "turn:medium:LATE:def:ip:none:check": {
+            "situationKey": "turn:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.4174976068399312,
+            "share": 0.00521872008549914
+          },
+          "river:medium:LATE:def:ip:none:check": {
+            "situationKey": "river:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.1911569206578427,
+            "share": 0.027389461508223037
+          },
+          "flop:medium:LATE:def:ip:bet:fold": {
+            "situationKey": "flop:medium:LATE:def:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.42577301112733856,
+            "share": 0.005322162639091733
+          },
+          "flop:medium:SB:agg:oop:none:cbet": {
+            "situationKey": "flop:medium:SB:agg:oop:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.4177894074516524,
+            "share": 0.005222367593145655
+          },
+          "turn:dry:SB:agg:oop:none:cbet": {
+            "situationKey": "turn:dry:SB:agg:oop:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.9916329722926154,
+            "share": 0.024790824307315384
+          },
+          "turn:dry:SB:agg:oop:raise:call_raise": {
+            "situationKey": "turn:dry:SB:agg:oop:raise:call_raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 4.394604235272865,
+            "share": 0.05493255294091082
+          },
+          "river:medium:SB:def:oop:none:check": {
+            "situationKey": "river:medium:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 10.208746945090162,
+            "share": 0.12760933681362704
+          },
+          "river:medium:SB:def:oop:bet:call": {
+            "situationKey": "river:medium:SB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 10.169827169541602,
+            "share": 0.12712283961927004
+          },
+          "flop:medium:LATE:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:LATE:agg:ip:none:cbet",
+            "n": 4,
+            "weight": 0.05,
+            "meanWithin": 0.5670849986501921,
+            "share": 0.02835424993250961
+          },
+          "flop:dry:BB:def:oop:none:check": {
+            "situationKey": "flop:dry:BB:def:oop:none:check",
+            "n": 4,
+            "weight": 0.05,
+            "meanWithin": 0.35662213035944124,
+            "share": 0.017831106517972064
+          },
+          "flop:dry:BB:def:oop:bet:fold": {
+            "situationKey": "flop:dry:BB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.1542293638507557,
+            "share": 0.0019278670481344463
+          },
+          "flop:dry:LATE:def:ip:bet:call": {
+            "situationKey": "flop:dry:LATE:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.5403769403437177,
+            "share": 0.019254711754296473
+          },
+          "turn:dry:LATE:def:ip:none:check": {
+            "situationKey": "turn:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.5532950703874882,
+            "share": 0.019416188379843602
+          },
+          "river:dry:LATE:def:ip:none:check": {
+            "situationKey": "river:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 9.783436307261022,
+            "share": 0.12229295384076277
+          },
+          "flop:medium:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "flop:medium:LATE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.0958749390323943,
+            "share": 0.0011984367379049288
+          },
+          "turn:wet:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "turn:wet:LATE:agg:ip:none:check_give_up",
+            "n": 3,
+            "weight": 0.0375,
+            "meanWithin": 0.8798328113367225,
+            "share": 0.03299373042512709
+          },
+          "river:wet:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "river:wet:LATE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.7676203825728563,
+            "share": 0.009595254782160704
+          },
+          "flop:dry:SB:agg:oop:none:check_give_up": {
+            "situationKey": "flop:dry:SB:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.12376795086236214,
+            "share": 0.001547099385779527
+          },
+          "flop:medium:BB:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:BB:agg:ip:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.026644495902325538,
+            "share": 0.00033305619877906925
+          },
+          "flop:medium:BB:agg:ip:raise:reraise": {
+            "situationKey": "flop:medium:BB:agg:ip:raise:reraise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.3910416267296579,
+            "share": 0.004888020334120724
+          },
+          "flop:dry:MIDDLE:agg:oop:none:cbet": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.09359501090552369,
+            "share": 0.002339875272638092
+          },
+          "flop:dry:LATE:agg:ip:bet:raise": {
+            "situationKey": "flop:dry:LATE:agg:ip:bet:raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.21770106156281788,
+            "share": 0.002721263269535224
+          },
+          "river:medium:LATE:agg:ip:bet:fold": {
+            "situationKey": "river:medium:LATE:agg:ip:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 13.404841575499695,
+            "share": 0.3351210393874924
+          },
+          "turn:dry:BB:def:oop:none:donk": {
+            "situationKey": "turn:dry:BB:def:oop:none:donk",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.3701899053914173,
+            "share": 0.004627373817392716
+          },
+          "turn:medium:BB:def:oop:none:check": {
+            "situationKey": "turn:medium:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.8193106473420841,
+            "share": 0.010241383091776052
+          },
+          "turn:medium:BB:def:oop:bet:fold": {
+            "situationKey": "turn:medium:BB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.5190521545094073,
+            "share": 0.03148815193136759
+          },
+          "flop:dry:MIDDLE:agg:oop:raise:reraise": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:raise:reraise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.07080454759730159,
+            "share": 0.00088505684496627
+          },
+          "flop:dry:MIDDLE:agg:oop:raise:call_raise": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:raise:call_raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 25.591642122216754,
+            "share": 0.3198955265277095
+          },
+          "flop:medium:MIDDLE:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:MIDDLE:agg:ip:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.21773676744484893,
+            "share": 0.005443419186121224
+          },
+          "turn:wet:MIDDLE:agg:ip:bet:fold": {
+            "situationKey": "turn:wet:MIDDLE:agg:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.724460386343523,
+            "share": 0.02155575482929404
+          },
+          "flop:dry:BB:def:ip:bet:call": {
+            "situationKey": "flop:dry:BB:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.23128923043675975,
+            "share": 0.002891115380459497
+          },
+          "turn:wet:BB:def:ip:none:check": {
+            "situationKey": "turn:wet:BB:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.2235032448102636,
+            "share": 0.015293790560128296
+          },
+          "river:wet:BB:def:ip:none:check": {
+            "situationKey": "river:wet:BB:def:ip:none:check",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 5.961452551147733,
+            "share": 0.14903631377869334
+          },
+          "flop:medium:SB:def:oop:none:check": {
+            "situationKey": "flop:medium:SB:def:oop:none:check",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.9666622708658079,
+            "share": 0.024166556771645198
+          },
+          "flop:medium:SB:def:oop:bet:fold": {
+            "situationKey": "flop:medium:SB:def:oop:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.3596928539603663,
+            "share": 0.008992321349009158
+          },
+          "flop:dry:LATE:def:ip:bet:fold": {
+            "situationKey": "flop:dry:LATE:def:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.1426549707861131,
+            "share": 0.001783187134826414
+          },
+          "flop:medium:BB:agg:ip:bet:call": {
+            "situationKey": "flop:medium:BB:agg:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.4400513707054303,
+            "share": 0.0055006421338178796
+          },
+          "turn:wet:BB:def:ip:bet:call": {
+            "situationKey": "turn:wet:BB:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 4.314619101351514,
+            "share": 0.05393273876689393
+          },
+          "turn:medium:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "turn:medium:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.468550705332376,
+            "share": 0.018356883816654703
+          },
+          "river:wet:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "river:wet:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.8281916114569015,
+            "share": 0.03535239514321127
+          },
+          "flop:medium:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "flop:medium:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.35586452350981457,
+            "share": 0.004448306543872682
+          },
+          "turn:dry:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "turn:dry:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.3475451183157854,
+            "share": 0.004344313978947317
+          },
+          "turn:dry:MIDDLE:agg:oop:bet:fold": {
+            "situationKey": "turn:dry:MIDDLE:agg:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.6451901007155625,
+            "share": 0.008064876258944531
+          },
+          "flop:medium:MIDDLE:agg:oop:none:cbet": {
+            "situationKey": "flop:medium:MIDDLE:agg:oop:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.056098356949387806,
+            "share": 0.0007012294618673476
+          },
+          "turn:wet:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "turn:wet:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.8660659338865759,
+            "share": 0.0108258241735822
+          },
+          "turn:wet:MIDDLE:agg:oop:bet:call": {
+            "situationKey": "turn:wet:MIDDLE:agg:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.1405347800374592,
+            "share": 0.014256684750468242
+          },
+          "river:wet:MIDDLE:def:oop:none:check": {
+            "situationKey": "river:wet:MIDDLE:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 3.784138112922607,
+            "share": 0.04730172641153259
+          },
+          "river:wet:MIDDLE:def:oop:bet:call": {
+            "situationKey": "river:wet:MIDDLE:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 29.038295056463742,
+            "share": 0.3629786882057968
+          },
+          "flop:medium:LATE:def:ip:bet:call": {
+            "situationKey": "flop:medium:LATE:def:ip:bet:call",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.380310014606811,
+            "share": 0.009507750365170277
+          },
+          "turn:wet:LATE:def:ip:bet:fold": {
+            "situationKey": "turn:wet:LATE:def:ip:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.8018444933187947,
+            "share": 0.02004611233296987
+          },
+          "flop:dry:LATE:agg:ip:none:cbet": {
+            "situationKey": "flop:dry:LATE:agg:ip:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.11758370353969338,
+            "share": 0.0029395925884923347
+          },
+          "turn:wet:LATE:def:ip:none:donk": {
+            "situationKey": "turn:wet:LATE:def:ip:none:donk",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.8844266050126146,
+            "share": 0.011055332562657684
+          },
+          "flop:dry:BB:def:oop:bet:call": {
+            "situationKey": "flop:dry:BB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.03523717216124567,
+            "share": 0.0004404646520155709
+          },
+          "turn:dry:BB:def:oop:none:check": {
+            "situationKey": "turn:dry:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.7047274683387013,
+            "share": 0.008809093354233766
+          },
+          "river:dry:BB:def:oop:none:check": {
+            "situationKey": "river:dry:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.9608387689892837,
+            "share": 0.03701048461236605
+          },
+          "flop:dry:SB:def:oop:none:check": {
+            "situationKey": "flop:dry:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.23639321449526474,
+            "share": 0.0029549151811908096
+          },
+          "flop:dry:SB:def:oop:bet:call": {
+            "situationKey": "flop:dry:SB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.27348934406990555,
+            "share": 0.0034186168008738197
+          },
+          "turn:medium:SB:def:oop:none:check": {
+            "situationKey": "turn:medium:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.9751216221630248,
+            "share": 0.012189020277037811
+          },
+          "turn:medium:SB:def:oop:bet:fold": {
+            "situationKey": "turn:medium:SB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.3602685904608496,
+            "share": 0.01700335738076062
+          },
+          "flop:medium:LATE:def:ip:none:check": {
+            "situationKey": "flop:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.2693059834521865,
+            "share": 0.003366324793152331
+          },
+          "flop:medium:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "flop:medium:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.11242340914990478,
+            "share": 0.00140529261437381
+          }
+        }
+      },
+      "bySituationSecondary": {
+        "measure": "kl",
+        "total": 0.4148664044635894,
+        "n": 80,
+        "shares": {
+          "flop:dry:LATE:def:ip:none:check": {
+            "situationKey": "flop:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:LATE:def:ip:none:check": {
+            "situationKey": "turn:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:medium:LATE:def:ip:none:check": {
+            "situationKey": "river:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.0794415416798357,
+            "share": 0.02599301927099795
+          },
+          "flop:medium:LATE:def:ip:bet:fold": {
+            "situationKey": "flop:medium:LATE:def:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:SB:agg:oop:none:cbet": {
+            "situationKey": "flop:medium:SB:agg:oop:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:SB:agg:oop:none:cbet": {
+            "situationKey": "turn:dry:SB:agg:oop:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:SB:agg:oop:raise:call_raise": {
+            "situationKey": "turn:dry:SB:agg:oop:raise:call_raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:medium:SB:def:oop:none:check": {
+            "situationKey": "river:medium:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.13081203594113697,
+            "share": 0.0016351504492642121
+          },
+          "river:medium:SB:def:oop:bet:call": {
+            "situationKey": "river:medium:SB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:LATE:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:LATE:agg:ip:none:cbet",
+            "n": 4,
+            "weight": 0.05,
+            "meanWithin": 0.03338284815613064,
+            "share": 0.0016691424078065322
+          },
+          "flop:dry:BB:def:oop:none:check": {
+            "situationKey": "flop:dry:BB:def:oop:none:check",
+            "n": 4,
+            "weight": 0.05,
+            "meanWithin": 0.03338284815613064,
+            "share": 0.0016691424078065322
+          },
+          "flop:dry:BB:def:oop:bet:fold": {
+            "situationKey": "flop:dry:BB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:LATE:def:ip:bet:call": {
+            "situationKey": "flop:dry:LATE:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:LATE:def:ip:none:check": {
+            "situationKey": "turn:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:dry:LATE:def:ip:none:check": {
+            "situationKey": "river:dry:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.3862943611198906,
+            "share": 0.01732867951399863
+          },
+          "flop:medium:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "flop:medium:LATE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "turn:wet:LATE:agg:ip:none:check_give_up",
+            "n": 3,
+            "weight": 0.0375,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:wet:LATE:agg:ip:none:check_give_up": {
+            "situationKey": "river:wet:LATE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 2.0794415416798357,
+            "share": 0.02599301927099795
+          },
+          "flop:dry:SB:agg:oop:none:check_give_up": {
+            "situationKey": "flop:dry:SB:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:BB:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:BB:agg:ip:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:BB:agg:ip:raise:reraise": {
+            "situationKey": "flop:medium:BB:agg:ip:raise:reraise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:MIDDLE:agg:oop:none:cbet": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:LATE:agg:ip:bet:raise": {
+            "situationKey": "flop:dry:LATE:agg:ip:bet:raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:medium:LATE:agg:ip:bet:fold": {
+            "situationKey": "river:medium:LATE:agg:ip:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 1.3862943611198906,
+            "share": 0.03465735902799726
+          },
+          "turn:dry:BB:def:oop:none:donk": {
+            "situationKey": "turn:dry:BB:def:oop:none:donk",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:BB:def:oop:none:check": {
+            "situationKey": "turn:medium:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:BB:def:oop:bet:fold": {
+            "situationKey": "turn:medium:BB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:MIDDLE:agg:oop:raise:reraise": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:raise:reraise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:MIDDLE:agg:oop:raise:call_raise": {
+            "situationKey": "flop:dry:MIDDLE:agg:oop:raise:call_raise",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.04823844727885791,
+            "share": 0.0006029805909857239
+          },
+          "flop:medium:MIDDLE:agg:ip:none:cbet": {
+            "situationKey": "flop:medium:MIDDLE:agg:ip:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:MIDDLE:agg:ip:bet:fold": {
+            "situationKey": "turn:wet:MIDDLE:agg:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:BB:def:ip:bet:call": {
+            "situationKey": "flop:dry:BB:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:BB:def:ip:none:check": {
+            "situationKey": "turn:wet:BB:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:wet:BB:def:ip:none:check": {
+            "situationKey": "river:wet:BB:def:ip:none:check",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0.37291789144782694,
+            "share": 0.009322947286195675
+          },
+          "flop:medium:SB:def:oop:none:check": {
+            "situationKey": "flop:medium:SB:def:oop:none:check",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:SB:def:oop:bet:fold": {
+            "situationKey": "flop:medium:SB:def:oop:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:LATE:def:ip:bet:fold": {
+            "situationKey": "flop:dry:LATE:def:ip:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:BB:agg:ip:bet:call": {
+            "situationKey": "flop:medium:BB:agg:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:BB:def:ip:bet:call": {
+            "situationKey": "turn:wet:BB:def:ip:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "turn:medium:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:wet:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "river:wet:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 1.4594326117914849,
+            "share": 0.01824290764739356
+          },
+          "flop:medium:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "flop:medium:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "turn:dry:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:MIDDLE:agg:oop:bet:fold": {
+            "situationKey": "turn:dry:MIDDLE:agg:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:MIDDLE:agg:oop:none:cbet": {
+            "situationKey": "flop:medium:MIDDLE:agg:oop:none:cbet",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:MIDDLE:agg:oop:none:check_give_up": {
+            "situationKey": "turn:wet:MIDDLE:agg:oop:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:MIDDLE:agg:oop:bet:call": {
+            "situationKey": "turn:wet:MIDDLE:agg:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:wet:MIDDLE:def:oop:none:check": {
+            "situationKey": "river:wet:MIDDLE:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.14384103622589042,
+            "share": 0.0017980129528236304
+          },
+          "river:wet:MIDDLE:def:oop:bet:call": {
+            "situationKey": "river:wet:MIDDLE:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 13.815510557964274,
+            "share": 0.17269388197455343
+          },
+          "flop:medium:LATE:def:ip:bet:call": {
+            "situationKey": "flop:medium:LATE:def:ip:bet:call",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:LATE:def:ip:bet:fold": {
+            "situationKey": "turn:wet:LATE:def:ip:bet:fold",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:LATE:agg:ip:none:cbet": {
+            "situationKey": "flop:dry:LATE:agg:ip:none:cbet",
+            "n": 2,
+            "weight": 0.025,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:wet:LATE:def:ip:none:donk": {
+            "situationKey": "turn:wet:LATE:def:ip:none:donk",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:BB:def:oop:bet:call": {
+            "situationKey": "flop:dry:BB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:dry:BB:def:oop:none:check": {
+            "situationKey": "turn:dry:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "river:dry:BB:def:oop:none:check": {
+            "situationKey": "river:dry:BB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 7.973130860569689,
+            "share": 0.09966413575712112
+          },
+          "flop:dry:SB:def:oop:none:check": {
+            "situationKey": "flop:dry:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:dry:SB:def:oop:bet:call": {
+            "situationKey": "flop:dry:SB:def:oop:bet:call",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:SB:def:oop:none:check": {
+            "situationKey": "turn:medium:SB:def:oop:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "turn:medium:SB:def:oop:bet:fold": {
+            "situationKey": "turn:medium:SB:def:oop:bet:fold",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:LATE:def:ip:none:check": {
+            "situationKey": "flop:medium:LATE:def:ip:none:check",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0,
+            "share": 0
+          },
+          "flop:medium:MIDDLE:agg:ip:none:check_give_up": {
+            "situationKey": "flop:medium:MIDDLE:agg:ip:none:check_give_up",
+            "n": 1,
+            "weight": 0.0125,
+            "meanWithin": 0.28768207245178085,
+            "share": 0.003596025905647261
+          }
+        }
+      },
+      "summingDecompositionAvailable": false,
+      "summingDecompositionReason": "decomposeByLayer{Telescoping,Shapley} require layer functions PINNED to this atom set's engine commit and evaluated on HYBRID inputs no atom records — for this stack that is 2^L engine re-runs per decision at ~20s each, unaffordable at any n worth reporting. The sum identity (by-layer total == by-situation total) is asserted by test on the pinned closed-form fixture instead: src/utils/standardOfRecord/__tests__/divergence.test.js."
+    },
+    "counters": {
+      "checkpoints": 26,
+      "skippedCheckpoints": 0,
+      "geometrySkips": 0,
+      "armFailures": {
+        "sfc-depth1:no-combos": 1
+      },
+      "engineErrors": 0
+    },
+    "notAnEdge": true
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "quotable": true,
+    "reasons": [
+      "n = 80 paired decisions across 60 EVAL players",
+      "unsigned divergence, not an edge — no surface is claimed better than another",
+      "no summing by-layer decomposition (see metrics.attribution.summingDecompositionReason)",
+      "transferred, not measured, for live 9-handed 1/2-1/3"
+    ]
+  },
+  "manifest": {
+    "engineCommit": "1389589e9f1446c9a51dc6e34fd42c7d12bdac17",
+    "engineDirty": true,
+    "dealBookHash": "sha256:aa3f044785b17066edd4c5db57c452895862e67a71b8d6556af86db0cfbf534f",
+    "fieldVersion": "behavior-policy@pool-train/12191obs",
+    "partition": "pool-train@50",
+    "seeds": {
+      "comboSampling": "systematic-deterministic"
+    },
+    "unseededSources": [
+      {
+        "source": "src/utils/pokerCore/monteCarloEquity.js",
+        "reached_via": "heroPolicy -> evaluateGameTree -> handVsRange",
+        "mechanism": "Math.random() in the deck shuffle and the weighted combo draw",
+        "consequence": "Two runs over the same Deal Book with identical seeds agree to within Monte Carlo noise, not exactly. Do not read a small difference between two Result Cards as a change."
+      },
+      {
+        "source": "src/utils/exploitEngine/gameTreeSampling.js, gameTreeDepth2.js",
+        "reached_via": "heroPolicy -> evaluateGameTree -> refinement stages",
+        "mechanism": "Math.random() in stratified sampling and mini-rollout equity inside depth-2/3",
+        "consequence": "The depth-2 arm carries Monte Carlo noise the depth-1 arm does not."
+      },
+      {
+        "source": "src/utils/exploitEngine/gameTreeEvaluator.js (refinement budget clock)",
+        "reached_via": "refinementBudgetMs enforced against Date.now()",
+        "mechanism": "WALL-CLOCK DEPENDENCE, not randomness. Which refinement stages complete depends on machine speed and load, capped per stage by MAX_STAGE_SHARE.",
+        "consequence": "The depth-2 arm is NOT reproducible on a different machine, or on this one under different load: a re-run can differ because a stage that finished before did not finish again. The depth-1 arm (budget 0) has no such dependence and IS stable."
+      }
+    ],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "KL_FLOOR": 0.000001,
+      "REFINEMENT_BUDGET_MS_REFERENCE": 0,
+      "REFINEMENT_BUDGET_MS_FAST": 250,
+      "REFINEMENT_BUDGET_MS_FULL": 2000,
+      "HERO_POLICY_COMBO_SAMPLES": 8,
+      "HERO_POLICY_TRIALS": 200
+    },
+    "disclaimerRegisterVersion": "FR-1+e3867c10fc2a",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": "sha256:e8775bf60776ec1fa3af7c343d77c008340675a5326837401d2dd87e0650b13b",
+  "atomCount": 240,
+  "anchorGeneration": 1,
+  "fragility": {
+    "margins": [
+      {
+        "name": "KL_FLOOR",
+        "value": 0.000001,
+        "flipsAt": null,
+        "sweptRange": [
+          1e-9,
+          0.01
+        ],
+        "relativeMove": null,
+        "note": "The probability floor under KL. heroPolicy applies NO smoothing, so a flipped argmax against a hard zero contributes ~ln(1/floor) nats. The floor therefore sets the magnitude of every KL figure on this card. EV-difference has no equivalent knob, which is itself a difference between the two candidate measures."
+      }
+    ],
+    "tightestInput": null,
+    "tightestRelativeMove": null,
+    "knifeEdge": false,
+    "knifeEdgeThreshold": 0.1,
+    "unswept": [
+      "KL_FLOOR"
+    ]
+  },
+  "flipRegister": null,
+  "comparisonCensus": {
+    "schemaVersion": 1,
+    "axis": "surface",
+    "possible": [
+      "sfc-depth1 vs sfc-depth2-fast",
+      "sfc-depth1 vs sfc-depth2-full",
+      "sfc-depth2-fast vs sfc-depth2-full"
+    ],
+    "drawn": [
+      {
+        "contrast": "sfc-depth1 vs sfc-depth2-fast",
+        "resultCardId": "RC-layer-divergence"
+      },
+      {
+        "contrast": "sfc-depth1 vs sfc-depth2-full",
+        "resultCardId": "RC-layer-divergence"
+      }
+    ],
+    "notDrawn": [
+      {
+        "contrast": "sfc-depth2-fast vs sfc-depth2-full",
+        "reason": "not-attempted",
+        "blocked": false
+      }
+    ],
+    "blockedReasons": {}
+  }
+}

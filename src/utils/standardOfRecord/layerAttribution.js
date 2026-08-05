@@ -461,4 +461,91 @@ export const firstMeasuredDivergence = (decomposition, threshold = 0) => STACK_L
   return s && s.admissible && Math.abs(s.mean) > threshold;
 }) ?? null;
 
+/**
+ * A layer's share of the total, as a FRACTION — but only from an instrument that sums (WS-350).
+ *
+ * `localizeByLayer` returns `sumsToTotal: false` in its payload precisely so a caller cannot
+ * read its per-layer numbers as shares of anything. Honouring that has to be mechanical, so this
+ * throws on a non-summing decomposition rather than dividing two numbers that are not in the
+ * same space. A localization's `range` figure is in range-width units and its `action` figure is
+ * in nats; their ratio is not a share, it is a category error with a decimal point.
+ */
+export const shareOfTotal = (decomposition, layer) => {
+  if (decomposition?.sumsToTotal !== true) {
+    throw new StandardOfRecordError(
+      `layerAttribution.shareOfTotal: instrument "${decomposition?.instrument}" reports `
+      + 'sumsToTotal: false, so its per-layer numbers are not shares of the total and dividing '
+      + 'them by it would invent one. Use decomposeByLayerTelescoping or decomposeByLayerShapley, '
+      + 'which require pinned layer functions and actually sum.',
+      { instrument: decomposition?.instrument, layer },
+    );
+  }
+  const s = decomposition.shares?.[layer];
+  if (!s) return null;
+  const total = decomposition.total;
+  if (!Number.isFinite(total) || total === 0) return null;
+  return (s.share ?? s.mean ?? 0) / total;
+};
+
+/**
+ * WS-350 AC4, in one object: WHICH layer, and HOW MUCH of the divergence it accounts for.
+ *
+ * The two halves come from different instruments on purpose, and the payload keeps them apart:
+ *
+ *   `structuralLayer`  from `stack.firstStructuralDivergence` — one surface has an equity layer
+ *                      and the other does not. Needs no measurement and no `d`.
+ *   `localizedLayer`   from `localizeByLayer` — the first layer whose RECORDED values differ
+ *                      admissibly. Evaluation-free, and therefore carries NO share.
+ *   `measuredLayer`    from a SUMMING decomposition — the first layer with an admissible share,
+ *                      WITH that share. Requires pinned layer functions.
+ *
+ * A structural separation is upstream of any measured one: if the two surfaces do not even have
+ * the same layers, the first place they differ is where a layer is missing, and no quantity is
+ * needed to know it. So `firstLayer` prefers structural, then localized, then measured — and
+ * `firstLayerFrom` names which instrument answered, because "we could not measure it" and "there
+ * was nothing to measure" must not read the same.
+ */
+export const attributeFirstLayer = ({
+  structuralDivergence = null,
+  localization = null,
+  decomposition = null,
+  threshold = 0,
+} = {}) => {
+  const localizedLayer = localization
+    ? (localization.firstDivergentLayer ?? null)
+    : null;
+  const measuredLayer = decomposition
+    ? firstMeasuredDivergence(decomposition, threshold)
+    : null;
+
+  let firstLayer = null;
+  let firstLayerFrom = null;
+  if (structuralDivergence) { firstLayer = structuralDivergence; firstLayerFrom = 'structural'; }
+  else if (localizedLayer) { firstLayer = localizedLayer; firstLayerFrom = 'localization'; }
+  else if (measuredLayer) { firstLayer = measuredLayer; firstLayerFrom = 'decomposition'; }
+
+  const share = (decomposition && measuredLayer)
+    ? shareOfTotal(decomposition, measuredLayer)
+    : null;
+
+  return Object.freeze({
+    firstLayer,
+    firstLayerFrom,
+    structuralLayer: structuralDivergence,
+    localizedLayer,
+    measuredLayer,
+    // NULL when no summing instrument was available. Explicitly not "0" and not "unknown share
+    // of a known layer" — a share needs a decomposition that sums, and saying so is the whole
+    // reason `localizeByLayer` carries `sumsToTotal: false`.
+    shareOfTotal: share,
+    shareInstrument: decomposition?.instrument ?? null,
+    shareAvailable: share !== null,
+    shareUnavailableReason: share === null
+      ? 'no summing decomposition was supplied — a share requires layer functions PINNED to the '
+        + 'atom set\'s engine commit and replayed from its seeds, which an evaluation-free '
+        + 'localization deliberately does not have'
+      : null,
+  });
+};
+
 export { layerIndex };

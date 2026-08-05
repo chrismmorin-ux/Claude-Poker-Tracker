@@ -22,6 +22,7 @@
  */
 
 import { MANIFEST_SCHEMA, StandardOfRecordError, checkAgainstSchema } from './schemas.js';
+import { REGISTER_VERSION_PATTERN, isRegisterVersionShape } from './faultRegister.js';
 
 /**
  * The constants ADR-009 names as the MINIMUM set. A manifest missing any of these is refused.
@@ -135,12 +136,32 @@ export const manifestProblems = (manifest) => {
   // flagger uses to open an existing card, and a rule that made legacy cards unreadable would
   // mean the cards most likely to be contaminated are exactly the ones the mechanism cannot
   // open. A card missing this is invalid to PUBLISH and still legible to AUDIT.
+  // WS-353 FOLLOW-UP — THE PRESENCE CHECK WAS NOT THE WHOLE CHECK.
+  //
+  // The rule above was `if (!manifest.disclaimerRegisterVersion)`. That does reject `null`, `''`
+  // and an absent key — but it accepts ANY non-empty string: `'unknown'`, `'v1'`, a hand-typed
+  // near-miss, a placeholder somebody meant to replace. The stamp has exactly one job, which is
+  // to be JOINED back to a register version when a fault is confirmed so the results that stood
+  // on it can be found. A string that cannot be joined does none of that while passing the check
+  // — and is strictly worse than `null`, because `null` states that the card cannot name its
+  // register while an unjoinable string asserts that it can.
+  //
+  // The shape lives in `faultRegister.js` beside the function that mints it, so the checker
+  // cannot drift from the producer.
   if (!manifest.disclaimerRegisterVersion) {
     problems.push(
       'manifest.disclaimerRegisterVersion is missing — every Result Card must name the '
       + 'suspected-fault register version it was produced under, or confirming a fault later '
       + 'cannot tell which prior results it invalidates. Stamp `registerVersion()` from '
       + 'src/utils/standardOfRecord/faultRegister.js',
+    );
+  } else if (!isRegisterVersionShape(manifest.disclaimerRegisterVersion)) {
+    problems.push(
+      `manifest.disclaimerRegisterVersion "${manifest.disclaimerRegisterVersion}" is not a `
+      + `register version — it must match ${REGISTER_VERSION_PATTERN} (epoch + 12-hex content `
+      + 'hash). A value that cannot be joined back to a register version is worse than no value: '
+      + 'it claims the card can be traced when it cannot. Stamp `registerVersion()` from '
+      + 'src/utils/standardOfRecord/faultRegister.js rather than writing the field by hand',
     );
   }
   return problems;

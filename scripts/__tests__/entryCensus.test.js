@@ -121,6 +121,38 @@ describe('three kinds of absence, kept apart', () => {
   });
 });
 
+describe('what the run examined is declared, never inferred (WS-328)', () => {
+  it('declares an EMPTY examined set rather than reporting 24 zeros it never looked at', async () => {
+    // v1 emitted `hits: 0` on every reachable cell, which reads as "we looked and found none".
+    // Nothing here ever places a decision in a cell, so that reading was false. The honest
+    // declaration is that no cell was examined at all — and the reason is a permanent property
+    // of the corpus (masked hole cards), not a scope choice more files could undo.
+    const census = await buildEntryCensus(['AA', 'AKs', '72o'], { root });
+    expect(census.examination.mode).toBe('enumerated');
+    expect(census.examination.examinedContexts).toBe(0);
+    expect(census.examination.unexaminedReason).toBe('instrument-cannot-evaluate');
+    expect(census.examination.basis).toMatch(/masked at deal/);
+  });
+
+  it('counts the never-looked cells apart from the genuine zeros', async () => {
+    // The pair is the claim. 24 reachable cells were never examined; ZERO were examined and
+    // found empty. A single "0% coverage" would fold those two into one number.
+    const census = await buildEntryCensus(['AA', 'AKs', '72o'], { root });
+    expect(census.statusCounts.unexamined).toBe(24);
+    expect(census.statusCounts['observed-zero']).toBe(0);
+    expect(census.statusCounts.unreachable).toBe(6);
+    expect(census.statusCounts.hit).toBe(0);
+  });
+
+  it('names the ordered axes the contexts were enumerated from', async () => {
+    // Positional context keys: `AA|EARLY|raise` is only readable against this order, and it is
+    // the same order `entryMap` builds its cellId from.
+    const census = await buildEntryCensus(['AA'], { root });
+    expect(census.axes.map((a) => a.name)).toEqual(['handClass', 'posCategory', 'facingAction']);
+    expect(census.cells.every((c) => c.contextKey === c.cellId)).toBe(true);
+  });
+});
+
 describe('the census is a WS-322 Coverage Census, not a bespoke shape', () => {
   it('validates against the registered schema', async () => {
     // A coverage record that answered to nothing could drift into saying whatever the run that

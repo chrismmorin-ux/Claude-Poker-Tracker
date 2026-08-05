@@ -69,7 +69,7 @@ const actorIdOf = (seat, mySeat, seatPlayers) => {
  * @param {Object} entry — actionSequence entry { seat, action, street, ... }
  * @param {Object} ctx — { street, seat, actor, actorId, prevActionsThisStreet, fullActionSequence, index }
  */
-const defaultIsModeledNode = (entry, ctx) => {
+export const defaultIsModeledNode = (entry, ctx) => {
   if (!entry || !BETTING_ACTIONS.has(entry.action)) return false;
   const { seat, prevActionsThisStreet } = ctx;
   return !prevActionsThisStreet.some(prev => prev.seat === seat);

@@ -16,6 +16,7 @@ import {
 import { buildFlipRegister, buildFragility, buildMargin } from '../fragility.js';
 import { buildComparisonCensus, censusSummary, contrastKey } from '../comparisonCensus.js';
 import { buildReplicationManifest, manifestProblems, knownDivergence, REQUIRED_CONSTANTS } from '../manifest.js';
+import { registerVersion } from '../faultRegister.js';
 import { StandardOfRecordError } from '../schemas.js';
 
 const manifestInput = () => ({
@@ -72,6 +73,83 @@ describe('buildReplicationManifest', () => {
     delete noSeeds.seeds;
     expect(() => buildReplicationManifest(noSeeds)).toThrow(/seeds/);
     expect(() => buildReplicationManifest({ ...manifestInput(), seeds: {} })).not.toThrow();
+  });
+
+  // ── the disclaimer stamp, and the hole in the check that guarded it (WS-353 follow-up) ──────────
+  //
+  // WS-353 flagged `RC-hero-ev-2d765568-c56405ee` (out/hero-ev-pbr.json) as carrying
+  // `disclaimerRegisterVersion: null` while `manifestProblems` was supposed to reject that,
+  // and read it as an enforcement hole. It is not: that artifact was produced 2026-08-04
+  // 00:14 from engine commit c56405ee, and WS-330 — which added BOTH the requirement and the
+  // stamp — landed at 11:42 the same day. Re-run `resultCardProblems` on that card today and
+  // it is rejected. What the card actually preserves is a stale verdict: its stored
+  // `resultCardProblems: []` was computed under the old rules and nothing rechecks it.
+  //
+  // The REAL hole is one line below the presence check: `!version` accepts any non-empty
+  // string. That is the case that matters, because the stamp exists only to be JOINED back to
+  // a register version, and an unjoinable string is worse than `null` — `null` says the card
+  // cannot name its register, `'unknown'` claims it can.
+  it('refuses a NULL register stamp — the presence check, pinned as a regression', () => {
+    const input = { ...manifestInput(), disclaimerRegisterVersion: null };
+    expect(() => buildReplicationManifest(input)).toThrow(/disclaimerRegisterVersion is missing/);
+  });
+
+  it('refuses an ABSENT register stamp, which the builder defaults to null', () => {
+    const input = { ...manifestInput() };
+    delete input.disclaimerRegisterVersion;
+    expect(() => buildReplicationManifest(input)).toThrow(/disclaimerRegisterVersion is missing/);
+  });
+
+  it('refuses an UNDEFINED register stamp on a manifest checked rather than built', () => {
+    // A hand-assembled manifest reaches `manifestProblems` without passing the builder's
+    // default, so `undefined` has to be caught on its own account.
+    const problems = manifestProblems({ ...manifestInput(), disclaimerRegisterVersion: undefined });
+    expect(problems.length).toBeGreaterThan(0);
+    expect(problems.join(' ')).toMatch(/disclaimerRegisterVersion/);
+  });
+
+  it('refuses an EMPTY-STRING register stamp', () => {
+    expect(() => buildReplicationManifest({ ...manifestInput(), disclaimerRegisterVersion: '' }))
+      .toThrow(/disclaimerRegisterVersion is missing/);
+  });
+
+  // THE FAILING CASE. Every value here is non-empty and passed the old truthiness check.
+  it.each([
+    ['a placeholder somebody meant to replace', 'unknown'],
+    ['a hand-typed version', 'v1'],
+    ['the epoch with no hash', 'FR-1'],
+    ['the epoch with an empty hash', 'FR-1+'],
+    ['a hash that is too short', 'FR-1+e3867c10fc2'],
+    ['a hash that is too long', 'FR-1+e3867c10fc2ab'],
+    ['a hash that is not lowercase hex', 'FR-1+ABCDEF012345'],
+    ['a hash that is not hex at all', 'FR-1+zzzzzzzzzzzz'],
+    ['the wrong register family', 'SOR-1+e3867c10fc2a'],
+  ])('refuses %s (%s) — a stamp that cannot be joined is worse than none', (_label, value) => {
+    expect(() => buildReplicationManifest({ ...manifestInput(), disclaimerRegisterVersion: value }))
+      .toThrow(/is not a register version/);
+  });
+
+  it('accepts a future epoch, because bumping the epoch is a legal change', () => {
+    // A validator pinned to `FR-1` would reject every card minted the day after an epoch bump.
+    expect(manifestProblems(buildReplicationManifest({
+      ...manifestInput(), disclaimerRegisterVersion: 'FR-12+8c4e65578ca2',
+    }))).toEqual([]);
+  });
+
+  it('accepts what registerVersion() actually mints, so checker and producer cannot drift', async () => {
+    const version = await registerVersion();
+    expect(manifestProblems(buildReplicationManifest({
+      ...manifestInput(), disclaimerRegisterVersion: version,
+    }))).toEqual([]);
+  });
+
+  it('rejects the WS-353 card SHAPE at the card level, not just the manifest level', () => {
+    // The shape of `RC-hero-ev-2d765568-c56405ee`: a complete card whose only defect is the
+    // null stamp. `resultCardProblems` must surface it, because the scanner checks cards it
+    // did not build and that is the path an existing artifact arrives on.
+    const card = { ...cardInput(), manifest: { ...manifestInput(), disclaimerRegisterVersion: null } };
+    const problems = resultCardProblems({ ...card, schemaVersion: 2 });
+    expect(problems.join(' ')).toMatch(/disclaimerRegisterVersion is missing/);
   });
 
   it('records a dirty tree, because a dirty commit does not identify the code that ran', () => {
