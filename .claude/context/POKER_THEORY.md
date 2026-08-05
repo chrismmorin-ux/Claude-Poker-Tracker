@@ -1,5 +1,5 @@
 ---
-version: '2.1'
+version: '2.3'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,12 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-08-05
+    version: '2.3'
+    change: "WS-283: added §11.1a — THE FOLD CURVE'S SHAPE IS MEASURED, ITS LEVEL IS NOT. `POPULATION_CURVE` was a founder estimate and was wrong in two ways that a base-rate correction cannot reach. (1) `logisticFoldResponse` returns `baseFold` at `fraction === midpoint` and nowhere else, while every caller passes an UNCONDITIONAL fold rate — so the midpoint must be the sizing at which the field's conditional fold rate equals its unconditional one. That is 0.35x pot, measured; it shipped at 0.75x, above 71% of all real bets, so the model subtracted from the base at nearly every sizing that occurs and the error changed SIGN with bet size. The docblock had meanwhile claimed `baseFold` was the rate at half pot — a stated contract the code contradicted for the life of the parameter. (2) `maxDelta` bounds the TOTAL swing, and at 0.25 the curve could span 25 points of fold rate while the field spans ~78 (6.4% fold at 0.03x pot, 84.2% at 2.0x) — no other parameter could compensate for a ceiling below the signal. Refitted by Brier minimisation on POOL players days 1-11 (k=98,273/n=178,174) and scored on EVAL players days 12-23 (k=178,794/n=318,347), a two-level structural leakage guard: maxDelta 0.25->0.95, midpoint 0.75->0.35, steepnessUp/Down 4.0/2.0->6.5/0.75. Residual-vs-sizing slope on the hold-out, intercept calibrated out so only shape is scored, +0.1409 -> +0.0078; Brier 0.24054 -> 0.23530; the ticket's 33-66% bucket +6.1pp -> -2.0pp on 202,261 decisions. ONLY THE SHAPE MOVED: the corpus is online cash July 2009 and the founder plays live 9-handed 1/2-1/3, so under the ratified WS-259 separation an online-mined gradient may inform a live model while an online base rate may not — POPULATION_PRIORS.bet.fold and STAT_PRIORS.foldToCbet are untouched, and with the base pinned at the live 0.45 estimate the shape correction closes about half the 17.3pp bucket error, the rest being the live/online level gap this corpus may not close. Also records that the WS-273 harness's flat prediction was NOT the fold curve: `queryActionDistribution` takes no bet-size argument, so its prediction is sizing-independent by construction and no curve change can move its lift. Two copies of the old midpoint were found downstream: `preflopFoldResolver` had linearised the pot-fraction->pot-odds change of variables at 0.75, which tripled the preflop response and clamped squeeze fold-through (now applies the map exactly, `f = r/(1-2r)`, deleting the constant); `gameTreeEquity.multiwayFoldPct`'s `betFraction = 0.75` default is reachable only from tests and is recorded, not fixed. NULL RESULT recorded rather than acted on: FOLD_CURVE_STREET_MODS refit per street returns the same shape on all three, and the shipped multipliers make the hold-out worse (~5e-4) — values unchanged, poker-theory justification withdrawn. Result Card RC-WS283-FOLD-CURVE-SHAPE-2026-08-05; hold-out pinned as a fixture in `foldCurveShape.test.js`, four assertions of which fail against the previous constants."
+  - date: 2026-08-05
+    version: '2.2'
+    change: "WS-366: extended §2.1's support boundaries with a third — THE SUPPORT MAY SOFTEN A SHAPE, IT MAY NOT RE-DECIDE ONE. WS-302 established that `withEquitySupport` preserves range WIDTH; measured now, it was not preserving the shape. `softContinuationWeights` derives its logistic sharpness from `TAU_FRACTION × IQR of the scores`, a statistic measured for the POSTFLOP caller whose scores are per-combo equities across a continuing range and are roughly symmetric. Preflop the scores are a range SHAPE concentrated at the top of the field, so both quartiles sit inside the folded tail: on the LATE 3-bet prior the shape ran 0 to 0.935 with an IQR of 0.012, giving tau = 0.0037 and a logistic that was a STEP rather than a soft boundary. A step saturates everything above it, and the mean-pin puts that step where the grid's own WIDTH says — so a WIDE grid lost its entire tier structure and a NARROW one kept its. Section 5.8's deliberately-uncapped `limpReraise` prior therefore shipped its 1.00/0.25 doctrine tiers as 1.00/~0.83, a 4:1 gap delivered as 1.18:1. The section 2.5.3 carve divides the parent by the ratio between sibling shapes, so what then decided each cell was WHERE EACH SIBLING'S STEP FELL — a function of range width, not of doctrine. Measured at LATE, zero observations, carved `limpReraise`: 88 at 0.0370 against QQ at 0.0202 (1.8x the wrong way), with AKo, AQs, AJs and AQo also above QQ and KK four places below AKo; same signature at MIDDLE, SB and BB and in carved `cold3Bet`; worst at LATE because SUBCLASS_SPLIT.threeBet.LATE.limpReraise = 0.06 is the thinnest split, so the shape term carries the most of the apportionment. A villain who limp-reraises being put on 88 as readily as on QQ inverts the one preflop line whose entire doctrinal content is 'this range contains monsters', and it is the trait (`trapsPreflop`) that tells the exploit layer the range is uncapped. FIX: the sharpness is DERIVED from `SUPPORT_BANDWIDTH`, the only width this section names — tau = SUPPORT_BANDWIDTH x (S_max - S_min), which is one smoothing bandwidth of equity transported onto the score axis (a monotone smoothed shape covers its full range across the full equity spread, so one bandwidth spans SUPPORT_BANDWIDTH of that range; the equity spread cancels). The logistic must not resolve finer than the Nadaraya-Watson smoother that produced its scores, nor coarser. Nothing is tuned and nothing is per-position. Consistency check, not a second derivation: on a symmetric score distribution 0.3 x IQR is 0.15 x range for a uniform and 0.06 x range for a Gaussian at n = 1326, so 0.12 is the same sharpness regime the postflop caller measured, computed from a statistic that survives skew. Scope: only the preflop caller moves — `softContinuationWeights` gains an explicit `tau` option and postflop keeps its separately-measured ACTION_TAU_FRACTION. Range width is BIT-IDENTICAL after the change at every position x action, and every live cell stays strictly positive (the WS-302 converse: `bayesianUpdater` multiplies, so a restored ordering bought by zeroing the tail would be the worse bug). Ordering after: QQ+ lead the carved `limpReraise` and `cold3Bet` grids at every position. Two honesty notes. (1) The 1.00/0.25 tier gap is NOT fully restored and cannot be at the shipped PRIOR_SUPPORT_LAMBDA = 0.8, where four fifths of the prior IS the support — the tier body now ships at 0.22-0.28 against QQ at 0.87, but the cell immediately below the boundary is legitimately smoothed upward by SUPPORT_BANDWIDTH doing its declared job. The residual gap is a lambda statement, and lambda was deliberately not moved. (2) Within QQ+ the carved ordering is no longer pinned to AA: section 5.8's prior gives every QQ+ cell weight 1.00, so where the child's tier is flat and the parent's is a ramp the share rises exactly as the parent falls — at lambda 0 the doctrine separates AA from KK in the carve by 1.4%, which a frequency update consumes. That within-tier order was never a doctrine claim and the test that pinned it has been re-anchored to 'a premium leads'."
   - date: 2026-08-05
     version: '2.1'
     change: "WS-337: added §16 — THE EQUITY OPERATOR IS ANTISYMMETRIC. E(a,b)+E(b,a)=1 makes S = M - 1/2 exactly skew-symmetric (measured: max|M+M^T-1| = 0, BIT-EXACT on both of two independently seeded 20,000-board builds), which forces three theorems rather than three modelling choices: no real eigen-axes, a canonical decomposition into at most 84 two-dimensional rotation planes (each one rock-paper-scissors cycle with a magnitude), and 169 odd so one dimension has no partner. Promotes the decomposition from a research script to a first-class object: src/utils/pokerCore/equityOperator.js (construction + the exact arithmetic) and equitySkew.js (the shipped artifact reader), with the intransitivity map committed as a 169-cell grid in data/equitySkewDecomposition.js indexed exactly like every range grid. Three corrections to the exploratory measurement it builds on: (1) the transitive/intransitive split is now the exact ORTHOGONAL projection (potential f = Sw = average equity - 1/2, no fitted scalar, Pythagoras residual < 2e-15) rather than a scalar fitted to a unit-normalised strength vector under a different inner product — 74.01/25.99 weighted, 75.28/24.72 unweighted; (2) plane AXIS loadings are basis-arbitrary and are no longer reported, only plane magnitudes and per-class radii, which are the invariants; (3) plane significance is now a MEASURED threshold — two seeds give a statistically exact noise replica (S_A-S_B)/2, whose top singular value 1.353e-3 admits 28 of 84 planes (99.93% of skew energy). Records two honesty corrections to the ticket's own framing: at 13 planes the mean reconstruction error is 1.07pp but the MAX is 16.18pp, and the intransitivity map spans only 7.14-11.52pp (ratio 1.61), so 'the trash is a pure strength ladder' is NOT supported — the map licenses a ranking, not a partition. buildCompressionClaim refuses in CODE any claim reporting energy share without reconstruction error and the transitive/intransitive split. The 169-grid remains authoritative; low-dimensional coordinates ship as an additional lens carrying their measured residual, and the estimation claim (log-loss vs the 169-cell ladder on HandHQ under the two-level split) is NOT YET RUN and therefore unknown rather than favourable."
@@ -128,6 +134,25 @@ Two boundaries hold this in place:
 - **Narrow ranges stay narrow.** The floor self-limits to 90% of the grid's own width, so
   the ~1%-wide 3-bet prior floors near 0.001, not 0.05. §2.3's "a 3-bet from a typical
   live player is almost always a monster" survives — 72o becomes rare, not plausible.
+- **The support may soften a shape; it may not RE-DECIDE one (WS-366).** Unchanged width is
+  not the same as unchanged shape, and for two years it was not. `softContinuationWeights`
+  sets its logistic sharpness from a fraction of the **IQR of the scores**, which is the
+  right statistic postflop, where the scores are per-combo equities across a continuing
+  range. A preflop prior is a *range shape* concentrated at the top of the field, so both
+  quartiles fall inside the folded tail: measured on the LATE 3-bet prior the shape ran
+  0 → 0.935 with an IQR of 0.012, giving `tau = 0.0037` and a logistic that was a **step**.
+  A step saturates everything above it, and its position tracks the grid's own WIDTH
+  (the mean is pinned to it) — so a wide grid lost its whole tier structure while a narrow
+  one kept its. §5.8's deliberately-wide `limpReraise` prior shipped its 1.00 / 0.25 tiers
+  as 1.00 / ~0.83, and the §2.5.3 carve — which divides the parent by the ratio between
+  sibling shapes — then let a sibling's *step position* decide the cell. Measured at LATE,
+  zero observations, carved `limpReraise`: **88 at 0.0370 against QQ at 0.0202**, with AKo,
+  AQs, AJs and AQo also above QQ; the same signature at MIDDLE, SB and BB, and in carved
+  `cold3Bet`. The sharpness is now DERIVED from `SUPPORT_BANDWIDTH`, the smoother's own
+  declared resolution: `tau = SUPPORT_BANDWIDTH × (S_max − S_min)`, one bandwidth of equity
+  transported onto the score axis. The logistic must not resolve finer than the smoother
+  that produced its scores, nor coarser. Range width is bit-identical after the change at
+  every position × action; the ordering is not. See `supportTau` in `populationPriors.js`.
 
 Typical full-ring ranges (9-handed):
 | Position | Open Range | ~% of hands |
@@ -251,6 +276,7 @@ This mirrors the `poolBaseline.js` hierarchical philosophy (§6.5a): a thin subc
 2. A **zero-observation** subclass still carries its parent-derived share — it degrades to the parent, never to a flat guess and never to zero.
 3. The split posterior lies **strictly between** the doctrine split and the raw rate `n_sub / n_parent`, and is **prior-dominated while `n_parent ≤ SUBCLASS_PRIOR_WEIGHT`** — the 50/50 crossover at 10, matching §6.5 for `PRIOR_WEIGHT`.
 4. **One observation shifts the subclass's share of its parent by <25%** (measured 23.3% at n_parent=5), satisfying DEC-025 AS-2. Two shift it 44.6%. Heavy evidence does override the doctrine split.
+5. **The carve does not REORDER the doctrine (WS-366).** QQ+ outrank every cell of the AQ/88 band in every carved subclass at every position. This is not free and did not hold until WS-366: `share_sub(h)` divides by the sibling sum, so the ratio between two sibling *shapes* decides the cell, and any mechanism that flattens one sibling's shape more than another's — there, a logistic sharp enough to be a step, whose position tracked each grid's own width — will reorder the parent it was supposed to be carved from. **A carve that can reorder its parent is not a carve.** Asserted per position on the CARVED grid, never on the standalone prior: the standalone `limpReraise` prior at EARLY held its ordering throughout, which is precisely why the defect survived from WS-256 to WS-366.
 
 **The anti-pattern this rule exists to prevent** — and the actual WS-256 review defect: deriving each subclass grid from an independent prior and shrinking only the frequency. That produced `limpReraise[QQ] = 1.00` against `threeBet[QQ] = 0.58`, subclass mass summing above the parent in **151/169 cells**, and a ~300% range swing from a single observation.
 
@@ -1127,6 +1153,72 @@ Resolved in `foldEquityCalculator.js` `findOptimalBetSize`: `personalizedFoldCur
 FOLD_CURVE_PARAMS[style] || FOLD_CURVE_PARAMS.default`. The fold response itself is a
 logistic in bet fraction (`logisticFoldResponse`), consistent with §3.5 (small bets barely
 move fold%, medium bets steepest, overbets bimodal) — not a linear scaling.
+
+#### 11.1a The shape is MEASURED; the level is not (WS-283)
+
+Tier 4 — `POPULATION_CURVE` — was a founder estimate until WS-283 fitted it against the
+HandHQ corpus. **Only the shape changed.** `POPULATION_PRIORS.bet.fold` and
+`STAT_PRIORS.foldToCbet` are untouched, and that division is the point: the corpus is
+online cash July 2009 and the founder plays live 9-handed 1/2–1/3, so under the ratified
+live/online separation (WS-259) an online-mined *gradient* may inform a live model while an
+online *base rate* may not. `baseFold` still comes from the §6.5a hierarchy; the curve only
+says how that rate moves when the price changes.
+
+| | before | after (fitted) |
+|---|---|---|
+| `maxDelta` | 0.25 | **0.95** |
+| `midpoint` | 0.75 | **0.35** |
+| `steepnessUp` / `steepnessDown` | 4.0 / 2.0 | **6.5 / 0.75** |
+| `steepness` (symmetric fallback) | 3.0 | **1.0** |
+
+**Two defects, both of shape, neither fixable by a base-rate correction.**
+
+1. **`baseFold` was anchored 0.40 pot-fractions too high.** `logisticFoldResponse` returns
+   `baseFold` exactly at `fraction === midpoint` and nowhere else, while every caller hands
+   it an *unconditional* fold rate. `midpoint` must therefore be the sizing at which the
+   field's *conditional* fold rate equals its *unconditional* one — a measurable quantity,
+   not a free knob. It is 0.35× pot. Anchored at 0.75 on a curve with a steep left limb,
+   the model subtracted from the base at every sizing below 0.75×, and **71% of real bets
+   are below 0.75× pot**. This is why the measured error changed SIGN with sizing rather
+   than being a constant offset.
+2. **`maxDelta` capped the swing below the signal.** It bounds the total achievable swing,
+   so at 0.25 the curve could span 25 points of fold rate across all sizings while the
+   field spans ~78 (6.4% fold at 0.03× pot, 84.2% at 2.0×). No setting of `midpoint` or
+   `steepness` could have fitted that — the ceiling itself was the defect.
+
+**Measurement.** Fit on POOL players, days 1–11 (k=98,273 / n=178,174); scored on EVAL
+players, days 12–23 (k=178,794 / n=318,347). Two-level structural leakage guard — player
+partition *and* walk-forward in time — because a corpus-mined constant scored on the corpus
+that produced it measures memorisation (§14, `scripts/backtest/partition.mjs`). Residual
+versus sizing on the hold-out, intercept calibrated out so only shape is scored:
+
+```
+n-weighted slope of (observed − predicted) on bet fraction:   +0.1409  →  +0.0078
+Brier, same 316,178 decisions:                                 0.24054 →  0.23530
+```
+
+**Consequences elsewhere, both from the same root — a copy of the old midpoint.**
+`preflopFoldResolver` had linearised the pot-fraction → pot-odds change of variables at the
+old midpoint (`1 / 0.16`); carrying that forward tripled the preflop response and drove
+squeeze fold-through into its clamp. It now applies the map *exactly*
+(`f = r / (1 − 2r)`, displacement taken relative to `REFERENCE_POT_ODDS`), which needs no
+constant and can never be steeper than the postflop curve it comes from.
+`gameTreeEquity.multiwayFoldPct` still defaults `betFraction = 0.75`; both production call
+sites pass an explicit fraction, so it is reachable only from tests — recorded, not fixed.
+
+**What was NOT established.** `FOLD_CURVE_STREET_MODS` refit independently per street
+returns essentially the same shape on flop, turn and river, and applying the shipped
+multipliers on top of the fitted curve is *worse* on the hold-out (flop 0.23668 → 0.23723,
+river 0.22844 → 0.22885). The effect is ~5e-4, an order of magnitude under the
+population-curve correction, so the values are left alone and the poker-theory
+justification they carried is withdrawn rather than inverted. Per-style curves
+(`computeFoldCurveForStyle`) remain an unmeasured founder estimate.
+
+**Residual the fit does not remove.** Below ~0.15× pot the curve still over-predicts
+folding by 3–13 points. A bounded logistic in raw pot fraction cannot reach a 6% floor.
+The principled fix is to re-express the curve in the *price* villain is offered,
+`s / (1 + 2s)` (§6.2) — the variable §11.4 already uses preflop — but that is a
+functional-form change with a much wider blast radius and was deliberately not taken.
 
 ### 11.2 SPR Zones (Descriptive) + Continuous Sizing Multiplier (Decision)
 
@@ -2149,6 +2241,88 @@ along a *measurable* axis rather than clustered at equilibrium, which is a testa
 is filed as one. Every rung of that ladder is a HIGH-FREQUENCY observable (limp rate, 3-bet
 rate, c-bet rate), which is exactly the property §11.8's slowplay axis lacked and the control
 axis had.
+
+#### 15.3.1 The rungs separate; the LADDER barely does (WS-320, measured)
+
+`RC-study-ladder-c0043f8b`, engine `cb08203`, Deal Book `handhq-allsites-allstakes-c0043f8b`
+(sha256:c0043f8b…), register `FR-1+a6bbfb7d1491`. Artifacts: `.artifacts/study-ladder.card.json`
+and `.artifacts/study-ladder.json`; instrument in `scripts/backtest/separability.mjs`, axes in
+`ladderAxes.mjs`, runner `run-study-ladder.mjs`.
+
+**What it ran on.** 1,756 `.phhs` files — FTP + PS, 50NL, July 2009 (SRC-012) — 1,070,493
+converted hands, 59,848 player-site rows. This is the WHOLE locally materialised corpus, and it
+is ~3x the hand count §11.8 used. Scored on the EVAL half of a 50/50 FNV-1a player partition
+against a common rate mined from the POOL half, so no player contributed to the rate they were
+tested against. Shrinkage is Beta-Binomial, leave-one-out, pseudocount 10 — §11.8's method
+unchanged. Primary floor: ≥20 observations per player.
+
+| axis | k/n | rate | obs/player (median) | χ²/df | z | SD between players | split-half reliability | verdict |
+|---|---|---|---|---|---|---|---|---|
+| limp rate | 281,655 / 2,242,995 | 12.6% | 51 | **26.461** | +2239.7 | **14.5pp** | 0.83 | separates |
+| 3-bet rate | 46,410 / 1,158,562 | 4.0% | 43.5 | **2.118** | +81.2 | **2.1pp** | 0.33 | separates (thinly) |
+| c-bet rate | 100,303 / 149,477 | 67.1% | 35 | **4.540** | +100.3 | **12.6pp** | 0.62 | separates |
+| flop bet frequency — **control** | 206,852 / 569,000 | 36.4% | 37 | **4.314** | +201.2 | 11.6pp | 0.60 | separates |
+| flop bet freq, non-aggressor — disjoint control | 106,549 / 419,523 | 25.4% | 34 | 4.578 | +192.3 | 11.9pp | 0.62 | separates |
+
+**The founder's prediction was right about power.** All three rungs clear the bar the slowplay
+axis could not, and for the stated reason: median observations per player are 35–51 here against
+§11.8's **median 2**. The hypothesis that high-frequency observables would have the power the
+showdown-gated conditional lacked is confirmed.
+
+**χ²/df IS NOT COMPARABLE ACROSS RUNS AND MUST NOT BE QUOTED AS IF IT WERE.** It scales with
+observations per player, so the control reading 4.314 here against 1.859 in §11.8 is more data,
+not a different pool. The comparable quantity is the **between-player SD**: §11.8 measured ≈9pp
+on this control, this run measures 11.6pp. Those agree. Every verdict above is read against the
+control **from this same run**, per the standing rule.
+
+**Limp rate is the strongest behavioural axis this repo has measured.** SD 14.5pp against the
+control's 11.6pp, reliability 0.83 — it re-measures on the same player across time better than
+aggression frequency does. **3-bet rate is the weakest**: statistically overdispersed (z = +81)
+but only **2.1pp** of between-player spread — the same magnitude §11.8 assigned to the
+*non-separating* slowplay conditional — and reliability 0.33. Significance is not size; at a
+million hands a 2pp trait is detectable and still nearly useless to condition on.
+
+**Cross-axis: c-betting is NOT just aggression re-expressed.** Against the overlapping control
+r = 0.674, but that pair is a subset relation and guaranteed by construction. Against the
+**disjoint** control (flop bets where the actor was not the preflop raiser) r = 0.180 — so
+c-bet frequency carries something general aggression does not. This is the check that decides
+whether an axis adds anything, and it is why the disjoint control exists.
+
+**But the rungs do not co-vary enough to be one trait.** All three pairwise signs point the way
+the ladder predicts, and all three magnitudes are small: limp×3-bet r = −0.093 (ρ = −0.182,
+disattenuated −0.177, n = 10,487); limp×c-bet r = −0.138 (−0.193 disattenuated, n = 1,607);
+3-bet×c-bet r = +0.187 (+0.413 disattenuated, n = 1,607). Disattenuation uses each axis's own
+Spearman-Brown-corrected split-half reliability, so §11.8's attenuation objection is answered in
+numbers rather than conceded in prose.
+
+**Ordering: 82.5% of players are Guttman-nested — and 77.8% would be anyway.** Over the 1,607
+players measurable on all three rungs, 1,325 show a nested pattern. The tempting reading is
+"82.5% against a 50% chance baseline". **That reading is wrong and the artifact is instructive.**
+Each rung's acquired/not split is at its own population median, but the three-rung intersection
+is SELECTED — a player with enough c-bet spots to measure is a player who raises preflop, and
+those players limp far less than the median. Marginals in the intersection are 90.5% / 68.6% /
+50.0%, not 50/50. Independent habits with *those* marginals already nest 77.8% of the time. The
+excess actually attributable to ordering is **+4.7 points**, not +32.
+
+**So: a ladder of rungs, not a ladder of players.** Each rung is real, measurable, and (except
+3-bet) carries usable between-player spread. The claim that they are *stages of one underlying
+trait acquired in order* is only weakly supported — |ρ| ≤ 0.19 raw, ≤ 0.41 disattenuated, and
++4.7 points of nesting. **The 101 pattern — low limp, low 3-bet, high c-bet — is the largest
+violation class at 172 players**, which is a coherent real player (the passive-preflop /
+aggressive-flop reg), not noise. Per the standing distinction §11.8 drew: this is closer to
+"independent habits, which is a different and still useful finding" than to a ladder. That
+changes what may be built — a **per-axis segmentation** is earned; a **single latent
+study-level score** is not.
+
+**Nothing here licenses deleting anything.** A weak ladder is a fact about the ladder.
+
+**LIVE IS UNMET, NOT ANSWERED.** The accept criterion asked for the live pool (SRC-014)
+separately. No live sample was reachable: SRC-014 lives in the app's IndexedDB, not on disk, so
+a node harness cannot see it. Every figure above is **online 2009 50NL — transferred, not
+measured**, against a live 9-handed 1/2–1/3 game. This is the top-ranked suspected-fault entry
+and it bites hardest exactly where the headline is strongest: **open-limping is far more common
+live than online**, so the limp axis is the one whose transfer is least safe. Re-running this
+instrument on live hands is the falsifier.
 
 ### 15.4 What this binds
 
