@@ -1,0 +1,177 @@
+id: "WS-370"
+title: "The extension's Export button is wired to a dead handler that returns [] unconditionally — the only file it has ever produced is two bytes, and SRC-005 therefore has no artefact any harness can read"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "data-quality"
+capability: "core"
+program: "data-provenance"
+finding_id: ""
+fault_id: "FAULT-temporal-staleness"
+description: |
+  THE FIRST OF THE THREE BLOCKERS UNDER THE FAULT REGISTER'S RANK-2 ENTRY, in its concrete
+  form. WS-353 (commit 67e9e14e, 2026-08-05) tried to run the falsifier on
+  `FAULT-temporal-staleness` — expected damage 0.765, second only to population mismatch — and
+  recorded the verdict NOT EXECUTABLE. Its first machine-readable `falsifierBlocker` reads
+  "SRC-005 HAS NO ARTEFACT ANY HARNESS CAN READ ... the extension export dumps the volatile
+  capture buffer, and the only file it ever produced contains ZERO hands." This ticket is the
+  code defect underneath that sentence.
+
+  THE MECHANISM, verified against HEAD by reading the source rather than trusting the
+  commit message. It is worse than "dumps the volatile buffer": the buffer does not exist and
+  the handler is a stub.
+
+    `ignition-poker-tracker/popup/popup.js:152-166` — `exportHands` sends
+    `{ type: MSG.GET_CAPTURED_HANDS }`, serialises `result.hands || []`, and downloads it as
+    `ignition-hands-<timestamp>.json`.
+
+    `ignition-poker-tracker/background/service-worker.js:467-471` — the handler for that
+    message is, in full:
+
+        case MSG.GET_CAPTURED_HANDS: {
+          // Legacy: return empty — hands now flow through session storage queue
+          sendResponse({ hands: [] });
+          return false;
+        }
+
+  It is unconditional. There is no branch on which it returns a hand. So the export path is
+  `[] -> JSON.stringify -> Blob -> download`, and every file it produces is the two bytes `[]`.
+
+  THE ARTEFACT, ON DISK. `C:\Users\chris\Downloads\ignition-hands-1781851220916.json` —
+  2 bytes, content `[]`, written 2026-06-19. That is the file WS-353 refers to, and it is the
+  only one. It is valid JSON with a plausible name, which is why nothing looked wrong.
+
+  WHY NOBODY NOTICED. `popup.js:60` loads the popup's own "captured hands" log from the SAME
+  dead message, so the hands tab reads "No hands captured yet" permanently — the one surface
+  that would have contradicted the export agrees with it. Meanwhile the status line above it
+  reads `storedHands` off `MSG.GET_PIPELINE_STATUS` (`service-worker.js:423-432`) and correctly
+  says "Capturing — N hands stored". The popup shows a true count and a false list, side by
+  side, and the export follows the false one.
+
+  WHERE THE HANDS ACTUALLY ARE. Three stores, and only one of them is the right export source.
+
+    THE DELIVERY QUEUE — `chrome.storage.session`, read by `getQueuedHands`
+    (`shared/storage-writer.js:261-268`). TRANSIENT BY DESIGN: entries are removed once the app
+    ACKs them (`MSG.DEQUEUE_HANDS`, `service-worker.js:519-527`) and Chrome wipes session
+    storage on browser close. Exporting this would usually produce a near-empty file too, for a
+    different reason — it is the un-synced backlog, not the history.
+
+    THE DURABLE JOURNAL — `chrome.storage.local` under `STORAGE_KEYS.HAND_JOURNAL`, a
+    write-through mirror added by WS-358 (`shared/storage-writer.js:35-92`). This survives
+    browser close and is the only durable extension-side record. It is CAPPED at
+    `MAX_JOURNAL = 5000` (`:59`) with oldest-first eviction, and the count evicted is already
+    tracked under `HAND_JOURNAL_DROPPED` (`:83-90`).
+
+    THE APP'S IndexedDB, after sync. Definitive, but out of the extension's reach and behind
+    the app-side export blocker (WS-352's second blocker), which is a different ticket.
+
+  CONSEQUENCE 1 — THE REGISTER'S RANK-2 FALSIFIER CANNOT RUN. `FAULT-temporal-staleness` says
+  the corpus is July 2009 and the founder plays in 2026. Its falsifier is to fit the same
+  priors on SRC-005 (Ignition, current) and difference them against the 2009 values cell by
+  cell. The 2009 arm is already in hand — it IS `HANDHQ_REFERENCE_STAKES`. The current-era arm
+  needs one thing to exist: a file with real hands in it. It does not exist, so the entry stays
+  `untested` and every figure in this repo keeps carrying an unfalsifiable seventeen-year
+  staleness caveat. WS-353 measured the within-corpus drift instead and recorded, explicitly,
+  that it is NOT evidence for this entry.
+
+  CONSEQUENCE 2 — A FOUNDER WHO EXPORTS BELIEVING HE HAS A BACKUP HAS AN EMPTY FILE. This is
+  the sharper half. The failure is silent: no error, no zero-count warning, a well-formed file
+  with a sensible name. A button labelled Export that always writes nothing is worse than no
+  button, because it manufactures confidence in a backup that does not exist. The journal is
+  capped at 5000 and evicts silently; a founder relying on this button would discover both
+  facts at the same time, after the loss.
+accept_criteria: |
+  - THE EXPORT READS THE DURABLE JOURNAL. `chrome.storage.local[STORAGE_KEYS.HAND_JOURNAL]`,
+    not the session delivery queue and not the dead handler. The queue is the un-ACKed backlog
+    and is wiped on browser close; exporting it would trade one empty file for another.
+  - THE DEAD HANDLER IS RESOLVED, NOT WORKED AROUND. `MSG.GET_CAPTURED_HANDS` is a stub
+    documented "Legacy: return empty" that two live UI call sites still invoke
+    (`popup.js:60` and `:154`). Either make it serve the journal or delete it and its callers.
+    A message handler whose comment says it is legacy while a shipping button depends on it is
+    the actual defect; leaving it in place and adding a second path reproduces it.
+  - PARITY: THE POPUP'S HANDS LOG IS FIXED IN THE SAME CHANGE. `popup.js:60` feeds
+    `renderCapturedHands` from the same message. Fixing only the export leaves the one surface
+    that would have caught this still lying, which is how it survived from 2026-06-19.
+  - AN EMPTY EXPORT REFUSES RATHER THAN SUCCEEDING. If the journal is empty, say so in the UI
+    and write no file. A download of `[]` is indistinguishable to the founder from a successful
+    backup, and that indistinguishability IS this bug.
+  - THE FILE STATES WHAT IT IS AND WHAT IT IS NOT. Hand count, the time window it actually
+    covers, the journal cap (5000), and the `HAND_JOURNAL_DROPPED` count. The journal evicts
+    oldest-first, so a truncated export otherwise reads as a complete history — which is the
+    same class of error as the register entry this ticket unblocks. The count is already
+    tracked at `storage-writer.js:83-90`; it only needs to be carried into the artefact.
+  - A TEST THAT FAILS AGAINST HEAD. Seed the journal with N hands, run the export path, assert
+    N hands come out. Against HEAD that assertion sees `[]` and fails. Extension tests live in
+    `ignition-poker-tracker/test/` and run under `npm test` in that directory (824+ existing).
+  - VERIFIED BY A REAL EXPORT, NOT ONLY BY TESTS. The evidence that this bug was live for seven
+    weeks is a 2-byte file on disk. The evidence that it is fixed should be the same kind: a
+    downloaded file with real captured hands in it, hand count stated.
+effort: "S"
+files_involved:
+  - "ignition-poker-tracker/popup/popup.js"
+  - "ignition-poker-tracker/background/service-worker.js"
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/shared/constants.js"
+  - "ignition-poker-tracker/test/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-353"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT SHAPE THE EXPORTED RECORD TAKES. Two answers, and they are not the same ticket.
+    (a) A raw dump of the journal's hand records: smallest change, unblocks the founder's backup
+    problem immediately, and is enough to prove hands come out. (b) A shape a node harness can
+    score against a versioned Deal Book under ADR-009 — which needs an adapter from an app hand
+    record to a mined (k,n) cell, plus a content hash and a manifest. WS-353's blocker asks for
+    (b); the founder-facing data-loss half only needs (a). Doing (a) now and (b) as a
+    strategy-of-record ticket is the recommended split, but it should be a stated decision
+    rather than a default, because shipping (a) alone leaves the register entry blocked.
+  - |
+    OPEN — WHETHER THE JOURNAL CAP IS THE RIGHT ONE FOR AN ARCHIVE. `MAX_JOURNAL = 5000` was
+    sized for a delivery-recovery mirror (WS-358), where 5000 un-synced hands is already a
+    pathological backlog. If the journal is now also the export source, it is doing a second job
+    — archive — for which oldest-first eviction at 5000 is a silent data ceiling. Either raise
+    it, or state clearly that the export is a recovery snapshot and not a history.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-353"
+created_at: "2026-08-05T02:00:00Z"
+status_note: |
+  Filed 2026-08-05 out of WS-353's closeout, alongside the clearing of WS-352's identity
+  blocker. Premises re-verified against HEAD before filing rather than taken from the commit
+  message, and one correction resulted: WS-353 describes the export as dumping "the volatile
+  capture buffer", but at HEAD there is no buffer to dump — `service-worker.js:467-471` is an
+  unconditional `sendResponse({ hands: [] })` stub, and the adjacent `CLEAR_CAPTURED_HANDS`
+  handler at `:473-479` says outright that "the staging buffer no longer exists". The observable
+  outcome WS-353 recorded is exactly right; the mechanism is one step deader than described.
+
+  Verified: `popup/popup.js:152-166` (exportHands), `:60` (the hands log on the same message),
+  `background/service-worker.js:467-471` (the stub), `:512-527` (GET_QUEUED_HANDS / DEQUEUE_HANDS,
+  the live path), `shared/storage-writer.js:35-92` (the WS-358 durable journal), `:59`
+  (MAX_JOURNAL = 5000), `:261-268` (getQueuedHands reads session storage),
+  `shared/constants.js:15-16` (both legacy message types still exported).
+  Artefact on disk: `C:\Users\chris\Downloads\ignition-hands-1781851220916.json`, 2 bytes, `[]`,
+  2026-06-19 — the only file the button has ever produced.
+
+  SCOPE — WHAT THIS TICKET IS NOT. It is not the app-side export. WS-352's second blocker on
+  FAULT-population-mismatch ("SRC-014 IS UNREACHABLE BY THE HARNESS") is about the founder's
+  LIVE hands in the app's browser IndexedDB, a different store, a different population, and a
+  different fault entry. The two are easy to conflate because both end in "no file the harness
+  can read"; they share no code. That blocker remains open and is unaffected by this ticket.
+
+  PROGRAM CHOICE. `data-provenance` rather than `engineering`, because the reason this is P1 is
+  not that a button is broken — it is that a registered source (SRC-005, the Ignition capture
+  stream, named in the program's own contract) produces no evidence any downstream claim can
+  rest on. The program's Source Registration problem class covers exactly this. The extension
+  files sit in `engineering`'s scope paths; flag it there if the split matters at composition.

@@ -1,0 +1,31 @@
+id: "SPR-175"
+title: "Ship WS-334: The depth-2/3 subsystem never runs on the live path — context building spends 390ms bef"
+status: done
+approved_at: "2026-08-04T21:00:08.620Z"
+completed_at: "2026-08-05T08:44:22.321Z"
+completed_by_commit: "115c3651"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-334: The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-04T21:00:08.620Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-334 selected (30 × no damping = 30).
+  Program cap-breach: design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22.
+  Cap usage: 3 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-334"
+    title: "The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-08-05T08:44:22.321Z"
+
+created_at: "2026-08-04T21:00:08.620Z"

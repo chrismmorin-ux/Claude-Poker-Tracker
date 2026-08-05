@@ -1,0 +1,157 @@
+id: "WS-372"
+title: "Seat-bucket boundaries do not match between the service and the miner — 3-to-5-handed villains are served the exactly-6-handed row, and the real short-handed data was mined and then dropped"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND BY THE WS-325 MASS-DATA-FIELD AUDIT (commit 9f6b9f95, 2026-08-05), the second of its
+  five findings. WS-325 recorded the mismatch as a readable property of the data — it added
+  `seatBucketDefinition` and `excludedSeatBuckets` to `HANDHQ_REFERENCE_META` and made the
+  generator assert reconciliation — but deliberately did not change which row a villain is
+  served, because that is a behaviour change and it needs a re-mine.
+
+  THE MECHANISM, verified against HEAD. Two boundaries, neither aware of the other.
+
+    THE SERVICE. `src/utils/exploitEngine/poolBaseline.js:187`, inside `buildPoolIndex`:
+
+        const bucket = pids.length <= 6 ? 'sixMax' : 'full';
+
+    So any table with 6 or fewer players dealt in is tallied as `sixMax`.
+
+    THE MINER. `phh_miner.py`'s `table_bucket(n)`, transcribed in
+    `scripts/generate-handhq-reference.mjs:56`:
+
+        n == 2 -> hu,  n <= 5 -> short,  n == 6 -> 6max,  else full
+
+    So the `6max` ROW was mined from EXACTLY-6-handed tables only.
+
+  A villain observed at a 3-, 4-, or 5-handed table is therefore tallied into `sixMax` by the
+  service and served a prior built from tables with more players than the one he was sitting at.
+  `generate-handhq-reference.mjs:57-61` already states this in a comment; nothing acts on it.
+
+  THE ERROR HAS A KNOWN SIGN AND A KNOWN SIZE. The short-handed data WAS mined. From the WS-325
+  layer reconciliation, `short` is 5,701,743 hands — dropped at the `analyze.py` combine step
+  and given no row. It is measurably looser than the exactly-6 population it is being
+  substituted for:
+
+    | stat | short (3-5 handed) | 6max (exactly 6) |
+    |---|---|---|
+    | VPIP | 29.7% | 27.0% |
+    | PFR  | 17.7% | 14.7% |
+
+  So the substitution biases every short-handed villain TIGHT — the served prior understates
+  how wide he plays, by roughly 2.7pp of VPIP and 3.0pp of PFR at the population level. That is
+  the direction that makes hero fold too much and value-bet too thin against exactly the players
+  who are widest.
+
+  IT IS NOT A ROUNDING ERROR IN THE CORPUS EITHER. 5,701,743 hands is 26.4% of the 21,606,087
+  mined, and it is the single largest thing thrown away: `hu` (2,977,180, excluded by design —
+  heads-up is a different game) is half its size. `HANDHQ_REFERENCE_META.excludedSeatBuckets`
+  at `handhqReferencePool.js:58-67` now records both, with `short` annotated "mined but never
+  combined; no row exists to serve it."
+
+  WHY THIS REACHES THE FOUNDER DIRECTLY. His game is LIVE 9-HANDED. Nine dealt-in falls in
+  `full` under both boundaries, so the 9-handed case is not itself misrouted — but the
+  full-ring/short-handed boundary is precisely the axis his game sits on, and the served `full`
+  row is `dealt-in >= 7`, which lumps 7-handed with 10-handed. The same class of boundary
+  question that produces the bug here is unresolved on the row he is actually served. Whether
+  `full` should be split is a question this ticket should ask; it is not established that it
+  should.
+
+  NOT YET KNOWN: how many hands in the founder's own data and in the ignition capture actually
+  sit at 3-5 dealt-in. If the answer is near zero, the live impact is small and the fix is
+  mostly about not shipping a known-wrong boundary. That count is cheap and should be the first
+  thing measured, before the re-mine is scoped.
+accept_criteria: |
+  - THE TWO BOUNDARIES ARE MADE THE SAME, AND THE SHARED DEFINITION IS DECLARED AS DATA IN ONE
+    PLACE. Not two comments agreeing. `HANDHQ_REFERENCE_META.seatBucketDefinition` already
+    exists and is the natural home; `buildPoolIndex` should read the served table's own declared
+    boundary rather than hardcoding `<= 6`. A boundary that is asserted in code cannot drift the
+    way two transcriptions can.
+  - RE-MINE SCOPED EXPLICITLY, AS ITS OWN COSTED STEP. The `short` bucket exists in the mining
+    output but has no combined row, so serving it means re-running the combine
+    (`analyze.py`) and regenerating the table — not editing `handhqReferencePool.js` by hand.
+    The corpus root is off-repo (`C:\Users\chris\data\phh-mining\out\`), so state plainly
+    whether it is still present before planning around it. If it is gone, that is a different
+    ticket and this one reduces to the guard below.
+  - IF THE RE-MINE CANNOT HAPPEN, THE MISMATCH MUST FAIL LOUDLY RATHER THAN RESOLVE QUIETLY.
+    A villain at a 3-to-5-handed table should get NO reference row (falling back to the founder
+    static prior and observed counts) rather than a wrong one. Serving a knowingly-wrong row is
+    worse than serving none, because the wrong row carries n=millions and will dominate the
+    blend. This is the minimum acceptable outcome of the ticket.
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule). Build a pool index from hands with 4 or 5
+    players dealt in and assert the villain is NOT served the exactly-6 row. It must fail today;
+    a test that passes is asserting the misrouting.
+  - THE `full` BOUNDARY IS ASKED THE SAME QUESTION AND THE ANSWER IS WRITTEN DOWN. `full` is
+    `dealt-in >= 7` on both sides, so it does not drift — but it spans 7 through 10 seats and
+    the founder plays 9. Either the corpus supports a finer split and the decision to make one
+    is measured, or it does not and the decision to keep 7+ as one bucket is recorded with its
+    reason. Do not silently leave it because it happens not to be broken.
+  - THE FOUNDER-IMPACT COUNT IS MEASURED FIRST, NOT ASSUMED. Report how many hands in the live
+    store and the ignition capture sit at 3-5 dealt-in before scoping the re-mine. That number
+    decides whether this is a correctness cleanup or a live bias.
+  - DOCTRINE — A PRIOR IS DEFINED BY THE POPULATION IT WAS MINED FROM, AND A LOOKUP KEY THAT
+    DOES NOT MATCH THAT POPULATION IS NOT A LOOKUP, IT IS A SUBSTITUTION. The same rule as
+    "numbers carry their conditional" applied to the row rather than the rate.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`. ONLINE 2009 corpus, LIVE 9-handed
+    founder game — any live claim is TRANSFERRED, not measured.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "scripts/generate-handhq-reference.mjs"
+  - "docs/research/mass-pool-data-2026-07-25.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — SERVE THE SHORT ROW, OR REFUSE TO SERVE 3-5 HANDED AT ALL. These are not equivalent
+    and the choice depends on the re-mine being possible. Serving it is the better answer and
+    costs a re-mine; refusing is cheap, honest, and leaves short-handed villains on the founder
+    static prior. What is not acceptable is the status quo, which serves a wrong row with
+    millions of hands of apparent authority behind it.
+  - |
+    OPEN — WHETHER `hu` SHOULD ALSO GET A ROW. It is excluded by design and that exclusion is
+    defensible (heads-up is a different game with different correct play). But the service has
+    no `hu` bucket at all, so a 2-handed table currently tallies as `sixMax` under
+    `pids.length <= 6` — the same misrouting, one bucket further out. If the answer is that
+    heads-up should not be served a prior, the service must say so explicitly rather than
+    quietly routing it to 6max.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-325"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading code:
+  `poolBaseline.js:187` (`pids.length <= 6 ? 'sixMax' : 'full'`);
+  `generate-handhq-reference.mjs:56` (the miner's `table_bucket(n)` transcription) and `:57-61`
+  (the comment naming the mismatch), `:71-77` (`MINED_CORPUS` with `short` at 5,701,743 and
+  `hu` at 2,977,180 against a corpus of 21,606,087);
+  `handhqReferencePool.js:55-71` (`minedCorpusHands`, `excludedSeatBuckets`,
+  `seatBucketDefinition: {"6max":"dealt-in == 6","full":"dealt-in >= 7"}`).
+
+  The short-vs-6max VPIP/PFR figures (29.7/17.7 against 27.0/14.7) come from the WS-325 audit's
+  own reconciliation against the 27 site x stake mining segments and are not restated in
+  `docs/research/mass-pool-data-2026-07-25.md` — that document never mentions the `short`
+  bucket at all, which is itself part of the finding. Re-derive them from the mining output
+  before quoting them in a Result Card.
+
+  WS-325 fixed the DECLARATION and left the BEHAVIOUR: the generator now asserts
+  table + excluded == corpus and exits 1 on a perturbed input (verified non-inert), and zero
+  data rows changed. Do not read the present bucket assignment as a considered value.

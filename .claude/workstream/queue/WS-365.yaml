@@ -1,0 +1,146 @@
+id: "WS-365"
+title: "Blocker effects are counted three times — the segmentation already has hero's cards dead, then blockerMult multiplies, then gameTreeEvaluator adds a boost on top"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND AND DOCUMENTED IN PLACE, DELIBERATELY NOT PATCHED, while shipping WS-315
+  (commit 62a6601f). The commit message names it: "blocker effects are counted three times
+  over ... That is its own ticket." The in-code record is the comment block at
+  `gameTreeEvaluator.js:262-275`, which states the reason for leaving it: re-basing the
+  fold-rate nudges would have changed the MAGNITUDE of an existing double count and called
+  that a fix.
+
+  THE MECHANISM — three application points, verified against HEAD.
+
+  1. `gameTreeContext.js:254` builds the segmentation with hero's cards dead:
+     `segmentRange(narrowedRange, board, [...heroCards, ...deadCards], boardTexture)`.
+     `segmentRange` (`rangeSegmenter.js:280-282`) enumerates combos against
+     `[...board, ...deadCards]`, so every villain combo hero blocks is ALREADY ABSENT from
+     the range. Card removal is accounted, structurally and exactly, once.
+
+  2. `gameTreeContext.js:323-324` then calls `estimateFoldPct` on that same segmentation.
+     Inside it (`foldEquityCalculator.js:625-637`) a `blockerMult` is built from
+     `blockerEffects` and multiplied into the estimate:
+       `blockerMult *= 1 + (nuts.pctRemoved / 100) * 0.5`
+       `blockerMult *= 1 + (strong.pctRemoved / 100) * 0.3`
+       `blockerMult *= 1 - (air.pctRemoved  / 100) * 0.3`
+       `estimate *= blockerMult`
+     `blockerEffects` comes from `computeBlockerEffects(heroCards, segmentation, ...)`
+     (`gameTreeContext.js:257`) — i.e. it is measured on the same removal that step 1 has
+     already applied. Second helping.
+
+  3. `gameTreeEvaluator.js:534-548` takes the resulting `pFold` and adds a third adjustment:
+       `valueBlockerReduction = (nuts.pctRemoved + strong.pctRemoved) / 100`
+       `if (valueBlockerReduction > 0.05) pFold += min(valueBlockerReduction * 0.4, 0.05)`
+     with `pCall`/`pRaise` shaved and the triple renormalised. The check-raise branch runs
+     the same construction at `gameTreeEvaluator.js:363-375`. Third helping.
+
+  THE CONSEQUENCE, PLAINLY. Fold equity is inflated by a compounding factor, and the factor
+  GROWS WITH HOW MANY OF VILLAIN'S CONTINUING COMBOS HERO BLOCKS. So the error is not a
+  constant bias that washes out — it is largest exactly where blockers are most load-bearing.
+
+  Inflated fold equity does not make the engine timid; it makes it RECKLESS, because every
+  villain hand wrongly folded is a hand the bluff never has to beat. And it inflates the
+  WEAKEST hands most: a hand with no showdown value is valued almost entirely by the fold
+  branch, so a multiplicative error on `pFold` passes through to its EV nearly undamped,
+  while a value hand's EV is dominated by the call branch and barely moves. The engine
+  therefore over-prices precisely the bluffs it is least able to fall back on.
+
+  CROSS-REFERENCE — WS-314 IS INVESTIGATING A SYMPTOM OF EXACTLY THAT SHAPE. Check-raise
+  ranking first for every weak hand is what an inflated, weakness-amplifying fold branch
+  produces: the check-raise branch has the largest fold-equity term of any candidate, and
+  the branch at `gameTreeEvaluator.js:363-375` is one of the three application points. This
+  may be its root cause. It is NOT yet established that it is — that is a measurement, not
+  an argument, and it belongs in the accept criteria below.
+
+  NOT YET KNOWN: the size of the compounding at a representative spot. `pctRemoved` is
+  bounded, the third boost is capped at +0.05 absolute, and the second is a product of two
+  terms — so the total is bounded but has never been measured. Do not assume it is small
+  because each term is; that is the reasoning that let it ship.
+accept_criteria: |
+  - EACH BLOCKER ADJUSTMENT IS APPLIED EXACTLY ONCE, and the single application point is
+    NAMED in the code and in the change description. Deleting two of the three is one valid
+    answer; so is keeping a single adjustment somewhere none of the three currently sits.
+    What is not valid is leaving two and softening the constants — that tunes a constant to
+    hide a miscount (the same objection WS-303 recorded against depth-damped narrowing).
+  - A TEST THAT FAILS ON THE COMPOUNDING. It must fail against HEAD (WS-309 rule) — a test
+    that passes today is testing the wrong thing. Concrete shape: take a maximally-blocking
+    hero holding, and assert that the fold equity the engine reports does not exceed the
+    value produced by a single application of the adjustment. Assert the converse too: hold
+    the hero hand fixed and remove the blocking, and the fold estimate must fall — a change
+    that flattens the compounding AND the real signal has deleted card removal, not fixed it.
+  - A MEASURED BEFORE/AFTER ON A REPRESENTATIVE SPOT, not an argument. Report the `pFold`
+    and the per-action EV at each of the three stages so the size of each helping is visible
+    separately, and state which hands move most. Prediction to be tested, not assumed: the
+    weakest candidates move most.
+  - THE WS-314 LINK IS RESOLVED EITHER WAY. Re-run the WS-314 symptom (check-raise ranking
+    first for every weak hand) against the corrected engine and record whether it survives.
+    If it does, WS-314 has a different cause and this ticket must say so; if it does not,
+    WS-314 closes on this one. Do not close WS-314 on the argument alone.
+  - DOCTRINE THAT BINDS THIS WORK: NEVER STACK AN ADJUSTMENT ON TOP OF THE STATS THAT
+    ALREADY DEFINE IT — that is double-counting. It is the same rule `exploitEngine/CLAUDE.md`
+    records against style + stat + villain-model stacking, and against WS-303's one-narrowing-
+    per-street. Use the highest-fidelity source available and do not apply lower tiers on top
+    of it. Here the highest-fidelity source is the structural one: the segmentation with
+    hero's cards dead is an exact enumeration, not an estimate, and nothing should be
+    multiplied onto it.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-314"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHICH of the three survives. They are not interchangeable. (1) is structural and
+    exact but only models REMOVAL, i.e. the change in villain's range composition; it says
+    nothing about villain deciding differently. (2) and (3) are attempts to model the second
+    effect, but both are keyed off `pctRemoved`, which is the FIRST effect's quantity — so
+    as written they re-price removal rather than adding anything. If a genuine second effect
+    is wanted, it needs its own quantity and its own justification, not a multiplier on the
+    one already counted.
+  - |
+    OPEN — (2) and (3) read different buckets (nuts/strong/air vs nuts+strong) and WS-315
+    established that the buckets they read are the wrong ones anyway: what buys fold equity
+    is removing the hands that CONTINUE, which is not the same set as the hands that are
+    nutted. `computeBlockerScore` already resolves continuation per combo through
+    `comboCallFilter` composed with `villainRequiredEquity`. If any adjustment survives, it
+    should read that, not a bucket label — bucket labels are range-level approximations and
+    per-combo continuation is available here.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-315"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premises re-verified against HEAD before filing, all three application points confirmed by
+  reading the code rather than trusting the commit message:
+  `gameTreeContext.js:254` (hero cards dead in `segmentRange`), `:257` (`computeBlockerEffects`
+  on that same segmentation), `:323-324` (`estimateFoldPct` on it);
+  `foldEquityCalculator.js:625-637` (`blockerMult`, `estimate *= blockerMult`);
+  `gameTreeEvaluator.js:534-548` and `:363-375` (`blockerBoost` added to `pFold`).
+  The WS-315 scope-boundary comment at `gameTreeEvaluator.js:262-275` is the in-place record.
+
+  WS-315 deliberately left the EV maths untouched — `blockerScore` has no EV path, and the
+  fold-rate nudges were left EXACTLY as they were so that this ticket would inherit an
+  unmodified subject. Do not treat their present constants as considered values.

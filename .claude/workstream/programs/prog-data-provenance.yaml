@@ -191,7 +191,7 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "Installed 2026-07-31 with a promoted baseline but no protocol run under the program itself. Run /pulse run data-provenance baseline to establish a score."
 findings_open: 0
-work_items_open: 0
+work_items_open: 1
 
 cap_breach:
   active: false

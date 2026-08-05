@@ -2,7 +2,7 @@ id: "WS-334"
 title: "The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -141,17 +141,119 @@ source:
 created_at: "2026-08-03T00:45:00Z"
 status_note: |
   Filed 2026-08-03 while executing WS-301. WS-301 asked "does the live path pay the 8.5s?"
-  The answer is no, because the live path does not reach the code at all. WS-301's own
-  criteria are met and it is closed; this is the finding that replaced its premise.
-  Measurement harness was temporary and deleted, but it is no longer needed: the stage
-  ledger shipped with this item (`treeMetadata.latency`) reports the same facts from any
-  live evaluation. `src/utils/exploitEngine/__tests__/depthReachability.test.js` guards the
-  observability so the degrade can never go silent again.
+  The answer is no, because the live path does not reach the code at all.
 
-  SHIPPED ALREADY UNDER THIS ITEM (2026-08-03), decision still open:
-    - `treeMetadata.latency` — per-stage ran/blockedBy/atMs/ms ledger, `budgetSkipped`,
-      `preRefinementMs`, `overBudget`. Diagnostic only; nothing branches on it.
-    - `treeMetadata.depthReached` and `.callDepth2` now report work DONE. They were derived
-      from the street, so the metadata asserted depth-2 on every postflop evaluation whether
-      or not any ran — a large part of why this hid for months.
-    - `depthReachability.test.js` — 4 tests asserting the degrade stays observable.
+  ============================================================================
+  SPR-175 (2026-08-04) — MECHANISM FIXED. Depth-2 now executes on live evaluations.
+  ============================================================================
+
+  FOUNDER DECISIONS TAKEN 2026-08-04:
+    1. Two-phase advice (fast depth-1 now, refined answer after) — Option B.
+    2. Model sparsity is REPORTED, never a gate.
+    3. Partials returned and clearly marked.
+    4. Target device corrected: Samsung Galaxy S22, NOT the A22 named in CLAUDE.md.
+
+  WHAT SHIPPED:
+    - `gameTreeEvaluator` split into two phases with TWO clocks. `refinementBudgetMs`
+      (default 2000) budgets depth-2/3 only and starts when refinement starts. Context
+      building is mandatory work and is no longer budgeted — budgeting it decided nothing.
+      `onFastResult` delivers the depth-1 answer, followed by a real macrotask yield so the
+      host can paint (a microtask would make two-phase cosmetic).
+    - `lowConfidence` removed from every depth-2/3 gate. It was a SECOND independent blocker,
+      true for almost every opponent at a live 9-handed table.
+    - Stage ledger extended: `partial` outcome, `weightConsumed`, `phase`. Per-stage time is
+      CAPPED (`MAX_STAGE_SHARE`), not reserved — first-come-first-served let the first stage
+      take 82% of the budget and starve the barrel-planning stage behind it.
+    - `computeComboEquityDistribution` rebuilt onto shared, weighted, deterministic runouts
+      unified with the perceived-range map. Turn 500ms -> 203ms and still exact. Flop is
+      ~parity (390ms -> ~400ms) with per-combo error 30-47% LOWER on all four board types
+      (R=24x4 chosen by sweep against full enumeration). Hero flop equity is now
+      DETERMINISTIC — it used raw Math.random and flickered between evaluations.
+    - `stratifiedSample` bug fixed: asking for fewer samples than there are non-empty
+      categories silently redistributed the missing category's probability mass. Measured
+      +0.19 equity overstatement on J-T-9ss. Shipped in the perceived map since WS-307.
+
+  ACCEPT CRITERIA:
+    AC1 behavioural test  MET — `depthReachability.test.js`, demonstrated failing on HEAD first.
+    AC2 budget/architecture MET — the change is deliberate and recorded as DEC-036 in
+                          `system/decisions.md` (two clocks, sparsity reported not gated, per-stage cap,
+                          rejected alternatives, and the open items it leaves behind). `.claude/context/
+                          SYSTEM_MODEL.md` §2.3 / §5.1 / §7.1 / §9.3 updated to match.
+    AC3 device stated     MET — S22 (corrected). Measured on desktop only; S22 run outstanding.
+    AC4 skip visible      MET — exceeded (partial + weightConsumed + phase).
+    AC5 accuracy delta    MET 2026-08-05 — see the block below.
+
+  ============================================================================
+  AC5 CLOSED (2026-08-05) — Result Card `RC-depth-ablation-1c560bcc-67e9e14e`
+  ============================================================================
+
+  Doc: `docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md`
+  Card: `docs/standard-of-record/cards/RC-depth-ablation.json` — passes `manifestProblems`
+  and `resultCardProblems` with zero problems; stamps `FR-1+e3867c10fc2a`.
+  Instrument: `scripts/backtest/run-depth-ablation.mjs` -> `depthAblationReport.mjs`.
+
+  WHICH HARNESS. "The WS-273 harness" names two things and only one can see depth-2.
+  WS-273 as shipped (`run.mjs` -> `runner.mjs` -> `calibrationMetrics.js`) scores VILLAIN
+  ACTION PREDICTION; depth-2/3 does not touch that quantity, so it would return exactly zero
+  for a reason unrelated to depth-2 (`FAULT-degenerate-signal`). WS-287's HERO-EV arm
+  (`run-hero-ev.mjs` -> `heroEvRunner.mjs`) extends the SAME harness — same corpus reader,
+  partition, leakage guard, walk-forward — and scores the RECOMMENDATION against realized
+  chips. That is the arm used. No second comparison path was created: the ablation enters as
+  one more `piOurs` remap through the same `estimateEdge` as PBR and the baselines.
+
+  DESIGN. Both arms are evaluated at the SAME decision in ONE pass, and a decision is kept
+  only if both arms produced a policy — so the contrast is exactly paired and the population
+  term cancels (`edge2 - edge1 = V2 - V1`). That differences away the between-player variance
+  `MIN_CLUSTERS_FOR_CI = 30` exists to guard, which is why the paired delta is quotable at 22
+  players while the two absolute arm edges are NOT (`absoluteArmsQuotable: false`).
+
+  RESULT — 260 paired decisions, 22 players, complete run, control exactly 0.0000 bb.
+
+    Paired delta (depth2 - depth1)   -0.4711 bb, CI [-2.7653, +1.3290] — INCLUDES ZERO.
+    Advice moved on 37.3% of decisions; top action flipped on 15.4%.
+
+    | street | n   | flips | rate  |
+    |--------|-----|-------|-------|
+    | flop   | 138 |   1   |  0.7% |
+    | turn   |  77 |   3   |  3.9% |
+    | river  |  45 |  36   | 80.0% |
+
+    38 of 40 flips move toward PASSIVITY (bet->check 30, raise->fold 6, raise->call 2).
+
+  NOT A VERDICT — per the founder's 2026-08-03 ruling, recorded on the card itself as
+  `metrics.notAVerdict: true`. A delta that does not resolve at this n is a statement about
+  the instrument, not about depth-2.
+
+  TRANSFER LIMIT — corpus is HandHQ ONLINE 2009; the founder's game is LIVE 9-handed 1/2-1/3.
+  Any live reading is TRANSFERRED, not measured (`FAULT-population-mismatch`, register rank 1).
+
+  KNOWN WEAKNESS OF THIS RUN — `manifest.engineDirty: true`. Several sessions were editing
+  `src/utils/exploitEngine/` concurrently (this ticket's uncommitted work, WS-365 landing
+  mid-run). The engine graph loads once at run start so the run is internally consistent, but
+  the stamped commit does not identify the code that ran. A clean-tree re-run needs no new
+  code and is the cheapest upgrade to this card.
+
+  ALSO FILED OUT OF THIS — see WS-361: 80% of the flips are on the RIVER, where the depth-2
+  `E[max(check,bet)]` machinery does not execute at all (`needsDepth2: street !== 'river'`).
+  The stage that fires there is `riverPerCombo`. WS-361's accept criteria target
+  `gameTreeDepth2` only and should widen.
+
+  NOT DONE, DELIBERATELY:
+    - App wiring. `onFastResult` has no production caller. Wiring it changes the primary
+      decision surface, which needs design Gates 1 + 4 first. An inertness guard test asserts
+      the two phases genuinely diverge, so the parameter is not the WS-276 failure mode.
+    - Phase C (design gates, sidebar zones 1/2/4). The open design question: does the refined
+      answer replace the Z2 recommendation pill, or land in Z4 with a Z1 signal? Z2's existing
+      `stale-advice` vocabulary and R-1.2 glance stability point at the latter.
+    - S22 latency measurement (`ssh s22`, Termux) and Result Card. `refinementBudgetMs = 2000`
+      was chosen on desktop and has never been set on the device that will run it.
+
+  FILED OUT OF THIS WORK:
+    - WS-361 — depth-2's EV outputs have never been validated and two disagree with depth-1
+      (an OESD getting 3:1 priced at -26.2; checking back AA on A72 IP outscoring betting).
+      Common suspect: `E[max(check,bet)]` optimism, i.e. WS-295's optimizer's curse.
+    - CLAUDE.md names the wrong target device (A22 1600x720; actual S22 2340x1080), so the
+      responsive scale factor clamps to 1.0. Needs its own ticket — UX-gated surface.
+
+  Full suite green at handoff: 596 files, 14,126 passed, 21 skipped, 0 failed.
+closed_by_event: "ev-1785919462348-8d1802eba703"

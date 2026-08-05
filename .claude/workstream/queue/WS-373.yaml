@@ -1,0 +1,149 @@
+id: "WS-373"
+title: "The served priors are hand-weighted, so multitabling regulars dominate them — the source doc's own caveat recommends player-weighted (VPIP 0.37-0.41 vs 0.29) and no decision on which is correct was ever recorded"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P2"
+category: "data-quality"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  FOUND BY THE WS-325 MASS-DATA-FIELD AUDIT (commit 9f6b9f95, 2026-08-05), the third of its
+  five findings. WS-325 closed half of it in passing; this ticket is the half that remains, and
+  the premise has been narrowed accordingly — see `status_note`.
+
+  THE MECHANISM. Every row in `src/utils/exploitEngine/handhqReferencePool.js` is a raw count
+  sum: `vpip: { k: 3854336, n: 13476245 }` and so on, summed over hands. A player who played
+  40,000 hands contributes 40,000 times the weight of a player who played 1,000. That is
+  HAND-WEIGHTING, and the population it describes is "the average HAND dealt in this pool",
+  not "the average PLAYER in this pool".
+
+  Those are different populations, and the gap is large. The source document's own caveat 6
+  (`docs/research/mass-pool-data-2026-07-25.md:33`) states it directly:
+
+    "Player-weighted vs hand-weighted VPIP: 0.37-0.41 vs 0.29 (multitabling regs) — live
+     seeding should prefer player-weighted numbers."
+
+  The served table reads 28.6% VPIP for 25NL 6max — the hand-weighted number. The
+  player-weighted equivalent is 37-41%. That is not a refinement; it is a 9-12pp difference on
+  the single most load-bearing preflop stat, and it is exactly the difference between "the pool
+  is tight" and "the pool is loose".
+
+  WHY THE GAP EXISTS, PLAINLY. High-volume players are systematically different from low-volume
+  ones. A 2009 online regular multitabling 12 tables plays a tight, disciplined range and
+  generates enormous hand volume; a recreational player logs a few hundred loose hands and
+  leaves. Summing over hands therefore does not average the field — it averages the field
+  weighted by how much each type plays, and regulars win that weighting by an order of
+  magnitude. The hand-weighted number describes who you are dealt against most OFTEN, which is
+  a real and useful quantity; the player-weighted number describes who a randomly-chosen
+  opponent IS, which is a different real and useful quantity. Neither is wrong. Serving one
+  while the doctrine recommends the other, without recording that anyone chose, is the defect.
+
+  THE RECOMMENDATION WAS NEVER IMPLEMENTED. Caveat 6 has been in the research document since
+  2026-07-25 and nothing in the mining, generation, or service path acts on it. There is no
+  player-weighted variant of the table, no aggregate at the player level, and no ticket that
+  says the recommendation was considered and declined.
+
+  WHAT WS-325 ALREADY FIXED, SO THAT THIS TICKET DOES NOT REDO IT.
+  `HANDHQ_REFERENCE_META.weighting` now exists (`handhqReferencePool.js:71`, value
+  `'hand-weighted'`), emitted by `scripts/generate-handhq-reference.mjs:195`. So the artifact
+  DOES declare its weighting as machine-readable data at the table level. The premise "nothing
+  records which weighting was served" no longer holds at HEAD.
+
+  WHAT REMAINS, AND IT IS THE PART THAT BITES. The declaration stops at the table. It does not
+  travel to the consumer: `resolvePoolPriors` (`poolBaseline.js:352-398`) returns a bare
+  `{ [stat]: prior }` map. A caller holding a resolved prior of 0.286 has no way to ask what
+  weighting produced it, any more than it can ask what n stands behind it (that second half is
+  WS-374 — same discard, same function, and the two should probably be fixed in one change).
+  And no decision exists on which weighting is correct FOR SERVING PRIORS, which is the
+  question that actually needs a human answer.
+
+  RELEVANT TO THE FOUNDER SPECIFICALLY. Caveat 6's own framing is "LIVE SEEDING should prefer
+  player-weighted numbers", and live seeding is precisely what this table is used for. Live
+  9-handed 1/2-1/3 has no multitabling: every opponent is one human at one table, so the
+  population the founder faces is player-weighted by construction. That is an argument, not a
+  measurement, and this ticket should treat it as the hypothesis to test rather than the answer.
+accept_criteria: |
+  - A DECISION RECORDED ON WHICH WEIGHTING IS CORRECT FOR SERVING PRIORS, VIA `/decide`, with
+    its reasoning. This is the load-bearing deliverable and it needs a human answer. State
+    plainly in the ADR what each weighting describes: hand-weighted answers "what is the
+    average hand dealt against", player-weighted answers "what is the average opponent". State
+    that hand-weighted over-represents high-volume players, who are systematically tighter and
+    more disciplined than the field, and that the founder's live game has no multitabling at
+    all so its population is player-weighted by construction.
+  - THE WEIGHTING TRAVELS WITH THE SERVED PRIOR, NOT JUST WITH THE TABLE. `resolvePoolPriors`
+    discards everything but the number. A consumer must be able to ask a resolved prior what
+    weighting it carries. FIX THIS TOGETHER WITH WS-374 — it is the same discard in the same
+    function and splitting it means designing the prior's return shape twice.
+  - IF PLAYER-WEIGHTED IS CHOSEN, IT IS MINED, NOT ESTIMATED. Caveat 6's 0.37-0.41 is a range,
+    not a table: it cannot be served. Producing a player-weighted table means aggregating per
+    player then averaging across players, which is a re-run of the combine step, not an edit to
+    the generated file. Scope it as such. Note WS-372 also needs a re-mine — if both land, run
+    them together.
+  - BOTH WEIGHTINGS MAY SHIP, BUT EACH MUST CARRY ITS LIMIT AS DATA. If the answer is that both
+    are useful (they answer different questions and both questions get asked), ship both and
+    encode each one's limit in the artifact as a field, not as prose in a comment. Do not
+    descope to one because choosing is hard; the gap between them is itself the finding.
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule) asserting a consumer can read the weighting off
+    a resolved prior. It must fail today.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`. ONLINE 2009 corpus against a LIVE
+    9-handed 1/2-1/3 game — TRANSFERRED, not measured, and say so.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "scripts/generate-handhq-reference.mjs"
+  - "docs/research/mass-pool-data-2026-07-25.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHICH WEIGHTING IS CORRECT FOR SERVING PRIORS. Restated here because it needs a
+    founder answer and it is the reason the ticket exists. The source document already
+    recommends player-weighted for live seeding and was never acted on. Declining the
+    recommendation is a valid answer; leaving it unanswered for another two weeks is not.
+  - |
+    OPEN — WHETHER THE PLAYER-WEIGHTED AGGREGATE NEEDS A MINIMUM-HANDS FLOOR PER PLAYER.
+    Averaging across players gives a 30-hand tourist the same weight as a 40,000-hand regular,
+    which is the intended correction — but a player with 3 observed hands contributes a VPIP of
+    0.00 or 1.00 and pure noise. Any floor is a choice about which population is being
+    described and must be recorded with the weighting decision, not chosen inside the mining
+    script.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-325"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  PREMISE NARROWED AT FILING TIME — ONE HALF NO LONGER HOLDS AT HEAD. The WS-325 finding as
+  written says "nothing in the artifact records WHICH weighting was served. A consumer cannot
+  tell." The first clause was true when the audit ran and is FALSE at HEAD: WS-325's own fix
+  added `weighting: 'hand-weighted'` to `HANDHQ_REFERENCE_META`
+  (`handhqReferencePool.js:71`, generated at `generate-handhq-reference.mjs:195`), so the
+  table-level declaration already exists and this ticket must not re-file it as missing. The
+  second clause still holds: the declaration does not reach the consumer, because
+  `resolvePoolPriors` returns bare numbers. The ticket has been scoped to the surviving half
+  plus the unrecorded decision, which was never touched.
+
+  Premises re-verified against HEAD by reading code and the source document:
+  `docs/research/mass-pool-data-2026-07-25.md:33` (caveat 6, verbatim, 0.37-0.41 vs 0.29);
+  25NL 6max VPIP computed from the shipped row as 3,854,336 / 13,476,245 = 28.6%;
+  `handhqReferencePool.js:70-71` (the `weighting` field and its "Raw count sums, so multitabling
+  regulars dominate" comment);
+  `poolBaseline.js:352-398` (`resolvePoolPriors` building and returning `result[stat] = prior`
+  with no metadata).
+
+  The WS-325 commit message records that the source document "is refuted on its own weighting
+  caveat" — i.e. the document recommended something the pipeline never did. That refutation is
+  what this ticket settles.

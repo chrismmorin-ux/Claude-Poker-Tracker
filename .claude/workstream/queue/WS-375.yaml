@@ -1,0 +1,153 @@
+id: "WS-375"
+title: "entryEvaluator loads the all-corpus reference table outside LeakageGuard — there is no leak today because it scores no corpus hands, so the safety is circumstantial rather than structural"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND BY THE WS-325 MASS-DATA-FIELD AUDIT (commit 9f6b9f95, 2026-08-05), the fifth and
+  lowest-consequence of its five findings — filed at P2 for that reason, and filed at all
+  because the failure it prevents is silent.
+
+  STATE THIS FIRST, PLAINLY, SO NOBODY READS IT AS A LIVE CONTAMINATION: THERE IS NO LEAK AT
+  HEAD. `entryEvaluator.mjs` scores no corpus hands. It prices the 169 preflop hand classes by
+  Monte Carlo against a synthesised Field, and never touches a real hand from the mining
+  corpus. Verified by reading it: `openEntryEvaluator` (`:50`) loads engine modules through the
+  Vite loader, builds `handClasses` from `preflopEquityTable.HAND_LABELS` (`:74`), and its only
+  uses of the reference table are `HANDHQ_REFERENCE_STAKES.find(s => s.bb === stakeBB)` at
+  `:81-84` and `HANDHQ_REFERENCE_META.sourceId` for the artifact stamp at `:227`. No hand from
+  the corpus is scored, so no player in the corpus can be predicted by a model their own hands
+  trained. Nothing needs to be rerun and no published number is suspect on this account.
+
+  THE DEFECT IS THAT THE GUARD DOES NOT BIND THERE.
+
+    `scripts/backtest/entryEvaluator.mjs:65` loads the SHIPPED, ALL-CORPUS table:
+
+        loader.load('/src/utils/exploitEngine/handhqReferencePool.js')
+
+    and the file contains no reference to `LeakageGuard` at all — grep returns nothing.
+
+    Every other scoring entry point in `scripts/backtest/` constructs one:
+    `heroEvRunner.mjs:125`, `layerAblation.mjs:301`, `run-atoms.mjs:132`,
+    `run-study-ladder.mjs:88`, `runner.mjs:485`.
+
+  THE GUARD'S DESIGN MAKES THE OMISSION MATTER. `LeakageGuard`'s constructor
+  (`leakageGuard.mjs:136-148`) does not merely check a table — it VALIDATES provenance and then
+  re-exposes the validated copy, with the comment stating the contract in as many words: "The
+  ONLY sanctioned way to obtain a usable reference table: it has passed the provenance check.
+  Callers must read it from here rather than from the raw input, so an unvalidated table cannot
+  reach the model." `validateReferenceTable` (`:70-106`) returns either `mode: 'pool-train'`
+  with a POOL-partition-only table, or `mode: 'disabled'` with no table at all — and a bare
+  `new LeakageGuard({})` throws (`leakageGuard.test.js:81`), so the guard's own rule is that
+  you must make an explicit choice about your reference table before you may score anything.
+
+  `entryEvaluator.mjs` makes no choice. It reaches past the sanctioned channel and imports the
+  all-corpus table directly, which is exactly the access pattern the guard exists to make
+  impossible.
+
+  THE CONSEQUENCE, STATED HONESTLY. Today: none. Tomorrow: a change that makes this evaluator
+  score real corpus hands — a natural extension, since the whole point of an entry map is to
+  compare it against what the field actually did — would leak silently, because there is
+  nothing in the file to fail. Its two callers (`run-entry-map.mjs:83`,
+  `run-entry-suit-pass.mjs:77`) would produce a scorecard that looks exactly like a clean one.
+  The property being lost is not correctness, it is CHECKABILITY: at HEAD the run is clean
+  because of what it happens to do, and after any change it is clean because someone remembered.
+
+  DOCTRINE — CORPUS-MINED PRIORS LEAK INTO CORPUS MEASUREMENTS BY CONSTRUCTION. This is already
+  house rule (memory: backtest split + leakage — "corpus-mined priors leak into corpus
+  backtests by construction; enforce structurally"). The reference table was mined from the
+  corpus; any measurement over that corpus that consults it is contaminated unless the
+  partition is enforced. The word that matters is STRUCTURALLY. A guard that binds on five of
+  six entry points is a convention, and a convention is a thing someone has to remember at the
+  moment they are least likely to — while extending a script that has never needed it.
+
+  NOT YET KNOWN: whether other modules reach past the guard the same way. This ticket found one
+  because the audit was looking at the reference table specifically. The sweep below is the
+  point of the ticket more than the single fix is.
+accept_criteria: |
+  - THE GUARD BINDS ON THE ENTRY EVALUATOR, STRUCTURALLY. `entryEvaluator.mjs` must obtain its
+    reference table through a `LeakageGuard` like every other scoring entry point, and must make
+    an EXPLICIT choice of mode. `REFERENCE_DISABLED` is very likely the right answer — it scores
+    no corpus hands, so it needs no partition — and it is a declaration rather than an absence.
+    `run-atoms.mjs:132` and `run-study-ladder.mjs:88` already show the pattern. What is not
+    acceptable is leaving the direct import and adding a comment saying it is fine.
+  - THE ALL-CORPUS TABLE CANNOT BE IMPORTED BY A SCORING SCRIPT WITHOUT PASSING THE GUARD. This
+    is the criterion that generalises. A guard you can walk around is not a guard. Whether the
+    enforcement is a lint rule over `scripts/backtest/`, a module-level accessor that refuses
+    outside a guard, or an invariant script run by `/verify`, it must be something a future
+    change TRIPS rather than something a future author recalls.
+  - A SWEEP OF `scripts/backtest/` FOR THE SAME PATTERN, WITH THE FINDINGS NAMED. Every module
+    that imports `handhqReferencePool.js`, `poolBaseline.js`, or any corpus-derived artifact
+    must be listed with whether it scores corpus hands and whether a guard binds. Report the
+    clean ones too — the value is the map, not just the exceptions.
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule). Concretely: assert that constructing the entry
+    evaluator without a declared reference mode is refused. It must fail today; a test that
+    passes is asserting the current unguarded access.
+  - THE TICKET SAYS IN ITS CLOSING NOTE THAT NO PUBLISHED RESULT WAS CONTAMINATED. This matters
+    because a leakage fix in the log reads as a retraction unless it says otherwise. No Result
+    Card needs re-stamping on this account, and the fault register needs no new confirmed entry
+    — this is a guard-coverage gap, not a fault whose damage propagated. If the sweep above
+    finds a module that DOES score corpus hands unguarded, that changes and the register entry
+    must be raised properly, with the affected cards flagged `suspect-pending-review`.
+  - NO SCOPE CREEP INTO THE EVALUATOR'S MATHS. This ticket moves where a table comes from. The
+    MC replicates, the seed stride at `:238-245`, and the Field construction are untouched.
+effort: "S"
+files_involved:
+  - "scripts/backtest/entryEvaluator.mjs"
+  - "scripts/backtest/leakageGuard.mjs"
+  - "scripts/backtest/run-entry-map.mjs"
+  - "scripts/backtest/run-entry-suit-pass.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHERE THE ENFORCEMENT LIVES. Three shapes, not equivalent. (a) A lint/invariant rule
+    banning direct imports of the corpus artifacts from `scripts/backtest/` — cheap, catches the
+    import, says nothing about what the module then does with it. (b) The reference modules
+    refuse to hand out their table except through the guard — strongest, but they are also
+    imported by the APP, which has no guard and no need of one, so the refusal would have to be
+    scoped to the backtest context. (c) A runtime assertion in each entry point — weakest, since
+    it is the thing being forgotten. Choose deliberately; (a) is the cheapest thing that is
+    genuinely structural.
+  - |
+    OPEN — WHETHER THE ENTRY EVALUATOR SHOULD EVENTUALLY SCORE CORPUS HANDS. The natural next
+    question after "what does the model say to open" is "what did the field actually do", and
+    the corpus can answer it. If that is on the roadmap, this ticket is a prerequisite rather
+    than hygiene, and its priority should rise accordingly. If it is not, P2 is right. The
+    founder should say which.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-325"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading code, not by trusting the commit message:
+  `entryEvaluator.mjs:65` (`loader.load('/src/utils/exploitEngine/handhqReferencePool.js')`) and
+  a grep of the whole file for `LeakageGuard`/`leakage` returning zero hits;
+  `:81-84` and `:227` (the only two uses of the loaded table — a stake lookup and a `sourceId`
+  stamp), `:74` (hand classes from the generated equity table, not from corpus hands),
+  confirming the "no leak today" claim rather than repeating it;
+  `leakageGuard.mjs:136-148` (constructor validates and re-exposes, with the sanctioned-channel
+  comment), `:70-106` (`validateReferenceTable` returning `pool-train` or `disabled`);
+  `leakageGuard.test.js:81` (bare construction throws);
+  the five guarded entry points at `heroEvRunner.mjs:125`, `layerAblation.mjs:301`,
+  `run-atoms.mjs:132`, `run-study-ladder.mjs:88`, `runner.mjs:485`;
+  the two callers at `run-entry-map.mjs:83` and `run-entry-suit-pass.mjs:77`.
+
+  Filed at P2 deliberately. The other four WS-325 findings all have a live consequence; this one
+  has none today. It is filed because the failure mode it guards against is SILENT — a leaked
+  backtest produces a scorecard indistinguishable from a clean one — and a silent failure with
+  no live damage is exactly the kind that stays unfixed until it is expensive.

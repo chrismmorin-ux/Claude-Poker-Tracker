@@ -1,0 +1,255 @@
+id: "WS-377"
+title: "STAT_PRIORS.foldTo3Bet is a 55%-mean prior on a 76%-mean quantity, and subActionRules borrows the same prior for limp-fold — a third quantity again, for which no field measurement exists at all"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.5
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  CONFIRMED AND DECLARED OUT OF SCOPE BY WS-371 (commit 0cf1b915, 2026-08-05): "STAT_PRIORS.foldTo3Bet
+  is Beta(5.5, 4.5), a 55%-mean prior applied to a 76%-mean quantity, and subActionRules
+  borrows it for limp-fold." WS-371 fixed the DETECTOR that read the mis-defined quantity and
+  left the PRIOR that shrinks it, on the same ground it left the two threshold residuals: a
+  calibration change is a behaviour change that needs its own measurement.
+
+  ---------------------------------------------------------------------------
+  THE MECHANISM — THREE QUANTITIES, ONE PRIOR
+  ---------------------------------------------------------------------------
+
+  `bayesianConfidence.js:56` declares
+
+      foldTo3Bet: { alpha: 5.5, beta: 4.5 },   // mean 55%
+
+  total pseudocount 10, which by the module's own header (`:8-10`) means "at 10 observed hands
+  the blend is 50/50; at 30+ hands data dominates". That prior is applied to three different
+  quantities at HEAD.
+
+  1. THE BROAD PREFLOP FOLD QUANTITY — the one WS-371 renamed.
+     `tendencyCalculations.js:360-361` builds `intervals.foldTo3Bet` from
+     `credibleInterval(stats.foldTo3BetCount, stats.facedRaisePreflop, P.foldTo3Bet.alpha,
+     P.foldTo3Bet.beta)`. The denominator is `facedRaisePreflop` — "a raise preceded this
+     seat's first preflop action" — which WS-371 established measures FOLD VS ANY PREFLOP
+     RAISE, dominated by folding to an open. `poolBaseline.js:69` binds the same pair
+     (`{ num: 'foldTo3BetCount', den: 'facedRaisePreflop' }`) at prior weight 10 (`:88`), and
+     `resolveStatPriors` (`:356`) falls back to `STAT_PRIORS` verbatim when a segment is thin
+     or absent.
+
+     THE FIELD FOR THAT QUANTITY, directly measured between players (WS-371,
+     `HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD`, 105,640 player-segments at n >= 30):
+
+         6max  72.95% +/- 14.15pp
+         full  79.80% +/- 13.36pp
+         hand-weighted, all cells: 82.3%
+
+     A 55% prior against a 75.8% pooled between-player field is 21pp low; against full ring —
+     the bucket nearest the founder's live 9-handed game — it is 24.8pp low.
+
+  2. THE TIER-4 FLOOR IN THE FOLD RESOLVER.
+     `preflopFoldResolver.js:240-243` reaches `STAT_PRIORS.foldTo3Bet` as its LAST resort and
+     takes `alpha / (alpha + beta)` = 55% as the mean a seat's fold rate shrinks toward. That
+     module's header (`:27-34`) documents that it deliberately relies on the BROAD semantics —
+     it is the one consumer WS-371 found to be already correct about WHICH quantity it wants.
+     It is nonetheless anchored on a number the field does not hold. Being right about the
+     quantity and wrong about its central tendency is a distinct defect from the one WS-371
+     fixed, and it is the reason this ticket is not closed by that one.
+
+  3. LIMP-FOLD — A THIRD QUANTITY, BORROWED.
+     `subActionRules.js:41` runs the `limp-fold-exploitable` rule with
+     `statKey: 'foldTo3Bet'`, k = `totalLimpFold`, n = `totalLimpsFacedRaise`, threshold 0.50,
+     direction above. `:63` runs `limp-never-folds` on the same `statKey`, threshold 0.30,
+     direction below. Neither quantity is fold-vs-any-preflop-raise: both are "folded to a
+     raise AFTER having limped", a strictly narrower and behaviourally different population of
+     spots. The prior is borrowed because a key was needed, not because the quantities match.
+
+  ---------------------------------------------------------------------------
+  THE CONSEQUENCE, PLAINLY
+  ---------------------------------------------------------------------------
+
+  A prior centred 21pp below the field pulls every low-n villain toward a value the field does
+  not hold — and it does so HARDEST exactly where the prior matters most, which is where there
+  are few observations. That is the inversion: the prior exists to be the answer when data is
+  thin, so an error in it is concentrated in precisely the cases it was built to handle. A
+  villain with 4 observations folding 3 of 4 (75%, the field's own value) is shrunk toward 55%
+  and reads as a below-average folder; the same villain at 200 hands reads correctly. The
+  system is most confidently wrong about the players it knows least, which is most of them at
+  a live table.
+
+  DOCTRINE THIS VIOLATES (memory: subclass grids are carved from the parent). Prior grids are
+  PROPENSITIES and subclasses SHRINK TOWARD THE PARENT PRIOR — never built independently, never
+  normalised into distributions (DEC-025 Amendment 1). That rule assumes the parent is centred
+  on the quantity its children measure. A parent centred on the WRONG QUANTITY makes shrinkage
+  ACTIVELY HARMFUL rather than merely weak: the machinery works exactly as designed and drags
+  each estimate toward a number that describes nothing. Shrinkage toward a wrong centre is not
+  a softer version of shrinkage toward a right one; it is a bias with the same strength and the
+  opposite sign.
+
+  ---------------------------------------------------------------------------
+  THE SAME QUESTION ACROSS THE WHOLE PRIOR SET, MEASURED
+  ---------------------------------------------------------------------------
+
+  The mined corpus carries a between-player spread for six of the nine `STAT_PRIORS` entries,
+  so the comparison is available at zero extra cost. Computed for this ticket (method and
+  provenance in PREMISES):
+
+      stat         prior mean   measured between-player mean (6max / full)
+      vpip            25%          37.20% / 33.16%
+      pfr             15%          13.75% / 10.10%
+      threeBet         7%           4.75% /  3.24%
+      cbet            55%          58.17% / 59.36%
+      foldToCbet      45%          52.13% / 55.86%
+      foldTo3Bet      55%          72.95% / 79.80%     <-- 17.9pp / 24.8pp
+      af, limpFreq, callFreq — no mined counterpart exists
+
+  `foldTo3Bet` is not merely the largest gap; it is roughly double the next largest. That is
+  why this ticket is scoped to it and to limp-fold rather than to a wholesale recalibration:
+  the others are within the range a deliberately weak 10-pseudocount prior can absorb, and
+  moving all nine at once would make the measurement uninterpretable.
+
+  THE TENSION THAT MUST NOT BE RESOLVED SILENTLY. `bayesianConfidence.js:8` states these
+  priors "encode typical 1/2 LIVE player frequencies", while every number above is ONLINE 2009.
+  So the defect is NOT simply "55 should be 76". It is that 55 is not the measured central
+  tendency of ANY population for that conditioning set, live or online, and no live measurement
+  exists. Re-anchoring on the mined figure swaps an undocumented live estimate for a documented
+  transferred one — which is an improvement in provenance and possibly a regression in
+  applicability. See the decision flag; do not decide it in passing.
+accept_criteria: |
+  - EACH PRIOR IS DERIVED FROM THE FIELD DISTRIBUTION OF THE QUANTITY IT IS ACTUALLY APPLIED
+    TO. Not the quantity its name suggests, not a neighbouring one — the one the call site
+    passes k and n for. Where the three consumers want three different quantities, they get
+    three priors under names that cannot be confused at a call site. WS-371 established that a
+    shared field-name neighbourhood IS the mechanism; sharing a prior key is the same mechanism
+    one layer down.
+  - THE PSEUDOCOUNT IS JUSTIFIED, NOT INHERITED FROM THE 10 EVERY ENTRY CURRENTLY CARRIES. The
+    method already exists in-repo: moment-match the Beta to the measured between-player mean
+    and sd, implied weight `mean*(1-mean)/sd^2 - 1`. `handhqReferencePool.js:161` records that
+    this yields 8.0 for the fold quantity and treats it as "independent corroboration" of
+    PRIOR_WEIGHT = 10. Run the same computation for each prior this ticket changes and record
+    the result beside it. If a stat's measured spread implies a weight far from 10, that is a
+    finding about how much between-player variation the prior is entitled to suppress, not a
+    number to round back to 10.
+  - A TEST THAT A LOW-n VILLAIN'S POSTERIOR SITS BETWEEN THE FIELD MEAN AND THE OBSERVATION,
+    NOT OUTSIDE IT. This is the generalised statement of the defect and it is the criterion
+    that matters most: shrinkage must interpolate, never extrapolate. Feed a villain a small n
+    at the field's own rate and assert the posterior lands ON the field mean; feed one above
+    and one below and assert the posterior falls strictly between observation and field. It
+    must FAIL against HEAD (WS-309 rule) — with a 55% centre and a 76% field, an observation at
+    the field value is currently pulled BELOW everything it sits between, which is exactly what
+    the test should catch. Consider making it table-driven over every entry in STAT_PRIORS that
+    has a measured field, so a future prior cannot be added without one.
+  - LIMP-FOLD GETS ITS OWN PRIOR OR AN EXPLICIT, NAMED FOUNDER ESTIMATE — AND THE CORPUS CANNOT
+    SUPPLY ONE. Verified: the WS-262 mining output carries `overdispersion` for exactly
+    `vpip, pfr, threeBet, foldTo3Bet, cbet, foldToCbet`, and per-bucket `stats` for the same
+    six. There is no limp-fold family. So the honest options are (a) mine it — the corpus has
+    the hands, this is a miner change not a data problem; or (b) declare a founder-estimate
+    prior under its own key with the estimate's basis written down and its status as unmeasured
+    stamped where a consumer can see it. What is NOT acceptable is the current state, where a
+    borrowed key makes an unmeasured quantity look calibrated. `subActionRules` has two rules
+    on this key with thresholds 0.50 and 0.30 that were themselves never derived; note them,
+    but they are WS-376's family, not this ticket's — do not silently re-derive them here.
+  - THE THREE CONSUMERS ARE RE-CHECKED INDIVIDUALLY AFTER THE CHANGE, because they use the
+    prior differently: `derivePercentages` for credible intervals only (additive, no existing
+    consumer reads them per WS-363), `poolBaseline.resolveStatPriors` as the fallback when the
+    mined row is absent, and `preflopFoldResolver` as a tier-4 MEAN that then has style/PFR
+    adjustments applied on top (`:246+`). Raising the tier-4 mean by ~21pp and THEN applying a
+    style multiplier is a different composition than doing so from 55% — check the adjustment
+    does not push past the bound, and that tier-4 does not end up above tier-3.
+  - CROSS-CHECK AGAINST WS-363 BEFORE MEASURING, AND SAY WHICH ORDER WAS CHOSEN. WS-363 records
+    that the blended prior currently dies one step after resolution — `classifyStyle` reads raw
+    k/n, so the shrunk rates never reach `buildVillainDecisionModel`. If that is still true at
+    the time this ticket runs, then correcting the prior changes the credible intervals and the
+    fold resolver but NOT the decision model, and any before/after measured through the villain
+    model will read as no-change for a reason that has nothing to do with this fix. That is the
+    `shipped-but-inert` trap in its exact known form. Either sequence behind WS-363 or state
+    plainly which surfaces the measurement can and cannot see.
+  - Comparative figures resolve to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion` (`registerVersion()` from
+    `faultRegister.js`). Every field figure here is ONLINE 2009 and the founder's game is LIVE
+    9-handed 1/2-1/3, so a live claim on it is TRANSFERRED, not measured — say so when
+    reporting (fault register rank-1 entry). This is unusually load-bearing for this ticket:
+    the change replaces a number documented as a LIVE estimate with one measured ONLINE, so the
+    disclaimer is not boilerplate, it is the substance of what changed.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+  - "src/utils/exploitEngine/subActionRules.js"
+  - "src/utils/tendencyCalculations.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "scripts/generate-handhq-reference.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — LIVE ESTIMATE VS TRANSFERRED MEASUREMENT, AND THIS IS THE REAL QUESTION. The module
+    header says STAT_PRIORS encodes "typical 1/2 LIVE player frequencies"; every field number
+    available is ONLINE 2009. Live 1/2-1/3 is limpier and more passive, so its
+    fold-vs-any-preflop-raise rate is plausibly lower than online's 76% — but nobody has
+    measured it, and 55% has no recorded basis either. Three shapes, not equivalent:
+    (a) re-anchor on the mined figure and stamp it transferred; (b) keep a founder estimate but
+    write down what quantity it estimates and why that value; (c) keep both, live-intended
+    estimate and online measurement, as separate named priors resolved by segment — which is
+    what `poolBaseline`'s tier structure already does for the mined rows and would be
+    consistent with it. The founder is the only source for what a live 1/2 field actually
+    folds; ASK rather than inferring.
+  - |
+    OPEN — WHETHER THE OTHER FIVE MEASURABLE PRIORS MOVE IN THIS TICKET OR A SUCCESSOR. The
+    comparison table in the description shows vpip (-12.2pp vs 6max), foldToCbet (-10.9pp) and
+    threeBet (+2.3pp) are also off, all in the range a 10-pseudocount prior partly absorbs.
+    Moving all six at once makes the before/after uninterpretable — nothing would attribute a
+    scorecard change to a cause. Moving only foldTo3Bet leaves known-wrong numbers in place
+    deliberately. Recommend: fix foldTo3Bet + limp-fold here with an isolated measurement, and
+    file the remaining five as one successor with the table already computed.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-371"
+created_at: "2026-08-05T18:00:00Z"
+status_note: |
+  Filed 2026-08-05 out of WS-371's closeout, which named this finding as "confirmed and out of
+  scope". Same split as WS-284 -> WS-363 and WS-371 -> WS-376.
+
+  ALL THREE PREMISES RE-VERIFIED AGAINST HEAD (0cf1b915) BY READING CODE, NOT BY TRUSTING THE
+  COMMIT MESSAGE:
+    - `bayesianConfidence.js:50-60` — the STAT_PRIORS block; `foldTo3Bet: { alpha: 5.5,
+      beta: 4.5 }` at `:56`, mean 55%, total pseudocount 10; header at `:8-10` ("typical 1/2
+      live player frequencies", 50/50 blend at n=10) and `:42-48` (the tier note).
+    - `tendencyCalculations.js:342-343` (the ratio on `facedRaisePreflop`) and `:360-361`
+      (`intervals.foldTo3Bet` built with `P.foldTo3Bet`) — the prior IS applied to the broad
+      quantity, confirmed at the call site.
+    - `poolBaseline.js:69` (`{ num: 'foldTo3BetCount', den: 'facedRaisePreflop' }`), `:88`
+      (weight 10), `:356` (`staticPriors = STAT_PRIORS` fallback).
+    - `preflopFoldResolver.js:240-243` — the tier-4 'founder' fallback taking 55% as the mean.
+    - `subActionRules.js:41` and `:63` — `statKey: 'foldTo3Bet'` on limp-fold counts
+      (`totalLimpFold` / `totalLimpsFacedRaise`), thresholds 0.50 above and 0.30 below.
+      THE THIRD-QUANTITY CLAIM HOLDS: neither is fold-vs-any-preflop-raise.
+
+  THE FIELD FIGURES WERE COMPUTED FRESH FOR THIS TICKET, NOT COPIED. Source: the WS-262
+  per-site mining output at `C:\Users\chris\data\phh-mining\out\` (`SITE-<stake>.json`,
+  `<bucket>.overdispersion.<stat>` = `{players, mean, sd_between, avg_n}` over players at
+  n >= 30), pooled by the law of total variance weighted by player count — the identical
+  method `generate-handhq-reference.mjs:236-243` uses. VALIDATION: the same routine over
+  `overdispersion.foldTo3Bet` reproduces WS-371's published figures exactly (6max 72.95% +/-
+  14.15pp, full 79.80% +/- 13.36pp, 105,640 players), so the other five sit on the same
+  footing. Full table in the description. These are INDICATIVE — regenerate through the
+  generator during the work rather than pasting from here.
+
+  VERIFIED NEGATIVE, AND IT CONSTRAINS THE FIX: there is NO limp-fold family in the mined
+  output. Per-bucket `stats` and `overdispersion` both carry exactly six keys —
+  `vpip, pfr, threeBet, foldTo3Bet, cbet, foldToCbet` — alongside `fold_curve`, `barrels`,
+  `open3b` and `river_sd`. So limp-fold cannot be derived from the existing extract; it needs
+  a miner change or an explicit founder estimate. Stated here so the ticket does not begin by
+  looking for data that is not there — the recurring composition failure recorded in memory
+  (`verify ticket premise at composition`, 8 occurrences).

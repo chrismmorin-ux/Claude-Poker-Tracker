@@ -1,5 +1,5 @@
 id: "WS-254"
-title: "foldTo3Bet stat counts ANY preflop fold facing a raise (incl. fold-to-open) — audit definition vs name, priors, and exploit consumers"
+title: "SUPERSEDED BY WS-371 EXCEPT FOR THE RENAME — carry the corrected foldTo3Bet naming into extract3BetStats, the extension stats engine and the poolBaseline key, in one atomic change across two codebases"
 legacy_id: ""
 type: fix
 status: backlog
@@ -14,6 +14,82 @@ category: "domain-correctness"
 capability: "core"
 program: "domain-correctness"
 description: |
+  ####################################################################################
+  # CORRECTION 2026-08-05 — SCOPE NARROWED. WS-371 (commit 0cf1b915) COMPLETED THIS
+  # TICKET'S DEFINITION AUDIT. WHAT REMAINS IS THE RENAME, AND ONLY THE RENAME.
+  # The original framing is preserved below the line for provenance. Read the
+  # correction block FIRST — most of what the original asks for is already done.
+  ####################################################################################
+
+  WHAT WS-371 COMPLETED, so it is not re-done here:
+
+    - THE DEFINITION IS DECIDED AND RECORDED. `preflopFoldQuantities.js` now names the two
+      quantities separately and states the conditioning set of each:
+        FOLD_VS_PREFLOP_RAISE     a raise preceded this seat's FIRST preflop action —
+                                  22,867,051 / 27,800,827 = 82.3% hand-weighted,
+                                  75.8% +/- 14.2pp between players
+        FOLD_VS_3BET_AFTER_OPEN   this seat RAISED, then faced a 3-bet —
+                                  609,756 / 1,260,802 = 48.4% (call 40.0%, 4-bet 11.3%)
+      A 33.9pp gap on identical hands. The narrow quantity was ALREADY mined per seat-bucket
+      as `open3b`, so it ships as `HANDHQ_OPENER_FACING_3BET` with zero re-mine and a
+      byte-identical data table.
+    - EVERY CONSUMER IS AUDITED AND EACH IS NOW LABELLED FOR THE QUANTITY IT ACTUALLY WANTS.
+      `weaknessDetector` and `villainObservations` wanted the broad one: renamed
+      `pf-folds-to-3bet-high` -> `pf-overfolds-vs-preflop-raise`, `V-PF-FOLDS-TO-3BET` ->
+      `V-PF-OVERFOLDS-VS-PF-RAISE`, raised P3 -> P1, with n now read from
+      `facedRaisePreflop` directly rather than recovered by dividing a count by a rounded
+      percentage. `preflopFoldResolver` relied on the broad semantics deliberately and is
+      unchanged in behaviour but now asks for the quantity by name.
+    - THE THRESHOLDS ARE DERIVED, NOT MOVED. Bar = field between-player mean + 1sd, maximised
+      over served buckets (full ring 79.80 + 13.36 = 93.17%), with severity `(p - 93.17) /
+      (100 - 93.17)`, replacing two anchors that disagreed at 60 and 55. The old MDF argument
+      is rejected on its own terms.
+    - NOTHING OUTSIDE `preflopFoldQuantities.js` READS `pct.foldTo3Bet` BY NAME ANY MORE.
+    - 15 tests fail against the previous code; 22 of 22 pass now, 3,779 across the affected
+      suites.
+
+  WHAT SURVIVES — THE ONLY PART WS-371 COULD NOT DO. WS-371 corrected the SEMANTICS and the
+  READERS. It did not rename the COUNTERS, and it says why: the app/extension parity seam
+  passes today PRECISELY BECAUSE NEITHER SIDE WAS CHANGED. The remaining residual is three
+  names in two codebases:
+
+    1. `tendencyCalculations.extract3BetStats` (`src/utils/tendencyCalculations.js:112`)
+       and the accumulator it feeds — `facedRaisePreflop` (`:181`, `:243`), `foldTo3BetCount`
+       (`:187`, `:245`), and the local `foldedTo3Bet` flag. The counter is named for a
+       quantity it does not measure.
+    2. The extension's stats engine (`ignition-poker-tracker/shared/stats-engine.js`) —
+       `seatContext.foldTo3Bet` (`:60`, `:78`, `:129`) and `stats.foldTo3BetCount`
+       (`:200`, `:229`). Same names, same wrong referent, independently maintained.
+    3. The `poolBaseline` key — `STAT_COUNT_FIELDS.foldTo3Bet` = `{ num: 'foldTo3BetCount',
+       den: 'facedRaisePreflop' }` (`src/utils/exploitEngine/poolBaseline.js:69`) with its
+       prior weight at `:88`, plus the matching `stats.foldTo3Bet` key in the generated
+       `handhqReferencePool.js`, whose header already carries a standing warning that the key
+       "IS NOT FOLD-TO-A-3-BET ... survives only because `poolBaseline.STAT_COUNT_FIELDS`
+       binds to it".
+
+  THE LOCKSTEP CONSTRAINT IS THE WHOLE DIFFICULTY, AND IT IS WHY THIS IS ONE TICKET RATHER
+  THAN THREE. `src/utils/__tests__/statsEngineParity.seam.test.js:102` pins
+  `'facedRaisePreflop', 'threeBetCount', 'foldTo3BetCount'` as field names that must match
+  ACROSS the app and the extension. Renaming either side alone breaks that seam — the suite
+  goes red and, worse, the two engines silently diverge if the seam is patched rather than
+  moved. So this is ONE ATOMIC CHANGE ACROSS TWO CODEBASES: app extractor, extension stats
+  engine, the seam's field list, and the pool key, in a single commit. The generated reference
+  table must be regenerated in the same change if its key moves, since it is emitted by
+  `scripts/generate-handhq-reference.mjs` and hand-editing it is forbidden.
+
+  WHY THIS STAYED AT P2 AND WHY THAT WAS NOT WRONG. This ticket described the defect
+  correctly on 2026-07-22 and even carried the 49.9% evidence in its status note. What it did
+  not have was the MEASUREMENT of the consequence — that all 14 population cells trip both
+  founder-facing over-folding surfaces, so a perfectly average villain is reported as having a
+  leak the entire field has by construction. WS-371 measured that, which is what moved the
+  work to P0 and got it done. A described defect and a measured one are not the same object,
+  and the priority gap between them is itself a finding worth keeping (memory: numbers carry
+  their conditional; a described consequence is not a measured one).
+
+  --------------------------------------------------------------------------------
+  ORIGINAL FRAMING (2026-07-22, PRESERVED FOR PROVENANCE — SUPERSEDED ABOVE)
+  --------------------------------------------------------------------------------
+
   Surfaced by the WS-236 parity seam work (2026-07-22). The canonical pipeline's
   extract3BetStats (src/utils/tendencyCalculations.js) computes:
 
@@ -45,32 +121,52 @@ description: |
   (engine guardrail). Sibling ticket WS-255 (limp-reraise not counted as 3-bet)
   touches the same extractor — consider one sprint for both.
 accept_criteria: |
-  - Definition decided from first principles and recorded (decision noted or /decide
-    if trade-offs): what exactly is the foldTo3Bet denominator and numerator.
-  - tendencyCalculations.extract3BetStats and ignition stats-engine
-    analyzePreflopContext updated in lockstep; statsEngineParity.seam.test.js
-    updated to pin the NEW semantics (all 21+ tests green).
-  - STAT_PRIORS.foldTo3Bet (and poolBaseline segment handling) reviewed against the
-    new definition; recalibrated or explicitly confirmed with a comment.
-  - Exploit consumers (preflopAdvisor, weaknessDetector, subActionRules,
-    liveGameContext) reviewed — thresholds re-checked against the new stat scale;
-    tests updated where behavior legitimately shifts.
-  - No regression in the full src/utils engine suite + extension suite.
-effort: "M"
+  SCOPE NARROWED 2026-08-05 — see the correction block. The definition, the consumer audit
+  and the threshold derivation are DONE (WS-371, commit 0cf1b915). Do not redo them.
+
+  - THE COUNTERS ARE RENAMED TO THE QUANTITY THEY MEASURE, on BOTH sides, IN ONE COMMIT.
+    App: `extract3BetStats` and its accumulator fields (`facedRaisePreflop`,
+    `foldTo3BetCount`, the local `foldedTo3Bet`). Extension:
+    `ignition-poker-tracker/shared/stats-engine.js` (`seatContext.foldTo3Bet`,
+    `stats.foldTo3BetCount`). The target vocabulary already exists and must be reused, not
+    reinvented — `preflopFoldQuantities.js` names it `FOLD_VS_PREFLOP_RAISE`.
+  - THE PARITY SEAM MOVES WITH THEM. `statsEngineParity.seam.test.js:102` lists the pinned
+    field names; it must be updated in the SAME commit and stay green. Changing one codebase
+    alone breaks the seam by construction — that is not a merge hazard to be worked around,
+    it is the invariant doing its job.
+  - THE `poolBaseline` KEY FOLLOWS. `STAT_COUNT_FIELDS.foldTo3Bet` (`poolBaseline.js:69`) and
+    its prior weight (`:88`) bind to the counter names; the generated
+    `handhqReferencePool.js` `stats.foldTo3Bet` key and its `statConditioning` entry move
+    with them. The table is GENERATED — regenerate via
+    `node scripts/generate-handhq-reference.mjs`, never hand-edit, and confirm the emitted
+    rows are otherwise byte-identical (the same discipline WS-371 held itself to).
+  - NO BEHAVIOUR CHANGE. This is a rename, and it should be provable as one: the same inputs
+    produce the same numbers, the same observations fire with the same severities, and the
+    only diff is identifiers. If a behaviour change appears, something in the correction block
+    was wrong and the ticket should stop and report rather than absorb it.
+  - IDB / PERSISTED SHAPES ARE CHECKED BEFORE RENAMING ANYTHING THAT LANDS ON DISK. If any
+    persisted record or sync payload carries these field names, a rename is a migration, not a
+    rename — check `PERSISTENCE_OVERVIEW.md` and the extension sync path first.
+  - No regression in the full src/utils engine suite or the extension suite (824+ tests).
+effort: "S"
 files_involved:
   - "src/utils/tendencyCalculations.js"
   - "ignition-poker-tracker/shared/stats-engine.js"
   - "src/utils/__tests__/statsEngineParity.seam.test.js"
-  - "src/utils/exploitEngine/bayesianConfidence.js"
-  - "src/utils/exploitEngine/preflopAdvisor.js"
-  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "scripts/generate-handhq-reference.mjs"
 blocked_by: []
 blocked_by_legacy: []
 blocked_reason: ""
 enables: []
 sprint_id: null
 decision_flags:
-  - "foldTo3Bet denominator/numerator definition (first-principles stat semantics)"
+  - |
+    CLOSED 2026-08-05 by WS-371 (commit 0cf1b915) — "foldTo3Bet denominator/numerator
+    definition (first-principles stat semantics)". Both quantities are now named and
+    conditioned in `preflopFoldQuantities.js`: FOLD_VS_PREFLOP_RAISE (82.3% hand-weighted)
+    and FOLD_VS_3BET_AFTER_OPEN (48.4%). No decision remains on this ticket.
 source:
   type: session-observation
   created_by: ai
@@ -78,6 +174,44 @@ source:
   run_id: "SPR-145-ws236-parity-work"
 created_at: "2026-07-22T00:00:00Z"
 status_note: |
+  ####################################################################################
+  # CORRECTION 2026-08-05 — SUPERSEDED IN PART, NOT MERGED AND NOT CLOSED.
+  ####################################################################################
+
+  WS-371 (commit 0cf1b915, 2026-08-05) recommended this ticket be SUPERSEDED rather than
+  merged, and that recommendation is applied here. Its definition audit — the substance of
+  the original scope — IS COMPLETE and is recorded in WS-371's commit message and in
+  `src/utils/exploitEngine/preflopFoldQuantities.js`. This ticket has been narrowed to the
+  residual WS-371 explicitly could not do: the counter RENAME in
+  `tendencyCalculations.extract3BetStats` and the extension's stats engine, in lockstep,
+  plus the `poolBaseline` key. See the correction block at the head of `description`.
+
+  THE LOCKSTEP CONSTRAINT, stated once more because it is the reason this cannot be split:
+  the app/extension parity seam (`statsEngineParity.seam.test.js:102`) passes TODAY precisely
+  because neither side was changed. Renaming one side alone breaks it. This is one atomic
+  change across two codebases, in a single commit.
+
+  PRIORITY DELIBERATELY UNCHANGED at P2 / 14.0. Not raised here — the ticket has SHRUNK, not
+  grown, and the urgent half already shipped. Recorded for the record: WS-371 measured the
+  consequence this ticket had only DESCRIBED (every one of the 14 population cells trips both
+  founder-facing over-folding surfaces, so an average villain reads as an over-folder by
+  construction). That measurement is why the work moved at P0 while this sat at P2 for two
+  weeks. The described-vs-measured gap is the finding; the P2 was not an error of judgement
+  on the information available at the time.
+
+  Residual re-verified against HEAD (0cf1b915) before narrowing, by reading code:
+  `tendencyCalculations.js:112` (`extract3BetStats`), `:181/:243` (`facedRaisePreflop`),
+  `:187/:245` (`foldTo3BetCount`); `ignition-poker-tracker/shared/stats-engine.js:60, 78,
+  129` (`seatContext.foldTo3Bet`) and `:200, 229` (`stats.foldTo3BetCount`);
+  `poolBaseline.js:69` (`STAT_COUNT_FIELDS.foldTo3Bet`) and `:88` (prior weight);
+  `statsEngineParity.seam.test.js:102` (the pinned field list). All still present, all still
+  carrying the old names. Sibling WS-255 (limp-reraise not counted as 3-bet) touches the same
+  extractor and the same seam — still a candidate for one sprint with this.
+
+  --------------------------------------------------------------------------------
+  ORIGINAL NOTE (2026-07-22 / 2026-07-25, PRESERVED — SUPERSEDED ABOVE)
+  --------------------------------------------------------------------------------
+
   Authored at founder request after WS-236 parity work exposed the broad
   definition. Both engines currently agree on the broad definition (parity-pinned)
   so there is no drift risk — this ticket is about whether the definition itself

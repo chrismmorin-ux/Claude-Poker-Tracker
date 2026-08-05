@@ -1,0 +1,155 @@
+id: "WS-374"
+title: "The served prior carries no n — resolvePoolPriors computes reference.meta and discards it, so a prior backed by 13.5M hands is indistinguishable from one backed by 300"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.5
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND BY THE WS-325 MASS-DATA-FIELD AUDIT (commit 9f6b9f95, 2026-08-05), the fourth of its
+  five findings. The audit's own layer reconciliation names it as the terminal layer's loss:
+
+    L8 service    n=13.5M -> pseudocount <= 10-35 (n discarded)
+
+  THE MECHANISM, verified against HEAD, in one function.
+
+    `resolveReferenceCounts` (`src/utils/exploitEngine/poolBaseline.js:264`) returns
+    `{ stats, meta }`, and builds the meta at `:304`:
+
+        meta: { minedLabel: best.minedLabel, referenceBb: best.bb,
+                requestedBb: bb, seatBucket: resolvedBucket }
+
+    `resolvePoolPriors` calls it at `:369`:
+
+        const reference = referenceTable ? resolveReferenceCounts(seg, bucket, referenceTable) : null;
+
+    and then reads `reference.stats[stat]` at `:380` — and never touches `reference.meta`.
+    The function returns `result` (`:398`), a bare `{ [stat]: number }` map. `meta` is
+    computed on every call and dropped on every call. Nothing outside the test file reads it:
+    grepping `resolveReferenceCounts` across `src/` and `scripts/` returns only
+    `poolBaseline.test.js` and two comments.
+
+  WHAT IS LOST IS NOT DECORATION. Four things go with it:
+
+    - `minedLabel` — which stake row actually answered. The resolver scans by nearest big
+      blind, so a request for a stake with no row is silently served its neighbour.
+    - `requestedBb` vs `referenceBb` — HOW FAR the substitution reached. A 1/3 request served
+      from the 200NLH (1/2) row is a near miss; the same request served from 1000NLH would not
+      be, and the consumer cannot tell the two apart.
+    - `seatBucket` — which population. This is the same axis WS-372 is about; without it in the
+      returned value, a misrouted bucket is invisible downstream.
+    - The n behind the row, implicitly. `blendPrior(prior, ref.k, ref.n, cap)` (`:381`) consumes
+      k and n and returns a scalar; the evidence weight is spent inside the blend and never
+      surfaces.
+
+  THE CONSEQUENCE, PLAINLY. A PRIOR WITHOUT ITS n CANNOT BE SHRUNK AGAINST CORRECTLY, AND
+  CANNOT BE AUDITED. Shrinkage is a statement about relative evidence — how much this villain's
+  observed counts should move a belief depends entirely on how much evidence stands behind the
+  belief. `0.286` backed by 13,476,245 hands and `0.286` backed by 300 are the same JavaScript
+  number and demand completely different treatment, and at HEAD every downstream consumer sees
+  only the number. The cap does not rescue this: `maxPseudocount` / `PER_STAT_PRIOR_WEIGHT`
+  bounds the blend at 10-35 pseudo-observations regardless of whether the row behind it has
+  millions of hands or a handful, so the CAP is doing the job the n should be doing — and it is
+  a constant, not a measurement.
+
+  It also cannot be audited, which is the quieter cost. When a prior turns out to be wrong,
+  there is no way to ask which row produced it or how far the stake resolution reached, because
+  that question was answered at `:304` and the answer thrown away one line later.
+
+  SAME SHAPE AS WS-284 — COMPUTED, THEN DISCARDED. WS-284 (commit f1b712eb) found
+  `resolveReferenceCounts` being invoked, resolving correctly, and producing a bit-identical
+  scorecard because the resolved value never reached the thing being measured. WS-363 carries
+  the residual: the blended prior dies at `derivePercentages`, which returns raw k/n point
+  estimates while the prior survives only in an additive `intervals` field no consumer reads.
+  This ticket is the third instance in the same file's neighbourhood, and it is the same
+  mechanism each time — a value is correctly computed, and the return shape has nowhere to put
+  it, so it is dropped at the boundary. That is the `shipped-but-inert` family
+  (WS-276 `perceivedHeroRange`, WS-284, WS-334, WS-362), and the rule it carries is: WIRE A
+  PRODUCTION CALLER IN THE SAME CHANGE AND ASSERT THE PATHS DIVERGE.
+
+  NOT YET KNOWN: whether any consumer would behave differently today if it had the n. It is
+  possible every current caller would ignore it, in which case the ticket's value is the audit
+  trail and the enabling of WS-373's weighting question rather than an immediate behaviour
+  change. That is a thing to measure, not to assume in either direction.
+accept_criteria: |
+  - n TRAVELS WITH THE PRIOR TO EVERY CONSUMER. `resolvePoolPriors` must return, per stat, the
+    evidence behind the prior — at minimum the n, and the resolution meta (`minedLabel`,
+    `requestedBb` vs `referenceBb`, `seatBucket`) that is already computed at `:304` and thrown
+    away at `:369`. The shape must make it impossible to hold a prior without being able to ask
+    what stands behind it.
+  - A TEST ASSERTING A CONSUMER CAN DISTINGUISH A PRIOR BACKED BY 13.5M HANDS FROM ONE BACKED BY
+    300. Not that the metadata exists on the returned object — that a CONSUMER behaves
+    differently, or can be shown to. It must FAIL against HEAD (WS-309 rule). Without the
+    consumer half this ships as another computed-then-discarded value, which is precisely the
+    defect being fixed.
+  - THE POOL TIER GETS THE SAME TREATMENT, NOT JUST THE REFERENCE TIER. `resolvePoolPriors`
+    also accumulates observed pool counts (`:384-392`, the leave-one-out loop) and blends them
+    at `:392`, discarding that k and n identically. A fix that surfaces the imported row's n
+    while still hiding the pool's has fixed one of two.
+  - THE CAP IS RE-EXAMINED ONCE n IS VISIBLE, OR THE DECISION TO KEEP IT IS WRITTEN DOWN.
+    `PER_STAT_PRIOR_WEIGHT` / `maxPseudocount` currently stands in for the evidence weight. Once
+    the real n is available the cap is either a deliberate regularisation with a stated reason
+    or a leftover. Say which. Do not silently keep it because it happens to work.
+  - FIX TOGETHER WITH WS-373. That ticket needs the WEIGHTING to travel with the served prior;
+    this one needs the n and the resolution meta. Same function, same return shape, same
+    discard. Designing the shape twice is how the second one ends up bolted on.
+  - DOCTRINE — A NUMBER CARRIES ITS CONDITIONAL AND ITS EVIDENCE, OR IT IS NOT A MEASUREMENT.
+    Reporting k/n rather than a bare rate is already house rule; this is the same rule applied
+    at a function boundary rather than in a report. And: prior grids are PROPENSITIES and must
+    never be normalised into distributions (DEC-025 Amendment 1) — if the new return shape
+    tempts a normalisation step to make the numbers "sum right", that is the error, not the fix.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "src/utils/exploitEngine/__tests__/poolBaseline.test.js"
+  - "src/utils/tendencyCalculations.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT SHAPE THE PRIOR BECOMES. Today `resolvePoolPriors` returns
+    `{ vpip: 0.286, ... }` and every caller treats those as numbers. Turning them into objects
+    is a breaking change at every call site; adding a parallel `meta` map beside the numbers
+    preserves the callers but recreates the exact structure that let this happen — a value and
+    its provenance in two places, where a caller can hold one without the other. WS-363's
+    decision flag records the same choice one layer up, about `intervals` beside the point
+    estimates. Decide once, for both layers, or the two layers will disagree.
+  - |
+    OPEN — WHETHER THE DISPLAY PATH AND THE MODEL PATH WANT THE SAME THING. A surface showing
+    "pool VPIP 28.6%" is reporting a summary and may not want the apparatus. The model needs the
+    evidence weight. If both shapes are kept they must be named so they cannot be confused at a
+    call site — the same requirement WS-363 records, for the same reason.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-325"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading code, not by trusting the commit message:
+  `poolBaseline.js:262` (the JSDoc `@returns {{stats, meta}}`), `:264`
+  (`resolveReferenceCounts` definition), `:304` (the meta literal with `minedLabel`,
+  `referenceBb`, `requestedBb`, `seatBucket`), `:369` (the call in `resolvePoolPriors`),
+  `:380-381` (`reference.stats[stat]` then `blendPrior(prior, ref.k, ref.n, cap)`), `:398`
+  (`return result` — the bare map). A repo-wide grep for `resolveReferenceCounts` outside
+  `poolBaseline.js` returns only `poolBaseline.test.js` and two comments in
+  `scripts/backtest/`, confirming no consumer reads `meta` anywhere.
+
+  Cross-reference verified rather than asserted: WS-284's residual is filed as WS-363, whose
+  description records `derivePercentages` returning raw point estimates with the prior surviving
+  only in an additive `intervals` field — the same computed-then-discarded shape one layer
+  downstream of this one.

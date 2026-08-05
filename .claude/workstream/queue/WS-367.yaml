@@ -1,0 +1,128 @@
+id: "WS-367"
+title: "A second copy of the retired rank-sum strength score lives under __dev__ — same function name as the engine's replacement, different quantity, and a live test pins the ordering WS-304 measured as the defect"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  LEFT OUT OF SCOPE BY WS-304 (commit d5850c15), which names it: "and
+  src/__dev__/mwEquityValidation/scenarios/heroResponse.js carries a second copy of the same
+  rank-sum score."
+
+  VERIFIED AT HEAD. `src/__dev__/mwEquityValidation/scenarios/heroResponse.js:24-29`:
+
+      export const handStrengthTier = (idx) => {
+        const { rank1, rank2, isPair, suited } = decodeIndex(idx);
+        const raw = rank1 + rank2 + (isPair ? 8 : 0) + (suited ? 2 : 0);
+        const max = 12 + 12 + 8; // AA = 32
+        return raw / max;
+      };
+
+  That is the formula WS-304 retired: a rank sum with 33 distinct levels to spend on 169
+  hand classes. The engine now scores strength as the combo-weighted equity percentile —
+  `populationPriors.js:411`, `handStrengthTier = (idx, position) => strengthPercentiles(position)[idx]`.
+
+  THE SHARPEST DETAIL: THE TWO FUNCTIONS SHARE A NAME. One takes `(idx)`, the other
+  `(idx, position)`; one returns a rank sum, the other an equity percentile. Nothing at a
+  call site distinguishes them, and the dev copy's own docblock still says "Mirrors the
+  formula in rangeEngine/populationPriors.js (private there)" — a claim that was true when
+  written and is now false. This is the failure mode the engine directory already records
+  three times over (WS-285's unmeasured dimension ordering, WS-291's refuted doc claim,
+  WS-300's index comment): a label asserting something the values contradict, with nothing
+  checking.
+
+  THE CONSEQUENCE, PLAINLY. A validation scenario scores hands by a formula the engine no
+  longer uses, so it validates against a RETIRED MODEL. Its outputs are not wrong about
+  anything the engine does — they are about a different engine. And because it lives under
+  `__dev__`, it is exactly the kind of divergence nothing will notice: no production path
+  imports it, so no production test constrains it, and it will drift further with every
+  strength change.
+
+  IT IS NOT INERT. Three consumers, all at HEAD:
+    - `src/__dev__/mwEquityValidation/comparator.js:12,75` — sorts divergences by
+      `refWeight * handStrengthTier(idx)`, so the ranked output of the comparison report is
+      ordered by the retired score.
+    - `src/__dev__/mwEquityValidation/scenarios/heroResponse.js:38,49` — `heroResponseToThreeBet`
+      and its siblings THRESHOLD on the tier to decide 4-bet / call / fold, and
+      `scenarios/btnScenarios.js:155,221` runs those decisions.
+    - `src/utils/pokerCore/__tests__/mwEquityValidationSmoke.test.js:64-77` — a LIVE test in
+      the main suite asserting `AA > KK > JJ > AKs > AKo > 72o`. `JJ > AKs` is precisely the
+      ordering WS-304 measured as the defect and corrected. The suite is currently pinning
+      the retired model in place.
+
+  THE SCORE'S OWN DOCBLOCK CONTRADICTS ITS FORMULA — arithmetic, checkable by hand.
+  `heroResponse.js:9-11` names the tiers as "tier > 0.85 → 4-bet (AA, KK, QQ, AKs)" and
+  "tier > 0.70 → call (JJ, TT, 99, AKo, AQs, AJs)". Under its own formula
+  AKs = (12+11+2)/32 = 0.781, so AKs is NOT in the 4-bet tier the comment assigns it to; and
+  99 = (7+7+8)/32 = 0.688, so 99 is NOT in the call tier either — it folds. Two of the named
+  hands are misfiled by the formula that is supposed to place them. Same root cause WS-304
+  recorded: a rank sum has no room to order 169 classes, so any tier boundary drawn on it
+  cuts through hands it was not meant to separate.
+
+  NOT YET KNOWN: whether the dev scenario NEEDS a different score. It is a multiway-equity
+  validation harness built for WS-168, and the response model it encodes is a stated
+  simplification ("3-tier strength bucket"). It is possible the right answer is that it
+  should differ — but that has to be recorded as a reason, not left as a duplicate nobody
+  decided on.
+accept_criteria: |
+  - ONE SHARED IMPLEMENTATION, or an EXPLICIT RECORDED REASON the dev scenario must differ.
+    If shared: the dev scenario imports the engine's strength score and its thresholds are
+    re-derived on the new scale (the percentile scale means "top (1-t) of the field", so the
+    old rank-sum cut points do not transport — transport them by quantile as WS-304 did, and
+    say so). If it must differ: the reason is written INTO the file, the local function is
+    RENAMED so it cannot be confused with the engine's `handStrengthTier`, and the stale
+    "mirrors populationPriors" docblock is corrected.
+  - THE NAME COLLISION IS CLOSED EITHER WAY. Two functions called `handStrengthTier`
+    returning different quantities is the mechanism that made this invisible; the fix is not
+    complete while both names stand.
+  - `mwEquityValidationSmoke.test.js:64-77` IS RESOLVED DELIBERATELY. Either it asserts the
+    engine's ordering (and `JJ > AKs` goes), or it is re-anchored with the reason recorded
+    inline, as WS-304 did for the two WS-302 tests it re-anchored. A green test pinning a
+    retired model must not be left standing silently.
+  - THE DOCBLOCK'S NAMED TIERS MATCH WHAT THE CODE DOES. AKs and 99 currently do not land in
+    the tiers the comment assigns them. Where a comment states a fact the code could assert
+    instead, ASSERT IT — the standing rule from WS-285 / WS-291 / WS-300.
+  - No production behaviour changes. This file is under `__dev__` and has no production
+    consumer; if the change turns out to touch one, that is a finding in its own right and
+    the scope stops until it is recorded.
+effort: "S"
+files_involved:
+  - "src/__dev__/mwEquityValidation/scenarios/heroResponse.js"
+  - "src/__dev__/mwEquityValidation/comparator.js"
+  - "src/__dev__/mwEquityValidation/scenarios/btnScenarios.js"
+  - "src/utils/pokerCore/__tests__/mwEquityValidationSmoke.test.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — the engine's score is POSITION-CONDITIONED (`handStrengthTier(idx, position)`
+    reads `strengthPercentiles(position)`), and the dev copy is not. Sharing the
+    implementation therefore requires the dev scenario to name a position, which is a
+    modelling choice it currently avoids. Decide which position the BTN scenarios imply, or
+    whether an unconditioned percentile is the right shared primitive to expose.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-304"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premise verified at HEAD before filing, by reading the file rather than trusting the
+  commit message: the rank-sum copy is at `heroResponse.js:24-29` and is live. The
+  verification also turned up two things WS-304's note did not carry — the NAME COLLISION
+  with the engine's replacement `handStrengthTier`, and the live smoke test at
+  `mwEquityValidationSmoke.test.js:64-77` asserting `JJ > AKs`, which pins the retired
+  ordering inside the main suite rather than only under `__dev__`.

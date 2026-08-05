@@ -1,0 +1,159 @@
+id: "WS-362"
+title: "Situation keys are built with the wrong arity — a 7-parameter builder called with 4 args, and a 4-axis emitter read by a 7-axis parser; weakness matching is dead in production"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED 2026-08-05 while testing WS-318's premise before fixing it. WS-318 said weakness
+  matching was "far looser than intended". It is not loose — it is DEAD, and the reason is
+  upstream of both files WS-318 named.
+
+  **Nothing hero or villain does can ever match a recorded weakness.** Two independent
+  producer defects, either of which is sufficient on its own:
+
+  PRODUCER 1 — ARITY. `replayAnalysis.js:660` calls a SEVEN-parameter builder with FOUR
+  arguments:
+
+      const situationKey = buildSituationKeyFn(street, boardTexture?.texture || 'unknown', posCategory, action);
+
+  `buildSituationKey` (`exploitEngine/decisionAccumulator.js:197`) is
+  `(street, texture, posCategory, isAgg, isIP, facingAction, contextAction)`. So `action`
+  lands in the `isAgg` slot and axes 4-6 come out empty. Measured emitted key:
+
+      "flop:dry:LATE:call:::"     parses to isAgg: 'call', isIP/facingAction/contextAction: ''
+
+  Weakness keys from the accumulator hold 'agg'/'def' at that axis
+  (`"flop:dry:LATE:def:ip:bet:call"`). Axis 3 can never be equal, so `matchHeroWeakness`
+  returns null for every action. Measured: call, bet, raise, check, fold — all null.
+
+  This is the PRODUCTION path, not a defensive default. `replayAnalysis.js:469` defaults the
+  dep to `() => ''`, but `useHandReplayAnalysis.js:82` injects the real builder. (The default
+  is inert in the other direction: `''` fails to parse, so an un-injected caller matches
+  nothing either.)
+
+  PRODUCER 2 — AXIS COUNT. `handSignificance.buildQuickSituationKeys` (handSignificance.js:41)
+  emits FOUR axes:
+
+      keys.push(`${entry.street}:unknown:${posCategory}:${primitive}`);
+
+  `parseSituationKey` accepts 7 or 8 axes and throws otherwise, so `tryParseSituationKey`
+  returns null and BOTH weakness branches short-circuit at their `if (!parsed) return false`
+  guard before any comparison runs. Measured: `computeHandSignificance` returns heroLearning
+  0.5 and villainIntel 0 — bit-identical with and without weaknesses supplied.
+
+  WHY NEITHER DEFECT IS DETECTABLE WHERE IT LIVES. A 4-argument call to a 7-parameter
+  JavaScript function is legal and silent; the missing parameters are `undefined` and
+  `formatSituationKey` joins them into a well-formed 7-axis string, so the PARSER cannot
+  object either — it receives a valid key carrying wrong values. A 4-axis string is likewise
+  a legal string. WS-317 closed this failure family for the READERS (its guard test fails on
+  any positional `split(':')`), but nothing checks the PRODUCERS, which is why the migration
+  that was looking straight at these call sites did not see them.
+
+  THIS IS THE `shipped-but-inert` FAMILY, already recorded against WS-276's
+  `perceivedHeroRange` and WS-284 (and WS-334's depth-2/3): a capability that is correct,
+  tested, and unreachable in production, with a GREEN SUITE because the tests call it
+  directly with well-formed 7-axis keys the app never actually builds. `heroAnalysis` and
+  `handSignificance` both have passing tests. Neither exercises a key that came out of
+  `replayAnalysis` or `buildQuickSituationKeys`.
+
+  WHAT IS DEAD AS A RESULT. `matchHeroWeakness` and its coaching message; the
+  `heroWeaknessMatch` term of `heroLearning` (a fixed 0 of 4, capping that factor at 0.75);
+  the `villainWeaknessRevealed` term of `villainIntel`. Every consumer of hand significance
+  is scoring hands on three inputs where the code says four.
+
+  NOT YET KNOWN: how much significance ranking moves once the term is live. That is the
+  point of the accept criteria below — repair, then measure, in that order.
+accept_criteria: |
+  - A test asserts weakness matching genuinely FIRES end-to-end: a key built the way
+    production builds it (through `replayAnalysis`'s call site and through
+    `buildQuickSituationKeys`, not hand-written in the test) matches a weakness key built by
+    `decisionAccumulator`. It must FAIL against the current code (WS-309 rule) — a test that
+    passes today is asserting the dead behaviour.
+  - INERTNESS IS A TEST FAILURE, NOT A LATER OBSERVATION. Assert the repaired path DIVERGES:
+    `computeHandSignificance` must return a DIFFERENT heroLearning with weaknesses present
+    than without, and `matchHeroWeakness` must return non-null for at least one production
+    key. Both currently return identical/null, which is precisely the WS-276 failure mode —
+    a wired-but-unreachable capability that no assertion distinguishes from a working one.
+  - A production caller exercises the path. It is not enough for the builders to be callable
+    with the right arity; the app's own replay/significance flow must produce a key that
+    matches. State which caller, and cover it.
+  - Both producers are fixed, not one. They are independent — repairing the arity at
+    `replayAnalysis.js:660` leaves `buildQuickSituationKeys` unparseable, and vice versa.
+  - The four missing axes at `replayAnalysis.js:660` are DERIVED, not defaulted. `isAgg`,
+    `isIP`, `facingAction` and `contextAction` have exactly one derivation each in
+    `decisionAccumulator` (`deriveStreetAggressor` / `deriveFacingAction` /
+    `deriveContextAction`). Reuse them. A second derivation in replay is a second chance to
+    disagree — the argument `pokerCore/situationKey.js` is built around. Same for
+    `buildQuickSituationKeys`: emit through `formatSituationKey`, never a template literal.
+  - The `texture: 'unknown'` placeholder in `buildQuickSituationKeys` is resolved or
+    justified in writing. A key whose texture axis is always 'unknown' cannot match an
+    accumulator key with a real texture, so repairing the axis COUNT alone still yields a
+    match rate of 0 on that path. Decide: compute the texture, or match on a documented
+    subset of axes. Do not ship a 7-axis key that still cannot match.
+  - Guard the class, not just these two instances. Prefer a producer-side check with the
+    same standing as WS-317's reader-side guard — a builder that rejects missing identity
+    axes, or a lint/test that fails on an under-arity call to `buildSituationKey`. Two
+    producers were wrong in two different ways; assume there is a third.
+  - Report the significance-ranking delta once matching is live: how many hands change
+    heroLearning / villainIntel over a real hand set. This is INFORMATION about a term that
+    has been silently 0, not a keep/delete verdict.
+effort: "M"
+files_involved:
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - "src/utils/handAnalysis/handSignificance.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/pokerCore/situationKey.js"
+  - "src/hooks/useHandReplayAnalysis.js"
+  - "src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-318"
+sprint_id: null
+decision_flags:
+  - |
+    SEQUENCING WITH WS-318 — READ BEFORE STARTING. This ticket makes the match rate
+    observable; WS-318 decides WHAT the match should compare. Landing this one alone would
+    make `"Pattern: <label> — occurrence #n in flop agg spots"` render for the first time,
+    under a semantic (aggressor-status) that WS-318 flags as probably wrong and that only
+    the founder can settle. That is worse than the dead feature, because it looks like
+    working output.
+
+    So either the two land together with the semantic chosen, or this one lands with
+    `matchHeroWeakness`'s emitting branch held back until it is. Not: repair and see.
+  - |
+    OPEN — what `buildQuickSituationKeys` should do about board texture. It has no board in
+    scope and hardcodes 'unknown'. Options: thread the board through and compute the texture
+    (aligns it with the accumulator, costs a plumbing change), or make significance match on
+    a documented subset of identity axes (cheaper, but then "a matching weakness" means two
+    different things in two places — the exact divergence WS-317 existed to end). Whichever
+    is chosen must be written down; both are defensible and they are not equivalent.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-318-premise-test"
+created_at: "2026-08-05T00:30:00Z"
+status_note: |
+  Filed 2026-08-05 out of testing WS-318's premise rather than assuming it. WS-318 asked
+  "is the match too loose?" The answer is no — there is no match at all, and the cause is in
+  files WS-318 does not name.
+
+  Sequenced BEFORE WS-318's measurable criterion (see `enables`), because WS-318's
+  "report matches gained/lost" is unsatisfiable while the rate is 0 on every arm. But NOT
+  independently shippable — see the first decision flag.
+
+  Standing evidence: `src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js`, green on
+  HEAD 2026-08-05. It pins the CURRENT BROKEN behaviour deliberately and MUST fail once this
+  ticket lands; delete it with WS-318, not with this one.

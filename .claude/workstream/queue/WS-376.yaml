@@ -1,0 +1,262 @@
+id: "WS-376"
+title: "Two more detectors are calibrated below their own field — V-FP-FOLDS-TO-CBET fires on 4 of 14 cells and ALL FOUR are full ring, and V-PF-3BET-ONLY-PREMIUMS fires below a bar the field's small-stakes full-ring cells already sit under"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.5
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE RESIDUAL WS-371 RECORDED IN A RATCHET RATHER THAN FIXED (commit 0cf1b915, 2026-08-05).
+
+  WS-371 did not fix one bug; it named a CLASS. A detector whose population baseline sits
+  above its own threshold cannot discriminate — it is not measuring a deviation, it is
+  reporting the definition. Having fixed the fold-vs-preflop-raise instance, WS-371
+  generalised the check into a census (`populationBaselineSelfTrip.test.js`), ran it over
+  every rule that compares a stat to a constant, and found exactly two more. Both are listed
+  in `KNOWN_SELF_TRIPPING_RULES` (`:168-171`) with the ratchet's own instruction attached:
+  "DO NOT ADD TO THIS LIST TO MAKE THE TEST PASS ... Removing one is the point of the list
+  existing." This ticket removes both.
+
+  ---------------------------------------------------------------------------
+  INSTANCE 1 — `V-FP-FOLDS-TO-CBET`, AND THIS ONE LANDS ON THE FOUNDER'S GAME
+  ---------------------------------------------------------------------------
+
+  `villainObservations.js:78` sets `foldToCbetMin: 55`, annotated "MDF ~57% vs 2/3 pot".
+  The rule fires at `:450` on `foldPct > T.foldToCbetMin`, where `foldPct` is
+  `rawStats.foldedToCbet / rawStats.facedCbet` (`:446-447`), with severity
+  `clamp((foldPct - 45) / 45, 0, 1)` (`:454`) — a second undeclared anchor at 45, disagreeing
+  with the first, the same two-anchor pattern WS-371 removed.
+
+  Hand-weighted field: 53.63% (1,518,177 / 2,830,802 flop c-bets faced). The bar is 1.4pp
+  above it, and FOUR of the fourteen population cells clear it:
+
+    | cell          | foldToCbet |
+    |---|---|
+    | 25NLH  full   | 55.19 |
+    | 50NLH  full   | 57.00 |
+    | 100NLH full   | 56.62 |
+    | 200NLH full   | 55.86 |
+
+  ALL FOUR ARE FULL RING. State plainly why that matters and do not soften it: the founder
+  plays LIVE 9-HANDED 1/2-1/3, and full ring (dealt-in >= 7) is the only served bucket that
+  resembles it. The cells that misfire are exactly his game. A 6-max grinder would mostly
+  never see this rule fire spuriously; the one player this repo exists to serve sees it fire
+  on the average opponent at his own table.
+
+  The BETWEEN-PLAYER reading is worse than the hand-weighted one, and it is the reading that
+  governs, because a detector judges ONE player. Directly measured over the mined
+  `overdispersion.foldToCbet` segments (see PREMISES for the derivation and its provenance):
+
+      6max   52.13% +/- 10.53pp   (12,486 players, 23 segments)
+      full   55.86% +/- 11.19pp   ( 6,533 players, 20 segments)
+
+  The full-ring between-player MEAN is 55.86% — the bar of 55 sits BELOW the average full-ring
+  player, not merely near them. Slightly over half the founder's field is flagged as an
+  over-folder to c-bets by construction.
+
+  It is not inert downstream. `actionClassifier.js:429` resolves this observation
+  (`findObs(contextHints, 'V-FP-FOLDS-TO-CBET')`) and it shapes hero's c-bet / bluff
+  reasoning. A phantom over-folder is a phantom licence to bluff.
+
+  ---------------------------------------------------------------------------
+  INSTANCE 2 — `V-PF-3BET-ONLY-PREMIUMS`, WHICH FIRES BELOW ITS BAR
+  ---------------------------------------------------------------------------
+
+  `villainObservations.js:63` sets `threeBetMin: 3`, annotated "Population floor for 3-bet
+  frequency (typical: 4-8%)" — an annotation that CONTRADICTS the constant it labels, since a
+  floor of 3 under a stated typical band of 4-8 leaves no margin. The rule fires at `:237` on
+  `threeBetPct < T.threeBetMin` (a BELOW rule — the sd bar must be subtracted, not added),
+  emits at `:239` with heroContext P1, and carries severity `0.6` FLAT (`:241`): not derived,
+  not scaled, a constant.
+
+  Hand-weighted field: 4.45% (1,236,567 / 27,800,827 opportunities). But 25NLH full reads
+  2.96% and 50NLH full 2.89% — so the average small-stakes full-ring player is reported as
+  "3-bets only 3% — premiums only". Between-player: 6max 4.75% +/- 3.90pp (61,043 players),
+  full 3.24% +/- 3.19pp (44,597 players). The full-ring between-player mean, 3.24%, is barely
+  above the bar; nearly half of full ring sits under it.
+
+  TWO SEPARATE DEFECTS ARE STACKED HERE AND BOTH NEED NAMING.
+
+  (a) THE BAR IS BELOW THE FIELD, as above.
+
+  (b) THE RULE CLAIMS RANGE COMPOSITION FROM A FREQUENCY. Its label says "premiums only" —
+      a claim about WHAT is in the 3-betting range — from a number that only says HOW OFTEN.
+      A player 3-betting 3% with a polarised range and a player 3-betting 3% with the top 3%
+      of hands produce the identical statistic and require opposite responses. And the
+      conditioning set is the broad one WS-371 named: the denominator is
+      `rawStats.facedRaisePreflop` (`:233`), i.e. "a raise preceded this seat's first preflop
+      action", which pools cold-3-bet spots with 3-betting an open. P(3-bet | faced ANY
+      preflop raise) is not P(3-bet | faced an open), and the label claims a third thing again.
+
+  ---------------------------------------------------------------------------
+  WHAT MAKES THIS FIXABLE NOW WITHOUT A RE-MINE
+  ---------------------------------------------------------------------------
+
+  The between-player distributions for BOTH quantities are ALREADY MINED. Every per-site
+  file in the WS-262 output carries `overdispersion` with all six keys — `vpip`, `pfr`,
+  `threeBet`, `foldTo3Bet`, `cbet`, `foldToCbet` — each as
+  `{ players, mean, sd_between, avg_n }` over players at n >= 30. `generate-handhq-reference.mjs`
+  already reads these files (`:186-207`) and already contains the pooling routine
+  (`poolSpread`, `:236-243`, law of total variance weighted by player count). It simply
+  harvests only `overdispersion.foldTo3Bet` today (`:206`) and only asserts that one is
+  present (`:231`).
+
+  So this is a GENERATOR change plus two threshold derivations. Zero re-mining, zero new data
+  rows, and the same provenance chain WS-371's bar already travels.
+accept_criteria: |
+  - EACH BAR IS DERIVED FROM THE DIRECTLY MEASURED BETWEEN-PLAYER DISTRIBUTION OF ITS OWN
+    QUANTITY, NOT FROM THE HAND-WEIGHTED TABLE. This is the shape that worked in WS-371 and
+    it worked for a stated reason: a detector judges ONE player, so the reference distribution
+    is the player one. The hand-weighted rows let multitabling regulars dominate
+    (`HANDHQ_REFERENCE_META.weighting = 'hand-weighted'`) and are the wrong denominator for a
+    per-player bar. Emit `threeBet` and `foldToCbet` spreads from
+    `generate-handhq-reference.mjs` beside the existing `HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD`,
+    reusing `poolSpread` rather than writing a second pooling routine.
+  - THE DERIVATION IS WRITTEN DOWN WHERE THE CONSTANT LIVES, in the register
+    `preflopFoldQuantities.js` established: field mean, measured sd, player count, segment
+    count, the sd multiple, and WHY that multiple. Imported by the rule, never restated at the
+    call site — the two surfaces that read the fold quantity drifted apart precisely because
+    each carried its own number.
+  - THE SD MULTIPLE IS ARGUED, NOT INHERITED. WS-371 recorded that 1sd was FORCED rather than
+    chosen: at 79.80% +/- 13.36pp, +2sd is 106.5%, which does not exist on a quantity bounded
+    at 100. THAT ARGUMENT DOES NOT TRANSFER TO EITHER RULE HERE, and porting the recipe
+    mechanically is the error this criterion exists to prevent.
+      * `foldToCbet` +2sd is 73.18% (6max) / 78.24% (full) — both admissible. The support does
+        not force anything, so the multiple must be CHOSEN and justified.
+      * `threeBet` is a BELOW rule on a quantity bounded at 0, and it is right-skewed and
+        near the bound: full ring -1sd is 0.04% and -2sd is -3.15%. A mechanical mean-minus-1sd
+        bar would set the threshold at effectively "has literally never 3-bet", making the rule
+        fire almost never. The bound forces the multiple AND makes a symmetric mean+/-sd bar the
+        wrong instrument. Use the shape of the distribution — a Beta moment-matched to the
+        measured mean and sd, or a percentile of the empirical player distribution — and say
+        which and why. Recording "no derivable bar exists on this quantity, retire the rule" is
+        an acceptable outcome IF argued; silently keeping 3 is not.
+  - THE MAXIMUM/MINIMUM IS TAKEN OVER SERVED SEAT BUCKETS, per WS-371: neither rule has a
+    seat-bucket input, so a villain must be unusual in EVERY field they could have come from
+    before being called unusual. For an above-rule that is the max over buckets; for the
+    below-rule it is the min. Note that for `foldToCbet` this lands on full ring, which is also
+    the bucket nearest the founder's live 9-handed game.
+  - A TEST ASSERTS THE POPULATION BASELINE DOES NOT TRIP ITS OWN THRESHOLD, and the mechanism
+    already exists: REMOVE both entries from `KNOWN_SELF_TRIPPING_RULES`
+    (`populationBaselineSelfTrip.test.js:168-171`). That removal must FAIL against HEAD's
+    thresholds (WS-309 rule) and pass after the derivation. Do not add compensating entries.
+    Add the paired assertion WS-371 shipped for its own bar — that the bar equals the
+    measured mean +/- n*sd to within float tolerance — so a hand-edit to the constant breaks
+    the suite rather than passing silently.
+  - THE SEVERITY FUNCTIONS ARE DERIVED FROM THE SAME BAR OR THE DECISION TO LEAVE THEM IS
+    RECORDED. `V-FP-FOLDS-TO-CBET` currently scales from an undeclared 45 while gating on 55 —
+    two anchors that disagree, which is exactly the pattern WS-371 replaced with
+    `(p - bar) / (100 - bar)`. `V-PF-3BET-ONLY-PREMIUMS` has no severity function at all, just
+    the constant 0.6.
+  - THE COMPOSITION CLAIM IS SEPARATED FROM THE FREQUENCY CLAIM, or the observation is
+    relabelled to claim only what it measures. "3-bets only N% — premiums only" asserts range
+    composition from a frequency over a conditioning set that pools cold 3-bets with 3-bets of
+    an open. Either the rule reads a quantity that supports the claim, or the claim shrinks to
+    the measurement. Renaming an observation id is a founder-facing change — carry it through
+    `actionClassifier.js` and any other `findObs` consumer in the same commit, as WS-371 did
+    for `V-PF-FOLDS-TO-3BET`.
+  - DOCTRINE TO RECORD — NUMBERS CARRY THEIR CONDITIONAL, AND A BAR IS A NUMBER TOO. WS-371's
+    finding was that a rate is meaningless without its conditioning set. The generalisation
+    this ticket adds: a THRESHOLD inherits the conditioning set of the quantity it is compared
+    against, so an MDF-derived bar ("MDF ~57% vs 2/3 pot" on `foldToCbetMin`) is a claim about
+    a fold-through frequency at a specific sizing, being applied to an unconditional per-player
+    fold rate across all sizings. Converting between those needs the sizing and the pot, which
+    is the game tree's job, not a detector's — the same rejection WS-371 made of the 66.7%
+    fold-through argument. Per `exploitEngine/CLAUDE.md`, the weakness layer emits a population
+    deviation and the exploit layer computes the EV.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion` (`registerVersion()` from
+    `faultRegister.js`). The mined rows are ONLINE 2009 and the founder's game is LIVE 9-handed
+    1/2-1/3, so a live claim on them is TRANSFERRED, not measured — say so when reporting
+    (fault register rank-1 entry). This bites harder here than in WS-371, because the whole
+    point of instance 1 is that the misfiring cells are the full-ring ones nearest his game:
+    the transfer is being leaned on precisely where it is being disclaimed.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/exploitEngine/preflopFoldQuantities.js"
+  - "scripts/generate-handhq-reference.mjs"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "src/utils/exploitEngine/__tests__/populationBaselineSelfTrip.test.js"
+  - "src/utils/exploitEngine/__tests__/villainObservations.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — THE SD MULTIPLE FOR `foldToCbet`, WHICH THE SUPPORT DOES NOT DECIDE. Unlike WS-371,
+    +2sd exists here (73.18% 6max / 78.24% full). 1sd flags the top ~sixth of players; 2sd the
+    top ~2.5%. The choice is a statement about how rare a "leak" should be before the surface
+    names it, and it should be made once, consciously, and then applied to every rule of this
+    family rather than re-argued per rule. WS-371 never had to make it because the bound made
+    it for them.
+  - |
+    OPEN — WHETHER `V-PF-3BET-ONLY-PREMIUMS` SURVIVES AT ALL. On a right-skewed quantity
+    pressed against 0, the between-player derivation pushes the bar to ~0.04% (full ring),
+    which is "has never 3-bet in the observed sample" — arguably a real and different
+    observation, but not the one the rule claims. The honest outcomes are: retire it; replace
+    it with a never-3-bet observation on raw counts with an explicit n gate; or re-found it on
+    a quantity that actually supports a composition claim. Choosing "keep 3" requires an
+    argument that survives the field measurement, not the current annotation, which contradicts
+    its own constant.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-371"
+created_at: "2026-08-05T18:00:00Z"
+status_note: |
+  Filed 2026-08-05 out of WS-371's closeout. WS-371's commit message names both residuals
+  explicitly and states why they were not fixed there: "a threshold change is a behaviour
+  change that needs its own measurement (WS-325 rule)". Same split as WS-284 -> WS-363.
+
+  PREMISES RE-VERIFIED AGAINST HEAD (0cf1b915) BY READING CODE AND DATA, NOT BY TRUSTING THE
+  COMMIT MESSAGE:
+    - `villainObservations.js:78` `foldToCbetMin: 55` with the "MDF ~57% vs 2/3 pot" annotation;
+      `:444-456` the rule, denominator `facedCbet`, numerator `foldedToCbet`, severity
+      `clamp((foldPct - 45) / 45, 0, 1)`, heroContext F1.
+    - `villainObservations.js:63` `threeBetMin: 3` with the "typical: 4-8%" annotation;
+      `:231-243` the rule, denominator `rawStats.facedRaisePreflop`, numerator `threeBetCount`,
+      fires BELOW, flat severity 0.6, heroContext P1.
+    - `actionClassifier.js:429` consumes `V-FP-FOLDS-TO-CBET` — the observation is live, not
+      inert.
+    - `populationBaselineSelfTrip.test.js:149-171` — the ratchet, its two entries, and its
+      instruction not to extend the list. The hand-weighted figures quoted above (53.63%,
+      4.45%, and the four full-ring cells) are read from that block, which WS-371 computed
+      from `handhqReferencePool.js` at runtime.
+
+  THE BETWEEN-PLAYER FIGURES IN THE DESCRIPTION WERE COMPUTED FRESH FOR THIS TICKET, NOT
+  COPIED. Source: the WS-262 per-site mining output at `C:\Users\chris\data\phh-mining\out\`
+  (`SITE-<stake>.json`, `<bucket>.overdispersion.<stat>` = `{players, mean, sd_between, avg_n}`
+  over players at n >= 30), pooled by the law of total variance weighted by player count —
+  the identical method `generate-handhq-reference.mjs:236-243` uses. VALIDATION THAT THE
+  METHOD MATCHES: running it over `overdispersion.foldTo3Bet` reproduces WS-371's published
+  bar inputs exactly — 6max 72.95% +/- 14.15pp, full 79.80% +/- 13.36pp, 105,640 players.
+  Same routine, same inputs, so the `threeBet` and `foldToCbet` figures below are on the same
+  footing:
+
+      threeBet     6max  4.75% +/- 3.90pp  (61,043 players, 24 segs)
+                   full  3.24% +/- 3.19pp  (44,597 players, 23 segs)
+      foldToCbet   6max 52.13% +/- 10.53pp (12,486 players, 23 segs)
+                   full 55.86% +/- 11.19pp ( 6,533 players, 20 segs)
+
+  These are INDICATIVE and must be regenerated through the generator during the work, not
+  pasted from here — a constant that cannot be regenerated from its source is the failure mode
+  the register in `preflopFoldQuantities.js` exists to prevent.
+
+  NOTE ON SAMPLE DEPTH: the `foldToCbet` spread rests on far fewer players (6,533 full ring)
+  than the fold-vs-preflop-raise spread (44,597), because a flop-c-bet-faced n >= 30 gate is
+  much harder to clear than a preflop one. The sd is correspondingly less well determined.
+  That is a reason to state the player count beside the bar, not a reason to prefer the
+  hand-weighted table, which answers a different question entirely.

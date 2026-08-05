@@ -1,5 +1,5 @@
 id: "WS-318"
-title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
+title: "Weakness matching compares aggressor-status while calling it the action — the match is DEAD, not loose, and the string never renders (premise corrected 2026-08-05)"
 legacy_id: ""
 type: bug
 status: backlog
@@ -53,36 +53,134 @@ description: |
   WS-291 a doc the data refuted, WS-300 an index list naming the wrong hands, and now a
   destructure naming the wrong axis). The WS-317 guard test now fails on any positional
   colon-split, which closes the class; this ticket closes the instance.
+
+  ========================================================================================
+  CORRECTION TO THE FIRST DIAGNOSIS — 2026-08-05, MEASURED
+  ========================================================================================
+  Recorded rather than quietly restated, because how it was got wrong is the point. The
+  premise above was TESTED before any fix was attempted, and it is PARTIALLY REFUTED.
+
+  WHAT HOLDS. The mechanism is real and present. Axis 3 (`isAgg`) is what the three sites
+  compare while the naming and comments said "action":
+    - `src/utils/handAnalysis/heroAnalysis.js:234`      (matchHeroWeakness)
+    - `src/utils/handAnalysis/handSignificance.js:132`  (hero-weakness branch)
+    - `src/utils/handAnalysis/handSignificance.js:169`  (villain-weakness branch)
+
+  WHAT IS REFUTED. BOTH stated consequences. The feature is not "far looser than intended"
+  and the copy is not on screen — the feature is DEAD. Match rate is 0, not loose. Two
+  upstream PRODUCERS guarantee no weakness can ever match, and neither is in a file this
+  ticket named:
+
+    PRODUCER 1 — arity. `src/utils/handAnalysis/replayAnalysis.js:660` calls a SEVEN-
+    parameter builder with FOUR arguments:
+
+        buildSituationKeyFn(street, boardTexture?.texture || 'unknown', posCategory, action)
+
+    `buildSituationKey` (exploitEngine/decisionAccumulator.js:197) takes
+    (street, texture, posCategory, isAgg, isIP, facingAction, contextAction). The ACTION
+    therefore lands in the `isAgg` slot and axes 4-6 come out empty. Measured emitted key:
+    `"flop:dry:LATE:call:::"`, which parses with `isAgg === 'call'`. It is a well-formed
+    7-axis key, so the parser cannot object. Real weakness keys from `decisionAccumulator`
+    hold 'agg'/'def' at that axis (`"flop:dry:LATE:def:ip:bet:call"`). The two can never
+    be equal. This is the production path, not a default: `useHandReplayAnalysis.js:82`
+    injects the real builder.
+
+    PRODUCER 2 — axis count. `handSignificance.buildQuickSituationKeys` (handSignificance.js:41)
+    emits FOUR axes (`"flop:unknown:EARLY:call"`). `parseSituationKey` accepts 7 or 8 only,
+    so `tryParseSituationKey` returns null and BOTH weakness branches short-circuit at the
+    `if (!heroParsed) return false` guard before any comparison happens.
+
+  MEASURED BEHAVIOUR (`src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js`, green on
+  HEAD 2026-08-05):
+    - `matchHeroWeakness` returns null for all five actions (call/bet/raise/check/fold)
+      against real 7-axis weakness keys.
+    - `computeHandSignificance` yields heroLearning 0.5 and villainIntel 0 — IDENTICAL with
+      and without weaknesses present.
+
+  CONSEQUENCE FOR THIS TICKET. The user-visible string "in flop agg spots" CANNOT render
+  today; nothing reaches the `if (match)` branch that emits it. And the original accept
+  criterion "Match rate WILL move — report how many matches are gained/lost" is
+  UNSATISFIABLE by editing only the two files this ticket names: the rate is 0 before and 0
+  after, under option (a) contextAction, (b) isAgg and (c) both alike. The criteria below
+  are rewritten accordingly.
+
+  WHY THE WORK STOPPED HERE rather than proceeding. Fixing the producers is what makes the
+  match rate observable — but it is also what would make the WRONG label start rendering,
+  because the semantics decision below is still open. Producer-first with the semantics
+  unresolved ships a defect to the founder's screen that is currently only latent. So the
+  producer defect is filed separately (WS-362) and this ticket waits on the decision.
+
+  THE FAILURE FAMILY IS THE SAME ONE, AT ANOTHER LAYER. WS-317 closed "a structure
+  asserting something nothing checks" for the READERS by banning positional colon-splits.
+  Nothing checks the PRODUCERS: a 4-arg call to a 7-param function is legal JavaScript, and
+  a 4-axis string is a legal string. That is why this survived the migration that was
+  looking straight at it.
 accept_criteria: |
+  ORDERING IS LOAD-BEARING. Criteria 1 and 2 must both be satisfied before criterion 4 can
+  produce a number at all — see the correction block. Do not attempt criterion 4 first and
+  report "no change"; that is a measurement of the dead path, not of this decision.
+
   - Decide the INTENDED semantic and record why. The three candidates are not equivalent:
       (a) contextAction (axis 6) — matches the action taken; almost certainly what the
           naming and the "same street + action" comment intended.
-      (b) isAgg (axis 3) — current behaviour; defensible as "same street, same role" but
+      (b) isAgg (axis 3) — the coded behaviour; defensible as "same street, same role" but
           then the variables, comment and user copy must all say so.
       (c) both — narrower still.
     This is a founder-facing product decision about what "a matching weakness" means, not a
-    tidy-up. State the choice in the ticket before coding.
+    tidy-up. State the choice in the ticket before coding. See decision_flags — it is OPEN.
+  - WS-362 IS CLOSED FIRST. Its producer fix is what makes ANY match possible; until then
+    every option scores identically at 0. This ticket's blocked_by records that dependency.
   - All three sites agree. They are copies of one idea and must not diverge again; prefer
     extracting the predicate into ONE shared function rather than fixing it three times.
   - The user-visible string names something a poker player recognises. "in flop agg spots"
     is not a phrase; if the match stays on isAgg, the copy must be rewritten to describe the
-    role ("as the aggressor on the flop"), not print the raw axis value.
-  - Quantify the change before shipping it. Match rate WILL move — (a) is strictly narrower
-    than (b) — so report how many matches are gained/lost over a real hand set. A weakness
-    that stops matching is a behaviour change the founder should see measured, not discover.
+    role ("as the aggressor on the flop"), not print the raw axis value. Note this string
+    cannot render today — landing WS-362 without settling the semantic is what would put it
+    on screen for the first time.
+  - Quantify the change against a state where matching actually FIRES. The comparison is
+    (b) as-repaired versus (a) as-repaired, both measured on top of WS-362 — not
+    before-versus-after this ticket, which would confound the semantic change with the
+    producer fix. Report matches gained/lost over a real hand set, and report the WS-362
+    baseline (repaired, semantics unchanged) alongside, so the two effects are separable.
+  - A test asserts the match rate is NON-ZERO in the repaired state before any delta is
+    quoted. A rate of 0 on both arms is the current situation and must be a test failure,
+    not a finding.
   - Tests cover the near-miss: a weakness on the same street with the same isAgg but a
     DIFFERENT contextAction must match under (b) and not under (a). That single case is the
     whole difference and pins whichever is chosen.
+  - `src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js` IS DELETED when this ticket
+    closes. Its own header says so. It pins the current broken behaviour deliberately so the
+    finding cannot be lost, and it MUST fail once the producers are repaired — that is its
+    purpose, not a regression.
 effort: "S"
 files_involved:
   - "src/utils/handAnalysis/heroAnalysis.js"
   - "src/utils/handAnalysis/handSignificance.js"
-blocked_by: []
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js"
+blocked_by:
+  - "WS-362"
 blocked_by_legacy: []
 enables: []
 sprint_id: null
 decision_flags:
   - "What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision."
+  - |
+    OPEN — NEEDS THE FOUNDER, AND IT IS WHY THIS WORK STOPPED. The aggressor-status-versus-
+    action semantics choice above is unresolved, and it is not an implementation detail that
+    can be settled in passing.
+
+    The sequencing trap: repairing the producers (WS-362) is what makes the match rate
+    measurable, but it is ALSO what would make `"Pattern: <label> — occurrence #n in flop
+    agg spots"` render for the first time. Today that string is unreachable, so the wrong
+    semantic is latent. Land WS-362 without this decision and an incorrect user-visible
+    label starts appearing on the founder's screen — a strictly worse state than the dead
+    feature, because it looks like working output.
+
+    So the work stopped at diagnosis deliberately. Either the founder settles (a)/(b)/(c)
+    and both tickets land together, or WS-362 lands with the emitting branch's copy held
+    back until the semantic is chosen. Not: repair the producers and see what happens.
 source:
   type: bug-found-during-work
   created_by: ai
@@ -94,3 +192,18 @@ status_note: |
   now carry the honest name (`isAgg`, `heroIsAgg`) and each site has a comment pointing here.
   Priority is P1 rather than P0 because it degrades a secondary matching feature rather than
   the engine's EV path — but the wrong string is on screen today.
+
+  ============================================================================
+  2026-08-05 — PREMISE TESTED BEFORE FIXING. PARTIALLY REFUTED. NOT STARTED.
+  ============================================================================
+  The mechanism holds at all three sites; both stated consequences do not. The feature is
+  dead (match rate 0), so the string is NOT on screen today — the last sentence of the
+  filing note above is wrong, and is left standing rather than edited out because the
+  correction is the record. Full evidence in the description's correction block; the
+  standing diagnostic is `src/utils/handAnalysis/__tests__/ws318-diagnostic.test.js`
+  (green on HEAD, delete on close).
+
+  Title amended the same day: it asserted "far looser than intended", which the measurement
+  refutes. Priority left at P1 and status left at backlog — the defect is now known to be
+  smaller in user impact (nothing renders) but blocked on a founder decision, and the
+  producer half is separately filed as WS-362.

@@ -1,0 +1,159 @@
+id: "WS-369"
+title: "The isLiveFacing matcher is inverted with respect to its own risk — it fires on a card BECAUSE that card discloses its limitation honestly, and cannot see a card that relies on the online corpus silently"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+fault_id: "FAULT-population-mismatch"
+description: |
+  FLAGGED FOR THE FOUNDER BY WS-352 (commit cb082033) AND DELIBERATELY NOT FIXED, on the stated
+  ground that it is a judgement call rather than a mechanical error. The commit message: "the
+  `isLiveFacing` matcher fires on the WS-293 card because that card's own disclaimer says 'live …
+  TRANSFERRED, not measured'. It catches honest disclosure and would miss a card that leans on the
+  corpus for live advice silently — the actually dangerous case."
+
+  THE MECHANISM, verified against HEAD.
+
+  `haystack` (`src/utils/standardOfRecord/faultRegister.js:370-378`) flattens a card's IDENTITY AND
+  PROSE — `match.surfaceId`, `match.dealBookId`, `match.fieldId`, `estimand`, `treatment`,
+  `manifest.partition`, `manifest.fieldVersion` — into one lowercased string.
+
+  `isLiveFacing` (`:384`) is a regex over that string:
+      /\blive\b|1\/2|1\/3|9-handed/
+
+  It is consumed twice: by `FAULT-population-mismatch` at `:411`
+  (`isLiveFacing(card) && onOnlineCorpus(card)`) and by `FAULT-rake-inert-on-live-path` at `:578`.
+
+  WHY IT FIRES ON THE WS-293 CARD. `RANGE_CALIBRATION_TREATMENT`
+  (`scripts/backtest/rangeCalibrationReport.mjs:98-104`) ends with: "population is online
+  6-max/full-ring July 2009, so any claim about live 9-handed 1/2-1/3 is TRANSFERRED, not
+  measured." `treatment` is in the haystack. The card matches on "live", on "9-handed", and on
+  "1/3" — every one of those tokens is present ONLY because the card author wrote the disclaimer.
+  The module's own header comment at `:64-69` says the disclosure is stated in three places
+  "because it is the one a reader is most likely to skip". Each of those three placements makes
+  the match more certain.
+
+  WHY IT WOULD MISS THE DANGEROUS CARD. A Result Card that scores a live-facing recommendation on
+  the online corpus and simply never uses the words "live", "1/2", "1/3" or "9-handed" in its
+  identity or prose matches NOTHING. Its `treatment` says what it did without saying what
+  population it is being read against; nothing in the register objects.
+
+  SO THE DETECTOR IS INVERTED WITH RESPECT TO THE RISK IT EXISTS TO CATCH. It penalises disclosure
+  and is blind to silence. The incentive it creates runs the wrong way: the cheapest route to a
+  clean register report is to delete the sentence that made the card honest.
+
+  THE SECOND MECHANICAL DETAIL WS-352 FOUND. `matches` is EXCLUDED from the register's content
+  hash. `canonicalRegisterBody` (`:1154-1175`) enumerates `faultId`, `title`, `site`, `mechanism`,
+  `contaminates`, `falsifier`, `probability`, `probabilityBasis`, `priorBreadth`, `status`,
+  `evidence`, `falsifierBlockers` — and not `matches`. The stated reason (`:1146-1152`) is that a
+  function has no stable serialisation and hashing its source would make a whitespace change look
+  semantic; the claim a reader relies on is the prose `contaminates`, which IS hashed.
+
+  WHAT THAT IMPLIES, PLAINLY. `registerVersion()` (`:1186-1189`) is what every Result Card stamps
+  into `manifest.disclaimerRegisterVersion`, and that stamp is the mechanism by which a fault
+  confirmed tomorrow finds the results that depended on it yesterday. Because `matches` is outside
+  the hash, the matcher can be rewritten — narrowed, widened, or inverted — and every previously
+  stamped card will continue to carry a version string that is indistinguishable from the one it
+  was produced under. Two cards bearing the same `disclaimerRegisterVersion` may have been screened
+  by different predicates, and nothing in either card records which.
+
+  WHETHER THAT IS CORRECT OR A SECOND DEFECT IS AN OPEN QUESTION, AND THIS TICKET POSES IT RATHER
+  THAN ANSWERING IT. The argument for exclusion is real: the prose is the claim, the matcher is an
+  implementation of it, and hashing a function body would produce false version churn. The argument
+  against is equally real: `falsifierBlockers` was included on exactly the reasoning that a change
+  in what the register CAN SETTLE is something an old card's reader needs to detect — and a change
+  in what the register CAN SEE is the same kind of claim. Do not settle this by picking whichever
+  is less work.
+accept_criteria: |
+  - MATCH ON WHAT THE CARD DEPENDS ON, NOT ON WHAT IT SAYS. The card already carries the structured
+    facts: `match.dealBookId`, `manifest.partition`, and the source/field identity. A card built on
+    SRC-012 / the HandHQ corpus IS anchored on an online 2009 population whether or not its prose
+    admits it. Key the matcher on those fields. Note that `onOnlineCorpus` (`:381`) has the same
+    defect in the other direction — it is a regex over the same prose haystack — so fixing
+    `isLiveFacing` alone leaves `FAULT-population-mismatch`'s conjunction at `:411` half-textual.
+  - TWO FIXTURES, AND THE SECOND IS THE POINT. A test with (a) a card that DISCLOSES its population
+    limitation in its `treatment` and (b) a card with identical structural provenance that says
+    nothing about population. Assert (b) matches — that is the assertion the current matcher fails,
+    and it must FAIL AGAINST HEAD (WS-309 rule). Then assert (a) is handled correctly, and state in
+    the test what "correctly" means: a disclosing card built on the online corpus is still
+    contaminated and should still match — the defect is not that (a) matches, it is that (a) matches
+    FOR THE WRONG REASON and (b) does not match at all. A fix that simply stops flagging (a) has
+    removed a true positive and left the false negative in place.
+  - AN EXPLICIT, WRITTEN DECISION ON WHETHER `matches` BELONGS IN THE HASH — with the reasoning, not
+    just the outcome. If it stays out, say what a reader of an old card is supposed to do when the
+    matcher has changed under them, and consider the middle path: hash a stable DESCRIPTOR of what
+    the matcher reads (the field names it keys on) rather than the function source, which changes
+    when the semantics change and not when the whitespace does. If it goes in, say how false version
+    churn is avoided.
+  - CHECK THE OTHER MATCHERS FOR THE SAME SHAPE BEFORE CLOSING. `isLiveFacing` is consumed twice
+    (`:411`, `:578`), and at least seven other entries are prose regexes over the same haystack —
+    `:482`, `:530`, `:604`, `:649`, `:670`, `:720`, `:789`. If the defect is generic to
+    prose-matching, say so and scope the fix, rather than fixing the one instance that happened to
+    be noticed. The register's own diagnostics already report matchers that match nothing (`:1098`)
+    or everything (`:1100`); a matcher that matches the wrong thing is invisible to both.
+  - DO NOT RE-SCORE OR RE-STAMP EXISTING CARDS AS A SIDE EFFECT. WS-352 left prior stamps alone on
+    the stated ground that "they correctly record what they were produced under". The same rule
+    binds here. If the corrected matcher would flag cards the old one did not, report that as a
+    finding with the count, and let the confirm/retire machinery — which requires evidence — decide.
+  - THE REGISTER ENTRY'S PROSE AND ITS MATCHER MUST AGREE AFTER THE CHANGE. `contaminates` for
+    FAULT-population-mismatch reads "Any live-facing recommendation validated on the Mass Data
+    Field." That is a statement about what a card DEPENDS ON. The matcher should implement that
+    sentence; today it implements "any card that mentions live play".
+effort: "S"
+files_involved:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "src/utils/standardOfRecord/__tests__/faultRegister.test.js"
+  - "scripts/backtest/rangeCalibrationReport.mjs"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES `matches` BELONG IN THE CONTENT HASH? Posed, not answered. The exclusion is
+    documented and reasoned (`faultRegister.js:1146-1152`); `falsifierBlockers` was INCLUDED on
+    reasoning that arguably applies to `matches` too (`:1170-1173`). A change in what the register
+    can SEE and a change in what it can SETTLE are the same kind of claim about an old card's
+    screening. Whichever way this goes, it is a founder-visible decision about what a version stamp
+    promises.
+  - |
+    OPEN — WHAT A CORRECT MATCH MEANS FOR A DISCLOSING CARD. If matching keys on structural
+    provenance, the WS-293 card still matches — correctly, because it genuinely is a corpus-anchored
+    card. The question is whether the register should then DISTINGUISH "contaminated and says so"
+    from "contaminated and silent", since only the second is a reporting failure. That distinction
+    is real and is not currently representable; adding it is a change to what a match MEANS, not
+    just to what matches.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-352"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Filed out of WS-352's closeout, which flagged this for the founder rather than patching it
+  because inverting a matcher is a judgement about what the register is FOR, not a typo.
+
+  Premises re-verified against HEAD before filing, by reading the code:
+  `faultRegister.js:370-378` (`haystack` reads identity and prose only — `estimand`, `treatment`,
+  `manifest.partition`, `manifest.fieldVersion`, and the three `match.*` ids), `:381`
+  (`onOnlineCorpus`, same prose basis), `:384` (`isLiveFacing` regex `/\blive\b|1\/2|1\/3|9-handed/`),
+  `:411` and `:578` (its two consumers), `:1146-1152` (the documented reason `matches` is excluded),
+  `:1154-1175` (`canonicalRegisterBody` — `matches` absent, `falsifierBlockers` present), `:1186-1189`
+  (`registerVersion` hashes only that body).
+
+  The WS-293 trigger confirmed at source, not inferred: `RANGE_CALIBRATION_TREATMENT`
+  (`scripts/backtest/rangeCalibrationReport.mjs:98-104`) contains "any claim about live 9-handed
+  1/2-1/3 is TRANSFERRED, not measured", and `treatment` is a haystack field. The same sentence
+  appears at `:334-335` in the rendered warnings and at `:64-69` in the module header — the file
+  states plainly that it is repeated three times so a reader cannot skip it.

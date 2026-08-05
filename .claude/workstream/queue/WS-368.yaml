@@ -1,0 +1,174 @@
+id: "WS-368"
+title: "Live hands have no positive identity — 'live' is the ABSENCE of a source stamp, so the live subset cannot be selected and an un-stamped import is indistinguishable from it"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.5
+priority_label: "P0"
+category: "data-quality"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+fault_id: "FAULT-population-mismatch"
+description: |
+  THE LOAD-BEARING BLOCKER UNDER THE FAULT REGISTER'S RANK-1 ENTRY. WS-352 (commit cb082033,
+  2026-08-05) tried to run the falsifier on FAULT-population-mismatch — the top-ranked entry by
+  expected damage, 0.855 — and recorded the verdict NOT EXECUTABLE. The first of the three
+  machine-readable `falsifierBlockers` it wrote into `faultRegister.js:427-432` is this ticket.
+  It is not a hypothetical: the entry stays `untested` today because of it.
+
+  THE MECHANISM, verified against HEAD.
+
+  A hand's provenance is INFERRED FROM A FIELD BEING UNDEFINED.
+
+    `saveOnlineHand` (`src/utils/persistence/handsStorage.js:437-446`) builds its record with
+    `source: 'ignition'` at line 445.
+
+    `saveHand` — the manual/live path (`src/utils/persistence/handsStorage.js:63-71`) — builds
+    its record with `timestamp`, `version`, `userId`, `sessionId`, `sessionHandNumber`,
+    `handDisplayId`, and NO `source` at all.
+
+  So "live" is the absence of a marker rather than the presence of one. The same shape repeats
+  one level up, at the SESSION record: `sessionsStorage.js:471` stamps `source: 'ignition'`, and
+  `sessionsFilter.js:33` defines the live filter as `session.source !== 'ignition'` — a negation,
+  not a selection.
+
+  THE SELECTOR THAT ALREADY DOES NOT WORK. `getHandsBySource` (`handsStorage.js:481-493`)
+  documents its parameter as `'live' | 'ignition'` (`:477`) and then filters
+  `all.filter(h => h.source === source)` (`:486`). Called with `'live'` it returns an empty array
+  on a database full of live hands. The API for selecting the live subset exists, is documented,
+  and returns nothing — that is the blocker in its most concrete form.
+
+  CONSEQUENCE 1 — THE FALSIFIER CANNOT RUN. The live subset cannot be SELECTED, so it cannot be
+  measured, so the register's top-ranked fault cannot be falsified. SRC-014 is registered in
+  `docs/provenance/data-source-registry.md:301-313` as "THE ONLY UNCONTAMINATED TEST SET" —
+  nothing was mined from it, so no corpus-mined prior can leak into it. The cleanest validation
+  target in the repo is the one there is no way to address.
+
+  CONSEQUENCE 2 — IMPORTS SILENTLY CONTAMINATE THE LIVE SET, AND THE PATH ALREADY EXISTS. This is
+  not a future risk. `src/utils/exportUtils.js:226-232` walks `importData.data.hands`, strips
+  `handId` and remaps `sessionId`, and calls `saveHand({...handData, sessionId})`. `saveHand`
+  stamps no source. Every hand that arrives through import is therefore, by construction, a
+  member of "live" — and nothing anywhere would detect it. Any future bulk ingest inherits the
+  same default.
+
+  CONSEQUENCE 3 — ABSENCE CANNOT BE VERSIONED. There is no way to distinguish "this hand is live"
+  from "this hand was recorded before we started stamping." A positive value can carry a schema
+  version, a venue, and a stake; an absence carries nothing and cannot be made to. This is why
+  the migration question below is a genuine decision and not a formality — the existing rows are
+  AMBIGUOUS, and a migration that stamps them all `'live'` would be inventing a fact.
+
+  ALREADY AN OPEN FINDING, TWICE. `docs/provenance/data-source-registry.md:365` carries it in the
+  findings table — "Live hands identified by ABSENCE of a source stamp — OPEN, newly raised; fix
+  before the next ingest path". The SRC-014 review note (`:313`) states the requirement precisely:
+  "Give live capture a positive stamp INCLUDING VENUE AND STAKE before any new ingest path lands."
+  It has been recorded twice and fixed zero times; this ticket is the fix.
+accept_criteria: |
+  - A POSITIVE PROVENANCE STAMP ON EVERY HAND AT THE POINT OF CREATION, with an explicit value
+    for the live/manual path. `saveHand` must write a source value in the same object literal
+    that already writes `handDisplayId` — not a default applied on read, not a fallback in a
+    selector. The stamp is set where the record is constructed or it is not a stamp.
+  - THE STAMP CARRIES VENUE AND STAKE, not just a bare `'live'`. This is the requirement the
+    provenance registry already states at SRC-014 (`data-source-registry.md:313`), and it exists
+    because the register's rank-1 fault is about POPULATION: a live 1/2 hand and a live 1/3 hand
+    at a different venue are different populations, and the pool-identity drift note at `:237`
+    records that this has already bitten once (SRC-009 is an estimate of a live 1/2 pool while
+    the founder now plays live 1/3 at Wind Creek). A stamp that cannot tell those apart does not
+    settle the fault it is being built to settle.
+  - A HAND CANNOT BE PERSISTED WITHOUT A PROVENANCE VALUE. `validateHandRecord`
+    (`src/utils/persistence/validation.js:23`) currently does not mention `source` at all. It must
+    reject a record without one, and the test must FAIL against HEAD (WS-309 rule) — a test that
+    passes today is asserting the absence.
+  - AN EXPLICIT MIGRATION DECISION FOR EXISTING UNSTAMPED HANDS, WRITTEN DOWN, NOT ASSUMED. Those
+    rows are AMBIGUOUS: on this device they are probably live, but the import path at
+    `exportUtils.js:230` means some may not be, and nothing distinguishes them. The valid answers
+    include stamping them with a distinct value that says "provenance unknown, recorded before
+    stamping" — which is honest and keeps them out of the live arm — and asking the founder to
+    confirm. What is NOT valid is stamping them all `'live'`, which would manufacture the exact
+    fact the falsifier is supposed to measure.
+  - SCHEMA VERSION BUMP. This is a data-model change to the `hands` store. `DB_VERSION` is 27
+    (`src/utils/persistence/database.js:50`), so the migration lands at 28 with a matching entry
+    in `src/utils/persistence/migrationRegistry.js` (the registry asserts a new migration's
+    `version` equals `DB_VERSION`). The sessions store needs the same question asked of it —
+    `sessionsFilter.js:33` reads the negation today.
+  - `getHandsBySource('live')` RETURNS THE LIVE HANDS. It is the existing, documented selector and
+    it currently returns zero; a test asserting a non-empty result is the plainest statement that
+    the blocker is cleared.
+  - THE FALSIFIER BLOCKER IS CLEARED IN THE REGISTER, NOT JUST IN THE CODE. Remove the SRC-014
+    identity blocker from `faultRegister.js:427-432`. Note that `falsifierBlockers` IS hashed into
+    `canonicalRegisterBody` (`faultRegister.js:1170-1173`), so clearing it bumps `registerVersion()`
+    — which is the intended behaviour: a reader of an older Result Card can then tell it was
+    stamped under a register that could not settle this entry.
+effort: "M"
+files_involved:
+  - "src/utils/persistence/handsStorage.js"
+  - "src/utils/persistence/validation.js"
+  - "src/utils/persistence/database.js"
+  - "src/utils/persistence/migrationRegistry.js"
+  - "src/utils/exportUtils.js"
+  - "src/utils/persistence/sessionsStorage.js"
+  - "src/utils/sessionsFilter.js"
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/provenance/data-source-registry.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-352"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT THE EXISTING UNSTAMPED ROWS BECOME. Stated as an accept criterion above because it
+    is load-bearing, restated here because it needs a human answer. They are genuinely ambiguous.
+    Treating them as live is the convenient reading and it is the one that would quietly
+    manufacture the population the falsifier is meant to measure.
+  - |
+    OPEN — WHETHER THE STAMP IS ONE FIELD OR A SMALL OBJECT. A single `source: 'live'` string
+    cannot carry venue and stake, and encoding them into the string ("live-windcreek-1_3") makes
+    every future consumer parse prose. The registry's own language is "a positive stamp INCLUDING
+    VENUE AND STAKE", which reads as structure. Decide before the migration, because a schema
+    version is expensive to spend twice.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-352"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  SCOPE DECISION — THE SECOND WS-352 BLOCKER IS DELIBERATELY OUT OF THIS TICKET. WS-352 recorded
+  three blockers on the live arm. The second is that SRC-014 is UNREACHABLE BY THE HARNESS: it
+  lives in browser IndexedDB on the founder's device with no export path in the repo, while
+  SRC-012 is scored by node scripts over an on-disk corpus root, so no harness reads both arms
+  (`faultRegister.js:433-437`).
+
+  It is NOT in scope here, for two reasons.
+
+  (1) SEQUENCING. Export is downstream of identity — you cannot export a subset you cannot select.
+  Until `getHandsBySource('live')` returns something, there is nothing for an export path to
+  address. Bundling them would mean designing the export against a selector that does not yet work.
+
+  (2) DIFFERENT FAILURE CLASS AND DIFFERENT PROGRAM. This ticket is a persistence data-model change
+  with a schema migration (data-quality). The export blocker is a Deal Book / harness-pipeline
+  change — turning live hands into something `scripts/backtest` can score against a versioned Deal
+  Book under ADR-009 — which is strategy-of-record work with its own accept criteria about
+  manifests and hashing.
+
+  Nothing is lost by leaving it: WS-352 already recorded it as a HASHED `falsifierBlocker` in the
+  register, so it is machine-readable state rather than prose someone has to remember, and the
+  register's own rule forbids confirming or retiring a blocked entry. It should be filed as its own
+  ticket when this one lands — at which point its shape is knowable, because the stamp this ticket
+  chooses determines what the export carries. The third blocker (no stated volume floor per spot
+  class) belongs with the export ticket or with WS-352 itself, not here.
+
+  Premises re-verified against HEAD before filing, by reading the code rather than trusting the
+  commit message: `handsStorage.js:445` (`source: 'ignition'` in `saveOnlineHand`), `:63-71`
+  (`saveHand` record literal with no source), `:481-493` + `:477` (`getHandsBySource` filters
+  `h.source === source` while documenting `'live'`), `exportUtils.js:226-232` (import calls
+  `saveHand`, no stamp), `validation.js:23-70` (no `source` check), `database.js:50`
+  (`DB_VERSION = 27`), `sessionsStorage.js:471` and `sessionsFilter.js:33` (same absence-as-identity
+  at session level), `faultRegister.js:427-432` (the blocker) and `:1170-1173` (blockers are hashed).
+  One drift noted: the blocker text cites `handsStorage.js:444`; at HEAD the stamp is at `:445`.

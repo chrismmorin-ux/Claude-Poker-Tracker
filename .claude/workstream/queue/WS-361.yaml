@@ -1,0 +1,157 @@
+id: "WS-361"
+title: "Depth-2 has never been validated on the live path, and now that it runs its EV outputs disagree with depth-1 in two places"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ""
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FILED 2026-08-04 while closing WS-334, which made depth-2/3 reachable on the live path for
+  the first time. The subsystem is correct-looking, tested, and — until this week — had never
+  executed on a real evaluation. Turning it on changes advice, and two of those changes look
+  wrong.
+
+  THE MEASUREMENT. `dumpGameTreeEV.mjs` now takes `WS334_REFINEMENT_MS`, so the same eight
+  scenarios can be dumped at depth-1 and at full depth and differenced per decision (the
+  WS-285 rule — an arm scored on its own decision set is measuring the decisions).
+
+  | action | mean EV change, depth-2 vs depth-1 | n |
+  |---|---|---|
+  | call  | **+26.7%** | 5 |
+  | raise | **+18.0%** | 5 |
+  | bet   | +0.9%      | 3 |
+  | fold  |  0.0%      | 5 |
+  | check | **-11.7%** | 3 |
+
+  Top action flips in 1 of 8 (`flop-wet-facing-raise-full`: raise -> call, on call +134.8).
+  So there is no systematic pull toward passivity; continuation gets more valuable, which is
+  poker-sensible — depth-1 has no model of hero's future streets at all, so it cannot see
+  implied odds or the option to barrel and must undervalue every line that continues.
+
+  DEFECT 1 — DRAWS ARE PRICED TOO PESSIMISTICALLY. T♠9♠ on 8♥7♦2♣, calling 40 into 80 with
+  an open-ended straight draw getting 3:1. Depth-2 prices the call at **-26.2 EV**, i.e.
+  hero realises roughly 12% of a 120 pot holding 8 outs plus backdoors. `advisorAccuracy`'s
+  "OESD on flop — call is +EV with implied odds" is skipped pending this ticket.
+
+  DEFECT 2 — CHECKING BACK A MONSTER IP OUTSCORES BETTING IT. AA on A♠7♥2♦ in position vs a
+  full range. Four assertions in `gameTreeEvaluator.test.js` encoded the depth-1 relationship
+  and are now pinned to `refinementBudgetMs: 0`; `depthReachability.test.js` carries an
+  OPEN QUESTION test recording the divergence. Checking back there is a defensible line, so
+  this may be a CORRECTION rather than a defect — it is listed because it is unvalidated,
+  not because it is known wrong.
+
+  THE COMMON SUSPECT. `computeCallDepth2EV` and `computeBetCallDepth2EV` both average
+  `max(checkEV, bestBetEV)` over sampled runouts, and a max over noisy estimates is biased
+  upward: E[max(X̂,Ŷ)] > max(E[X],E[Y]). Checking back is composed ENTIRELY of that term,
+  while betting is only pCall-weighted into it (a fold ends the hand and wins the pot
+  cleanly), so the optimism lands unevenly even where the structure is right. That is
+  WS-295's optimizer's curse, and it is open. `bestBetEV` is itself a max over sizings, so
+  there are two nested maxima.
+
+  WHY THE GREEN SUITE DID NOT CATCH ANY OF THIS. `advisorAccuracy.test.js`'s describe block
+  is literally named "Depth-2 per-combo validation" and passed for the life of the project
+  while depth-2 never ran — it was validating depth-1 numbers under a depth-2 name. One test
+  in it, "Turn call — depth-2 uses exact river enumeration", had been marked `test.fails`,
+  which was the accurate bug report: it could not be true. It passes now. Same family as
+  WS-312's 59 green tests on a hand-fed number the engine cannot produce.
+accept_criteria: |
+  - The OESD call price is explained or corrected, and the explanation is a MEASUREMENT, not
+    an argument. If -26.2 is right, the reasoning that makes it right is written down and the
+    skipped test is restored with the corrected expectation.
+  - The `E[max(...)]` optimism is quantified, not just named: estimate the bias by scoring
+    the same spots at increasing runout counts and observing whether the max-term shrinks
+    toward a limit. Its size decides whether it needs correcting or only documenting.
+  - Whichever way DEFECT 2 resolves, it resolves DELIBERATELY: either the depth-1 assertions
+    come back (depth-2 corrected) or they are retired with the poker reasoning recorded.
+  - `advisorAccuracy.test.js`'s skipped test is un-skipped. A depth-2 validation suite that
+    does not run depth-2 must never exist again — assert `depthReached === 2` inside it.
+  - Scored through the WS-273 calibration harness so depth-1 and depth-2 advice land on ONE
+    scale, per the Standard of Record. Any comparative figure resolves to a Result Card.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "scripts/backtest/dumpGameTreeEV.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — is DEFECT 2 a defect at all? Checking back AA on A72 in position against a range
+    that folds most of its air to a bet is a line real players take, and depth-1 cannot
+    represent it. The question is not "does the engine prefer checking" but "is the margin
+    by which it prefers checking an artefact of the max-bias". Answer that before touching
+    the EV.
+  - |
+    OPEN — does this block shipping depth-2 to the founder's sidebar? WS-334's two-phase
+    split makes the fast depth-1 answer independent of the refined one, so the refined
+    answer can be withheld from the headline recommendation while still being computed and
+    inspectable. That is a design decision (WS-334 Phase C, sidebar zones 2/4), not an
+    engine one.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-04T18:30:00Z"
+status_note: |
+  Filed while WS-334 was in flight. WS-334's own accept criteria are about REACHABILITY and
+  OBSERVABILITY and are met; this ticket owns the question WS-334 could only ask once the
+  subsystem started running. Per the founder's standing rule recorded in WS-334's decision
+  flags: a null or surprising result measured on an unverified substrate is a statement
+  about the substrate. Depth-2 is now the substrate under test.
+
+  ============================================================================
+  2026-08-05 — WIDEN SCOPE TO `riverPerCombo`. Measured, not argued.
+  ============================================================================
+
+  WS-334's AC5 measurement shipped: `docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md`,
+  Result Card `RC-depth-ablation-1c560bcc-67e9e14e`. 260 paired corpus decisions, 22 players,
+  depth-1 vs depth-2 evaluated at the SAME decision in one pass. It also satisfies THIS
+  ticket's fifth accept criterion (one scale, Result Card).
+
+  WHAT IT FOUND, AND WHY IT MATTERS HERE. The pull toward passivity this ticket suspects is
+  REAL, LARGE and ONE-DIRECTIONAL — 38 of 40 top-action flips move toward passivity
+  (bet->check 30, raise->fold 6, raise->call 2, and only 2 the other way). But it is not
+  where this ticket is looking:
+
+    | street | n   | flips | rate  |
+    |--------|-----|-------|-------|
+    | flop   | 138 |   1   |  0.7% |
+    | turn   |  77 |   3   |  3.9% |
+    | river  |  45 |  36   | 80.0% |
+
+  **80% of river decisions flip; 4 of 215 flop+turn decisions do.** Every depth-2 branch is
+  gated `needsDepth2: street !== 'river'`, so on the river the `E[max(check, bet)]` machinery
+  this ticket names as the common suspect DOES NOT EXECUTE. The stage that fires there is
+  `riverPerCombo` (`gameTreeEvaluator.js:1327`): `computeRiverCheckEV` replaces the check
+  candidate's EV wholesale and `computeRiverBetEV` replaces the bet candidate's, so the two
+  are re-priced by DIFFERENT functions and any asymmetry between them lands straight on the
+  comparison. That is a second, independent candidate mechanism for the same symptom.
+
+  CONSEQUENCE FOR THE ACCEPT CRITERIA. They are written entirely around `gameTreeDepth2`.
+  Quantifying the `E[max(...)]` bias alone would measure the stage that moved FOUR decisions
+  and miss the one that moved THIRTY-SIX. Add `riverPerCombo` to scope, or state explicitly
+  why the river is out of scope.
+
+  WHAT THE RUN DOES NOT SAY. Neither of this ticket's two named spots was reproduced — the
+  corpus decision set does not contain the OESD-at--26.2 spot or the AA-on-A72 spot, which
+  came from `dumpGameTreeEV`'s eight hand-picked scenarios. Nothing here confirms or refutes
+  DEFECT 1 or DEFECT 2. The EV delta itself does not resolve: -0.4711 bb, CI [-2.7653,
+  +1.3290], includes zero at n=260 / 22 players.
+
+  Also: the three `dumpGameTreeEV` percentages quoted in this ticket's description (call
+  +26.7%, raise +18.0%, check -11.7%) are percentage changes in the engine's own EV numbers
+  on eight scenarios, carry no manifest, and are not comparable to anything. Do not re-quote
+  them; cite the Result Card.

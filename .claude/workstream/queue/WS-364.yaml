@@ -1,0 +1,136 @@
+id: "WS-364"
+title: "DEC-036's '~26s full refinement' figure appears only in prose — nothing in code, no test, no artifact produces it, and it is the number a future reader would use to set refinementBudgetMs"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  VERIFIED 2026-08-05 by search, before filing. DEC-036 in `system/decisions.md` and the
+  matching sections of `.claude/context/SYSTEM_MODEL.md` both state that FULL refinement takes
+  up to ~26 seconds on a wet flop. The figure appears in five places, all of them prose:
+
+  | file | line | text |
+  |---|---|---|
+  | `system/decisions.md` | 825 | "full depth-2/3 costs up to 26s regardless" (used to REJECT the cut-context-to-150ms alternative) |
+  | `system/decisions.md` | 831 | "full refinement measured up to 26s on a wet flop" |
+  | `system/decisions.md` | 837 | "At 2000ms against a 26s full refinement most stages return `partial`" |
+  | `.claude/context/SYSTEM_MODEL.md` | 159 | "Full refinement measured up to 26s on a wet flop" |
+  | `.claude/context/SYSTEM_MODEL.md` | 366 | vital-signs row: "Full depth measured up to 26s on a wet flop" |
+
+  WHAT BACKS IT: nothing found. Searched `src/`, `scripts/`, `docs/`, `.claude/`, `system/`
+  and the session/sprint records for `26s` / `26 seconds` / `26000` / `~26` near refinement,
+  budget or latency language. No constant, no test, no benchmark script, no Result Card, no
+  session log. `git log -S"26s"` on both documents returns exactly one commit — f6737ed4, the
+  WS-334 fix that introduced the prose — and that commit's own message does not contain the
+  figure or a measurement producing it. `docs/standard-of-record/BASELINE-2026-08-04.md`,
+  written the same day, carries no latency figure at all.
+
+  WHY IT MATTERS RATHER THAN BEING A TYPO. Two of the five occurrences are LOAD-BEARING inside
+  the decision. Line 825 uses the figure to reject an alternative ("no context saving could
+  ever have made it fit"). Line 837 uses it to justify treating partials as the normal case.
+  It is precisely the number a future reader reaches for when arguing to raise or lower
+  `refinementBudgetMs`, and the word "measured" tells that reader they need not re-derive it.
+
+  AGAINST THE STANDARD OF RECORD (ADR-009, root `CLAUDE.md`). The binding trigger is "a number
+  someone could act on or cite" — a latency ceiling inside an architecture decision record is
+  exactly that. It must resolve to a Result Card carrying a replication manifest: engine
+  commit, hardware, node version, the spot(s), the seeds, and every load-bearing constant. It
+  currently resolves to a sentence.
+
+  MEASURED CONTEXT THAT BEARS ON IT BUT IS NOT IT. A WS-334 desktop benchmark, run 2026-08-05
+  (win32/x64, node 24, 20 cores, median of 5):
+
+  | spot | wall in refinement | outcome |
+  |---|---|---|
+  | flop facing bet | 1756 ms of a 2000 ms budget | both stages `partial`, 36% / 30% runout weight |
+  | flop facing check | 1870 ms | `partial`, 30% / 23% |
+  | turn facing bet | 67 ms | ALL stages complete, including depth-3 |
+
+  So on the fastest hardware available, the flop spots saturate the budget while covering
+  roughly a QUARTER TO A THIRD of runout weight. Extrapolating linearly from ~33% coverage in
+  1.8s would put full coverage near 5-6s, not 26s — but runout cost is not linear in weight
+  and depth-3 is not reached at all on those flop runs, so this arithmetic is SUGGESTIVE, NOT
+  A MEASUREMENT. State it that way. It is evidence that 26s is unverified; it is not evidence
+  of what the true figure is, and it must not be quoted as a replacement number.
+
+  The founder's device is a Galaxy S22, not this desktop. Any figure measured here is a floor.
+accept_criteria: |
+  - ONE OF THREE OUTCOMES, chosen deliberately and recorded:
+    (a) MEASURE IT. Run full refinement to completion (`refinementBudgetMs` effectively
+        unbounded) on a named set of spots including a wet flop, and register the result as a
+        Result Card under `docs/standard-of-record/` with a complete replication manifest —
+        engine commit, hardware + node version, spot definitions, every seed, every
+        load-bearing constant, and `manifest.disclaimerRegisterVersion` via `registerVersion()`.
+        Then correct all five prose occurrences to the measured figure and cite the card.
+    (b) REMOVE THE CLAIM from both documents, rewriting DEC-036's rejected-alternative
+        reasoning (line 825) so it no longer rests on an unbacked number. The alternative may
+        still be rightly rejected — but on a stated ground that holds without the figure.
+    (c) MARK IT AS NOT MEASURED. Acceptable ONLY if the documents say so in those words —
+        "not measured; order-of-magnitude estimate" or equivalent — at every occurrence, and
+        the word "measured" is struck from lines 831 / 159 / 366. Silently leaving it is not
+        this option.
+  - ALL FIVE OCCURRENCES ARE HANDLED. `system/decisions.md` 825 / 831 / 837 and
+    `.claude/context/SYSTEM_MODEL.md` 159 / 366. Fixing the ADR and leaving the vital-signs row
+    (SYSTEM_MODEL §"Game tree eval time") reproduces the divergence in a quieter place.
+  - IF (a): the measurement covers the case the claim names. "Up to 26s on a WET FLOP" is a
+    worst-case claim, so a median over easy spots does not answer it — report the distribution
+    and the board that produced the maximum.
+  - IF (a): state the device. Desktop is the floor, the S22 is the target, and
+    `refinementBudgetMs = 2000` has never been set on the hardware that will run it (WS-334's
+    own outstanding item). A desktop card is still worth having; it just must not be read as
+    the device figure.
+  - GUARD THE CLASS, NOT THE INSTANCE. This number survived because prose in an ADR is not
+    checked against anything. Prefer a mechanism — a claim-to-card link, a lint on bare latency
+    figures in `system/decisions.md`, or a register entry — over a one-off correction. Assume
+    there is a second unbacked figure in the same documents.
+effort: "S"
+files_involved:
+  - "system/decisions.md"
+  - ".claude/context/SYSTEM_MODEL.md"
+  - "docs/standard-of-record/"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — is measuring it worth the run? Option (b), deleting the claim, is cheap and honest
+    and costs nothing the decision actually needs; DEC-036 stands on the reachability evidence
+    without a full-refinement ceiling. Option (a) costs an unbounded-budget run but produces
+    the number that will be needed anyway the first time `refinementBudgetMs` is tuned, and
+    tuning it on the S22 is already an outstanding WS-334 item. Recommend (a) IF the S22 run
+    is being done regardless — measure both in one pass — and (b) if not. Do not default to
+    (c); a "not measured" marker is the right answer only if the number is wanted later and
+    nobody is going to produce it now.
+  - |
+    NOTE — the 26s figure may be a misremembered relative of WS-301's measured 8.5s depth-2
+    cost, or of an in-session observation never written down. Worth two minutes of history
+    before measuring, because if a real run produced it, the run is the artifact to register
+    and the ticket collapses to citing it.
+source:
+  type: audit
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-05T12:05:00Z"
+status_note: |
+  Filed 2026-08-05. Premise verified by search before filing rather than assumed — the
+  instruction that produced this ticket said to check for a real source and report instead of
+  filing if one existed. None was found: five prose occurrences, one introducing commit
+  (f6737ed4), no code, no test, no artifact, no Result Card.
+
+  Related and NOT duplicated here: WS-334's own outstanding items include the S22 latency
+  measurement and a Result Card for its accuracy delta (its AC5 is PARTIAL). This ticket is
+  narrower — it is about one specific unbacked figure inside a decision record, and it can be
+  closed by deletion without any measurement at all.

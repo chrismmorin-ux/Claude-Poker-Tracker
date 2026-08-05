@@ -1,0 +1,195 @@
+id: "WS-371"
+title: "foldTo3Bet is denominated on facedRaisePreflop, so the population reads 78-87% where the true value is 49.9% — and every population cell trips both founder-facing over-folding thresholds by construction"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.5
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND BY THE WS-325 MASS-DATA-FIELD AUDIT (commit 9f6b9f95, 2026-08-05), recorded for a
+  ticket rather than fixed because correcting a denominator is a behaviour change that needs
+  its own measurement. It is the first of that audit's five findings, ranked by consequence.
+
+  READ THE DUPLICATION NOTE IN `status_note` BEFORE STARTING. WS-254 already carries the
+  definition half of this defect at P2. This ticket exists because WS-325 measured the
+  CONSEQUENCE and found a second instance WS-254 predates.
+
+  THE MECHANISM, verified against HEAD in two places.
+
+  1. IN THE APP STAT. `extract3BetStats` / `derivePercentages`
+     (`src/utils/tendencyCalculations.js:342-344`) computes
+
+         foldTo3Bet = foldTo3BetCount / facedRaisePreflop
+
+     and `facedRaisePreflop` (`:243`) increments whenever ANY raise preceded the seat's first
+     preflop action — an open included. So the numerator counts folds to opens, cold-callers
+     folding later, and folds to actual 3-bets, all in one bucket, over a denominator of
+     "faced any preflop raise". The quantity is fold-vs-any-preflop-raise wearing the name of
+     fold-vs-3bet.
+
+  2. IN THE IMPORTED POPULATION ROW — the instance WS-254 predates. Every one of the 14 rows
+     in `src/utils/exploitEngine/handhqReferencePool.js` (lines 76+) has
+     `foldTo3Bet.n === threeBet.n` EXACTLY, in all 14, because the miner mirrors the app's
+     definition deliberately. Enumerated at HEAD:
+
+     | stake   | bucket | foldTo3Bet n | threeBet n | foldTo3Bet % |
+     |---|---|---|---|---|
+     | 25NLH   | 6max | 4,272,961 | 4,272,961 | 78.7 |
+     | 25NLH   | full | 5,711,204 | 5,711,204 | 85.2 |
+     | 50NLH   | 6max | 1,367,379 | 1,367,379 | 78.3 |
+     | 50NLH   | full | 1,304,394 | 1,304,394 | 85.9 |
+     | 100NLH  | 6max | 1,433,490 | 1,433,490 | 80.9 |
+     | 100NLH  | full | 1,297,529 | 1,297,529 | 87.4 |
+     | 200NLH  | 6max | 2,605,585 | 2,605,585 | 80.1 |
+     | 200NLH  | full | 1,636,748 | 1,636,748 | 86.6 |
+     | 400NLH  | 6max | 2,910,875 | 2,910,875 | 80.5 |
+     | 400NLH  | full |   954,553 |   954,553 | 86.0 |
+     | 600NLH  | 6max | 1,501,456 | 1,501,456 | 79.4 |
+     | 600NLH  | full |   442,358 |   442,358 | 85.8 |
+     | 1000NLH | 6max | 1,921,360 | 1,921,360 | 80.0 |
+     | 1000NLH | full |   440,935 |   440,935 | 85.2 |
+
+     Range 78.3-87.4%. The SAME corpus, mined separately against the true opener-facing-3bet
+     denominator, gives fold 49.9% / call 38.8% / 4-bet 11.0% on n=1,833,206
+     (`docs/research/mass-pool-data-2026-07-25.md:20`). A 28-37pp gap on identical hands.
+
+  THE CONSEQUENCE IS LIVE AND FOUNDER-FACING, IN TWO SURFACES.
+
+    `src/utils/exploitEngine/weaknessDetector.js:464` fires `pf-folds-to-3bet-high`
+    ("Folds to 3-bets too often") when `pct.foldTo3Bet > 65`, with severity
+    `clamp((pct.foldTo3Bet - 60) / 40, 0, 1)`.
+
+    `src/utils/exploitEngine/villainObservations.js:328` fires `V-PF-FOLDS-TO-3BET` when
+    `pct.foldTo3Bet > T.foldTo3BetMin`, which is 60 (`:58`), with severity
+    `clamp((pct.foldTo3Bet - 55) / 40, 0, 1)`.
+
+  All 14 population cells clear both bars. At the field's own central tendency the app reports
+  a weakness that THE ENTIRE FIELD HAS BY CONSTRUCTION — severity 0.46-0.68 on the first rule,
+  0.58-0.81 on the second, for a player who is exactly average. A detector whose baseline trips
+  its own threshold cannot discriminate: it is not measuring a deviation, it is reporting the
+  definition.
+
+  Downstream that is not a cosmetic error. "Folds to 3-bets 85%" reads as auto-profit for
+  3-betting; the true response is a 49.9% fold with an 11.0% 4-bet behind it. Sizing up 3-bets
+  against a villain "with high foldTo3Bet" is priced against fold equity that is not there.
+
+  THE THIRD CONSUMER READS IT CORRECTLY, AND THIS IS WHY A RESCALE IS NOT THE FIX.
+  `src/utils/exploitEngine/preflopFoldResolver.js:27-34` documents the broad semantics
+  explicitly and RELIES on them: it asks "will this seat fold to my open," which is exactly the
+  quantity `facedRaisePreflop` denominates. Its header says so in as many words — "That is
+  exactly the quantity needed ... the semantics relied on here are the ones the stat actually
+  has today, not the ones its name implies." So there are two genuinely different questions
+  sharing one field. Correcting the number in place would silently break the one consumer that
+  is currently right.
+
+  NOT YET KNOWN: whether the 65 and 60 thresholds were ever chosen against a stated definition,
+  or inherited. `villainObservations.js:58` annotates 60 with "MDF ~55-60%", which is a
+  fold-to-3bet-shaped justification applied to a fold-to-any-raise-shaped number — evidence
+  they were set for the narrow stat and applied to the broad one, but that is an inference and
+  the ticket must check it rather than assert it.
+accept_criteria: |
+  - THE DENOMINATOR IS CORRECTED AT SOURCE, IN BOTH INSTANCES. The app extractor
+    (`tendencyCalculations.js:243-245, 342-344`) and the mined reference table
+    (`scripts/generate-handhq-reference.mjs` + `handhqReferencePool.js`) must end up
+    denominating the same, named quantity. Correcting one and not the other reintroduces the
+    exact skew WS-284 measured: a prior mined on one definition blended against observations on
+    another.
+  - BOTH QUESTIONS SURVIVE, UNDER NAMES THAT CANNOT BE CONFUSED AT A CALL SITE. There are two
+    real quantities here — fold-vs-any-preflop-raise (what `preflopFoldResolver` needs) and
+    fold-vs-3bet (what the two weakness surfaces claim to report). Deleting either is wrong.
+    They must not share a field name's neighbourhood; that shared neighbourhood is the whole
+    mechanism.
+  - EVERY CONSUMER AUDITED AND NAMED IN THE CHANGE DESCRIPTION, with which of the two quantities
+    each one is asking for. The known set at HEAD is `weaknessDetector.js:464`,
+    `villainObservations.js:328`, `preflopFoldResolver.js` (lines 199, 232, 310-311),
+    `poolBaseline.js` (via `STAT_COUNT_FIELDS`), `bayesianConfidence.js` (`STAT_PRIORS`), and
+    the ignition stats engine. Grep for the rest rather than trusting this list.
+  - A TEST ASSERTING THE POPULATION BASELINE DOES NOT TRIP ITS OWN WEAKNESS THRESHOLD. This is
+    the generalised statement of the defect and it is the criterion that matters most: feed a
+    villain the field's own central tendency and assert that NO weakness fires. It must FAIL
+    against HEAD (WS-309 rule) — a test that passes today is asserting the broken behaviour.
+    Consider extending it to every rule that compares a stat to a constant, not just this one;
+    a baseline that flags itself is a defect class, not an incident.
+  - THE THRESHOLDS ARE RE-DERIVED AGAINST THE CORRECTED DISTRIBUTION, NOT LEFT WHERE THEY ARE.
+    65 and 60 sit inside the current 78.3-87.4 band; against a ~50% field they would sit far
+    above it and the rule would then fire almost never. Neither position is obviously right.
+    Derive them from the corrected population's spread and write down the derivation, or record
+    the decision to keep them and why.
+  - PARITY WITH THE EXTENSION IS UPDATED IN LOCKSTEP. `statsEngineParity.seam.test.js` currently
+    pins the broad definition on BOTH sides deliberately (WS-236). It must be updated in the
+    same change or the two engines drift.
+  - DOCTRINE TO RECORD — NUMBERS CARRY THEIR CONDITIONAL. A rate is meaningless without its
+    conditioning set, and this is that failure in its purest form: 85% and 49.9% are both true
+    of the same corpus and the same players, and they differ only in what was conditioned on.
+    Report k/n WITH the conditioning set, and where a rule fires on a rate, the rule must name
+    the set it assumed. The inverse conditional matters too — P(fold | faced any raise) and
+    P(fold | faced a 3-bet) support opposite exploit recommendations.
+  - Any comparative figure resolves to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`. The mined rows are ONLINE 2009 and the
+    founder's game is LIVE 9-handed 1/2-1/3, so a live claim on them is TRANSFERRED, not
+    measured — say so when reporting (fault register rank-1 entry).
+effort: "M"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "src/utils/exploitEngine/handhqReferencePool.js"
+  - "scripts/generate-handhq-reference.mjs"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "ignition-poker-tracker/shared/stats-engine.js"
+  - "src/utils/__tests__/statsEngineParity.seam.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER THIS TICKET AND WS-254 ARE ONE PIECE OF WORK. They are the same defect.
+    WS-254 (P2, backlog, score 14.0, filed 2026-07-22) owns the definition audit and already
+    carries the 49.9% evidence in its status_note. This ticket owns the measured consequence
+    and the reference-table instance, which postdates it. Doing them separately means touching
+    `extract3BetStats` twice and re-running the parity suite twice. The founder should decide
+    whether to merge them, or close WS-254 into this one — but the priority gap is itself the
+    finding: WS-254 sat at P2 for two weeks because nobody had measured that the population
+    trips its own detector.
+  - |
+    OPEN — WHAT THE CORRECTED WEAKNESS RULE SHOULD SAY WHEN n IS SMALL. The narrow denominator
+    (raised, then faced a 3-bet) is a much rarer event than "faced any raise". On the founder's
+    live sample a villain may have single-digit observations. `villainObservations.js:326-328`
+    currently back-computes its denominator from the percentage
+    (`foldTo3BetCount / (pct.foldTo3Bet / 100)`) — a reconstruction that recovers
+    `facedRaisePreflop`, not faced-3bet, so the sample gate is also measuring the wrong thing
+    and will need re-setting once the true n is available directly.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-325"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  DUPLICATION IS DELIBERATE AND MUST BE RESOLVED BEFORE WORK STARTS — see the first decision
+  flag. WS-254 exists and is the same defect. This ticket was filed anyway because the WS-325
+  audit produced two things WS-254 does not have: the measurement that every population cell
+  trips both founder-facing thresholds, and the reference table (shipped after WS-254 was
+  written) carrying the same denominator in all 14 rows. Filing it silently as a fresh P0 while
+  a P2 duplicate sits in the queue would be the worse error, so the overlap is stated here
+  rather than buried.
+
+  Premises re-verified against HEAD by reading code, not by trusting the commit message:
+  all 14 rows enumerated from `handhqReferencePool.js` at runtime and `foldTo3Bet.n` confirmed
+  equal to `threeBet.n` in every one, with the percentages in the table above computed from
+  those k/n; `tendencyCalculations.js:243` (`facedRaisePreflop` on any preceding raise), `:245`
+  (`foldTo3BetCount`), `:342-344` (the division); `weaknessDetector.js:464` (`> 65`);
+  `villainObservations.js:58` (`foldTo3BetMin: 60`) and `:328` (the gate);
+  `preflopFoldResolver.js:27-34` (the correct-consumer header);
+  `docs/research/mass-pool-data-2026-07-25.md:20` (49.9% / 38.8% / 11.0%, n=1.83M).

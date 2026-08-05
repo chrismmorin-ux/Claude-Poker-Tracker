@@ -1,0 +1,144 @@
+id: "WS-366"
+title: "withEquitySupport's logistic is too sharp for the subclass carve — measured, 88 and AQs outrank QQ in the LATE limp-reraise grid, so an uncapped shape reads as a mushy one"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND WHILE SHIPPING WS-304 (commit d5850c15), recorded there as a follow-up not taken:
+  "withEquitySupport's logistic is sharp enough that AQ/88-band cells can outrank QQ in the
+  subclass carve, which makes the limp-reraise grid mushier than the theory implies."
+
+  MEASURED AT HEAD BEFORE FILING, not restated from the commit. Carving the three
+  `threeBet` subclasses out of the parent exactly as `updateSubclassRanges` does
+  (`bayesianUpdater.js:290-310`: `ranges[sub][i] = parentGrid[i] * share * totalShare`,
+  `share ∝ splitPost_sub · prior_sub(i)`), at zero observations so the split is the doctrine
+  split:
+
+  | LATE, carved `limpReraise` | weight |
+  |---|---|
+  | AA | 0.0600 |
+  | AKo | 0.0393 |
+  | AQs | 0.0383 |
+  | **88** | **0.0370** |
+  | AJs | 0.0362 |
+  | AQo | 0.0351 |
+  | 77 | 0.0241 |
+  | AKs | 0.0226 |
+  | KK | 0.0208 |
+  | JJ | 0.0206 |
+  | **QQ** | **0.0202** |
+  | TT | 0.0200 |
+
+  88 is 1.8x QQ. Six classes in the AQ/88 band sit above QQ, and KK sits four places below
+  AKo. The same carve at EARLY holds the ordering (QQ 0.0849 above AQs 0.0467), so this is
+  position-dependent — it is worst where `SUBCLASS_SPLIT.threeBet.LATE.limpReraise` is
+  smallest (0.06), i.e. where the subclass's own share is thin and the shape term dominates
+  the apportionment. The carved `cold3Bet` grid at LATE shows the same signature: 88 (0.0702)
+  nearly matches QQ (0.0811) and beats JJ, TT and AKs.
+
+  THE MECHANISM. `withEquitySupport` (`populationPriors.js:328-346`) blends the doctrine grid
+  with `softContinuationWeights` over `smoothedShape`, at `PRIOR_SUPPORT_LAMBDA = 0.8` — so
+  four fifths of the shipped prior is the support term, not the doctrine. Inside
+  `softContinuationWeights` (`pokerCore/softWeights.js:99-144`) the sharpness is
+  `tau = spread * tauFraction`, where `spread` is the IQR OF THE SCORES and `tauFraction` is
+  a shipped constant. Nothing ties that width to anything the theory says. The standalone
+  `limpReraise` prior at EARLY already shows the flattening before the carve: doctrine puts
+  QQ+ at 1.00 and the next tier at 0.25 (`populationPriors.js:633-639`), and what ships is
+  QQ 1.0000, JJ 0.8500, AKs 0.8491, TT 0.8480, AKo 0.8437, AQs 0.8312, AQo 0.8122 — the
+  0.25 tier arrives at ~0.83. A 4:1 doctrine gap is delivered as 1.18:1. The carve then
+  divides the parent by these near-equal shapes, and small differences between siblings
+  decide the ordering.
+
+  THE CONSEQUENCE, PLAINLY. §5.8's limp-reraise range is UNCAPPED — the passive line was
+  chosen deliberately to trap, so premiums carry full weight. A shape that should be
+  dominated by premium holdings instead admits middling ones at equal or greater weight. A
+  villain who limp-reraises and is put on 88 or AQs as readily as on QQ is a villain the
+  model has mis-read in the direction that matters most: this is the one preflop line whose
+  entire doctrinal content is "this range contains monsters", and the trait it feeds
+  (`trapsPreflop`) is what tells the exploit layer the range is uncapped.
+
+  NOT YET KNOWN: whether correcting the sharpness moves any downstream number. WS-304 swept
+  `PRIOR_SUPPORT_LAMBDA` over 4,946 decisions and deliberately did NOT move it, on the
+  ground that a 531-decision re-sweep must not re-decide a 4,946-decision result. The same
+  discipline binds here: this is a change to the SHARPNESS, and it must be scored on the
+  larger set, not on whichever set is convenient.
+accept_criteria: |
+  - THE SHARPNESS IS DERIVED, NOT TUNED. `tau` must come from a width the theory section
+    names — the doctrine grid's own tier structure, or the width `withEquitySupport` already
+    pins the mean to — rather than from a shipped `tauFraction` constant nothing anchors.
+    A value picked because it makes the ordering come out right is the same failure in a new
+    place; state the derivation and what would falsify it.
+  - A TEST PINNING THE ORDERING THE CARVE MUST PRESERVE. It must FAIL against HEAD (WS-309
+    rule). Minimum content: in the carved `limpReraise` grid at every position, QQ+ outrank
+    every cell in the AQ/88 band. Assert it on the CARVED grid, not on the standalone prior —
+    the standalone prior at EARLY already passes, which is exactly why this survived.
+  - THE CONVERSE IS ASSERTED TOO. Sharpening must not re-open the WS-302 defect it was built
+    to close: every cell keeps positive support, because `bayesianUpdater` updates as
+    `prior[i] * ratio` and a cell that starts at zero can never be lifted by any amount of
+    evidence. A fix that restores the ordering by zeroing the tail has traded one bug for the
+    worse one. Structural zeros (an identically-zero grid) still pass through untouched.
+  - RANGE WIDTH IS UNCHANGED, or the change is stated and justified.
+    `withEquitySupport` pins the support term's mean to the grid's own combo-weighted mean so
+    the blend preserves width by construction; a sharpness change must not smuggle in a width
+    change. Report the before/after width per position and action.
+  - DOCTRINE THAT BINDS THIS WORK. Subclass grids are CARVED FROM THE PARENT and shrink
+    TOWARD the parent prior — never built independently (DEC-025 Amendment 1; deriving them
+    independently is what let `limpReraise[QQ] = 1.00` stand against `threeBet[QQ] = 0.58`).
+    And PRIOR GRIDS ARE PROPENSITIES, never distributions: they must not be normalised by
+    their own total. Normalising divides each cell by the range's breadth and penalises wide
+    ranges everywhere — it made the deliberately uncapped `limpReraise` range LESS likely at
+    AA than the narrow `squeeze` range, inverting §2.5.2. If the fix reaches for a
+    normalisation step to make the numbers "sum right", that is the error, not the fix.
+  - MEASURED, NOT ARGUED, and on the larger decision set. Re-run WS-304's sweep rather than a
+    convenient subset, and report at both lambda extremes — at lambda 0 the shape does the
+    work and at the shipped 0.8 the support does. `PRIOR_SUPPORT_LAMBDA` is NOT to be moved as
+    part of this change. Comparative figures resolve to a Result Card with a replication
+    manifest per ADR-009, stamped with `manifest.disclaimerRegisterVersion`.
+effort: "M"
+files_involved:
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/pokerCore/softWeights.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/rangeEngine/__tests__/taxonomyInvariants.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHERE the fix belongs. `softContinuationWeights` is WS-291's shared primitive and
+    is used postflop as well as here, where `targetMean` is a villain's continuation rate
+    rather than a range width. Changing `tauFraction` globally re-decides a postflop
+    calibration that was measured separately. The narrower move is to pass an explicit
+    sharpness from `withEquitySupport` (the primitive already takes an options object with
+    `floor` and `tauFraction`), leaving the postflop caller on its measured value. Choose
+    deliberately and say which callers are in scope.
+  - |
+    OPEN — is the SHARPNESS the whole story, or is the carve's apportionment also implicated?
+    `share ∝ splitPost_sub · prior_sub(i)` divides by the sibling sum, so at LATE, where
+    `limpReraise` takes 0.06 against `cold3Bet` 0.60, the ratio between two near-equal shapes
+    decides the cell. A flattened shape and a small split compound. Establish which term
+    dominates before changing either — measured, not reasoned.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-304"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premise verified at HEAD by computing the carve directly from `getPopulationPrior` and the
+  `SUBCLASS_SPLIT` table, reproducing `updateSubclassRanges`' arithmetic at zero observations.
+  The numbers in the description are that run, not the WS-304 commit's prose. The commit
+  named the AQ/88 band and QQ; the measurement confirms it and localises it to LATE, where
+  the subclass split is thinnest — a detail the original note did not carry.

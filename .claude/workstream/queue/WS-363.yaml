@@ -1,0 +1,136 @@
+id: "WS-363"
+title: "The population prior is resolved, blended, and then discarded — classifyStyle reads raw k/n, so the shrunk rates never reach the villain model in production"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE RESIDUAL WS-284 LEFT DELIBERATELY UNFIXED (commit f1b712eb, 2026-08-05). WS-284 found
+  that `--reference` produced a bit-identical scorecard and traced why. It then fixed the
+  HARNESS — by scoring the belief directly — and explicitly did NOT fix the engine, because
+  changing what `classifyStyle` reads is a behaviour change that needs its own measurement.
+  That change is this ticket.
+
+  THE MECHANISM, verified during WS-284. `resolveReferenceCounts` is invoked, resolves the
+  mined 50NLH population row, and the blended priors move a long way:
+
+  | stat | founder static | blended with mined row |
+  |---|---|---|
+  | vpip | .250 | **.198** |
+  | foldTo3Bet | .550 | **.866** |
+  | threeBet | .070 | **.031** |
+
+  The value dies one step later. `derivePercentages` (`src/utils/tendencyCalculations.js:308`)
+  returns raw k/n POINT ESTIMATES — `{ vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet,
+  sampleSize, intervals }` — and the prior survives ONLY inside the additive `intervals`
+  field (line 346-364, added without changing any existing consumer). `classifyStyle`
+  (line 287) reads the raw `vpip` / `pfr` / `af`. Style is the ONLY route those six scalars
+  have into `buildVillainDecisionModel`, so the model cannot move no matter what the prior
+  says.
+
+  THIS IS PRODUCTION, NOT A HARNESS ARTEFACT. `src/utils/analysisPipeline.js:87-88` runs the
+  identical two lines:
+
+      const pct = derivePercentages(rawStats, statPriors);
+      const style = classifyStyle(pct);
+
+  `sessionStats.js:68` and `modelAudit.js:272-273` run the same pair.
+
+  THE CONSEQUENCE, PLAINLY. On a villain with few observed hands, the decision model is
+  driven by unshrunk small-sample rates rather than by the population prior that exists
+  precisely for that case. A villain seen folding to one 3-bet out of one reads as
+  foldTo3Bet 1.00 rather than shrinking toward the mined .866; a villain who has played two
+  hands and entered both reads vpip 1.00 rather than shrinking toward .198. The low-n case
+  is the case the prior was built for, and it is the case where the prior currently has no
+  effect at all.
+
+  THIS IS THE `shipped-but-inert` FAMILY — already recorded against WS-276's
+  `perceivedHeroRange`, WS-284 itself, WS-334's depth-2/3, and WS-362's situation keys. The
+  suite is green because the prior machinery is tested by calling it directly; nothing
+  asserts that the value it produces reaches a consumer.
+
+  NOT YET KNOWN: how much the model actually moves once shrunk rates reach it, and whether
+  style classification boundaries need re-tuning against shrunk inputs (the thresholds in
+  `classifyStyle` were set against raw rates). That is the measurement below, not an
+  argument to be settled first.
+accept_criteria: |
+  - THE SHRUNK ESTIMATE REACHES `buildVillainDecisionModel`. Whatever the route — `classifyStyle`
+    reading a shrunk field, or the six scalars reaching the model without going through style —
+    a test asserts the model built from a low-n villain reflects the prior. It must FAIL against
+    the current engine (WS-309 rule); a test that passes today is asserting the dead behaviour.
+  - MEASURED BEFORE/AFTER THROUGH THE WS-273 HARNESS, not argued. The same corpus, the same
+    split, scored both ways, on one scale. WS-284 already built the instrument that isolates
+    this class (`statPriorScore.mjs`, belief `(k_train+alpha)/(n_train+alpha+beta)` against
+    realised rates in the NEXT window); the ACTION scorecard is the axis that has never moved
+    and is the one that must be shown to move here.
+  - INERTNESS IS A TEST FAILURE, NOT A LATER OBSERVATION. Assert that a LOW-n villain's model
+    genuinely DIFFERS from its high-n counterpart on the same raw rates — same k/n ratio,
+    different n, materially different model output. Without that assertion this becomes another
+    shipped-but-inert fix, which is the exact failure mode the ticket exists to close.
+  - The style-classification thresholds are re-checked against shrunk inputs or the decision to
+    leave them is written down. Shrinking every villain toward the population mean pulls the
+    whole field toward the centre of the threshold grid; a boundary tuned on raw rates may now
+    classify a different population.
+  - DOCTRINE THAT BINDS THIS WORK (memory: subclass grids are carved from the parent):
+    subclass grids are CARVED FROM the parent and shrink TOWARD the parent prior — never built
+    independently. And prior grids are PROPENSITIES: they must never be normalised into
+    distributions (DEC-025 Amendment 1). If the fix reaches for a normalisation step to make
+    the shrunk numbers "sum right", that is the error, not the fix.
+  - Comparative figures resolve to a Result Card with a replication manifest per ADR-009,
+    stamped with `manifest.disclaimerRegisterVersion`. The mined row is ONLINE 2009 50NLH and
+    the founder's game is LIVE 9-handed 1/2–1/3, so any live claim on it is TRANSFERRED, not
+    measured — say so when reporting (fault register top entry).
+effort: "M"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "src/utils/analysisPipeline.js"
+  - "src/utils/exploitEngine/poolBaseline.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "scripts/backtest/statPriorScore.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHERE the shrunk value should live. Two shapes, not equivalent. (a) `classifyStyle`
+    reads shrunk rates: smallest diff, but it silently changes what every existing style
+    consumer means, and `af` has no interval today so it would shrink on a different basis
+    than the other five. (b) The six scalars reach `buildVillainDecisionModel` directly rather
+    than through the style bottleneck: larger change, but it removes the bottleneck that made
+    this bug possible — six numbers collapsing into one label before they reach the model is
+    itself the mechanism. Choose deliberately; (a) is a patch on (b)'s cause.
+  - |
+    OPEN — should the raw point estimate remain available? Display surfaces that show "VPIP
+    31% (13 hands)" are reporting an OBSERVATION and should probably keep reporting the raw
+    count, while the MODEL should read the belief. If both are kept, they must be named so
+    they cannot be confused at a call site — the failure here was exactly that two different
+    quantities shared one field name's neighbourhood.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-284"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Filed 2026-08-05 out of WS-284's closeout. WS-284's commit message names this residual
+  explicitly: "The value dies one step later ... Style is the only route those six scalars
+  have into buildVillainDecisionModel, so the scored distribution could not move no matter
+  what the prior said." WS-284 fixed the harness and left the engine, on the stated ground
+  that an engine behaviour change needs its own measurement rather than riding along in a
+  backtest fix. That was the right split; this ticket owns the half that was left.
+
+  Premise re-verified against HEAD before filing: `tendencyCalculations.js:287` (classifyStyle
+  on raw vpip/pfr/af), `:308-364` (derivePercentages returning point estimates plus an
+  additive `intervals`), and `analysisPipeline.js:87-88` running the pair on the production
+  path.
