@@ -2304,6 +2304,12 @@ this (it is a theorem); the locator is wrong. A valid locator must search the re
 - Any comparative claim about compressing this operator goes through `buildCompressionClaim` and
   carries all three numbers plus its threshold, boards and seeds. A claim reporting only energy
   share is refused in code, not in review.
+- **This measurement is not a Result Card, and that is deliberate** (ADR-009). A Match is
+  `Surface x Deal Book x Field`; this has no surface, no strategy and no opponent population —
+  it is a property of the deck. Inventing a `fieldId` for a fieldless measurement is exactly the
+  shape-fitting the standard exists to stop. The instant this basis is scored *against* the
+  169-cell ladder on corpus data, that **is** a comparative claim about model quality and it
+  resolves to a Result Card like everything else.
 - Never symmetrise `S`; never rank hands by a single plane axis; never quote a plane count without
   the threshold that produced it. **A near-zero eigenvalue is a decision about a threshold, not a
   fact about poker.**
