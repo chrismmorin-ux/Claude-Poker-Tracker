@@ -109,3 +109,6 @@ out/
 .claude/workstream/tmp/
 .claude/.tmp-*.json
 .cwos-snapshots/
+
+# Runtime session pointer (ephemeral, per-machine)
+.claude/workstream/.current-session
