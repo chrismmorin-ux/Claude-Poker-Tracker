@@ -147,3 +147,44 @@ status_note: |
   The WS-325 commit message records that the source document "is refuted on its own weighting
   caveat" — i.e. the document recommended something the pipeline never did. That refutation is
   what this ticket settles.
+
+  ── 2026-08-05: THE MECHANICAL HALF IS DONE. THE DECISION IS STILL OPEN. ──
+
+  DONE, following the shape WS-374 established (commit 154d6858) so the return shape was not
+  designed twice: the weighting now travels with the served prior. `resolveReferenceCounts`
+  puts it on the resolution meta beside `minedLabel` / `seatBucket`; `resolveStatPriors`
+  reports it per stage AND for the prior as a whole on `evidence.weighting`. It is resolved
+  from the matched table row, then the table, then — for the SHIPPED table only, identified by
+  identity — `HANDHQ_REFERENCE_META.weighting`. It is never defaulted: an undeclared table
+  yields `null`, and one undeclared stage makes the whole blended prior undeclared, because a
+  blend of a known basis with an unknown one has an unknown basis. Two stages declaring
+  DIFFERENT bases resolve to `'mixed'` rather than to either, which is the state the engine
+  lands in if both weightings ever ship. The founder-observed pool stage declares
+  `'hand-weighted'` by construction (buildPoolIndex sums raw k and n).
+
+  GUARD, same family as WS-374's `assertPriorEvidenceVisible` and riding the same gate so
+  every existing caller enforces it with no edit: `assertPriorWeightingDeclared` refuses a
+  pool-train run whose priors came from a reference table that would not say what population
+  it aggregated. `scripts/backtest/mine-pool-reference.py` now stamps `weighting` on every row
+  it writes, so a re-mine satisfies it; a stale unstamped table fails loudly with that remedy
+  named. The scorecard prints the basis per stat and prints UNDECLARED rather than a blank.
+
+  NOT DONE, AND DELIBERATELY NOT DECIDED BY THE IMPLEMENTING SESSION — which weighting is
+  CORRECT for serving priors. The guard asserts only that the answer is RECORDED, never what
+  it is. The case is written out in full in the weighting block near the top of
+  `src/utils/exploitEngine/poolBaseline.js`, which is where the next reader will hit it, and
+  it turns on one point that must not be collapsed: THE TWO WEIGHTINGS ANSWER DIFFERENT
+  QUESTIONS AND THE ENGINE MAY NEED BOTH. Shrinking one specific villain's stats toward a
+  typical opponent is a statement about a PLAYER and argues player-weighted; predicting the
+  next hand at a table is a statement about a HAND and argues hand-weighted, because you meet
+  high-volume players more often per hand, exactly in proportion to how much they play.
+
+  RELEVANT NEW EVIDENCE, WHICH DOES NOT SETTLE IT. WS-371 and WS-376 both found that DETECTORS
+  must be calibrated against the BETWEEN-PLAYER distribution, because a detector judges one
+  player. Same hand/player distinction in a different place, so it is a data point for this
+  decision — but serving a prior is PREDICTION, not JUDGEMENT, and the two have opposite
+  defaults. Cite it; do not read it as the answer.
+
+  Unchanged and still open: the minimum-hands floor question in `decision_flags`, which only
+  arises if player-weighted is chosen. Also unchanged: every figure here is ONLINE 2009
+  against a LIVE 9-handed 1/2-1/3 game — TRANSFERRED, not measured.
