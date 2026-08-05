@@ -14,6 +14,15 @@ const GRID_SIZE = 169;
  * bump sufficient and a migration unnecessary (DEC-025).
  *
  * v4 (WS-256): derived line-taxonomy subclasses added.
+ *
+ * NOT v5, deliberately (WS-337). The equity operator's rotation-plane basis reproduces every
+ * class-vs-class equity to ~1pp mean with 26 coordinates, which raises the question of storing
+ * those coordinates on the profile instead of estimating 169 cells from tens of observations.
+ * They are a DERIVED VIEW for now — `pokerCore/equitySkew.js#projectOntoPlanes` — and the
+ * 169-cell grid stays the record. Two reasons: the mean error hides a 16pp max, and the
+ * estimation claim itself (log-loss in the low-dimensional basis vs the shipped ladder, on
+ * corpus data, under POOL/EVAL *and* walk-forward) has not been run. A stored coordinate would
+ * commit a schema to an answer nobody has measured. Revisit only after that score exists.
  */
 export const PROFILE_VERSION = 4;
 

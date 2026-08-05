@@ -300,6 +300,58 @@ describe('prior support (WS-302)', () => {
   });
 });
 
+describe('support sharpness (WS-366)', () => {
+  it('does not saturate a wide grid — each doctrine tier ships nearer its own value', () => {
+    // THE MEASURED DEFECT. `softContinuationWeights` defaulted `tau` to a fraction of the
+    // IQR OF THE SCORES, and a preflop range shape puts both quartiles inside the folded
+    // tail: on the LATE `threeBet` prior the shape ran 0 → 0.935 with an IQR of 0.012, so
+    // `tau` came out at 0.0037 and the logistic became a STEP. A step saturates everything
+    // above it at 1.0, so the WIDER a grid is the more of its top it flattens. Measured at
+    // HEAD on the EARLY `limpReraise` prior, whose doctrine tiers are 1.00 / 0.25 / 0.10:
+    //
+    //     QQ 1.0000 · JJ 0.8500 · AKs 0.8491 · TT 0.8480 · AKo 0.8437 · AQs 0.8312
+    //
+    // The 0.25 tier arrived at ~0.85. A 4:1 doctrine gap shipped as 1.18:1, and the grid
+    // §5.8 calls UNCAPPED was delivered as a nearly flat one.
+    //
+    // The assertion is the doctrine's own tiers, not a chosen tolerance: a cell must land
+    // nearer the tier it belongs to than the tier above it. `withEquitySupport` smooths in
+    // equity space before ranking, so a cell ADJACENT to the boundary is legitimately
+    // pulled up by its neighbours — that is `SUPPORT_BANDWIDTH` doing its declared job —
+    // and the midpoint is exactly the line that tolerates that without tolerating collapse.
+    const MID = (1.0 + 0.25) / 2;
+    for (const pos of RANGE_POSITIONS) {
+      const doctrine = getPopulationPrior(pos, 'limpReraise', { supportLambda: 0 });
+      const shipped = getPopulationPrior(pos, 'limpReraise');
+      for (let i = 0; i < GRID_SIZE; i++) {
+        if (doctrine[i] === 1.0) expect(shipped[i], `${pos} premium tier ${i}`).toBeGreaterThan(MID);
+        if (doctrine[i] === 0.25) expect(shipped[i], `${pos} 0.25 tier ${i}`).toBeLessThan(MID);
+      }
+    }
+  });
+
+  it('keeps every prior monotone in its own doctrine shape at the premium end', () => {
+    // The support may soften a grid; it may not REORDER one. If a cell the doctrine ranks
+    // strictly below another ships above it, `tau` is too small — that is falsifier (1) on
+    // `supportTau`. Checked at the premium end, where every 3-bet-family grid has a strict
+    // doctrine ordering and where the carve is most sensitive to it.
+    const AA = rangeIndex(12, 12, false);
+    const KK = rangeIndex(11, 11, false);
+    const QQ = rangeIndex(10, 10, false);
+    const _88 = rangeIndex(6, 6, false);
+    for (const pos of RANGE_POSITIONS) {
+      for (const action of ['threeBet', 'cold3Bet', 'squeeze']) {
+        const doctrine = getPopulationPrior(pos, action, { supportLambda: 0 });
+        const shipped = getPopulationPrior(pos, action);
+        for (const [a, b] of [[AA, KK], [KK, QQ], [QQ, _88]]) {
+          if (doctrine[a] <= doctrine[b]) continue; // no doctrine claim to preserve
+          expect(shipped[a], `${pos} ${action}: ${a} over ${b}`).toBeGreaterThan(shipped[b]);
+        }
+      }
+    }
+  });
+});
+
 // =============================================================================
 // HAND STRENGTH ORDERING (WS-304)
 // =============================================================================

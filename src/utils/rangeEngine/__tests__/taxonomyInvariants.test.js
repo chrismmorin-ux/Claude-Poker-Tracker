@@ -405,19 +405,46 @@ describe('limp-reraise visibility', () => {
       rangeIndex(12, 12, false), rangeIndex(11, 11, false), rangeIndex(10, 10, false),
       rangeIndex(12, 11, true), rangeIndex(12, 11, false),
     ]);
-    // AA leads outright — the strongest hand is the one a trapper most wants
-    // the passive line for.
-    expect(ranked[0]).toBe(AA);
-    // …and the premium BLOCK leads, which is the claim §5.8 actually makes.
-    // Asserted as a block mean rather than an exact top-3 membership: the
-    // sibling priors fall off sharply just below JJ once `withEquitySupport`
-    // has blended them, so individual cells in the AQ/88 band can outrank QQ
-    // in the carve. That sharpness is a `softContinuationWeights` property,
-    // not a taxonomy one, and pinning an exact ordering here would make this
-    // test a tripwire for a parameter it does not own.
-    const mean = (idxs) => idxs.reduce((s, i) => s + grid[i], 0) / idxs.length;
-    const all = Array.from({ length: 169 }, (_, i) => i);
-    expect(mean([...premiums])).toBeGreaterThan(mean(all.filter((i) => !premiums.has(i))));
+    // A PREMIUM leads. Not AA specifically: §5.8's limp-reraise prior gives every
+    // cell of QQ+ the SAME weight (1.00) — the premium tier is deliberately flat,
+    // because the doctrine's claim is "this range contains monsters", not "aces
+    // more than kings". The carve is `parent × share`, and where the child's tier
+    // is flat and the parent's is a ramp, the share RISES as the parent falls, so
+    // the two nearly cancel: at λ = 0 the doctrine separates AA from KK in the
+    // carved grid by 1.4%, and a frequency update that pushes the parent's top
+    // toward 1.0 consumes that. Pinning AA at rank 1 would be pinning a 1.4%
+    // residue of two curves that doctrine did not intend to rank against each
+    // other. (WS-366 — the previous anchor was `ranked[0] === AA`.)
+    expect(premiums.has(ranked[0])).toBe(true);
+
+    // …and the premium block leads CELL BY CELL, which is the claim §5.8 makes.
+    //
+    // TIGHTENED AT WS-366, and the loosening this replaces is the defect's own
+    // fingerprint. It read: "individual cells in the AQ/88 band can outrank QQ in
+    // the carve … that sharpness is a `softContinuationWeights` property, not a
+    // taxonomy one", and settled for a block MEAN. It was right about the cause
+    // and wrong that the taxonomy could live with it: measured on this very
+    // fixture at HEAD, `limpReraise` gave AKo 0.2104 and 88 0.1911 against KK
+    // 0.1860 and QQ 0.1601. A trap range that holds 88 more readily than QQ is
+    // not an uncapped range — it is the mush §5.8 exists to rule out.
+    // QQ+ ONLY, not the whole premium set. AK's place here is bounded by a
+    // limitation WS-304 named when it built this ordering: `EQUITY_VS_OPEN` is
+    // all-in equity, which cannot see equity REALIZATION (§1.4), so it ranks AK
+    // just below the pairs doctrine ranks it above. Asserting AKs > 99 would be
+    // asserting against that approximation, which is a different ticket from
+    // this one.
+    const BAND = [
+      rangeIndex(12, 10, true), rangeIndex(12, 10, false),   // AQs AQo
+      rangeIndex(12, 9, true), rangeIndex(12, 9, false),     // AJs AJo
+      rangeIndex(12, 8, true),                               // ATs
+      rangeIndex(7, 7, false), rangeIndex(6, 6, false), rangeIndex(5, 5, false), // 99 88 77
+    ];
+    const QQ_PLUS = [rangeIndex(12, 12, false), rangeIndex(11, 11, false), rangeIndex(10, 10, false)];
+    for (const p of QQ_PLUS) {
+      for (const b of BAND) {
+        expect(grid[p], `premium ${p} vs band ${b}`).toBeGreaterThan(grid[b]);
+      }
+    }
   });
 
   it('limp-reraise claims more of the premium end than its siblings do', () => {
@@ -430,6 +457,68 @@ describe('limp-reraise visibility', () => {
     const shareAt = (sub, i) => (r.threeBet[i] > 0 ? r[sub][i] / r.threeBet[i] : 0);
     expect(shareAt('limpReraise', AA)).toBeGreaterThan(0);
     expect(shareAt('limpReraise', AA)).toBeGreaterThan(shareAt('squeeze', AA));
+  });
+
+  it('QQ+ outrank the AQ/88 band in every carved subclass, at every position (WS-366)', () => {
+    // THE CARVE MUST NOT REORDER THE DOCTRINE. §2.5.3 — a subclass grid is carved OUT of
+    // its parent and shrinks TOWARD it; a carve that can lift a middling cell above a
+    // premium one is not a carve. Asserted on the CARVED grid, not the standalone prior:
+    // the standalone `limpReraise` prior at EARLY passed throughout, which is exactly why
+    // WS-366 survived from WS-256 to now.
+    //
+    // MEASURED AT HEAD BEFORE THE FIX, zero observations, LATE `limpReraise`:
+    //   AA 0.0600 · AKo 0.0393 · AQs 0.0383 · 88 0.0370 · AJs 0.0362 · AQo 0.0351 …
+    //   KK 0.0208 · JJ 0.0206 · QQ 0.0202
+    // 88 at 1.8x QQ, with KK four places below AKo. Same signature at MIDDLE, SB and BB,
+    // and in the carved `cold3Bet` at LATE — worst where the split is thinnest
+    // (SUBCLASS_SPLIT.threeBet.LATE.limpReraise = 0.06), because the thinner the split the
+    // more of the apportionment the shape term decides. Root cause and derivation of the
+    // fix: `supportTau` in populationPriors.js.
+    //
+    // AK is NOT in the band. §2.3 names it a premium in the same breath as QQ+, and
+    // WS-304's re-anchoring of the test above rests on the same reading.
+    const profile = build([]); // zero observations — the split IS the doctrine split
+    const QQ_PLUS = { AA: rangeIndex(12, 12, false), KK: rangeIndex(11, 11, false), QQ: rangeIndex(10, 10, false) };
+    const BAND = {
+      AQs: rangeIndex(12, 10, true), AQo: rangeIndex(12, 10, false),
+      AJs: rangeIndex(12, 9, true), AJo: rangeIndex(12, 9, false),
+      ATs: rangeIndex(12, 8, true),
+      99: rangeIndex(7, 7, false), 88: rangeIndex(6, 6, false), 77: rangeIndex(5, 5, false),
+    };
+
+    for (const pos of RANGE_POSITIONS) {
+      for (const sub of PARENT_SUBCLASSES.threeBet) {
+        const grid = profile.ranges[pos][sub];
+        if (rangeWidth(grid) === 0) continue; // BB limp-reraise — structurally empty
+        for (const [premium, pi] of Object.entries(QQ_PLUS)) {
+          for (const [middling, mi] of Object.entries(BAND)) {
+            expect(
+              grid[pi],
+              `${pos}.${sub}: ${premium} (${grid[pi].toFixed(4)}) must outrank ${middling} (${grid[mi].toFixed(4)})`,
+            ).toBeGreaterThan(grid[mi]);
+          }
+        }
+      }
+    }
+  });
+
+  it('the carve leaves every cell of a live subclass positive (WS-302 converse)', () => {
+    // Sharpening the support must not restore the ordering by zeroing the tail. Ranges
+    // update as `prior[i] * ratio`, so a cell that starts at zero can never be lifted by
+    // any amount of evidence — that trade would be the worse bug. A structurally empty
+    // grid (BB limp-reraise) still passes through as identically zero.
+    const profile = build([]);
+    for (const pos of RANGE_POSITIONS) {
+      for (const sub of RANGE_SUBCLASS_ACTIONS) {
+        const grid = profile.ranges[pos][sub];
+        const parent = profile.ranges[pos][PARENT_SUBCLASSES.open.includes(sub) ? 'open' : 'threeBet'];
+        if (rangeWidth(grid) === 0) continue;
+        for (let i = 0; i < 169; i++) {
+          if (parent[i] === 0) continue; // containment: a child is 0 where its parent is
+          expect(grid[i], `${pos}.${sub}[${i}]`).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 
   it('counts one showdown per hand, not one per decision point', () => {

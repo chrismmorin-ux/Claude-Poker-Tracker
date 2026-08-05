@@ -20,7 +20,7 @@
  */
 
 import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../pokerCore/rangeMatrix';
-import { softContinuationWeights, MIN_CONTINUATION_WEIGHT } from '../pokerCore/softWeights';
+import { softContinuationWeights, MIN_CONTINUATION_WEIGHT, quantile } from '../pokerCore/softWeights';
 import { EQUITY_VS_OPEN } from '../pokerCore/preflopEquityTable';
 
 const GRID_SIZE = 169;
@@ -295,6 +295,88 @@ const smoothedShape = (grid, eq) => {
 };
 
 /**
+ * The logistic's transition width, in SCORE units. DERIVED FROM `SUPPORT_BANDWIDTH` — the
+ * only width this section names — not from a shipped fraction (WS-366).
+ *
+ * THE DEFECT THIS CLOSES. `softContinuationWeights` defaults `tau` to `TAU_FRACTION × IQR
+ * of the scores`, and that default is measured for the POSTFLOP caller, whose scores are
+ * per-combo equities across a villain's continuing range — roughly symmetric, so the IQR
+ * straddles the decision. Preflop the scores are a range SHAPE, concentrated at the top of
+ * the field. Measured on the LATE `threeBet` prior: the shape runs 0 → 0.935, but Q1 =
+ * 0.00016 and Q3 = 0.0124, so the IQR is 0.012 and `tau` came out at 0.0037 — 1/250th of
+ * the axis it was supposed to soften. Both quartiles lie inside the folded tail, where
+ * nothing happens. The logistic degenerated into a STEP.
+ *
+ * A step is not a slightly-too-sharp logistic; it is a different object. Its position
+ * depends on the grid's own WIDTH (the mean is pinned to it), so a WIDE grid saturates its
+ * whole top at 1.0 and a NARROW grid saturates only its premiums. That is exactly the
+ * WS-366 inversion: `limpReraise` is deliberately wide (§5.8 uncapped), so its step fell
+ * below 88 and the doctrine's 1.00 / 0.25 / 0.10 tiers were flattened to a single
+ * saturated value; its narrow siblings `cold3Bet` / `squeeze` kept theirs. `bayesianUpdater`
+ * then carves the parent by `splitPost_sub · prior_sub(h)` normalised across siblings, so
+ * what decided the cell was WHERE EACH SIBLING'S STEP FELL — a function of range width —
+ * rather than anything the doctrine says. Measured at LATE before the fix: carved
+ * `limpReraise` gave 88 = 0.0370 against QQ = 0.0202.
+ *
+ * THE DERIVATION. The scores are `smoothedShape(grid, equity)` — a Nadaraya-Watson
+ * regression of the grid on equity with bandwidth `h = SUPPORT_BANDWIDTH × (equity
+ * spread)`. That bandwidth IS this section's declared resolution: its comment states both
+ * bounds ("wide enough that a hole is filled by its genuine neighbours, narrow enough that
+ * a range's shape is not flattened into its own average"). Structure finer than one
+ * bandwidth is not resolved by the smoother and must not be resolved by the logistic
+ * either; structure coarser than one bandwidth is real and must not be erased by it. So
+ * the logistic transitions over exactly one bandwidth, transported onto the score axis.
+ *
+ * The transport is exact, not an analogy. A monotone smoothed shape covers its full range
+ * `S_max − S_min` across the full equity spread `E`, so its average slope is
+ * `(S_max − S_min) / E`; one bandwidth `h = SUPPORT_BANDWIDTH · E` of equity therefore
+ * spans `SUPPORT_BANDWIDTH · (S_max − S_min)` of score. The `E` cancels, which is why no
+ * equity quantity appears below.
+ *
+ *     tau = SUPPORT_BANDWIDTH × (S_max − S_min)
+ *
+ * Nothing is fitted and nothing is per-position: the same 0.12 that set the smoother's
+ * resolution sets the logistic's. It is a per-GRID quantity because `S` is, and that is the
+ * point — a grid's sharpness now follows its own shape rather than its width, which is what
+ * stops a wide range and a narrow one from being softened by different amounts.
+ *
+ * CONSISTENCY CHECK, NOT A SECOND DERIVATION. On a symmetric score distribution the shipped
+ * postflop default sits in the same place: `0.3 × IQR` is `0.15 × range` for a uniform and
+ * `0.06 × range` for a Gaussian at n = 1326, and 0.12 lies between them. So this is not a
+ * new sharpness regime — it is the postflop sharpness computed from a statistic that
+ * survives skew. The postflop caller is deliberately NOT moved (it keeps `ACTION_TAU_FRACTION`,
+ * measured separately in WS-303).
+ *
+ * FALSIFIERS. (1) If a shipped prior's ordering ever departs from its own doctrine grid's
+ * ordering, `tau` is too small — asserted per position in `taxonomyInvariants.test.js`.
+ * (2) If shipped tier RATIOS are flatter than the blend `(1−λ)·doctrine + λ·[floor,1]`
+ * permits, `tau` is too large. (3) Re-run the WS-293 discrimination sweep: if a materially
+ * different sharpness wins at BOTH sites, the bandwidth transport is the wrong argument and
+ * this constant is measured, not derived. Re-run it — do not re-reason it.
+ *
+ * DELIVERED AS A `tauFraction`, NOT AS A NEW OPTION. `softContinuationWeights` parameterises
+ * its sharpness as a fraction of the score IQR, so this returns
+ * `derived tau / IQR(scores)` — which the primitive multiplies straight back out. The
+ * primitive is WS-291's shared postflop/preflop surface and is left untouched: its default
+ * path, and therefore `ACTION_TAU_FRACTION`, is bit-identical. The IQR is computed here with
+ * the primitive's OWN exported `quantile` on the same combo-expanded score array, so the two
+ * cannot drift.
+ */
+const supportTauFraction = (shape, scores) => {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let i = 0; i < GRID_SIZE; i++) {
+    if (shape[i] < lo) lo = shape[i];
+    if (shape[i] > hi) hi = shape[i];
+  }
+  const tau = Math.max(1e-9, SUPPORT_BANDWIDTH * (hi - lo));
+  // Same statistic, same guard, same helper the primitive itself applies.
+  const asc = Array.from(scores).sort((a, b) => a - b);
+  const iqr = Math.max(1e-6, quantile(asc, 0.75) - quantile(asc, 0.25));
+  return tau / iqr;
+};
+
+/**
  * Give a prior grid support on every cell, ranked by the grid's own smoothed shape.
  *
  * THE DEFECT THIS CLOSES (WS-302). A prior of exactly zero is not "unlikely", it is
@@ -335,7 +417,11 @@ export const withEquitySupport = (grid, position, lambda = PRIOR_SUPPORT_LAMBDA)
   // Rank by the grid's OWN smoothed shape, not by raw equity — see `smoothedShape`.
   const shape = smoothedShape(grid, equity);
   const scores = Float64Array.from(cellOf, (i) => shape[i]);
-  const w = softContinuationWeights(scores, width, { floor: PRIOR_SUPPORT_FLOOR });
+  const w = softContinuationWeights(scores, width, {
+    floor: PRIOR_SUPPORT_FLOOR,
+    // Sharpness DERIVED from the smoother's own bandwidth — see `supportTauFraction`.
+    tauFraction: supportTauFraction(shape, scores),
+  });
 
   const out = createRange();
   // Every combo in a cell carries the same score, so it receives the same weight; the
