@@ -39,6 +39,7 @@ import {
   registerSelfCheck,
   canonicalRegisterBody,
   registerVersion,
+  blockedFalsifiers,
 } from '../faultRegister.js';
 import { STACK_LAYERS } from '../stack.js';
 
@@ -461,5 +462,97 @@ describe('the document and the module cannot drift apart', () => {
     const md = readFileSync(DOC, 'utf8');
     expect(md).toMatch(/## 1\. What this system can honestly say today/);
     expect(md).toMatch(/suspect-pending-review/);
+  });
+});
+
+// ── a falsifier that cannot be run (WS-352) ─────────────────────────────────────────────
+
+/**
+ * WS-352 ran the rank-1 entry's falsifier and found it UNRUNNABLE — it names SRC-014, the
+ * founder's live pool, which has no positive identity and no export path. These guard the
+ * distinction that finding forced: "nobody measured it" and "it cannot be measured, here is
+ * what would change that" are different states routing to different work.
+ */
+describe('falsifierBlockers — an entry that says why its own test cannot be run', () => {
+  const runnable = (over = {}) => buildFaultEntry({
+    faultId: 'FAULT-fixture',
+    title: 'fixture',
+    site: 'corpus',
+    mechanism: 'a stated path by which it goes wrong',
+    contaminates: 'some cards',
+    matches: () => false,
+    falsifier: 'measure the thing',
+    probability: 0.5,
+    probabilityBasis: 'stated so it can be argued with',
+    priorBreadth: 0.5,
+    ...over,
+  });
+
+  it('defaults to empty — an entry is assumed runnable until it says otherwise', () => {
+    expect(runnable().falsifierBlockers).toEqual([]);
+  });
+
+  it('rejects a blocker that names nothing actionable', () => {
+    expect(faultEntryProblems({ ...runnable(), falsifierBlockers: ['  '] }))
+      .toContainEqual(expect.stringContaining('non-empty string'));
+    expect(faultEntryProblems({ ...runnable(), falsifierBlockers: 'blocked' }))
+      .toContainEqual(expect.stringContaining('must be an array'));
+  });
+
+  it('refuses to CONFIRM a blocked entry even with evidence — that would be a substituted test', () => {
+    expect(() => runnable({
+      status: 'confirmed',
+      evidence: ['some other measurement entirely'],
+      falsifierBlockers: ['the live arm does not exist yet'],
+    })).toThrow(/not available while falsifierBlockers is non-empty/);
+  });
+
+  it('refuses to RETIRE a blocked entry even with evidence', () => {
+    expect(() => runnable({
+      status: 'retired',
+      evidence: ['looked fine to me'],
+      falsifierBlockers: ['the live arm does not exist yet'],
+    })).toThrow(/not available while falsifierBlockers is non-empty/);
+  });
+
+  it('confirmFault cannot launder a blocked entry into confirmed', () => {
+    const faults = [runnable({ falsifierBlockers: ['the live arm does not exist yet'] })];
+    expect(() => confirmFault({
+      faults, faultId: 'FAULT-fixture', evidence: ['a proxy measurement'], cards: [],
+    })).toThrow(/falsifierBlockers/);
+  });
+
+  it('still allows confirmation once the blockers are cleared', () => {
+    const faults = [runnable({ falsifierBlockers: [] })];
+    const { entry } = confirmFault({ faults, faultId: 'FAULT-fixture', evidence: ['ran it'] });
+    expect(entry.status).toBe('confirmed');
+  });
+
+  it('is hashed into the register version, so clearing a blocker is a recorded change', async () => {
+    const base = [runnable()];
+    const blocked = [runnable({ falsifierBlockers: ['the live arm does not exist yet'] })];
+    expect(canonicalRegisterBody(blocked).entries[0].falsifierBlockers).toHaveLength(1);
+    expect(await registerVersion(base)).not.toBe(await registerVersion(blocked));
+  });
+
+  it('reports the population-mismatch entry as blocked on the live arm, and keeps it untested', () => {
+    const rows = blockedFalsifiers();
+    const row = rows.find((r) => r.faultId === 'FAULT-population-mismatch');
+    expect(row, 'WS-352 found the rank-1 falsifier unrunnable').toBeTruthy();
+    // Untested rather than settled: the named test was never run, so nothing settled it.
+    expect(row.status).toBe('untested');
+    // Each blocker has to say what would clear it, or it routes to nobody.
+    expect(row.blockers.length).toBeGreaterThan(0);
+    for (const b of row.blockers) expect(b).toMatch(/UNBLOCKED BY:/);
+    expect(row.blockers.join(' ')).toMatch(/SRC-014/);
+  });
+
+  it('leaves the entry evidence-free — "we could not test it" is not evidence', () => {
+    const entry = SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-population-mismatch');
+    expect(entry.evidence).toEqual([]);
+  });
+
+  it('leaves every runnable entry unblocked, so the field discriminates', () => {
+    expect(blockedFalsifiers().length).toBeLessThan(SUSPECTED_FAULTS.length);
   });
 });

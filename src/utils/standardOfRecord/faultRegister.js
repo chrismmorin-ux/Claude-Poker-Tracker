@@ -206,6 +206,8 @@ export const DISCLAIMER_TREATMENT =
  *   enough Result Cards exist to measure it
  * @param {string} [input.status]
  * @param {string[]} [input.evidence] - required for `confirmed` and `retired`
+ * @param {string[]} [input.falsifierBlockers] - why the falsifier CANNOT BE RUN TODAY, and what
+ *   would unblock it. See the block comment above `faultEntryProblems`.
  */
 export const buildFaultEntry = ({
   faultId,
@@ -220,6 +222,7 @@ export const buildFaultEntry = ({
   priorBreadth,
   status = 'untested',
   evidence = [],
+  falsifierBlockers = [],
 } = {}) => {
   const entry = {
     faultId,
@@ -234,6 +237,7 @@ export const buildFaultEntry = ({
     priorBreadth,
     status,
     evidence: [...evidence],
+    falsifierBlockers: [...falsifierBlockers],
   };
   const problems = faultEntryProblems(entry);
   if (problems.length) {
@@ -248,6 +252,35 @@ export const buildFaultEntry = ({
  * Exported separately from the builder for the reason `manifestProblems` and
  * `resultCardProblems` are: a checker that can disagree with its constructor is worse than no
  * checker, so there is exactly one implementation and both paths call it.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * WHY `falsifierBlockers` EXISTS (WS-352).
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * The register is a WORK QUEUE — §6 of the doc turns top-ranked entries into tickets carrying
+ * their falsifier as the accept criterion. WS-352 ran the rank-1 entry's falsifier and found it
+ * UNRUNNABLE: it names SRC-014 (the founder's live 1/3 pool) as one of its two arms, and SRC-014
+ * has no positive identity, no export path, and no volume floor. Nothing in the register could
+ * say that.
+ *
+ * That gap matters because `untested` was doing two incompatible jobs: "nobody got round to it"
+ * and "it cannot be done, and here is what would make it possible". Those route to completely
+ * different work — the first to an analyst, the second to whoever owns the ingest path — and a
+ * queue that cannot tell them apart re-emits an unrunnable item at rank 1 forever.
+ *
+ * So the blocker is DATA, not prose in a report nothing reads. It is hashed into the register
+ * version, which means removing a blocker is a recorded version change rather than a quiet edit.
+ *
+ * DELIBERATELY NOT `evidence`. Evidence is the field that gates confirmation and retirement, and
+ * it must keep meaning "a measurement exists". Writing "we could not measure it" into the field
+ * whose whole job is to prove something WAS measured would let a future entry be confirmed on
+ * the record of its own failure to be tested. Blocked and settled are opposite states.
+ *
+ * Hence the rule below: an entry may not be `confirmed` or `retired` while it declares its
+ * falsifier is blocked. Settling an entry whose named test cannot be run means something EASIER
+ * was substituted — which is exactly the move this whole apparatus exists to prevent. Clearing
+ * the blocker first is not a formality; it is the author stating, in a hashed field, that the
+ * test that was supposed to settle this is the test that settled it.
  */
 export const faultEntryProblems = (entry) => {
   const problems = [];
@@ -296,6 +329,27 @@ export const faultEntryProblems = (entry) => {
       `status "${entry.status}" requires at least one evidence entry — an entry may not be `
       + 'confirmed or retired on assertion alone',
     );
+  }
+
+  if (!Array.isArray(entry.falsifierBlockers)) {
+    problems.push('falsifierBlockers must be an array (empty means the falsifier is runnable today)');
+  } else {
+    if (entry.falsifierBlockers.some((b) => typeof b !== 'string' || !b.trim())) {
+      problems.push(
+        'every falsifierBlocker must be a non-empty string naming WHAT blocks the falsifier and '
+        + 'what would unblock it — "blocked" on its own routes to nobody',
+      );
+    }
+    if (
+      entry.falsifierBlockers.length > 0
+      && (entry.status === 'confirmed' || entry.status === 'retired')
+    ) {
+      problems.push(
+        `status "${entry.status}" is not available while falsifierBlockers is non-empty — the `
+        + 'named falsifier cannot be run, so anything that settled this entry was a DIFFERENT '
+        + 'and easier test. Clear the blockers (a hashed, recorded change) before settling it',
+      );
+    }
   }
   return problems;
 };
@@ -364,6 +418,29 @@ export const SUSPECTED_FAULTS = Object.freeze([
       'Near-certain as a STRUCTURAL fact — the populations genuinely differ. What is uncertain '
       + 'is the magnitude, not the existence.',
     priorBreadth: 0.9,
+    // WS-352 ran this falsifier on 2026-08-05. It is UNRUNNABLE, and stays `untested` for that
+    // reason rather than being settled by a substitute. All three blockers are about the LIVE
+    // arm; the SRC-012 arm is measurable today (scripts/backtest reads 1,756 HandHQ files). A
+    // two-arm comparison with one unavailable arm has no reduced form — the gap between the
+    // populations is the entire estimand, so there is no partial credit to bank here.
+    falsifierBlockers: [
+      'SRC-014 HAS NO POSITIVE IDENTITY. Live hands are distinguished only by `source` being '
+      + "UNDEFINED — `saveOnlineHand` stamps source:'ignition' (handsStorage.js:444) and the "
+      + 'manual path stamps nothing. So the live subset cannot be SELECTED, and an un-stamped '
+      + 'import is indistinguishable from a live hand. Already an open finding in '
+      + 'docs/provenance/data-source-registry.md. UNBLOCKED BY: a positive source stamp on live '
+      + 'capture carrying venue and stake.',
+      'SRC-014 IS UNREACHABLE BY THE HARNESS. It is browser IndexedDB on the founder\'s device '
+      + 'with no export path in the repo; SRC-012 is scored by node scripts over an on-disk '
+      + 'corpus root. No harness can currently read both arms, so "the same estimand on both" '
+      + 'has no execution path regardless of identity. UNBLOCKED BY: an export of live hands '
+      + 'into a Deal Book the existing harness can score.',
+      'NO VOLUME FLOOR IS STATED. The falsifier turns on whether two intervals overlap, and '
+      + 'SRC-014 is the smallest source by orders of magnitude — so a null result would be '
+      + 'unreadable, indistinguishable between "transfer holds" and "the live arm had no power". '
+      + 'UNBLOCKED BY: stating the minimum live n PER SPOT CLASS at which the comparison could '
+      + 'resolve, before any live data is collected against it.',
+    ],
   }),
 
   buildFaultEntry({
@@ -1033,6 +1110,23 @@ export const registerSelfCheck = (faults = SUSPECTED_FAULTS, cards = []) => {
   };
 };
 
+/**
+ * Entries whose falsifier cannot currently be run, with what blocks each one.
+ *
+ * The work-queue emitter (§6 of the doc) ranks by expected damage, which is a statement about
+ * what is worth measuring — not about what CAN be measured. Without this, the rank-1 entry is
+ * re-emitted as an analysis ticket indefinitely when the actual next action belongs to whoever
+ * owns the data path. A blocked entry is not lower priority; it is DIFFERENT work.
+ */
+export const blockedFalsifiers = (faults = SUSPECTED_FAULTS) => faults
+  .filter((f) => (f.falsifierBlockers ?? []).length > 0)
+  .map((f) => ({
+    faultId: f.faultId,
+    title: f.title,
+    status: f.status,
+    blockers: [...f.falsifierBlockers],
+  }));
+
 /** Problems across the whole register. Empty means every entry is well-formed and unique. */
 export const registerProblems = (faults = SUSPECTED_FAULTS) => {
   const problems = [];
@@ -1073,6 +1167,10 @@ export const canonicalRegisterBody = (faults = SUSPECTED_FAULTS) => ({
     priorBreadth: e.priorBreadth,
     status: e.status,
     evidence: e.evidence,
+    // Hashed deliberately. A blocker is a claim about what this register CAN currently settle,
+    // and removing one is a claim that the falsifier became runnable — both are exactly the kind
+    // of change a reader of an old Result Card needs to be able to detect.
+    falsifierBlockers: e.falsifierBlockers,
   })),
 });
 

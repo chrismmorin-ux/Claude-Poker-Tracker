@@ -95,7 +95,7 @@ convention. Entries never quietly disappear.
 
 | # | Fault | Site | P | Breadth | Exp. damage | Status |
 |---|---|---|---|---|---|---|
-| 1 | `FAULT-population-mismatch` — live claims anchored on an online corpus | corpus | 0.95 | 0.90 | **0.855** | untested |
+| 1 | `FAULT-population-mismatch` — live claims anchored on an online corpus | corpus | 0.95 | 0.90 | **0.855** | untested · **falsifier blocked** |
 | 2 | `FAULT-temporal-staleness` — July 2009, sixteen years of drift | corpus | 0.90 | 0.85 | **0.765** | untested |
 | 3 | `FAULT-modelled-rake` — the corpus records none, so every figure assumes a schedule | instrument | 0.90 | 0.80 | **0.720** | untested |
 | 4 | `FAULT-static-field-overstatement` — a Field that never adapts inflates aggression | instrument | 0.85 | 0.70 | **0.595** | untested |
@@ -121,6 +121,43 @@ ranks last because it is *unlikely* — three channels are closed and enforced. 
 **1.00**: if a fourth channel is open, every backtested figure in this repo is inflated in the
 same direction, and nothing would look anomalous. That is the row where a low rank means "we
 think we closed it," not "it would not matter."
+
+### When a falsifier cannot be run (WS-352)
+
+The rank-1 entry's falsifier was **run on 2026-08-05 and found unrunnable**. It names two arms —
+the same estimand on SRC-012 (online 2009) and on SRC-014 (the founder's live 1/3 pool). The
+SRC-012 arm is measurable today. The SRC-014 arm is not, for three separate reasons, each
+recorded as a `falsifierBlockers` entry in the module:
+
+1. **SRC-014 has no positive identity.** Live hands are distinguished only by `source` being
+   *undefined* — the online path stamps `source: 'ignition'`, the manual path stamps nothing. The
+   live subset therefore cannot be selected, and an un-stamped import is indistinguishable from a
+   live hand. Already an open finding in `docs/provenance/data-source-registry.md`.
+2. **SRC-014 is unreachable by the harness.** It is browser IndexedDB on the founder's device
+   with no export path; SRC-012 is scored by node scripts over an on-disk corpus root. No harness
+   can currently read both arms.
+3. **No volume floor is stated.** The falsifier turns on whether two intervals overlap, and
+   SRC-014 is the smallest source by orders of magnitude — so a null result would be unreadable,
+   indistinguishable between "transfer holds" and "the live arm had no power."
+
+The entry therefore stays **`untested`**. It was not confirmed, and it was not retired. Being
+unable to run a test is not a result, and **a null result is never grounds for weakening or
+deleting an entry** — so the entry's wording, probability, and breadth are unchanged.
+
+This is now enforced rather than merely intended: an entry **may not be `confirmed` or `retired`
+while it declares a blocker**. Settling an entry whose named test cannot be run means something
+*easier* was substituted, which is the move this apparatus exists to prevent. Blockers are hashed
+into the register version, so clearing one is a recorded change and not a quiet edit.
+
+`blockedFalsifiers()` exposes the list, because "nobody got round to it" and "it cannot be done,
+and here is what would change that" route to **different work** — the first to an analyst, the
+second to whoever owns the ingest path. A queue that cannot tell them apart re-emits an unrunnable
+item at rank 1 forever.
+
+> **Note on the figures above.** The table is computed with **no card set**, so its breadth column
+> is pure prior. Six Result Cards now exist; against them this entry's *observed* breadth is 3/6
+> and its `evidenceWeight` 0.375. Deciding which cards constitute the canonical set for a
+> published ranking is a separate, unmade decision.
 
 **Mechanisms, falsifiers, and evidence live in the code**, one per entry, in
 `src/utils/standardOfRecord/faultRegister.js`. They are there rather than here because each
@@ -222,6 +259,11 @@ Add it to `SUSPECTED_FAULTS` in `faultRegister.js` with all of: `mechanism` (the
 it goes wrong — "the model may be off" is a worry, not an entry), `contaminates`, a `matches`
 predicate, a `falsifier`, a `probability` **with its basis stated**, and a `priorBreadth`.
 `buildFaultEntry` refuses anything less.
+
+If the falsifier **cannot be run today**, add `falsifierBlockers` — one non-empty string per
+blocker, each naming what blocks it *and* what would unblock it (`UNBLOCKED BY: …`). A bare
+"blocked" routes to nobody. Do not put "we could not measure it" in `evidence`: that field gates
+confirmation and retirement and must keep meaning *a measurement exists*.
 
 Then update §3's table — a test asserts the table lists exactly the module's fault IDs in ranked
 order, so the two cannot drift.
