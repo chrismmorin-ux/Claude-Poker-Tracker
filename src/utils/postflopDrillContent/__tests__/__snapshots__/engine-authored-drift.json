@@ -571,32 +571,32 @@
     {
       "baseFold": 0.5,
       "fraction": 0.33,
-      "response": 0.4302
+      "response": 0.4953
     },
     {
       "baseFold": 0.5,
       "fraction": 0.5,
-      "response": 0.4552
+      "response": 0.5356
     },
     {
       "baseFold": 0.5,
       "fraction": 0.75,
-      "response": 0.5
+      "response": 0.5938
     },
     {
       "baseFold": 0.5,
       "fraction": 1,
-      "response": 0.5448
+      "response": 0.6492
     },
     {
       "baseFold": 0.7,
       "fraction": 0.5,
-      "response": 0.6552
+      "response": 0.7356
     },
     {
       "baseFold": 0.3,
       "fraction": 1.5,
-      "response": 0.4012
+      "response": 0.5465
     }
   ],
   "constants": {

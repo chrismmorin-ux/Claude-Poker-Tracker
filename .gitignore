@@ -112,3 +112,9 @@ out/
 
 # Transient sprint-composition scratch written by /next; not state of record.
 .claude/.tmp-sprint.json
+
+# Equity-operator research intermediates (WS-337). The 169x169 matrix is ~540KB and is
+# regenerable byte-for-byte from a seed; only its DECOMPOSITION is committed, in
+# src/utils/pokerCore/data/equitySkewDecomposition.js
+equity-matrix*.csv
+equity-matrix*.csv.meta.json

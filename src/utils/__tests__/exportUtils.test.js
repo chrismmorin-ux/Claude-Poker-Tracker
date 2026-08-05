@@ -20,7 +20,7 @@ vi.mock('../persistence/index', () => ({
   getAllSessions: vi.fn(),
   getAllPlayers: vi.fn(),
   clearAllHands: vi.fn(),
-  saveHand: vi.fn(),
+  saveImportedHand: vi.fn(),
   createSession: vi.fn(),
   createPlayer: vi.fn(),
   deleteSession: vi.fn(),
@@ -33,7 +33,7 @@ import {
   getAllSessions,
   getAllPlayers,
   clearAllHands,
-  saveHand,
+  saveImportedHand,
   createSession,
   createPlayer,
   deleteSession,
@@ -766,16 +766,19 @@ describe('importAllData', () => {
     };
 
     createSession.mockResolvedValue('new-s1');
-    saveHand.mockResolvedValue('new-h1');
+    saveImportedHand.mockResolvedValue('new-h1');
 
     const result = await importAllData(importData);
 
-    expect(saveHand).toHaveBeenCalledTimes(1);
-    expect(saveHand).toHaveBeenCalledWith({
+    expect(saveImportedHand).toHaveBeenCalledTimes(1);
+    // WS-368: imports go through saveImportedHand (stamped source:'import'),
+    // never through saveHand (which stamps source:'live'). Routing them through
+    // the live writer was the contamination vector.
+    expect(saveImportedHand).toHaveBeenCalledWith({
       timestamp: 1000,
       sessionId: 'new-s1', // remapped
       dealerSeat: 1,
-    });
+    }, 'guest');
     expect(result.counts.hands).toBe(1);
   });
 
@@ -789,11 +792,11 @@ describe('importAllData', () => {
       },
     };
 
-    saveHand.mockResolvedValue('new-h1');
+    saveImportedHand.mockResolvedValue('new-h1');
 
     await importAllData(importData);
 
-    const callArgs = saveHand.mock.calls[0][0];
+    const callArgs = saveImportedHand.mock.calls[0][0];
     expect(callArgs.sessionId).toBeNull();
   });
 
@@ -807,11 +810,11 @@ describe('importAllData', () => {
       },
     };
 
-    saveHand.mockResolvedValue('new-h1');
+    saveImportedHand.mockResolvedValue('new-h1');
 
     await importAllData(importData);
 
-    const callArgs = saveHand.mock.calls[0][0];
+    const callArgs = saveImportedHand.mock.calls[0][0];
     expect(callArgs.sessionId).toBeNull();
   });
 
@@ -827,7 +830,7 @@ describe('importAllData', () => {
 
     createPlayer.mockResolvedValue('new-p1');
     createSession.mockResolvedValue('new-s1');
-    saveHand.mockResolvedValue('new-h1');
+    saveImportedHand.mockResolvedValue('new-h1');
 
     const result = await importAllData(importData);
 
@@ -903,7 +906,7 @@ describe('importAllData', () => {
       },
     };
 
-    saveHand
+    saveImportedHand
       .mockResolvedValueOnce('new-h1')
       .mockRejectedValueOnce(new Error('Invalid data'));
 

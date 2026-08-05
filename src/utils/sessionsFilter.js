@@ -12,6 +12,34 @@
  * `source: 'ignition'` at the writer boundary. Filter classification is
  * therefore correct by construction (verified WS-080 / SPR-062 — no bug).
  *
+ * WS-368 SCOPE DECISION — SESSIONS DELIBERATELY LEFT ON THE NEGATION.
+ *
+ * WS-368 gave HAND records a positive provenance identity (`source` +
+ * structured `provenance`, IDB v28) because "live" being the ABSENCE of a stamp
+ * made the live subset unselectable. The same absence-as-identity shape exists
+ * one level up, here: `mode === 'live'` is `source !== 'ignition'`, a negation.
+ * The question was asked of the sessions store and answered NO for now, on
+ * three grounds:
+ *
+ *   1. The thing hand provenance could not state — POPULATION identity, the
+ *      rank-1 fault in the suspected-fault register — sessions already state
+ *      positively. A session record carries `venue`, `gameType` and (online)
+ *      `stakes` at construction. Only the channel discriminator is a negation,
+ *      and that is the part that matters least: the hand stamp now carries
+ *      venue and stake down onto each hand, which is where measurement reads.
+ *   2. This predicate feeds UI filter pills, not a measurement selector. The
+ *      failure it can cause is a mislabelled chip, not a wrong number. The hand
+ *      selector could return an empty set on a full database; this cannot.
+ *   3. Cost. A session channel would mean a second store migration in the same
+ *      version bump plus changes across SessionCard, SessionDetailModal,
+ *      SessionsView and OnlineSessionContext — UI-visible work that trips the
+ *      Design Program gates, for a defect with no measurement consequence.
+ *
+ * What that leaves: a session with no `source` still reads as live here, and an
+ * imported session is indistinguishable from a live one. File it with the
+ * export/harness work WS-368's status_note sequences after this ticket, where
+ * the shape of the session stamp is knowable because the hand stamp is settled.
+ *
  * Pure util — extracted SPR-062 from inline filter for reusability +
  * verify-and-pin regression coverage.
  *

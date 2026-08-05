@@ -27,7 +27,7 @@ src/utils/persistence/
 ## Object Stores (v13)
 | Store | Key | Indexes | Purpose |
 |-------|-----|---------|---------|
-| `hands` | handId (auto) | timestamp, sessionId, userId, userId_timestamp, source | Saved poker hands |
+| `hands` | handId (auto) | timestamp, sessionId, userId, userId_timestamp, source | Saved poker hands. `source` + `provenance` are REQUIRED (v28) — see below. |
 | `sessions` | sessionId (auto) | startTime, endTime, userId, userId_startTime, source, tableId | Poker sessions |
 | `players` | playerId (auto) | name, lastSeenAt, userId, userId_name | Player profiles |
 | `activeSession` | id (`active_${userId}`) | - | Per-user active session |
@@ -46,6 +46,14 @@ src/utils/persistence/
 | v10→v11 | Added tournaments object store for tournament state persistence. |
 | v11→v12 | Added source index to hands, source/tableId indexes to sessions for online play integration. |
 | v12→v13 | Normalize seatActions strings to arrays in-place (one-time migration, replaces per-load normalization). |
+| v27→v28 | **Positive hand provenance (WS-368).** Every hand carries `source` (`'live' \| 'ignition' \| 'import' \| 'unknown'`) plus a structured `provenance` object with venue and stake. Stamped at construction by `handProvenance.js` constructors — the channel is baked into each constructor, so no writer can produce an unstamped hand and no caller can pick the wrong channel. Pre-v28 rows are stamped `'unknown'`, deliberately NOT `'live'`: they are ambiguous (imports used to go through `saveHand`, which stamped nothing) and guessing would manufacture the population `FAULT-population-mismatch` exists to measure. `migrateV28` must stay the LAST hands-store cursor walk in `runMigrations` — it wins the ordering race against v25/v27 and re-applies their defaults to compensate. |
+
+**Writing a hand — pick the right entry point, there is no channel parameter:**
+`saveHand` (live/manual, stamps `live`, venue+stake from the active session) ·
+`saveOnlineHand` (Ignition extension, stamps `ignition`) ·
+`saveImportedHand` (backup import, stamps `import`, keeps the file's claim under
+`provenance.original`). `getHandsBySource(channel, userId)` selects a subset and
+THROWS on an unrecognised channel rather than returning `[]`.
 
 ## Key Functions (all accept optional `userId`, defaults to 'guest')
 ```js

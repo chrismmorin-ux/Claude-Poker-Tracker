@@ -288,7 +288,9 @@ export const SessionsView = ({ scale }) => {
     if (!importData) return;
 
     try {
-      const result = await importAllData(importData);
+      // Import under the signed-in account, matching downloadBackup(userId)
+      // above — hands are user-scoped and must not land on 'guest'.
+      const result = await importAllData(importData, userId);
 
       if (result.success) {
         showSuccess(`Imported ${result.counts.hands} hands, ${result.counts.sessions} sessions, ${result.counts.players} players`);
