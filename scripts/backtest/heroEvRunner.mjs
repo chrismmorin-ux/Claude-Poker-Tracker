@@ -41,6 +41,32 @@ export const DEFAULT_RAKE_CONFIG = { pct: 0.05, cap: 3, noFlopNoDrop: true };
 const bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
 
 /**
+ * The single-policy pass expressed as a one-armed ablation.
+ *
+ * Collapsing "no arms" into "one arm with the engine's own default budget" means there is
+ * exactly ONE scoring loop in this module. A second loop for the unablated case would be a
+ * second thing to keep correct, and the copy nobody exercises is the copy that drifts —
+ * the same argument `snapshot()` below makes for partial vs final.
+ *
+ * `refinementBudgetMs: undefined` on the default arm is load-bearing: it makes the key absent
+ * at the engine call, so the default arm is the engine's own configuration rather than this
+ * module's opinion of it.
+ */
+const normalizeDepthArms = (depthArms) => {
+  if (!depthArms) return [{ id: 'default', refinementBudgetMs: undefined }];
+  if (!Array.isArray(depthArms) || depthArms.length === 0) {
+    throw new Error('runHeroEv: depthArms must be a non-empty array of { id, refinementBudgetMs }');
+  }
+  const ids = new Set();
+  for (const a of depthArms) {
+    if (!a?.id) throw new Error('runHeroEv: every depth arm needs an id');
+    if (ids.has(a.id)) throw new Error(`runHeroEv: duplicate depth arm id "${a.id}"`);
+    ids.add(a.id);
+  }
+  return depthArms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs }));
+};
+
+/**
  * Run the hero-EV pass.
  *
  * @returns {Promise<{decisions: Array, integrity: Object, counters: Object}>}
@@ -65,6 +91,24 @@ export const runHeroEv = async ({
   replicationStamp = null,
   surfaceId = 'engine-read',
   fieldId = 'pool-mined-behavior-policy',
+  // WS-334 AC5 — the depth ablation.
+  //
+  // `null` (the default) is the existing single-policy pass, unchanged. When supplied, this
+  // is an ordered list of `{ id, refinementBudgetMs }`: the engine is asked for its advice
+  // ONCE PER ARM at every decision, and both answers are stored on the same row.
+  //
+  // WHY BOTH ARMS RUN IN ONE PASS rather than as two runs differenced afterwards. Two runs
+  // would share a Deal Book but not a decision SET — a checkpoint that skipped in one run
+  // for an engine error, a walk-forward boundary, or a policy skip would leave the arms
+  // scored over different decisions, and the difference would then contain a selection
+  // effect indistinguishable from a depth effect. Here a decision is kept only if EVERY arm
+  // produced a policy for it, so the contrast is exactly paired and the population term in
+  // the edge cancels identically.
+  depthArms = null,
+  // Which arm supplies `piOurs` (and the equities PBR consumes) so that every existing
+  // downstream reader of a run keeps its current meaning. Defaults to the LAST arm, which is
+  // the shipped configuration by convention of how the arms are ordered.
+  primaryArmId = null,
   log = () => {},
   // Called with a PARTIAL snapshot (`complete: false`) every 25 scored decisions. Default
   // no-op, so nothing changes for callers that do not want it.
@@ -72,6 +116,12 @@ export const runHeroEv = async ({
 }) => {
   // All guards run at construction, before any work: a run that could leak must not
   // be able to start, let alone produce a number someone might quote.
+  const arms = normalizeDepthArms(depthArms);
+  const primaryId = primaryArmId ?? arms[arms.length - 1].id;
+  if (!arms.some((a) => a.id === primaryId)) {
+    throw new Error(`runHeroEv: primaryArmId "${primaryId}" is not one of ${arms.map((a) => a.id).join(', ')}`);
+  }
+
   const guard = new LeakageGuard({ poolPct, reference });
   const policy = validateBehaviorPolicy(behaviorPolicy, poolPct);
   // WS-331. A THIRD refusal, not a repeat of the second. `validateBehaviorPolicy` asks whether
@@ -177,9 +227,29 @@ export const runHeroEv = async ({
         };
         const pool = queryPolicy(policy, policyCtx);
 
-        const ours = await heroPolicyAt({ ctx, hand: ctx.hand, rakeConfig, comboSamples, trials });
-        if (!ours.ok) { bump(counters.policySkips, ours.reason); continue; }
-        counters.engineErrors += ours.engineErrors;
+        // ONE ENGINE PASS PER ARM, and a decision survives only if EVERY arm produced a
+        // policy. Keeping a decision one arm could score and the other could not would let a
+        // skip pattern that CORRELATES WITH DEPTH (a refinement stage that throws only on
+        // hard spots, say) enter the contrast as if it were a depth effect.
+        const byArm = {};
+        let armFailure = null;
+        for (const arm of arms) {
+          // eslint-disable-next-line no-await-in-loop -- the engine call is the cost; arms are 1-2
+          const res = await heroPolicyAt({
+            ctx, hand: ctx.hand, rakeConfig, comboSamples, trials,
+            refinementBudgetMs: arm.refinementBudgetMs,
+          });
+          counters.engineErrors += res.engineErrors ?? 0;
+          if (!res.ok) { armFailure = { arm: arm.id, reason: res.reason }; break; }
+          byArm[arm.id] = res;
+        }
+        if (armFailure) {
+          bump(counters.policySkips, arms.length > 1
+            ? `${armFailure.arm}:${armFailure.reason}`
+            : armFailure.reason);
+          continue;
+        }
+        const ours = byArm[primaryId];
 
         // WS-331 — the ceiling, from the equities the engine pass just paid for. No engine
         // call. Scored on exactly the decisions the engine policy is scored on, so the two
@@ -198,6 +268,19 @@ export const runHeroEv = async ({
           netBB,
           netBBUnraked,
           piOurs: ours.actions,
+          // WS-295 — the engine's OWN stated EV at this node, from the primary arm.
+          //
+          // This sits beside `netBB` (what the hand actually paid) deliberately: the optimizer's
+          // curse is the gap between what the engine asserts and what its advice delivers, and
+          // the two quantities have never before been on the same row. They are NOT on the same
+          // scale — `netBB` is the whole hand's net in bb, `statedEvMean` is a per-decision
+          // quantity in the engine's internal chips — so no figure may difference them directly.
+          // heroEvReport measures the SHAPE, which survives the unit mismatch.
+          evStats: ours.evStats ?? null,
+          // WS-334 AC5. Present on every run — a single-arm run carries `{ default: … }`,
+          // which is the same object `piOurs` already is. A field that exists only on the
+          // ablation runs would be a field every reader has to remember to check for.
+          piOursByArm: Object.fromEntries(arms.map((a) => [a.id, byArm[a.id].actions])),
           piPool: pool.actions,
           poolEvidenceN: pool.evidenceN,
           // The ceiling at the shipped shrinkage, and the whole sweep beside it. The sweep is
@@ -267,6 +350,8 @@ export const runHeroEv = async ({
       config: {
         poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
         rakeConfig, rakeIsModelled: true, maxDecisions,
+        depthArms: arms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs ?? null })),
+        primaryArmId: primaryId,
       },
       // Carried, not computed here — the runner measures, the report assembles the card.
       dealBook,

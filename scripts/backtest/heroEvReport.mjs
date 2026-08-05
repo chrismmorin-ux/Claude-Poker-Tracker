@@ -14,7 +14,10 @@
  *      vanished edge, and the run says so rather than quoting the flattering arm.
  */
 
-import { estimateEdge, TREATMENT, DEFAULT_BOOTSTRAP_SEED } from './ipsEstimator.mjs';
+import {
+  estimateEdge, TREATMENT, DEFAULT_BOOTSTRAP_SEED,
+  weightFor, wisValue, poolValue, clusterBootstrapCI,
+} from './ipsEstimator.mjs';
 import { applyFoldShift } from './behaviorPolicy.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
 import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
@@ -38,8 +41,15 @@ const CORPUS_CAVEAT =
  * exploitation), `pbrSweep` (its shrinkage curve), `positions` (every strategy as a 2D
  * location rather than a scalar), and `premium` (which reports an honest ABSENCE until the
  * Equilibrium post SRC-013 exists). Every pre-existing field is unchanged and in place.
+ *
+ * v4 (WS-295) — ADDITIVE. The report gained a `curse` block: the optimizer's curse measured as a
+ * SHAPE (edge by posterior-width stratum and by top-two-margin stratum). On a run that predates
+ * the stated-EV capture the block reports `available: false` WITH ITS REASON rather than being
+ * absent — an absent block reads as "not applicable", a false one reads as "measured, found
+ * nothing", and the truth is "this artifact cannot answer it". Every pre-existing field is
+ * unchanged and in place.
  */
-export const HERO_EV_SCHEMA_VERSION = 3;
+export const HERO_EV_SCHEMA_VERSION = 4;
 
 /**
  * The estimand, stated in words.
@@ -232,6 +242,259 @@ const buildCardFor = (run, arms, headline, pbr = null) => {
   }
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// WS-295 — THE OPTIMIZER'S CURSE, MEASURED AS A SHAPE
+//
+// THE UNIT TRAP, AND HOW THIS AVOIDS IT. The engine's stated EV (`evStats.statedEvMean`) is a
+// PER-DECISION quantity in the engine's internal chips. The realized outcome attached to a
+// decision (`netBB`) is the WHOLE HAND's net in bb, counted once per decision the hand contains.
+// A predicted-minus-realized difference between them is unit-mismatched and would produce a
+// confident wrong number — `ipsEstimator`'s header says so explicitly. NOTHING BELOW SUBTRACTS
+// THE TWO. They never meet in an expression.
+//
+// WHAT IS DONE INSTEAD. The decisions are STRATIFIED by two node-level covariates the curse
+// makes predictions about, and the IPS edge is measured WITHIN each stratum by the same
+// `weightFor` / `wisValue` / `poolValue` the headline arm uses. The curse then makes two
+// monotone predictions about how the edge moves ACROSS strata:
+//
+//   1. POSTERIOR WIDTH (`statedEvSd`): the wider the posterior at a node, the more the argmax
+//      is selecting on favourable error, so the LESS of its stated value the advice delivers.
+//      Predicted: edge DECREASES as width increases.
+//   2. TOP-TWO MARGIN (`topTwoMarginMean`): the further ahead the winner is, the less noise can
+//      dislodge it, so the less optimism there is to lose.
+//      Predicted: edge INCREASES as margin increases.
+//
+// Both are claims about the SIGN OF A DIFFERENCE BETWEEN STRATA, which is invariant to the unit
+// of either axis — that is precisely why the shape survives a mismatch the level does not.
+//
+// A FLAT RELATIONSHIP IS A REFUTATION and is reported as one, in the verdict word, never buried.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Terciles by a covariate. Equal-count, so a skewed covariate cannot empty a stratum. */
+const tercileSplit = (rows, keyOf) => {
+  const withKey = rows.filter((r) => Number.isFinite(keyOf(r)));
+  if (withKey.length < 6) return null;
+  const sorted = [...withKey].sort((a, b) => keyOf(a) - keyOf(b));
+  const third = Math.floor(sorted.length / 3);
+  return {
+    low: sorted.slice(0, third),
+    mid: sorted.slice(third, sorted.length - third),
+    high: sorted.slice(sorted.length - third),
+  };
+};
+
+/**
+ * Score one stratum with the SAME estimator the headline arm uses.
+ *
+ * `estimateEdge` is not called directly because the between-stratum CI below needs the scored
+ * records themselves (tagged by stratum) to resample players across both strata at once. The
+ * arithmetic is `weightFor` + `wisValue` - `poolValue`, i.e. exactly `estimateEdge`'s, reusing
+ * its exported pieces rather than restating them. ADR-009 forbids a SECOND COMPARISON PATH; this
+ * is the same path with a filter in front of it.
+ */
+const scoreStratum = (rows, weightCap) => {
+  const scored = [];
+  let clipped = 0;
+  const skipped = {};
+  for (const d of rows) {
+    const r = weightFor(d, { weightCap });
+    if (!r.ok) { skipped[r.reason] = (skipped[r.reason] || 0) + 1; continue; }
+    if (r.clipped) clipped++;
+    scored.push({ w: r.w, net: r.net, playerId: d.playerId });
+  }
+  if (!scored.length) return null;
+
+  let sw = 0, sw2 = 0;
+  for (const s of scored) { sw += s.w; sw2 += s.w * s.w; }
+  const ess = sw2 > 0 ? (sw * sw) / sw2 : 0;
+  const vOurs = wisValue(scored);
+  const vPool = poolValue(scored);
+
+  return {
+    n: scored.length,
+    players: new Set(scored.map((s) => s.playerId)).size,
+    // ESS and clipped share travel with EVERY figure — the estimator's own standing
+    // requirement, and a stratum is exactly where a small effective sample hides.
+    ess: Number(ess.toFixed(1)),
+    essShare: Number((ess / scored.length).toFixed(4)),
+    clippedShare: Number((clipped / scored.length).toFixed(4)),
+    edgeBB: (vOurs !== null && vPool !== null) ? Number((vOurs - vPool).toFixed(4)) : null,
+    skipped,
+    scored,
+  };
+};
+
+/**
+ * One covariate's shape test: the high-stratum edge minus the low-stratum edge, with a cluster
+ * bootstrap over PLAYERS on the difference itself.
+ *
+ * The CI is taken on the DIFFERENCE, for the same reason the headline arm takes it on the edge
+ * rather than on the two values: the same players feed both strata, so the contrast is far
+ * better determined than either level, and the prediction is about the difference.
+ */
+const shapeAxis = ({ rows, keyOf, weightCap, label, covariate, predictedSign, seed }) => {
+  const split = tercileSplit(rows, keyOf);
+  if (!split) {
+    return {
+      label, covariate, predictedSign,
+      verdict: 'UNDETERMINED',
+      detail: `fewer than 6 decisions carry ${covariate}; no tercile split is possible`,
+      strata: null,
+    };
+  }
+
+  const strata = {
+    low: scoreStratum(split.low, weightCap),
+    mid: scoreStratum(split.mid, weightCap),
+    high: scoreStratum(split.high, weightCap),
+  };
+  for (const k of ['low', 'mid', 'high']) {
+    if (strata[k]) {
+      const vals = split[k].map(keyOf);
+      strata[k].covariateMin = Math.min(...vals);
+      strata[k].covariateMax = Math.max(...vals);
+      strata[k].covariateMean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    }
+  }
+  if (!strata.low || !strata.high) {
+    return { label, covariate, predictedSign, verdict: 'UNDETERMINED', detail: 'a stratum had no scorable decision', strata };
+  }
+
+  // Resample players across BOTH extreme strata together, tagging each scored record with the
+  // stratum it came from, so a drawn player carries its decisions from each.
+  const byPlayer = new Map();
+  const tag = (recs, which) => {
+    for (const r of recs) {
+      if (!byPlayer.has(r.playerId)) byPlayer.set(r.playerId, []);
+      byPlayer.get(r.playerId).push({ ...r, stratum: which });
+    }
+  };
+  tag(strata.low.scored, 'low');
+  tag(strata.high.scored, 'high');
+
+  const diffStat = (chunk) => {
+    const lo = chunk.filter((c) => c.stratum === 'low');
+    const hi = chunk.filter((c) => c.stratum === 'high');
+    if (!lo.length || !hi.length) return null;
+    const eLo = wisValue(lo) - poolValue(lo);
+    const eHi = wisValue(hi) - poolValue(hi);
+    return eHi - eLo;
+  };
+  const ci = clusterBootstrapCI(byPlayer, diffStat, { seed });
+
+  const diff = strata.high.edgeBB - strata.low.edgeBB;
+  const contributingPlayers = byPlayer.size;
+  const directionMatches = (diff > 0 ? 'positive' : 'negative') === predictedSign;
+
+  let verdict, detail;
+  if (!ci) {
+    verdict = 'UNDETERMINED';
+    detail = 'cluster bootstrap returned no interval (fewer than 2 contributing players)';
+  } else if (contributingPlayers < MIN_CLUSTERS_FOR_CI) {
+    // POWER BEFORE VERDICT, and the bar is the one this module ALREADY declares for believing
+    // any cluster-bootstrap interval — not a second bar invented for this block. Below roughly
+    // 30 clusters the bootstrap cannot represent between-player variance, so a straddling
+    // interval reflects the sample size and NOT the absence of the effect.
+    //
+    // Calling that "REFUTED" would be the precise mistake `MIN_CLUSTERS_FOR_CI`'s own docblock
+    // was written to prevent, one level up: there, a narrow CI was read as precision; here, a
+    // wide one would be read as a null. Both are the cluster count talking.
+    verdict = directionMatches ? 'UNDERPOWERED-DIRECTION-CONSISTENT' : 'UNDERPOWERED';
+    detail = `${contributingPlayers} contributing players is below the ${MIN_CLUSTERS_FOR_CI}-cluster bar. `
+      + `high-minus-low edge ${diff.toFixed(3)} bb, CI [${ci.lo.toFixed(3)}, ${ci.hi.toFixed(3)}]. `
+      + (directionMatches
+        ? `The sign runs in the predicted ${predictedSign} direction, but this sample could not `
+          + 'have refuted the null either, so it is a hint and not a result.'
+        : `The sign runs against the predicted ${predictedSign} direction. `)
+      + 'This is NOT a refutation — raise the decision and player count and re-run.';
+  } else if (ci.lo <= 0 && ci.hi >= 0) {
+    // THE REFUTATION BRANCH, and it is a first-class outcome. WS-295 states plainly that a null
+    // is publishable and that a flat relationship must not be buried.
+    verdict = 'REFUTED-FLAT';
+    detail = `high-minus-low edge ${diff.toFixed(3)} bb, CI [${ci.lo.toFixed(3)}, ${ci.hi.toFixed(3)}] `
+      + `straddles zero. The curse predicts a ${predictedSign} difference; this sample does not show one.`;
+  } else if ((diff > 0 ? 'positive' : 'negative') !== predictedSign) {
+    verdict = 'REFUTED-WRONG-SIGN';
+    detail = `high-minus-low edge ${diff.toFixed(3)} bb, CI [${ci.lo.toFixed(3)}, ${ci.hi.toFixed(3)}] `
+      + `excludes zero but runs OPPOSITE to the predicted ${predictedSign} direction.`;
+  } else {
+    verdict = 'CONFIRMED';
+    detail = `high-minus-low edge ${diff.toFixed(3)} bb, CI [${ci.lo.toFixed(3)}, ${ci.hi.toFixed(3)}] `
+      + `excludes zero in the predicted ${predictedSign} direction.`;
+  }
+
+  return {
+    label, covariate, predictedSign, highMinusLowBB: Number(diff.toFixed(4)),
+    ci, contributingPlayers, minClustersForCI: MIN_CLUSTERS_FOR_CI,
+    directionMatchesPrediction: directionMatches, verdict, detail, strata,
+  };
+};
+
+/**
+ * The WS-295 block. Returns an honest ABSENCE on a run that predates the `evStats` capture,
+ * rather than an empty shape that would read as "measured, found nothing".
+ */
+export const buildCurseReport = (decisions, { weightCap = 20, seed = DEFAULT_BOOTSTRAP_SEED } = {}) => {
+  const rows = (decisions || []).filter((d) => d?.evStats);
+
+  const unitNote =
+    'STATED EV IS PER-DECISION IN ENGINE CHIPS; REALIZED OUTCOME IS THE WHOLE HAND\'S NET IN bb, '
+    + 'counted once per decision the hand contains. The two are NEVER differenced here. Every '
+    + 'figure below is an edge measured WITHIN a stratum by the headline estimator, and every '
+    + 'claim is about the SIGN OF A DIFFERENCE BETWEEN strata, which the unit mismatch does not '
+    + 'touch. No headline figure depends on the two being on the same scale.';
+
+  const liveTransfer =
+    'A magnitude here is mined from HandHQ online cash, July 2009. It is evidence about the '
+    + 'ESTIMATOR\'S SHAPE, never a live 1/2-1/3 constant; the founder\'s game is live 9-handed and '
+    + 'any value carried across is TRANSFERRED, not measured.';
+
+  if (rows.length === 0) {
+    return {
+      available: false,
+      reason: (decisions || []).length
+        ? 'this run predates the WS-295 stated-EV capture — no decision row carries `evStats`. '
+          + 'Re-run the pass to measure the curse; it cannot be recovered from this artifact.'
+        : 'no decisions were scored',
+      unitNote,
+      liveTransfer,
+      n: 0,
+    };
+  }
+
+  return {
+    available: true,
+    n: rows.length,
+    nWithoutEvStats: (decisions || []).length - rows.length,
+    unitNote,
+    liveTransfer,
+    // The villain is held at POPULATION BASELINE for the whole pass, so villain-model posterior
+    // width is constant and CANNOT be the covariate here. The width that varies — and the one
+    // actually tested — is hero's RANGE posterior expressed in EV units. Stated in the artifact
+    // because a reader who assumes the other one would credit this run with a channel it never
+    // varied.
+    posteriorWidthMeans: 'hero range posterior (villain held at population baseline — that width is constant by design)',
+    vsPosteriorWidth: shapeAxis({
+      rows, keyOf: (d) => d.evStats.statedEvSd, weightCap, seed,
+      label: 'edge vs POSTERIOR WIDTH at the node',
+      covariate: 'evStats.statedEvSd',
+      predictedSign: 'negative',
+    }),
+    vsTopTwoMargin: shapeAxis({
+      rows, keyOf: (d) => d.evStats.topTwoMarginMean, weightCap, seed,
+      label: 'edge vs TOP-TWO EV MARGIN',
+      covariate: 'evStats.topTwoMarginMean',
+      predictedSign: 'positive',
+    }),
+    vsActionCount: shapeAxis({
+      rows, keyOf: (d) => d.evStats.nActionsMean, weightCap, seed,
+      label: 'edge vs NUMBER OF ACTIONS COMPARED',
+      covariate: 'evStats.nActionsMean',
+      predictedSign: 'negative',
+    }),
+  };
+};
+
 export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}) => {
   const d = run.decisions;
   const opts = { weightCap };
@@ -352,6 +615,9 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
     admissibility,
+    // WS-295 — the optimizer's curse, as a shape. Reports its own unavailability with a reason
+    // on a run that predates the stated-EV capture.
+    curse: buildCurseReport(run.decisions, { weightCap }),
     // WS-331 — the pier posts. Additive; everything that predates this is unchanged.
     pbrSweep,
     positions,
@@ -467,6 +733,56 @@ const renderPiers = (r) => {
   return L;
 };
 
+/**
+ * The WS-295 block (optimizer's curse).
+ *
+ * The unit note is printed BEFORE any number, not after. A caveat that follows the figure is a
+ * caveat that gets separated from it the first time someone quotes the figure — the same
+ * argument `renderPiers` makes for putting the PBR warning above the ceiling.
+ */
+const renderCurse = (r) => {
+  const c = r.curse;
+  const L = [];
+  if (!c) return L;
+
+  L.push('  OPTIMIZER\'S CURSE — is stated EV above what the advice delivers? (WS-295)');
+  L.push('  ' + '─'.repeat(90));
+  L.push(`    UNITS: ${c.unitNote}`);
+  L.push('');
+
+  if (!c.available) {
+    L.push(`    NOT MEASURED — ${c.reason}`);
+    L.push('');
+    return L;
+  }
+
+  L.push(`    decisions carrying stated EV: ${c.n}` + (c.nWithoutEvStats ? `  (${c.nWithoutEvStats} without)` : ''));
+  L.push(`    posterior width means: ${c.posteriorWidthMeans}`);
+  L.push('');
+
+  for (const axis of [c.vsPosteriorWidth, c.vsTopTwoMargin, c.vsActionCount]) {
+    if (!axis) continue;
+    L.push(`    ${axis.label}`);
+    L.push(`      predicts: a ${axis.predictedSign} high-minus-low difference`);
+    if (axis.strata) {
+      for (const k of ['low', 'mid', 'high']) {
+        const s = axis.strata[k];
+        if (!s) { L.push(`      ${k.padEnd(5)} no scorable decisions`); continue; }
+        L.push(`      ${k.padEnd(5)} ${axis.covariate.split('.').pop()} `
+          + `${s.covariateMean.toFixed(3).padStart(9)}  edge ${bb(s.edgeBB).padStart(8)} bb  `
+          + `n=${String(s.n).padStart(4)}  ESS=${String(s.ess).padStart(7)} (${pct(s.essShare)})  `
+          + `clipped ${pct(s.clippedShare)}`);
+      }
+    }
+    L.push(`      ${axis.verdict}: ${axis.detail}`);
+    L.push('');
+  }
+
+  L.push(`    ${c.liveTransfer}`);
+  L.push('');
+  return L;
+};
+
 export const renderHeroEvReport = (r) => {
   const L = [];
   L.push('');
@@ -491,6 +807,8 @@ export const renderHeroEvReport = (r) => {
   L.push('');
 
   L.push(...renderPiers(r));
+
+  L.push(...renderCurse(r));
 
   const h = r.arms.engineRaked;
   L.push('  WEIGHT DIAGNOSTICS (headline arm)');

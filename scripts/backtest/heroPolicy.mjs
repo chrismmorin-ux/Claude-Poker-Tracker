@@ -146,6 +146,15 @@ export const heroPolicyAt = async ({
   ctx, hand, rakeConfig = null,
   comboSamples = DEFAULT_COMBO_SAMPLES,
   trials = DEFAULT_TRIALS,
+  // WS-334 AC5. The depth-2/3 refinement clock, passed straight through to the engine.
+  //
+  // `undefined` — the default — means DO NOT PASS IT, so `evaluateGameTree` applies its own
+  // default and every existing caller of this module is bit-for-bit unchanged. Passing 0
+  // means "refine nothing": the depth-1 answer is the whole answer, which is what the engine
+  // shipped in production for the life of the project (WS-334 measured zero depth-2 calls on
+  // a live evaluation). That makes the depth-1 arm a REAL historical configuration rather
+  // than a hypothetical one.
+  refinementBudgetMs = undefined,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
@@ -198,6 +207,18 @@ export const heroPolicyAt = async ({
   // looking like it compared their advice.
   const perCombo = [];
 
+  // WS-295 — THE ENGINE'S STATED EV, which this loop already paid for and used to discard.
+  //
+  // `result.recommendations` arrives sorted descending by `ev`, so `[0].ev` is the value the
+  // engine ASSERTS for the action it selected and `[1].ev` is the runner-up it beat. Only
+  // `[0].action` was ever read here; the numbers went out of scope at the end of the
+  // iteration. Keeping them costs one array push and is what lets the optimizer's curse be
+  // measured on the same pass rather than by standing up a second one.
+  //
+  // Each entry is one HOLDING hero could have at this node, not one decision. The node-level
+  // aggregate below is therefore taken over hero's RANGE POSTERIOR — see `evStats`.
+  const evSamples = [];
+
   for (const combo of combos) {
     let result;
     try {
@@ -224,6 +245,11 @@ export const heroPolicyAt = async ({
         numOpponents,
         opponentModels: [],
         rakeConfig,
+        // Spread rather than assigned, so an unset budget leaves the key ABSENT and the
+        // engine's own default applies. Assigning `refinementBudgetMs: undefined` would also
+        // trigger the default today, but only because the engine happens to use a default
+        // parameter; a future `?? 2000` would silently turn "unset" into "zero".
+        ...(refinementBudgetMs === undefined ? {} : { refinementBudgetMs }),
       });
     } catch {
       engineErrors++;
@@ -239,6 +265,25 @@ export const heroPolicyAt = async ({
 
     const top = result?.recommendations?.[0];
     if (!top) { engineErrors++; continue; }
+
+    // Recorded BEFORE the corpus-vocabulary filter below, for the same reason `perCombo` is:
+    // whether the engine's advice maps onto an action the hand history could contain is a fact
+    // about the CORPUS, not about the engine's decision. Dropping those combos here would
+    // measure the curse only on the spots the corpus happens to be able to express.
+    const runnerUp = result.recommendations[1];
+    if (Number.isFinite(top.ev)) {
+      evSamples.push({
+        w: combo.sampleWeight,
+        statedEv: top.ev,
+        // `null` rather than 0 when the engine offered exactly one action: a node with no
+        // alternative has NO margin, and it also has no max to be optimistic about. Zeroing it
+        // would plant a false "the top two were tied" at exactly the nodes where the curse is
+        // structurally absent, dragging the margin covariate toward zero for the wrong reason.
+        topTwoMargin: Number.isFinite(runnerUp?.ev) ? top.ev - runnerUp.ev : null,
+        nActions: result.recommendations.length,
+        depthReached: result?.treeMetadata?.depthReached ?? null,
+      });
+    }
 
     const primitive = toPrimitive(top.action);
     if (!primitive || !responses.includes(primitive)) { outOfSet++; continue; }
@@ -269,5 +314,57 @@ export const heroPolicyAt = async ({
   const actions = {};
   for (const a of responses) actions[a] = counts[a] / used;
 
-  return { ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo };
+  return { ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo, evStats: summarizeEv(evSamples) };
+};
+
+/**
+ * Collapse per-combo stated EVs into the node-level quantities WS-295 needs.
+ *
+ * WHAT `statedEvSd` IS, precisely, because the ticket calls the covariate "posterior width at
+ * the node" and there is more than one posterior in play:
+ *
+ *   It is the dispersion of the engine's stated EV ACROSS THE HOLDINGS HERO COULD HAVE, weighted
+ *   by the range posterior `decisionAccumulator` inferred. It is the width of hero's RANGE
+ *   posterior expressed in EV units.
+ *
+ *   It is NOT the villain-model posterior width. This pass holds the villain at population
+ *   baseline by design (see the module header), so that width is CONSTANT across every decision
+ *   in the run and cannot be a covariate here at all. A reader who assumes otherwise would take
+ *   this as evidence about a channel the run never varied.
+ *
+ * Weights are the range probabilities, so the variance is the population-weighted one (divide by
+ * the total weight, not by n-1): these are not n independent draws from a superpopulation, they
+ * are a weighted enumeration of one posterior.
+ */
+const summarizeEv = (samples) => {
+  if (!samples.length) return null;
+
+  const W = samples.reduce((s, x) => s + x.w, 0);
+  if (!(W > 0)) return null;
+  const mean = samples.reduce((s, x) => s + x.w * x.statedEv, 0) / W;
+  const variance = samples.reduce((s, x) => s + x.w * (x.statedEv - mean) ** 2, 0) / W;
+
+  // Margins exist only where the engine offered a second action. Averaged over THAT subset,
+  // with its own weight total, and the count reported so a margin computed from two of ten
+  // combos is not read as a property of the node.
+  const withMargin = samples.filter((x) => Number.isFinite(x.topTwoMargin));
+  const Wm = withMargin.reduce((s, x) => s + x.w, 0);
+  const marginMean = Wm > 0
+    ? withMargin.reduce((s, x) => s + x.w * x.topTwoMargin, 0) / Wm
+    : null;
+
+  const depths = samples.map((x) => x.depthReached).filter(Number.isFinite);
+
+  return {
+    combosScored: samples.length,
+    statedEvMean: mean,
+    statedEvSd: Math.sqrt(variance),
+    topTwoMarginMean: marginMean,
+    combosWithMargin: withMargin.length,
+    nActionsMean: samples.reduce((s, x) => s + x.w * x.nActions, 0) / W,
+    // The engine reports the depth it actually REACHED, not the depth the street made it
+    // eligible for (WS-334). Carried so a curse figure can be read against the depth that
+    // produced it — which is the WS-361 question.
+    depthReachedMax: depths.length ? Math.max(...depths) : null,
+  };
 };
