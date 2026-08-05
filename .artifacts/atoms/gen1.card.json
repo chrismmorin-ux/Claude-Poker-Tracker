@@ -1,0 +1,2785 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-WS328-GEN1-1785913579152",
+  "match": {
+    "surfaceId": "read:reconstructed-population-prior",
+    "dealBookId": "handhq-FTP-allstakes-fe3954de",
+    "fieldId": "field:handhq-50nlh-2009"
+  },
+  "estimand": "The share of modeled decision nodes on this Deal Book for which the reconstruction instrument emitted an action distribution, over EVAL-partition players, and the share of the declared context domain it examined at all. AN INSTRUMENT MEASUREMENT, NOT A STRATEGY CLAIM.",
+  "treatment": "Substituting a static corpus-mined population prior for each villain's range, over recorded 2009 online 50NLH hands. Transferred, not measured, for any live claim.",
+  "metrics": {
+    "scoredShare": 0.7432532271635849,
+    "scoredGivenModeled": {
+      "k": 72433,
+      "n": 97454,
+      "rate": 0.7432532271635849,
+      "conditional": "P(the model produced a distribution | the node was modeled)"
+    },
+    "modeledNodes": 97454,
+    "neverLookedGivenReachable": {
+      "k": 95,
+      "n": 190,
+      "rate": 0.5,
+      "conditional": "P(the run never examined it | the context can occur at all) — WE NEVER LOOKED"
+    },
+    "observedZeroGivenExamined": {
+      "k": 43,
+      "n": 95,
+      "rate": 0.45263157894736844,
+      "conditional": "P(context never occurred | the run examined it) — WE LOOKED AND FOUND NONE"
+    },
+    "droppedGivenReachable": {
+      "k": 36,
+      "n": 190,
+      "rate": 0.18947368421052632,
+      "conditional": "P(reached then discarded | the context can occur at all)"
+    },
+    "predictionAuditDivergence": {
+      "wiredScored": 72433,
+      "unwiredScored": 0,
+      "lift": null,
+      "divergedNodes": 72433,
+      "conditional": "nodes scored with engine deps minus nodes scored without, over the same hands"
+    },
+    "skipReasons": {
+      "model-returned-empty-distribution": 25021
+    },
+    "droppedDecisions": 25021,
+    "partiallyDroppedCells": 0,
+    "partitionExcludedDecisions": 95921,
+    "leakage": {
+      "poolPct": 50,
+      "referenceMode": "disabled",
+      "evalPlayersChecked": 1606,
+      "decisionsChecked": 0,
+      "statWindowsChecked": 0
+    }
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "admissible": false,
+    "reasons": [
+      "The Read surface is a population prior mined from this corpus family (SRC-011/012), so it LEAKS BY CONSTRUCTION into any accuracy figure computed on the same corpus. Coverage figures are unaffected; accuracy figures are not computed here for exactly this reason.",
+      "Online 2009 50NLH. Any live 1/2-1/3 reading is TRANSFERRED, not measured (register rank-1 entry)."
+    ],
+    "quotableFor": [
+      "instrument coverage",
+      "never-looked share",
+      "predictionAudit liveness"
+    ]
+  },
+  "manifest": {
+    "engineCommit": "923aef3a1d833507bba8cbcc7ed1f8a215e543a8",
+    "engineDirty": true,
+    "dealBookHash": "sha256:fe3954de31e5d02bc58aa4c8740876cc69a0f99b2cd4f3175181ec7e34c7e9a6",
+    "fieldVersion": "population-prior/static",
+    "partition": "EVAL(50%) by fnv1a32(site:playerId); walk-forward N/A — the Read surface is a STATIC population prior, fitted nowhere in this run",
+    "seeds": {
+      "deal": "per-hand: site:handId",
+      "partition": "fnv1a32(site:playerId)"
+    },
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05
+    },
+    "disclaimerRegisterVersion": "FR-1+8c4e65578ca2",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": {
+    "schemaVersion": 2,
+    "domain": {
+      "gameType": "cash",
+      "seats": [
+        3,
+        9
+      ],
+      "stackDepthBB": null,
+      "surfaceId": "read:reconstructed-population-prior",
+      "dealBookId": "handhq-FTP-allstakes-fe3954de",
+      "fieldId": "field:handhq-50nlh-2009"
+    },
+    "cells": [
+      {
+        "contextKey": "hero|preflop|EARLY|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|EARLY|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "hero|preflop|EARLY|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|EARLY|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|EARLY|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|MIDDLE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|MIDDLE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "hero|preflop|MIDDLE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|LATE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|LATE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "hero|preflop|LATE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|LATE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|LATE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|SB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|SB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "hero|preflop|SB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|SB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|SB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|BB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|BB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "hero|preflop|BB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|BB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|preflop|BB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|EARLY|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|EARLY|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|EARLY|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|EARLY|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|EARLY|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|MIDDLE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|MIDDLE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|MIDDLE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|LATE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|LATE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|LATE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|LATE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|LATE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|SB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|SB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|SB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|SB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|SB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|BB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|BB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|BB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|BB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|flop|BB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|EARLY|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|EARLY|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|EARLY|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|EARLY|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|EARLY|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|MIDDLE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|MIDDLE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|MIDDLE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|LATE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|LATE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|LATE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|LATE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|LATE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|SB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|SB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|SB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|SB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|SB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|BB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|BB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|BB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|BB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|turn|BB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|EARLY|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|EARLY|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|EARLY|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|EARLY|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|EARLY|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|MIDDLE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|MIDDLE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|MIDDLE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|LATE|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|LATE|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|LATE|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|LATE|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|LATE|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|SB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|SB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|SB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|SB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|SB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|BB|none",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|BB|bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|BB|raise",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|BB|3bet",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "hero|river|BB|4bet+",
+        "coords": {
+          "actorRole": "hero",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unexamined",
+        "reason": "instrument-cannot-evaluate"
+      },
+      {
+        "contextKey": "villain|preflop|EARLY|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 7229,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|EARLY|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "villain|preflop|EARLY|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 169,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|EARLY|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|preflop|EARLY|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|preflop|MIDDLE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 13040,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|MIDDLE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "villain|preflop|MIDDLE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 1449,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 13,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|preflop|LATE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 21955,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|LATE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "villain|preflop|LATE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 8632,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|LATE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 272,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|LATE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|preflop|SB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 4823,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|SB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "villain|preflop|SB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 5361,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|SB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 314,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|SB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 3,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|BB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 2616,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|BB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "unreachable",
+        "reason": "preflop has no bare bet — the BB is a raise"
+      },
+      {
+        "contextKey": "villain|preflop|BB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 6035,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|BB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 510,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|preflop|BB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "preflop",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 12,
+        "droppedCount": 0,
+        "status": "hit",
+        "reason": null
+      },
+      {
+        "contextKey": "villain|flop|EARLY|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 662,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|EARLY|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 106,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|EARLY|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 1,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|EARLY|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|EARLY|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|MIDDLE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1453,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|MIDDLE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 366,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|MIDDLE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 4,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|LATE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 3128,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|LATE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 1727,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|LATE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 43,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|LATE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|LATE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 2,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|SB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 2342,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|SB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|SB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|SB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|SB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|BB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 3261,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|BB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 457,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|flop|BB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|BB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|flop|BB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "flop",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|EARLY|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 326,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|EARLY|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 71,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|EARLY|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 1,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|EARLY|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|EARLY|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|MIDDLE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 720,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|MIDDLE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 244,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|MIDDLE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 1,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|LATE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1698,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|LATE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 875,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|LATE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 4,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|LATE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|LATE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|SB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1237,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|SB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|SB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|SB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|SB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|BB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1661,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|BB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 237,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|turn|BB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|BB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|turn|BB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "turn",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|EARLY|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 207,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|EARLY|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 36,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|EARLY|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|EARLY|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|EARLY|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "EARLY",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|MIDDLE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 435,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|MIDDLE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 139,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|MIDDLE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 1,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|MIDDLE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|MIDDLE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "MIDDLE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|LATE|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1037,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|LATE|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 565,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|LATE|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 4,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|LATE|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|LATE|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "LATE",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|SB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 785,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|SB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|SB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|SB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|SB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "SB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|BB|none",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "none"
+        },
+        "hits": 0,
+        "droppedCount": 1044,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|BB|bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "bet"
+        },
+        "hits": 0,
+        "droppedCount": 141,
+        "status": "dropped",
+        "reason": "model-returned-empty-distribution"
+      },
+      {
+        "contextKey": "villain|river|BB|raise",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "raise"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|BB|3bet",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "3bet"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      },
+      {
+        "contextKey": "villain|river|BB|4bet+",
+        "coords": {
+          "actorRole": "villain",
+          "street": "river",
+          "posCategory": "BB",
+          "facingAction": "4bet+"
+        },
+        "hits": 0,
+        "droppedCount": 0,
+        "status": "observed-zero",
+        "reason": "examined; no observation"
+      }
+    ],
+    "totalContexts": 200,
+    "hitContexts": 16,
+    "abstentions": 0,
+    "examination": {
+      "mode": "enumerated",
+      "examinedContexts": 95,
+      "unexaminedReason": "instrument-cannot-evaluate",
+      "basis": "phhAdapter sets gameState.mySeat = null (a corpus hand has no hero), so the hero branch of reconstructPredictionAudit is unreachable on this Deal Book. Villain contexts were all evaluated."
+    },
+    "statusCounts": {
+      "hit": 16,
+      "observed-zero": 43,
+      "unexamined": 95,
+      "dropped": 36,
+      "unreachable": 10,
+      "unattributable": 0
+    },
+    "axes": [
+      {
+        "name": "actorRole",
+        "levels": [
+          "hero",
+          "villain"
+        ]
+      },
+      {
+        "name": "street",
+        "levels": [
+          "preflop",
+          "flop",
+          "turn",
+          "river"
+        ]
+      },
+      {
+        "name": "posCategory",
+        "levels": [
+          "EARLY",
+          "MIDDLE",
+          "LATE",
+          "SB",
+          "BB"
+        ]
+      },
+      {
+        "name": "facingAction",
+        "levels": [
+          "none",
+          "bet",
+          "raise",
+          "3bet",
+          "4bet+"
+        ]
+      }
+    ]
+  },
+  "warrantAttribution": null,
+  "atomSetHash": "sha256:83db4ce26b94d03133848e57914c0b360b8dd012def01294f75fc594498a780c",
+  "atomCount": 97454,
+  "anchorGeneration": 1,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null
+}

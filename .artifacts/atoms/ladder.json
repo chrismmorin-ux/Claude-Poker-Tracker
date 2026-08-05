@@ -1,0 +1,51 @@
+{
+  "metricPath": "metrics.scoredShare",
+  "higherIsBetter": true,
+  "generations": [
+    {
+      "generation": 1,
+      "ranked": [
+        {
+          "rungId": "read:reconstructed-population-prior",
+          "resultCardId": "RC-WS328-GEN1-1785913579152",
+          "value": 0.7432532271635849,
+          "dealBookHash": "sha256:fe3954de31e5d02bc58aa4c8740876cc69a0f99b2cd4f3175181ec7e34c7e9a6",
+          "engineCommit": "923aef3a1d833507bba8cbcc7ed1f8a215e543a8",
+          "atomSetHash": "sha256:83db4ce26b94d03133848e57914c0b360b8dd012def01294f75fc594498a780c",
+          "admissible": false,
+          "rank": 1
+        }
+      ],
+      "dealBookHash": "sha256:fe3954de31e5d02bc58aa4c8740876cc69a0f99b2cd4f3175181ec7e34c7e9a6"
+    },
+    {
+      "generation": 2,
+      "ranked": [
+        {
+          "rungId": "read:reconstructed-population-prior",
+          "resultCardId": "RC-WS328-GEN2-1785913579152",
+          "value": 0.7416384817737692,
+          "dealBookHash": "sha256:756c31a33befd5c8505fd49d91f519dac9c0e38735985f40a04a66f0c69229fe",
+          "engineCommit": "923aef3a1d833507bba8cbcc7ed1f8a215e543a8",
+          "atomSetHash": "sha256:d16f33c76a4bded7cdbb17b086f8ccfab65e374bd7217df27afd5403870b08e6",
+          "admissible": false,
+          "rank": 1
+        }
+      ],
+      "dealBookHash": "sha256:756c31a33befd5c8505fd49d91f519dac9c0e38735985f40a04a66f0c69229fe"
+    }
+  ],
+  "rebases": [
+    {
+      "fromGeneration": 1,
+      "toGeneration": 2,
+      "dealBookHash": "sha256:756c31a33befd5c8505fd49d91f519dac9c0e38735985f40a04a66f0c69229fe",
+      "rungIds": [
+        "read:reconstructed-population-prior"
+      ],
+      "rebasedAt": "2026-08-05T07:06:38.766Z",
+      "failedRungIds": []
+    }
+  ],
+  "cardCount": 2
+}

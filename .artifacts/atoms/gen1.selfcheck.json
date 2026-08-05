@@ -1,0 +1,340 @@
+{
+  "ok": true,
+  "missingReaders": [],
+  "failedReaders": [],
+  "reports": [
+    {
+      "field": "schemaVersion",
+      "depth": "descriptive",
+      "question": "Are all atoms in this set the same schema version?",
+      "value": {
+        "versions": {
+          "2": 97454
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "atomId",
+      "depth": "inferential",
+      "question": "Is any decision double-counted?",
+      "value": {
+        "unique": 97454,
+        "total": 97454,
+        "duplicates": 0
+      },
+      "error": null
+    },
+    {
+      "field": "situationKey",
+      "depth": "inferential",
+      "question": "How much of the situation space did this run touch, and how thin is the tail?",
+      "value": {
+        "distinctKeys": 52,
+        "singletonKeys": 4,
+        "medianPerKey": 457,
+        "top": {
+          "preflop:na:LATE:false:false:none:na": 21955,
+          "preflop:na:MIDDLE:false:false:none:na": 13040,
+          "preflop:na:LATE:false:false:raise:na": 8632,
+          "preflop:na:EARLY:false:false:none:na": 7229,
+          "preflop:na:BB:false:false:raise:na": 6035,
+          "preflop:na:SB:false:false:raise:na": 5361
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "carried",
+      "depth": "descriptive",
+      "question": "Which carried axes actually arrived, and which are silently empty?",
+      "value": {
+        "axesPresent": {
+          "actorRole": 97454,
+          "street": 97454,
+          "posCategory": 97454,
+          "facingAction": 97454,
+          "source": 97454,
+          "pool": 97454
+        },
+        "atomsWithNoCarriedContext": 0
+      },
+      "error": null
+    },
+    {
+      "field": "surfaceId",
+      "depth": "inferential",
+      "question": "Can every atom be attributed to a surface?",
+      "value": {
+        "surfaces": {
+          "read:reconstructed-population-prior": 97454
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "action",
+      "depth": "inferential",
+      "question": "How often did the surface actually emit a distribution?",
+      "value": {
+        "scored": 72433,
+        "total": 97454,
+        "scoredGivenModeled": 0.7432532271635849,
+        "conditional": "P(distribution emitted | node was modeled)",
+        "pureActions": 0,
+        "actionsSeen": {
+          "open": 72433,
+          "coldCall": 72433,
+          "threeBet": 72433
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "ruleId",
+      "depth": "inferential",
+      "question": "Which rules fired versus the residual clause? (null ruleId IS the residual)",
+      "value": {
+        "residualShare": 0,
+        "conditional": "P(residual clause fired | a decision was made)",
+        "rules": {
+          "range-4+engine-v123": 97454
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "warrant",
+      "depth": "inferential",
+      "question": "What is EV by warrant class — how much rests on rules the author labelled fear?",
+      "value": {
+        "warrants": {
+          "(none declared)": 97454
+        },
+        "note": "EV-by-warrant needs an outcome join; the warrant column is here and populated by Declared surfaces. A reconstructed audit has no per-rule warrant, hence (none declared)."
+      },
+      "error": null
+    },
+    {
+      "field": "layers",
+      "depth": "inferential",
+      "question": "Which layer is wrong, independently of whether the recommendation was?",
+      "value": {
+        "layerEmissions": {},
+        "atomsWithNoStack": 97454,
+        "note": "Empty until the surface declares a Stack (WS-324). Zero here is a COVERAGE fact, not a finding — layer probes cannot run on this set."
+      },
+      "error": null
+    },
+    {
+      "field": "outcome",
+      "depth": "inferential",
+      "question": "What actually happened, so a prediction can be scored at all?",
+      "value": {
+        "withOutcome": 97454,
+        "observedActions": {
+          "fold": 56293,
+          "check": 14918,
+          "call": 10395,
+          "raise": 8430,
+          "bet": 7418
+        },
+        "conditional": "counts of the REALIZED action, over modeled nodes"
+      },
+      "error": null
+    },
+    {
+      "field": "skipReason",
+      "depth": "inferential",
+      "question": "Why is coverage thin here — WHICH decisions were unscorable, and for what reason?",
+      "value": {
+        "skipped": 25021,
+        "reasons": {
+          "model-returned-empty-distribution": 25021
+        },
+        "note": "Atom-level, not a run-level counter. A counter says 40% were skipped; this says WHICH contexts, which is what makes \"why is 4-bet coverage thin?\" answerable."
+      },
+      "error": null
+    },
+    {
+      "field": "alternativeScores",
+      "depth": "inferential",
+      "question": "How close was this decision? Near-ties are where strategies differ.",
+      "value": {
+        "withMargin": 72433,
+        "marginP10": 0.01764946396909206,
+        "marginMedian": 0.02250377673506815,
+        "marginP90": 0.023342305643919814,
+        "nearTies": 72433,
+        "conditional": "top-two margin, over atoms whose surface scored 2+ alternatives"
+      },
+      "error": null
+    },
+    {
+      "field": "rulesMatchedAndLost",
+      "depth": "inferential",
+      "question": "What would rule-level ablation say, without a re-run?",
+      "value": {
+        "atomsWithContenders": 0,
+        "note": "Populated by Declared surfaces, whose ordered rules can lose. Zero on a reconstructed audit is a property of the surface, not a gap in the capture."
+      },
+      "error": null
+    },
+    {
+      "field": "beliefState",
+      "depth": "inferential",
+      "question": "What did we believe each opponent held here? (input to the belief-vs-truth join)",
+      "value": {
+        "withBelief": 0,
+        "joinableWithTruth": 0,
+        "conditional": "atoms carrying BOTH a belief and an OBSERVED truth — the only rows a calibration claim may use; hypothesized-basis rows are a category error, not noise"
+      },
+      "error": null
+    },
+    {
+      "field": "truth",
+      "depth": "inferential",
+      "question": "What did they actually hold, and was the belief observed or hypothesized?",
+      "value": {
+        "withTruth": 9935,
+        "byBasis": {
+          "observed": 9935
+        },
+        "conditional": "P(holding revealed | node modeled) — SHOWDOWN-SELECTED, so this subset is biased toward hands that got called down and is not a random sample of decisions"
+      },
+      "error": null
+    },
+    {
+      "field": "seeds",
+      "depth": "inferential",
+      "question": "Can this exact decision be replayed bit-for-bit?",
+      "value": {
+        "seedNames": [
+          "deal"
+        ],
+        "atomsWithNoSeeds": 0,
+        "replayable": 1,
+        "conditional": "P(the decision names at least one seed | atom). A decision with no seeds is replayable only if it is deterministic — which is a claim, not a default."
+      },
+      "error": null
+    },
+    {
+      "field": "actorSeat",
+      "depth": "inferential",
+      "question": "Are villain decisions captured, or is this a hero-only log?",
+      "value": {
+        "seats": {
+          "1": 14865,
+          "2": 15974,
+          "3": 2937,
+          "4": 5871,
+          "5": 7289,
+          "6": 10576,
+          "7": 12569,
+          "8": 13566,
+          "9": 13807
+        }
+      },
+      "error": null
+    },
+    {
+      "field": "actorRole",
+      "depth": "inferential",
+      "question": "Does the table play back differently against card A vs card B?",
+      "value": {
+        "roles": {
+          "villain": 97454
+        },
+        "note": "Villain rows present means the question is REACHABLE in principle. It is NOT answerable on a recorded corpus: those villains never saw our card, so their actions cannot respond to it. A responsive Field (WS-326) is the missing half."
+      },
+      "error": null
+    },
+    {
+      "field": "wallTimeMs",
+      "depth": "inferential",
+      "question": "Is this card affordable to run?",
+      "value": {
+        "measured": 0,
+        "totalMs": 0,
+        "meanMs": null
+      },
+      "error": null
+    },
+    {
+      "field": "tokens",
+      "depth": "descriptive",
+      "question": "What did an AI-authored decision cost in tokens?",
+      "value": {
+        "measured": 0,
+        "totalTokens": 0
+      },
+      "error": null
+    },
+    {
+      "field": "atomSetId",
+      "depth": "descriptive",
+      "question": "Which set is this?",
+      "value": {
+        "atomSetId": "ws328-gen1-1785913579152"
+      },
+      "error": null
+    },
+    {
+      "field": "surfaceId",
+      "depth": "descriptive",
+      "question": "Which surface produced it?",
+      "value": {
+        "surfaceId": "read:reconstructed-population-prior"
+      },
+      "error": null
+    },
+    {
+      "field": "fullSampleRate",
+      "depth": "inferential",
+      "question": "How exact can a layer ablation over this set be?",
+      "value": {
+        "declaredRate": 0,
+        "observedFullAtoms": 0,
+        "note": "The rate is RECORDED, never inferred from how many full values are present — a low rate, a crashed run and a dropped filter are three different facts with opposite meanings. Declared vs observed disagreeing is the signal."
+      },
+      "error": null
+    },
+    {
+      "field": "seatOccupancy",
+      "depth": "inferential",
+      "question": "Does this card earn more against a table that has been together two hours?",
+      "value": {
+        "spans": 20800,
+        "distinctPlayers": 3230,
+        "medianHandsSeated": 511,
+        "note": "Without this the table-history question is permanently unanswerable — it cannot be recovered from atoms, because occupancy is a property of the table over time."
+      },
+      "error": null
+    },
+    {
+      "field": "atomCount",
+      "depth": "inferential",
+      "question": "Was the set truncated? A short read must not read as a small sample.",
+      "value": {
+        "declared": 97454,
+        "readable": 97454,
+        "agrees": true
+      },
+      "error": null
+    },
+    {
+      "field": "anchorGeneration",
+      "depth": "inferential",
+      "question": "Which Deal Book generation does this set stand on?",
+      "value": {
+        "anchorGeneration": 1
+      },
+      "error": null
+    }
+  ],
+  "depthMix": {
+    "descriptive": 5,
+    "inferential": 21
+  },
+  "atomCount": 97454
+}

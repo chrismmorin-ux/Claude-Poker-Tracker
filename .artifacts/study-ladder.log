@@ -1,0 +1,81 @@
+Deal Book handhq-allsites-allstakes-c0043f8b  1756 files  sha256:c0043f8b0b47be1d1ea36ee4c2c5cfafa401264145ec8df68adac3e5cd1a6df9
+  ...200/1756 files, 179838 hands, 16001 players
+  ...400/1756 files, 349179 hands, 22831 players
+  ...600/1756 files, 491324 hands, 30943 players
+  ...800/1756 files, 591698 hands, 37922 players
+  ...1000/1756 files, 686123 hands, 43751 players
+  ...1200/1756 files, 779077 hands, 48283 players
+  ...1400/1756 files, 882890 hands, 53120 players
+  ...1600/1756 files, 987867 hands, 56991 players
+converted 1070493 hands · 59848 player-site rows
+
+=== OVERDISPERSION (EVAL half, common rate mined from POOL half) ===
+min observations per player: 20
+
+axis                                    role      players            k/n    rate  obs/plyr  chi2/df       z   SD_betw  reliab  verdict
+limp rate                              candidate   15475 281655/2242995  12.6%        51   26.461  2239.7     14.5%    0.83  separates
+3-bet rate                             candidate   10552  46410/1158562   4.0%      43.5    2.118    81.2      2.1%    0.33  separates
+c-bet rate                             candidate    1607  100303/149477  67.1%        35    4.540   100.3     12.6%    0.62  separates
+flop bet frequency (§11.8 control)     control     7370  206852/569000  36.4%        37    4.314   201.2     11.6%    0.60  separates
+flop bet frequency, non-aggressor (disjoint control) control     5774  106549/419523  25.4%        34    4.578   192.3     11.9%    0.62  separates
+
+--- min-n sensitivity: chi2/df (players) ---
+axis                                               n>=5           n>=20           n>=50
+limp rate                               19.357 (25014)  26.461 (15475)   36.781 (7970)
+3-bet rate                               1.738 (21948)   2.118 (10552)    2.783 (4649)
+c-bet rate                                2.364 (6642)    4.540 (1607)     7.242 (495)
+flop bet frequency (§11.8 control)       2.687 (19320)    4.314 (7370)    6.558 (2546)
+flop bet frequency, non-aggressor (disjoint control)   2.787 (17443)    4.578 (5774)    7.019 (1670)
+
+=== CROSS-AXIS CORRELATION (shrunk rates, players present on both) ===
+limpRate x threeBetRate                        n=10487  r= -0.093  rho= -0.182  disatt= -0.177
+limpRate x cbetRate                            n= 1607  r= -0.138  rho= -0.198  disatt= -0.193
+limpRate x flopBetFreq                         n= 7362  r= -0.124  rho= -0.161  disatt= -0.175
+limpRate x flopBetFreqNonPfa                   n= 5770  r=  0.331  rho=  0.350  disatt=  0.460
+threeBetRate x cbetRate                        n= 1607  r=  0.187  rho=  0.206  disatt=  0.413
+threeBetRate x flopBetFreq                     n= 7054  r=  0.230  rho=  0.229  disatt=  0.515
+threeBetRate x flopBetFreqNonPfa               n= 5619  r=  0.046  rho= -0.013  disatt=  0.102
+cbetRate x flopBetFreq                         n= 1607  r=  0.674  rho=  0.663  disatt=  1.000   << OVERLAPPING BY CONSTRUCTION — not evidence of a shared trait
+cbetRate x flopBetFreqNonPfa                   n= 1542  r=  0.180  rho=  0.139  disatt=  0.290
+flopBetFreq x flopBetFreqNonPfa                n= 5774  r=  0.789  rho=  0.728  disatt=  1.000
+
+=== ORDERING: a ladder, or independent habits wearing a ladder's name? ===
+  acquired(limpRate) := shrunk rate < 0.1772  (population median)
+  acquired(threeBetRate) := shrunk rate > 0.0332  (population median)
+  acquired(cbetRate) := shrunk rate > 0.6773  (population median)
+
+  limpRate / threeBetRate          n=10487 both= 3124 exp_if_indep= 2793.5 P(A|B)=0.597 P(B|A)=0.558 phi=0.126
+  limpRate / cbetRate              n= 1607 both=  745 exp_if_indep=  726.5 P(A|B)=0.928 P(B|A)=0.512 phi=0.078
+  threeBetRate / cbetRate          n= 1607 both=  613 exp_if_indep=  551.2 P(A|B)=0.763 P(B|A)=0.556 phi=0.166
+
+  Guttman nesting over limpRate -> threeBetRate -> cbetRate: 1325/1607 nested (82.5%), 282 violations (17.5%).
+  marginals in this intersection: 90.5% / 68.6% / 50.0%  — NOT 50/50, so the equal-marginal baseline (50.0%) does not apply.
+  independent habits with THESE marginals would already nest 77.8%. EXCESS ATTRIBUTABLE TO ORDERING: 4.7%.
+  pattern counts (limp/3bet/cbet acquired): {"100":271,"101":172,"110":438,"111":573,"010":52,"000":43,"011":40,"001":18}
+
+=== VERDICTS ===
+
+  limp rate
+    SEPARATES — χ²/df = 26.461 (z = 2239.7), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 14.5pp — real variation beyond what each player's own n explains.
+
+  3-bet rate
+    SEPARATES — χ²/df = 2.118 (z = 81.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 2.1pp — real variation beyond what each player's own n explains.
+
+  c-bet rate
+    SEPARATES — χ²/df = 4.540 (z = 100.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 12.6pp — real variation beyond what each player's own n explains.
+
+  flop bet frequency (§11.8 control)
+    SEPARATES — χ²/df = 4.314 (z = 201.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.6pp — real variation beyond what each player's own n explains.
+
+  flop bet frequency, non-aggressor (disjoint control)
+    SEPARATES — χ²/df = 4.578 (z = 192.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.9pp — real variation beyond what each player's own n explains.
+
+=== RESULT CARD RC-study-ladder-c0043f8b ===
+  admissible: true
+  warning LOW_SPLIT_HALF_RELIABILITY: threeBetRate split-half reliability is 0.331 over 16493 players. Whatever between-player variance the χ² sees, it does not re-measure on the same player across time — so it is not yet a trait a per-villain channel could read.
+  warning ONLINE_2009_NOT_LIVE: Top-ranked suspected-fault entry. Corpus is online 2009 50NL (SRC-012); the founder plays live 9-handed 1/2–1/3 (SRC-014). Limping in particular is far more common live, so the limp axis is the one most likely to behave differently there. No live sample was available to this run — SRC-014 lives in the app's IndexedDB and is not reachable from a node script — so the live half of the accept criterion is UNMET, not answered.
+
+  leakage guard: {"poolPct":50,"referenceMode":"disabled","evalPlayersChecked":29953,"decisionsChecked":0,"statWindowsChecked":65254}
+
+wrote .artifacts/study-ladder.json
+wrote .artifacts/study-ladder.card.json
