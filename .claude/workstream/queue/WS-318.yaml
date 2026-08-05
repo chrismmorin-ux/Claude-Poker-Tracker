@@ -2,12 +2,12 @@ id: "WS-318"
 title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: ""
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-05T19:30:00Z"
+completion_commit: "77c566f"
 priority_score: 26.0
 priority_label: "P1"
 category: "domain-correctness"
@@ -94,3 +94,49 @@ status_note: |
   now carry the honest name (`isAgg`, `heroIsAgg`) and each site has a comment pointing here.
   Priority is P1 rather than P0 because it degrades a secondary matching feature rather than
   the engine's EV path — but the wrong string is on screen today.
+
+  ── CLOSED 2026-08-05 (commit 77c566f) ──────────────────────────────────────────────
+
+  THE TICKET'S PREMISE WAS WRONG, AND THAT MATTERED. This was filed as "the match is far
+  looser than intended". Measured, it was not loose — it NEVER FIRED, at any of the three
+  sites, before or after WS-317. So option (b) "keep current behaviour, fix the naming" was
+  never on the table: there was no behaviour to keep.
+
+  ROOT CAUSE — three producers, one comparison, no agreement on what axis 3 means:
+    weakness keys (decisionAccumulator, 7 args) -> isAgg      'agg' | 'def'
+    hero keys     (replayAnalysis:589, 4 args)  -> primitive  'bet' | 'check' | ...
+    quick keys    (handSignificance)            -> 4 axes, does not parse at all
+  `replayAnalysis.js:589` called a SEVEN-parameter builder with FOUR arguments, so the action
+  landed in the isAgg slot and axes 4-6 serialized empty ('flop:dry:BTN:bet:::'). 'bet' is
+  never 'agg', so the comparison returned false for every hand. The defect was in neither
+  file this ticket listed under files_involved.
+
+  COST: heroWeaknessMatch and villainWeaknessRevealed are each 1 of 4 terms in factors
+  weighted 0.40 and 0.35, both pinned at 0 — the hand-significance score could never exceed
+  0.8125 of its 1.0 range. ~19% of the scale that ranks which hands are worth reviewing was
+  structurally unreachable.
+
+  DECISION (founder, 2026-08-05): match on street + contextAction — the ticket's option (a).
+  contextAction subsumes isAgg for the first-to-act family ('cbet' is aggressor-only, 'donk'
+  defender-only) and is the axis the naming always implied. Deliberately NOT matched on
+  texture (hero producers pass 'unknown'), position, or IP — a leak is a leak wherever you
+  sit, and requiring all seven axes would make matches vanishingly rare on live samples.
+  Widen only with a measurement attached.
+
+  MEASURED, 36 hero decisions vs 4 distinct weakness keys:
+    old (as shipped)       0/36  ( 0.0%)
+    option (b) isAgg      12/36  (33.3%)
+    option (a) contextAct  8/36  (22.2%)  <- shipped
+  (a) is strictly narrower than (b), exactly as this ticket predicted.
+
+  EFFORT: filed S, actually M/L. The S estimate assumed a renamed variable; the real fix was
+  giving hero keys a real derivation. Left as `effort: "S"` deliberately — the estimate was
+  the artifact, and overwriting it hides the calibration signal.
+
+  WHY IT HID, AND WHAT NOW CATCHES IT: each producer was self-consistent, and this ticket's
+  own unit fixtures hand-wrote BOTH sides of the comparison in the same shape — a shape
+  production never emitted. No unit test could catch a disagreement BETWEEN producers. The
+  new `pokerCore/__tests__/situationKeyComparability.test.js` asserts the relationship
+  between two independently-built keys, including that axis 3 never holds a primitive action.
+  That is the fifth instance of this engine's recurring failure mode (WS-285, WS-291, WS-300,
+  WS-317): a structure asserting something nothing checks.
