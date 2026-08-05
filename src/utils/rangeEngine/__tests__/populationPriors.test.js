@@ -8,12 +8,26 @@ import {
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,
   SUBCLASS_SPLIT,
+  THREE_BET_TOP_FRACTION,
 } from '../populationPriors';
 import { RANGE_POSITIONS } from '../rangeProfile';
-import { rangeIndex, rangeWidth } from '../../pokerCore/rangeMatrix';
+import {
+  rangeIndex, rangeWidth, decodeIndex, averageCharts, PREFLOP_CHARTS,
+} from '../../pokerCore/rangeMatrix';
 import { HAND_LABELS } from '../../pokerCore/preflopEquityTable';
 
 const GRID_SIZE = 169;
+
+/** Combo-weighted mean — the quantity `withEquitySupport` pins. `rangeWidth` rounds to
+ *  whole percent, which cannot resolve a 2.5%-wide grid. */
+const comboWidth = (grid) => {
+  let s = 0;
+  for (let i = 0; i < GRID_SIZE; i++) {
+    const { isPair, suited } = decodeIndex(i);
+    s += grid[i] * (isPair ? 6 : suited ? 4 : 12);
+  }
+  return s / 1326;
+};
 
 describe('populationPriors', () => {
   describe('frequency tables', () => {
@@ -223,22 +237,33 @@ describe('prior support (WS-302)', () => {
     }
   });
 
-  it('reproduces the pre-WS-302 chart at lambda = 0', () => {
+  it('pins the lambda = 0 doctrine grid — the sweep control arm', () => {
     // The control arm of the sweep. If this drifts, the sweep's lambda = 0 column stops
-    // being a baseline and the whole comparison is unanchored. The counts are the
-    // measured pre-change support of the `open` prior — the numbers WS-302 was filed on.
-    const PRE_WS302_OPEN_CELLS = { EARLY: 106, MIDDLE: 108, LATE: 119, SB: 111, BB: 116 };
-    for (const [pos, expected] of Object.entries(PRE_WS302_OPEN_CELLS)) {
+    // being a baseline and the whole comparison is unanchored.
+    //
+    // RE-ANCHORED AT WS-304, and the drift is the point of that ticket rather than an
+    // accident. The anchor also CHANGED KIND, from a cell count to a width, because the
+    // open branch's foot is now solved rather than asserted: the count is an incidental
+    // output of that solve, the width is what the solve targets.
+    //
+    // Previously {EARLY 106, MIDDLE 108, LATE 119, SB 111, BB 116} cells for `open` and 5
+    // for EARLY `threeBet`.
+    const chart = {
+      EARLY: averageCharts('UTG', 'UTG+1'),
+      MIDDLE: averageCharts('MP1', 'MP2'),
+      LATE: averageCharts('HJ', 'CO', 'BTN'),
+      SB: PREFLOP_CHARTS.SB,
+      BB: PREFLOP_CHARTS.BB,
+    };
+    for (const pos of RANGE_POSITIONS) {
       const off = getPopulationPrior(pos, 'open', { supportLambda: 0 });
-      let nonZero = 0;
-      for (let i = 0; i < GRID_SIZE; i++) if (off[i] > 0) nonZero++;
-      expect(nonZero, pos).toBe(expected);
+      // "Widen GTO charts ~20% for live 1/2" — the branch's own comment, now enforced.
+      expect(comboWidth(off) / comboWidth(chart[pos]), pos).toBeCloseTo(1.20, 2);
     }
-    // …and the 3-bet prior, which was the worst of them: 5 cells out of 169.
     expect(
       Array.from(getPopulationPrior('EARLY', 'threeBet', { supportLambda: 0 }))
         .filter((v) => v > 0).length,
-    ).toBe(5);
+    ).toBe(10);
   });
 
   it('ranks off-chart support by real equity, not by chart membership', () => {
@@ -255,13 +280,119 @@ describe('prior support (WS-302)', () => {
 
   it('keeps a narrow 3-bet prior narrow — the floor self-limits', () => {
     // POKER_THEORY §2.3: a 3-bet from a typical live player is almost always a monster.
-    // A flat 0.05 floor on a 1%-wide grid would erase that read; the primitive caps the
+    // A flat 0.05 floor on a 2.5%-wide grid would erase that read; the primitive caps the
     // floor at 90% of the target mean instead.
+    //
+    // WS-304 moved the numbers here, and the reason is derived rather than incidental. The
+    // floor IS 90% of the range width by construction, so an assertion on the floor is an
+    // assertion on the width — and the old width (1.04%) was NARROWER than the 2.56%
+    // combo width of the hand set §2.3 names as the live-pool value 3-bet (QQ+ = 18
+    // combos, AK = 16). That is precisely why AK could not fit inside it. At the derived
+    // width the floor lands at 0.018, so the ratio to AA necessarily falls.
     const prior = getPopulationPrior('EARLY', 'threeBet');
     const junk = prior[HAND_LABELS.indexOf('72o')];
     expect(junk).toBeGreaterThan(0);
-    expect(junk).toBeLessThan(0.01);
-    expect(prior[HAND_LABELS.indexOf('AA')]).toBeGreaterThan(50 * junk);
+    expect(junk).toBeLessThan(0.03);
+    expect(prior[HAND_LABELS.indexOf('AA')]).toBeGreaterThan(25 * junk);
+    // The read that actually broke: before WS-304, AKo and 72o carried the SAME number
+    // here — both sat exactly on the floor, because AK was not in the doctrine grid at all.
+    expect(prior[HAND_LABELS.indexOf('AKo')]).toBeGreaterThan(4 * junk);
+  });
+});
+
+// =============================================================================
+// HAND STRENGTH ORDERING (WS-304)
+// =============================================================================
+
+describe('hand strength ordering (WS-304)', () => {
+  const at = (prior, label) => prior[HAND_LABELS.indexOf(label)];
+  const rankOf = (prior, label) => Array.from(prior.keys())
+    .sort((a, b) => prior[b] - prior[a])
+    .indexOf(HAND_LABELS.indexOf(label));
+  const width = comboWidth;
+
+  it('puts AK in the top region of the 3-bet prior alongside QQ+, on every position', () => {
+    // POKER_THEORY §2.3: "Value 3-bet: QQ+, AK — expecting to be called by worse", and
+    // "live low-stakes: most players 3-bet only premiums (QQ+, AK)". AK is one of the two
+    // holdings the doctrine names. Measured before this fix, the EARLY prior at lambda = 0
+    // read AA=1.0000 KK=0.7159 QQ=0.4318 JJ=0.1477 AKs=0.0057 AKo=0.0000 — AKo ranked
+    // 157th of 169, i.e. the model said a villain who 3-bet and turned over AK was holding
+    // a hand they could not have had.
+    for (const pos of RANGE_POSITIONS) {
+      const prior = getPopulationPrior(pos, 'threeBet');
+      expect(rankOf(prior, 'AKs'), `${pos} AKs rank`).toBeLessThan(8);
+      expect(rankOf(prior, 'AKo'), `${pos} AKo rank`).toBeLessThan(8);
+      // "alongside QQ+" — comparable weight, not a rounding error next to it.
+      expect(at(prior, 'AKo') / at(prior, 'QQ'), `${pos} AKo:QQ`).toBeGreaterThan(0.4);
+      // …and clearly separated from everything the doctrine does NOT name.
+      for (const weak of ['KQo', 'A5s', '76s', '22', '72o']) {
+        expect(at(prior, 'AKo'), `${pos} AKo vs ${weak}`).toBeGreaterThan(at(prior, weak));
+      }
+    }
+  });
+
+  it('derives the 3-bet width from the combo count of the hand set §2.3 names', () => {
+    // A linear ramp over the top f of a combo-uniform percentile axis has combo-weighted
+    // mean f/2. THREE_BET_TOP_FRACTION = 0.05 therefore gives a range width of 2.50%,
+    // against 34/1326 = 2.56% — the exact combo count of QQ+ (18) plus AK (16). The
+    // threshold is that identity solved, not a number tuned until AK cleared it.
+    const w = width(getPopulationPrior('EARLY', 'threeBet', { supportLambda: 0 }));
+    expect(w).toBeCloseTo(THREE_BET_TOP_FRACTION / 2, 3);
+    expect(w).toBeCloseTo(34 / 1326, 2);
+  });
+
+  it('scales the 3-bet foot by declared 3-bet propensity, not by a position label', () => {
+    // The old code branched on `position === 'LATE' || position === 'BB'`, which left SB
+    // on EARLY's tight threshold while FACED_RAISE_FREQUENCIES declares SB 3-betting at
+    // 0.12 — twice EARLY, equal to LATE — and §2.5.2 calls the blind 3-bet wider and more
+    // merged. Width now tracks the declared frequency ratio exactly.
+    const w = (pos) => width(getPopulationPrior(pos, 'threeBet', { supportLambda: 0 }));
+    for (const pos of RANGE_POSITIONS) {
+      const ratio = FACED_RAISE_FREQUENCIES[pos].threeBet / FACED_RAISE_FREQUENCIES.EARLY.threeBet;
+      expect(w(pos) / w('EARLY'), pos).toBeCloseTo(ratio, 1);
+    }
+    expect(w('SB')).toBeGreaterThan(w('EARLY'));
+  });
+
+  it('ranks a small pair above a junk broadway — the rank sum did the opposite', () => {
+    // `(rank1 + rank2 + 8·isPair + 2·suited)/32` scored 22 at 0.250 and K3o at 0.375, so a
+    // pair's whole pair bonus was worth less than one rank step at the top of the deck.
+    // Asserted at lambda = 0, on the DOCTRINE grid — WS-302's support already ranked by
+    // equity, so this only fails if the ordering underneath it is wrong.
+    const open = getPopulationPrior('EARLY', 'open', { supportLambda: 0 });
+    expect(at(open, '22')).toBeGreaterThan(at(open, 'K3o'));
+    // The cold-call foot sat between them, so 22 — the hand a live pool set-mines with —
+    // was assigned EXACTLY ZERO cold-call weight while K3o carried 0.3.
+    const coldCall = getPopulationPrior('EARLY', 'coldCall', { supportLambda: 0 });
+    expect(at(coldCall, '22')).toBeGreaterThan(0);
+    expect(at(coldCall, '22')).toBeGreaterThanOrEqual(at(coldCall, 'K3o'));
+    // …and the fold prior runs the other way: 22 is folded LESS often than K3o.
+    const fold = getPopulationPrior('EARLY', 'fold', { supportLambda: 0 });
+    expect(at(fold, '22')).toBeLessThan(at(fold, 'K3o'));
+  });
+
+  it('includes both hands §2.3 names as light 3-bets in the bluff tails', () => {
+    // §2.3: "Bluff 3-bet (light 3-bet): A5s, 76s". The old tail band (0.40 < s < 0.60 on
+    // the rank sum) scored 76s at 0.344 and excluded it — the doctrine's own example was
+    // outside the tail the comment cited it for. The squeeze tail (0.35 < s < 0.62)
+    // excluded it too.
+    for (const action of ['cold3Bet', 'squeeze']) {
+      const prior = getPopulationPrior('EARLY', action, { supportLambda: 0 });
+      expect(at(prior, '76s'), `${action} 76s`).toBeGreaterThan(0);
+      expect(at(prior, 'A5s'), `${action} A5s`).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps the transported regions the same size as the ones they replaced', () => {
+    // Every threshold that carried no doctrine number of its own was moved by quantile
+    // matching, so each region selects the SAME fraction of the 1326 combos as before and
+    // only its membership changed. Range width is the observable: `limp`, `coldCall` and
+    // `fold` are pure threshold shapes with no chart term, so theirs must be preserved.
+    const PRE_WS304_WIDTH = { limp: 0.3180, coldCall: 0.2499, fold: 0.5164 };
+    for (const [action, before] of Object.entries(PRE_WS304_WIDTH)) {
+      const after = width(getPopulationPrior('EARLY', action, { supportLambda: 0 }));
+      expect(Math.abs(after - before), `${action} ${after}`).toBeLessThan(0.03);
+    }
   });
 });
 

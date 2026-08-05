@@ -1,5 +1,5 @@
 ---
-version: '2.0'
+version: '2.1'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-08-05
+    version: '2.1'
+    change: "WS-337: added §16 — THE EQUITY OPERATOR IS ANTISYMMETRIC. E(a,b)+E(b,a)=1 makes S = M - 1/2 exactly skew-symmetric (measured: max|M+M^T-1| = 0, BIT-EXACT on both of two independently seeded 20,000-board builds), which forces three theorems rather than three modelling choices: no real eigen-axes, a canonical decomposition into at most 84 two-dimensional rotation planes (each one rock-paper-scissors cycle with a magnitude), and 169 odd so one dimension has no partner. Promotes the decomposition from a research script to a first-class object: src/utils/pokerCore/equityOperator.js (construction + the exact arithmetic) and equitySkew.js (the shipped artifact reader), with the intransitivity map committed as a 169-cell grid in data/equitySkewDecomposition.js indexed exactly like every range grid. Three corrections to the exploratory measurement it builds on: (1) the transitive/intransitive split is now the exact ORTHOGONAL projection (potential f = Sw = average equity - 1/2, no fitted scalar, Pythagoras residual < 2e-15) rather than a scalar fitted to a unit-normalised strength vector under a different inner product — 74.01/25.99 weighted, 75.28/24.72 unweighted; (2) plane AXIS loadings are basis-arbitrary and are no longer reported, only plane magnitudes and per-class radii, which are the invariants; (3) plane significance is now a MEASURED threshold — two seeds give a statistically exact noise replica (S_A-S_B)/2, whose top singular value 1.353e-3 admits 28 of 84 planes (99.93% of skew energy). Records two honesty corrections to the ticket's own framing: at 13 planes the mean reconstruction error is 1.07pp but the MAX is 16.18pp, and the intransitivity map spans only 7.14-11.52pp (ratio 1.61), so 'the trash is a pure strength ladder' is NOT supported — the map licenses a ranking, not a partition. buildCompressionClaim refuses in CODE any claim reporting energy share without reconstruction error and the transitive/intransitive split. The 169-grid remains authoritative; low-dimensional coordinates ship as an additional lens carrying their measured residual, and the estimation claim (log-loss vs the 169-cell ladder on HandHQ under the two-level split) is NOT YET RUN and therefore unknown rather than favourable."
   - date: 2026-07-30
     version: '2.0'
     change: "WS-276 (SPR-161): added §12 — HERO'S RANGE, AND WHAT VILLAIN THINKS IT IS. The engine priced every villain fold/call decision from `1 - combo.heroEquity`, i.e. that villain combo's equity against hero's EXACT TWO CARDS, so villains were modelled as able to see hero's hand. The anecdote that motivated the ticket (a villain folding a made straight to a BTN 3-bettor's river shove) understates the defect: measured on a river board, equity against a known holding is DEGENERATE — exactly 0, 0.5 or 1 — so the model gave every opponent flawless knowledge of whether they were beaten, erring in BOTH directions (AT top pair 0.000 → 0.393 vs a perceived range; A9 two pair 1.000 → 0.583). Any weakness inferred from those predictions inherited the bias. Fix: a parallel per-combo field `villainEquityVsPerceived` computed against hero's perceived range, with `heroEquity` retained for hero's own EV; one builder (heroRangeBuilder.js) seeded from the §2.5 population prior for hero's line and narrowed by the same `narrowByBoard` villain ranges use, so §3.6.1's never-zero guarantee applies for free. Evidence enters as an observed frequency shrunk by n/(n+PRIOR_WEIGHT) per §6.5 — never as an image label (§7.1/§7.2) — and is per-villain. ZERO observation history is the load-bearing case, not a degraded one: a typical BTN 3-bet + three barrels contains the Broadway combos regardless of what anyone watched. Also adds §12.4 bluff:value construction from sizing (s/(1+2s); half pot 3:1, pot 2:1, 2x overbet 1.5:1) shipped as a BASELINE the exploitative deviation is measured against, never a prescription (WS-310 Layer A discipline). Records two boundaries honestly: §12.5 recursion stops at level 2 deliberately, and §12.6 v1 corrects the CURRENT node only — depth-2/3 future-street branches retain a residual omniscience bias because a perceived range at a future node needs hero's strategy there, which WS-301's breached timing budget cannot absorb. River decisions are fully corrected. Measured cost: flop 1.67x, turn 1.94x, river 1.03x. §12.7 records that the motivating shove was read-dependent and NOT balanced-correct, and forbids tuning the model until it agrees folding a straight was right."
@@ -153,6 +156,20 @@ A 3-bet (re-raise preflop) is typically either:
 - **Linear/merged range**: value + good hands, no bluffs (exploit approach vs stations)
 
 Live low-stakes: most players 3-bet only premiums (QQ+, AK). A 3-bet from a typical player is almost always a monster. This is exploitable — fold non-premium hands to their 3-bet.
+
+**The prior did not contain AK, for five years (WS-304, binding).** Measured at `PRIOR_SUPPORT_LAMBDA = 0` — the shipped prior's own shape, before WS-302's support — the EARLY 3-bet prior read `AA=1.0000 KK=0.7159 QQ=0.4318 JJ=0.1477 AKs=0.0057 AKo=0.0000`. AKo ranked **157th of 169**. A villain who 3-bet and turned over AK was, per the model, holding a hand they could not have had — one of the two holdings this very section names.
+
+The cause was the ordering the branch thresholded on, not the threshold: `(rank1 + rank2 + 8·isPair + 2·suited) / 32`, a rank sum with two fudge terms and only **33 levels for 169 hand classes**. It scored AKs at 0.781 against a threshold of 0.78 (clearing by 0.001, hence 0.0057) and AKo at 0.719 (not clearing at all). The same score ranked **22 (0.250) below K3o (0.375)** — a pair's entire pair bonus was worth less than one rank step at the top of the deck — which put small pairs outside the cold-call prior while K3o sat inside it. And because 33 levels cannot separate 169 classes, distinct thresholds selected *identical* hand sets: `cold3Bet` (0.81) and `squeeze` (0.79) both selected exactly {AA,KK,QQ,JJ}, so the two shapes §2.5.2 calls different were the same shape.
+
+Three rules follow, and they bind:
+
+1. **Hand strength in the priors is the combo-weighted equity percentile** of the class, from `pokerCore/preflopEquityTable.EQUITY_VS_OPEN` — measured, not asserted. A percentile is uniform on combos, so a threshold `t` means exactly "the top (1 − t) of the field" and a linear ramp from `t` to 1 has combo-weighted mean `(1 − t)/2`. That identity is what lets a threshold be *derived* rather than tuned. Do not reintroduce a hand-rolled strength score anywhere in `rangeEngine/`.
+2. **The 3-bet value core is derived from the combinatorics of the hand set named above.** QQ+ is 18 combos and AK is 16, so the live-pool value 3-bet range is 34/1326 = 2.56% of the field; a ramp over the top 5% has mean 2.50%. The branch's own long-standing comment ("top 3-5%") independently lands in the same band, and 5% rather than 3% because AKo enters the measured equity prefix only at 3.47% — the tight end of the band excludes it. `THREE_BET_TOP_FRACTION = 0.05` in `populationPriors.js`. The old thresholds gave 1.04% and 1.55% — **narrower than the hand set this section names**, which is the arithmetic reason AK had to fall off the bottom.
+3. **Position scaling reads the declared frequency, not a position label.** The old code branched on `position === 'LATE' || position === 'BB'`, which left SB on EARLY's tight threshold while `FACED_RAISE_FREQUENCIES` declares SB 3-betting at 0.12 — twice EARLY, equal to LATE — and §2.5.2 calls the blind 3-bet wider and more merged. The foot now scales by that declared ratio (§7.2: a position-conditioned prior is sanctioned; a position-conditioned *decision* is not).
+
+**Named approximation, stated because it is load-bearing.** All-in equity does not encode equity realization (§1.4), so this ordering ranks AKo just *below* TT and JJ, where doctrine ranks AK above both — AK realizes far better against a raiser's calling range than a mid pair does, and the table cannot see it. It is still the right instrument, because the error it makes is one rank position and the error it replaces was a hundred and fifty. Falsifier: regenerate `EQUITY_VS_OPEN` with realization weighting and re-run the WS-293 support sweep; if the argmax moves sharply, the realization information is real and this ordering is the wrong basis.
+
+Also fixed by the same change: §2.3's own named light 3-bets. The bluff tail was gated on `0.40 < s < 0.60`, and **76s scored 0.344 — the doctrine's own example was outside the tail the code comment cited it for**. On the equity ordering both A5s and 76s sit inside it.
 
 ### 2.4 Squeeze Plays
 A squeeze is a 3-bet when facing a raise + one or more callers. It's more powerful than a standard 3-bet because:
@@ -2142,3 +2159,157 @@ axis had.
 - Region claims cite a measured width. "It has showdown value" is a claim about an interval
   and should carry one.
 - Equilibrium and statistically-supported curves are reported separately, never averaged.
+
+---
+
+## 16. The Equity Operator Is Antisymmetric, and Its Cycles Are Measurable (WS-337)
+
+Heads-up all-in equity is not a table of numbers. It is an **operator** `M` on the 169-class
+grid, `M[i][j]` = equity of class `i` against class `j`, and it satisfies
+
+```
+E(a, b) + E(b, a) = 1        exactly, by the definition of a showdown
+```
+
+so `S = M - 1/2` is **exactly skew-symmetric**. This is a property of the deck, not of this
+repo's engine: a different engine, or a corrected one, produces the same operator. The founder's
+standing caveat that the engine is not accuracy-validated therefore does not reach anything in
+this section.
+
+Measured 2026-08-05 on two independently seeded 20,000-board builds:
+`max |M[i][j] + M[j][i] - 1| = 0` — **bit-exact, both seeds**, not merely small. Reproduce with
+`scripts/research/build-equity-matrix.mjs` then `scripts/research/spectrum.py`. Code:
+`src/utils/pokerCore/equityOperator.js` (construction plus the arithmetic that is exact) and
+`equitySkew.js` (the shipped decomposition).
+
+### 16.1 What antisymmetry forces — three theorems, not three choices
+
+1. **`S` has no real eigen-axes.** There is no "principal hand class" of this operator, and
+   eigenvectors of `S` are not principal components. Reporting them as such is a category error.
+2. **`S` decomposes canonically into 2-D rotation planes** (Youla / real Schur form), each with a
+   magnitude `sigma_k`. A rotation in range space *is* a cycle. Each plane is one
+   rock-paper-scissors structure with a size attached. **That is the intransitivity of preflop
+   poker, in a basis, with a number on it.**
+3. **169 is odd**, so at least one dimension has no partner: **at most 84 planes**, ever.
+
+**DO NOT SYMMETRISE.** `(S + S^T)/2` is identically zero — symmetrising this operator to make a
+familiar tool apply destroys 100% of its content, not some of it. (Forming `S^T S = -S^2` is a
+*different* operation and is correct: that is the Gram operator, and its eigenspaces **are**
+`S`'s invariant planes. The distinction is easy to lose and expensive to lose.)
+
+**DO NOT RANK HANDS BY A PLANE AXIS.** Inside a rotation plane the basis is arbitrary — if
+`(u, v)` spans it, so does any rotation of them. The invariants are the plane's magnitude and
+each class's **radius** in it, `sqrt(u^2 + v^2)`. A table of "plane 3, axis A, top loadings" is a
+table of a basis choice, not of the operator.
+
+### 16.2 The transitive / intransitive split — a projection, with no fitted parameter
+
+A game is transitive exactly when `S_ij = f_i - f_j` for some potential `f` — a pure strength
+ladder. Those matrices form a **linear subspace**, so the transitive part of `S` is the orthogonal
+**projection** onto it, and the split obeys Pythagoras. Solving the least squares in the
+combo-frequency inner product gives, with no free parameter:
+
+```
+f = S w  =  (equity against a random hand) - 1/2
+```
+
+The strength ladder is therefore not a model somebody chose and fitted; it *is* the projection,
+and its potential happens to be exactly average equity.
+
+| Inner product | Transitive (ladder) | Intransitive residual |
+|---|---|---|
+| Combo-frequency weighted | **74.01%** | **25.99%** |
+| Unweighted (169 classes equal) | 75.28% | 24.72% |
+
+Pythagoras residual `< 2e-15` in both, which is what makes these a variance decomposition rather
+than a fit. **The load-bearing consequence:** a pure strength ladder is already **rank 2**, so
+"few planes explain most of `S`" is no news on its own. The part that makes poker a *game*
+resists compression far harder than the whole does — **9** planes for 90% of the residual's
+energy and **21** for 99%, against **3** and **13** for the full operator.
+
+### 16.3 What a compression claim about this operator must carry — binding
+
+Three numbers, always together. `buildCompressionClaim` in `equityOperator.js` **refuses** to
+construct a claim missing any of them; this is enforced in code rather than left to review.
+
+| | Why it alone is not enough |
+|---|---|
+| **Energy share** | A ratio of squared magnitudes. It flatters every low-rank claim. |
+| **Reconstruction error** | The honest half — how wrong the reconstructed equities actually are. |
+| **Transitive / intransitive split** | Without it, "low rank" restates "there is a strength ladder". |
+
+Plus, per the Standard of Record: the number of boards, every seed, the basis, and the
+**threshold** used to call a plane significant. Measured (2 x 20,000 boards, seeds 20260803 and
+987654321, combo-frequency-weighted basis):
+
+| planes | coords/class | cumulative energy | mean err | max err |
+|---|---|---|---|---|
+| 1 | 2 | 81.5% | 5.64 pp | 38.83 pp |
+| 3 | 6 | 92.3% | 3.47 pp | 24.76 pp |
+| 6 | 12 | 95.7% | 2.51 pp | 21.76 pp |
+| 13 | 26 | 98.8% | 1.07 pp | **16.18 pp** |
+| 20 | 40 | 99.4% | 0.61 pp | 9.86 pp |
+| 30 | 60 | 99.8% | 0.26 pp | 2.88 pp |
+
+**Read the max column.** "13 coordinates reproduce class-vs-class equity to about 1pp" is true of
+the *mean* and false of the worst matchup by a factor of fifteen. Any claim that a
+low-dimensional basis is sufficient for range estimation must be made against the max, or scored
+directly against the 169-cell grid.
+
+**The significance threshold is measured, not chosen.** Two independent board seeds give
+`Sbar = (S_A + S_B)/2` (signal) and `D = (S_A - S_B)/2` — a statistically exact **noise replica**,
+since both carry noise of the same variance. `sigma_1(D) = 1.353e-3` is therefore the level below
+which a plane cannot be distinguished from board sampling. **28 of the 84 planes clear it**,
+carrying 99.93% of the skew energy (99.96% of the skew *norm*). Of the intransitive residual's own
+84 planes, **38** clear its noise floor of `4.58e-4`. The familiar "3 / 6 / 13 planes" figures are
+*energy-share cuts* and answer a different question; quote which one you mean.
+
+### 16.4 The intransitivity map — where cyclic structure can exist at all
+
+Per class, the RMS cyclic edge it carries against a randomly drawn opponent hand: the part of its
+equity that **no** strength ladder can express. Shipped as a 169-cell grid in
+`src/utils/pokerCore/data/equitySkewDecomposition.js`, indexed exactly like every range grid, and
+read via `intransitivityFor(hand)` / `intransitivityGrid()`.
+
+| | classes | value |
+|---|---|---|
+| **Most cyclic** | AKo, AKs, KQo, AQo, AA, AQs, KJo, KQs, QJo, AJo, AJs, KTo, KJs, QTo | 9.8 – 11.5 pp |
+| **Least cyclic** | T2s, 92s, T3s, 93s, J3s, J2s, T4s, J4s, 82s, J5s, A5s, Q3s | 7.1 – 7.3 pp |
+
+Per-class sampling noise is ~0.12 pp (max 0.18 pp), so all 169 values clear their own noise by
+more than 10x. The ordering is real, and cyclic structure does concentrate in the big-ace /
+broadway cluster — i.e. in exactly the hands that populate raising ranges.
+
+**But state the spread honestly.** The range is 7.144 – 11.518 pp, a ratio of **1.61**. The least
+cyclic hand in the deck still carries 62% of the most cyclic hand's cyclic magnitude. **"The trash
+is a pure strength ladder" is not supported by the measurement** — nothing in the 169 grid is
+close to purely transitive, and partitioning the grid into "cyclic" and "ladder" regions would
+draw a line where the data shows a gentle gradient. What the map licenses is a *ranking*; a 1.6x
+spread does not license a threshold rule.
+
+### 16.5 Confirmed cycles, and one locator that does not work
+
+Genuine intransitive triples exist in the raw matrix, not merely in a model of it:
+`22 > AKo (53.1%) > JTs (59.3%) > 22 (53.3%)`; also `22 > AQo > QTs > 22` and
+`22 > AJo > JTs > 22`.
+
+**A recorded failure, so it is not re-proposed.** The heuristic that classes ~120 degrees apart in
+the top *residual* plane form raw-matrix triples finds none, and is invalid **by construction**:
+it uses residual angles to predict raw-matrix cycles while the transitive component — 74% of the
+structure — is added back in and swamps them. The rotation-plane decomposition is untouched by
+this (it is a theorem); the locator is wrong. A valid locator must search the residual operator.
+
+### 16.6 What this binds
+
+- Any comparative claim about compressing this operator goes through `buildCompressionClaim` and
+  carries all three numbers plus its threshold, boards and seeds. A claim reporting only energy
+  share is refused in code, not in review.
+- Never symmetrise `S`; never rank hands by a single plane axis; never quote a plane count without
+  the threshold that produced it. **A near-zero eigenvalue is a decision about a threshold, not a
+  fact about poker.**
+- The **169-cell grid remains authoritative.** Low-dimensional plane coordinates ship as an
+  ADDITIONAL lens (`projectOntoPlanes`) that always returns its measured residual alongside.
+  Nothing in the estimation path may treat them as a replacement until the basis has been scored
+  against the shipped 169-cell grid on corpus data under the two-level split (POOL/EVAL **and**
+  walk-forward, corpus-mined priors structurally excluded from the eval fold). **That test has not
+  been run**, so the estimation claim in WS-337 is currently *unknown*, not *favourable*.

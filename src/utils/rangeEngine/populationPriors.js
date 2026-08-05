@@ -173,6 +173,29 @@ export const FACED_RAISE_SUBCLASSES = ['cold3Bet', 'squeeze', 'limpReraise'];
  * holding-knowledge join, when it lands) and against a hero-EV metric rather than log
  * loss. If the optimum moves sharply toward 0 under either, the shape information is real
  * and this metric was the wrong instrument. Re-run the sweep — do not re-reason it.
+ *
+ * RE-SWEPT AT WS-304 (2026-08-05), because that ticket changed the shapes underneath this
+ * constant and the argmax could not be assumed to hold. Both arms scored on the SAME 531
+ * revealed villain decisions (50NLH, 60 files, 200 players — a smaller slice than the
+ * table above, so read the two ROWS against each other, not against the numbers above):
+ *
+ *     lambda        0      0.40    0.60    0.80    1.00
+ *     pre-WS-304  -1.038  +0.581  +0.609  +0.611  +0.577    coverage at lambda 0: 90.4%
+ *     WS-304      -0.284  +0.580  +0.593  +0.590  +0.561    coverage at lambda 0: 95.5%
+ *
+ * Two things, and the second is the uncomfortable one again:
+ *
+ *   1. Where the doctrine shape actually does the work — lambda = 0 — the ordering fix is
+ *      worth +0.754 nats and five points of coverage. That is the WS-304 defect being
+ *      priced: a grid that could not hold AK, and that ranked 22 below K3o, was losing
+ *      that much per decision.
+ *   2. At the SHIPPED lambda it COSTS 0.021 nats (+0.611 -> +0.590), and the argmax drifts
+ *      0.80 -> 0.60 across a 0.003-nat plateau. NOT MOVED, deliberately: 0.021 and 0.003
+ *      nats are not a basis for changing a constant that a 4,946-decision run put at 0.80,
+ *      and this is the arm where 80% of the mass is the smooth support rather than the
+ *      shape. The shape fix is a doctrine correctness claim (2.3 names AK as a value
+ *      3-bet); this metric — showdown-selected, support-dominated — is not the instrument
+ *      that adjudicates it. Re-run at the WS-302 corpus size before moving lambda.
  */
 export const PRIOR_SUPPORT_LAMBDA = 0.8;
 
@@ -322,15 +345,191 @@ export const withEquitySupport = (grid, position, lambda = PRIOR_SUPPORT_LAMBDA)
   return out;
 };
 
+// =============================================================================
+// HAND STRENGTH ORDERING (WS-304)
+// =============================================================================
+
 /**
- * Compute hand strength tier (0.0-1.0) from grid index.
- * Higher = stronger hand.
+ * Hand strength as the COMBO-WEIGHTED EQUITY PERCENTILE of a hand class: the fraction of
+ * the 1326 starting combos this class beats, measured (not asserted) by `EQUITY_VS_OPEN`.
+ *
+ * WHAT THIS REPLACED, AND WHY IT HAD TO GO (WS-304). Every branch below used to threshold
+ * on `(rank1 + rank2 + 8·isPair + 2·suited) / 32` — a rank sum with two fudge terms, not a
+ * hand strength ordering. Three measured consequences:
+ *
+ *   1. **AK was not in the 3-bet prior at all.** AKo scored 0.719 against an EARLY
+ *      threshold of 0.78 and got exactly zero; AKs scored 0.781 and cleared by 0.001, so
+ *      the ramp gave it 0.006. POKER_THEORY 2.3 names AK as one of the two value 3-bet
+ *      holdings in the live pool. A villain who 3-bet and turned over AK was holding a
+ *      hand the model said they could not have.
+ *   2. **22 (0.250) ranked BELOW K3o (0.375)** everywhere the score was used — a pair's
+ *      +8 bonus is worth less than one rank step at the top of the deck. That put small
+ *      pairs outside the cold-call prior (foot 0.30) while K3o was inside it.
+ *   3. **The score has 33 levels for 169 classes**, so distinct thresholds selected
+ *      identical hand sets: `cold3Bet` at 0.81 and `squeeze` at 0.79 both selected exactly
+ *      {AA,KK,QQ,JJ}, and at LATE (0.73 / 0.72) both selected exactly
+ *      {AA,KK,QQ,JJ,AKs,TT,AQs}. The two shapes 2.5.2 calls different were the same shape.
+ *
+ * WHY A PERCENTILE AND NOT RAW EQUITY. A percentile is **uniform on combos** by
+ * construction, so a threshold `t` means exactly "the top (1 − t) of the field" and a
+ * linear ramp from `t` to 1 has combo-weighted mean `(1 − t) / 2`. That is what lets every
+ * threshold below be *derived* from a stated range width or a named hand set instead of
+ * tuned until one hand comes out right. Raw equity has no such reading — its spread is
+ * compressed at the bottom and a threshold on it means nothing in particular.
+ *
+ * NAMED APPROXIMATION (1.4). All-in equity does not encode equity REALIZATION, and this
+ * ordering inherits that: it ranks AKo just BELOW TT and JJ, where doctrine ranks AK
+ * above both — AK realizes far better than a small pair against a raiser's calling range,
+ * and the table cannot see it. It is still the right instrument here, because the error it
+ * makes is one rank position and the error it replaces was 150. Same caveat, same wording,
+ * as `PRIOR_SUPPORT_LAMBDA` above.
+ *
+ * Midpoint-of-ties, so classes with identical table entries share a percentile rather than
+ * being ordered by grid index.
  */
-const handStrengthTier = (idx) => {
-  const { rank1, rank2, isPair, suited } = decodeIndex(idx);
-  const raw = rank1 + rank2 + (isPair ? 8 : 0) + (suited ? 2 : 0);
-  const max = 12 + 12 + 8; // AA = 32
-  return raw / max;
+const percentileCache = {};
+const strengthPercentiles = (position) => {
+  if (percentileCache[position]) return percentileCache[position];
+  // Same key semantics and same fallback as `comboScores` — the ORDER barely moves
+  // between keys, and an unrecognized category falls back rather than throwing.
+  const eq = EQUITY_VS_OPEN[position] || EQUITY_VS_OPEN.LATE;
+  const out = new Float64Array(GRID_SIZE);
+  for (let i = 0; i < GRID_SIZE; i++) {
+    let below = 0;
+    let tied = 0;
+    for (let j = 0; j < GRID_SIZE; j++) {
+      if (eq[j] < eq[i]) below += COMBOS_AT[j];
+      else if (eq[j] === eq[i]) tied += COMBOS_AT[j];
+    }
+    out[i] = (below + tied / 2) / TOTAL_COMBOS;
+  }
+  percentileCache[position] = out;
+  return out;
+};
+
+/** Hand strength (0.0-1.0) for one grid cell. Higher = stronger. */
+const handStrengthTier = (idx, position) => strengthPercentiles(position)[idx];
+
+/**
+ * Linear ramp: 0 at `foot`, `cap` at `top`, clamped outside.
+ * Every branch below is one of these, a window, or a step.
+ */
+const ramp = (x, foot, top, cap = 1.0) => (
+  x <= foot ? 0 : Math.min(cap, (cap * (x - foot)) / (top - foot))
+);
+
+/**
+ * THRESHOLD TRANSPORT (WS-304). Every threshold that carried no doctrine number of its own
+ * was moved onto the percentile axis by QUANTILE MATCHING: the old threshold θ selected
+ * some fraction q of the 1326 combos, and the new threshold is `1 − q`, which selects the
+ * same fraction of the field ranked by measured equity. Nothing was fitted and no region
+ * changed size — only its MEMBERSHIP changed, from the rank sum to the equity ordering,
+ * which is the defect being fixed. `q` is combo-exact; the comment on each constant gives
+ * the old threshold and the combo count it selected.
+ *
+ * `threeBet` is the one exception: its old threshold is the defect, so it is re-derived
+ * from doctrine below rather than transported.
+ */
+const OPEN_TOP = 1 - 6 / TOTAL_COMBOS;         // old 0.975 (where the 0.5 cap was reached)
+const ISO_TOP = 1 - 6 / TOTAL_COMBOS;          // old 0.9467 (where the 0.6 cap was reached)
+const COLD3_TAIL_LO = 1 - 684 / TOTAL_COMBOS;  // old 0.40
+const COLD3_TAIL_HI = 1 - 162 / TOTAL_COMBOS;  // old 0.60
+const SQUEEZE_TAIL_LO = 1 - 782 / TOTAL_COMBOS; // old 0.35
+const SQUEEZE_TAIL_HI = 1 - 162 / TOTAL_COMBOS; // old 0.62 (same 162 combos as 0.60 — see 3 above)
+const LR_PREMIUM = 1 - 18 / TOTAL_COMBOS;      // old 0.82   → 18 combos = exactly QQ+
+const LR_MID = 1 - 272 / TOTAL_COMBOS;         // old 0.55
+const LR_LOW = 1 - 1158 / TOTAL_COMBOS;        // old 0.20
+const COLD_CALL_LO = 1 - 956 / TOTAL_COMBOS;   // old 0.30
+const COLD_CALL_HI = 1 - 28 / TOTAL_COMBOS;    // old 0.78
+const LIMP_LO = 1 - 1246 / TOTAL_COMBOS;       // old 0.15
+const LIMP_MID = 1 - 272 / TOTAL_COMBOS;       // old 0.55
+const LIMP_HI = 1 - 58 / TOTAL_COMBOS;         // old 0.70
+const FOLD_ZERO = 1 - 18 / TOTAL_COMBOS;       // old 1/1.2 = 0.8333, where the fold ramp hit 0
+
+/**
+ * The 3-bet value core, as a fraction of the field. DERIVED, not transported — the old
+ * threshold is the defect this ticket exists for.
+ *
+ * TWO INDEPENDENT ROUTES TO 0.05, WHICH IS WHY IT IS 0.05:
+ *
+ *  1. **The branch's own stated support.** The comment on `case 'threeBet'` has always
+ *     read "Top 3-5%: QQ+, AK heavy". Measured against `EQUITY_VS_OPEN`, AKo enters the
+ *     top-of-field prefix at 3.47% of combos (EARLY) — so the 3% end of that band excludes
+ *     AK outright, and a foot placed AT 3.47% gives it a ramp weight of zero, which is the
+ *     AKs-clears-by-0.001 failure restated. 5% is the smallest value in the branch's own
+ *     band that gives every hand 2.3 names a non-degenerate weight.
+ *  2. **The combinatorics of the hand set 2.3 names.** QQ+ is 18 combos and AK is 16, so
+ *     the live-pool value 3-bet range is 34/1326 = 2.56% of the field. A linear ramp over
+ *     the top f has combo-weighted mean f/2, so f = 0.05 gives the prior a range width of
+ *     2.50%. The two routes agree to 0.06 percentage points.
+ *
+ * The old thresholds gave 1.04% (EARLY/MIDDLE/SB) and 1.55% (LATE/BB) — narrower than the
+ * hand set the doctrine names, which is why AK had to fall off the bottom of it.
+ */
+export const THREE_BET_TOP_FRACTION = 0.05;
+
+/**
+ * Position scaling for the 3-bet foot.
+ *
+ * The old code branched on `position === 'LATE' || position === 'BB'` — a label list, and
+ * one that contradicted its own file: `FACED_RAISE_FREQUENCIES` declares SB 3-betting at
+ * 0.12, twice EARLY's 0.06 and equal to LATE, while 2.5.2 calls the blind 3-bet WIDER and
+ * more merged. SB was nonetheless given EARLY's tight threshold. Reading the declared
+ * relative propensity instead of a label list corrects that and removes the list.
+ *
+ * This is a PRIOR conditioned on position, which 7.2 sanctions explicitly; no decision
+ * reads a label.
+ */
+const threeBetTopFraction = (position) => {
+  const f = FACED_RAISE_FREQUENCIES[position] || FACED_RAISE_FREQUENCIES.LATE;
+  return THREE_BET_TOP_FRACTION * (f.threeBet / FACED_RAISE_FREQUENCIES.EARLY.threeBet);
+};
+
+/**
+ * How much wider than its GTO chart a live 1/2 open range is, as a fraction of the chart's
+ * own combo width.
+ *
+ * THIS IS THE BRANCH'S OWN NUMBER. `case 'open'` has always been commented "Widen GTO
+ * charts ~20% for live 1/2" — and has never done that. The off-chart extension was a ramp
+ * on an absolute strength threshold, which knows nothing about how wide the chart under it
+ * already is, so the actual widening ran from +2% (LATE) to +36% (EARLY): the tightest
+ * chart got widened most and the widest barely at all, which is the opposite of a uniform
+ * percentage and the opposite of the doctrine (§2.1 — live players are looser than the
+ * chart *everywhere*). Solving for the foot instead of asserting it makes the branch do
+ * what it says, and it is what keeps WS-304's ordering change from silently moving these
+ * widths as a side effect.
+ *
+ * ISO_WIDENING is not a second guess. The old code's iso-raise extension came out at very
+ * nearly 2× the open extension at EVERY position (+68/36, +45/23, +7/2, +21/10, +10/4), so
+ * the 2× is transported from the code being replaced, the same as every other constant
+ * above. §2.5.2: iso-raise is "wider than openFirstIn, value-tilted".
+ */
+const OPEN_WIDENING = 0.20;
+const ISO_WIDENING = 0.40;
+
+/**
+ * Solve the off-chart ramp's foot so the extension adds exactly `targetAdd` of combo width.
+ *
+ * Added width falls monotonically as the foot rises, so bisection converges. ~50 iterations
+ * is machine-adequate, matching `softContinuationWeights`' own bisection.
+ */
+const chartExtensionFoot = (chart, pct, targetAdd, top, cap) => {
+  const addedAt = (foot) => {
+    let s = 0;
+    for (let i = 0; i < GRID_SIZE; i++) {
+      if (chart[i] > 0) continue;
+      s += ramp(pct[i], foot, top, cap) * COMBOS_AT[i];
+    }
+    return s / TOTAL_COMBOS;
+  };
+  let lo = 0;
+  let hi = 1;
+  if (addedAt(lo) <= targetAdd) return lo; // cannot reach it; widest possible extension
+  for (let k = 0; k < 50; k++) {
+    const mid = (lo + hi) / 2;
+    if (addedAt(mid) > targetAdd) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
 };
 
 /** Is this grid cell a suited hand? Used by the polar bluff tails. */
@@ -354,8 +553,19 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
   const range = createRange();
   const baseChart = getBaseChart(position);
 
+  const threeBetFoot = 1 - threeBetTopFraction(position);
+  // Solved per position, because the target is a fraction of THIS chart's width.
+  const pct = strengthPercentiles(position);
+  const chartWidth = comboWeightedMean(baseChart);
+  const openFoot = (action === 'open' || action === 'openFirstIn')
+    ? chartExtensionFoot(baseChart, pct, OPEN_WIDENING * chartWidth, OPEN_TOP, 0.5)
+    : 0;
+  const isoFoot = action === 'isoRaise'
+    ? chartExtensionFoot(baseChart, pct, ISO_WIDENING * chartWidth, ISO_TOP, 0.6)
+    : 0;
+
   for (let i = 0; i < GRID_SIZE; i++) {
-    const strength = handStrengthTier(i);
+    const strength = handStrengthTier(i, position);
     const inChart = baseChart[i] > 0;
 
     switch (action) {
@@ -363,17 +573,14 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // Widen GTO charts ~20% for live 1/2
         if (inChart) {
           range[i] = baseChart[i];
-        } else if (strength > 0.35) {
-          range[i] = Math.min(0.5, (strength - 0.35) * 0.8);
+        } else {
+          range[i] = ramp(strength, openFoot, OPEN_TOP, 0.5);
         }
         break;
       }
       case 'threeBet': {
-        // Top 3-5%: QQ+, AK heavy; widen for LATE/BB
-        const threshold = (position === 'LATE' || position === 'BB') ? 0.70 : 0.78;
-        if (strength > threshold) {
-          range[i] = Math.min(1.0, (strength - threshold) / (1.0 - threshold));
-        }
+        // Top 3-5%: QQ+, AK heavy (2.3). Foot DERIVED — see THREE_BET_TOP_FRACTION.
+        range[i] = ramp(strength, threeBetFoot, 1.0);
         break;
       }
       // ---- Derived subclasses (POKER_THEORY §2.5.2) --------------------
@@ -389,19 +596,22 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // posted, the price to continue is discounted, so the range is WIDER
         // and MERGED — medium hands stay in, and there is no bluff tail
         // because the value region already extends down.
+        //
+        // VALUE CORE (WS-304). All three 3-bet classes share 2.3's value set —
+        // "most players 3-bet only premiums (QQ+, AK)" is a statement about
+        // 3-bets, and 2.5.2 describes cold3Bet as "real value plus a thin
+        // bluff tail" and squeeze as "real value + more bluffs". So the value
+        // foot is the PARENT's derived foot, and the classes differ where
+        // 2.5.2 actually says they differ: the bluff side, and the blind
+        // merge. This is not a widening of the taxonomy — measured, the old
+        // cold3Bet (0.81) and squeeze (0.79) feet selected the SAME 1.81% of
+        // the field, and at LATE (0.73 / 0.72) the same 2.87%. The distinction
+        // the two thresholds appeared to draw did not exist.
         const isBlind = position === 'SB' || position === 'BB';
-        if (isBlind) {
-          const threshold = 0.66;
-          if (strength > threshold) {
-            range[i] = Math.min(1.0, (strength - threshold) / (1.0 - threshold));
-          }
-        } else {
-          const threshold = (position === 'LATE') ? 0.73 : 0.81;
-          if (strength > threshold) {
-            range[i] = Math.min(1.0, (strength - threshold) / (1.0 - threshold));
-          } else if (suitedAt(i) && strength > 0.40 && strength < 0.60) {
-            range[i] = 0.08; // thin polar bluff tail (§2.3: A5s, 76s)
-          }
+        range[i] = ramp(strength, threeBetFoot, 1.0);
+        if (!isBlind && range[i] === 0
+            && suitedAt(i) && strength > COLD3_TAIL_LO && strength < COLD3_TAIL_HI) {
+          range[i] = 0.08; // thin polar bluff tail (§2.3: A5s, 76s)
         }
         break;
       }
@@ -409,10 +619,9 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // Polar and leveraged. Dead money plus a capped caller range makes the
         // bluff side profitable, so the range splits: real value on top, MORE
         // bluffs than a cold 3-bet, medium region hollowed out (§2.4).
-        const threshold = (position === 'LATE' || position === 'BB') ? 0.72 : 0.79;
-        if (strength > threshold) {
-          range[i] = Math.min(1.0, (strength - threshold) / (1.0 - threshold));
-        } else if (suitedAt(i) && strength > 0.35 && strength < 0.62) {
+        range[i] = ramp(strength, threeBetFoot, 1.0);
+        if (range[i] === 0
+            && suitedAt(i) && strength > SQUEEZE_TAIL_LO && strength < SQUEEZE_TAIL_HI) {
           range[i] = 0.18; // wider bluff tail than cold3Bet — the leverage
         }
         break;
@@ -421,11 +630,11 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // UNCAPPED (§5.8). The passive line was chosen deliberately to trap,
         // so premiums carry full weight, plus the speculative residue of the
         // limp range that occasionally wakes up. Never a capped shape.
-        if (strength > 0.82) {
+        if (strength > LR_PREMIUM) {
           range[i] = 1.0; // premium traps — full weight, uncapped
-        } else if (strength > 0.55) {
+        } else if (strength > LR_MID) {
           range[i] = 0.25;
-        } else if (strength > 0.20) {
+        } else if (strength > LR_LOW) {
           range[i] = 0.10; // limp-range residue
         }
         break;
@@ -435,8 +644,8 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // shape as the parent open, which was always predominantly first-in.
         if (inChart) {
           range[i] = baseChart[i];
-        } else if (strength > 0.35) {
-          range[i] = Math.min(0.5, (strength - 0.35) * 0.8);
+        } else {
+          range[i] = ramp(strength, openFoot, OPEN_TOP, 0.5);
         }
         break;
       }
@@ -446,16 +655,16 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
         // weak to open first-in — wider than openFirstIn, value-tilted.
         if (inChart) {
           range[i] = baseChart[i];
-        } else if (strength > 0.28) {
-          range[i] = Math.min(0.6, (strength - 0.28) * 0.9);
+        } else {
+          range[i] = ramp(strength, isoFoot, ISO_TOP, 0.6);
         }
         break;
       }
       case 'coldCall': {
         // Medium hands: suited connectors, medium pairs, suited broadways
-        if (strength > 0.30 && strength < 0.78) {
+        if (strength > COLD_CALL_LO && strength < COLD_CALL_HI) {
           range[i] = inChart ? 0.6 : 0.3;
-        } else if (strength >= 0.78) {
+        } else if (strength >= COLD_CALL_HI) {
           range[i] = 0.2; // strong hands that might flat
         }
         break;
@@ -463,16 +672,17 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
       case 'limp': {
         // Speculative hands: small pairs, suited connectors, weak suited aces
         if (position === 'BB') break; // BB doesn't limp
-        if (strength > 0.15 && strength < 0.55) {
+        if (strength > LIMP_LO && strength < LIMP_MID) {
           range[i] = 0.4;
-        } else if (strength >= 0.55 && strength < 0.70) {
+        } else if (strength >= LIMP_MID && strength < LIMP_HI) {
           range[i] = 0.15;
         }
         break;
       }
       case 'fold': {
-        // Fold prior — weakest hands fold most
-        range[i] = Math.max(0, 1.0 - strength * 1.2);
+        // Fold prior — weakest hands fold most. Descending ramp, 1.0 at the
+        // bottom of the field, 0 at FOLD_ZERO (transported from `1 - s*1.2`).
+        range[i] = Math.max(0, 1.0 - strength / FOLD_ZERO);
         break;
       }
     }
