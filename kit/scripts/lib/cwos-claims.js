@@ -113,6 +113,63 @@ function isPidAlive(pid, recordHost, opts = {}) {
   }
 }
 
+/**
+ * What can this machine PROVE about the process that owns a session record?
+ *
+ * → 'dead'    the owning process is gone. Decisive, and independent of the clock.
+ * → 'live'    a process with that pid is running here, right now.
+ * → 'unknown' the question is not answerable from this record on this machine.
+ *
+ * WHY THIS OVERRIDES THE "PID IS NEVER A DEATH TEST" RULE ABOVE (WS-351). That rule
+ * was written against `resolveSessionId`'s pid, which is `process.pid` — the minting
+ * script, gone milliseconds later. It is NOT true of the pid
+ * `cwos-session-register` records, which is `process.ppid`: the Claude Code harness.
+ * Measured in claude-poker-tracker on 2026-08-05 — pid 10208 alive for the whole of
+ * the session that recorded it, pid 15224 alive and shared by two records written
+ * the previous day. The two writers were stamping different things into one field.
+ * That is now fixed at the source: the registrar dates its pid with
+ * `pid_recorded_at`, and the minting path records no pid at all rather than a
+ * decoy. Only then is the field safe to read.
+ *
+ * THE ASYMMETRY IS STILL REAL, and 'live' is deliberately weaker than 'dead'.
+ * One harness process serves several session records, so a live pid does NOT prove
+ * that THIS session is live — only that something is still there. Callers use
+ * 'dead' as proof and 'live' as a veto on destructive action, never as a licence to
+ * keep a session open past its heartbeat timeout.
+ *
+ * PID REUSE. Handled for the case that actually happens — a reboot. A pid recorded
+ * before the current boot cannot name a surviving process, so it reads 'dead' no
+ * matter what the local process table says, which is both correct and the common
+ * crash case. Reuse WITHIN a single boot is NOT handled: it would need a per-process
+ * start-time probe that has no portable Node API, and the residual error is the
+ * cheap direction (a dead session read as live costs a stale warning, never a
+ * stolen claim).
+ *
+ * HOST GATE, as everywhere else here: a pid from another machine is asked of the
+ * wrong process table, so a foreign or unknown host degrades to 'unknown'.
+ */
+function sessionOwnerVerdict(doc, opts = {}) {
+  if (!doc) return 'unknown';
+  const pid = doc.pid == null ? NaN : Number(doc.pid);
+  if (!Number.isInteger(pid) || pid <= 0) return 'unknown';
+  if (!isLocalHost(doc.host, opts)) return 'unknown';
+
+  const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
+  if (boot != null) {
+    // `started_at` is the fallback because that is when both writers stamped the
+    // pid before this field existed; records self-heal on the next SessionStart.
+    const stamp = doc.pid_recorded_at || doc.started_at;
+    const at = stamp ? Date.parse(String(stamp).replace(/^"|"$/g, '')) : NaN;
+    if (!Number.isFinite(at)) return 'unknown';   // undateable pid — reuse unrulable-out
+    if (at < boot) return 'dead';                 // predates the boot: gone, whoever holds it now
+  }
+
+  const alive = isPidAlive(pid, doc.host, opts);
+  if (alive === false) return 'dead';
+  if (alive === true) return 'live';
+  return 'unknown';
+}
+
 const POINTER = '.current-session';
 
 const nowISO = () => new Date().toISOString();
@@ -178,14 +235,19 @@ function minutesSinceHeartbeat(sessionFile, now = Date.now()) {
  *      claims mid-work.
  *   2. Otherwise, the staleness window.
  *
- * WHY PID LIVENESS IS *NOT* A DEATH TEST, despite being tempting. The pid on a
- * session record is written by a short-lived hook process, so it is gone moments
- * later — testing it declared every session dead the instant it registered. Even
- * recording the parent pid is unreliable: the parent may be a transient shell.
- * And the error is not symmetric. Reading a LIVE session as dead releases its
- * claims and re-enables the concurrent clobbering this module exists to prevent,
- * whereas reading a dead session as live merely costs a stale warning. So we fail
- * conservative: pid is recorded for humans and diagnostics, never for the verdict.
+ * PID DEATH IS NOW TEST (0), AND IT OUTRANKS BOTH (WS-351). This used to say pid
+ * liveness could never be a death test, because the recorded pid was a short-lived
+ * hook. That was true of one of the two writers and false of the other, and the
+ * field meant different things depending on which had written it — see
+ * `sessionOwnerVerdict`, where the reasoning and the fix at the source now live.
+ * With the writers made honest, a dead pid is the strongest death proof available:
+ * it does not wait for a timer, so a crashed session stops fencing its claims the
+ * moment the next hook fires rather than up to `staleMinutes` later.
+ *
+ * The asymmetry that produced the old rule is unchanged and still respected: a LIVE
+ * pid buys nothing here. It cannot extend a session past its heartbeat window,
+ * because one harness pid serves several session records and a stale record sharing
+ * a live pid would otherwise read as a peer forever.
  */
 function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now(), opts = {}) {
   if (!id) return false;
@@ -197,6 +259,8 @@ function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now()
     if (!doc) return false;
     const status = String(doc.status || '').toLowerCase();
     if (status && status !== 'active') return false;
+
+    if (sessionOwnerVerdict(doc, opts) === 'dead') return false;                 // (0)
 
     if (isLocalHost(doc.host, opts)) {
       const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
@@ -476,9 +540,16 @@ function resolveSessionId(wsDir, { create = true, clock = null, agentId: agentId
       'ended_at: null',
       'mode: auto',
       `last_heartbeat: "${ts}"`,
-      // CLAUDE_PID is the actual Claude process; process.pid here is this
-      // short-lived script. Diagnostic only either way — see isSessionLive.
-      `pid: ${process.env.CLAUDE_PID || process.pid}`,
+      // CLAUDE_PID is the actual Claude process. `process.pid` — what this line
+      // used to fall back to — is THIS script, which exits milliseconds later, so
+      // the field said "dead process" about a perfectly healthy session. Harmless
+      // while nothing read it; a trap the moment something did (WS-351). A session
+      // minted here has no durable owner to point at, so it now points at nothing
+      // and liveness falls back to the heartbeat, which is what it was doing
+      // anyway. `pid_recorded_at` is written only when the pid is real.
+      ...(process.env.CLAUDE_PID
+        ? [`pid: ${Number(process.env.CLAUDE_PID)}`, `pid_recorded_at: "${ts}"`]
+        : ['pid: null']),
       // The machine that owns this record. Without it, every pid and boot-time
       // test on a git-synced session file is asked of the wrong process table
       // (WS-564). Recorded at mint AND re-stamped on every heartbeat, so a record
@@ -769,6 +840,8 @@ module.exports = {
   localHost,
   isLocalHost,
   isPidAlive,
+  sessionOwnerVerdict,
+  patchOrInsert,
   readSessionPointer,
   readSessionDoc,
   agentSessionIdFromEnv,

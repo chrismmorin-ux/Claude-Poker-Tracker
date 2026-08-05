@@ -2,8 +2,12 @@
 /**
  * cwos-session-recovery — Detect and recover abandoned sessions.
  *
- * Sessions are "abandoned" when last_heartbeat is older than
- * session_abandon_timeout_hours (from config.yaml, default 4h).
+ * A session is "abandoned" when its recorded process is provably gone, OR — when
+ * that cannot be established — when last_heartbeat is older than
+ * session_abandon_timeout_hours (from config.yaml, default 4h). A session whose
+ * process is provably RUNNING is never abandoned, including under --force.
+ * WS-351: the clock alone got this wrong in both directions. See
+ * `sessionOwnerVerdict` in lib/cwos-claims.js for what "provably" means here.
  *
  * Recovery synthesizes handoff notes from observable state (git log, sprint
  * progress, queue changes) so no context is lost even when /session-end is
@@ -36,6 +40,7 @@ const {
   todayISO,
   withFileLock,
 } = require('./lib/cwos-utils');
+const { sessionOwnerVerdict } = require('./lib/cwos-claims');
 
 // Session-recovery is high-frequency (fires on every session-start hook);
 // the liveness-stamp write at line 78 is intentionally NOT emitted —
@@ -106,7 +111,7 @@ const CLI = {
     auto: { type: 'boolean', describe: 'recover automatically (used by the SessionStart hook)' },
     quiet: { type: 'boolean', describe: 'silent unless recovery actually happened' },
     'dry-run': { type: 'boolean', describe: 'compute and report, but write nothing' },
-    force: { type: 'boolean', describe: 'recover even if still within the abandon timeout' },
+    force: { type: 'boolean', describe: 'recover even if still within the abandon timeout (never touches a session whose process is running)' },
     verbose: { type: 'boolean', describe: 'print stack traces on failure' },
     'workstream-dir': { type: 'string', placeholder: 'path', describe: 'override workstream dir discovery' },
   },
@@ -189,12 +194,40 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
   const nowMs = Date.now();
   const timeoutMs = timeoutHours * 60 * 60 * 1000;
 
+  // WS-351: abandonment used to be read off the clock ALONE, which got it wrong in
+  // both directions on the same run. A session registered 40s after a reboot whose
+  // process was already gone stayed "active" for the whole timeout window — and the
+  // documented escape hatch for that, `--force`, swept every active session
+  // including the live one issuing the command. Ask the OS first; the timer is the
+  // fallback for when the OS cannot answer.
   const abandoned = [];
   for (const session of active) {
     const heartbeatMs = parseHeartbeatMs(session);
     const ageMs = heartbeatMs === null ? Infinity : (nowMs - heartbeatMs);
+    const owner = sessionOwnerVerdict(session.raw);
+
+    // A running process is a veto on the destructive path. `--force` exists to
+    // recover a session INSIDE its timeout; it was never meant to close one that
+    // is still working, and recovery is always invoked from a session, so without
+    // this the flag is unsafe whenever anyone is at the keyboard.
+    if (owner === 'live') continue;
+
+    // A dead process is proof, and proof does not wait for a timer.
+    if (owner === 'dead') {
+      abandoned.push({
+        ...session,
+        age_hours: ageMs === Infinity ? null : ageMs / (60 * 60 * 1000),
+        reason: 'dead-process',
+      });
+      continue;
+    }
+
     if (force || ageMs > timeoutMs) {
-      abandoned.push({ ...session, age_hours: ageMs === Infinity ? null : ageMs / (60 * 60 * 1000) });
+      abandoned.push({
+        ...session,
+        age_hours: ageMs === Infinity ? null : ageMs / (60 * 60 * 1000),
+        reason: 'timeout',
+      });
     }
   }
 
@@ -207,7 +240,12 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
   if (!auto) {
     process.stdout.write(`session-recovery: ${abandoned.length} abandoned session(s) detected:\n`);
     for (const s of abandoned) {
-      const ageStr = s.age_hours === null ? 'no heartbeat' : `${s.age_hours.toFixed(1)}h stale`;
+      // Say WHICH evidence condemned it. The report is what the founder reads before
+      // deciding to run --auto, and "0.2h stale" for a session whose process is gone
+      // is the reading that made this bug survive.
+      const ageStr = s.reason === 'dead-process'
+        ? `process ${s.raw && s.raw.pid != null ? s.raw.pid : '?'} is gone`
+        : (s.age_hours === null ? 'no heartbeat' : `${s.age_hours.toFixed(1)}h stale`);
       process.stdout.write(`  - ${s.id} (${ageStr})\n`);
     }
     process.stdout.write('\nRun with --auto to recover, or manually close via /session-end.\n');
@@ -301,7 +339,9 @@ function recoverSession(wsDir, session, opts) {
   emitEvent('T15:session-end', 'session-abandoned', {
     session_id: session.id,
     path: path.relative(process.cwd(), session.path).replace(/\\/g, '/'),
-    reason: 'timeout',
+    // Which evidence closed it. Was hardcoded 'timeout', which is now only one of
+    // two answers — and the one that is NOT true of a crash (WS-351).
+    reason: session.reason || 'timeout',
   });
 
   // 4. Remove lock file.

@@ -16,6 +16,21 @@
  *   cwos-event append command_completed --track T0:envelope --tag /status --payload '{"exit":0}'
  *   cwos-event head                      # print current chain head (empty if no log)
  *   cwos-event current-id                # print CWOS_COMMAND_ID (or generate + set)
+ *
+ * THE POSITIONAL IS THE PAYLOAD TYPE, NOT THE TRACK TAG — and for tracks that key
+ * their schema off `track_tag` (T6, T11, T20) or off nothing at all, `--tag` is what
+ * matters and the positional just lands in `payload.type`. So an event a script emits
+ * internally as emitEvent(track, tag, payload) is reproducible here by passing the tag
+ * to BOTH, e.g. the event cwos-session-recovery writes when it closes a session:
+ *
+ *   cwos-event append session-abandoned --track T15:session-end --tag session-abandoned \
+ *     --payload '{"session_id":"ses-…","path":"…","reason":"dead-process"}'
+ *
+ * Nothing here is internal-only. Schema enforcement is per-track (see
+ * core/events.js `_resolveSchemaLookup`): strict-by-payload.type on T0 and T7, by tag
+ * and warn-only on T6/T11/T20, absent on every other track. Checked 2026-08-05 against
+ * WS-351, which was filed believing this path rejected T15:session-end — it does not,
+ * and hand-emitting through makeEventEmitter() to work around it is unnecessary.
  */
 
 'use strict';
