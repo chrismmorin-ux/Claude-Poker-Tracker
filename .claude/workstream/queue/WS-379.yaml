@@ -1,0 +1,145 @@
+id: "WS-379"
+title: "foldEstimateComposition's raise-ordering test only fails under parallel load — three agents in one night each had to prove it was not their regression"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  OBSERVED 2026-08-04/05 by three separate sessions independently, which is the reason this
+  is filed rather than shrugged at.
+
+  `src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js` — specifically the test
+  `'the raise EV ordering follows the range, not hero\'s hand strength'` (line 236) — FAILS
+  during a full-suite run and PASSES in isolation. Verified at HEAD: run alone, the file is
+  19 passed / 0 failed in 14.1s, with the named test taking 4,294 ms on its own.
+
+  THE ASSERTION IS A CONTINUOUS COMPARISON, which is why it is exposed:
+
+      const [nutted, weak] = await Promise.all([
+        evaluate(NUTTED_UNCAPPED()),
+        evaluate(parseRangeString(CAPPED_WEAK)),
+      ]);
+      expect(bestRaise(weak)).toBeGreaterThan(bestRaise(nutted));
+
+  Two full `evaluateGameTree` calls, run CONCURRENTLY with each other, on a three-card board
+  (Q♥J♥T♠) with `trials: 2000`, and the test compares their EV outputs directly. There is no
+  tolerance band — the two numbers must land in a specific order.
+
+  THE MECHANISM, TWO CONTRIBUTING SOURCES OF NONDETERMINISM. Both are the thing the repo's
+  own testing rule forbids: "Tests must be deterministic. No test should depend on time,
+  random values, or external services."
+
+    1. WALL-CLOCK REFINEMENT BUDGET — the primary suspect, and the one that explains why the
+       failure is LOAD-DEPENDENT rather than merely random. `evaluateGameTree` takes
+       `refinementBudgetMs = 2000` (`gameTreeEvaluator.js:814`) and gates every refinement
+       stage on `Date.now() - refinementStart > timeBudgetMs`
+       (`gameTreeEvaluator.js:895-903`), with per-stage shares carved from the remaining
+       wall clock at `:927-930`. The amount of depth-2 refinement that completes is therefore
+       a function of how much CPU the process actually got. Alone, this test spends 4.3s —
+       i.e. it runs the budget to exhaustion on both arms. Under a full-suite run with vitest
+       workers competing for cores, each arm completes a DIFFERENT amount of refinement, and
+       the two EV numbers being compared are no longer produced by the same amount of work.
+       The two arms also race each other inside a single `Promise.all`, so they do not even
+       degrade symmetrically.
+    2. MONTE CARLO EQUITY — the board is a flop, so equity is sampled, not enumerated. A
+       repo memory already records this: flop equity is Monte Carlo and therefore flaky, and
+       deterministic assertions need a river board or a fixed equity stub. Sampling alone
+       would produce load-INDEPENDENT flakiness; combined with (1) it widens the gap the
+       ordering has to survive.
+
+  Source (1) is a HYPOTHESIS consistent with every observation but not yet confirmed by
+  measurement — confirming it is the first accept criterion, because the fix differs
+  depending on which source dominates.
+
+  THE REAL COST, WHICH IS NOT THE ONE FAILING TEST. A nondeterministic test in the suite
+  means every future failure in this file must first be triaged as "mine or the flake?"
+  before any real work can proceed. That triage already happened three times in one night,
+  three separate times, by three agents who each had to establish it was not their
+  regression before continuing. That is a recurring tax on every session that touches
+  `exploitEngine/`. Worse, it TRAINS THE READER TO IGNORE A RED TEST in this file — and this
+  file is the WS-307 regression suite for the fold-estimate composition path, which is
+  exactly where a real regression must not be waved past. A flake here does not just cost
+  time; it disarms the alarm on a load-bearing path.
+accept_criteria: |
+  - ESTABLISH WHICH SOURCE DOMINATES BEFORE FIXING. Run the test under artificial CPU
+    contention with the refinement budget pinned to a fixed value, and separately with the
+    budget at its default but equity stubbed. Whichever isolation makes the failure vanish
+    names the cause. Record the result — if it is the wall-clock budget, the same exposure
+    exists in every other engine test that compares two EV numbers, and that is a finding
+    larger than this file.
+  - MAKE IT DETERMINISTIC — do not raise a tolerance. A widened tolerance leaves the test
+    passing for the wrong reason and silently weakens the WS-307 assertion it exists to
+    protect: the whole point of `bestRaise(weak) > bestRaise(nutted)` is that the ORDERING
+    follows the range, and a band wide enough to absorb load jitter may be wide enough to
+    absorb a real inversion. Preferred shapes, in order:
+      a. pin `refinementBudgetMs` to a fixed deterministic value (or 0) so the amount of
+         work does not depend on wall clock — the same pattern WS-361 already applied to
+         four assertions in `gameTreeEvaluator.test.js`;
+      b. use a river board or a stubbed equity function so equity is exact rather than
+         sampled (the recorded repo pattern for deterministic engine assertions);
+      c. run the two arms sequentially rather than inside one `Promise.all`, so they cannot
+         race each other for the same budget.
+    Any of these may be combined. What is NOT acceptable is loosening the comparison.
+  - DEMONSTRATE THE FIX UNDER LOAD, NOT IN ISOLATION. The bug does not reproduce in
+    isolation, so a green isolated run proves nothing about it. Show the file green across
+    repeated FULL-SUITE runs (multiple consecutive passes, not one). State the exact command
+    used so the next session can repeat it.
+  - THE ASSERTION STILL MEANS WHAT IT MEANT. After the change, verify the test still FAILS
+    if the WS-307 defect is reintroduced — i.e. it must still discriminate on range
+    composition. A determinism fix that also flattens the signal has deleted the test rather
+    than repaired it (WS-309 rule).
+  - CHECK THE FILE'S SIBLINGS. Five other tests in this file call the same `evaluate` helper
+    on the same flop board. If they share the exposure and have simply not lost the coin flip
+    yet, fix them in the same change or state why they are safe.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — IS THE WALL-CLOCK REFINEMENT BUDGET A TEST PROBLEM OR AN ENGINE PROBLEM? If the
+    amount of refinement that runs depends on machine load, then the engine's answer depends
+    on machine load, and the founder's phone is a slower machine than the desktop the 2000ms
+    default was chosen on (WS-334 recorded that the S22 latency measurement was never taken).
+    That is a product question hiding inside a test flake. Fixing the test does not answer it,
+    and this ticket should not pretend it does — but it should NAME it, so it does not get
+    closed as "flake fixed".
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-05T04:00:00Z"
+status_note: |
+  Premises verified at HEAD before filing:
+    - the file and the named test exist (`foldEstimateComposition.test.js:236`);
+    - isolated run is 19 passed / 0 failed in 14.14s, the named test at 4,294 ms — i.e. it
+      is already consuming the full 2000ms refinement budget on both arms;
+    - the board is `QJT`, three cards, with `trials: 2000` in `SPOT` — flop equity, sampled;
+    - `refinementBudgetMs = 2000` at `gameTreeEvaluator.js:814` with wall-clock gating at
+      `:895-903` and per-stage shares at `:927-930`.
+
+  NOT verified by this filing: the failure itself was not reproduced under load here — it is
+  taken from three independent session reports on 2026-08-04/05. Reproducing it under a full
+  suite run is the first thing the implementer should do, both to confirm and to have a
+  before/after.
+
+  Note that WS-334 recorded a fully green suite at its handoff (596 files, 14,126 passed,
+  0 failed). That is not a contradiction — it is the expected behaviour of a load-dependent
+  flake, and it is the reason this needs a deterministic fix rather than a re-run.
+
+  Source: commit 0fa91d23 session context.

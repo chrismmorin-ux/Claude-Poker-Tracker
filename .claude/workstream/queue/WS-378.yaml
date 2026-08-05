@@ -1,0 +1,187 @@
+id: "WS-378"
+title: "riverPerCombo is where the advice actually changes — it flipped the top action on 80% of river decisions, almost all toward passivity, and has never been validated"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED, NOT ARGUED. Filed 2026-08-05 out of the WS-334 AC5 depth ablation
+  (`docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md`, Result Card
+  `RC-depth-ablation-1c560bcc-67e9e14e`): 260 paired corpus decisions across 22 players,
+  depth-1 and depth-2 evaluated at the SAME decision in one pass.
+
+  Advice moved on 37.3% of decisions and the top action flipped on 15.4%. Where those
+  flips are is the finding:
+
+    | street | n   | flips | rate  |
+    |--------|-----|-------|-------|
+    | flop   | 138 |   1   |  0.7% |
+    | turn   |  77 |   3   |  3.9% |
+    | river  |  45 |  36   | 80.0% |
+
+  THE RIVER DOES NOT RUN DEPTH-2. Verified at HEAD: `gameTreeEvaluator.js:537` sets
+  `needsDepth2: street !== 'river'`, and it is the only construction of that flag in the
+  engine (`gameTreeEvaluator.js:1504` merely reads it). So the `E[max(check, bet)]`
+  machinery that WS-361 and WS-295 name as the common suspect DOES NOT EXECUTE on the
+  river. The stage that fires there is `riverPerCombo`, gated at
+  `gameTreeEvaluator.js:1409` on `street === 'river'`. (WS-361's status note cites line
+  1327 for this gate; at HEAD it is 1409 — line drift only, the mechanism is unchanged.)
+
+  WHAT `riverPerCombo` ACTUALLY DOES, read at HEAD (`gameTreeEvaluator.js:1409-1500`):
+  it re-prices three candidate families through THREE DIFFERENT FUNCTIONS, then compares
+  the results against each other.
+
+    - the check candidate: `computeRiverCheckEV` REPLACES `checkCandidate.ev` wholesale
+      when IP; when OOP it blends per-combo check-back with the depth-1 villain-bet
+      branch, then discards the blend entirely and takes the per-combo number anyway if
+      `combosAnalyzed >= 20`.
+    - every bet/raise candidate: `computeRiverBetEV` REPLACES `betCandidate.ev` wholesale.
+    - the call candidate: priced inline from `computeFilteredEquity(comboDistribution,
+      comboBetFilter(0.55, 'river'))` with no realization discount.
+
+  Three independently-written estimators produce the numbers that are then argmax'd
+  against one another. Any asymmetry in optimism between them lands directly on the
+  comparison — there is no shared basis forcing them onto one scale. That is a second,
+  fully independent candidate mechanism for the passivity symptom, and unlike the
+  depth-2 one it has never been examined.
+
+  THE DIRECTION IS THE SIGNATURE. 38 of 40 top-action flips move toward passivity:
+  bet -> check 30 times, raise -> fold 6, raise -> call 2, and only 2 the other way. A
+  near-universal one-directional shift is not what a noisy estimator produces; it is what
+  a SYSTEMATICALLY PESSIMISTIC river evaluation produces.
+
+  THE CONSEQUENCE, PLAINLY. The entire depth-2/3 investigation — WS-361, WS-295, and the
+  WS-334 work that made the subsystem reachable — has been examining a stage that changed
+  the top action 4 times in 215 decisions, while `riverPerCombo` changed it 36 times in 45
+  and has never been validated by anything. And the river is the street where the pot is
+  largest, so it is the street where a wrong recommendation costs the most chips per
+  occurrence. Attention has been on the cheap street.
+
+  THE THREAT TO THIS MEASUREMENT, RECORDED RATHER THAN BURIED. WS-295 found depth-2
+  estimator variance with argmax stability as low as 0.50. A single evaluation per arm
+  cannot separate a genuine flip from seed noise at the level of an individual decision,
+  so **80% is an UPPER BOUND on the systematic flip rate**. Two arguments that most of it
+  is nevertheless systematic:
+    1. the 38-2 directional split — noise is symmetric, this is not;
+    2. river equity is EXACT (villain combos enumerated against a complete board), not
+       Monte Carlo, so the river arm has no sampling variance of its own to contribute.
+  Neither argument is a measurement. The seed replicate below is.
+
+  DOCTRINE THAT BINDS THIS WORK. River equity is a SHOWDOWN-OUTCOME DISTRIBUTION — the
+  share of villain's combos that beat hero, plus strength tiers — and NEVER runout
+  variance. There is no runout left on the river; nothing is uncertain except which combo
+  villain holds. If any of the three river estimators is applying a variance, realization,
+  or equity-discount term inherited from the pre-river code path, that alone would produce
+  exactly the systematic pessimism observed, because every such term is one-directional
+  downward. Check this FIRST — it is the cheapest hypothesis that explains both the
+  magnitude and the direction.
+
+  WHAT THIS TICKET DOES NOT CLAIM. The paired EV delta does not resolve: -0.4711 bb, CI
+  [-2.7653, +1.3290] at n=260 / 22 players, includes zero. Nothing here says the flips are
+  wrong — it says they are large, one-directional, unexamined, and on the most expensive
+  street. Also: the card carries `engineDirty: true` (concurrent engine edits during the
+  run) and its absolute arm edges are flagged not quotable at 22 clusters against a floor
+  of 30. The FLIP COUNTS are structural tallies and do not depend on the absolute edges.
+accept_criteria: |
+  - FIRST, THE CHEAP CONFIRMATION — SEPARATE SYSTEMATIC FLIPS FROM SEED NOISE BEFORE ANY
+    FIX. Re-run the same 45 river decisions across multiple seeds and report, per decision,
+    how often the top action flips. A decision that flips in one replicate and not another
+    is noise; one that flips in all of them is systematic. Report the systematic flip rate
+    with its uncertainty — that number, not 80%, is what the rest of this ticket is about.
+    Do not touch engine code before this exists. If the systematic rate collapses toward
+    zero, this ticket becomes a WS-295 variance ticket and says so.
+  - THE DIRECTION MUST BE EXPLAINED, NOT MERELY REMOVED. A change that makes the flips
+    disappear without accounting for WHY 38 of 40 pointed the same way has tuned a constant
+    until a symptom went quiet. State the mechanism that produced the one-directional pull
+    and show that the mechanism, not the symptom, is what changed. If the pessimism turns
+    out to be CORRECT — the river genuinely warranting more checking than depth-1 believed —
+    that is a valid outcome, but it must be argued from the showdown-outcome distribution
+    and demonstrated, not assumed because it is convenient.
+  - AUDIT THE THREE ESTIMATORS AGAINST THE DOCTRINE. For `computeRiverCheckEV`,
+    `computeRiverBetEV`, and the inline call pricing at `gameTreeEvaluator.js:1479-1490`:
+    name every term each one applies, and confirm that none applies runout variance, a
+    realization discount, or any other pre-river equity haircut. Report them side by side —
+    the question is not whether each is defensible alone but whether the three are on ONE
+    SCALE, since they are compared by argmax.
+  - A TEST THAT FAILS ON THE ASYMMETRY, failing against HEAD (WS-309 rule). Concrete shape:
+    a river spot where hero's exact showdown equity is enumerable by hand, asserting that
+    the check and bet candidates are priced against the SAME villain range composition and
+    that the ordering between them follows that composition. A test that passes today is
+    testing the wrong thing.
+  - THE OOP CHECK BLEND IS RESOLVED DELIBERATELY. `gameTreeEvaluator.js:1427-1441` computes
+    a blend of per-combo check-back and the depth-1 villain-bet branch, then overwrites it
+    with the unblended per-combo number whenever `combosAnalyzed >= 20`. Either the blend is
+    load-bearing and the override is a bug, or the blend is dead and should be deleted.
+    Both cannot be true. Decide, and record which.
+  - SCOPE BOUNDARY WITH WS-361 IS STATED EXPLICITLY. WS-361's accept criteria are written
+    entirely around `gameTreeDepth2`. Either WS-361 widens to own the river or this ticket
+    owns it as a sibling — but no version of the resolution leaves the river unowned. Say
+    which, in both tickets.
+  - Any comparative figure resolves to a Result Card with a replication manifest per
+    ADR-009, stamped with `manifest.disclaimerRegisterVersion`. The corpus is online 2009
+    and the founder's game is live 9-handed 1/2-1/3; any live claim is TRANSFERRED, not
+    measured, and must say so.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md"
+  - "scripts/backtest/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-361"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES WS-361 WIDEN OR DOES THIS TICKET STAND AS ITS SIBLING? WS-361's status note
+    already recommends widening its own scope to `riverPerCombo`; its accept criteria have
+    not been rewritten. Widening keeps one owner for "the refinement stages disagree with
+    depth-1" but buries a P0 river question inside a ticket about `E[max(...)]` optimism on
+    the flop and turn. Splitting keeps the river visible but risks the two drifting. The
+    founder's call. Whichever way it goes, ONE ticket must name the river as in scope.
+  - |
+    OPEN — IS THE PASSIVITY A CORRECTION RATHER THAN A DEFECT? Depth-1 has no per-combo
+    model of what actually beats hero at showdown, so it can over-value thin river value
+    bets, and a per-combo river evaluation checking those back would be RIGHT. This is the
+    same shape as WS-361's DEFECT 2 (checking back AA on A72). The question is not "does
+    the engine prefer checking" but "is the MARGIN by which it prefers checking produced by
+    the showdown-outcome distribution or by a haircut term that does not belong on a
+    complete board". Answer that before changing any EV.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-05T04:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+    - `gameTreeEvaluator.js:537` — `needsDepth2: street !== 'river'`, and it is the ONLY
+      construction of that flag in `src/utils/exploitEngine/`. The river genuinely cannot
+      reach depth-2.
+    - `gameTreeEvaluator.js:1409` — `gateStage('riverPerCombo', { street: street === 'river' })`.
+      WS-361's note cites 1327; that is line drift since WS-356/WS-357 landed, not a changed
+      mechanism.
+    - `gameTreeEvaluator.js:1419` `computeRiverCheckEV`, `:1457` `computeRiverBetEV`,
+      `:1479-1490` the inline call pricing — three separate estimators, all writing
+      `candidate.ev` wholesale, all compared against each other afterwards.
+    - `docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md` exists.
+
+  The founder's standing rule that makes this a P0 rather than a curiosity: a null or
+  surprising result measured on an unverified substrate is a statement about the substrate.
+  The depth ablation returned a CI that includes zero on the quantity it set out to measure,
+  and in doing so pointed at a different stage entirely. `riverPerCombo` is now the substrate
+  under test.
+
+  Source: commit 0fa91d23, "feat(backtest): depth-2's accuracy delta, and the flips are on a
+  street depth-2 never runs (WS-334 AC5)".
