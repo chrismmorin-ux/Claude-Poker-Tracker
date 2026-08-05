@@ -268,6 +268,10 @@ export const DISCLAIMER_TREATMENT =
  * @param {string} input.mechanism - HOW it goes wrong. Not "the model may be off" — the path.
  * @param {string} input.contaminates - which results this would taint, in words, for a human
  * @param {(card: Object) => boolean} input.matches - the machine form of `contaminates`
+ * @param {string[]} input.matchesOn - the card fields `matches` READS, from
+ *   `MATCHABLE_CARD_FIELDS`. Required, non-empty, and HASHED — see `canonicalRegisterBody`.
+ * @param {RegExp} [input.disclosureCue] - prose that would count as the card DISCLOSING this
+ *   fault. Read by `contaminationDisclosure` for reporting only; never by `matches`.
  * @param {string} input.falsifier - the measurement that would settle it. Required: an entry
  *   with no falsifier is a worry, not a register entry, and cannot leave `untested`.
  * @param {number} input.probability - declared P(this fault is real), 0..1
@@ -289,6 +293,8 @@ export const buildFaultEntry = ({
   mechanism,
   contaminates,
   matches,
+  matchesOn = [],
+  disclosureCue = null,
   falsifier,
   probability,
   probabilityBasis,
@@ -305,6 +311,8 @@ export const buildFaultEntry = ({
     mechanism,
     contaminates,
     matches,
+    matchesOn: [...matchesOn],
+    disclosureCue,
     falsifier,
     probability,
     probabilityBasis,
@@ -414,6 +422,30 @@ export const faultEntryProblems = (entry) => {
       + 'and it ships WITH the entry so the reader and the claim arrive together',
     );
   }
+  // WS-369. The predicate itself cannot be hashed, so the entry must declare WHAT IT READS —
+  // a stable descriptor that moves when the semantics move and not when the whitespace does.
+  // See `canonicalRegisterBody` for why that descriptor is in the version hash.
+  if (!Array.isArray(entry.matchesOn) || entry.matchesOn.length === 0) {
+    problems.push(
+      'matchesOn is required and must name at least one card field the matcher reads, from '
+      + `${MATCHABLE_CARD_FIELDS.join(' | ')}. A matcher whose basis is undeclared can be `
+      + 'rewritten from a dependency to a sentence without any reader of an old card being able '
+      + 'to tell',
+    );
+  } else {
+    const unknown = entry.matchesOn.filter((f) => !MATCHABLE_CARD_FIELDS.includes(f));
+    if (unknown.length) {
+      problems.push(
+        `matchesOn names ${unknown.join(', ')}, which ${unknown.length === 1 ? 'is' : 'are'} not `
+        + `${MATCHABLE_CARD_FIELDS.join(' | ')}. The set is closed so a typo cannot pass for a `
+        + 'declaration',
+      );
+    }
+  }
+  if (entry.disclosureCue !== null && entry.disclosureCue !== undefined
+    && !(entry.disclosureCue instanceof RegExp)) {
+    problems.push('disclosureCue must be a RegExp over the card\'s prose, or absent');
+  }
   if (!entry.falsifier) {
     problems.push(
       'falsifier is required — an entry with no falsifier can never leave `untested`, which '
@@ -517,11 +549,57 @@ const inUnitInterval = (n) => typeof n === 'number' && Number.isFinite(n) && n >
 // ══════════════════════════════════════════════════════════════════════════════════════
 
 /**
- * The card's own text, flattened, for matchers that key on what a card SAYS it measured.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * WS-369 — A MATCHER MAY NOT READ A CARD'S PROSE TO DECIDE WHAT THAT CARD DEPENDS ON.
+ * ─────────────────────────────────────────────────────────────────────────────────────
  *
- * Deliberately narrow: identity and prose only, never `metrics`. A matcher that swept the
- * metric VALUES would fire on the number rather than on the claim, and the same figure means
- * different things on two different instruments.
+ * `isLiveFacing` used to be `/\blive\b|1\/2|1\/3|9-handed/` over a haystack that included
+ * `estimand` and `treatment`. It therefore fired on the WS-293 range-calibration card BECAUSE
+ * that card's own treatment string ends "any claim about live 9-handed 1/2-1/3 is TRANSFERRED,
+ * not measured" — every matching token was present ONLY because the author wrote the disclaimer,
+ * and the module that emits it states it repeats the sentence three times so a reader cannot
+ * skip it. Each repetition made the match more certain.
+ *
+ * A card with the SAME Deal Book, the same Field and the same partition, whose treatment simply
+ * never uses those words, matched nothing at all. That is the dangerous card: it leans on the
+ * online corpus for advice that will be read at a live table and says so nowhere.
+ *
+ * So the detector was inverted with respect to the risk it exists to catch — it penalised
+ * disclosure and was blind to silence — and the incentive ran the wrong way: the cheapest route
+ * to a clean register report was to DELETE the sentence that made the card honest. That is the
+ * one incentive this entire apparatus must never create.
+ *
+ * THE RULE THAT REPLACES IT. A card's DEPENDENCIES are structural facts it already carries —
+ * `match.dealBookId`, `match.fieldId`, `manifest.fieldVersion`, `manifest.partition`. Its
+ * disclaimer is authorial text. Reading the second to infer the first is the error. Contamination
+ * matchers key on the first. Disclosure is REPORTED (`contaminationDisclosure`), never MATCHED.
+ *
+ * AND UNKNOWN PROVENANCE MATCHES. `cardPopulation` returns `unknown` when nothing in a card's
+ * identity names a population, and `unknown` is treated as live-facing and NOT as exempt. A
+ * matcher that let an unnamed provenance through would rebuild the same escape hatch out of
+ * omission instead of out of wording.
+ */
+
+/**
+ * The card fields that name what a result DEPENDS ON. Identity only — never `estimand` or
+ * `treatment`, which are the author's account of the work rather than the work's inputs.
+ *
+ * Never `metrics` either: a matcher that swept metric VALUES would fire on the number rather
+ * than on the claim, and the same figure means different things on two different instruments.
+ * (Matchers that key on metric KEY NAMES are a separate, legitimate structural basis — a card
+ * reporting `n` without `ess` is asserting a precision it has not shown it has.)
+ */
+const provenance = (card) => [
+  card?.match?.dealBookId,
+  card?.match?.fieldId,
+  card?.manifest?.fieldVersion,
+  card?.manifest?.partition,
+].filter(Boolean).join(' ').toLowerCase();
+
+/**
+ * The card's own text, flattened, for the matchers whose fault genuinely lives in the
+ * instrument DECLARATION rather than in the data — see `proseMatchers` for the standing
+ * warning that attaches to every one of them.
  */
 const haystack = (card) => [
   card?.match?.surfaceId,
@@ -533,13 +611,87 @@ const haystack = (card) => [
   card?.manifest?.fieldVersion,
 ].filter(Boolean).join(' ').toLowerCase();
 
-/** True when the card stands on the 2009 online corpus rather than a live or generated set. */
-const onOnlineCorpus = (card) => /handhq|src-01[12]|mass data field|\bmdf\b|online|2009/.test(haystack(card));
+/**
+ * How a Deal Book / Field identity resolves to a POPULATION, declared rather than inferred.
+ *
+ * Ordered: the first pattern that hits wins, and `live` is tested first so a live Deal Book
+ * cannot be captured by a venue token that happens to appear beside it.
+ *
+ * These are SRC ids and the naming conventions the repo's Deal Books actually use
+ * (`handhq-allsites-50NLH-<hash>`, `field:handhq-50nlh-2009`). Adding a source means adding a
+ * row here, which is a hashed change to what the register can see — see `matchesOn`.
+ */
+export const POPULATION_ANCHORS = Object.freeze([
+  { venue: 'live', pattern: /\bsrc-014\b|(^|[^a-z0-9])live[-:]/ },
+  {
+    venue: 'online',
+    pattern: /handhq|\bsrc-0(05|11|12)\b|mass data field|\bmdf\b|ignition|pokerstars|\bftp\b|\b2009\b/,
+  },
+  { venue: 'synthetic', pattern: /\bsrc-013\b|generated|synthetic|simulat|responsive-sim|\bsim-/ },
+]);
 
-/** True when the card makes a claim ABOUT live play. */
-const isLiveFacing = (card) => /\blive\b|1\/2|1\/3|9-handed/.test(haystack(card));
+/**
+ * The population a card's RESULT STANDS ON: `live` | `online` | `synthetic` | `unknown`.
+ *
+ * `unknown` is a real answer and is deliberately not benign — see the block comment above.
+ */
+export const cardPopulation = (card) => {
+  const p = provenance(card);
+  if (!p) return 'unknown';
+  for (const { venue, pattern } of POPULATION_ANCHORS) {
+    if (pattern.test(p)) return venue;
+  }
+  return 'unknown';
+};
+
+/**
+ * True when what the card STANDS ON is the online corpus.
+ *
+ * Structural: read off the Deal Book and Field identity, not off whether the author mentioned
+ * the corpus in a sentence.
+ */
+const onOnlineCorpus = (card) => cardPopulation(card) === 'online';
+
+/**
+ * True when the card's conclusion will be read at the founder's LIVE table.
+ *
+ * WHY THE DEFAULT IS TRUE. This repo exists to advise a live 9-handed 1/2-1/3 game — that is
+ * the first line of its CLAUDE.md and the whole content of the rank-1 register entry. So a
+ * result is transferred to live play unless it was MEASURED on live play. Being measured on a
+ * live population is the only thing that makes a card not live-facing, and it is a structural
+ * fact about the Deal Book rather than a claim in the prose.
+ *
+ * Note what this does NOT do: it does not let a card buy exemption by declaring itself
+ * online-only in words. An exemption purchasable with a sentence is the same defect as a match
+ * triggerable by one, pointed the other way.
+ */
+const isLiveFacing = (card) => cardPopulation(card) !== 'live';
 
 const metricKeys = (card) => Object.keys(card?.metrics ?? {});
+
+/**
+ * The card field paths an entry may name in `matchesOn`.
+ *
+ * A CLOSED SET, so a typo cannot pass for a declaration. The two prose fields are legal — some
+ * faults genuinely live in the instrument declaration and there is no structural field carrying
+ * it — but naming one marks the entry a prose matcher, which `proseMatchers` counts.
+ */
+export const MATCHABLE_CARD_FIELDS = Object.freeze([
+  'match.surfaceId',
+  'match.dealBookId',
+  'match.fieldId',
+  'manifest.partition',
+  'manifest.fieldVersion',
+  'manifest.constants',
+  'manifest.unseededSources',
+  'metrics.keys',
+  'metrics.values',
+  'estimand',
+  'treatment',
+]);
+
+/** The card fields that are the AUTHOR'S ACCOUNT rather than the result's inputs. */
+export const PROSE_CARD_FIELDS = Object.freeze(['estimand', 'treatment']);
 
 // ══════════════════════════════════════════════════════════════════════════════════════
 // THE OPENING REGISTER
@@ -564,7 +716,14 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'populations that are never merged. So every live-facing claim anchored on this corpus '
       + 'is TRANSFERRED, not measured, and nothing in the number says so.',
     contaminates: 'Any live-facing recommendation validated on the Mass Data Field.',
+    // WS-369. `contaminates` is a statement about what a card DEPENDS ON, and this is now the
+    // machine form of that sentence rather than of "any card that mentions live play". Both
+    // halves read the Deal Book and Field identity: the card stands on the online corpus, and
+    // it was not measured on the live population it will be read against.
     matches: (card) => isLiveFacing(card) && onOnlineCorpus(card),
+    matchesOn: ['match.dealBookId', 'match.fieldId', 'manifest.fieldVersion', 'manifest.partition'],
+    // Reported, never matched. See `contaminationDisclosure`.
+    disclosureCue: /transferred, not measured|\btransferred\b.*\blive\b|\blive\b.*\btransferred\b/,
     falsifier:
       'Measure the same estimand on SRC-014 (live 1/3) and on SRC-012. If the two agree within '
       + 'their intervals on a shared spot set, transfer is supported for that spot class; if '
@@ -655,6 +814,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
     // is legal (a field with no fitted component) but it is also the state in which leakage
     // would be undetectable, so it is the honest trigger.
     matches: (card) => !card?.manifest?.partition,
+    matchesOn: ['manifest.partition'],
     falsifier:
       'Re-fit every prior on POOL only, re-run on EVAL only, and compare against the current '
       + 'figures. A gap beyond Monte Carlo noise localizes an open channel; agreement retires '
@@ -675,7 +835,11 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'population model. Any fault in the model therefore becomes an INVISIBLE fault in every '
       + 'EV number the simulator emits — the instrument cannot detect an error it is built on.',
     contaminates: 'Every simulator-derived EV figure, including agreement checks that use one.',
-    matches: (card) => /simulat|synthetic|modelled field|model-opponent/.test(haystack(card)),
+    // WS-369: narrowed from the prose haystack to the Field identity. Whether the opponents were
+    // simulated is a property of the FIELD the card was scored against, which the card names
+    // structurally — not of whether the author used the word "simulated" in a sentence.
+    matches: (card) => /simulat|synthetic|modelled field|model-opponent/.test(provenance(card)),
+    matchesOn: ['match.dealBookId', 'match.fieldId', 'manifest.fieldVersion', 'manifest.partition'],
     falsifier:
       'The WS-326 agreement gate: run the same estimand on Instrument I (corpus substitution, '
       + 'real opponents) and Instrument II. Divergence beyond their joint interval bounds the '
@@ -697,11 +861,15 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'consistent direction will score its own advice highly precisely BECAUSE it is wrong. '
       + 'Realized chips are the only external anchor, and they are noisy.',
     contaminates: 'Any result whose metric is model EV rather than a realized outcome.',
+    // WS-369: the escape clause used to read the PROSE haystack, so a card could buy exemption
+    // by using the word "realized" in its treatment while reporting nothing but model EV. What
+    // the card measured is in its METRIC KEYS; that is the only thing consulted now.
     matches: (card) => {
       const keys = metricKeys(card).join(' ').toLowerCase();
-      const saysRealized = /realiz|chips|showdown|observed/.test(`${keys} ${haystack(card)}`);
-      return /ev|edge/.test(keys) && !saysRealized;
+      const reportsRealized = /realiz|chips|showdown|observed/.test(keys);
+      return /ev|edge/.test(keys) && !reportsRealized;
     },
+    matchesOn: ['metrics.keys'],
     falsifier:
       'Score the same decisions against REALIZED chips and against model EV. A systematic gap '
       + "in the engine's favour is the optimizer's curse made visible (WS-295); no gap beyond "
@@ -723,7 +891,14 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'statement is easily lost downstream — at which point a per-decision edge gets read as '
       + 'bb/100 and overstates the result by roughly the decisions-per-hand factor.',
     contaminates: 'Any figure quoted as a winrate that was produced by per-decision substitution.',
+    // WS-369: PROSE MATCHER, and knowingly so — see `proseMatchers`. The horizon is a property
+    // of the instrument, declared in `treatment` (from `ipsEstimator.TREATMENT`, a module
+    // constant rather than free text) and carried by no structural field. Note that this entry's
+    // own mechanism says the fault FIRES where a downstream reader DROPS the treatment string —
+    // exactly the card this matcher cannot see. Making it structural needs a horizon field on
+    // the card, which is a schema change and not this ticket.
     matches: (card) => /one-decision|per-decision/.test(haystack(card)),
+    matchesOn: ['treatment', 'estimand', 'match.surfaceId'],
     falsifier:
       'Run a whole-strategy arm — every hero decision in the hand supplied by the surface — on '
       + 'the same Deal Book, and compare against the per-decision figure scaled by observed '
@@ -747,6 +922,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'half.',
     contaminates: 'Every bb-denominated EV figure, and marginal calls most of all.',
     matches: (card) => metricKeys(card).some((k) => /bb|ev|edge/i.test(k)),
+    matchesOn: ['metrics.keys'],
     falsifier:
       'Sweep the rake schedule across the live and online configurations and report the '
       + 'conclusion under each. A conclusion that survives both is rake-robust and can be '
@@ -771,7 +947,11 @@ export const SUSPECTED_FAULTS = Object.freeze([
     contaminates:
       'Any comparison between a corpus-measured figure and live advisor behaviour, and every '
       + 'marginal live recommendation.',
+    // WS-369: the same repair as the rank-1 entry, and it is the second consumer of
+    // `isLiveFacing` — a card is exposed to a rake-inert live advisor unless it was measured on
+    // the live population itself.
     matches: (card) => isLiveFacing(card),
+    matchesOn: ['match.dealBookId', 'match.fieldId', 'manifest.fieldVersion', 'manifest.partition'],
     falsifier:
       'Assert `estimateRake` returns non-zero on a live 1/2 decision through the advisor path. '
       + 'It returns 0 today; when it does not, the entry retires with that test as evidence.',
@@ -797,7 +977,10 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'number is reading a different quantity than it believes, and the number is plausible '
       + 'enough that nothing downstream notices.',
     contaminates: 'Any surface or prior consuming foldTo3Bet, and every fold-probability layer built on one.',
+    // WS-369: PROSE MATCHER. Which stats a surface consumes is not on the card — only the
+    // surface id is, and it is not resolvable to a stack from here. Declared rather than hidden.
     matches: (card) => /foldto3bet|fold-to-3bet|preflop prior|3bet/.test(haystack(card)),
+    matchesOn: ['estimand', 'treatment', 'match.surfaceId', 'match.fieldId'],
     falsifier:
       'Recompute the stat restricted to folds facing an actual 3-bet and compare against the '
       + 'served value. Already known to differ; the measurement fixes the magnitude and tells '
@@ -821,7 +1004,10 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'barrels more, or steals more therefore never gets punished for being predictable, and '
       + 'its measured edge is an upper bound rather than an estimate.',
     contaminates: 'Every result for an aggressive surface, and the Pool Best Response ceiling most of all.',
-    matches: (card) => Boolean(card?.match?.fieldId) && !/responsive|adaptive/.test(haystack(card)),
+    // WS-369: the "responsive" escape now has to be in the FIELD's identity, where a responsive
+    // Field would actually be named, rather than anywhere in the card's prose.
+    matches: (card) => Boolean(card?.match?.fieldId) && !/responsive|adaptive/.test(provenance(card)),
+    matchesOn: ['match.fieldId', 'manifest.fieldVersion', 'match.dealBookId', 'manifest.partition'],
     falsifier:
       'Run the same surface against a responsive Field (WS-326) and against the static one. The '
       + 'drop is the overstatement, and it should be largest for the most aggressive surfaces — '
@@ -842,7 +1028,10 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'the range. The result is the value of the ADVICE averaged over hands hero COULD hold, '
       + 'not the value of the play hero MADE with the hand hero HELD.',
     contaminates: 'Every figure from a range-marginalized policy — a weaker claim than a cards-known instrument.',
+    // WS-369: PROSE MATCHER. Whether hole cards were known is a property of the instrument with
+    // no structural field on the card. Same escape-by-omission as the horizon entry.
     matches: (card) => /range-marginalized|marginalized/.test(haystack(card)),
+    matchesOn: ['treatment', 'estimand'],
     falsifier:
       'On the showdown subset where hole cards ARE revealed, compute both the marginalized and '
       + 'the cards-known figure. The gap bounds the weakening — on a selected subset, which is '
@@ -863,7 +1052,10 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'limit how far a stale prior can pull a posterior, but that is a MITIGATION, not a '
       + 'control: it bounds the damage without measuring it.',
     contaminates: 'Every prior mined from the corpus, and every claim that leans on one.',
+    // WS-369: structural now, via the shared `cardPopulation` resolution — a card is stale
+    // because of the Deal Book it stands on, not because it said "2009" somewhere.
     matches: onOnlineCorpus,
+    matchesOn: ['match.dealBookId', 'match.fieldId', 'manifest.fieldVersion', 'manifest.partition'],
     falsifier:
       'Fit the same priors on SRC-005 (Ignition, current) and compare against the 2009 values '
       + 'cell by cell. The per-cell gap is the drift; cells that agree are stable and can be '
@@ -935,6 +1127,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
       const hasEss = keys.some((k) => /ess|effective/.test(k));
       return hasN && !hasEss;
     },
+    matchesOn: ['metrics.keys'],
     falsifier:
       'Report ESS and the clipped weight share alongside n on every card. Where ESS/n is near '
       + '1 the entry retires for that result; where it is small the interval was always wrong '
@@ -956,7 +1149,10 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'never a population rate — the selection runs hardest against exactly the strong and '
       + 'weak tails a range model cares about.',
     contaminates: 'Any rate estimated from revealed holdings, including range-model ground truth.',
+    // WS-369: PROSE MATCHER. Showdown-conditioning is a property of the estimand and nothing
+    // structural records it.
     matches: (card) => /showdown|revealed|holding/.test(haystack(card)),
+    matchesOn: ['estimand', 'treatment'],
     falsifier:
       'Compare a rate estimated on the showdown subset against the same rate estimated with a '
       + 'selection correction over all hands. The gap is the selection effect; agreement '
@@ -978,6 +1174,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'right; it is known to be unobjected-to, which is a different thing.',
     contaminates: 'Any result whose conclusion depends on a constant that was never swept.',
     matches: (card) => Object.keys(card?.manifest?.constants ?? {}).length > 0,
+    matchesOn: ['manifest.constants'],
     falsifier:
       'Sweep each stamped constant across a plausible range and record the margin at which the '
       + "conclusion flips — which is exactly what the Result Card's `fragility` field holds. A "
@@ -1004,6 +1201,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
     matches: (card) => Object.values(card?.metrics ?? {}).some(
       (v) => v === true || v === 1 || v === 1.0 || v === 0,
     ),
+    matchesOn: ['metrics.values'],
     falsifier:
       'For each check, exhibit an input on which it FAILS. A check with no such input is '
       + 'degenerate and must be removed or repaired; producing the failing input retires the '
@@ -1025,7 +1223,9 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'results touching multiway spots inherit the caveat rather than depending on the reader '
       + 'remembering the ticket.',
     contaminates: 'Any result covering three-or-more-way pots.',
+    // WS-369: PROSE MATCHER. Player count per spot is not a card-level field.
     matches: (card) => /multiway|3-way|three-way|multi-way/.test(haystack(card)),
+    matchesOn: ['estimand', 'treatment'],
     falsifier:
       'Compare the approximation against an exact multiway computation on a bounded spot set. '
       + 'The gap bounds the error for spots of that shape and no others.',
@@ -1045,6 +1245,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
       + 'small difference between two Result Cards is therefore not evidence of a change.',
     contaminates: 'Any comparison between two cards whose difference is near the noise floor.',
     matches: (card) => (card?.manifest?.unseededSources ?? []).length > 0,
+    matchesOn: ['manifest.unseededSources'],
     falsifier:
       'Run the same Deal Book twice with identical seeds and report the spread. That spread is '
       + 'the noise floor, below which no difference may be quoted as a change. Seeding the '
@@ -1076,6 +1277,7 @@ export const SUSPECTED_FAULTS = Object.freeze([
     // metric computed upstream can still be hand-clustered before it ever reaches a card, and
     // the declared unit would not know.
     matches: (card) => metricKeys(card).some((k) => /ci|interval|stderr|se$|variance/i.test(k)),
+    matchesOn: ['metrics.keys'],
     falsifier:
       'Recompute one published interval with a session-level cluster bootstrap and compare '
       + 'against the stored bounds. Agreement retires the residual channel for that instrument; '
@@ -1350,6 +1552,65 @@ export const registerSelfCheck = (faults = SUSPECTED_FAULTS, cards = []) => {
 };
 
 /**
+ * Entries that decide contamination by reading the card's PROSE, with the standing warning.
+ *
+ * WS-369 fixed the instance that was noticed. The defect is generic, so this makes the residual
+ * countable instead of leaving it to be rediscovered one entry at a time.
+ *
+ * A prose matcher can be escaped by DELETING A SENTENCE, and it fires hardest on the most
+ * carefully-written card. That is invisible to both existing diagnostics: `registerSelfCheck`
+ * reports a matcher that matches nothing and a matcher that matches everything, and a matcher
+ * that matches THE WRONG CARDS looks healthy to both.
+ *
+ * Some of these are irreducible today rather than unfixed — horizon, hole-card knowledge,
+ * showdown conditioning and player count are properties of the instrument with no structural
+ * field on the Result Card to carry them. Making those structural is a card-schema change. Until
+ * then they are declared, not hidden.
+ */
+export const proseMatchers = (faults = SUSPECTED_FAULTS) => faults
+  .filter((f) => (f.matchesOn ?? []).some((field) => PROSE_CARD_FIELDS.includes(field)))
+  .map((f) => ({
+    faultId: f.faultId,
+    matchesOn: [...f.matchesOn],
+    proseFields: f.matchesOn.filter((field) => PROSE_CARD_FIELDS.includes(field)),
+    warning:
+      'decides contamination from the author\'s account of the work rather than from the work\'s '
+      + 'inputs — escapable by deleting a sentence, and biased toward flagging the cards that '
+      + 'disclose most',
+  }));
+
+/**
+ * Split an entry's contaminated cards into the ones that DISCLOSE the fault and the ones that
+ * are SILENT about it.
+ *
+ * The distinction WS-352 could not represent, and the reason it could not: matching and
+ * disclosure were the same test. They are now separate, and the ordering is the whole point —
+ * the DEPENDENCY decides contamination, the PROSE only annotates it. A disclosing card is not
+ * less contaminated for having said so; a silent one is not less contaminated for having not.
+ *
+ * `silent` is the list worth reading. Those cards are subject to the fault and a reader taking
+ * the number at face value would never learn it — a reporting failure on top of a real exposure.
+ *
+ * Entries with no `disclosureCue` report every matched card as `undetermined`, because "we did
+ * not look" and "we looked and found nothing" are different facts (WS-328's rule, applied here).
+ */
+export const contaminationDisclosure = (entry, cards = []) => {
+  const matched = contaminatedCards(entry, cards);
+  const cue = entry?.disclosureCue ?? null;
+  const idOf = (c) => c?.resultCardId ?? null;
+  if (!cue) {
+    return { faultId: entry?.faultId ?? null, disclosed: [], silent: [], undetermined: matched.map(idOf) };
+  }
+  const prose = (c) => [c?.estimand, c?.treatment].filter(Boolean).join(' ').toLowerCase();
+  return {
+    faultId: entry.faultId,
+    disclosed: matched.filter((c) => cue.test(prose(c))).map(idOf),
+    silent: matched.filter((c) => !cue.test(prose(c))).map(idOf),
+    undetermined: [],
+  };
+};
+
+/**
  * Entries whose falsifier cannot currently be run, with what blocks each one.
  *
  * The work-queue emitter (§6 of the doc) ranks by expected damage, which is a statement about
@@ -1453,10 +1714,44 @@ export const registerProblems = (faults = SUSPECTED_FAULTS) => {
 /**
  * The canonical body the register's version hash is taken over.
  *
- * Excludes `matches` — a function has no stable serialization, and hashing its source would
- * make a whitespace change look like a semantic one. The claim a reader relies on is the PROSE
- * (`contaminates`), which is included; the matcher is the machine form of that prose and is
- * covered by tests, not by the hash.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * DOES THE MATCHER BELONG IN THE HASH? WS-369 ANSWERS: THE SOURCE NO, THE BASIS YES.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * The original exclusion was reasoned and half right. A function has no stable serialization;
+ * hashing its source would move the version on a rename, a reformat, or an extracted helper, and
+ * a version that churns for non-reasons is a version nobody reads. That argument is decisive
+ * against hashing the SOURCE. It is not an argument against hashing the CLAIM.
+ *
+ * And there is a claim. `falsifierBlockers` is hashed on the stated ground that it says what this
+ * register can currently SETTLE, and a reader holding an old Result Card needs to detect a change
+ * in that. What a matcher READS is the same kind of statement about the same card: it says what
+ * the register can SEE. WS-369 is the proof by construction — the matcher moved from the card's
+ * prose to the card's dependencies, the contamination set changed, and under the old body the
+ * version would not have moved by a single character. Two cards stamped `FR-1+8c4e65578ca2` could
+ * have been screened by opposite predicates with nothing in either card recording which. That is
+ * exactly the invisibility the stamp exists to prevent, and it is worse than a wrong number,
+ * because under-matching SHRINKS the list `confirmFault` returns and shrinks it silently.
+ *
+ * So the middle path, and it is the one the ticket named: hash `matchesOn`, a declared descriptor
+ * of the card fields the predicate reads. It changes when the semantics change — moving from
+ * `treatment` to `match.dealBookId` is precisely a change of declared fields — and does not
+ * change when the whitespace does. Its vocabulary is closed (`MATCHABLE_CARD_FIELDS`) so a typo
+ * cannot pass for a declaration, and the tests bind the descriptor to the behaviour rather than
+ * trusting it: every entry that does not declare a prose field is asserted invariant under
+ * scrambling `estimand` and `treatment`.
+ *
+ * WHAT THIS DOES TO EXISTING STAMPS. Adding `matchesOn` moves `registerVersion()` off
+ * `FR-1+8c4e65578ca2`. Prior cards keep the stamp they were minted with, and are NOT re-stamped —
+ * the WS-352 rule holds: a stamp correctly records what the card was produced under. The gain is
+ * forward-looking and is the whole point: from here on, a reader comparing an old card's stamp to
+ * today's register can tell that the screening changed, which before this change they could not.
+ * Re-screening those cards is not automatic and must not be: that is the confirm/retire
+ * machinery's job, and it requires evidence.
+ *
+ * `matches` itself is still excluded, and so is `disclosureCue` — the cue annotates a match for
+ * reporting and never alters the contamination set, so it makes no claim about what the register
+ * can see.
  */
 export const canonicalRegisterBody = (faults = SUSPECTED_FAULTS) => ({
   epoch: REGISTER_EPOCH,
@@ -1472,6 +1767,8 @@ export const canonicalRegisterBody = (faults = SUSPECTED_FAULTS) => ({
     site: e.site,
     mechanism: e.mechanism,
     contaminates: e.contaminates,
+    // WS-369. Hashed: the declared basis of the matcher. See the block comment above.
+    matchesOn: e.matchesOn,
     falsifier: e.falsifier,
     probability: e.probability,
     probabilityBasis: e.probabilityBasis,

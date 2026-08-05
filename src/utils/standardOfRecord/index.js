@@ -195,4 +195,10 @@ export {
   registerSelfCheck,
   canonicalRegisterBody,
   registerVersion,
+  MATCHABLE_CARD_FIELDS,
+  PROSE_CARD_FIELDS,
+  POPULATION_ANCHORS,
+  cardPopulation,
+  proseMatchers,
+  contaminationDisclosure,
 } from './faultRegister.js';

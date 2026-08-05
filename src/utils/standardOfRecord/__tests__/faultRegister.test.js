@@ -44,6 +44,11 @@ import {
   isRegisterVersionShape,
   REGISTER_VERSION_PATTERN,
   WITHIN_CORPUS_DRIFT_2009,
+  MATCHABLE_CARD_FIELDS,
+  PROSE_CARD_FIELDS,
+  cardPopulation,
+  proseMatchers,
+  contaminationDisclosure,
 } from '../faultRegister.js';
 import { STACK_LAYERS } from '../stack.js';
 
@@ -89,6 +94,7 @@ const entryInput = (overrides = {}) => ({
   mechanism: 'The path by which it goes wrong.',
   contaminates: 'Anything at all.',
   matches: () => true,
+  matchesOn: ['match.dealBookId'],
   falsifier: 'Measure it.',
   probability: 0.5,
   probabilityBasis: 'Because.',
@@ -485,6 +491,7 @@ describe('falsifierBlockers — an entry that says why its own test cannot be ru
     mechanism: 'a stated path by which it goes wrong',
     contaminates: 'some cards',
     matches: () => false,
+    matchesOn: ['match.dealBookId'],
     falsifier: 'measure the thing',
     probability: 0.5,
     probabilityBasis: 'stated so it can be argued with',
@@ -676,6 +683,7 @@ describe('clearedBlockers — one of three, recorded, and not a settlement (WS-3
     mechanism: 'a stated path by which it goes wrong',
     contaminates: 'some cards',
     matches: () => false,
+    matchesOn: ['match.dealBookId'],
     falsifier: 'measure the thing',
     probability: 0.5,
     probabilityBasis: 'stated so it can be argued with',
@@ -817,5 +825,249 @@ describe('registerVersion shape — the join key, not just a non-empty string', 
   it('accepts a future epoch, because bumping the epoch is a legal change', () => {
     expect(isRegisterVersionShape('FR-2+000000000000')).toBe(true);
     expect(isRegisterVersionShape('FR-12+8c4e65578ca2')).toBe(true);
+  });
+});
+
+// ── WS-369: a matcher that read the disclaimer instead of the dependency ────────────────────
+
+/**
+ * THE DEFECT THESE GUARD. `isLiveFacing` was a regex over a haystack containing `estimand` and
+ * `treatment`, so `FAULT-population-mismatch` fired on the WS-293 range-calibration card BECAUSE
+ * that card's own treatment string says "any claim about live 9-handed 1/2-1/3 is TRANSFERRED,
+ * not measured". Every token that made it match was present only because the author disclosed the
+ * limitation — and the emitting module repeats that sentence three times on purpose.
+ *
+ * A card with the SAME Deal Book, the SAME Field, the SAME partition, whose prose simply omits
+ * those words, matched nothing. The detector was inverted with respect to its own risk: it
+ * penalised disclosure and was blind to silence, and the cheapest route to a clean register
+ * report was to delete the honest sentence.
+ *
+ * WHAT "HANDLED CORRECTLY" MEANS FOR THE DISCLOSING CARD, stated here because the ticket asks
+ * for it explicitly: it STILL MATCHES. A card built on the 2009 online corpus is anchored on an
+ * online population whether or not its prose admits it, so disclosure does not make the
+ * dependency go away and a fix that simply stopped flagging it would have removed a TRUE
+ * POSITIVE while leaving the false negative in place. The defect was never that (a) matched —
+ * it was that (a) matched FOR THE WRONG REASON and (b) did not match at all.
+ */
+describe('contamination matches on what a card DEPENDS ON, not on what it says (WS-369)', () => {
+  /** The structural provenance both fixtures share. Identical, down to the Deal Book hash. */
+  const sharedProvenance = () => ({
+    match: {
+      surfaceId: 'engine-read',
+      dealBookId: 'handhq-allsites-50NLH-deadbeef',
+      fieldId: 'population-chart-baseline',
+    },
+    metrics: { natsPerDecision: 0.31, n: 512 },
+    clusterUnit: 'players',
+    manifest: {
+      partition: 'pool/eval@poolPct=50, walk-forward trainFrac=0.5',
+      fieldVersion: 'population-chart-baseline',
+      constants: { PRIOR_WEIGHT: 10 },
+      unseededSources: [],
+    },
+  });
+
+  /** (a) DISCLOSES. This is the WS-293 card's treatment string, verbatim from its emitter. */
+  const disclosingCard = () => ({
+    ...sharedProvenance(),
+    resultCardId: 'RC-range-calibration-DISCLOSES',
+    estimand: 'Mean log P(true holding) minus log uniform-over-live-combos, nats per decision.',
+    treatment:
+      'read-only layer probe · no substitution and no counterfactual · population is online '
+      + '6-max/full-ring July 2009, so any claim about live 9-handed 1/2-1/3 is TRANSFERRED, '
+      + 'not measured.',
+  });
+
+  /** (b) SILENT. Same dependencies, same instrument. Says nothing about what population it is
+   * being read against. THIS IS THE DANGEROUS CARD and the assertion the old matcher failed. */
+  const silentCard = () => ({
+    ...sharedProvenance(),
+    resultCardId: 'RC-range-calibration-SILENT',
+    estimand: 'Mean log P(true holding) minus log uniform, nats per decision.',
+    treatment: 'read-only layer probe · no substitution and no counterfactual.',
+  });
+
+  const populationMismatch = () => SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-population-mismatch');
+
+  it('FLAGS THE SILENT CARD — the false negative, and the assertion the old matcher failed', () => {
+    expect(populationMismatch().matches(silentCard())).toBe(true);
+  });
+
+  it('still flags the disclosing card — honest disclosure does not remove the dependency', () => {
+    expect(populationMismatch().matches(disclosingCard())).toBe(true);
+  });
+
+  it('gives the two IDENTICAL verdicts across the whole register — prose is not the variable', () => {
+    for (const entry of SUSPECTED_FAULTS) {
+      if ((entry.matchesOn ?? []).some((f) => PROSE_CARD_FIELDS.includes(f))) continue;
+      expect(entry.matches(disclosingCard()), entry.faultId)
+        .toBe(entry.matches(silentCard()));
+    }
+  });
+
+  it('does not change its verdict when the disclaimer is deleted — the incentive is neutral', () => {
+    // The property that matters most. If deleting the honest sentence changed the verdict, the
+    // register would be paying authors to delete it.
+    const stripped = { ...disclosingCard(), treatment: 'read-only layer probe.', estimand: 'a number.' };
+    expect(populationMismatch().matches(stripped)).toBe(true);
+  });
+
+  it('does NOT flag a card measured on the live population — the matcher is not degenerate', () => {
+    const liveCard = {
+      ...silentCard(),
+      resultCardId: 'RC-measured-on-SRC-014',
+      match: { ...silentCard().match, dealBookId: 'live-1-3-morongo-9handed-abc12345', fieldId: 'live-pool-observed' },
+      manifest: { ...silentCard().manifest, fieldVersion: 'live-pool-observed' },
+    };
+    expect(cardPopulation(liveCard)).toBe('live');
+    expect(populationMismatch().matches(liveCard)).toBe(false);
+  });
+
+  it('treats UNKNOWN provenance as live-facing — silence must not buy an exemption', () => {
+    const unnamed = {
+      ...silentCard(),
+      match: { surfaceId: 'engine-read', dealBookId: 'book-7f3a', fieldId: 'field-2' },
+      manifest: { ...silentCard().manifest, fieldVersion: null, partition: 'pool/eval@50' },
+    };
+    expect(cardPopulation(unnamed)).toBe('unknown');
+    // Not anchored on the online corpus as far as the register can tell, so population-mismatch
+    // is silent — but the rake entry, whose exposure is "anything not measured live", holds.
+    const rake = SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-rake-inert-on-live-path');
+    expect(rake.matches(unnamed)).toBe(true);
+  });
+
+  it('flags a REAL published card that never mentions live play (RC-depth-ablation)', () => {
+    // The false negative in the shipped set, not a fixture. Its treatment never says "live",
+    // so the old matcher passed it — while it is a paired depth contrast on the 2009 corpus
+    // whose conclusion the founder would act on at a live table.
+    const path = fileURLToPath(new URL('../../../../docs/standard-of-record/cards/RC-depth-ablation.json', import.meta.url));
+    const card = JSON.parse(readFileSync(path, 'utf8'));
+    expect(card.treatment).not.toMatch(/\blive\b/i);
+    expect(cardPopulation(card)).toBe('online');
+    expect(populationMismatch().matches(card)).toBe(true);
+  });
+});
+
+describe('disclosure is REPORTED, never MATCHED (WS-369)', () => {
+  const cards = () => [
+    {
+      resultCardId: 'RC-DISCLOSES',
+      match: { surfaceId: 's', dealBookId: 'handhq-50NLH-aaaa', fieldId: 'f' },
+      estimand: 'x', treatment: 'population is online July 2009; any live claim is TRANSFERRED, not measured.',
+      metrics: {}, manifest: { partition: 'pool@50' },
+    },
+    {
+      resultCardId: 'RC-SILENT',
+      match: { surfaceId: 's', dealBookId: 'handhq-50NLH-aaaa', fieldId: 'f' },
+      estimand: 'x', treatment: 'a read-only probe.',
+      metrics: {}, manifest: { partition: 'pool@50' },
+    },
+  ];
+
+  it('separates contaminated-and-says-so from contaminated-and-silent, without either escaping', () => {
+    const entry = SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-population-mismatch');
+    const out = contaminationDisclosure(entry, cards());
+    // BOTH are contaminated. The split is a reporting axis on top of the match, not a filter
+    // applied to it — which is the distinction WS-352 could not represent because matching and
+    // disclosure were the same test.
+    expect(contaminatedCards(entry, cards()).map((c) => c.resultCardId))
+      .toEqual(['RC-DISCLOSES', 'RC-SILENT']);
+    expect(out.disclosed).toEqual(['RC-DISCLOSES']);
+    expect(out.silent).toEqual(['RC-SILENT']);
+  });
+
+  it('reports undetermined rather than "none silent" when an entry declares no cue', () => {
+    // "We did not look" and "we looked and found nothing" are different facts (WS-328's rule).
+    const entry = SUSPECTED_FAULTS.find((f) => f.faultId === 'FAULT-temporal-staleness');
+    const out = contaminationDisclosure(entry, cards());
+    expect(out.silent).toEqual([]);
+    expect(out.undetermined).toHaveLength(2);
+  });
+});
+
+describe('every matcher declares what it reads, and the declaration is hashed (WS-369)', () => {
+  it('requires matchesOn, from a closed vocabulary', () => {
+    expect(registerProblems()).toEqual([]);
+    for (const entry of SUSPECTED_FAULTS) {
+      expect(entry.matchesOn.length, entry.faultId).toBeGreaterThan(0);
+      for (const field of entry.matchesOn) {
+        expect(MATCHABLE_CARD_FIELDS, `${entry.faultId} -> ${field}`).toContain(field);
+      }
+    }
+    expect(faultEntryProblems(buildFaultEntry({ ...entryInput(), matchesOn: ['match.dealBookId'] })))
+      .toEqual([]);
+    expect(() => buildFaultEntry({ ...entryInput(), matchesOn: [] })).toThrow(/matchesOn is required/);
+    expect(() => buildFaultEntry({ ...entryInput(), matchesOn: ['manifest.vibes'] }))
+      .toThrow(/not\s+match\.surfaceId/);
+  });
+
+  it('BINDS the declaration to the behaviour: a non-prose matcher is invariant under prose', () => {
+    // The descriptor would be worth nothing if it were merely asserted. Any entry that does not
+    // declare a prose field must return the same verdict when the prose is emptied AND when it
+    // is replaced by a decoy stuffed with every trigger word the old matchers keyed on.
+    const base = {
+      resultCardId: 'RC-probe',
+      match: { surfaceId: 'engine-read', dealBookId: 'handhq-50NLH-bbbb', fieldId: 'pool-mined-v1' },
+      estimand: 'an estimand', treatment: 'a treatment',
+      metrics: { edgeBB: 0.2, n: 900 }, clusterUnit: 'players',
+      manifest: { partition: 'pool@50', fieldVersion: 'v1', constants: { PRIOR_WEIGHT: 10 }, unseededSources: [] },
+    };
+    const decoy =
+      'live 9-handed 1/2 1/3 simulated synthetic responsive adaptive realized chips showdown '
+      + 'revealed multiway per-decision one-decision range-marginalized foldTo3Bet online 2009';
+    const variants = [
+      { ...base, estimand: '', treatment: '' },
+      { ...base, estimand: decoy, treatment: decoy },
+    ];
+    for (const entry of SUSPECTED_FAULTS) {
+      if (entry.matchesOn.some((f) => PROSE_CARD_FIELDS.includes(f))) continue;
+      for (const variant of variants) {
+        expect(entry.matches(variant), entry.faultId).toBe(entry.matches(base));
+      }
+    }
+  });
+
+  it('puts matchesOn in the version hash — a change in what the register can SEE is visible', () => {
+    const body = canonicalRegisterBody();
+    for (const e of body.entries) expect(e).toHaveProperty('matchesOn');
+    // ...and `matches` itself stays out, because a function has no stable serialization.
+    for (const e of body.entries) expect(e).not.toHaveProperty('matches');
+  });
+
+  it('moves the version when a matcher changes basis — the WS-352 gap, closed', async () => {
+    // Under the old body this was impossible: rewriting a matcher from the card's prose to its
+    // dependencies left the stamp byte-identical, so two cards carrying the same version could
+    // have been screened by opposite predicates with nothing recording which.
+    const reProsed = SUSPECTED_FAULTS.map((f) => (
+      f.faultId === 'FAULT-population-mismatch'
+        ? buildFaultEntry({ ...f, matchesOn: ['estimand', 'treatment'] })
+        : f
+    ));
+    expect(await registerVersion(reProsed)).not.toBe(await registerVersion());
+  });
+
+  it('counts the residual prose matchers instead of leaving them to be rediscovered', () => {
+    const ids = proseMatchers().map((r) => r.faultId);
+    // The repaired ones are gone from this list — that is the fix, stated as data.
+    for (const repaired of [
+      'FAULT-population-mismatch',
+      'FAULT-rake-inert-on-live-path',
+      'FAULT-temporal-staleness',
+      'FAULT-model-opponent-bias',
+      'FAULT-self-grading-circularity',
+      'FAULT-static-field-overstatement',
+    ]) {
+      expect(ids, `${repaired} must no longer decide contamination from prose`).not.toContain(repaired);
+    }
+    // The rest are declared, not hidden: their fault is a property of the instrument with no
+    // structural field on the Result Card to carry it. Making those structural is a schema change.
+    expect(ids).toEqual([
+      'FAULT-horizon-bias',
+      'FAULT-stat-definition-mismatch',
+      'FAULT-masked-hole-cards',
+      'FAULT-showdown-selection',
+      'FAULT-multiway-approximation',
+    ]);
+    for (const row of proseMatchers()) expect(row.warning).toMatch(/deleting a sentence/);
   });
 });

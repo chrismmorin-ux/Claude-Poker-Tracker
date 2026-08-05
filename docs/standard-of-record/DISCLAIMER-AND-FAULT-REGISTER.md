@@ -178,6 +178,50 @@ than left to a reader's memory:
 `registerVersion()`: `FR-1+e3867c10fc2a` → `FR-1+8c4e65578ca2`. Existing card stamps are untouched
 — they correctly record what they were produced under.
 
+### The matcher read the disclaimer instead of the dependency (WS-369)
+
+`isLiveFacing` was a regex — `/\blive\b|1\/2|1\/3|9-handed/` — over a haystack containing the
+card's `estimand` and `treatment`. So this entry fired on the WS-293 range-calibration card
+**because that card's own treatment string says** "any claim about live 9-handed 1/2-1/3 is
+TRANSFERRED, not measured", a sentence its emitting module repeats three times on purpose. A card
+with the same Deal Book, the same Field and the same partition, whose prose omits those words,
+matched nothing at all.
+
+The detector was **inverted with respect to its own risk**: it penalised disclosure and was blind
+to silence, and the cheapest route to a clean register report was to delete the honest sentence.
+
+It now keys on what the card **depends on** — Deal Book, Field and partition identity, resolved
+to a population by `cardPopulation` — and never on its prose. Unknown provenance counts as
+live-facing, so an unnamed source cannot buy the exemption a deleted sentence used to. The
+disclosing card **still matches**, correctly: disclosure does not make the dependency go away.
+What changed is that it no longer matches *for the wrong reason*, and the silent card no longer
+escapes. `contaminationDisclosure()` splits a matched set into disclosed and silent — a reporting
+axis on top of the match, never a filter applied to it.
+
+`registerVersion()`: `FR-1+8c4e65578ca2` → `FR-1+746d7b4aaea4`, from adding `matchesOn` to the
+hashed body. **Finding, reported rather than acted on:** the corrected matcher flags **one
+existing Result Card the old one missed** — `RC-depth-ablation-1c560bcc-67e9e14e`, a paired depth
+contrast on the 2009 corpus whose prose never says "live". Seven of seven known cards now match,
+where six did before. Prior stamps are **not** re-minted and no card is re-scored; deciding what
+that means for those results is the confirm/retire machinery's job, and it requires evidence.
+
+Four more matchers had the same shape and had a structural basis available, so they were repaired
+in the same change: `FAULT-rake-inert-on-live-path` (the second consumer of `isLiveFacing`),
+`FAULT-temporal-staleness`, `FAULT-model-opponent-bias` and `FAULT-static-field-overstatement`
+(both narrowed from the prose haystack to the Field identity), and
+`FAULT-self-grading-circularity` (whose "realized" escape clause read the prose, so a card could
+buy exemption with a word while reporting nothing but model EV — it now reads metric keys only).
+
+Five remain prose matchers and are **declared rather than hidden**, listed by `proseMatchers()`
+with the standing warning: horizon, stat-definition, masked hole cards, showdown selection and
+multiway. Each turns on a property of the *instrument* that no structural field on the Result Card
+carries, so making them structural is a card-schema change and not this ticket. Note that
+`FAULT-horizon-bias` has the inversion in its purest form — its own mechanism says the fault
+fires where a downstream reader **drops** the treatment string, which is exactly the card its
+matcher cannot see. `registerSelfCheck()` cannot help here: it reports a matcher that matches
+nothing and one that matches everything, and a matcher that matches **the wrong cards** looks
+healthy to both.
+
 > **Note on the figures above.** The table is computed with **no card set**, so its breadth column
 > is pure prior. Six Result Cards now exist; against them this entry's *observed* breadth is 3/6
 > and its `evidenceWeight` 0.375. Deciding which cards constitute the canonical set for a
@@ -304,9 +348,24 @@ the version changes whether or not anyone remembered to bump anything. This is t
 copy: a version someone has to remember to change is a version that will be wrong exactly when
 it matters.
 
-The hash deliberately excludes each entry's `matches` predicate — a function has no stable
+The hash still excludes each entry's `matches` predicate — a function has no stable
 serialization, and hashing its source would make a whitespace change look like a semantic one.
-The claim a reader relies on is the prose, which is hashed; the matcher is covered by tests.
+
+**But it hashes `matchesOn`, the declared list of card fields that predicate reads (WS-369).**
+The original exclusion was half right. "A function cannot be serialised stably" is decisive
+against hashing the *source*; it is not an argument against hashing the *claim*. And there is a
+claim: `falsifierBlockers` is hashed because it states what the register can **settle**, and what
+a matcher reads states what the register can **see** — the same kind of fact about the same old
+card. WS-369 is the proof. A matcher moved from reading the card's prose to reading its
+dependencies, the contamination set changed, and under the old body the version would not have
+moved by one character. Two cards stamped `FR-1+8c4e65578ca2` could have been screened by
+opposite predicates with nothing in either card recording which — and the dangerous direction is
+silent *under*-matching, because that shrinks the list `confirmFault` hands back.
+
+`matchesOn` is drawn from a closed vocabulary (`MATCHABLE_CARD_FIELDS`), so a typo cannot pass
+for a declaration, and it is bound to behaviour rather than trusted: every entry that does not
+declare a prose field is asserted invariant under scrambling `estimand` and `treatment`. It moves
+when the semantics move and not when the whitespace does.
 
 **A Result Card without a register version is invalid** (`manifestProblems` rejects it). One
 deliberate asymmetry: the schema field stays optional so `checkAgainstSchema` can still *parse*
@@ -357,8 +416,17 @@ composition, and a work queue that buries the queue is not one.
 
 Add it to `SUSPECTED_FAULTS` in `faultRegister.js` with all of: `mechanism` (the *path* by which
 it goes wrong — "the model may be off" is a worry, not an entry), `contaminates`, a `matches`
-predicate, a `falsifier`, a `probability` **with its basis stated**, and a `priorBreadth`.
-`buildFaultEntry` refuses anything less.
+predicate, `matchesOn`, a `falsifier`, a `probability` **with its basis stated**, and a
+`priorBreadth`. `buildFaultEntry` refuses anything less.
+
+**Write the matcher against what the card DEPENDS ON.** Its Deal Book, its Field, its partition —
+structural facts it already carries. Do **not** read `estimand` or `treatment` to infer them: a
+card's disclaimer is the author's account of the work, its identity is the work's inputs, and
+matching on the first is how WS-369's inversion happened. `matchesOn` must name the fields the
+predicate actually reads, from `MATCHABLE_CARD_FIELDS`; naming `estimand` or `treatment` is legal
+but marks the entry a prose matcher, which `proseMatchers()` counts and warns about. Where a
+matcher cannot tell — unknown provenance — **match**. An exemption bought by omission is the same
+defect as a match triggered by wording, pointed the other way.
 
 If the falsifier **cannot be run today**, add `falsifierBlockers` — one non-empty string per
 blocker, each naming what blocks it *and* what would unblock it (`UNBLOCKED BY: …`). A bare
