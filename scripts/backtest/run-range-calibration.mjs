@@ -7,6 +7,15 @@
  *   node scripts/backtest/run-range-calibration.mjs \
  *     --stakes 50NLH --max-files 400 --max-players 600 --out out/range-calibration.json
  *
+ *   STANDING METRIC (WS-293) — Result Card + append-only history:
+ *     --card out/range-calibration-card.json   write the Result Card beside --out
+ *     --record --label "<what changed>"        append a row to the history file. Requires
+ *                                              --out (the row must name its evidence file) and
+ *                                              refuses an inadmissible run unless
+ *                                              --record-inadmissible is passed explicitly.
+ *     --history <path>                         override the default history file
+ *     --date / --notes                         override the row's date / notes
+ *
  *   Parameter sweeps (WS-291) — every arm is scored on the SAME decisions:
  *     --tau-sweep   0.08,0.15,0.25     logistic softness
  *     --floor-sweep 0.01,0.02,0.03,0.05,0.08   minimum P(action | combo)
@@ -60,9 +69,17 @@ const main = async () => {
   try {
     const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runRangeCalibrationProbe } = await loader.load('/scripts/backtest/rangeCalibrationProbe.mjs');
+    const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
+    const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
+    const {
+      buildRangeCalibrationReport, renderRangeCalibrationReport,
+      historyRow, appendHistoryRow, historyRunCount, HISTORY_PATH,
+      RANGE_CALIBRATION_UNSEEDED_SOURCES,
+    } = await loader.load('/scripts/backtest/rangeCalibrationReport.mjs');
 
+    const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     let files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root: corpusRoot,
       sites: list(args.sites),
       stakes: list(args.stakes),
     });
@@ -73,10 +90,49 @@ const main = async () => {
     }
     if (files.length === 0) { console.error('No corpus files matched.'); process.exit(2); }
 
+    const poolPct = int(args['pool-pct'], 50);
+
+    // WS-293: built AFTER the slice, for the reason run-hero-ev states — the book must describe
+    // the hands the run actually saw, not the ones that matched the filter.
+    const dealBook = await buildDealBook({
+      files,
+      root: corpusRoot,
+      sliceSpec: {
+        root: corpusRoot,
+        sites: list(args.sites),
+        stakes: list(args.stakes),
+        maxFiles: Number.isFinite(maxFiles) ? maxFiles : null,
+        maxPlayers: int(args['max-players'], null),
+        maxHandsPerPlayer: int(args['max-hands-per-player'], null),
+        poolPct,
+      },
+      identity: args['hash-members'] ? 'content' : 'path+size',
+    });
+    console.log(`Deal Book ${dealBook.dealBookId} — ${dealBook.memberCount} file(s), ${dealBook.identity}, ${dealBook.contentHash.slice(0, 20)}…`);
+
+    const replicationStamp = await buildStampInput({
+      loader,
+      // This probe uses NO randomness at all — no Monte Carlo, no sampling, no shuffle. An
+      // empty `seeds` with an empty `unseededSources` is therefore a true positive claim of
+      // bit-reproducibility, which is exactly what those two fields are for. Do not copy the
+      // hero-EV list in here: it names Monte Carlo sources this instrument never reaches.
+      seeds: {},
+      unseededSources: RANGE_CALIBRATION_UNSEEDED_SOURCES,
+      dealBookHash: dealBook.contentHash,
+      fieldVersion: 'population-chart-baseline (buildBaselineRange, DEFAULT_CONTINUATION_RATES)',
+      // Stated asymmetrically because it IS asymmetric: the acting arm is EVAL-partitioned and
+      // the villain arm is keyed by seat and never resolved to a player. A single
+      // `pool-train@50` here would assert a discipline only half the run has.
+      partition: `acting:eval@poolPct=${poolPct}; villain:seat-keyed-unpartitioned`,
+    });
+    if (replicationStamp.engineDirty) {
+      console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
+    }
+
     const started = Date.now();
     const r = await runRangeCalibrationProbe({
       files,
-      poolPct: int(args['pool-pct'], 50),
+      poolPct,
       maxPlayers: int(args['max-players'], Infinity),
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
       tauSweep: list(args['tau-sweep'])?.map(Number) ?? null,
@@ -168,10 +224,53 @@ const main = async () => {
     console.log(`\n  runtime ${((Date.now() - started) / 1000).toFixed(1)}s`);
     console.log('═'.repeat(76));
 
+    // ── WS-293: the standing metric. Result Card + history row. ────────────────────────
+    const report = buildRangeCalibrationReport(r, {
+      replicationStamp, dealBook, poolPct,
+    });
+    console.log(renderRangeCalibrationReport(report));
+
     if (typeof args.out === 'string') {
       mkdirSync(dirname(args.out), { recursive: true });
-      writeFileSync(args.out, JSON.stringify(r, null, 2));
+      writeFileSync(args.out, JSON.stringify({ report, probe: r }, null, 2));
       console.log(`\nWrote ${args.out}`);
+      if (typeof args.card === 'string' && report.resultCard) {
+        mkdirSync(dirname(args.card), { recursive: true });
+        writeFileSync(args.card, JSON.stringify(report.resultCard, null, 2));
+        console.log(`Wrote ${args.card}`);
+      }
+    }
+
+    if (args.record) {
+      // A row must name the evidence file it was read from, so --record requires --out. The
+      // rule is inherited from scorecard-history.yaml's header: "A row without a source is not
+      // admissible evidence."
+      if (typeof args.out !== 'string') {
+        console.error('Refused: --record requires --out. A history row must name the evidence file its metrics were read from.');
+        process.exit(2);
+      }
+      if (typeof args.label !== 'string') {
+        console.error('Refused: --record requires --label. A row nobody can identify is not evidence.');
+        process.exit(2);
+      }
+      if (!report.admissibility.admissible && !args['record-inadmissible']) {
+        // Deliberately not overridable by accident. `run-hero-ev`'s --from refuses an
+        // inadmissible report outright; this keeps the same bar while leaving an explicit,
+        // named escape for recording a smoke run AS a smoke run.
+        console.error('Refused: the run is NOT admissible and would enter the series as if it were.');
+        for (const b of report.admissibility.blockers) console.error(`  BLOCKER - ${b}`);
+        console.error('Pass --record-inadmissible to record it anyway; the row carries admissible: false.');
+        process.exit(2);
+      }
+      const historyPath = typeof args.history === 'string' ? args.history : HISTORY_PATH;
+      const row = historyRow(report, {
+        label: args.label,
+        source: args.out,
+        date: typeof args.date === 'string' ? args.date : undefined,
+        notes: typeof args.notes === 'string' ? args.notes : undefined,
+      });
+      appendHistoryRow(historyPath, row);
+      console.log(`\nAppended run ${historyRunCount(historyPath)} to ${historyPath}`);
     }
   } finally {
     await loader.close();

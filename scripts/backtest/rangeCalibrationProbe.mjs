@@ -43,12 +43,15 @@ import { indexEvalPlayers } from './runner.mjs';
 
 const USER_ID = 'backtest';
 
-const mkStat = () => ({
+// Exported for tests (WS-293): the calibration arithmetic is pinned against the REAL
+// accumulator rather than a re-implementation in the test file. A test that rebuilds `push`
+// passes just as happily when `push` is the thing that broke.
+export const mkStat = () => ({
   n: 0, covered: 0, retainedSum: 0, sumLogP: 0, sumLogU: 0,
   nPos: 0, sumLogPpos: 0, sumLogUpos: 0,
 });
 
-const push = (s, { covered, retained, p, u }) => {
+export const push = (s, { covered, retained, p, u }) => {
   s.n++;
   s.retainedSum += retained;
   if (covered) { s.covered++; s.nPos++; s.sumLogPpos += Math.log(p); s.sumLogUpos += Math.log(u); }
@@ -94,6 +97,137 @@ const scoreRange = (range, board, hole, dead = []) => {
 };
 
 const strengthBand = (pct) => (pct == null ? 'unknown' : pct >= 0.8 ? 'strong' : pct >= 0.5 ? 'medium' : 'weak');
+
+// ─── WS-293: showdown selection accounting ───────────────────────────────────
+//
+// THE PROBLEM THIS EXISTS TO MAKE VISIBLE. Every number this probe reports is conditioned on
+// the holding having been REVEALED. Hands reach showdown conditionally on the action, and
+// which hands get shown is itself strategy-dependent — so scoring an inferred range only
+// against revealed hands measures the showdown filter as much as the range model. That is
+// `FAULT-showdown-selection` in the Suspected-Fault Register, and until WS-293 this probe
+// had no term for it at all: `holdingTruth` returns null for "not revealed" and
+// `{refused, reason}` for hypothesized/unscoreable, and the probe collapsed all three into
+// one silent skip. The information was computed and thrown away.
+//
+// WHAT IS DONE ABOUT IT. The selection is NOT corrected away — it cannot be, because the
+// counterfactual (what did the seat hold on the decisions where nothing was shown?) is
+// exactly the thing the corpus does not record. Instead POKER_THEORY §14.1's prescription is
+// followed: the conditional is FACTORED so the selection becomes an explicit estimable term
+// rather than a hidden property of the denominator.
+//
+//     P(covered ∧ revealed | decision)  =  P(revealed | decision) × P(covered | revealed)
+//                                           └── revealRate ──┘      └── what we report ──┘
+//
+// From that factorisation two things follow that are reported as DATA on every run, never as
+// prose in a document nobody opens:
+//
+//   1. WORST-CASE BOUNDS over ALL decisions, not just revealed ones. Coverage over the full
+//      decision set is bounded below by assuming every unrevealed decision was a miss and
+//      above by assuming every one was covered. These are assumption-free (Manski) bounds:
+//        lower = coverage × revealRate           upper = lower + (1 − revealRate)
+//      Their width is exactly (1 − revealRate). When reveals are scarce the width approaches
+//      1 and the honest reading is that the metric says almost nothing about the population —
+//      which is a fact about the instrument that a reader must be handed, not left to infer.
+//
+//   2. THE INVERSE CONDITIONAL. Coverage is P(covered | revealed, slice). The repo's standing
+//      rule is that a number carries its conditioning set AND its inverse, because the two
+//      support opposite reads. So each slice also reports P(slice | revealed) against
+//      P(slice | scoreable) — the composition shift. Their ratio is the showdown filter's
+//      fingerprint: a slice over-represented among revealed decisions relative to all
+//      decisions is one the filter selects FOR, and its calibration number is the most
+//      selection-contaminated on the page.
+//
+// Refusals are counted SEPARATELY from non-reveals and never folded into either. A refusal is
+// a data or branch problem (`unscoreable`, `hypothesized`), not a showdown outcome; averaging
+// it in as a miss would understate the model, and counting it as unrevealed mass would
+// overstate the selection. Three categories, three counters.
+const mkSel = () => ({ opportunities: 0, revealed: 0, refused: 0, refusedByReason: {} });
+
+/**
+ * Record one decision's reveal outcome.
+ * @param {Object} s - a `mkSel()` bucket
+ * @param {'revealed'|'not-revealed'|'refused'} outcome
+ * @param {string|null} reason - refusal reason, when outcome is 'refused'
+ */
+const pushSel = (s, outcome, reason = null) => {
+  s.opportunities++;
+  if (outcome === 'revealed') s.revealed++;
+  else if (outcome === 'refused') {
+    s.refused++;
+    const k = reason || 'unknown';
+    s.refusedByReason[k] = (s.refusedByReason[k] || 0) + 1;
+  }
+};
+
+/**
+ * Turn a selection bucket into the reported term.
+ *
+ * `scoreable` — decisions where a reveal was possible in principle — is the denominator of
+ * `revealRate`, and it EXCLUDES refusals deliberately (see the note above). `null` rather than
+ * a fabricated 0 when nothing was scoreable, because a rate over an empty set is not 0.
+ */
+export const summarizeSelection = (s) => {
+  if (!s || !s.opportunities) return null;
+  const scoreable = s.opportunities - s.refused;
+  const revealRate = scoreable > 0 ? s.revealed / scoreable : null;
+  return {
+    opportunities: s.opportunities,
+    scoreable,
+    revealed: s.revealed,
+    notRevealed: scoreable - s.revealed,
+    refused: s.refused,
+    refusedByReason: { ...s.refusedByReason },
+    revealRate,
+  };
+};
+
+/**
+ * Assumption-free bounds on coverage over ALL scoreable decisions (WS-293).
+ *
+ * The point estimate `coverage` is P(covered | revealed). These bracket P(covered | scoreable)
+ * without assuming anything about the unrevealed decisions — the lower bound calls every one a
+ * miss, the upper bound calls every one covered. `width` is the honest statement of how much
+ * of the answer the showdown filter is withholding.
+ *
+ * @returns {{lower, upper, width, revealRate}|null}
+ */
+export const coverageSelectionBounds = (coverage, revealRate) => {
+  if (!Number.isFinite(coverage) || !Number.isFinite(revealRate)) return null;
+  const lower = coverage * revealRate;
+  return { lower, upper: lower + (1 - revealRate), width: 1 - revealRate, revealRate };
+};
+
+/**
+ * The inverse conditional: how the showdown filter reshapes the slice mix (WS-293).
+ *
+ * `shareOfRevealed` is P(slice | revealed); `shareOfScoreable` is P(slice | scoreable). The
+ * repo's standing rule is that P(A|B) is reported with P(B|A) because they support opposite
+ * reads — here the pair says whether a slice's calibration number was measured on a
+ * representative set of that slice's decisions or on a filtered one.
+ *
+ * `selectionRatio` > 1 means the filter selects FOR this slice.
+ *
+ * @param {Object} bySlice - { [key]: mkSel() bucket }
+ */
+export const selectionComposition = (bySlice) => {
+  const entries = Object.entries(bySlice || {});
+  const totRevealed = entries.reduce((s, [, v]) => s + v.revealed, 0);
+  const totScoreable = entries.reduce((s, [, v]) => s + (v.opportunities - v.refused), 0);
+  if (!totRevealed || !totScoreable) return {};
+  return Object.fromEntries(entries.map(([k, v]) => {
+    const scoreable = v.opportunities - v.refused;
+    const shareOfRevealed = v.revealed / totRevealed;
+    const shareOfScoreable = scoreable / totScoreable;
+    return [k, {
+      shareOfRevealed,
+      shareOfScoreable,
+      selectionRatio: shareOfScoreable > 0 ? shareOfRevealed / shareOfScoreable : null,
+      revealRate: scoreable > 0 ? v.revealed / scoreable : null,
+      revealed: v.revealed,
+      scoreable,
+    }];
+  }));
+};
 
 /**
  * Display floor for the per-player calibration table (WS-292). Players with fewer revealed
@@ -354,13 +488,36 @@ export const runRangeCalibrationProbe = async ({
   let revealedActing = 0;
   let revealedVillain = 0;
 
+  // WS-293: the reveal denominator, sliced the same way the calibration numbers are. Without
+  // this every figure below is a rate whose denominator nobody chose (POKER_THEORY §14).
+  const sel = {
+    acting: { all: mkSel(), byStreet: {}, byAction: {}, bySite: {} },
+    villain: { all: mkSel(), byStreet: {}, byAction: {} },
+  };
+
   const at = (bucket, key) => (bucket[key] || (bucket[key] = mkStat()));
   const atMap = (bucket, key) => (bucket[key] || (bucket[key] = {}));
+  const atSel = (bucket, key) => (bucket[key] || (bucket[key] = mkSel()));
+
+  // WS-293: how many players were DISCARDED, and why. `accumulateDecisions` is wrapped in a
+  // catch that drops the entire remaining player, so a fault in the engine — or in a module
+  // being edited concurrently — makes every player fail silently and the probe returns a
+  // clean-looking result with zero decisions in it. That happened during WS-293's own
+  // development and produced a Result Card whose every metric was null, which is exactly the
+  // "instrument that silently degrades" failure the WS-311 stratification guard exists to
+  // prevent. Counting the failures is what makes the collapse visible.
+  let playersFailedProfile = 0;
+  let playersFailedAccumulate = 0;
+  let firstFailure = null;
 
   for (const [pid, hands] of byPlayer) {
     let profile;
-    try { profile = buildRangeProfile(pid, hands, USER_ID); } catch { continue; }
-    if (!profile) continue;
+    try { profile = buildRangeProfile(pid, hands, USER_ID); } catch (err) {
+      playersFailedProfile++;
+      if (!firstFailure) firstFailure = `buildRangeProfile: ${err?.message || String(err)}`;
+      continue;
+    }
+    if (!profile) { playersFailedProfile++; continue; }
 
     try {
       accumulateDecisions(pid, hands, profile, USER_ID, {
@@ -383,6 +540,18 @@ export const runRangeCalibrationProbe = async ({
           // the range carries a hypothesized narrowing, which this one never does — the
           // accumulator only ever narrows on actions the seat really took.
           const truth = ctx.holding ? holdingTruth(ctx.holding, { board }) : null;
+          // WS-293: classify EVERY decision the accumulator tracked a range for, not only the
+          // ones that scored. `holdingTruth` already computes all three outcomes; the probe
+          // used to keep one and drop two, which is why the reveal rate — the other half of
+          // every number on this page — did not exist.
+          if (ctx.holding) {
+            const outcome = !truth ? 'not-revealed' : (truth.refused ? 'refused' : 'revealed');
+            const reason = truth?.refused ? truth.reason : null;
+            pushSel(sel.acting.all, outcome, reason);
+            pushSel(atSel(sel.acting.byStreet, ctx.street), outcome, reason);
+            pushSel(atSel(sel.acting.byAction, ctx.action), outcome, reason);
+            pushSel(atSel(sel.acting.bySite, site), outcome, reason);
+          }
           if (truth && !truth.refused) {
             const hole = truth.revealed;
             const r = {
@@ -413,18 +582,34 @@ export const runRangeCalibrationProbe = async ({
           // the villain's position, narrowed by the villain's own last action. This is
           // the range that decides what the engine recommends.
           const vSeat = ctx.opponentSeat;
-          const vRaw = vSeat != null ? sd[String(vSeat)] : null;
-          if (vRaw) {
-            const vHole = vRaw.map(parseAndEncode);
-            if (!vHole.some((c) => c < 0)) {
-              // the villain's last action on this street, before hero's decision
-              let vAction = null;
-              for (const e of hand.gameState.actionSequence) {
-                if (e.order >= ctx.order) break;
-                if (e.street !== ctx.street) continue;
-                if (String(e.seat) === String(vSeat)) vAction = e.action;
-              }
-              if (vAction) {
+          if (vSeat != null) {
+            // WS-293: the villain's last action on this street is resolved BEFORE the reveal
+            // check, because it is the DENOMINATOR's condition and not the numerator's —
+            // without an action there is no range to narrow, so the decision was never
+            // scoreable whether or not cards were shown. Resolving it only for revealed hands
+            // is precisely what made the reveal rate uncomputable. The SCORED set is unchanged:
+            // still exactly (vAction resolvable) ∧ (showdown cards present) ∧ (cards parse).
+            let vAction = null;
+            for (const e of hand.gameState.actionSequence) {
+              if (e.order >= ctx.order) break;
+              if (e.street !== ctx.street) continue;
+              if (String(e.seat) === String(vSeat)) vAction = e.action;
+            }
+            if (vAction) {
+              const vRaw = sd[String(vSeat)];
+              const vHole = vRaw ? vRaw.map(parseAndEncode) : null;
+              const vRevealed = Boolean(vHole && !vHole.some((c) => c < 0));
+              // Cards present but unparseable is a DATA problem, not a showdown outcome, so it
+              // is a refusal — never folded into the unrevealed mass, which would overstate the
+              // selection effect, and never into the scored set, which would understate the model.
+              const vOutcome = vRevealed
+                ? 'revealed'
+                : (vRaw ? 'refused' : 'not-revealed');
+              const vReason = (!vRevealed && vRaw) ? 'unparseable-showdown-cards' : null;
+              pushSel(sel.villain.all, vOutcome, vReason);
+              pushSel(atSel(sel.villain.byStreet, ctx.street), vOutcome, vReason);
+              pushSel(atSel(sel.villain.byAction, vAction), vOutcome, vReason);
+              if (vRevealed) {
                 const vPos = getRangePositionCategory(Number(vSeat), hand.gameState.dealerButtonSeat);
                 const base = buildBaselineRange(null, null, vPos);
                 let narrowed;
@@ -539,7 +724,13 @@ export const runRangeCalibrationProbe = async ({
           }
         },
       });
-    } catch { /* player skipped */ }
+    } catch (err) {
+      // Semantics unchanged — the player is still skipped rather than aborting the run — but
+      // the skip is now COUNTED and its first cause retained, so a run that lost every player
+      // cannot be mistaken for a run that found nothing to say.
+      playersFailedAccumulate++;
+      if (!firstFailure) firstFailure = `accumulateDecisions: ${err?.message || String(err)}`;
+    }
   }
 
   const mapSummary = (o) => Object.fromEntries(
@@ -576,13 +767,44 @@ export const runRangeCalibrationProbe = async ({
     }
   }
 
+  const mapSelection = (o) => Object.fromEntries(
+    Object.entries(o).map(([k, v]) => [k, summarizeSelection(v)]).filter(([, v]) => v),
+  );
+
   return {
+    // WS-293: the showdown-selection term. Every calibration number in this result is
+    // P(· | revealed); this block is the P(revealed | ·) that the factorisation needs, plus the
+    // composition shift that says which slices the filter selects for. It is emitted
+    // unconditionally — a selection term that only appears when someone passes a flag is a
+    // caveat, and the whole point is that it is data.
+    selection: {
+      acting: {
+        all: summarizeSelection(sel.acting.all),
+        byStreet: mapSelection(sel.acting.byStreet),
+        byAction: mapSelection(sel.acting.byAction),
+        bySite: mapSelection(sel.acting.bySite),
+        compositionByAction: selectionComposition(sel.acting.byAction),
+        compositionByStreet: selectionComposition(sel.acting.byStreet),
+      },
+      villain: {
+        all: summarizeSelection(sel.villain.all),
+        byStreet: mapSelection(sel.villain.byStreet),
+        byAction: mapSelection(sel.villain.byAction),
+        compositionByAction: selectionComposition(sel.villain.byAction),
+        compositionByStreet: selectionComposition(sel.villain.byStreet),
+      },
+    },
     scanned: {
       decisions,
       revealedActing,
       revealedVillain,
       players: byPlayer.size,
       handsRead,
+      // WS-293: the health of the scan itself. `playersFailed` > 0 with `decisions` low means
+      // the run collapsed rather than found nothing.
+      playersFailedProfile,
+      playersFailedAccumulate,
+      firstFailure,
       // WS-311: n per table-size stratum, prominent — 9-max is the thin one.
       byTableSize: Object.fromEntries(TABLE_SIZE_STRATA.map((st) => [st, byTableSize[st].n])),
     },
