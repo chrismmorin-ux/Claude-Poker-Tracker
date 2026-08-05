@@ -12,6 +12,7 @@
  */
 
 import { openLoader } from './loader.mjs';
+import { LeakageGuard, REFERENCE_FIELD_CORPUS } from './leakageGuard.mjs';
 import {
   FIELD_QUANTILES,
   buildFieldSweep,
@@ -40,12 +41,35 @@ export const FACED_RAISE_BB = 2.5;
 /**
  * Open the evaluator: load the engine, build the Field, and return a per-cell evaluate.
  *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * THE REFERENCE DECLARATION IS MANDATORY (WS-375)
+ *
+ * This evaluator reads the SHIPPED, ALL-CORPUS aggregate table. Until WS-375 it imported
+ * that table directly and contained no reference to `LeakageGuard` at all, while every
+ * other scoring entry point in this directory constructs one (`heroEvRunner`,
+ * `layerAblation`, `run-atoms`, `run-study-ladder`, `runner`).
+ *
+ * There was NO LEAK, and there is none now: this evaluator scores no corpus hand. It
+ * prices the 169 preflop hand classes by Monte Carlo against a synthesised Field, and no
+ * player in the corpus is ever predicted. Nothing was rerun and no published number is
+ * suspect on this account.
+ *
+ * What was wrong is that the safety was CIRCUMSTANTIAL. The run was clean because of
+ * what it happened to do, and after any change it would have been clean only because
+ * someone remembered — and the natural next question after "what does the model say to
+ * open" is "what did the field actually do", which the corpus can answer. So the table
+ * now arrives through `guard.fieldTable()`, the mode is declared rather than absent, and
+ * every corpus-hand-scoring assertion on that guard refuses.
+ *
  * @param {Object} opts
  * @param {number} opts.stakeBB       - which pool segment the Field is read from
  * @param {string} opts.seatBucket    - '6max' | 'full'
  * @param {number} opts.flopSamples   - flop samples per archetype inside the advisor
  * @param {number} opts.mcReplicates  - Monte Carlo replicates at the central Field
  * @param {number} [opts.dealerSeat]  - the button; hero's seat comes from `tableGeometry`
+ * @param {string} opts.reference     - REQUIRED. The reference declaration this run makes.
+ *        `REFERENCE_FIELD_CORPUS` is the correct answer for an entry map. There is no
+ *        default: an absent declaration is the state this ticket exists to abolish.
  */
 export const openEntryEvaluator = async ({
   stakeBB,
@@ -53,7 +77,13 @@ export const openEntryEvaluator = async ({
   flopSamples,
   mcReplicates,
   dealerSeat = 9,
+  reference,
 }) => {
+  // Constructed BEFORE the loader so a run with no declaration fails immediately rather
+  // than after paying for module loading — and, more importantly, so there is no window
+  // in which the corpus table is in scope without a guard beside it.
+  const guard = new LeakageGuard({ reference });
+
   const loader = await openLoader();
 
   const [preflopEquity, rangeMatrix, equityTable, advisor, pool, poolBaseline, betaMath] =
@@ -78,10 +108,22 @@ export const openEntryEvaluator = async ({
   }
 
   // ── The Field ─────────────────────────────────────────────────────────────────────────────
-  const stake = pool.HANDHQ_REFERENCE_STAKES.find((s) => s.bb === stakeBB);
+  // Through the guard, not around it: `fieldTable` is the only sanctioned way to obtain the
+  // all-corpus rows, and it refuses in any mode but the declared one.
+  // The catch closes the loader and RE-THROWS. It must never do anything else: WS-284
+  // found both catch blocks in `scorePlayer` downgrading a guard refusal to a skipped
+  // checkpoint, which is a guard that reports success by staying quiet.
+  let stakes;
+  try {
+    stakes = guard.fieldTable(pool.HANDHQ_REFERENCE_STAKES, pool.HANDHQ_REFERENCE_META);
+  } catch (e) {
+    await loader.close();
+    throw e;
+  }
+  const stake = stakes.find((s) => s.bb === stakeBB);
   if (!stake) {
     throw new Error(
-      `no pool segment for bb=${stakeBB}; have ${pool.HANDHQ_REFERENCE_STAKES.map((s) => s.bb).join(', ')}`,
+      `no pool segment for bb=${stakeBB}; have ${stakes.map((s) => s.bb).join(', ')}`,
     );
   }
   const bucket = stake.buckets[seatBucket];
@@ -221,10 +263,14 @@ export const openEntryEvaluator = async ({
     handClasses,
     combosOf,
     evaluateCell,
+    guard,
     close: () => loader.close(),
+    /** The run's own integrity report — a result that carries its own proof (WS-375). */
+    integrity: guard.summary(),
     /** Everything the artifact needs to stamp about how these numbers were produced. */
     fieldStamp: {
       sourceId: pool.HANDHQ_REFERENCE_META.sourceId,
+      referenceMode: guard.referenceMode,
       stakeBB,
       seatBucket,
       openerRange: OPENER_RANGE_STRING,

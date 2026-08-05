@@ -15,6 +15,7 @@ import {
   LeakageError,
   validateReferenceTable,
   REFERENCE_DISABLED,
+  REFERENCE_FIELD_CORPUS,
   REQUIRED_PARTITION_STAMP,
 } from '../backtest/leakageGuard.mjs';
 import { partitionOf, GROUPS, DEFAULT_POOL_PCT } from '../backtest/partition.mjs';
@@ -209,6 +210,74 @@ describe('LeakageGuard — integrity report', () => {
       evalPlayersChecked: 1,
       decisionsChecked: 1,
       statWindowsChecked: 1,
+      // WS-375: zero in a scoring run — this run consumed no all-corpus Field table.
+      fieldSourceId: null,
+      fieldRowsExposed: 0,
     });
+  });
+});
+
+// =============================================================================
+// WS-375 — the guard binds on the entry evaluator, structurally
+// =============================================================================
+
+/**
+ * STATE THIS FIRST SO NOBODY READS IT AS A RETRACTION: there was no leak. The entry
+ * evaluator scores no corpus hand and never did, so no published number was
+ * contaminated, no Result Card needs re-stamping, and the fault register gains no
+ * confirmed entry. What was wrong is that the safety rested on what the file happened
+ * to do rather than on anything that could fail — and the extension that would break it
+ * ("what did the field actually DO?") is the obvious next one.
+ *
+ * These tests are the bite: they assert the refusals, not the permission.
+ */
+describe('WS-375 — the all-corpus Field declaration', () => {
+  const CORPUS_ROWS = [{ bb: 0.5, canonical: '0.25-0.5', minedLabel: '50NLH', buckets: {} }];
+
+  it('is a distinct declaration from "no reference at all"', () => {
+    // Collapsing the two would hide the one that needs watching.
+    expect(validateReferenceTable(REFERENCE_FIELD_CORPUS).mode).toBe('field-corpus');
+    expect(validateReferenceTable(REFERENCE_DISABLED).mode).toBe('disabled');
+    expect(REFERENCE_FIELD_CORPUS).not.toBe(REFERENCE_DISABLED);
+  });
+
+  it('does NOT expose the corpus rows on the PRIOR channel', () => {
+    // `referenceTable` is what a model shrinks toward. A Field is not that.
+    const g = new LeakageGuard({ reference: REFERENCE_FIELD_CORPUS });
+    expect(g.referenceTable).toBeNull();
+  });
+
+  it('hands out the corpus rows ONLY through fieldTable, and only under the declaration', () => {
+    const g = new LeakageGuard({ reference: REFERENCE_FIELD_CORPUS });
+    expect(g.fieldTable(CORPUS_ROWS, { sourceId: 'SRC-011' })).toHaveLength(1);
+    expect(g.summary().fieldSourceId).toBe('SRC-011');
+    expect(g.summary().fieldRowsExposed).toBe(1);
+
+    for (const reference of [REFERENCE_DISABLED, cleanReference()]) {
+      const other = new LeakageGuard({ reference });
+      expect(() => other.fieldTable(CORPUS_ROWS)).toThrow(LeakageError);
+      expect(() => other.fieldTable(CORPUS_ROWS)).toThrow(/only a run that declares/i);
+    }
+  });
+
+  it('REFUSES every corpus-hand-scoring assertion under the declaration', () => {
+    // THE BITE. A future change that starts scoring corpus hands writes one of these
+    // three calls — every other scoring entry point in this directory does — and it
+    // fails loudly instead of producing a scorecard indistinguishable from a clean one.
+    const g = new LeakageGuard({ reference: REFERENCE_FIELD_CORPUS });
+    expect(() => g.assertEvalPlayer(evalPlayer)).toThrow(LeakageError);
+    expect(() => g.assertWalkForward({ playerId: evalPlayer, trainEndIdx: 0, handIdx: 5 }))
+      .toThrow(/declared the SHIPPED all-corpus table as its Field/);
+    expect(() => g.assertStatWindow({ playerId: evalPlayer, trainEndIdx: 0, handIdx: 5 }))
+      .toThrow(/Re-declare with a POOL-partition table/);
+    // And it stays refused for an EVAL player — the partition does not rescue it, because
+    // the shipped table was mined from EVAL players too.
+    expect(g.summary().decisionsChecked).toBe(0);
+    expect(g.summary().statWindowsChecked).toBe(0);
+  });
+
+  it('an empty Field table is refused like any other', () => {
+    const g = new LeakageGuard({ reference: REFERENCE_FIELD_CORPUS });
+    expect(() => g.fieldTable([])).toThrow(/no stake rows/);
   });
 });

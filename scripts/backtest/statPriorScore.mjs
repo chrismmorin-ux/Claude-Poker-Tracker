@@ -148,6 +148,14 @@ export const scoreStatPriorWindow = ({
     const pModel = posteriorRate(train.k, train.n, prior);
     const pBaseline = posteriorRate(train.k, train.n, base);
 
+    // WS-374: the evidence the served prior rests on, carried on the prior itself.
+    // Recorded per window because the resolution is per villain — the nearest-stake
+    // substitution and the seat bucket can differ between two players in one run, and
+    // an aggregate that hid that would be answering a question nobody asked.
+    const ev = prior.evidence || null;
+    const ref = ev && ev.reference;
+    const pool = ev && ev.pool;
+
     records.push({
       stat,
       nTrain: train.n,
@@ -159,6 +167,18 @@ export const scoreStatPriorWindow = ({
       actualRate: test.k / test.n,
       logLossModel: bernoulliLogLoss(pModel, test.k, test.n),
       logLossBaseline: bernoulliLogLoss(pBaseline, test.k, test.n),
+      // ── evidence behind the prior (WS-374) ──
+      priorPseudocount: ev ? ev.totalPseudocount : prior.alpha + prior.beta,
+      referenceN: ref ? ref.n : null,
+      referenceK: ref ? ref.k : null,
+      referenceRate: ref ? ref.rate : null,
+      referenceLabel: ref ? ref.minedLabel : null,
+      referenceBucket: ref ? ref.seatBucket : null,
+      referenceStakeReach: ref && ref.requestedBb ? Math.abs(Math.log(ref.requestedBb / ref.referenceBb)) : null,
+      referenceLimitedBy: ref ? ref.limitedBy : null,
+      poolN: pool ? pool.n : null,
+      poolPlayers: pool ? pool.players : null,
+      poolLimitedBy: pool ? pool.limitedBy : null,
     });
   }
 
@@ -171,6 +191,46 @@ const weighted = (records, field) => {
   let den = 0;
   for (const r of records) { num += r[field] * r.nTest; den += r.nTest; }
   return den > 0 ? num / den : null;
+};
+
+/** Distinct non-null values of a field, in first-seen order (small sets by construction). */
+const distinct = (records, field) => {
+  const out = [];
+  for (const r of records) {
+    const v = r[field];
+    if (v == null) continue;
+    if (!out.includes(v)) out.push(v);
+  }
+  return out;
+};
+
+/**
+ * Summarise the evidence behind one stat's served priors across a run (WS-374).
+ *
+ * `n` is reported as min/max rather than a mean: a run can resolve two villains to two
+ * different mined rows, and a mean over 13,476,245 and 300 is a number that describes
+ * neither. `limitedBy` says whether the stage's contribution was bounded by the data or
+ * by the regularisation — a stage limited by `evidence` gets stronger with more mining,
+ * one limited by `cap` never will.
+ */
+const summariseEvidence = (records) => {
+  const refNs = records.map(r => r.referenceN).filter(n => n != null);
+  const poolNs = records.map(r => r.poolN).filter(n => n != null);
+  const reaches = records.map(r => r.referenceStakeReach).filter(x => x != null);
+  return {
+    windowsWithReference: refNs.length,
+    referenceNMin: refNs.length ? Math.min(...refNs) : null,
+    referenceNMax: refNs.length ? Math.max(...refNs) : null,
+    referenceRows: distinct(records, 'referenceLabel'),
+    referenceBuckets: distinct(records, 'referenceBucket'),
+    maxStakeReachLogDist: reaches.length ? Math.max(...reaches) : null,
+    referenceLimitedBy: distinct(records, 'referenceLimitedBy'),
+    windowsWithPool: poolNs.length,
+    poolNMin: poolNs.length ? Math.min(...poolNs) : null,
+    poolNMax: poolNs.length ? Math.max(...poolNs) : null,
+    poolLimitedBy: distinct(records, 'poolLimitedBy'),
+    priorPseudocount: records.length ? records[0].priorPseudocount : null,
+  };
 };
 
 /**
@@ -194,6 +254,11 @@ export const buildStatPriorScorecard = (records, meta = {}) => {
       lift: baselineLogLoss ? (baselineLogLoss - logLoss) / baselineLogLoss : null,
       avgPredicted: weighted(rs, 'pModel'),
       avgActual: weighted(rs, 'actualRate'),
+      // ── WS-374: what the served prior stands on, per stat ──
+      // The prior's STRENGTH is capped (see poolBaseline's write-down), so it is the
+      // same number whether the row behind it holds 13.5M hands or 300. These fields
+      // are the only place that difference survives to a reader.
+      evidence: summariseEvidence(rs),
     };
   }).filter(r => r.trials > 0);
 
@@ -228,6 +293,45 @@ export const buildStatPriorScorecard = (records, meta = {}) => {
  *
  * @param {Object} card - from buildStatPriorScorecard
  */
+/**
+ * REGRESSION GATE — WS-374's half of the same rule.
+ *
+ * `assertReferenceTierLive` proves the tier MOVED the number. This proves the run can
+ * still SAY WHAT IT MOVED ON. A scorecard whose priors came from a mined reference row
+ * but which cannot name that row's n has re-severed the evidence channel — the exact
+ * state HEAD was in, where `resolveReferenceCounts` computed `meta` on every call and
+ * `resolveStatPriors` dropped it one line later, so a prior backed by 13,476,245 hands
+ * and one backed by 300 were the same JavaScript number with nothing to tell them apart.
+ *
+ * This is a hard failure of the run, not a warning. A warning in a passing run is a
+ * comment with extra steps.
+ *
+ * @param {Object} card - from buildStatPriorScorecard
+ */
+export const assertPriorEvidenceVisible = (card) => {
+  if (card.referenceMode !== 'pool-train') return true;
+  // Nothing scored at all is WS-284's failure, reported by WS-284's message. This gate
+  // is about a run that DID score and cannot say what on.
+  if (!card.perStat || card.perStat.length === 0) return true;
+
+  const blind = card.perStat.filter(r => !r.evidence || !r.evidence.windowsWithReference);
+  if (blind.length === card.perStat.length) {
+    throw new Error(
+      'Backtest refused: the resolved stat priors carry no reference evidence for any ' +
+      'stat, so this run cannot say how much data its priors rest on (WS-374). ' +
+      'resolveStatPriors must return the n and the resolution meta on the prior itself.',
+    );
+  }
+  for (const r of blind) {
+    throw new Error(
+      `Backtest refused: stat "${r.stat}" was scored against a served prior with no ` +
+      'recorded evidence (WS-374). A prior without its n cannot be shrunk against ' +
+      'correctly and cannot be audited.',
+    );
+  }
+  return true;
+};
+
 export const assertReferenceTierLive = (card) => {
   if (card.referenceMode !== 'pool-train') return true;
 
@@ -254,6 +358,12 @@ export const assertReferenceTierLive = (card) => {
       'WS-284 failure mode returning: a mandatory flag over a channel no number depends on.',
     );
   }
+
+  // WS-374 rides on the same gate deliberately: the two failures are one failure seen
+  // twice — a tier that cannot be shown to matter, and a tier that cannot be shown to
+  // rest on anything. Folding it in means every existing caller enforces both. It runs
+  // LAST so the more specific WS-284 diagnoses keep their own messages.
+  assertPriorEvidenceVisible(card);
   return true;
 };
 
@@ -295,6 +405,34 @@ export const renderStatPriorScorecard = (card, caveat = '') => {
     `    ${'OVERALL'.padEnd(12)}${String(o.windowRecords).padStart(6)}${String(o.trials).padStart(9)}` +
     `   ${num(o.logLoss)}   ${num(o.baselineLogLoss)}  ${pctf(o.lift)}`,
   );
+
+  // WS-374. What each served prior actually stands on. The prior's STRENGTH is capped by
+  // measured between-player overdispersion (WS-262), so it reads the same whether the row
+  // behind it holds millions of hands or a handful — these columns are the only place that
+  // difference reaches a reader.
+  L.push('');
+  L.push('  EVIDENCE BEHIND THE SERVED PRIOR — the prior\'s strength is capped, its n is not.');
+  L.push('  stat          pseudo   reference n (min–max)   row / bucket        bound by');
+  for (const r of card.perStat) {
+    const e = r.evidence || {};
+    const span = e.referenceNMin == null
+      ? 'none'
+      : (e.referenceNMin === e.referenceNMax
+        ? String(e.referenceNMin)
+        : `${e.referenceNMin}–${e.referenceNMax}`);
+    const row = [...(e.referenceRows || []), ...(e.referenceBuckets || [])].join(' / ') || '—';
+    L.push(
+      `    ${r.stat.padEnd(12)}${num(e.priorPseudocount, 1).padStart(6)}   ${span.padStart(21)}` +
+      `   ${row.padEnd(19)} ${(e.referenceLimitedBy || []).join(',') || '—'}`,
+    );
+  }
+  if (card.perStat.some(r => r.evidence && r.evidence.windowsWithPool)) {
+    for (const r of card.perStat) {
+      const e = r.evidence || {};
+      if (!e.windowsWithPool) continue;
+      L.push(`    ${r.stat.padEnd(12)}pool n ${e.poolNMin}–${e.poolNMax} (${(e.poolLimitedBy || []).join(',')})`);
+    }
+  }
   L.push('');
   return L.join('\n');
 };

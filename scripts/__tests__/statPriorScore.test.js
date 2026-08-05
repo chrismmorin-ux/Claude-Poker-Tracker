@@ -21,6 +21,7 @@ import {
   scoreStatPriorWindow,
   buildStatPriorScorecard,
   assertReferenceTierLive,
+  assertPriorEvidenceVisible,
   renderStatPriorScorecard,
 } from '../backtest/statPriorScore.mjs';
 import { STAT_PRIORS } from '../../src/utils/exploitEngine/bayesianConfidence';
@@ -220,5 +221,140 @@ describe('buildStatPriorScorecard', () => {
     expect(out).toContain('caveat here');
     expect(out).toContain('pool-train');
     for (const stat of SCORED_STATS) expect(out).toContain(stat);
+  });
+});
+
+// =============================================================================
+// WS-374 — THE SERVED PRIOR MUST CARRY ITS n
+// =============================================================================
+
+/**
+ * The WS-374 divergence assertion, and it is the only test here that matters.
+ *
+ * WS-325's layer reconciliation ends: `L8 service  n=13.5M -> pseudocount <= 10-35
+ * (n discarded)`. `resolveStatPriors` computed `reference.meta` on every call and
+ * dropped it on the next line, so a prior backed by 13,476,245 mined hands and one
+ * backed by 300 arrived at every consumer as the same JavaScript number.
+ *
+ * These two tables are IDENTICAL IN RATE and differ only in how much evidence stands
+ * behind that rate. The served prior's STRENGTH is capped by design (measured
+ * between-player overdispersion, WS-262), so it cannot and must not encode the
+ * difference — which is exactly why the difference has to travel beside it.
+ */
+const rowWithN = (n) => [{
+  bb: 0.5,
+  canonical: '0.25-0.5',
+  minedLabel: '50NLH',
+  buckets: {
+    full: {
+      hands: n,
+      stats: Object.fromEntries(SCORED_STATS.map(s => [s, { k: 0.2 * n, n }])),
+    },
+  },
+}];
+
+const CORPUS_N = 13476245;   // the WS-325 L8 figure
+const THIN_N = 300;
+
+/** A founder estimate whose mean is exactly the pool rate, so dilution cannot confound. */
+const MATCHED_PRIORS = Object.fromEntries(
+  Object.entries(STAT_PRIORS).map(([s, p]) => {
+    const w = p.alpha + p.beta;
+    return [s, { alpha: 0.2 * w, beta: 0.8 * w }];
+  }),
+);
+
+const windowWith = (referenceTable, staticPriors = STAT_PRIORS) => scoreStatPriorWindow({
+  playerId: 'villain-1',
+  trainStats: trainStats(),
+  testStats: testStats(),
+  segmentKey: SEGMENT,
+  seatBucket: 'full',
+  referenceTable,
+  staticPriors,
+});
+
+const cardWith = (referenceTable, staticPriors) => {
+  const w = windowWith(referenceTable, staticPriors);
+  return buildStatPriorScorecard(w.records, {
+    referenceMode: 'pool-train',
+    windows: 1,
+    divergedWindows: w.priorsDiverged ? 1 : 0,
+  });
+};
+
+describe('WS-374 — a consumer must be able to tell a 13.5M-hand prior from a 300-hand one', () => {
+  it('the served alpha/beta ALONE cannot distinguish them — this is the defect, measured', () => {
+    // Same rate, evidence differing by 44,920.8x. The prior's pseudocount is bit-identical
+    // because the cap binds in both cases; only the founder estimate's dilution moves the
+    // mean at all, and with a matched founder estimate even that vanishes.
+    const big = windowWith(rowWithN(CORPUS_N)).priors.vpip;
+    const thin = windowWith(rowWithN(THIN_N)).priors.vpip;
+
+    expect(big.alpha + big.beta).toBeCloseTo(thin.alpha + thin.beta, 12);
+    const meanOf = (p) => p.alpha / (p.alpha + p.beta);
+    expect(Math.abs(meanOf(big) - meanOf(thin))).toBeLessThan(2e-3);
+
+    const bigM = windowWith(rowWithN(CORPUS_N), MATCHED_PRIORS).priors.vpip;
+    const thinM = windowWith(rowWithN(THIN_N), MATCHED_PRIORS).priors.vpip;
+    expect(bigM.alpha).toBe(thinM.alpha);   // bit-identical
+    expect(bigM.beta).toBe(thinM.beta);
+  });
+
+  it('the CONSUMER distinguishes them — the scorecard reports the n behind each prior', () => {
+    // FAILS AGAINST HEAD: with `meta` discarded there is no evidence on the records at
+    // all, so both scorecards report the same nothing and the two are indistinguishable.
+    const big = cardWith(rowWithN(CORPUS_N));
+    const thin = cardWith(rowWithN(THIN_N));
+
+    for (const stat of SCORED_STATS) {
+      const b = big.perStat.find(r => r.stat === stat).evidence;
+      const t = thin.perStat.find(r => r.stat === stat).evidence;
+      expect(b.referenceNMax).toBe(CORPUS_N);
+      expect(t.referenceNMax).toBe(THIN_N);
+      expect(b.referenceNMax).not.toBe(t.referenceNMax);
+      // Both are bound by the cap, not by the data — the fact that makes the two
+      // priors equally strong, now stated rather than inferred.
+      expect(b.referenceLimitedBy).toEqual(['cap']);
+      expect(t.referenceLimitedBy).toEqual(['cap']);
+    }
+    expect(JSON.stringify(big.perStat)).not.toBe(JSON.stringify(thin.perStat));
+  });
+
+  it('names WHICH row answered and how far the nearest-stake substitution reached', () => {
+    const card = cardWith(rowWithN(CORPUS_N));
+    const e = card.perStat.find(r => r.stat === 'vpip').evidence;
+    expect(e.referenceRows).toEqual(['50NLH']);
+    expect(e.referenceBuckets).toEqual(['full']);
+    expect(e.maxStakeReachLogDist).toBeCloseTo(0, 12); // exact stake match
+  });
+
+  it('flags a prior bound by its EVIDENCE rather than by the cap', () => {
+    // vpip's cap is 10 pseudo-observations; a 4-hand row cannot even reach it. That
+    // prior gets stronger if more is mined; a capped one never will, however large n.
+    const e = cardWith(rowWithN(4)).perStat.find(r => r.stat === 'vpip').evidence;
+    expect(e.referenceLimitedBy).toEqual(['evidence']);
+    expect(e.priorPseudocount).toBeCloseTo(14, 6); // founder 10 + min(n=4, cap=10)
+  });
+
+  it('REFUSES a run whose priors came from a mined table but carry no evidence', () => {
+    // The regression gate. Strip the evidence and the run must fail, not warn.
+    const card = cardWith(rowWithN(CORPUS_N));
+    expect(() => assertPriorEvidenceVisible(card)).not.toThrow();
+
+    const stripped = {
+      ...card,
+      perStat: card.perStat.map(r => ({ ...r, evidence: undefined })),
+    };
+    expect(() => assertPriorEvidenceVisible(stripped)).toThrow(/no reference evidence/);
+    // And it rides on the existing gate, so every current caller enforces it.
+    expect(() => assertReferenceTierLive(stripped)).toThrow(/WS-374/);
+  });
+
+  it('surfaces the evidence to a reader, not just to a JSON file', () => {
+    const out = renderStatPriorScorecard(cardWith(rowWithN(CORPUS_N)), '');
+    expect(out).toContain('EVIDENCE BEHIND THE SERVED PRIOR');
+    expect(out).toContain(String(CORPUS_N));
+    expect(out).toContain('50NLH');
   });
 });

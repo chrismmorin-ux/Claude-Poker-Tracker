@@ -47,6 +47,34 @@ export const REQUIRED_PARTITION_STAMP = 'pool-train';
 /** Explicit opt-out: run with the Reference tier switched off entirely. */
 export const REFERENCE_DISABLED = 'none';
 
+/**
+ * Explicit declaration: this run consumes the SHIPPED, ALL-CORPUS table as a FIELD —
+ * a definition of the population being priced against — and scores NO corpus hand.
+ *
+ * WS-375. `entryEvaluator.mjs` is the case this exists for. It prices the 169 preflop
+ * hand classes by Monte Carlo against a synthesised Field built from the mined
+ * aggregates; no player in the corpus is ever predicted, so channel 1 has nothing to
+ * contaminate. That made it SAFE, and the safety was circumstantial — the file had no
+ * reference to this module at all, so a later change that started scoring corpus hands
+ * would have leaked in silence with nothing in the file to fail.
+ *
+ * This mode is the declaration, and it is deliberately not a free pass:
+ *
+ *   - the table is handed out only through `fieldTable()`, so the all-corpus data still
+ *     enters the run through the sanctioned channel rather than around it;
+ *   - every corpus-hand-scoring assertion (`assertEvalPlayer`, `assertWalkForward`,
+ *     `assertStatWindow`) THROWS in this mode. That is the bite: the moment someone
+ *     extends such a run to score real hands, the first guard call they write — the one
+ *     every other scoring entry point already makes — refuses and tells them to
+ *     re-declare against a POOL-partition table.
+ *
+ * It is NOT interchangeable with `REFERENCE_DISABLED`. "I use no reference at all" and
+ * "I use the corpus-wide one, as a population, and score nothing from that corpus" are
+ * different claims with different obligations, and collapsing them would hide exactly
+ * the one that needs watching.
+ */
+export const REFERENCE_FIELD_CORPUS = 'field-corpus';
+
 export class LeakageError extends Error {
   constructor(message, detail = {}) {
     super(message);
@@ -63,13 +91,22 @@ export class LeakageError extends Error {
  * unstamped default would silently reintroduce channel 1, which is precisely the
  * failure mode that makes the ticket's gate unsatisfiable today.
  *
- * @param {Object|string|null} reference - stamped table, or REFERENCE_DISABLED
+ * @param {Object|string|null} reference - stamped table, REFERENCE_DISABLED, or
+ *        REFERENCE_FIELD_CORPUS
  * @param {number} [poolPct]
- * @returns {{ mode: 'pool-train'|'disabled', table: Array|null, provenance: Object|null }}
+ * @returns {{ mode: 'pool-train'|'disabled'|'field-corpus', table: Array|null, provenance: Object|null }}
  */
 export const validateReferenceTable = (reference, poolPct = DEFAULT_POOL_PCT) => {
   if (reference === REFERENCE_DISABLED) {
     return { mode: 'disabled', table: null, provenance: null };
+  }
+
+  if (reference === REFERENCE_FIELD_CORPUS) {
+    // The table itself is not supplied here — it is handed out by `fieldTable()`, which
+    // is the sanctioned channel for it. `table` stays null so that a caller which reads
+    // `guard.referenceTable` (the PRIOR channel) gets nothing, as it must: the
+    // all-corpus aggregates are a Field in this mode, never a prior over scored hands.
+    return { mode: 'field-corpus', table: null, provenance: null };
   }
 
   if (!reference || typeof reference !== 'object') {
@@ -146,6 +183,55 @@ export class LeakageGuard {
     this.checkedPlayers = new Set();
     this.checkedDecisions = 0;
     this.checkedStatWindows = 0;
+    // WS-375: set by `fieldTable()` when the all-corpus table is consumed as a Field.
+    this.fieldSourceId = null;
+    this.fieldRowsExposed = 0;
+  }
+
+  /**
+   * WS-375. The sanctioned channel for the SHIPPED, ALL-CORPUS table when it is used as
+   * a FIELD rather than as a prior over scored hands.
+   *
+   * Refuses in every other mode, so a run cannot reach the corpus-wide aggregates by
+   * declaring `pool-train` or `disabled` and then importing them anyway.
+   *
+   * @param {Array} stakes - the raw HANDHQ_REFERENCE_STAKES rows
+   * @param {Object} [meta] - HANDHQ_REFERENCE_META, recorded for the run's stamp
+   * @returns {Array} the same rows, now obtained through the guard
+   */
+  fieldTable(stakes, meta = null) {
+    if (this.referenceMode !== 'field-corpus') {
+      throw new LeakageError(
+        `Backtest refused: the all-corpus Field table was requested by a run in ` +
+        `"${this.referenceMode}" mode. Only a run that declares ` +
+        '"field-corpus" may consume it, and such a run may not score corpus hands.',
+        { referenceMode: this.referenceMode },
+      );
+    }
+    if (!Array.isArray(stakes) || stakes.length === 0) {
+      throw new LeakageError('Backtest refused: the Field table carries no stake rows.');
+    }
+    this.fieldSourceId = meta?.sourceId ?? null;
+    this.fieldRowsExposed = stakes.length;
+    return stakes;
+  }
+
+  /**
+   * WS-375. A run holding the all-corpus table as a Field may not score corpus hands —
+   * the whole basis of the declaration is that it scores none. This is the refusal that
+   * makes the safety structural instead of circumstantial: the natural extension ("what
+   * did the field actually DO?") starts by asserting a player or a window, and that
+   * assertion is the thing that now fails.
+   */
+  #refuseIfFieldCorpus(unit) {
+    if (this.referenceMode !== 'field-corpus') return;
+    throw new LeakageError(
+      `Backtest refused: this run declared the SHIPPED all-corpus table as its Field ` +
+      `and is now scoring a ${unit}. Those hands trained that table, so the score would ` +
+      'measure memorisation. Re-declare with a POOL-partition table (or ' +
+      '"none") before scoring anything from the corpus.',
+      { referenceMode: this.referenceMode, unit },
+    );
   }
 
   /**
@@ -155,6 +241,7 @@ export class LeakageGuard {
    * @param {string} playerId
    */
   assertEvalPlayer(playerId) {
+    this.#refuseIfFieldCorpus('player');
     const group = partitionOf(playerId, this.poolPct);
     if (group !== GROUPS.EVAL) {
       throw new LeakageError(
@@ -179,6 +266,7 @@ export class LeakageGuard {
    * @param {number} params.handIdx
    */
   assertWalkForward({ playerId, trainEndIdx, handIdx }) {
+    this.#refuseIfFieldCorpus('decision');
     assertOrdering({ playerId, trainEndIdx, handIdx }, 'scored decision');
     this.checkedDecisions++;
     return true;
@@ -205,6 +293,7 @@ export class LeakageGuard {
    * @param {number} params.handIdx     - first hand of the scored window
    */
   assertStatWindow({ playerId, trainEndIdx, handIdx }) {
+    this.#refuseIfFieldCorpus('stat window');
     assertOrdering({ playerId, trainEndIdx, handIdx }, 'scored stat window');
     this.checkedStatWindows++;
     return true;
@@ -218,6 +307,8 @@ export class LeakageGuard {
       evalPlayersChecked: this.checkedPlayers.size,
       decisionsChecked: this.checkedDecisions,
       statWindowsChecked: this.checkedStatWindows,
+      fieldSourceId: this.fieldSourceId,
+      fieldRowsExposed: this.fieldRowsExposed,
     };
   }
 }
