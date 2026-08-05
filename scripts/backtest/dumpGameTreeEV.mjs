@@ -50,10 +50,29 @@ const mulberry32 = (seed) => () => {
 const FROZEN_NOW = 1_700_000_000_000;
 const realNow = Date.now;
 
+/**
+ * WS-361: THE FROZEN CLOCK IS WHY THIS INSTRUMENT COULD NOT SEE THE DEFECT IT WAS AIMED AT.
+ *
+ * Freezing `Date.now` means the refinement budget never trips, so this harness always dumps
+ * the FULL depth-2/3 tree. That is correct for a bit-identity check — it is the only way a
+ * before/after diff covers the same code — but it means the harness can never reproduce a
+ * budget-truncated run, and budget truncation is precisely what mispriced the OESD call at
+ * -26.9 EV against +12.4 over the full sample.
+ *
+ * `WS361_LIVE_CLOCK=1` leaves `Date.now` real, so the run reflects what the founder's sidebar
+ * actually computes under its budget. Output from a live-clock run is NOT bit-comparable
+ * between invocations and must never be used as a regression baseline — it is a measurement
+ * of the degraded path, which is a different question and now an askable one.
+ *
+ *   node scripts/backtest/dumpGameTreeEV.mjs out/full.json            # full tree
+ *   WS361_LIVE_CLOCK=1 node scripts/backtest/dumpGameTreeEV.mjs out/budgeted.json
+ */
+const LIVE_CLOCK = process.env.WS361_LIVE_CLOCK === '1';
+
 const freezeClocks = (seed) => {
   let rng = mulberry32(seed);
   Math.random = () => rng();
-  Date.now = () => FROZEN_NOW;
+  if (!LIVE_CLOCK) Date.now = () => FROZEN_NOW;
 };
 const restoreClocks = () => { Date.now = realNow; };
 
@@ -101,7 +120,7 @@ const main = async () => {
         range: () => topRange(50), villainAction: 'bet', villainBet: 140, pot: 260, stack: 540 },
     ];
 
-    const out = { frozenNow: FROZEN_NOW, scenarios: {} };
+    const out = { frozenNow: LIVE_CLOCK ? null : FROZEN_NOW, liveClock: LIVE_CLOCK, scenarios: {} };
 
     for (const s of SCENARIOS) {
       // Same seed per scenario so scenario N is independent of scenario N-1's draw count.
@@ -119,6 +138,16 @@ const main = async () => {
         villainModel: null,
         contextHints: { isIP: true, texture: 'unknown', posCategory: 'LATE' },
         trials: 200,
+        // WS-334: the refinement budget is now a parameter, so this harness can dump the
+        // SAME scenarios at depth-1 and at full depth and the pair can be differenced.
+        //   WS334_REFINEMENT_MS=0 node scripts/backtest/dumpGameTreeEV.mjs out/depth1.json
+        //   node scripts/backtest/dumpGameTreeEV.mjs out/depth2.json
+        // With `Date.now` frozen the budget never trips, so the non-zero run explores the
+        // FULL tree — which is what makes the difference attributable to depth rather than
+        // to where a bailout happened to land.
+        refinementBudgetMs: process.env.WS334_REFINEMENT_MS != null
+          ? Number(process.env.WS334_REFINEMENT_MS)
+          : 2000,
       });
       const elapsed = realNow() - t0;
       restoreClocks();
@@ -136,6 +165,13 @@ const main = async () => {
           depth2Ev: r.depth2?.ev ?? null,
           depth3Ev: r.depth3?.ev ?? null,
         })),
+        // WS-361: a depth-2 number is only as good as the fraction of the runout tree it
+        // averaged over. Dumping the EV without this is dumping a number with no error bar,
+        // and a stage that bailed at 5% used to be indistinguishable from one that finished.
+        depthReached: result?.treeMetadata?.depthReached ?? null,
+        stages: (result?.treeMetadata?.latency?.stages || [])
+          .filter(s => s.ran)
+          .map(s => ({ stage: s.stage, outcome: s.outcome, weightConsumed: s.weightConsumed ?? null })),
       };
       console.log(`${s.name.padEnd(32)} ${String(elapsed).padStart(6)}ms  ${out.scenarios[s.name].recommendations.length} recs`);
     }
