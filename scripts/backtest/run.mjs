@@ -41,7 +41,7 @@ import {
   buildAblationArms,
   DIMENSION_LABELS,
 } from './hierarchyVariants.mjs';
-import { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } from './corpusFiles.mjs';
+import { discoverCorpusFiles } from './corpusFiles.mjs';
 
 const parseArgs = (argv) => {
   const args = {};
@@ -83,7 +83,7 @@ const main = async () => {
   const reference = loadReference(args.reference);
 
   const files = await discoverCorpusFiles({
-    root: args['corpus-root'] || DEFAULT_CORPUS_ROOT,
+    root: args['corpus-root'],  // WS-321: undefined -> resolveCorpusRoot() (env, then G16)
     sites: list(args.sites),
     stakes: list(args.stakes),
   });

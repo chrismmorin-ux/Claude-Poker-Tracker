@@ -14,7 +14,7 @@
  *
  *   --sites            comma-separated corpus site codes (e.g. FTP,PS)
  *   --stakes           comma-separated stake labels (default: all)
- *   --corpus-root      override DEFAULT_CORPUS_ROOT
+ *   --corpus-root      override the corpus root (else $HANDHQ_CORPUS_ROOT, else G16 path)
  *   --max-files        cap on corpus files scanned
  *   --max-players      cap on players indexed PER GROUP (POOL and EVAL each get up to this
  *                       many — not a shared budget)
@@ -74,11 +74,11 @@ const main = async () => {
   const args = parseArgs(process.argv);
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runTeachableArmsProbe } = await loader.load('/scripts/backtest/teachableArmsProbe.mjs');
 
     let files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : undefined,  // WS-321
       sites: list(args.sites),
       stakes: list(args.stakes),
     });

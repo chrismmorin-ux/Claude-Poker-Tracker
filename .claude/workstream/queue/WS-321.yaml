@@ -2,12 +2,12 @@ id: "WS-321"
 title: "The HandHQ corpus root is a hardcoded G16 Windows path — no corpus job can run on any other machine"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: ""
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-05T22:15:00Z"
+completion_commit: "pending"
 priority_score: 62.0
 priority_label: "P1"
 category: "infrastructure"
@@ -66,3 +66,40 @@ status_note: |
   Filed 2026-08-05 while scoping HomeBase WS-608 (put the corpus jobs on CM-NODE1). Found
   by reading corpusFiles.mjs, not by running anything — the failure has never been observed
   because no corpus job has ever been attempted off the G16.
+
+  ── CLOSED 2026-08-05, same session ──────────────────────────────────────────────────
+
+  TWO CLAIMS IN THIS TICKET WERE OVERSTATED. Recorded rather than quietly edited, because
+  the filing was done from a single file read and the correction is the useful part:
+
+    1. "not an empty file list" — the module ALREADY threw on both a missing root and a
+       zero-file result, with a directed message. That was right before this change and
+       needed no fixing. The acceptance criterion was written as though it were a defect.
+    2. "no environment override" — true at the module level, but every one of the six
+       consumers already accepted a `--corpus-root` flag. A run on another machine was
+       therefore possible, just not zero-config.
+
+  So the real defect was narrower than filed: no PERSISTENT default. Every unattended
+  invocation would have had to carry the flag, and a scheduled job that eventually runs
+  without it falls back to a G16 path that does not exist on that machine.
+
+  SHIPPED
+    - `resolveCorpusRoot(explicit)` — precedence: argument > $HANDHQ_CORPUS_ROOT > G16 path.
+      Reads the environment at CALL time, not module load, so a scheduled job's own
+      environment is honoured (a load-time read would have baked in the G16 path at import).
+    - All six consumers now pass their flag through instead of substituting the G16
+      constant themselves — they were defeating the resolution by passing it explicitly.
+    - Errors name the resolved path, the env var, AND the flag, and the sparse-checkout
+      hint is now derived from the failing root. It previously always printed
+      "cd C:/Users/chris/data/phh-dataset" regardless of which root failed — useless advice
+      on the machine that would actually hit it.
+    - `DEFAULT_CORPUS_ROOT` retained as a deprecated alias of the fallback; it is a plain
+      constant and therefore cannot see the environment, which is exactly what pinned the
+      six scripts to the G16.
+    - `scripts/backtest/README.md` — first operating doc for the harness. Bring-up steps
+      for a second machine, resolution table, and why discovery throws.
+
+  VERIFIED: 17 new tests (the module had none), 256 scripts tests green, production build
+  clean, all six consumers syntax-checked, and one live end-to-end run of the env path.
+  NOT verified against the real corpus — it lives outside the repo and is not in this
+  container. First real proof comes when HomeBase WS-609 runs a slice on CM-NODE1.

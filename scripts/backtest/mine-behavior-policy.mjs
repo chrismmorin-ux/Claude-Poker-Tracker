@@ -44,11 +44,11 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { minePolicyObservations } = await loader.load('/scripts/backtest/behaviorPolicyMiner.mjs');
 
     const files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : undefined,  // WS-321
       sites: list(args.sites),
       stakes: list(args.stakes),
     });

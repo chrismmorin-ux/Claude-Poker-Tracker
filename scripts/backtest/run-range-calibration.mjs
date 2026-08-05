@@ -58,11 +58,11 @@ const main = async () => {
   const args = parseArgs(process.argv);
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runRangeCalibrationProbe } = await loader.load('/scripts/backtest/rangeCalibrationProbe.mjs');
 
     let files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : undefined,  // WS-321
       sites: list(args.sites),
       stakes: list(args.stakes),
     });
