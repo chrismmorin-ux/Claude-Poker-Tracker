@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-depth-ablation-1c560bcc-67e9e14e",
+  "match": {
+    "surfaceId": "engine-read",
+    "dealBookId": "handhq-allsites-50NLH-1c560bcc",
+    "fieldId": "pool-mined-behavior-policy"
+  },
+  "estimand": "Paired within-decision difference in expected hand value for hero (bb, attributed at the decision level) between two configurations of the SAME surface: depth-1-only advice (refinementBudgetMs=0, the configuration that shipped in production for the life of the project) and depth-2/3-enabled advice. NOT a per-decision increment, NOT a winrate, and NOT a keep/delete verdict on the depth-2 subsystem.",
+  "treatment": "per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy · PAIRED contrast: both arms evaluated at the same decision, same outcome, same propensity denominator, so the population term cancels exactly",
+  "metrics": {
+    "depthDeltaBB": -0.4711,
+    "depthDeltaCiLowBB": -2.7653,
+    "depthDeltaCiHighBB": 1.329,
+    "depthDeltaExcludesZero": false,
+    "edgeBaseArmBB": -1.0007,
+    "edgeTestArmBB": -1.4719,
+    "topActionFlipShare": 0.1538,
+    "flipShareByStreet": {
+      "flop": 0.0072,
+      "turn": 0.039,
+      "river": 0.8
+    },
+    "flipCountByStreet": {
+      "flop": {
+        "flips": 1,
+        "n": 138
+      },
+      "turn": {
+        "flips": 3,
+        "n": 77
+      },
+      "river": {
+        "flips": 36,
+        "n": 45
+      }
+    },
+    "flipDirections": {
+      "bet->check": 30,
+      "raise->call": 2,
+      "raise->fold": 6,
+      "fold->call": 1,
+      "call->fold": 1
+    },
+    "meanTotalVariation": 0.13,
+    "maxTotalVariation": 1,
+    "identicalShare": 0.6269,
+    "n": 260,
+    "discordantN": 95,
+    "players": 22,
+    "divergenceN": 260,
+    "controlEdgeBB": 0,
+    "notAVerdict": true
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "admissible": true,
+    "blockers": [],
+    "warnings": [
+      {
+        "code": "TOO_FEW_CLUSTERS_FOR_LEVELS",
+        "detail": "22 contributing players is below the 30-cluster bar. The two ABSOLUTE arm edges must not be quoted. The PAIRED delta and the advice divergence are still readable: the pairing differences away the between-player variance the bar exists to guard, and divergence never contained it."
+      }
+    ],
+    "clusters": 22,
+    "minClustersForCI": 30,
+    "absoluteArmsQuotable": false,
+    "complete": true
+  },
+  "manifest": {
+    "engineCommit": "67e9e14eb42318ccaa3d22ac1f7ba1a6a6fac144",
+    "engineDirty": true,
+    "dealBookHash": "sha256:1c560bcc8ba77b640ce38341f6bfbecb723903332c9e877e65adf60356a112df",
+    "fieldVersion": "behavior-policy@pool-train/12191obs",
+    "partition": "pool-train@50",
+    "seeds": {
+      "clusterBootstrap": 2654435769
+    },
+    "unseededSources": [
+      {
+        "source": "src/utils/pokerCore/monteCarloEquity.js",
+        "reached_via": "heroPolicy -> evaluateGameTree -> handVsRange",
+        "mechanism": "Math.random() in the deck shuffle and the weighted combo draw",
+        "consequence": "Two runs over the same Deal Book with identical seeds agree to within Monte Carlo noise, not exactly. Do not read a small difference between two Result Cards as a change."
+      },
+      {
+        "source": "src/utils/exploitEngine/gameTreeSampling.js, gameTreeDepth2.js",
+        "reached_via": "heroPolicy -> evaluateGameTree -> refinement stages",
+        "mechanism": "Math.random() in stratified sampling and mini-rollout equity inside depth-2/3",
+        "consequence": "The depth-2 arm carries Monte Carlo noise the depth-1 arm does not."
+      },
+      {
+        "source": "src/utils/exploitEngine/gameTreeEvaluator.js (refinement budget clock)",
+        "reached_via": "refinementBudgetMs enforced against Date.now()",
+        "mechanism": "WALL-CLOCK DEPENDENCE, not randomness. Which refinement stages complete depends on machine speed and load, capped per stage by MAX_STAGE_SHARE.",
+        "consequence": "The depth-2 arm is NOT reproducible on a different machine, or on this one under different load: a re-run can differ because a stage that finished before did not finish again. The depth-1 arm (budget 0) has no such dependence and IS stable."
+      }
+    ],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "REFINEMENT_BUDGET_MS_DEPTH1": 0,
+      "REFINEMENT_BUDGET_MS_DEPTH2": 2000,
+      "HERO_POLICY_COMBO_SAMPLES": 10,
+      "HERO_POLICY_TRIALS": 200,
+      "IPS_WEIGHT_CAP": 20
+    },
+    "disclaimerRegisterVersion": "FR-1+e3867c10fc2a",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      },
+      {
+        "name": "MAX_STAGE_SHARE",
+        "canonical": 0.4,
+        "shadowAt": "src/utils/exploitEngine/gameTreeEvaluator.js:783",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "Module-local const, not exported, so it cannot be read through the harness loader. It caps any single refinement stage at this fraction of refinementBudgetMs and therefore decides which stages complete in the depth-2 arm. Value transcribed from source; unverified at run time."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null
+}
