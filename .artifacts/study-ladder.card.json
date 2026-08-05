@@ -1,0 +1,505 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-study-ladder-c0043f8b",
+  "match": {
+    "surfaceId": "handhq-observed-field-ws320",
+    "dealBookId": "handhq-allsites-allstakes-c0043f8b",
+    "fieldId": "handhq-2009-online-eval-half"
+  },
+  "estimand": "Between-player heterogeneity (Pearson χ²/df over players, against the binomial expectation implied by each player's own n) in three study-ladder rungs — limp rate, 3-bet rate, c-bet rate — measured against flop bet frequency as a control axis in the SAME run. A statement about whether an axis carries real between-player variation, NOT an EV figure and NOT a claim that any archetype is profitable to exploit. POPULATION: online 2009 50NL (SRC-012). The founder's game is LIVE 9-handed 1/2–1/3 — any live reading of these figures is TRANSFERRED, not measured.",
+  "treatment": "per-player (k, n) over EVAL-half players · Pearson χ² against a POOL-mined common rate (leakage-free, df = m) with the in-sample variant reported beside it · Beta-Binomial shrinkage, leave-one-out prior, pseudocount 10 · temporal split-half reliability per player · control axis measured in the same run · NO EV claim",
+  "metrics": {
+    "handsSeen": 1070493,
+    "primaryMinN": 20,
+    "priorWeight": 10,
+    "controlAxis": "flopBetFreq",
+    "axes": {
+      "limpRate": {
+        "label": "limp rate",
+        "role": "candidate",
+        "conditioning": "preflop decision · no raise yet · actor is not the BB",
+        "numerator": "actor calls (open-limp, over-limp, or SB complete)",
+        "evalK": 281655,
+        "evalN": 2242995,
+        "evalRate": 0.1255709442062956,
+        "poolRate": 0.1286417026309334,
+        "players": 15475,
+        "obsPerPlayerMedian": 51,
+        "obsPerPlayerMean": 137.45266558966074,
+        "chi2PerDf": 26.461491594989887,
+        "z": 2239.6707237773744,
+        "df": 15475,
+        "betweenPlayerSd": 0.1446239384865753,
+        "chi2PerDfInSample": 28.840578101692707,
+        "splitHalfReliability": 0.8330279857566946,
+        "splitHalfPlayers": 20960,
+        "verdict": "separates",
+        "verdictReason": "χ²/df = 26.461 (z = 2239.7), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 14.5pp — real variation beyond what each player's own n explains.",
+        "sweep": {
+          "5": {
+            "players": 25014,
+            "chi2PerDf": 19.356722058586787,
+            "z": 2052.9184942212723
+          },
+          "20": {
+            "players": 15475,
+            "chi2PerDf": 26.461491594989887,
+            "z": 2239.6707237773744
+          },
+          "50": {
+            "players": 7970,
+            "chi2PerDf": 36.7812761727724,
+            "z": 2258.759483065994
+          }
+        }
+      },
+      "threeBetRate": {
+        "label": "3-bet rate",
+        "role": "candidate",
+        "conditioning": "preflop decision · exactly one raise so far",
+        "numerator": "actor raises",
+        "evalK": 46410,
+        "evalN": 1158562,
+        "evalRate": 0.04005827914259228,
+        "poolRate": 0.040128080949170676,
+        "players": 10552,
+        "obsPerPlayerMedian": 43.5,
+        "obsPerPlayerMean": 96.95327899924185,
+        "chi2PerDf": 2.117858968746454,
+        "z": 81.19689257638083,
+        "df": 10552,
+        "betweenPlayerSd": 0.021183339975319605,
+        "chi2PerDfInSample": 2.153883332234568,
+        "splitHalfReliability": 0.3313849518781536,
+        "splitHalfPlayers": 16493,
+        "verdict": "separates",
+        "verdictReason": "χ²/df = 2.118 (z = 81.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 2.1pp — real variation beyond what each player's own n explains.",
+        "sweep": {
+          "5": {
+            "players": 21948,
+            "chi2PerDf": 1.7383144894203408,
+            "z": 77.34350860124407
+          },
+          "20": {
+            "players": 10552,
+            "chi2PerDf": 2.117858968746454,
+            "z": 81.19689257638083
+          },
+          "50": {
+            "players": 4649,
+            "chi2PerDf": 2.782660968228975,
+            "z": 85.9475558507373
+          }
+        }
+      },
+      "cbetRate": {
+        "label": "c-bet rate",
+        "role": "candidate",
+        "conditioning": "flop · actor was last preflop raiser · no flop bet before them",
+        "numerator": "actor bets",
+        "evalK": 100303,
+        "evalN": 149477,
+        "evalRate": 0.6710263117402677,
+        "poolRate": 0.671750421111735,
+        "players": 1607,
+        "obsPerPlayerMedian": 35,
+        "obsPerPlayerMean": 50.29807093963908,
+        "chi2PerDf": 4.539962581220381,
+        "z": 100.34404682849858,
+        "df": 1607,
+        "betweenPlayerSd": 0.12583180762393095,
+        "chi2PerDfInSample": 4.533273184239029,
+        "splitHalfReliability": 0.6175379522989751,
+        "splitHalfPlayers": 3330,
+        "verdict": "separates",
+        "verdictReason": "χ²/df = 4.540 (z = 100.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 12.6pp — real variation beyond what each player's own n explains.",
+        "sweep": {
+          "5": {
+            "players": 6642,
+            "chi2PerDf": 2.36375841542014,
+            "z": 78.59083107401743
+          },
+          "20": {
+            "players": 1607,
+            "chi2PerDf": 4.539962581220381,
+            "z": 100.34404682849858
+          },
+          "50": {
+            "players": 495,
+            "chi2PerDf": 7.242063801276316,
+            "z": 98.20097618431816
+          }
+        }
+      },
+      "flopBetFreq": {
+        "label": "flop bet frequency (§11.8 control)",
+        "role": "control",
+        "conditioning": "flop decision · nothing owed",
+        "numerator": "actor bets",
+        "evalK": 206852,
+        "evalN": 569000,
+        "evalRate": 0.3635360281195079,
+        "poolRate": 0.36251142490092364,
+        "players": 7370,
+        "obsPerPlayerMedian": 37,
+        "obsPerPlayerMean": 57.94979647218453,
+        "chi2PerDf": 4.314432411728153,
+        "z": 201.19997080244184,
+        "df": 7370,
+        "betweenPlayerSd": 0.11597264107263623,
+        "chi2PerDfInSample": 4.316290079701908,
+        "splitHalfReliability": 0.6031425248682454,
+        "splitHalfPlayers": 13273,
+        "verdict": "separates",
+        "verdictReason": "χ²/df = 4.314 (z = 201.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.6pp — real variation beyond what each player's own n explains.",
+        "sweep": {
+          "5": {
+            "players": 19320,
+            "chi2PerDf": 2.686808158253306,
+            "z": 165.78844419368963
+          },
+          "20": {
+            "players": 7370,
+            "chi2PerDf": 4.314432411728153,
+            "z": 201.19997080244184
+          },
+          "50": {
+            "players": 2546,
+            "chi2PerDf": 6.558161071564004,
+            "z": 198.31032669846832
+          }
+        }
+      },
+      "flopBetFreqNonPfa": {
+        "label": "flop bet frequency, non-aggressor (disjoint control)",
+        "role": "control",
+        "conditioning": "flop decision · nothing owed · actor was NOT the preflop raiser",
+        "numerator": "actor bets",
+        "evalK": 106549,
+        "evalN": 419523,
+        "evalRate": 0.2539765400228355,
+        "poolRate": 0.2544813940316732,
+        "players": 5774,
+        "obsPerPlayerMedian": 34,
+        "obsPerPlayerMean": 48.69189470038102,
+        "chi2PerDf": 4.578255239199619,
+        "z": 192.26255427839672,
+        "df": 5774,
+        "betweenPlayerSd": 0.1193082925929299,
+        "chi2PerDfInSample": 4.712354225689723,
+        "splitHalfReliability": 0.6209721905130003,
+        "splitHalfPlayers": 11198,
+        "verdict": "separates",
+        "verdictReason": "χ²/df = 4.578 (z = 192.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.9pp — real variation beyond what each player's own n explains.",
+        "sweep": {
+          "5": {
+            "players": 17443,
+            "chi2PerDf": 2.7874818756147426,
+            "z": 166.9310939593398
+          },
+          "20": {
+            "players": 5774,
+            "chi2PerDf": 4.578255239199619,
+            "z": 192.26255427839672
+          },
+          "50": {
+            "players": 1670,
+            "chi2PerDf": 7.019369076738146,
+            "z": 173.93789526282893
+          }
+        }
+      }
+    },
+    "correlations": [
+      {
+        "a": "limpRate",
+        "b": "threeBetRate",
+        "overlapping": false,
+        "players": 10487,
+        "pearson": -0.0932115721802484,
+        "spearman": -0.18183658723223325,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.3313849518781536,
+        "disattenuated": -0.17740818205840814,
+        "disattenuatedUncapped": -0.17740818205840814,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "cbetRate",
+        "overlapping": false,
+        "players": 1607,
+        "pearson": -0.1382583914586284,
+        "spearman": -0.1982855716936186,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6175379522989751,
+        "disattenuated": -0.19276575215877848,
+        "disattenuatedUncapped": -0.19276575215877848,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "flopBetFreq",
+        "overlapping": false,
+        "players": 7362,
+        "pearson": -0.12382591520861305,
+        "spearman": -0.16133782885531683,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": -0.17469150074367257,
+        "disattenuatedUncapped": -0.17469150074367257,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5770,
+        "pearson": 0.33057727570665374,
+        "spearman": 0.35035833616976736,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.4596286849741254,
+        "disattenuatedUncapped": 0.4596286849741254,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "cbetRate",
+        "overlapping": false,
+        "players": 1607,
+        "pearson": 0.1866963242948319,
+        "spearman": 0.20628950126858794,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6175379522989751,
+        "disattenuated": 0.41270292720345303,
+        "disattenuatedUncapped": 0.41270292720345303,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "flopBetFreq",
+        "overlapping": false,
+        "players": 7054,
+        "pearson": 0.23044376600731362,
+        "spearman": 0.22893728186300716,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": 0.515452437317102,
+        "disattenuatedUncapped": 0.515452437317102,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5619,
+        "pearson": 0.04607539038108888,
+        "spearman": -0.013373756238360133,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.10157025814985442,
+        "disattenuatedUncapped": 0.10157025814985442,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "cbetRate",
+        "b": "flopBetFreq",
+        "overlapping": true,
+        "players": 1607,
+        "pearson": 0.6743430710644271,
+        "spearman": 0.6629750887652854,
+        "reliabilityA": 0.6175379522989751,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": 1,
+        "disattenuatedUncapped": 1.1049410231042243,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "cbetRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 1542,
+        "pearson": 0.17987681245908835,
+        "spearman": 0.1386437856140547,
+        "reliabilityA": 0.6175379522989751,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.29047401029446634,
+        "disattenuatedUncapped": 0.29047401029446634,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "flopBetFreq",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5774,
+        "pearson": 0.7890476366876449,
+        "spearman": 0.7275393339932499,
+        "reliabilityA": 0.6031425248682454,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 1,
+        "disattenuatedUncapped": 1.289309471001572,
+        "disattenuationBlocked": null
+      }
+    ],
+    "ordering": {
+      "thresholds": [
+        {
+          "axis": "limpRate",
+          "threshold": 0.17723839730876154,
+          "direction": "lower"
+        },
+        {
+          "axis": "threeBetRate",
+          "threshold": 0.033205515114763315,
+          "direction": "higher"
+        },
+        {
+          "axis": "cbetRate",
+          "threshold": 0.6772712807711075,
+          "direction": "higher"
+        }
+      ],
+      "pairwise": [
+        {
+          "labelA": "limpRate",
+          "labelB": "threeBetRate",
+          "n": 10487,
+          "both": 3124,
+          "aOnly": 2470,
+          "bOnly": 2113,
+          "neither": 2780,
+          "pAgivenB": 0.5965247278976513,
+          "pBgivenA": 0.5584554880228817,
+          "marginalA": 0.5334223324115571,
+          "marginalB": 0.49938018499094117,
+          "expectedBothUnderIndependence": 2793.5327548393248,
+          "phi": 0.12633099320657126
+        },
+        {
+          "labelA": "limpRate",
+          "labelB": "cbetRate",
+          "n": 1607,
+          "both": 745,
+          "aOnly": 709,
+          "bOnly": 58,
+          "neither": 95,
+          "pAgivenB": 0.9277708592777086,
+          "pBgivenA": 0.5123796423658872,
+          "marginalA": 0.9047915370255134,
+          "marginalB": 0.49968886123210954,
+          "expectedBothUnderIndependence": 726.5476042314873,
+          "phi": 0.07824469858574808
+        },
+        {
+          "labelA": "threeBetRate",
+          "labelB": "cbetRate",
+          "n": 1607,
+          "both": 613,
+          "aOnly": 490,
+          "bOnly": 190,
+          "neither": 314,
+          "pAgivenB": 0.763387297633873,
+          "pBgivenA": 0.5557570262919311,
+          "marginalA": 0.686372121966397,
+          "marginalB": 0.49968886123210954,
+          "expectedBothUnderIndependence": 551.1568139390167,
+          "phi": 0.1658895048821372
+        }
+      ],
+      "nesting": {
+        "labels": [
+          "limpRate",
+          "threeBetRate",
+          "cbetRate"
+        ],
+        "players": 1607,
+        "nested": 1325,
+        "violations": 282,
+        "nestedRate": 0.8245177349097698,
+        "violationRate": 0.17548226509023024,
+        "marginals": [
+          0.9047915370255134,
+          0.686372121966397,
+          0.49968886123210954
+        ],
+        "expectedNestedRateUnderIndependence": 0.7779352080137885,
+        "excessOverIndependence": 0.0465825268959813,
+        "equalMarginalBaseline": 0.5,
+        "patternCounts": {
+          "100": 271,
+          "101": 172,
+          "110": 438,
+          "111": 573,
+          "010": 52,
+          "000": 43,
+          "011": 40,
+          "001": 18
+        }
+      }
+    },
+    "leakage": {
+      "poolPct": 50,
+      "referenceMode": "disabled",
+      "evalPlayersChecked": 29953,
+      "decisionsChecked": 0,
+      "statWindowsChecked": 65254
+    }
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "admissible": true,
+    "blockers": [],
+    "warnings": [
+      {
+        "code": "LOW_SPLIT_HALF_RELIABILITY",
+        "detail": "threeBetRate split-half reliability is 0.331 over 16493 players. Whatever between-player variance the χ² sees, it does not re-measure on the same player across time — so it is not yet a trait a per-villain channel could read."
+      },
+      {
+        "code": "ONLINE_2009_NOT_LIVE",
+        "detail": "Top-ranked suspected-fault entry. Corpus is online 2009 50NL (SRC-012); the founder plays live 9-handed 1/2–1/3 (SRC-014). Limping in particular is far more common live, so the limp axis is the one most likely to behave differently there. No live sample was available to this run — SRC-014 lives in the app's IndexedDB and is not reachable from a node script — so the live half of the accept criterion is UNMET, not answered."
+      }
+    ],
+    "clusters": 7370
+  },
+  "manifest": {
+    "engineCommit": "cb0820333b39e428995464c70c0a8d6e71883be3",
+    "engineDirty": true,
+    "dealBookHash": "sha256:c0043f8b0b47be1d1ea36ee4c2c5cfafa401264145ec8df68adac3e5cd1a6df9",
+    "fieldVersion": "handhq-2009-online",
+    "partition": "pool/eval @ poolPct=50, FNV-1a over player-site id; walk-forward = per-player temporal split-half (early window ends where late window begins)",
+    "seeds": {},
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05
+    },
+    "disclaimerRegisterVersion": "FR-1+a6bbfb7d1491",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null
+}

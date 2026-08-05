@@ -1,0 +1,1041 @@
+{
+  "dealBook": {
+    "schemaVersion": 1,
+    "dealBookId": "handhq-allsites-allstakes-c0043f8b",
+    "kind": "corpus-slice",
+    "identity": "path+size",
+    "sliceSpec": {
+      "sites": null,
+      "stakes": null,
+      "maxFiles": null
+    },
+    "memberCount": 1756,
+    "seeds": {},
+    "contentHash": "sha256:c0043f8b0b47be1d1ea36ee4c2c5cfafa401264145ec8df68adac3e5cd1a6df9"
+  },
+  "analysis": {
+    "handsSeen": 1070493,
+    "poolPct": 50,
+    "priorWeight": 10,
+    "primaryMinN": 20,
+    "minNSweep": [
+      5,
+      20,
+      50
+    ],
+    "controlAxis": "flopBetFreq",
+    "axes": {
+      "limpRate": {
+        "id": "limpRate",
+        "label": "limp rate",
+        "role": "candidate",
+        "rung": 1,
+        "conditioning": "preflop decision · no raise yet · actor is not the BB",
+        "numerator": "actor calls (open-limp, over-limp, or SB complete)",
+        "studiedDirection": "lower",
+        "poolPlayers": 29353,
+        "evalPlayers": 29436,
+        "poolRate": 0.1286417026309334,
+        "evalRate": 0.1255709442062956,
+        "evalK": 281655,
+        "evalN": 2242995,
+        "primaryMinN": 20,
+        "sweep": {
+          "5": {
+            "minN": 5,
+            "poolAnchored": {
+              "players": 25014,
+              "decisions": 2232279,
+              "obsPerPlayerMedian": 28,
+              "obsPerPlayerMean": 89.2411849364356,
+              "commonRate": 0.1286417026309334,
+              "chi2": 484189.04557348986,
+              "df": 25014,
+              "chi2PerDf": 19.356722058586787,
+              "z": 2052.9184942212723,
+              "betweenPlayerSd": 0.15270426808046425,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 25014,
+              "decisions": 2232279,
+              "obsPerPlayerMedian": 28,
+              "obsPerPlayerMean": 89.2411849364356,
+              "commonRate": 0.12440246044513253,
+              "chi2": 497896.2795686652,
+              "df": 25013,
+              "chi2PerDf": 19.905500322578867,
+              "z": 2114.2486838623727,
+              "betweenPlayerSd": 0.15276224521373152,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "20": {
+            "minN": 20,
+            "poolAnchored": {
+              "players": 15475,
+              "decisions": 2127080,
+              "obsPerPlayerMedian": 51,
+              "obsPerPlayerMean": 137.45266558966074,
+              "commonRate": 0.1286417026309334,
+              "chi2": 409491.5824324685,
+              "df": 15475,
+              "chi2PerDf": 26.461491594989887,
+              "z": 2239.6707237773744,
+              "betweenPlayerSd": 0.1446239384865753,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 15475,
+              "decisions": 2127080,
+              "obsPerPlayerMedian": 51,
+              "obsPerPlayerMean": 137.45266558966074,
+              "commonRate": 0.1152979671662561,
+              "chi2": 446279.10554559296,
+              "df": 15474,
+              "chi2PerDf": 28.840578101692707,
+              "z": 2448.863326887604,
+              "betweenPlayerSd": 0.1442589987573722,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "50": {
+            "minN": 50,
+            "poolAnchored": {
+              "players": 7970,
+              "decisions": 1889669,
+              "obsPerPlayerMedian": 106,
+              "obsPerPlayerMean": 237.09774153074028,
+              "commonRate": 0.1286417026309334,
+              "chi2": 293146.77109699603,
+              "df": 7970,
+              "chi2PerDf": 36.7812761727724,
+              "z": 2258.759483065994,
+              "betweenPlayerSd": 0.1303380658334042,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 7970,
+              "decisions": 1889669,
+              "obsPerPlayerMedian": 106,
+              "obsPerPlayerMean": 237.09774153074028,
+              "commonRate": 0.09556488464381857,
+              "chi2": 356259.01880439644,
+              "df": 7969,
+              "chi2PerDf": 44.70561159548205,
+              "z": 2758.8247755564407,
+              "betweenPlayerSd": 0.12648315546275557,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          }
+        },
+        "primary": {
+          "minN": 20,
+          "poolAnchored": {
+            "players": 15475,
+            "decisions": 2127080,
+            "obsPerPlayerMedian": 51,
+            "obsPerPlayerMean": 137.45266558966074,
+            "commonRate": 0.1286417026309334,
+            "chi2": 409491.5824324685,
+            "df": 15475,
+            "chi2PerDf": 26.461491594989887,
+            "z": 2239.6707237773744,
+            "betweenPlayerSd": 0.1446239384865753,
+            "rateEstimatedInSample": false,
+            "note": null
+          },
+          "inSample": {
+            "players": 15475,
+            "decisions": 2127080,
+            "obsPerPlayerMedian": 51,
+            "obsPerPlayerMean": 137.45266558966074,
+            "commonRate": 0.1152979671662561,
+            "chi2": 446279.10554559296,
+            "df": 15474,
+            "chi2PerDf": 28.840578101692707,
+            "z": 2448.863326887604,
+            "betweenPlayerSd": 0.1442589987573722,
+            "rateEstimatedInSample": true,
+            "note": null
+          }
+        },
+        "reliability": {
+          "players": 20960,
+          "minHalfN": 5,
+          "halfCorrelation": 0.7138371576946952,
+          "reliability": 0.8330279857566946
+        },
+        "shrunkPlayers": 15475,
+        "verdict": {
+          "verdict": "separates",
+          "reason": "χ²/df = 26.461 (z = 2239.7), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 14.5pp — real variation beyond what each player's own n explains.",
+          "powered": true
+        }
+      },
+      "threeBetRate": {
+        "id": "threeBetRate",
+        "label": "3-bet rate",
+        "role": "candidate",
+        "rung": 2,
+        "conditioning": "preflop decision · exactly one raise so far",
+        "numerator": "actor raises",
+        "studiedDirection": "higher",
+        "poolPlayers": 28591,
+        "evalPlayers": 28751,
+        "poolRate": 0.040128080949170676,
+        "evalRate": 0.04005827914259228,
+        "evalK": 46410,
+        "evalN": 1158562,
+        "primaryMinN": 20,
+        "sweep": {
+          "5": {
+            "minN": 5,
+            "poolAnchored": {
+              "players": 21948,
+              "decisions": 1142639,
+              "obsPerPlayerMedian": 19,
+              "obsPerPlayerMean": 52.06119008565701,
+              "commonRate": 0.040128080949170676,
+              "chi2": 38152.52641379764,
+              "df": 21948,
+              "chi2PerDf": 1.7383144894203408,
+              "z": 77.34350860124407,
+              "betweenPlayerSd": 0.02359967749952406,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 21948,
+              "decisions": 1142639,
+              "obsPerPlayerMedian": 19,
+              "obsPerPlayerMean": 52.06119008565701,
+              "commonRate": 0.039766715471815685,
+              "chi2": 38480.827528302754,
+              "df": 21947,
+              "chi2PerDf": 1.7533525096050828,
+              "z": 78.91704651665724,
+              "betweenPlayerSd": 0.023734433174526132,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "20": {
+            "minN": 20,
+            "poolAnchored": {
+              "players": 10552,
+              "decisions": 1023051,
+              "obsPerPlayerMedian": 43.5,
+              "obsPerPlayerMean": 96.95327899924185,
+              "commonRate": 0.040128080949170676,
+              "chi2": 22347.647838212582,
+              "df": 10552,
+              "chi2PerDf": 2.117858968746454,
+              "z": 81.19689257638083,
+              "betweenPlayerSd": 0.021183339975319605,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 10552,
+              "decisions": 1023051,
+              "obsPerPlayerMedian": 43.5,
+              "obsPerPlayerMean": 96.95327899924185,
+              "commonRate": 0.03940663759675715,
+              "chi2": 22725.623038406924,
+              "df": 10551,
+              "chi2PerDf": 2.153883332234568,
+              "z": 83.80958954754736,
+              "betweenPlayerSd": 0.02133374520719845,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "50": {
+            "minN": 50,
+            "poolAnchored": {
+              "players": 4649,
+              "decisions": 841166,
+              "obsPerPlayerMedian": 98,
+              "obsPerPlayerMean": 180.93482469348248,
+              "commonRate": 0.040128080949170676,
+              "chi2": 12936.590841296505,
+              "df": 4649,
+              "chi2PerDf": 2.782660968228975,
+              "z": 85.9475558507373,
+              "betweenPlayerSd": 0.019534738592919702,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 4649,
+              "decisions": 841166,
+              "obsPerPlayerMedian": 98,
+              "obsPerPlayerMean": 180.93482469348248,
+              "commonRate": 0.03961881483559725,
+              "chi2": 13090.197983102316,
+              "df": 4648,
+              "chi2PerDf": 2.8163076555727877,
+              "z": 87.56034726567124,
+              "betweenPlayerSd": 0.01959463685345871,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          }
+        },
+        "primary": {
+          "minN": 20,
+          "poolAnchored": {
+            "players": 10552,
+            "decisions": 1023051,
+            "obsPerPlayerMedian": 43.5,
+            "obsPerPlayerMean": 96.95327899924185,
+            "commonRate": 0.040128080949170676,
+            "chi2": 22347.647838212582,
+            "df": 10552,
+            "chi2PerDf": 2.117858968746454,
+            "z": 81.19689257638083,
+            "betweenPlayerSd": 0.021183339975319605,
+            "rateEstimatedInSample": false,
+            "note": null
+          },
+          "inSample": {
+            "players": 10552,
+            "decisions": 1023051,
+            "obsPerPlayerMedian": 43.5,
+            "obsPerPlayerMean": 96.95327899924185,
+            "commonRate": 0.03940663759675715,
+            "chi2": 22725.623038406924,
+            "df": 10551,
+            "chi2PerDf": 2.153883332234568,
+            "z": 83.80958954754736,
+            "betweenPlayerSd": 0.02133374520719845,
+            "rateEstimatedInSample": true,
+            "note": null
+          }
+        },
+        "reliability": {
+          "players": 16493,
+          "minHalfN": 5,
+          "halfCorrelation": 0.19859880339156272,
+          "reliability": 0.3313849518781536
+        },
+        "shrunkPlayers": 10552,
+        "verdict": {
+          "verdict": "separates",
+          "reason": "χ²/df = 2.118 (z = 81.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 2.1pp — real variation beyond what each player's own n explains.",
+          "powered": true
+        }
+      },
+      "cbetRate": {
+        "id": "cbetRate",
+        "label": "c-bet rate",
+        "role": "candidate",
+        "rung": 3,
+        "conditioning": "flop · actor was last preflop raiser · no flop bet before them",
+        "numerator": "actor bets",
+        "studiedDirection": "higher",
+        "poolPlayers": 18950,
+        "evalPlayers": 19129,
+        "poolRate": 0.671750421111735,
+        "evalRate": 0.6710263117402677,
+        "evalK": 100303,
+        "evalN": 149477,
+        "primaryMinN": 20,
+        "sweep": {
+          "5": {
+            "minN": 5,
+            "poolAnchored": {
+              "players": 6642,
+              "decisions": 125323,
+              "obsPerPlayerMedian": 10,
+              "obsPerPlayerMean": 18.868262571514602,
+              "commonRate": 0.671750421111735,
+              "chi2": 15700.08339522057,
+              "df": 6642,
+              "chi2PerDf": 2.36375841542014,
+              "z": 78.59083107401743,
+              "betweenPlayerSd": 0.1297279697405868,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 6642,
+              "decisions": 125323,
+              "obsPerPlayerMedian": 10,
+              "obsPerPlayerMean": 18.868262571514602,
+              "commonRate": 0.6695099861956704,
+              "chi2": 15642.989743102255,
+              "df": 6641,
+              "chi2PerDf": 2.3555172026957165,
+              "z": 78.11002482161142,
+              "betweenPlayerSd": 0.12954248836860788,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "20": {
+            "minN": 20,
+            "poolAnchored": {
+              "players": 1607,
+              "decisions": 80829,
+              "obsPerPlayerMedian": 35,
+              "obsPerPlayerMean": 50.29807093963908,
+              "commonRate": 0.671750421111735,
+              "chi2": 7295.719868021153,
+              "df": 1607,
+              "chi2PerDf": 4.539962581220381,
+              "z": 100.34404682849858,
+              "betweenPlayerSd": 0.12583180762393095,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 1607,
+              "decisions": 80829,
+              "obsPerPlayerMedian": 35,
+              "obsPerPlayerMean": 50.29807093963908,
+              "commonRate": 0.6704524366254686,
+              "chi2": 7280.43673388788,
+              "df": 1606,
+              "chi2PerDf": 4.533273184239029,
+              "z": 100.12326190128582,
+              "betweenPlayerSd": 0.12578916846839422,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "50": {
+            "minN": 50,
+            "poolAnchored": {
+              "players": 495,
+              "decisions": 47287,
+              "obsPerPlayerMedian": 79,
+              "obsPerPlayerMean": 95.52929292929294,
+              "commonRate": 0.671750421111735,
+              "chi2": 3584.8215816317766,
+              "df": 495,
+              "chi2PerDf": 7.242063801276316,
+              "z": 98.20097618431816,
+              "betweenPlayerSd": 0.12066656765246521,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 495,
+              "decisions": 47287,
+              "obsPerPlayerMedian": 79,
+              "obsPerPlayerMean": 95.52929292929294,
+              "commonRate": 0.6722777930509443,
+              "chi2": 3587.7139408352955,
+              "df": 494,
+              "chi2PerDf": 7.262578827601812,
+              "z": 98.42415207796226,
+              "betweenPlayerSd": 0.12067335577366509,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          }
+        },
+        "primary": {
+          "minN": 20,
+          "poolAnchored": {
+            "players": 1607,
+            "decisions": 80829,
+            "obsPerPlayerMedian": 35,
+            "obsPerPlayerMean": 50.29807093963908,
+            "commonRate": 0.671750421111735,
+            "chi2": 7295.719868021153,
+            "df": 1607,
+            "chi2PerDf": 4.539962581220381,
+            "z": 100.34404682849858,
+            "betweenPlayerSd": 0.12583180762393095,
+            "rateEstimatedInSample": false,
+            "note": null
+          },
+          "inSample": {
+            "players": 1607,
+            "decisions": 80829,
+            "obsPerPlayerMedian": 35,
+            "obsPerPlayerMean": 50.29807093963908,
+            "commonRate": 0.6704524366254686,
+            "chi2": 7280.43673388788,
+            "df": 1606,
+            "chi2PerDf": 4.533273184239029,
+            "z": 100.12326190128582,
+            "betweenPlayerSd": 0.12578916846839422,
+            "rateEstimatedInSample": true,
+            "note": null
+          }
+        },
+        "reliability": {
+          "players": 3330,
+          "minHalfN": 5,
+          "halfCorrelation": 0.4466943257689528,
+          "reliability": 0.6175379522989751
+        },
+        "shrunkPlayers": 1607,
+        "verdict": {
+          "verdict": "separates",
+          "reason": "χ²/df = 4.540 (z = 100.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 12.6pp — real variation beyond what each player's own n explains.",
+          "powered": true
+        }
+      },
+      "flopBetFreq": {
+        "id": "flopBetFreq",
+        "label": "flop bet frequency (§11.8 control)",
+        "role": "control",
+        "rung": null,
+        "conditioning": "flop decision · nothing owed",
+        "numerator": "actor bets",
+        "studiedDirection": "higher",
+        "poolPlayers": 27835,
+        "evalPlayers": 27936,
+        "poolRate": 0.36251142490092364,
+        "evalRate": 0.3635360281195079,
+        "evalK": 206852,
+        "evalN": 569000,
+        "primaryMinN": 20,
+        "sweep": {
+          "5": {
+            "minN": 5,
+            "poolAnchored": {
+              "players": 19320,
+              "decisions": 549141,
+              "obsPerPlayerMedian": 15,
+              "obsPerPlayerMean": 28.423447204968944,
+              "commonRate": 0.36251142490092364,
+              "chi2": 51909.133617453874,
+              "df": 19320,
+              "chi2PerDf": 2.686808158253306,
+              "z": 165.78844419368963,
+              "betweenPlayerSd": 0.119225423988372,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 19320,
+              "decisions": 549141,
+              "obsPerPlayerMedian": 15,
+              "obsPerPlayerMean": 28.423447204968944,
+              "commonRate": 0.3628521636519582,
+              "chi2": 51887.84651354705,
+              "df": 19319,
+              "chi2PerDf": 2.685845360191886,
+              "z": 165.6895271006363,
+              "betweenPlayerSd": 0.11921060777866435,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "20": {
+            "minN": 20,
+            "poolAnchored": {
+              "players": 7370,
+              "decisions": 427090,
+              "obsPerPlayerMedian": 37,
+              "obsPerPlayerMean": 57.94979647218453,
+              "commonRate": 0.36251142490092364,
+              "chi2": 31797.366874436484,
+              "df": 7370,
+              "chi2PerDf": 4.314432411728153,
+              "z": 201.19997080244184,
+              "betweenPlayerSd": 0.11597264107263623,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 7370,
+              "decisions": 427090,
+              "obsPerPlayerMedian": 37,
+              "obsPerPlayerMean": 57.94979647218453,
+              "commonRate": 0.36226088178135757,
+              "chi2": 31806.74159732336,
+              "df": 7369,
+              "chi2PerDf": 4.316290079701908,
+              "z": 201.29908100823772,
+              "betweenPlayerSd": 0.11597758590011503,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "50": {
+            "minN": 50,
+            "poolAnchored": {
+              "players": 2546,
+              "decisions": 280637,
+              "obsPerPlayerMedian": 80,
+              "obsPerPlayerMean": 110.22663000785546,
+              "commonRate": 0.36251142490092364,
+              "chi2": 16697.078088201954,
+              "df": 2546,
+              "chi2PerDf": 6.558161071564004,
+              "z": 198.31032669846832,
+              "betweenPlayerSd": 0.1084422073117881,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 2546,
+              "decisions": 280637,
+              "obsPerPlayerMedian": 80,
+              "obsPerPlayerMean": 110.22663000785546,
+              "commonRate": 0.36364770147913494,
+              "chi2": 16673.060847171157,
+              "df": 2545,
+              "chi2PerDf": 6.551300922267645,
+              "z": 198.0266613498731,
+              "betweenPlayerSd": 0.10842306320692294,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          }
+        },
+        "primary": {
+          "minN": 20,
+          "poolAnchored": {
+            "players": 7370,
+            "decisions": 427090,
+            "obsPerPlayerMedian": 37,
+            "obsPerPlayerMean": 57.94979647218453,
+            "commonRate": 0.36251142490092364,
+            "chi2": 31797.366874436484,
+            "df": 7370,
+            "chi2PerDf": 4.314432411728153,
+            "z": 201.19997080244184,
+            "betweenPlayerSd": 0.11597264107263623,
+            "rateEstimatedInSample": false,
+            "note": null
+          },
+          "inSample": {
+            "players": 7370,
+            "decisions": 427090,
+            "obsPerPlayerMedian": 37,
+            "obsPerPlayerMean": 57.94979647218453,
+            "commonRate": 0.36226088178135757,
+            "chi2": 31806.74159732336,
+            "df": 7369,
+            "chi2PerDf": 4.316290079701908,
+            "z": 201.29908100823772,
+            "betweenPlayerSd": 0.11597758590011503,
+            "rateEstimatedInSample": true,
+            "note": null
+          }
+        },
+        "reliability": {
+          "players": 13273,
+          "minHalfN": 5,
+          "halfCorrelation": 0.43178530065234866,
+          "reliability": 0.6031425248682454
+        },
+        "shrunkPlayers": 7370,
+        "verdict": {
+          "verdict": "separates",
+          "reason": "χ²/df = 4.314 (z = 201.2), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.6pp — real variation beyond what each player's own n explains.",
+          "powered": true
+        }
+      },
+      "flopBetFreqNonPfa": {
+        "id": "flopBetFreqNonPfa",
+        "label": "flop bet frequency, non-aggressor (disjoint control)",
+        "role": "control",
+        "rung": null,
+        "conditioning": "flop decision · nothing owed · actor was NOT the preflop raiser",
+        "numerator": "actor bets",
+        "studiedDirection": "higher",
+        "poolPlayers": 27097,
+        "evalPlayers": 27262,
+        "poolRate": 0.2544813940316732,
+        "evalRate": 0.2539765400228355,
+        "evalK": 106549,
+        "evalN": 419523,
+        "primaryMinN": 20,
+        "sweep": {
+          "5": {
+            "minN": 5,
+            "poolAnchored": {
+              "players": 17443,
+              "decisions": 397182,
+              "obsPerPlayerMedian": 13,
+              "obsPerPlayerMean": 22.770280341684344,
+              "commonRate": 0.2544813940316732,
+              "chi2": 48622.04635634796,
+              "df": 17443,
+              "chi2PerDf": 2.7874818756147426,
+              "z": 166.9310939593398,
+              "betweenPlayerSd": 0.12480904886077789,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 17443,
+              "decisions": 397182,
+              "obsPerPlayerMedian": 13,
+              "obsPerPlayerMean": 22.770280341684344,
+              "commonRate": 0.2513860144719549,
+              "chi2": 48997.00156539456,
+              "df": 17442,
+              "chi2PerDf": 2.8091389499710218,
+              "z": 168.94878276914554,
+              "betweenPlayerSd": 0.12505012916013544,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "20": {
+            "minN": 20,
+            "poolAnchored": {
+              "players": 5774,
+              "decisions": 281147,
+              "obsPerPlayerMedian": 34,
+              "obsPerPlayerMean": 48.69189470038102,
+              "commonRate": 0.2544813940316732,
+              "chi2": 26434.8457511386,
+              "df": 5774,
+              "chi2PerDf": 4.578255239199619,
+              "z": 192.26255427839672,
+              "betweenPlayerSd": 0.1193082925929299,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 5774,
+              "decisions": 281147,
+              "obsPerPlayerMedian": 34,
+              "obsPerPlayerMean": 48.69189470038102,
+              "commonRate": 0.2389888563633971,
+              "chi2": 27204.42094490677,
+              "df": 5773,
+              "chi2PerDf": 4.712354225689723,
+              "z": 199.45052783504974,
+              "betweenPlayerSd": 0.11897042322139435,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          },
+          "50": {
+            "minN": 50,
+            "poolAnchored": {
+              "players": 1670,
+              "decisions": 157597,
+              "obsPerPlayerMedian": 74,
+              "obsPerPlayerMean": 94.3694610778443,
+              "commonRate": 0.2544813940316732,
+              "chi2": 11722.346358152703,
+              "df": 1670,
+              "chi2PerDf": 7.019369076738146,
+              "z": 173.93789526282893,
+              "betweenPlayerSd": 0.11059368301407317,
+              "rateEstimatedInSample": false,
+              "note": null
+            },
+            "inSample": {
+              "players": 1670,
+              "decisions": 157597,
+              "obsPerPlayerMedian": 74,
+              "obsPerPlayerMean": 94.3694610778443,
+              "commonRate": 0.2204356681916534,
+              "chi2": 11878.801846267183,
+              "df": 1669,
+              "chi2PerDf": 7.1173168641504985,
+              "z": 176.71529788590053,
+              "betweenPlayerSd": 0.10607026151606029,
+              "rateEstimatedInSample": true,
+              "note": null
+            }
+          }
+        },
+        "primary": {
+          "minN": 20,
+          "poolAnchored": {
+            "players": 5774,
+            "decisions": 281147,
+            "obsPerPlayerMedian": 34,
+            "obsPerPlayerMean": 48.69189470038102,
+            "commonRate": 0.2544813940316732,
+            "chi2": 26434.8457511386,
+            "df": 5774,
+            "chi2PerDf": 4.578255239199619,
+            "z": 192.26255427839672,
+            "betweenPlayerSd": 0.1193082925929299,
+            "rateEstimatedInSample": false,
+            "note": null
+          },
+          "inSample": {
+            "players": 5774,
+            "decisions": 281147,
+            "obsPerPlayerMedian": 34,
+            "obsPerPlayerMean": 48.69189470038102,
+            "commonRate": 0.2389888563633971,
+            "chi2": 27204.42094490677,
+            "df": 5773,
+            "chi2PerDf": 4.712354225689723,
+            "z": 199.45052783504974,
+            "betweenPlayerSd": 0.11897042322139435,
+            "rateEstimatedInSample": true,
+            "note": null
+          }
+        },
+        "reliability": {
+          "players": 11198,
+          "minHalfN": 5,
+          "halfCorrelation": 0.450297076129308,
+          "reliability": 0.6209721905130003
+        },
+        "shrunkPlayers": 5774,
+        "verdict": {
+          "verdict": "separates",
+          "reason": "χ²/df = 4.578 (z = 192.3), against the control's 4.314 (z = 201.2) in this same run. Between-player SD ≈ 11.9pp — real variation beyond what each player's own n explains.",
+          "powered": true
+        }
+      }
+    },
+    "correlations": [
+      {
+        "a": "limpRate",
+        "b": "threeBetRate",
+        "overlapping": false,
+        "players": 10487,
+        "pearson": -0.0932115721802484,
+        "spearman": -0.18183658723223325,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.3313849518781536,
+        "disattenuated": -0.17740818205840814,
+        "disattenuatedUncapped": -0.17740818205840814,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "cbetRate",
+        "overlapping": false,
+        "players": 1607,
+        "pearson": -0.1382583914586284,
+        "spearman": -0.1982855716936186,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6175379522989751,
+        "disattenuated": -0.19276575215877848,
+        "disattenuatedUncapped": -0.19276575215877848,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "flopBetFreq",
+        "overlapping": false,
+        "players": 7362,
+        "pearson": -0.12382591520861305,
+        "spearman": -0.16133782885531683,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": -0.17469150074367257,
+        "disattenuatedUncapped": -0.17469150074367257,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "limpRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5770,
+        "pearson": 0.33057727570665374,
+        "spearman": 0.35035833616976736,
+        "reliabilityA": 0.8330279857566946,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.4596286849741254,
+        "disattenuatedUncapped": 0.4596286849741254,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "cbetRate",
+        "overlapping": false,
+        "players": 1607,
+        "pearson": 0.1866963242948319,
+        "spearman": 0.20628950126858794,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6175379522989751,
+        "disattenuated": 0.41270292720345303,
+        "disattenuatedUncapped": 0.41270292720345303,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "flopBetFreq",
+        "overlapping": false,
+        "players": 7054,
+        "pearson": 0.23044376600731362,
+        "spearman": 0.22893728186300716,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": 0.515452437317102,
+        "disattenuatedUncapped": 0.515452437317102,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "threeBetRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5619,
+        "pearson": 0.04607539038108888,
+        "spearman": -0.013373756238360133,
+        "reliabilityA": 0.3313849518781536,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.10157025814985442,
+        "disattenuatedUncapped": 0.10157025814985442,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "cbetRate",
+        "b": "flopBetFreq",
+        "overlapping": true,
+        "players": 1607,
+        "pearson": 0.6743430710644271,
+        "spearman": 0.6629750887652854,
+        "reliabilityA": 0.6175379522989751,
+        "reliabilityB": 0.6031425248682454,
+        "disattenuated": 1,
+        "disattenuatedUncapped": 1.1049410231042243,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "cbetRate",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 1542,
+        "pearson": 0.17987681245908835,
+        "spearman": 0.1386437856140547,
+        "reliabilityA": 0.6175379522989751,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 0.29047401029446634,
+        "disattenuatedUncapped": 0.29047401029446634,
+        "disattenuationBlocked": null
+      },
+      {
+        "a": "flopBetFreq",
+        "b": "flopBetFreqNonPfa",
+        "overlapping": false,
+        "players": 5774,
+        "pearson": 0.7890476366876449,
+        "spearman": 0.7275393339932499,
+        "reliabilityA": 0.6031425248682454,
+        "reliabilityB": 0.6209721905130003,
+        "disattenuated": 1,
+        "disattenuatedUncapped": 1.289309471001572,
+        "disattenuationBlocked": null
+      }
+    ],
+    "ordering": {
+      "thresholds": [
+        {
+          "axis": "limpRate",
+          "threshold": 0.17723839730876154,
+          "direction": "lower"
+        },
+        {
+          "axis": "threeBetRate",
+          "threshold": 0.033205515114763315,
+          "direction": "higher"
+        },
+        {
+          "axis": "cbetRate",
+          "threshold": 0.6772712807711075,
+          "direction": "higher"
+        }
+      ],
+      "pairwise": [
+        {
+          "labelA": "limpRate",
+          "labelB": "threeBetRate",
+          "n": 10487,
+          "both": 3124,
+          "aOnly": 2470,
+          "bOnly": 2113,
+          "neither": 2780,
+          "pAgivenB": 0.5965247278976513,
+          "pBgivenA": 0.5584554880228817,
+          "marginalA": 0.5334223324115571,
+          "marginalB": 0.49938018499094117,
+          "expectedBothUnderIndependence": 2793.5327548393248,
+          "phi": 0.12633099320657126
+        },
+        {
+          "labelA": "limpRate",
+          "labelB": "cbetRate",
+          "n": 1607,
+          "both": 745,
+          "aOnly": 709,
+          "bOnly": 58,
+          "neither": 95,
+          "pAgivenB": 0.9277708592777086,
+          "pBgivenA": 0.5123796423658872,
+          "marginalA": 0.9047915370255134,
+          "marginalB": 0.49968886123210954,
+          "expectedBothUnderIndependence": 726.5476042314873,
+          "phi": 0.07824469858574808
+        },
+        {
+          "labelA": "threeBetRate",
+          "labelB": "cbetRate",
+          "n": 1607,
+          "both": 613,
+          "aOnly": 490,
+          "bOnly": 190,
+          "neither": 314,
+          "pAgivenB": 0.763387297633873,
+          "pBgivenA": 0.5557570262919311,
+          "marginalA": 0.686372121966397,
+          "marginalB": 0.49968886123210954,
+          "expectedBothUnderIndependence": 551.1568139390167,
+          "phi": 0.1658895048821372
+        }
+      ],
+      "nesting": {
+        "labels": [
+          "limpRate",
+          "threeBetRate",
+          "cbetRate"
+        ],
+        "players": 1607,
+        "nested": 1325,
+        "violations": 282,
+        "nestedRate": 0.8245177349097698,
+        "violationRate": 0.17548226509023024,
+        "marginals": [
+          0.9047915370255134,
+          0.686372121966397,
+          0.49968886123210954
+        ],
+        "expectedNestedRateUnderIndependence": 0.7779352080137885,
+        "excessOverIndependence": 0.0465825268959813,
+        "equalMarginalBaseline": 0.5,
+        "patternCounts": {
+          "100": 271,
+          "101": 172,
+          "110": 438,
+          "111": 573,
+          "010": 52,
+          "000": 43,
+          "011": 40,
+          "001": 18
+        }
+      }
+    },
+    "guardSummary": {
+      "poolPct": 50,
+      "referenceMode": "disabled",
+      "evalPlayersChecked": 29953,
+      "decisionsChecked": 0,
+      "statWindowsChecked": 65254
+    }
+  },
+  "skips": {
+    "heads-up": 671591,
+    "converted": 1070493,
+    "non-standard-blinds": 8560,
+    "unparseable-action": 1
+  }
+}
