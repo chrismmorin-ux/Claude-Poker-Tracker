@@ -81,6 +81,24 @@
             "command": "node kit/scripts/cwos-heartbeat.js"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/retreat-detector.cjs"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/improvement-default.cjs"
+          }
+        ]
       }
     ]
   }

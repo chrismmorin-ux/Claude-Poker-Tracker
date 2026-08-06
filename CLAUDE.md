@@ -215,6 +215,20 @@ Flag a choice when it matches any pattern:
 - If multiple valid approaches and user hasn't specified: state choice + reasoning before implementing.
 - Decisions accumulate; formalized at session end via `/session-end`. Weight classification (Heavy/Medium/Light) handled there.
 
+## The Improvement Default (HARD RESTRICTION)
+When analysis surfaces a limitation, **the default recommendation is to REMOVE the limitation.** Recommending accommodation — deferral, scope reduction, routing around, using a weaker configuration, "measure the easy thing instead" — is the **founder's decision, never the AI's**. It may be presented as a question with its cost stated; it may not be presented as a recommendation.
+
+The mechanism this stops is **measurability bias**: preferring what can be cleanly verified, then shrinking the work to fit the instrument instead of building the instrument to fit the work. It wears the costume of rigor — "we can't trust that number yet" is a correct observation, and *therefore use a configuration that produces a trustworthy number* is the backwards inference.
+
+**Structural test: a deep analysis that ends in a NARROWER scope than it started with has failed.** The output of an engine run is a list of things to build, not a list of things to avoid. Stop and re-derive on any of: recommending a path because it is easier to measure; describing a limitation as a fact to plan around; saying a result will be inconclusive without stating what would make it conclusive; deferring something on the path to the goal as "not blocking"; accepting a partial result as the answer. The words *pragmatic*, *for now*, *good enough*, *start simple*, *route around* are this failure's vocabulary. Full rule: `.claude/rules/improvement-default.md`.
+
+## Engine Execution Fidelity (HARD RESTRICTION)
+When a protocol, engine, or command **declares an execution method** (an `engine:` field, a persona set, a multi-agent phase structure), you MUST execute it by spawning those agents. **Inline single-threaded simulation of a declared multi-agent engine is prohibited and its output is invalid** — it may not be stamped as a protocol run, written to `evidence/`, filed as findings, or used to clear a block.
+
+Why, in one paragraph: the agents *are* you — the value is not that they are smarter, it is where they start from. Context is monotonic within a session; you accumulate and cannot shed. By the time you audit something you are already anchored, so an inline "roundtable" is one position wearing six names, and the disagreement that is the entire product of a roundtable cannot occur. A fresh context with a curated framing genuinely holds different priors and will contradict you. The failure is self-concealing — an inline pass agrees with itself, reads as plausible, gets stamped, and resets the staleness clock on work that did not happen.
+
+A session instruction discouraging agents does not override a declared engine — invoking the command IS the request. If you truly cannot spawn them: stop, say why, and produce nothing. **Never do the least accurate option.** Full rule: `.claude/rules/engine-execution-fidelity.md`.
+
 ## Proactive Automation
 These rules run automatically, every session, without prompting.
 - **After modifying code:** Run vital sign checks. If touching a program's `scope_paths`, mention it.
