@@ -82,8 +82,12 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
  *
  * THERE WAS NO BUDGET PROBLEM TO SOLVE. Measured 2026-08-06: the full 18-rule tier is
  * 2,304 B (an earlier revision of this comment said 16 rules / 1,912 B and was not
- * re-measured after rules were added — the exact stale-number failure this session
- * scored 45.9% claim survival on).
+ * re-measured after rules were added — the exact stale-number failure that session's
+ * claim-survival audit scored). CORRECTED 2026-08-06 by independent re-check: that
+ * audit's headline of 45.9% is `39/85`, which puts the 8 UNVERIFIABLE claims in the
+ * denominator and so counts them as refuted. The pre-registered statistic is
+ * `held/(held+refuted)` (docs/context-shift-prereg.md:144), giving 39/77 = 50.6%.
+ * Both figures are live in the repo; 50.6% is the one the prereg defines.
  * At every turn of a median 5-turn session that is 1.9% of ONE session-start load,
  * and 3.4% of what is already injected unconditionally on every session. The ceiling
  * below is a backstop against the RULE SET growing without bound, not a ration on
@@ -199,8 +203,13 @@ function violatesMagnitudeRule(text) {
  * from the code and obvious the moment the hook's own output was read.
  *
  * A founder turn is a `type:"user"` record whose `message.content` is a STRING.
- * Tool results carry an ARRAY of content blocks. Full parse costs ~4ms on a 1.6MB
- * transcript, which is affordable once per turn and is worth it for being exact.
+ * Tool results carry an ARRAY of content blocks.
+ *
+ * COST, re-measured 2026-08-06 (the "~4ms on a 1.6MB transcript" this comment used to
+ * claim was understated 2.5-4.6x): 9.1-18.5 ms at 1.78 MB, 37.6-48.3 ms at 6.8 MB,
+ * against 1.9-2.4 ms for build(). The CLI no longer calls this — see the note at the
+ * call site. It is retained, exported and tested for the day the ceiling stops being
+ * flat, which is a design question the founder has not yet ruled on.
  */
 function turnIndex(transcriptPath) {
   try {
@@ -221,7 +230,50 @@ function turnIndex(transcriptPath) {
   }
 }
 
-/** Build the tier. Returns { text, dropped, turn, ceiling }. */
+/**
+ * A dropped rule names ITSELF, its cause, and the file it failed against.
+ *
+ * Added 2026-08-06 after the failure it exists to surface actually fired. A kit
+ * upgrade (c116a816) rewrote CLAUDE.md by 60 lines mid-session; two anchors stopped
+ * resolving; the Improvement Default — a declared HARD RESTRICTION — was silently
+ * withheld from every turn for part of a session. The only signal was the string
+ * `[dropped 2]`, which names nothing, so the loss was invisible from inside the
+ * window that was missing it. The refusal to emit unverified doctrine was correct;
+ * the silence about WHICH doctrine was not.
+ *
+ * The id is DERIVED (`basename:"anchor"`), never stored, so it cannot drift from the
+ * rule it names — the same failure mode this whole file exists to prevent. It also
+ * happens to be the exact pair a reader needs in order to fix the anchor.
+ */
+function dropRecord(rule, cause) {
+  return {
+    id: `${path.basename(rule.source)}:"${rule.anchor}"`,
+    cause,
+    anchor: rule.anchor,
+    source: rule.source,
+  };
+}
+
+/**
+ * Render the drop line. Empty string when nothing dropped.
+ *
+ * The named list is CAPPED so the diagnostic can never itself breach the ceiling it
+ * reports against — a drop line that overflows would drop rules to explain dropped
+ * rules. The count is always exact; only the enumeration is bounded.
+ */
+const DROP_NAME_CAP = 12;
+const DROP_LINE_RESERVE = 640; // >= worst-case rendered length of a capped drop line
+
+function dropLine(records) {
+  if (records.length === 0) return '';
+  const named = records.slice(0, DROP_NAME_CAP);
+  const parts = named.map((r) => `${r.id} ${r.cause}`);
+  const rest = records.length - named.length;
+  const tail = rest > 0 ? `; +${rest} more` : '';
+  return `[dropped ${records.length}: ${parts.join('; ')}${tail}]`;
+}
+
+/** Build the tier. Returns { text, dropped, droppedDetail, turn, ceiling }. */
 function build(turn) {
   const ceiling = ceilingForTurn(turn);
   const sourceCache = new Map();
@@ -233,15 +285,17 @@ function build(turn) {
     return sourceCache.get(rel);
   };
 
-  let dropped = 0;
+  const droppedDetail = [];
   const kept = [];
   for (const rule of RULES) {
     const src = readSource(rule.source);
     // A source that cannot be read drops its rules rather than emitting unverified text.
-    if (src === null || !src.includes(rule.anchor)) { dropped++; continue; }
-    if (violatesMagnitudeRule(rule.text)) { dropped++; continue; }
+    if (src === null) { droppedDetail.push(dropRecord(rule, 'source-unreadable')); continue; }
+    if (!src.includes(rule.anchor)) { droppedDetail.push(dropRecord(rule, 'anchor-missing')); continue; }
+    if (violatesMagnitudeRule(rule.text)) { droppedDetail.push(dropRecord(rule, 'magnitude')); continue; }
     kept.push(rule);
   }
+  const dropped = droppedDetail.length;
 
   const order = { behaviour: 0, status: 1, doctrine: 2 };
   kept.sort((a, b) => order[a.kind] - order[b.kind]);
@@ -249,29 +303,39 @@ function build(turn) {
   const header = 'COMPACT TIER (generated per turn; no file backs this):';
   const lines = [header];
   for (const r of kept) lines.push(`- ${r.text}`);
-  if (dropped > 0) lines.push(`[dropped ${dropped}]`);
+  if (dropped > 0) lines.push(dropLine(droppedDetail));
 
   // The producer slices its OWN output. The ceiling is an emitter invariant, not a
   // check that can fail — so there is no state in which the tier is over budget.
   let text = lines.join('\n');
+  let detail = droppedDetail;
   if (Buffer.byteLength(text, 'utf8') > ceiling) {
+    // BREAK, not CONTINUE. `kept` is already sorted behaviour -> status -> doctrine,
+    // and skipping past an over-budget line to admit a SHORTER later one silently
+    // inverts that priority: short doctrine outlives long behaviour, which is the
+    // exact ordering the flat ceiling above exists to guarantee. Stop at the first
+    // line that does not fit and drop the remaining tail in priority order.
     const out = [header];
     let used = Buffer.byteLength(header, 'utf8');
-    let truncated = 0;
+    let cut = 0;
     for (const r of kept) {
       const line = `- ${r.text}`;
       const cost = Buffer.byteLength(line, 'utf8') + 1;
-      if (used + cost > ceiling - 24) { truncated++; continue; }
+      if (used + cost > ceiling - DROP_LINE_RESERVE) { cut = kept.length - out.length + 1; break; }
       out.push(line); used += cost;
     }
-    if (dropped + truncated > 0) out.push(`[dropped ${dropped + truncated}]`);
+    detail = droppedDetail.concat(
+      kept.slice(kept.length - cut).map((r) => dropRecord(r, 'truncated')),
+    );
+    if (detail.length > 0) out.push(dropLine(detail));
     text = out.join('\n');
   }
-  return { text, dropped, turn, ceiling };
+  return { text, dropped: detail.length, droppedDetail: detail, turn, ceiling };
 }
 
 module.exports = {
   RULES, CEILING_SCHEDULE, ceilingForTurn, violatesMagnitudeRule, build, turnIndex,
+  dropRecord, dropLine, DROP_NAME_CAP,
 };
 
 if (require.main === module) {
@@ -281,8 +345,18 @@ if (require.main === module) {
     let payload = {};
     try { payload = JSON.parse(stdin || '{}'); } catch { payload = {}; }
 
-    const turn = turnIndex(payload.transcript_path);
-    const { text } = build(turn);
+    // NOT `turnIndex(payload.transcript_path)`. The ceiling is flat by design (see the
+    // decay-curve rationale above), so `ceilingForTurn` ignores its argument and the
+    // turn index cannot change a single byte of output. Calling it read the ENTIRE
+    // transcript synchronously and JSON.parsed every line to feed a constant function:
+    // measured 9-18 ms on a 1.8 MB transcript and 38-48 ms on a 6.8 MB one, against
+    // 1.9-2.4 ms for the actual tier build. It was ~95% of this hook's own compute,
+    // paid on every founder prompt, for a value the CLI then discarded.
+    //
+    // `turnIndex` is retained and exported because it is correct and tested, and
+    // because restoring a turn-varying ceiling is a live design question. It simply
+    // has no consumer while the ceiling is flat.
+    const { text } = build(1);
 
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {

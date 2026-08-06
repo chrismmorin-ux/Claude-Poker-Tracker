@@ -97,7 +97,7 @@ describe('compact tier — ceiling is an invariant of the producer, not a check'
     const count = (r) => r.text.split('\n').filter(l => l.startsWith('- ')).length;
     expect(count(late)).toBe(count(early));
     expect(late.dropped).toBe(0);
-    expect(late.text).not.toMatch(/\[dropped \d+\]/);
+    expect(late.text).not.toMatch(/\[dropped /);
   });
 
   it('still reports truncation as [dropped N] if the RULE SET ever outgrows the backstop', () => {
@@ -111,9 +111,20 @@ describe('compact tier — ceiling is an invariant of the producer, not a check'
           text: `Filler imperative number ${i} used only to overflow the backstop ceiling here.`,
         });
       }
-      const { text, ceiling } = tier.build(1);
+      const { text, ceiling, droppedDetail } = tier.build(1);
       expect(Buffer.byteLength(text, 'utf8')).toBeLessThanOrEqual(ceiling);
-      expect(text).toMatch(/\[dropped \d+\]/);
+      expect(text).toMatch(/\[dropped \d+:/);
+      // The diagnostic must not itself breach the ceiling it reports against.
+      expect(droppedDetail.some((d) => d.cause === 'truncated')).toBe(true);
+      // Priority is preserved: truncation stops at the first line that does not fit,
+      // so no BEHAVIOUR rule may be cut while a DOCTRINE rule survives.
+      const emitted = text.split('\n').filter((l) => l.startsWith('- '));
+      const survivingDoctrine = tier.RULES.filter(
+        (r) => r.kind === 'doctrine' && emitted.includes(`- ${r.text}`));
+      const cutBehaviour = droppedDetail.filter(
+        (d) => d.cause === 'truncated'
+          && tier.RULES.some((r) => r.anchor === d.anchor && r.kind === 'behaviour'));
+      expect(survivingDoctrine.length === 0 || cutBehaviour.length === 0).toBe(true);
     } finally {
       tier.RULES.length = 0;
       tier.RULES.push(...original);
@@ -256,10 +267,46 @@ describe('compact tier — S2: every term is verified against its source at emit
       text: 'This line must never be emitted because its anchor does not resolve.',
     });
     try {
-      const { text, dropped } = tier.build(1);
+      const { text, dropped, droppedDetail } = tier.build(1);
       expect(dropped).toBeGreaterThan(0);
       expect(text).not.toContain('must never be emitted');
-      expect(text).toMatch(/\[dropped \d+\]/);
+      expect(text).toMatch(/\[dropped \d+:/);
+
+      // The drop must NAME itself. A bare count is what let a kit upgrade silently
+      // withhold a HARD RESTRICTION for part of a session on 2026-08-06: the tier
+      // printed `[dropped 2]` and nothing in the window said which two.
+      const rec = droppedDetail.find((d) => d.anchor === 'ZZZ_ANCHOR_THAT_CANNOT_EXIST_ZZZ');
+      expect(rec).toBeTruthy();
+      expect(rec.cause).toBe('anchor-missing');
+      expect(rec.id).toBe('POKER_THEORY.md:"ZZZ_ANCHOR_THAT_CANNOT_EXIST_ZZZ"');
+      expect(text).toContain('POKER_THEORY.md:"ZZZ_ANCHOR_THAT_CANNOT_EXIST_ZZZ" anchor-missing');
+    } finally {
+      tier.RULES.length = 0;
+      tier.RULES.push(...original);
+    }
+  });
+
+  it('distinguishes the three drop causes rather than pooling them into one count', () => {
+    // "The doctrine moved" and "someone wrote a percentage into a rule" are unrelated
+    // failures with unrelated fixes. A single `dropped` counter cannot tell them apart,
+    // so neither could a reader of the emitted tier.
+    const original = [...tier.RULES];
+    tier.RULES.push(
+      { kind: 'doctrine', anchor: 'ZZZ_GONE_ZZZ', source: '.claude/context/POKER_THEORY.md',
+        text: 'Anchor absent from a source that exists.' },
+      { kind: 'doctrine', anchor: 'SPR', source: '.claude/context/POKER_THEORY.md',
+        text: 'This rule states a fold frequency of 41.5% and must be refused.' },
+      { kind: 'doctrine', anchor: 'anything', source: 'no/such/file/ZZZ.md',
+        text: 'This rule names a source that cannot be read at all.' },
+    );
+    try {
+      const { droppedDetail } = tier.build(1);
+      const causeOf = (anchor) => (droppedDetail.find((d) => d.anchor === anchor) || {}).cause;
+      expect(causeOf('ZZZ_GONE_ZZZ')).toBe('anchor-missing');
+      expect(causeOf('anything')).toBe('source-unreadable');
+      const magnitude = droppedDetail.filter((d) => d.cause === 'magnitude');
+      expect(magnitude.length).toBe(1);
+      expect(magnitude[0].source).toBe('.claude/context/POKER_THEORY.md');
     } finally {
       tier.RULES.length = 0;
       tier.RULES.push(...original);
