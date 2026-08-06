@@ -1,0 +1,179 @@
+id: "WS-382"
+title: "Hero-side Decision Atoms are UNREACHABLE on the corpus because phhAdapter sets mySeat = null — half of every declared context can never be examined, so every hero-side measurement is unavailable rather than thin"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "data-quality"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  MEASURED BY THE INSTRUMENT BUILT TO MEASURE IT. WS-328 (commit 5853ae0a, 2026-08-05) built a
+  coverage census whose whole point is that a zero is three different facts — `observed-zero`,
+  `unexamined`, `dropped` — and that examination must be DECLARED, never inferred. The first
+  thing it declared was this.
+
+  Census, generation 1, 25 FTP files, HandHQ online 2009 50NLH, EVAL partition only:
+  hit 16, observed-zero 43, **unexamined 95**, dropped 36, unreachable 10.
+
+      P(never examined | reachable) = 95/190 = 50%
+
+  AND EVERY ONE OF THE 95 IS A HERO CONTEXT. That is not a coincidence in the data; it is
+  arithmetic on the declared domain. The axes are `actorRole × street × posCategory ×
+  facingAction` = 2 × 4 × 5 × 5 = 200 contexts (`scripts/backtest/run-atoms.mjs:50-59`). Ten are
+  structurally unreachable (`preflop × bet`, both roles × five positions — preflop has no bare
+  bet, the BB is a raise, `:237-241`). That leaves 190 reachable, of which exactly 95 are hero.
+  Every hero context is unexamined and every villain context was examined.
+
+  THE MECHANISM, ONE LINE.
+
+      scripts/backtest/phhAdapter.mjs:413
+        mySeat: null,          // corpus hands have no hero
+
+  The comment is true about the corpus and the consequence is not confined to it. With
+  `gameState.mySeat = null` the hero branch of the prediction-audit reconstructor is never taken,
+  so the harness cannot evaluate a hero context at all. `run-atoms.mjs:242-246` filters the
+  examined set to `actorRole === 'villain'` for exactly that reason, and `:265-267` records the
+  basis in the census: "phhAdapter sets gameState.mySeat = null (a corpus hand has no hero), so
+  the hero branch of reconstructPredictionAudit is unreachable on this Deal Book."
+
+  THE CENSUS DOES THE HONEST THING, WHICH IS WHY THIS IS FILED RATHER THAN DISCOVERED LATER. The
+  95 cells are `unexamined` with `UNEXAMINED_REASONS.INSTRUMENT_CANNOT_EVALUATE`, not zeros. Under
+  the pre-WS-328 shape they would have been indistinguishable from "we looked and hero never does
+  this" — a coverage GAP reading as a measured ABSENCE. The instrument worked. What it surfaced is
+  the ticket.
+
+  THE CONSEQUENCE, STATED SO IT IS NOT UNDERSTATED. Every hero-side measurement on this corpus is
+  UNAVAILABLE, not thin. Not low-n, not wide-CI, not needing more files — structurally absent, and
+  no quantity of additional corpus files changes it, because the blocker is one field in the
+  adapter rather than a shortage of data. Anything phrased as "what does the engine advise hero to
+  do, and how did that compare" cannot be scored on the 30M-hand corpus today. That is half the
+  declared domain of the atom instrument.
+
+  WS-328 RECORDED IT AS A FORCING QUESTION WITH `answerable: false` RATHER THAN FIXING IT. That
+  was the right call inside a ticket about the census schema. It is not a resolution, and an
+  `answerable: false` with no ticket behind it is a fact that has to be rediscovered.
+
+  WHY THIS IS NOT SIMPLY "PICK A SEAT". A corpus hand really does have no hero — nobody at that
+  table is the founder, and the hole cards of everyone who did not reach showdown are masked at
+  deal. So the question the fix has to answer is not "which seat" but "what does a hero-side
+  measurement MEAN on a corpus with no hero", and there is more than one defensible answer:
+  designate each seat hero in turn and evaluate the engine's advice against what that player
+  actually did; designate only showdown-revealed seats, where hole cards are known, and accept the
+  selection bias that introduces; or conclude the quantity is not measurable here and record that
+  in the register instead of in a comment. Those produce different numbers and different biases,
+  and choosing one silently is the failure this repo has recorded before.
+
+  THE SELECTION-BIAS TRAP IS ALREADY A NAMED REGISTER ENTRY. `FAULT-masked-hole-cards` and
+  `FAULT-showdown-selection` both live in `src/utils/standardOfRecord/faultRegister.js`. Any fix
+  that reaches hero-side atoms by restricting to showdown hands walks directly into the second
+  one, and any fix that reaches them without hole cards walks into the first. Whichever is chosen,
+  the resulting cards must match the entry that now applies — which is the register doing its job,
+  not an obstacle.
+accept_criteria: |
+  - EITHER HERO CONTEXTS BECOME REACHABLE, OR THE REASON THEY CANNOT IS RECORDED AS DATA. Both are
+    valid outcomes and the ticket must not presume which. What is NOT valid is leaving it as a
+    comment in `phhAdapter.mjs` and an `answerable: false` in a run output — that is the state
+    today, and it is why this had to be rediscovered from a commit message.
+  - IF REACHABLE: THE HERO DESIGNATION IS AN EXPLICIT, DECLARED CHOICE CARRIED ON THE MANIFEST.
+    Whatever rule assigns hero — every seat in turn, showdown-revealed seats only, one seat per
+    hand by a stated rule — it must be a named policy on the run manifest, not an implicit
+    consequence of adapter code. A reader of a Result Card must be able to tell which hero
+    population produced it, because the three rules produce three different populations.
+  - IF REACHABLE: THE BIAS IT INTRODUCES IS NAMED AGAINST THE EXISTING REGISTER ENTRIES.
+    `FAULT-masked-hole-cards` and `FAULT-showdown-selection` are already registered. State which
+    now applies to hero-side atoms and why, and make sure the resulting cards MATCH it. Reaching
+    the measurement while quietly stepping outside the register's view is worse than not reaching
+    it — see WS-369, where a matcher that saw the wrong cards looked healthy to every diagnostic.
+  - IF NOT REACHABLE: IT IS AN `unexamined` REASON AND A REGISTER FACT, NOT PROSE. The census
+    already has the vocabulary (`UNEXAMINED_REASONS.INSTRUMENT_CANNOT_EVALUATE`). The additional
+    requirement is that the impossibility is recorded where a future reader of a hero-side claim
+    will hit it — the same shape as `falsifierBlockers` in the fault register, which is hashed and
+    machine-readable rather than remembered.
+  - THE CENSUS NUMBERS MOVE, AND ARE REPORTED BEFORE AND AFTER. The claim to check is
+    `P(never examined | reachable)`. It is 95/190 = 50% today. Report the new figure with the same
+    denominator and the same partition, or state that it is unchanged and why. A fix that reaches
+    hero contexts but examines only a handful of them should say 95 became (say) 60, not "hero is
+    now supported".
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule). Concretely: assert that the atom instrument
+    produces at least one hero-role atom on a fixture hand, or — under the not-reachable outcome —
+    that a hero-role context declared examined THROWS. Both fail today for opposite reasons, which
+    is the point: whichever branch is taken, the assertion must be one the current code cannot
+    satisfy.
+  - NO SCOPE CREEP INTO THE DIVERGENCE OR PREDICTION-AUDIT WORK. This ticket is about whether a
+    hero context can be REACHED. What the engine then advises there, and how that is scored, is
+    WS-350/WS-361/WS-378 territory. Reaching them is the prerequisite; do not spend the ticket
+    measuring them.
+  - ANY COMPARATIVE FIGURE RESOLVES TO A RESULT CARD per ADR-009 with
+    `manifest.disclaimerRegisterVersion` stamped. The corpus is HandHQ online 2009 50NLH and the
+    founder's game is live 9-handed 1/2-1/3; a hero-side claim transferred from an online corpus
+    is transferred, not measured, and must say so.
+effort: "M"
+files_involved:
+  - "scripts/backtest/phhAdapter.mjs"
+  - "scripts/backtest/run-atoms.mjs"
+  - "scripts/backtest/atomsSelfCheck.mjs"
+  - "src/utils/standardOfRecord/coverageCensus.js"
+  - "src/utils/standardOfRecord/faultRegister.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND LOAD-BEARING — WHAT "HERO" MEANS ON A CORPUS WITH NO HERO. Three answers, and they
+    are not variations on one another. (a) EVERY SEAT IN TURN: maximal coverage, no selection on
+    outcome, but hole cards are masked for anyone who folded before showdown, so the engine is
+    advising a hand it cannot see — `FAULT-masked-hole-cards` applies directly. (b) SHOWDOWN SEATS
+    ONLY: hole cards are real, but conditioning on reaching showdown selects for exactly the hands
+    that continued, which is `FAULT-showdown-selection` by name, and the founder's standing rule
+    on numbers carrying their conditional binds every figure produced this way. (c) NOT MEASURABLE
+    HERE: honest, cheap, and it closes the question rather than leaving it open — but it means
+    accepting that half the declared atom domain has no corpus behind it and saying so on every
+    surface that implies otherwise. The founder should choose; the census is the same either way.
+  - |
+    OPEN — WHETHER THE DECLARED DOMAIN SHOULD SHRINK IF (c) IS CHOSEN. If hero-side is not
+    measurable on this Deal Book, then declaring 200 contexts and permanently marking 95 of them
+    unexamined is truthful but reports a 50% coverage gap forever. The alternative is to declare
+    hero contexts UNREACHABLE for this Deal Book specifically — the same status `preflop × bet`
+    already carries — which is a different and stronger claim: not "we did not look" but "this
+    instrument cannot look here." That is arguably the accurate word, and it changes the headline
+    coverage number, which is why it needs a decision rather than an edit.
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-328"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+    - `scripts/backtest/phhAdapter.mjs:413` — `mySeat: null,  // corpus hands have no hero`, inside
+      the `gameState` the adapter hands to the engine.
+    - `scripts/backtest/run-atoms.mjs:50-59` — the four declared axes, `actorRole` first with
+      levels `['hero', 'villain']`. 2 × 4 × 5 × 5 = 200.
+    - `run-atoms.mjs:237-241` — the `unreachable` map, `preflop × bet` only, 10 cells. 200 - 10 = 190.
+    - `run-atoms.mjs:242-246` — `examined` filtered to `c.coords.actorRole === 'villain'`, which is
+      what makes all 95 reachable hero cells `unexamined` rather than `observed-zero`.
+    - `run-atoms.mjs:260-268` — the `declareExamination` call carrying
+      `UNEXAMINED_REASONS.INSTRUMENT_CANNOT_EVALUATE` and the `mySeat = null` basis string.
+    - `src/utils/standardOfRecord/coverageCensus.js:185-190` — an unexamined cell without a valid
+      reason throws; `:62` the status enum. The 95 genuinely cannot be silently reported as zeros.
+    - `src/utils/standardOfRecord/faultRegister.js` — `FAULT-masked-hole-cards` and
+      `FAULT-showdown-selection` both exist as registered entries, so the bias any fix introduces
+      already has a name in the register.
+
+  The 95/190 = 50% figure reconciles exactly with the axis arithmetic above, so it is not being
+  taken on the commit message's word.
+
+  Filed at P1, not P0. There is no wrong number in circulation — the census records the gap
+  correctly and refuses to present it as an absence, which is precisely the protection WS-328 was
+  built for. What is at stake is that half the declared measurement domain has no data path, and a
+  recorded `answerable: false` with no ticket behind it is the kind of fact that has to be
+  rediscovered from a commit message. It was.

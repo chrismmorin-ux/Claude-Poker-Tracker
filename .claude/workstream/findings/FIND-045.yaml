@@ -1,0 +1,56 @@
+id: "FIND-045"
+title: "tightenRatesForContinuation discards the villain-model fold rate for a defaulted 0.45, and on the depth-3 line applies it twice"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  gameTreeSizingHelpers.js:162 — `tightenRatesForContinuation = (rates, priorAction = 'call',
+  foldRate = 0.45)`. EVERY production call site passes TWO arguments, so the third parameter is
+  always the default and the per-villain fold rate the model just computed is discarded:
+  gameTreeDepth2.js:757, :758, :895, :896, :1010, :1011, :1100, :1101, :1104, :1105 and
+  gameTreeEvaluator.js:1691, :1692. (Verified at HEAD; the run record cites :1073-1078, which is
+  stale line numbering for the same double-application site.)
+
+  DOUBLE APPLICATION ON THE DEPTH-3 LINE. gameTreeDepth2.js:1100-1101 tightens callingRates and
+  bettingRates for the turn, then :1104-1105 tightens THE RESULT again for the river. With
+  foldRate = 0.45, survivalRate = 0.55 and air is multiplied by `survivalRate * 0.7` = 0.385 each
+  time, so villain's river air is 0.148x his flop air — a 15% residual derived entirely from a
+  constant, inside the one module whose purpose is per-villain modelling.
+
+  DOCTRINE. This is a bucket-label-keyed narrowing driven by a literal rather than by the villain's
+  computed decision (AP-RL-01; first-principles rule — labels and constants are OUTPUTS of the
+  decision process, never inputs). It is also invisible to the holdingKnowledge audit trail:
+  `narrowingCount` at gameTreeDepth2.js:1087 and :1158 does not record it.
+
+  WHY IT OUTRANKS THE WIRING FAMILY. This is a wrong NUMBER, not absent wiring, and it is wrong
+  today in every path that executes — Ignition play, drills, computeDepth2Plan, replayAnalysis and
+  THE CORPUS BACKTEST. Because the Standard of Record binds comparative claims to backtest output,
+  this contaminates the evidence base used to justify every other fix, including the live-path fix.
+  Its direction — villain's continuing range biased STRONGER, so hero under-barrels — is opposite
+  to the inflated-fold-equity family, so no existing guard catches it.
+
+  WS-303 removed the analogous chained `narrowByBoard` and RELOCATED the effect into this channel
+  without revisiting it; the comment at gameTreeDepth2.js:1113-1125 records the relocation.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+recommended_fix: |
+  Thread the villain-model fold rate that is already in scope at each call site into the third
+  argument, and decide explicitly whether the depth-3 line should compound the tightening at all —
+  if it should, it must compound the TURN fold rate then the RIVER fold rate, not one constant
+  twice. Record the narrowing in holdingKnowledge so the effect is visible to the audit trail that
+  exists for exactly this purpose. Re-run the corpus scored figure before and after: the delta is
+  the size of the contamination and is itself the result worth having.
+theory_citation: "POKER_THEORY §7 (decisions derive from equity/potOdds/SPR, never labels); rangeEngine AP-RL-01; exploitEngine/CLAUDE.md first-principles anti-pattern"
+dedup_key: "blindspot-domain-correctness-tightenrates-defaulted-foldrate-applied-twice"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-387"

@@ -1,0 +1,226 @@
+id: "WS-389"
+title: "Refinement depth is gated on wall-clock time, so the same hand scored twice can produce a different top action — no per-improvement EV delta is trustworthy until a scored run is reproducible, and 5 of 19 tests in one suite already time out on a quiet machine"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-051"
+description: |
+  FIND-051 FROM THE 2026-08-05 DOMAIN-CORRECTNESS BLIND-SPOT ROUNDTABLE. This is the highest-ranked
+  item in the backtest-integrity family, and the reason is a rule rather than a magnitude: under the
+  founder's 2026-08-05 redirect the deliverable is an OPTIMIZABLE scored figure with per-improvement
+  deltas. REPRODUCIBILITY OUTRANKS ACCURACY for that deliverable. A stably-wrong figure still yields
+  honest deltas — the error cancels between arms. A figure that changes when re-run yields nothing,
+  because an improvement cannot be distinguished from machine load. Every other item in this family
+  attacks the LEVEL of the figure. This one is the only one that attacks the DELTAS.
+
+  THE MECHANISM.
+
+    `gameTreeEvaluator.js:814`   refinementBudgetMs = 2000,
+    `gameTreeEvaluator.js:822`   const startTime = Date.now();
+
+  and the docstring immediately above, at `:803-808`, states plainly that this clock gates depth-2/3.
+  Whether the engine returns a depth-1 answer, a partially-refined one, or a fully-refined one is
+  therefore decided by how much CPU the machine had spare in the two seconds after the call. Identical
+  inputs, different answer. Not probabilistically — deterministically, as a function of a variable
+  nobody records.
+
+  THIS IS ALREADY KNOWN TO CHANGE THE TOP ACTION, AND THE TEST SUITE SAYS SO IN PROSE.
+  `foldEstimateComposition.test.js:65-77` carries a docblock that exists only because of this:
+
+      "The budget here is deliberately LEFT AT THE DEFAULT, and that is load-bearing (WS-379).
+       Pinning `refinementBudgetMs` high was tried and reverted: with refinement allowed to run
+       to completion the engine recommends a raise where 'DEFECT: raising into an uncapped nutted
+       range is not the top action' asserts it must not. So these assertions are calibrated against
+       the SHIPPED budget, and changing it changes what they mean."
+
+  Read that as a statement about the engine rather than about the test. The suite's assertions are
+  calibrated to a WALL-CLOCK CONSTANT. The DEFECT assertion at `:228-238` — that hero must not raise
+  3s3d into a half-nutted range — holds at 2000ms and fails when refinement is allowed to finish.
+  The engine's answer to a poker question depends on a latency budget, and the suite has written that
+  dependence down and lived with it rather than resolved it.
+
+  THREE OPEN TICKETS ARE SYMPTOMS OF THIS ONE. WS-383: full refinement recommends the raise the suite
+  classifies as a defect. WS-379: desktop and phone give different advice on identical inputs.
+  WS-378: 80% of top-action flips are depth-1→depth-2, and 38 of 40 of them run toward passivity.
+  That last figure is the one that makes this urgent rather than merely untidy — the depth the engine
+  happens to reach is not a neutral quality dial. It has a DIRECTION. Getting less refinement makes
+  the engine systematically more aggressive. So a scored run on a loaded machine is not a noisier
+  version of a scored run on an idle one; it is a biased version, biased toward aggression, by an
+  amount nobody measures.
+
+  NEWLY MEASURED FOR THIS TICKET, AND WORSE THAN THE ROUNDTABLE REPORTED. Running
+  `src/utils/postflopDrillContent/__tests__/computeDepth2Plan.test.js` at HEAD on an OTHERWISE QUIET
+  machine: **5 of 19 tests fail with "Test timed out in 5000ms"**, suite duration 53.04s. The
+  roundtable's brief described this as 8 timeouts under CPU load. It is 5 without any load at all.
+  The test suite is not merely machine-dependent under contention — at HEAD, on an idle machine, a
+  quarter of one suite does not finish. Whatever number that suite is protecting, it is not
+  protecting it today.
+
+  `onFastResult` HAS NO PRODUCTION CONSUMER. Verified by grep across `src/` and `scripts/`: the
+  parameter is defined at `:815`, invoked internally at `:1392-1400`, documented in
+  `exploitEngine/CLAUDE.md`, and consumed in exactly one place — `__tests__/depthReachability.test.js`.
+  That test's own comment (`:226`) names the risk: "an optional parameter that could" ship correct
+  and unreachable. It did. This is the `feedback_shipped_but_inert_capability` pattern again, and it
+  matters here specifically: the two-phase design exists so the founder can get a fast answer at
+  table speed and a refined one after. Nothing consumes the fast answer, so the two-phase machinery
+  buys nothing today while the budget it introduced decides the advice.
+
+  WHAT "NOT ASSERTED MONOTONE" MEANS AND WHY IT IS THE CRUX. Nobody has established that MORE
+  refinement gives a BETTER answer. If refinement were monotone, a time budget would be a quality
+  dial — cheap and honest, and the fix would be to record which depth you got. WS-383 is evidence
+  against monotonicity: full refinement produces the answer the suite calls a defect. So the engine
+  may be in the worse of the two worlds — an unrecorded, load-dependent, directionally-biased choice
+  between two answers where the deeper one is not known to be the better one. Those are two separate
+  questions and this ticket must not collapse them: (1) is a run reproducible, (2) is deeper better.
+  Question 1 is answerable and is this ticket's job. Question 2 is WS-383's and needs question 1
+  answered first, because it cannot be measured on a harness that returns different answers on
+  re-run.
+accept_criteria: |
+  - A SCORED RUN IS REPRODUCIBLE, DEMONSTRATED BY RE-RUNNING IT. Two runs of the same harness over
+    the same decision set with the same seeds must produce BIT-IDENTICAL aggregate figures and an
+    identical per-decision top action. This is the primary criterion and it is testable today: run
+    it twice, diff the output. Against HEAD this fails, which is the point. Demonstrate it failing
+    before demonstrating it passing.
+  - THE EV CRITERION IS STATED, AND ITS CIRCULARITY IS HANDLED HONESTLY RATHER THAN BY EXEMPTION.
+    This item is a PREREQUISITE for measurement: its own EV delta cannot be trusted until it lands,
+    because the two arms would be compared on a harness that does not return the same answer twice.
+    So the claim this ticket makes is about the MEASUREMENT, not about EV: two runs on identical
+    inputs now produce identical figures. THEN, immediately after, the EV delta becomes measurable
+    and must be reported — specifically the aggregate EV difference between the depth the harness
+    reached before this fix (variable) and the depth it is pinned to after (fixed), on an identical
+    decision set. Expected direction, stated so it can be wrong: pinning to full refinement should
+    move aggregate EV in the passive direction, following WS-378's 38-of-40 finding. The magnitude
+    is UNMEASURED and stating it before the run would be the exact failure this family exists to fix.
+  - REFINEMENT DEPTH IS RECORDED IN THE RESULT CARD MANIFEST, PER DECISION AND IN AGGREGATE. A card
+    must say what depth its decisions actually reached — not "refinement ran" but the distribution
+    of achieved depth across the decision set. `treeMetadata.latency` already distinguishes
+    completed / partial / no-candidate / error / gated and carries `weightConsumed`, so the quantity
+    exists and is not being carried onto the card. Per `exploitEngine/CLAUDE.md`, "`ran: true` at 3%
+    and at 90% must never look the same again" — that principle currently stops at the engine
+    boundary and must reach the card. Two cards that reached different depths are not comparable and
+    a reader must be able to see that without having been present for the run.
+  - MONOTONICITY IS EITHER ASSERTED OR EXPLICITLY DECLARED UNKNOWN, IN DATA. If deeper refinement is
+    claimed to be better, there must be a test that fails when it is not — on a decision set where
+    truth is available. If it cannot be asserted today, the card carries a field saying so, so that
+    a reader of a figure knows whether the depth it reached is a quality level or an arbitrary
+    branch. WS-383's finding means the honest answer today is probably "unknown", and writing that
+    down is worth more than an assertion nobody can back.
+  - THE HARNESS DOES NOT USE A WALL CLOCK AT ALL. Whatever replaces the budget must be a
+    deterministic work counter — nodes evaluated, combos scored, strata visited — not `Date.now()`.
+    A tighter or looser millisecond budget is the same defect with a different constant. The live
+    app may legitimately keep a wall-clock budget for responsiveness on the founder's phone; the
+    SCORING path may not, and the two must be distinguishable in code rather than by which caller
+    happened to pass what.
+  - THE `computeDepth2Plan.test.js` TIMEOUTS ARE RESOLVED OR EXPLAINED, NOT RE-BASELINED BY RAISING
+    THE TIMEOUT. 5 of 19 fail on an idle machine at HEAD. Raising `testTimeout` makes them pass and
+    changes nothing about the engine. Either the work genuinely takes that long — in which case say
+    so and record what depth those calls reach in production on the founder's A22, where the same
+    work is competing with React — or something is pathological. Note that WS-379's commit
+    (fe716f59) already de-coupled two EV assertions from machine load; this is the residual.
+  - `onFastResult` IS EITHER WIRED TO A PRODUCTION CONSUMER OR REMOVED, WITH THE REASON RECORDED.
+    It has none today. If two-phase evaluation is the design, something must consume phase one; if
+    it is not, the parameter and its `setTimeout(0)` yield are dead weight sitting in the middle of
+    the code path this ticket is changing. Do not leave it ambiguous while touching the file — that
+    ambiguity is how it survived.
+  - COORDINATION, NOT DUPLICATION, WITH WS-383 / WS-378 / WS-379. All three are symptoms. This ticket
+    does not resolve any of them and must not silently absorb them. It makes them measurable. Say in
+    the completion note what each of the three can now do that it could not before.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+  - "src/utils/postflopDrillContent/__tests__/computeDepth2Plan.test.js"
+  - "src/utils/standardOfRecord/"
+  - "scripts/backtest/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-378"
+  - "WS-379"
+  - "WS-383"
+  - "WS-387"
+  - "WS-388"
+  - "WS-390"
+  - "WS-391"
+  - "WS-400"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE FOUNDER SHOULD DECIDE IT — DOES THE SCORING PATH RUN TO FULL DEPTH REGARDLESS OF
+    COST? The clean fix for reproducibility is to remove the budget from the scoring path entirely
+    and always refine fully. That is honest and it may be slow: `computeDepth2Plan.test.js` takes
+    53 seconds for 19 calls at HEAD, and a corpus run is thousands of decisions. The alternative is a
+    deterministic work budget — same answer every time, but a budget that still truncates, so the
+    figure is "the engine's answer at N nodes" rather than "the engine's answer". Both are
+    reproducible; they measure different things. The standing rule in memory
+    (`feedback_never_delete_for_null_result`) is that latency is a constraint to engineer around and
+    never a reason to ship a shallower answer — which argues for full depth on the scoring path and
+    a separate, clearly-labelled budget for the live app. Confirm that reading before building it.
+  - |
+    OPEN — WHETHER THE LIVE PATH AND THE SCORING PATH SHOULD BE ALLOWED TO DIVERGE AT ALL. If scoring
+    runs to full depth and the phone runs to 2000ms, then the EV figure the founder optimizes is not
+    the EV of the advice he receives at the table — it is the EV of a deeper engine he only ever gets
+    on a desktop. That gap is measurable (it is exactly the WS-379 desktop/phone difference) and it
+    should be REPORTED as a number rather than allowed to sit unnamed between the two paths. Deciding
+    to diverge is defensible; deciding to diverge without measuring the gap is how a scored figure
+    stops describing the product.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-051"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code and by RUNNING the suite, not by trusting the
+  roundtable record:
+    - `src/utils/exploitEngine/gameTreeEvaluator.js:814` — `refinementBudgetMs = 2000`; `:815`
+      `onFastResult = null`; `:822` `const startTime = Date.now();`; `:803-808` the docstring
+      confirming the budget gates depth-2/3 and explaining why the old single clock was dead.
+    - `onFastResult` consumers, by grep across `src/` and `scripts/`: definition `:815`, internal
+      invocation `:1392-1400`, comments `:810` and `:1110`, `exploitEngine/CLAUDE.md:455-471`, and
+      `__tests__/depthReachability.test.js:226,:235`. NO production consumer. Verified rather than
+      quoted.
+    - `foldEstimateComposition.test.js:65-77` — the docblock, quoted verbatim in the description;
+      `:228-238` the DEFECT test (`expect(result.recommendations[0].action).not.toBe('raise')`).
+
+  PROGRAM ASSIGNMENT, DECIDED AGAINST THE OBVIOUS ONE AND STATED BECAUSE IT IS ARGUABLE.
+  `methodology-integrity` is the natural home by SUBJECT — this is about whether a measurement is
+  reproducible — and WS-379, its closest sibling, sits there. It is filed under
+  `domain-correctness` instead, for two reasons. First, the defect is in engine code
+  (`gameTreeEvaluator.js`), squarely inside domain-correctness's scope, and the fix is an engine
+  change rather than a process change. Second, and decisively: `methodology-integrity` is at 10/3
+  open items (3.33x its cap) with `priority_floor: 18`, and per this repo's recorded failure mode
+  (`feedback_cap_breach_distorts_composition`) a program over cap has its backlog clamped to that
+  floor. Filing the family's highest-priority item there would clamp it to 18 — BELOW WS-387 (25)
+  and WS-388 (24), which it is supposed to gate. That would invert the exact ordering this ticket
+  exists to establish. `domain-correctness` is also over cap (73/60) with `priority_floor: 27`, so
+  the item is clamped UP rather than down. Both caps are breached and both should be addressed; that
+  is a separate concern and is reported rather than worked around further.
+
+  ONE PREMISE DID NOT VERIFY, AND IT IS THE ONE THE BRIEF LEANED ON HARDEST. The brief states that
+  `foldEstimateComposition.test.js:228-237` "documents a top-action flip between a 60000ms and the
+  shipped 2000ms budget." THE NUMBER 60000 DOES NOT APPEAR ANYWHERE IN THAT FILE AT HEAD — grepped
+  directly. What the file actually carries is the prose at `:65-77`: "Pinning `refinementBudgetMs`
+  high was tried and reverted", with no budget value named. The flip is real and is recorded; the
+  specific 60000ms figure is not a citable premise and has been removed from this ticket rather than
+  propagated. The file's most recent change is commit fe716f59 (WS-379, "stop two EV assertions from
+  measuring machine load"), which is likely where the earlier explicit budget was removed.
+
+  ONE PREMISE VERIFIED AND FOUND TO BE UNDERSTATED, WHICH IS THE RARER DIRECTION. The brief reports
+  8 timeouts in `computeDepth2Plan.test.js` "under CPU load". Ran at HEAD on an otherwise quiet
+  machine (`npx vitest run src/utils/postflopDrillContent/__tests__/computeDepth2Plan.test.js`):
+  **5 failed | 14 passed (19), duration 53.04s**, every failure reading "Test timed out in 5000ms"
+  — including `:148` ('defaults decisionKind to "standard" when omitted') and `:155` ('attaches
+  treeMetadata for diagnostic surfacing'). So the count is 5, not 8, and the load condition is not
+  required. That is worse than reported, not better: the suite does not need contention to fail. The
+  ticket cites the measured 5-on-idle rather than the reported 8-under-load.

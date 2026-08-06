@@ -1,0 +1,197 @@
+id: "WS-406"
+title: "RC-depth-ablation says it measured 'depth-1 vs depth-2/3-enabled advice' and measured neither on the river, where every refinement stage is street-gated out and the entire negative headline lives — and its engine commit predates the WS-378 omniscience fix by 3.4 hours; supersede it through the register and re-run"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+problem_class: "Methodology Drift"
+finding_id: ""
+description: |
+  THE CARD. `docs/standard-of-record/cards/RC-depth-ablation.json`, `resultCardId`
+  `RC-depth-ablation-1c560bcc-67e9e14e`. Its estimand, verbatim: "Paired within-decision difference
+  in expected hand value for hero (bb, attributed at the decision level) between two configurations
+  of the SAME surface: depth-1-only advice (refinementBudgetMs=0, the configuration that shipped in
+  production for the life of the project) and depth-2/3-enabled advice."
+
+  Two independent reasons that label is wrong for what was measured. Neither is a reason to delete
+  the card.
+
+  REASON (a) — ON THE RIVER, BOTH ARMS ARE DEPTH-1, AND THE RIVER IS THE ENTIRE HEADLINE.
+  Every refinement stage that adds depth is street-gated off the river: `callDepth2`
+  (`gameTreeEvaluator.js:1521`), `checkCheckDepth2` (`:1552`), `betCallDepth2` (`:1594`),
+  `checkRaiseDepth2` (`:1679`) are all `street !== 'river'`, and `depth3Barrel` (`:1732`) is
+  `street === 'flop' || street === 'turn'`. The only stage that opens on the river is
+  `riverPerCombo` (`:1413`), which is a per-combo exactness refinement and adds no depth. Confirmed
+  in the data rather than inferred: `depthReachedMax` is 1 on 45 of 45 river decisions.
+
+  So on the river the card compares depth-1 against depth-1-plus-per-combo-refinement. Whatever that
+  contrast measures, it is not depth. And it is where the number comes from — the street-decomposed
+  paired deltas, recomputed from `out/depth-ablation.json`:
+
+      slice        n     delta (bb)        95% CI              ESS(depth-1)
+      ALL         260      -0.4711     [-2.77, +1.33]              39.5
+      flop        138      +0.6725     [-0.07, +1.69]              21.0
+      turn         77      +0.0110     [-1.30, +1.05]              12.2
+      river        45      -3.9349     [-26.11, +2.47]              7.1
+      non-river   215      +0.4231     [-0.22, +1.30]              33.2
+
+  The headline is -0.4711. Remove the river and it is +0.4231. The negative sign of the card's
+  top-line number is produced entirely by the one street on which the treatment was not applied.
+  That is not a caveat to add to the card; it is the card measuring something other than what it
+  says.
+
+  REASON (b) — THE ENGINE MOVED 3.4 HOURS AFTER THE RUN. `manifest.engineCommit` is
+  `67e9e14eb42318ccaa3d22ac1f7ba1a6a6fac144`. The WS-378 fix `d0a03e49` landed afterwards and, per
+  its own commit record, cut systematic river flips from 0.7111 to 0.2222 and removed a 34-of-34
+  passive bias. The card's river slice is precisely the slice that fix repaired, so the card's
+  headline number was produced by an engine with a known river defect.
+
+  WHY THIS IS A SUPERSESSION AND NOT A DELETION. The card carries
+  `manifest.disclaimerRegisterVersion = 'FR-1+e3867c10fc2a'`. That stamp exists for exactly this
+  case: it is what lets a fault confirmed tomorrow find the results that depended on it yesterday.
+  Deleting the card destroys the only record that the measurement was taken, at what version of the
+  register, and with what result — and it deletes the evidence that the river number was ever
+  believed, which is the thing a future reader most needs. The register's own doctrine, enforced in
+  code (`faultRegister.js:469-475`), is that entries may not be confirmed or retired on assertion
+  alone and never quietly disappear; the same discipline must apply to cards.
+
+  ALSO ON THE RECORD, AND NOT A SEPARATE PROBLEM. WS-369's structural rewrite of `isLiveFacing`
+  made this card newly match `FAULT-population-mismatch` — the corpus is HandHQ online 2009,
+  `cardPopulation` resolves it to `online`, and under the new rule a card is live-facing unless it
+  was MEASURED live. That is the matcher working as designed on a card that genuinely carries the
+  transfer limitation, and it is already recorded in WS-385's `status_note`. It is a third reason to
+  keep the card rather than delete it: it is now a worked example of the structural matcher firing
+  correctly.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE STANDING EV-DELTA ACCEPT CRITERION BECAUSE IT IS AN INSTRUMENT
+    FIX — it repairs the record of a measurement rather than changing the engine. What it must
+    demonstrate instead: a re-run at an engine commit at or after `d0a03e49`, on the same Deal Book,
+    partition and seeds, reporting the full street-decomposed table above so the old and new numbers
+    sit on the same axis. The direction stated in advance is that the RIVER delta moves upward — the
+    WS-378 fix removed a passive bias on that street — and that the non-river delta is materially
+    unchanged, since nothing WS-378 touched applies off the river. If the non-river delta moves,
+    that is itself a finding and wants investigating before the new card is published.
+  - THE OLD CARD IS SUPERSEDED, NOT DELETED, AND THE MECHANISM FOR SAYING SO IS BUILT IF IT DOES NOT
+    EXIST. Checked at HEAD: `RESULT_CARD_FIELDS` (`schemas.js:277-410`) has no supersession or
+    retirement field. `SUSPECT_PENDING_REVIEW` (`faultRegister.js:124`) exists but is the flag a
+    CONTAMINATED card carries when an entry is confirmed, which is a different relation. So this
+    criterion contains a small schema decision — see the decision flag — and it must be settled
+    rather than worked around by renaming a file.
+  - THE ESTIMAND OF THE NEW CARD IS STREET-CONDITIONED, OR THE CARD DOES NOT SHIP. The failure this
+    ticket exists to correct is a label that claimed a treatment which was not applied on a third of
+    the sample. The replacement must either restrict its scope to the streets where the refinement
+    stages actually open, or state per street what treatment was applied — and the river row must
+    say `riverPerCombo` and not "depth-2/3".
+  - THE HEADLINE NUMBER IS NOT REPORTED WITHOUT ITS DECOMPOSITION. `-0.4711` and `+0.4231` are the
+    same run. Any surface quoting one must carry the other. The founder's standing rule that numbers
+    carry their conditional applies with unusual force here, because the two numbers differ in SIGN.
+  - THE ADMISSIBILITY WARNING SURVIVES THE RE-RUN OR IS CLEARED HONESTLY. The run had 22
+    contributing players against a 30-cluster bar, so `absoluteArmsQuotable` is false and only the
+    paired delta and the divergence are readable. If the re-run has the same cluster count, it
+    carries the same warning; do not let a re-run quietly acquire an authority the first one was
+    denied.
+  - THE COST IS STATED BEFORE THE RE-RUN IS SCHEDULED. 23.9 s per decision for a two-arm pair, 260
+    decisions, 6,219,107 ms measured. A re-run at the same scope is another 1.7 machine-hours. If
+    the scope grows to close the river's confidence interval it is 36,754 river decisions at the
+    current ESS — about 200x the flop cost per bit — which is a statement that the river is not
+    measurable until WS-402 raises the ESS. Sequence accordingly.
+effort: "S"
+files_involved:
+  - "docs/standard-of-record/cards/RC-depth-ablation.json"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+blocked_by:
+  - "WS-402"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES THE RESULT CARD SCHEMA GAIN A SUPERSESSION RELATION? There is none today
+    (`schemas.js:277-410`). The options are (a) a `supersededBy` field naming the replacement card,
+    (b) a status field mirroring the fault register's `untested | partially-supported | confirmed |
+    retired` vocabulary, or (c) no schema change, recording the supersession only in the fault
+    register as a confirmed entry whose matcher catches the old card. (c) is free and is arguably
+    where it belongs — "this card's estimand did not describe its treatment" is a FAULT, it has a
+    mechanism, it has a falsifier, and confirming it would flag the card `suspect-pending-review`
+    automatically. (a) is clearer to a human reading the cards directory. RECOMMENDATION: (c) first,
+    because it uses machinery that already exists and already enforces evidence
+    (`faultRegister.js:469-475`), and it makes the supersession searchable by the same mechanism
+    that finds every other contaminated result. Revisit (a) only if a second card needs it.
+  - |
+    OPEN — IS THE RE-RUN WORTH IT BEFORE WS-402 LANDS? The blocking dependency is set to WS-402
+    because a re-run at a 15.2% ESS reproduces the same uninformative intervals with a different
+    engine commit, and the river slice at ESS 7.1 cannot be read either way. The counter-argument is
+    that the card is wrong NOW and the correction should not wait on an unrelated engine fix. The
+    middle option is to supersede the card immediately (cheap, no compute) and schedule the re-run
+    after WS-402. RECOMMENDATION: the middle option. Correcting the record and producing a better
+    number are two different jobs and only the second needs the ESS.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), BY READING THE CARD, THE CODE, AND RECOMPUTING THE
+  DATA.
+
+  The card, read directly from `docs/standard-of-record/cards/RC-depth-ablation.json`:
+    - `resultCardId` `RC-depth-ablation-1c560bcc-67e9e14e`.
+    - `estimand` as quoted, including the trailing "NOT a per-decision increment, NOT a winrate, and
+      NOT a keep/delete verdict on the depth-2 subsystem" — the card is already careful about three
+      other misreadings and silent about this one.
+    - `manifest.engineCommit` `67e9e14eb42318ccaa3d22ac1f7ba1a6a6fac144`.
+    - `manifest.disclaimerRegisterVersion` `FR-1+e3867c10fc2a` — present, so the supersession
+      mechanism has something to hang on.
+    - The card has no status or supersession field; confirmed against `RESULT_CARD_FIELDS`
+      (`schemas.js:277-410`), where the only related field is `disclaimerRegisterVersion` at
+      `:365-366`.
+
+  The street gates, read in place: `:1413` `riverPerCombo` (`street === 'river'`), `:1521`
+  `callDepth2`, `:1552` `checkCheckDepth2`, `:1594` `betCallDepth2`, `:1679` `checkRaiseDepth2` (all
+  `street !== 'river'`), `:1732` `depth3Barrel` (`flop` or `turn`). ONE CORRECTION TO THE AUDIT
+  NOTE'S LINE LIST: `:1632` `raiseResponseDepth2` is gated on `{ enabled: enableDepth2Raise,
+  raiseLikely: pRaise > 0.02 }`, not on street; it is street-gated only transitively, being nested
+  inside the `betCallDepth2` block. The conclusion is unchanged — it too cannot run on the river —
+  but the reason is indirect and a future reader checking `:1632` would not find a street test
+  there.
+
+  The data, recomputed from `out/depth-ablation.json` with a standalone reimplementation of
+  `weightFor` / `wisValue` / `pairedDelta` that reproduces the shipped `report` block exactly where
+  they overlap (ALL delta -0.4711, ALL ESS 39.5, `discordantN` 95):
+    - The five-row street table above, every figure independently derived. All four street deltas
+      quoted in the audit note verified to four decimal places.
+    - `depthReachedMax` by street: river 45/45 at 1; flop 138/138 at 2; turn 74/77 at 3. This is the
+      empirical confirmation of reason (a) — the river arm never left depth 1.
+    - `report.divergence.byStreet.river`: 36 flips of 45 (`flipShare` 0.8) against flop 1/138 and
+      turn 3/77. The divergence is as river-concentrated as the delta.
+    - `report.admissibility`: 22 clusters, `minClustersForCI` 30, `absoluteArmsQuotable` false, with
+      the standing `TOO_FEW_CLUSTERS_FOR_LEVELS` warning.
+    - `run.runtimeMs` 6,219,107 over 260 decisions = 23.9 s per decision.
+
+  The WS-378 commit is `d0a03e49` ("feat(backtest): the river flips are systematic, and the cause is
+  omniscience not variance"), present in `git log` ahead of `67e9e14e`. The 0.7111 -> 0.2222 and
+  34-of-34 figures are taken from that ticket's own record and were NOT independently re-derived
+  here; they are attributed rather than asserted.
+
+  PROGRAM-CAP HAZARD, RECORDED BECAUSE IT WILL SUPPRESS THIS ITEM. `methodology-integrity` declares
+  `max_open_items: 3` with `priority_floor: 18` (`prog-methodology-integrity.yaml:200-201`) and was
+  already at 11 open items before this cluster was filed; adding this item and WS-406 takes it to 13,
+  a 4.33x breach. Per the standing behaviour a program over its cap has its whole backlog floored to
+  `priority_floor`, so this item's P1 score of 26.0 will be read as 18 by `/next` and it will not
+  compose. That is a pre-existing condition, not one this ticket created, and the fix is a cap
+  decision rather than a re-filing — this item's subject is the SCORING vocabulary, not poker domain
+  correctness, and moving it to `domain-correctness` (60-item cap, not breached) to dodge the floor
+  would put it under a program whose problem classes do not describe it. Flagged for the founder.

@@ -1,0 +1,68 @@
+id: "FIND-047"
+title: "One bucket, two denominators — the estimate decays and its confidence does not, and the decay unit is array position rather than time"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  DEFECT 1 — DUAL DENOMINATORS. decisionAccumulator.js:465-466 writes `bucket.occurrences++` (raw)
+  and `bucket.weightedOccurrences += recencyWeight` (DECAY_HALFLIFE = 50, :30) together. The
+  ESTIMATE then normalises by the decayed count — :611 `const wn = bucket.weightedOccurrences`,
+  feeding avgRangeEquity and avgSegmentation — while the CONFIDENCE uses the raw count: :628
+  `bucket.confidence = bayesianSampleConfidence(bucket.occurrences)`, and `bucket.sparse` likewise.
+  Confidence is therefore reported on n where the estimate was computed on an effective sample size
+  (Sum w, or (Sum w)^2 / Sum w^2), and the gap grows without bound in n. exploitValidator's
+  consequence-weighted gate reads the undecayed count, so it structurally cannot catch this.
+
+  CROSS-CRITIC CORRECTION APPLIED: the lens framing "evidence decays to zero" is OVERSTATED. The
+  averages are weighted MEANS and stay well-defined at any n. The defect is the denominator
+  MISMATCH between the estimate and its stated confidence, not a vanishing estimate. A related lens
+  claim — "the villain estimator has no time dimension" — was ruled WRONG and self-corrected:
+  DECAY_HALFLIFE = 50 and recencyWeight (:404) exist and are carried into the action distribution
+  at villainDecisionModel.js:276.
+
+  DEFECT 2 — THE MEMORIES ARE INCOMMENSURABLE. Decays: postflop buckets, evidenceN, the action
+  distribution. Never decays: the preflop range (bayesianUpdater.js:174-176), the six scalar stats
+  and every credible interval (tendencyCalculations.js:317-362), poolBaseline lifetime counts. So
+  "what this villain does" means the last ~50 hands on one street and his entire history on
+  another, and nothing in the model states the mixture or its effect.
+
+  DEFECT 3 — THE DECAY UNIT IS ARRAY POSITION, NOT TIME OR HANDS PLAYED.
+  decisionAccumulator.js:252 and :403-404 compute `handAge = totalHands - 1 - handIdx` over the
+  array as passed. modelAudit.js:107 passes up to `cp` hands while :121 passes a 10-hand slice, so
+  every TEST hand carries weight >= 0.87 while TRAINING hands decay across the full checkpoint —
+  the two sides of the audit are weighted on different scales. analysisPipeline.js:115 passes hands
+  with no in-function chronological sort, so the "recency" weight follows insertion order.
+
+  RELATED AND FILED HERE FOR SCOPE, NOT FIXED HERE: modelAudit.js:119 builds the test-window range
+  profile as `buildRangeProfile(playerId, sorted.slice(0, cp + CHECKPOINT_INTERVAL), userId)` — a
+  window that CONTAINS the test hands — and :121 then accumulates test decisions against it. The
+  labels are clean; the covariates are not. It matters disproportionately because modelAudit is the
+  only engine-independent check in the system.
+affected_files:
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/analysisPipeline.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/exploitEngine/tendencyCalculations.js"
+recommended_fix: |
+  (1) Feed the confidence function an effective sample size derived from the same weights that
+  produced the estimate — (Sum w)^2 / Sum w^2 is the standard form and both sums are already
+  available at the write site. Note the calibration caveat from FIND-049: the 15/5 thresholds
+  downstream are calibrated on RAW counts, so an ESS substitution must be re-anchored, not dropped
+  in. (2) Make the decay unit explicit and uniform — decay on hand index within a chronologically
+  sorted sequence, sorted inside the function rather than assumed at the caller, and state which
+  estimates decay and which do not. (3) In modelAudit, build the test-window profile from
+  `sorted.slice(0, cp)` only; the leak is a one-expression fix and the instrument is the reason to
+  make it first.
+theory_citation: "POKER_THEORY §11.5 admissibility; rangeEngine no-frequentist rule; memory: feedback_backtest_split_and_leakage (corpus-mined priors leak by construction — enforce structurally)"
+dedup_key: "blindspot-domain-correctness-dual-denominators-and-arraypos-decay"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-391"

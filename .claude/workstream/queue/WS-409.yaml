@@ -1,0 +1,167 @@
+id: "WS-409"
+title: "Triple barrel is unreachable on the flop at every budget — depth3Barrel is disqualified by an 800-combo range-width gate against a measured flop range of 1081 combos, not by time, which is why depthReachedMax is 2 on 138 of 138 flop decisions and 3 on 74 of 77 turn decisions"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+finding_id: ""
+description: |
+  SCOPED BY THE FOUNDER'S RULING: depth-2 is correct and required, and where it is not good enough
+  that is ours to fix. This is the depth-3 half of that, split from WS-408 because its blocker is
+  different in kind from the other five capabilities and is independently shippable.
+
+  THE CAPABILITY. Triple barrel — the value of betting a third time, two streets from now. It is
+  implemented (`computeDepth3BarrelEV`, reached through the `depth3Barrel` stage at
+  `gameTreeEvaluator.js:1732`), and on the turn it works: `depthReachedMax` is 3 on 74 of 77 turn
+  decisions in the scored run. On the flop it has never run: 0 of 138.
+
+  THE BLOCKER IS NOT TIME. This is the finding, and it inverts the obvious hypothesis. The gate at
+  `:1732` is `{ street: 'flop' || 'turn', betDepth2Ran: !!betDepth2 }` and it OPENS. What
+  disqualifies the node is the condition inside, at `:1740-1741`:
+
+      const depth3ComboLimit = street === 'turn' ? 1200 : 800;
+      if (topBetCandidate && segmentation.totalCombos <= depth3ComboLimit && ...)
+
+  Measured on HEAD with a temporary probe: a full-range OOP flop node has
+  `segmentation.totalCombos = 1081`. 1081 > 800, so the branch falls to the `else` and the ledger
+  records `endStage('depth3Barrel', 'no-candidate')` with an EMPTY `blockedBy`. At 2000 and 8000 ms
+  the stage reports `blockedBy: ['budget']` and the range-width disqualification is never reached —
+  which is exactly why this looked like a budget problem. At 30000 ms, with `budgetSkipped` empty
+  and every other stage at `weightConsumed = 1`, `depth3Barrel` still does not run, and now the
+  ledger says why.
+
+  A flop range of 1081 combos is not unusual; it is close to typical for a villain who has not yet
+  narrowed. The limit of 800 therefore excludes most real flop nodes by construction, and the turn
+  limit of 1200 admits most turn nodes — which is precisely the pattern the corpus census shows.
+  The asymmetry is deliberate and the comment says why: "Turn depth-3 is simpler (1 future street vs
+  2), so allow larger ranges." The reasoning is sound; the consequence — that the flop, the street
+  with the most decisions (138 of 260) and the most branching future, is the one street that never
+  gets depth-3 — was probably not the intent.
+
+  WHY IT MATTERS MOST ON THE FLOP, IN POKER TERMS. A three-barrel line is a flop decision. Deciding
+  whether to fire the first barrel without any model of the third is exactly the situation the
+  capability exists for: the flop bet's value depends on hero's ability to keep betting, and on the
+  flop there are two more streets of fold equity to collect. On the turn, where depth-3 does run, it
+  models a single future street and the decision it informs is already half-committed. The
+  capability is reachable precisely where it is worth least.
+
+  THE MEASURED DIRECTION, STATED HONESTLY. The flop is also the one street where depth-2's paired
+  delta is positive and its interval nearly excludes zero: +0.6725 bb [-0.07, +1.69] on 138
+  decisions, against turn +0.0110 and river -3.9349. So the flop is where depth already pays, which
+  is a reason to expect more depth to pay more — and it is a prediction this ticket must test rather
+  than assume.
+accept_criteria: |
+  - EV-DELTA ACCEPT CRITERION, DIRECTION STATED IN ADVANCE. On the IDENTICAL 260-decision set from
+    `out/depth-ablation.json`, restricted to the 138 FLOP decisions, the arm with depth-3 reachable
+    must be POSITIVE against the arm without it, holding the refinement budget constant across both.
+    The flop is the correct slice because it is the only street where the capability changes:
+    the turn already reaches depth-3 on 74 of 77 decisions and the river never can. Report the turn
+    and river slices as unchanged controls — if either moves, the change reached somewhere it should
+    not have and the measurement is invalid before it is interpreted.
+  - THE COMPUTE COST IS MEASURED AND STATED BEFORE THE LIMIT IS CHANGED. The 800-combo limit exists
+    to bound compute on a two-future-street enumeration, and that reason is real. Report the
+    measured wall-clock of `computeDepth3BarrelEV` on flop nodes at 800, 1100 and 1400 combos before
+    proposing a new value. A limit raised without that number is a limit moved from one arbitrary
+    place to another.
+  - THE FIX IS NOT NECESSARILY A LARGER NUMBER, AND THE TICKET MUST CONSIDER THE ALTERNATIVES. Three
+    are open (see the decision flag): raise the limit, sample the range rather than enumerate it, or
+    narrow the range before the limit is applied. Only the third is free. Whichever is chosen, the
+    accept criterion is the EV delta above, not the reachability alone — a stage that runs and
+    changes nothing has cost compute and bought nothing.
+  - REACHABILITY IS DEMONSTRATED AND PINNED. A test must show `depth3Barrel` in `ranStages` on a
+    flop node with a realistic range, and assert it. Today the corpus census is 0 of 138 and the
+    only reason anyone knows is that `depthReachedMax` was recomputed by hand from a 570 KB run
+    artefact. Per `exploitEngine/CLAUDE.md`, a diagnostic that only logs is a comment with extra
+    steps.
+  - THE `no-candidate` OUTCOME IS DISAMBIGUATED IN THE LEDGER. `endStage('depth3Barrel',
+    'no-candidate')` (`:1795`) currently covers three distinct situations that the comment above it
+    names: no depth-2-refined bet to extend, a range too wide for the combo limit, or a check that
+    already beats the bet. Those are not the same fact and only one of them is this ticket. The
+    ledger must say which, so that the next person to ask "why did depth-3 not run" reads the answer
+    instead of deriving it.
+  - THE WS-309 RULE APPLIES: the reachability assertion must be demonstrated FAILING against HEAD
+    before the fix is written. It will — 1081 > 800 on the probe fixture.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+blocked_by:
+  - "WS-403"
+  - "WS-404"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — RAISE THE LIMIT, SAMPLE THE RANGE, OR NARROW BEFORE MEASURING? (a) Raising
+    `depth3ComboLimit` from 800 is the direct fix and pays the full enumeration cost on the widest
+    ranges, which are also the slowest — the cost curve is worst exactly where the limit currently
+    bites. (b) Sampling the range to a fixed combo budget makes the cost constant and the result
+    stochastic, which collides with the standing determinism rule for engine EV assertions and with
+    the memory entry that advice must not vary with machine conditions. (c) Applying the limit to
+    the NARROWED range rather than the raw one — `narrowedRange` already exists at this point in
+    the function and is what the depth-2 stages consume — may bring typical flop nodes under 800
+    with no compute increase and no new mechanism at all. RECOMMENDATION: price (c) first, because
+    if it works it is free and it is arguably what the limit was always meant to test. Fall back to
+    (a) with a measured cost curve. Do not adopt (b) without an explicit founder ruling on
+    determinism.
+  - |
+    OPEN — SHOULD THE FLOP LIMIT BE HIGHER THAN THE TURN LIMIT RATHER THAN LOWER? The current
+    asymmetry (flop 800, turn 1200) follows compute: two future streets cost more than one. But the
+    VALUE asymmetry runs the other way — a three-barrel plan is a flop decision, and the flop is
+    where the plan is worth knowing. If the limits are ordered by cost alone, the capability is
+    cheapest exactly where it is least useful. This may be the right trade; it should be a decision
+    rather than a side effect.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), AND THE MECHANISM IDENTIFIED BY MEASUREMENT RATHER
+  THAN INHERITED FROM THE AUDIT NOTE — WHICH ATTRIBUTED THIS TO BUDGET.
+
+    - `gameTreeEvaluator.js:1732` — `if (gateStage('depth3Barrel', { street: street === 'flop' ||
+      street === 'turn', betDepth2Ran: !!betDepth2 }))`.
+    - `:1740` — `const depth3ComboLimit = street === 'turn' ? 1200 : 800;`
+    - `:1741` — `if (topBetCandidate && segmentation.totalCombos <= depth3ComboLimit && (!checkCandidate
+      || topBetCandidate.ev > checkCandidate.ev))`, with the `else` branch ending
+      `endStage('depth3Barrel', 'no-candidate')` and its comment naming the three situations that
+      outcome conflates.
+    - `:967-983` — `gateStage` records `blockedBy` from failing condition keys plus `'budget'`,
+      which is why the range-width disqualification appears as an EMPTY `blockedBy` with outcome
+      `no-candidate` and is invisible until the budget stops masking it.
+
+  MEASURED ON HEAD, via a temporary vitest probe (created, run, deleted) using the fixture from
+  `depthReachability.test.js`: full 169-cell villain range, board A-spade 7-heart 2-diamond, hero
+  A-heart K-heart, pot 60, `trials: 2000`, budgets 0/2000/8000/30000 ms, both a check node and a
+  facing-bet node. `segmentation.totalCombos` was 1081 in every configuration. `depth3Barrel`
+  reported `blockedBy: ['budget']` at 2000 and 8000 ms and `no-candidate` with an empty `blockedBy`
+  at 30000 ms, where `budgetSkipped` was empty and every other running stage had reached
+  `weightConsumed = 1`. That is the direct evidence that the flop blocker is range width, not time.
+
+  Corpus census recomputed from `out/depth-ablation.json` (`evStats.depthReachedMax` by
+  `slices.street`): flop 138/138 at depth 2 and 0 at depth 3; turn 74/77 at depth 3 and 3/77 at
+  depth 2; river 45/45 at depth 1. The audit note's "reached on 74/77 turn decisions, 0/138 flop"
+  verified exactly.
+
+  Street-decomposed paired deltas, also recomputed (reimplementation of `weightFor` / `wisValue` /
+  `pairedDelta` validated against the shipped `report` block): flop +0.6725 [-0.07, +1.69] on n=138,
+  turn +0.0110 [-1.30, +1.05] on n=77, river -3.9349 [-26.11, +2.47] on n=45. Flop depth-1 ESS is
+  21.0 of 138 (15.2%), so a flop-restricted contrast is reading a 21-decision sample — which is why
+  WS-402 is upstream of any strong conclusion here, and why this ticket's `blocked_by` names the
+  instrument items rather than pretending the number is available today. Reaching a plus-or-minus
+  0.5 bb interval on the flop needs roughly 433 decisions at the current ESS, and measured compute
+  is 23.9 s per decision for a two-arm pair.

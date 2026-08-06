@@ -1,0 +1,106 @@
+id: "WS-415"
+title: "Every rendered Hole Map row states a fold rate, a gap and a bb/hour without stating what population it came from — the transfer caveat exists in the data as denom.transferNote and is dropped by the renderer, so a screenshot of the table is a claim with 100% of its safety apparatus removed"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "claims-policy"
+problem_class: "Disclaimer & Scope Boundaries"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Stage A finding A1, ranked #2 of the
+  roundtable's eight follow-ups).
+
+  WHAT THE ROW SAYS AND WHAT IT OMITS. Verified at HEAD, scripts/backtest/holeMapHtml.mjs:143-155.
+  Each row emits nine cells: label, required fold%, measured fold% + n, gap in pp, bb/occurrence,
+  rate/100 + n, bb/100, bb/hour, pool frequency + n. The top row reads:
+
+    bet 33% pot — flop, first in (pool checks 58% here) | 24.8% | 55.2% | +30.4pp | 2.43 | 8.56 |
+    20.773 | 5.19 | 13.04%
+
+  There is no population marker, no era, and not the word "transferred" anywhere in the row.
+
+  THE CAVEAT ALREADY EXISTS IN THE DATA. Every row of out/hole-map.json carries denom.transferNote:
+  "bb/hour assumes 25 hands/hour (live 9-handed). The corpus is ONLINE, where table pace is several
+  multiples faster, so the RATE transfers worse than the per-occurrence gap. The per-100-hands figure
+  beside it is the repo's own currency (POKER_THEORY §14.1) and carries no pace assumption."
+  holeMapHtml.mjs never references it. The renderer drops a field the generator deliberately wrote.
+
+  WHERE THE CAVEATS DO LIVE. In out/hole-map.html, "transferred" occurs twice, "ONLINE" four times,
+  "2009" twice and "50NL" three times — all of them in prose bands above and below the table, none in
+  a row. So the caveats survive exactly one delivery mode: reading the whole page in order.
+
+  WHY THAT IS A DEFECT AND NOT A STYLE PREFERENCE. Three ordinary, non-abusive delivery modes strip
+  every one of them: a screenshot of the table, a paste of a row into chat, a voice memo quoting a
+  figure. CLAUDE.md instructs "Before quoting any figure from this system, read
+  docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md §1" — an instruction that presumes a
+  quoting act and therefore a recipient. The whole ADR-009 apparatus (disclaimerRegisterVersion
+  stamps, faultRegister.matches(card), confirmFault returning suspect-pending-review over prior
+  cards) exists because outputs travel beyond the surface that produced them. This row does not.
+
+  THE TOP-RANKED FAULT REGISTER ENTRY IS EXACTLY THIS TRANSFER. Per CLAUDE.md and
+  DISCLAIMER-AND-FAULT-REGISTER.md §3, the highest-ranked entry is that the founder's game is live
+  9-handed 1/2-1/3 while the corpus is online 2009, so any live claim anchored on it is TRANSFERRED,
+  not measured — and the standing rule is "say so when reporting one". The row does not say so.
+
+  THIS IS THE ESTIMATE OWNER'S PROBLEM, NOT THE VIEW'S. Fixing it only in the eventual React surface
+  would leave the static HTML — which is what actually gets screenshotted today — unfixed, and would
+  put the claim apparatus in the renderer rather than beside the number. The row is where it belongs.
+accept_criteria: |
+  - EVERY ROW CARRIES ITS POPULATION AND ERA IN THE ROW, in both the static HTML and any future
+    in-app rendering, such that a crop of a single row still says what it was measured on. The
+    minimum is the population (online 2009 HandHQ, 25NL-1000NL) and the transfer status; the form is
+    open — a compact per-row chip, a footnote marker bound to the row, or a column.
+  - THE FIX READS denom.transferNote RATHER THAN RESTATING IT. The generator already writes the
+    caveat per row; a second copy in the renderer is a two-renderer defect of exactly the kind
+    WS-420 exists to prevent. If the note is too long for a row, the row carries a short marker
+    derived from structured fields, not a hand-written abbreviation of the prose.
+  - A TEST ASSERTS THE ROW CANNOT LOSE IT. Take a rendered row in isolation and assert it contains a
+    population identifier. This must fail against HEAD, which is the point.
+  - THE PER-OCCURRENCE AND PER-RATE COLUMNS ARE DISTINGUISHED, because transferNote itself says they
+    transfer differently: the per-occurrence gap transfers better than the rate, and bb/100 carries
+    no pace assumption while bb/hour does. A single blanket caveat on the row would flatten a
+    distinction the generator took care to make.
+  - REPORT WHETHER ANY OTHER out/*.html READOUT HAS THE SAME SHAPE. The Hole Map is View 7; Views 1-6
+    will want the same treatment, and the roundtable found the missing JTBD domain has the same
+    seven-surface scope. Name them; do not fix them in this ticket unless the fix is shared code.
+effort: "M"
+files_involved:
+  - "scripts/backtest/holeMapHtml.mjs"
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — HOW MUCH FITS IN A ROW. The honest caveat is two sentences and the row has nine columns
+    already, with H-ML01's 640x360 viewport floor in play (Gate 2 Stage E). The candidates are a
+    compact population chip ("online 2009"), a per-row footnote marker, or a persistent table-level
+    header that survives cropping. The roundtable did not pick one because that is a Gate 4 design
+    decision; what it binds is that SOMETHING population-identifying must ride the row.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Premises re-verified at HEAD by reading the code and the artifact:
+    - holeMapHtml.mjs:143-155 — the nine cells of rowHtml, no population field among them.
+    - out/hole-map.json — denom.transferNote present on every row; zero references to it in
+      holeMapHtml.mjs.
+    - out/hole-map.html — "transferred" x2, "ONLINE" x4, "2009" x2, "50NL" x3, all outside the table.
+  Note the shipped HTML renders only the top 30 rows (holeMapHtml.mjs:141); the proposed in-app
+  surface renders all 945. The defect is identical in both, but its blast radius scales with the
+  second.

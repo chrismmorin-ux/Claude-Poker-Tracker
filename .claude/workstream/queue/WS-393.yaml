@@ -1,0 +1,196 @@
+id: "WS-393"
+title: "The game tree is not unconnected — it is fully wired to the venue the founder does not play, so the live path needs a second PRODUCER for a consumer that already exists, not a new connection; and it must not be wired until stacks are recordable and multiway is threaded"
+legacy_id: ""
+type: improvement
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 15.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-044"
+description: |
+  THE CORRECTION THAT CHANGES THE COST MODEL. Every prior framing of this — including three of the
+  six roundtable lenses and the standing memory entry `project_allin_side_pots.md:19` — describes
+  the live table as having "no game-tree advisor". That is wrong in a way that matters for pricing.
+  The advisor is COMPLETE and RUNNING. It terminates at a different venue:
+
+    - `src/contexts/OnlineAnalysisContext.jsx:57-60` — `useLiveActionAdvisor(safeLiveHandState,
+      tendencyMap, { equityFn, rakeConfig })` produces the full `evaluateGameTree` output, with a
+      rake config resolved at `:51-55` (`source: 'ignition'`, stated rather than inferred).
+    - `:68-70` — `pushAdvice(advice)` ships it to the Chrome extension.
+    - `ignition-poker-tracker/side-panel/render-coordinator.js:386` — the side panel reads
+      `snap.lastGoodAdvice?.recommendations?.[0]` and renders it.
+    - `src/components/views/TableView/LiveAdviceBar.jsx:181` — the LIVE bar already has a full
+      render path for the same object, gated on `topRec && gameTreeAdvice.heroEquity != null`.
+    - `src/components/views/TableView/CommandStrip.jsx:88` — the live table reads the same context.
+
+  It is null on the live path for exactly one reason: `src/hooks/useSyncBridge.js:329` is the SOLE
+  writer of `liveHandState`, and it fires only on a `BRIDGE_MSG.HAND_STATE` window message from the
+  extension. So the prop, the renderer, the rake resolution, and the rendering contract all exist.
+  What is missing is a producer that marshals the MANUAL table's state into the same shape.
+
+  Nobody has costed it that way, and the difference is large: this is not "build a connection", it
+  is "add a second producer behind an existing contract" — with the whole risk sitting in the
+  ARGUMENTS that producer would pass, which is the rest of this ticket.
+
+  WHY THE ONE-HOOK VERSION MUST NOT BE SHIPPED. The tempting minimal cut is to replace the
+  `actionAdvice` useMemo at `CommandStrip.jsx:653-665` with a `useActionAdvisor` call, on the
+  argument that every input is already in scope. Read from HEAD, it is not:
+
+    - `gameTreeEvaluator.js:792` defaults `numOpponents = 1` and `:793` defaults
+      `opponentModels = []`. `useActionAdvisor.js:59-70` passes NEITHER. A 9-handed table would be
+      evaluated with a HEADS-UP fold model on 100% of hands.
+    - `gameTreeEvaluator.js:791` defaults `effectiveStack = null`, and `useActionAdvisor` does not
+      pass it because it cannot: `src/reducers/gameReducer.js` has no stack field anywhere (direct
+      grep: zero matches for `stack`). SPR — the variable the founder's own doctrine names as the
+      cause of fear-driven passivity in medium hands — is not merely unmodelled on the live path,
+      it is UNRECORDABLE.
+    - `useActionAdvisor.js:41` defaults `rakeConfig = null`, and no caller supplies one. The online
+      path builds one (`OnlineAnalysisContext.jsx:51-55`); the manual path has no equivalent.
+      WS-333 measured the omission at ~4.8pp of required equity for a live blind defender.
+
+  Shipping that puts a heads-up fold model on a nine-handed table with rake omitted, and it replaces
+  three constants the founder can distrust on sight with an EV number he will trust. That is
+  strictly worse than the current state, which is why the roundtable ruled it harmful-in-isolation.
+
+  THE HONEST ORDERING, AND IT IS THE STRUCTURE OF THIS TICKET:
+    (0) RECORD STACKS. A per-seat stack field in `gameReducer`, an entry surface for it, and
+        persistence. Nothing downstream of this is honest without it — and note that the corpus
+        backtest has the same hole from the other side
+        (`assumptionEngine/__backtest__/handStateReconstructor.js:254` hardcodes
+        `effectiveStackBB = 100`), so SPR is currently a CONSTANT in both the scored figure and the
+        live path. Step 0 is shared infrastructure, not live-path-only work.
+    (1) THREAD MULTIWAY. `numOpponents` and `opponentModels` from the live seat state. The live
+        table is the one surface where multiway is the NORMAL case, and per
+        `exploitEngine/CLAUDE.md` "players remaining means WHO, not how many" — resolve the seat
+        list through `liveGameContext.buildSeatsToAct` / `preflopFoldResolver.resolveSeatFoldToRaise`,
+        do not pass a count and a per-opponent constant.
+    (2) MONOTONICITY OR DEPTH DISCLOSURE. Refinement depth is wall-clock gated
+        (`gameTreeEvaluator.js:814` `refinementBudgetMs = 2000`, `:822` `Date.now()`), and WS-378
+        measured that 80% of top-action flips are depth-1→2. Wiring the live path FIRST would take
+        the non-determinism from 0% of the founder's hands to 100% of them. Either refinement is
+        asserted monotone, or the surface says which depth produced the answer.
+    (3) WIRE. Only then, and behind the existing `LiveAdviceBar` contract rather than a new one.
+
+  THE SEQUENCING HAZARD IS THE POINT OF THIS TICKET. Each of (0)-(2) is independently justified;
+  (3) without them converts three visible constants into one invisible, non-reproducible,
+  structurally-misconfigured number. The ordering is not caution, it is the difference between an
+  improvement and a regression.
+
+  RANK. Below the backtest-integrity family and below WS-392. The founder has accepted thin live
+  volume: mechanism is scored on the corpus and live data then MOVES it (POKER_THEORY §11.5
+  admissibility), so a defect that does not touch the scored figure does not outrank one that does.
+  This one touches the scored figure only through step (0), which is shared with the backtest.
+accept_criteria: |
+  - THE §11.9 ARM SCORE FROM WS-392 IS READ BEFORE THIS TICKET IS SCHEDULED. That run prices the
+    shipped three-literal rule against the engine on an identical decision set. If a corrected small
+    rule recovers most of the engine's edge, this project's remaining value is the residual and it
+    must be re-priced against that number rather than assumed. This is a gate, not a formality.
+  - EACH STEP CARRIES ITS OWN EV DELTA, MEASURED BY THE STANDARDIZED METHOD ON AN IDENTICAL DECISION
+    SET. Not "the advisor now renders on the live table". Specifically:
+      * step (0): re-run the corpus scored figure with real per-hand effective stacks replacing the
+        hardcoded 100bb and report the EV delta and the change in the SPR distribution. Direction is
+        NOT predicted — 100bb is a plausible central value and the effect could go either way; that
+        is exactly why it must be measured rather than argued.
+      * step (1): re-run with `numOpponents`/`opponentModels` threaded on multiway decisions only,
+        and report the EV delta on that subset. Expected direction: fold equity DOWN and hero
+        aggression DOWN multiway, since a heads-up fold model understates how often at least one of
+        several opponents continues.
+      * step (3): report the EV delta of engine advice vs the WS-392-corrected rule on the live
+        decision set, which is the number that justifies the whole project.
+  - NO STEP SHIPS BEFORE ITS PREDECESSOR. Enforce it structurally, not by discipline: the live
+    producer must REFUSE to construct an `evaluateGameTree` call that omits `effectiveStack` or
+    `numOpponents` on a table with more than two live seats, rather than letting the defaults apply.
+    `exploitEngine/CLAUDE.md`'s standing preference is "prefer unrepresentable to validated" — a
+    default that silently means "heads-up, no rake, unknown stacks" is precisely the representable
+    wrong state to remove.
+  - THE RAKE CONFIG IS RESOLVED AND STATED, NEVER INFERRED FROM A STAKE LABEL. The online provider
+    states `source: 'ignition'` by construction because it knows its venue. The manual path knows
+    its venue too — it is live. Resolve through `rakeResolver.resolveRakeConfig` with the venue
+    stated, and surface WHICH rake the numbers were computed under, including when the answer is
+    "unknown", since an unknown rake is not a zero rake.
+  - THE EXISTING CONSUMER CONTRACT IS REUSED, NOT FORKED. `LiveAdviceBar` already renders this
+    object (`:181-390`) and the Ignition side panel renders the same shape. A second render path
+    for the same data is how the two surfaces drift, and the confidence badge (WS-394) is already
+    an instance of that drift. Assert that both surfaces consume the same producer output shape.
+  - REPRODUCIBILITY IS DEMONSTRATED ON THE LIVE PATH SPECIFICALLY. Identical inputs, two runs on the
+    founder's phone under different load, identical top action — or the surface states the depth it
+    got. WS-379 measured desktop and phone disagreeing on identical inputs; that must not become the
+    live experience.
+effort: "XL"
+files_involved:
+  - "src/reducers/gameReducer.js"
+  - "src/contexts/OnlineAnalysisContext.jsx"
+  - "src/hooks/useSyncBridge.js"
+  - "src/hooks/useActionAdvisor.js"
+  - "src/utils/exploitEngine/liveGameContext.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/utils/assumptionEngine/__backtest__/handStateReconstructor.js"
+blocked_by:
+  - "WS-392"
+  - "WS-401"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE FIRST ONE — IS THERE A STACK ENTRY SURFACE THE FOUNDER WILL ACTUALLY USE AT THE
+    TABLE? Step (0) is not a data-model change, it is a data-CAPTURE change, and the founder is
+    entering hands live on a phone in a 9-handed game. Per-seat stacks for eight opponents entered
+    by hand is a real interaction cost and it may simply not be payable. The cheaper alternatives
+    are worse in known ways: a single hero effective stack (loses per-opponent SPR, which is the
+    multiway case), a session-level default (constant SPR again, i.e. today's defect with extra
+    steps), or estimating from pot growth (unidentifiable). This needs Gate 1 of the design program
+    before any reducer field is added, and it should be decided by the founder rather than inferred.
+  - |
+    OPEN — WHETHER THE BACKTEST'S HARDCODED 100bb AND THE LIVE PATH'S MISSING STACKS ARE ONE FIX OR
+    TWO. They are the same absent quantity reached from opposite ends, and the backtest half
+    (`handStateReconstructor.js:19,:254,:330`) is in the backtest-integrity family filed separately
+    and higher. If the corpus carries real stack data that reconstruction is discarding, the backtest
+    half is cheap and should not wait on a live entry surface; if it does not, the two halves are
+    genuinely independent. Establish which before scheduling step (0).
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-044"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `OnlineAnalysisContext.jsx:51-55` rake resolution with `source: 'ignition'`; `:57-60` the
+      `useLiveActionAdvisor` call; `:68-70` the `pushAdvice` effect.
+    - `useSyncBridge.js:329` — `setLiveHandState(event.data)`, inside the `window` message handler,
+      after `validateLiveContext` and a debounce key. Sole writer confirmed.
+    - `render-coordinator.js:386` — `const topRec = snap.lastGoodAdvice?.recommendations?.[0];`
+    - `gameTreeEvaluator.js:791` `effectiveStack = null`, `:792` `numOpponents = 1`,
+      `:793` `opponentModels = []`, `:814` `refinementBudgetMs = 2000`, `:815` `onFastResult = null`.
+    - `useActionAdvisor.js:59-70` — the `evaluateGameTree` call passes `villainRange`, `board`,
+      `heroCards`, `potSize`, `villainAction`, `villainBet`, `playerStats`, `villainModel`, `trials`,
+      `rakeConfig` and nothing else. Neither `numOpponents` nor `opponentModels` nor `effectiveStack`.
+    - `useActionAdvisor.js:41` — `rakeConfig = null` default.
+    - `src/reducers/gameReducer.js` — grep for `stack` returns ZERO matches. Effective stack is
+      genuinely unrecordable from the manual table today, not merely unpassed.
+    - `CommandStrip.jsx:88` and `LiveAdviceBar.jsx:181` both consume the same context object.
+
+  ADDED, NOT IN THE RUN RECORD: `LiveAdviceBar.jsx:181-390` is a COMPLETE live-side renderer for the
+  game-tree object — sizing, fold%, reasoning, advantage badges, risk, staleness, flop breakdown —
+  all gated on the same `useGameTree` boolean. The run record establishes that the Ignition side
+  panel renders `topRec`; it does not note that the LIVE bar does too. That strengthens the "second
+  producer, existing contract" framing considerably: the live consumer is not merely possible, it is
+  already written and already dead.
+
+  NOTE ON A NEIGHBOURING CLAIM, NOT FILED HERE: the run record's `backtest_contaminants` states that
+  `gameTreeEvaluator.js:602-603`'s stale 0.75 is guarded by `if (numOpponents > 1)` and therefore
+  fires only in the backtest and never on the live path — "exactly backwards from how the external
+  ticket framed it". That is a backtest-integrity item and belongs to that batch; it is recorded here
+  only because it is the same `numOpponents` default and the two tickets must not both edit it.

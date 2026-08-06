@@ -1,0 +1,200 @@
+id: "WS-381"
+title: "The old fold-curve midpoint of 0.75 survives as a bet fraction in three places — the one WS-283 named is test-only, but the drill panel passes 0.75 as a hardcoded literal and IS production, so the stale constant reaches a user-visible number"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FILED OUT OF WS-283 (commit 923aef3a, 2026-08-05), whose closing line reads: "Not fixed:
+  gameTreeEquity.js:1119 carries a stale betFraction of 0.75. It is test-reachable only, and that
+  file was held by another agent."
+
+  THE FIRST HALF OF THAT NOTE VERIFIES. THE SECOND HALF DOES NOT GENERALISE, AND THAT IS THE
+  REASON THIS IS FILED AT P1 RATHER THAN P2.
+
+  WHAT WS-283 ESTABLISHED. `logisticFoldResponse` returns `baseFold` at `fraction === midpoint`
+  and nowhere else, and callers pass an UNCONDITIONAL fold rate — so the midpoint must sit where
+  the field's conditional fold rate equals its marginal. Measured on 1,139,119 postflop
+  facing-a-bet decisions, that is 0.35x pot. It had shipped at 0.75x, above 71% of all real bets,
+  so the curve subtracted from the base almost everywhere. `POPULATION_CURVE.midpoint` is now
+  `0.35` (`src/utils/exploitEngine/villainModelData.js:255`), and every entry in
+  `FOLD_CURVE_PARAMS` derives from it — `computeFoldCurveForStyle` returns
+  `POPULATION_CURVE.midpoint * clamp(inverseFoldRatio * 0.9, 0.6, 1.2)` (`:290`), so the whole
+  style table now lives in [0.21, 0.42], and `default` IS `POPULATION_CURVE` (`:307`).
+
+  So "betFraction = 0.75" no longer means what the code that passes it says it means. The
+  docblock inside `multiwayFoldPct` states the contract explicitly
+  (`gameTreeEquity.js:1132-1136`): "At the reference sizing (betFraction = curve midpoint) this
+  equals the style's base fold rate, so neutral-sizing behavior is unchanged; larger/smaller bets
+  now move the fold rate as game state dictates." Under the shipped curve, 0.75 is not the
+  reference sizing. It is roughly TWICE it, on every style. Passing it is not "neutral" — it is a
+  deliberate-looking request for the fold rate at a large overbet, applied where the author meant
+  "no sizing information."
+
+  THREE SITES CARRY THE STALE VALUE. THEY ARE NOT EQUALLY REACHABLE, AND THE TICKET MUST NOT
+  BLUR THEM.
+
+    (1) `gameTreeEquity.js:1119` — the DEFAULT PARAMETER
+
+          export const multiwayFoldPct = (primaryFoldPct, opponentModels, street, texture,
+                                          posCategory, betFraction = 0.75) => {
+
+        WS-283'S CLAIM HOLDS FOR THIS ONE. Both production callers pass an explicit sixth
+        argument, so the default is never taken outside tests. Verified by enumerating every
+        caller in `src/`.
+
+    (2) `src/utils/postflopDrillContent/drillModeEngine.js:808-814` — A HARDCODED LITERAL, AND
+        THIS ONE IS PRODUCTION.
+
+          const cascadingFoldProbability = multiwayFoldPct(
+            0.55,
+            villains.slice(1).map(() => ({ playerStats: { style: 'reg' } })),
+            street, (tx && tx.texture) || '*', '*',
+            0.75,
+          );
+
+        `computeBucketEVsV2` is imported by `src/components/views/PostflopDrillsView/BucketEVPanelV2.jsx:21`.
+        This is a rendered panel, not a harness. The 0.75 is passed positionally as `betFraction`
+        and is the same stale constant with the same stale meaning — the comment above it calls
+        the inputs "population-baseline fold rates", i.e. the author's intent was the NEUTRAL
+        sizing, which is now 0.35.
+
+    (3) `src/utils/exploitEngine/gameTreeEvaluator.js:603` — A FALLBACK, ALSO PRODUCTION.
+
+          const heroBetFraction = effectivePot > 0 ? betSize / effectivePot : 0.75;
+
+        Reached whenever `effectivePot` is zero or negative. The value is then passed straight
+        into `multiwayFoldPct` at `:605`. Same constant, same stale meaning, on the main engine
+        path rather than a drill.
+
+  SO: THE LINE WS-283 NAMED IS UNREACHABLE FROM PRODUCTION, AND THE DEFECT IT NAMED IS NOT.
+  Reporting only site (1) and calling it test-reachable is accurate about the line and wrong about
+  the codebase. That is the finding.
+
+  DIRECTION AND SIZE OF THE ERROR, NOT ASSERTED — TO BE MEASURED. The curve is asymmetric:
+  `steepnessUp: 6.5` below the midpoint, `steepnessDown: 0.75` above it (`villainModelData.js:252-254`),
+  so it is steep below the anchor and nearly flat above. Evaluating at 0.75 rather than ~0.35
+  therefore lands on the flat side, which bounds the error but does not zero it, and the sign is
+  one-directional: `logisticFoldResponse` adds above the midpoint, so every affected opponent is
+  modelled as folding MORE than the base rate. In a multiway product across N opponents that bias
+  compounds — `multiwayFoldPct` multiplies the per-opponent rates (`gameTreeEquity.js:1152`) — so
+  the drill's `cascadingFoldProbability` is biased upward, and an inflated fold-through probability
+  makes bluffing and betting look better than the field supports. The magnitude is a measurement
+  this ticket must produce, not a number to assert.
+
+  WHY P1 RATHER THAN P2. A wrong constant on a rendered panel is a number the founder can read and
+  act on. The Standard of Record's own trigger is "a number someone could act on or cite", and
+  `cascadingFoldProbability` is displayed as part of the drill's confidence disclosure
+  (`PostflopDrillsView/panels/ConfidenceDisclosure.jsx:86` names `multiwayFoldPct` by name as the
+  source). It is not a debug count.
+accept_criteria: |
+  - ALL THREE SITES RESOLVED, EACH WITH ITS OWN STATED REASON. Not a global find-and-replace of
+    0.75 with 0.35 — the three are different kinds of thing. The default at
+    `gameTreeEquity.js:1119` and the fallback at `gameTreeEvaluator.js:603` are both saying "no
+    sizing information available", and the honest expression of that is the curve's own anchor,
+    referenced rather than copied. The drill literal at `drillModeEngine.js:813` may instead want
+    the ACTUAL bet fraction of the drill spot, which the drill knows — in which case the fix is to
+    pass it, and the constant disappears rather than moving.
+  - THE CONSTANT IS REFERENCED, NOT RE-TYPED. Whatever the three become, none of them may be a
+    fresh numeric literal. `POPULATION_CURVE.midpoint` is the measured quantity and it already
+    exists; a second copy of it is the mechanism that produced this ticket, and it would produce
+    the next one the same way. If a site cannot import it, say why in place.
+  - THE DRILL'S DISPLAYED NUMBER IS MEASURED BEFORE AND AFTER. Report `cascadingFoldProbability`
+    at 0.75 and at the corrected fraction, for at least a 2-villain and a 4-villain spot, so the
+    compounding across the product is visible. If the change is negligible, that is a fine result
+    and should be stated with the numbers — but it must be shown, not assumed from the flat side
+    of the curve.
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule). Concretely: assert that at the neutral sizing —
+    defined AS the curve midpoint, read from `POPULATION_CURVE`, not written as a literal —
+    `multiwayFoldPct` returns exactly the product of the per-opponent BASE fold rates, with no
+    sizing adjustment. That is the contract the docblock at `gameTreeEquity.js:1132-1136` already
+    claims, and it fails today at the sites that pass 0.75. A test written against 0.75 asserts
+    the defect.
+  - THE SWEEP FOR OTHER SURVIVORS, WITH FINDINGS NAMED. WS-283 moved a measured constant; this
+    ticket exists because a copy of the old one outlived it. Grep the engine for `0.75` used as a
+    bet fraction or a midpoint and list every hit with its verdict. One is already known and is
+    documentation rather than code: `foldEquityCalculator.js:261` still documents
+    `@param {number} [params.midpoint=0.75]`, which now contradicts the value it describes. Fix it
+    in the same pass and report the rest.
+  - NO SCOPE CREEP INTO THE CURVE ITSELF. `POPULATION_CURVE`, the style multipliers, and the
+    street mods are WS-283's measured output and are not touched here. This ticket changes what is
+    fed INTO the curve, never the curve.
+  - IF ANY COMPARATIVE FIGURE IS PRODUCED, it resolves to a Result Card with a replication
+    manifest per ADR-009, stamped with `manifest.disclaimerRegisterVersion`. The corpus behind
+    the curve is HandHQ online cash, July 2009, 50NL; the founder's game is live 9-handed 1/2-1/3,
+    so only the SHAPE transfers and any live claim must say it is transferred, not measured.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/postflopDrillContent/drillModeEngine.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT "NO SIZING INFORMATION" SHOULD MEAN AT ALL. Substituting the midpoint makes the
+    curve a no-op at those sites, which is honest: with no bet size known, the unconditional base
+    rate IS the best estimate, and the midpoint is by construction the fraction at which the curve
+    returns it. The alternative reading is that a site with no bet size should not be calling a
+    SIZING-CONDITIONED function in the first place, and should call the base rate directly — which
+    is clearer but changes the call graph. The first is a one-line change with the right semantics;
+    the second states the semantics in the code's shape. Decide rather than default.
+  - |
+    OPEN AND ADJACENT — THE DRILL'S STYLE KEY DOES NOT MATCH THE TABLE. `drillModeEngine.js:811`
+    passes `{ playerStats: { style: 'reg' } }` in lowercase, while `STYLE_PRIORS`
+    (`villainModelData.js:99-149`) and `FOLD_CURVE_PARAMS` (`:300-308`) are keyed `'Reg'`
+    capitalised. So the lookup misses and BOTH the base fold rate and the curve silently fall
+    through to the population defaults. That may be harmless — `Reg` is close to population by
+    construction — but it means the drill's comment describing a "reg" opponent does not describe
+    what the code does, and a future style change would not reach it. NOT fixed as part of this
+    ticket without a decision, because "make the lookup hit" is a behaviour change to a displayed
+    number and deserves its own before/after.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-283"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  PREMISE HANDED IN WAS PARTLY WRONG, AND THE CORRECTION IS THE REASON FOR THE PRIORITY. The
+  filing brief repeated WS-283's "test-reachable only" and asked for it to be checked. It holds
+  for the default parameter at `gameTreeEquity.js:1119` and does NOT hold for the constant, which
+  reaches production twice more.
+
+  Verified against HEAD by reading the code:
+    - `gameTreeEquity.js:1119` — the default `betFraction = 0.75`.
+    - Every caller of `multiwayFoldPct` in `src/`, enumerated: `gameTreeEvaluator.js:605` (passes
+      `heroBetFraction`, computed at `:603` with a `0.75` fallback) and
+      `drillModeEngine.js:808-814` (passes the literal `0.75`). Everything else that names it is a
+      test file, a comment, or a docblock. So the DEFAULT is genuinely test-only.
+    - `drillModeEngine.js` is production: `computeBucketEVsV2` is imported by
+      `src/components/views/PostflopDrillsView/BucketEVPanelV2.jsx:21`, and
+      `panels/ConfidenceDisclosure.jsx:86` names `multiwayFoldPct` in the displayed disclosure.
+    - `villainModelData.js:255` — `POPULATION_CURVE.midpoint: 0.35`; `:252-254` the asymmetric
+      steepness pair (`steepnessUp: 6.5`, `steepnessDown: 0.75`); `:290` the style midpoint derived
+      as `POPULATION_CURVE.midpoint * clamp(inverseFoldRatio * 0.9, 0.6, 1.2)`; `:307`
+      `default: POPULATION_CURVE`. So no style midpoint exceeds 0.42 and 0.75 is off-anchor
+      everywhere.
+    - `gameTreeEquity.js:1141-1149` — the `logisticFoldResponse` call inside `multiwayFoldPct`,
+      taking `curve.midpoint * mod.midpointMult`, with `betFraction` as the evaluated fraction.
+    - `gameTreeEquity.js:1152` — `allFoldPct *= clamp(oppFold, 0.10, 0.90)`, the product that
+      compounds the bias across opponents.
+    - `foldEquityCalculator.js:261` — the stale `[params.midpoint=0.75]` docblock.
+
+  Not verified and deliberately not claimed: the SIZE of the error at any real drill spot. The
+  asymmetric curve is nearly flat above the midpoint, so it could be small. Measuring it is an
+  accept criterion rather than a premise.

@@ -1,0 +1,129 @@
+id: "WS-413"
+title: "FILING ONLY, DO NOT ACT — the problem_class validator added to this repo's cwos-reconcile.js is kit content whose canonical HomeBase copy does not contain it, so the next /kit-upgrade silently reverts it; upstreaming is a fleet-wide change and the founder's call"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 11.0
+priority_label: "P3"
+category: "infrastructure"
+capability: "core"
+program: "self-compliance"
+problem_class: "Detector Coverage Gap"
+finding_id: ""
+description: |
+  THIS ITEM IS FILED SO THE FACT IS NOT LOST. IT IS EXPLICITLY NOT AUTHORISED FOR ACTION. A change
+  to kit content in HomeBase reaches every repo in the fleet, and that is the founder's decision to
+  make, not a side effect of a poker-tracker session.
+
+  THE FACT. A `problem_class` vocabulary validator was added to
+  `kit/scripts/cwos-reconcile.js` in THIS repo on 2026-08-05. Its explanatory block begins at `:739`
+  and the implementation runs `:773-806`: for each program declaring `problem_classes:`, it collects
+  the declared names, compares each finding's `problem_class` against them, and pushes a
+  `problem-class drift:` WARNING (deliberately not a violation) naming the item, its program and the
+  invented class.
+
+  The reason it exists, in its own words (`:741-747`): the vocabulary "drifted: six of the twelve
+  findings from run-domain-correctness-blindspot-2026-08-05 carried invented class names
+  ('Uncertainty transmission', 'Estimator admissibility', ...) written by a concurrent agent,
+  alongside six that conformed. The cost is that `problem_class_coverage` in program health, and any
+  question of the form 'what have we found in this class', silently reads the wrong denominator."
+
+  THE PROBLEM. `kit/scripts/` is kit content. Its canonical copy is
+  `C:/Users/chris/repos/homebase/kit/scripts/cwos-reconcile.js`, and that file — checked directly —
+  contains ZERO occurrences of the string `problem_class`. So the validator exists only as a local
+  divergence in this repo's copy. `/kit-upgrade` overwrites kit content from HomeBase. The next
+  upgrade removes the validator, silently, and the drift it was written to catch resumes being
+  invisible.
+
+  WHY THIS IS WORTH A TICKET RATHER THAN A COMMENT. There is a standing memory entry — "Kit upgrades
+  half-apply via sidecar skew" — recording that preserved-library-plus-overwritten-caller produces
+  missing-symbol crashes that the upgrade gate does not catch. This is the same class of problem
+  running the other direction: a local improvement to kit content that the gate will not warn about
+  when it disappears, because nothing is broken afterwards. A validator that vanishes leaves no
+  error; it just stops warning. That is the hardest kind of regression to notice.
+
+  Note also that this repo currently carries a full set of `*.yaml.kit-update` sidecars in
+  `.claude/workstream/programs/` (14 of them, alongside `registry.yaml.kit-update`), which is
+  evidence that a kit upgrade is already partially staged and that the window for this to be
+  silently reverted is open now rather than hypothetical.
+
+  THE OPTIONS, FOR THE FOUNDER, NOT FOR AN AGENT.
+    (a) Upstream the validator to HomeBase. It is generic — it reads `problem_classes:` from
+        whatever programs a repo declares and warns on anything else — so it should behave sanely in
+        a repo that declares none (it skips: `if (!Array.isArray(r.data.problem_classes)) continue;`
+        at `:773`). Cost: a fleet-wide behaviour change, and every repo starts emitting these
+        warnings at once.
+    (b) Leave it local and accept that it is temporary, recording the expiry.
+    (c) Move it out of `kit/scripts/` into repo-local tooling so that it survives upgrades without
+        being fleet content. Cost: a second reconcile path, which is its own kind of drift.
+accept_criteria: |
+  - NO CODE IS CHANGED BY THIS TICKET WITHOUT AN EXPLICIT FOUNDER INSTRUCTION. That is the ticket's
+    primary criterion and it is a constraint, not a task. An agent that finds this item in a sprint
+    and "just upstreams it" has done a fleet-wide deployment on its own authority.
+  - THIS ITEM IS EXEMPT FROM THE STANDING EV-DELTA ACCEPT CRITERION, AND THE REASON IS THAT IT
+    AUTHORISES NO CHANGE AT ALL. It is a record of a fact with an expiry. There is nothing to
+    measure because nothing is being built. Stating the exemption rather than omitting it, per the
+    rule that exemptions are declared and not silent.
+  - WHEN THE FOUNDER RULES, THE RULING IS RECORDED HERE AND THE ITEM EITHER CLOSES OR SPAWNS THE
+    WORK. If (a), the work is a HomeBase change plus a re-verification that this repo's copy matches
+    canonical afterwards. If (b), the item closes with the expiry recorded and the validator's
+    disappearance becomes expected rather than surprising. If (c), it becomes an engineering item.
+  - THE VERIFICATION THAT SETTLES WHETHER THIS IS STILL TRUE IS ONE COMMAND, AND IT SHOULD BE RUN
+    BEFORE ACTING: compare occurrence counts of `problem_class` between
+    `kit/scripts/cwos-reconcile.js` here and `C:/Users/chris/repos/homebase/kit/scripts/cwos-reconcile.js`.
+    Local non-zero and canonical zero means the divergence is live. If canonical is non-zero by the
+    time anyone reads this, someone already upstreamed it and this item closes.
+effort: "S"
+files_involved:
+  - "kit/scripts/cwos-reconcile.js"
+  - "C:/Users/chris/repos/homebase/kit/scripts/cwos-reconcile.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND RESERVED TO THE FOUNDER — (a) UPSTREAM, (b) ACCEPT AS TEMPORARY, OR (c) MOVE OUT OF KIT
+    CONTENT. The validator is generic and skips programs that declare no `problem_classes:`, so (a)
+    is low-risk in mechanism; the risk is in blast radius, since every fleet repo would begin
+    emitting `problem-class drift:` warnings on its next reconcile and some of those repos have
+    findings nobody has looked at in months. RECOMMENDATION: (a), because the alternative is that a
+    validator written specifically because a concurrent agent invented six class names gets deleted
+    by the next routine upgrade — but the recommendation is a recommendation, and this ticket
+    authorises nothing.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES VERIFIED AGAINST HEAD (fe716f59) AND AGAINST THE HOMEBASE WORKING COPY.
+
+    - `kit/scripts/cwos-reconcile.js`: `problem_class` occurs at lines 739, 741, 746, 756, 757, 773,
+      774, 788, 794, 805. The explanatory block opens at `:739`; the implementation loop runs
+      `:773-806`; the warning is emitted at `:805-806`. CORRECTION TO THE AUDIT NOTE, which cited
+      `:738` — that line is blank and the block begins on the next.
+    - `C:/Users/chris/repos/homebase/kit/scripts/cwos-reconcile.js` exists (105,362 bytes, modified
+      2026-08-03 17:20) and contains ZERO occurrences of `problem_class`. Verified by direct grep
+      count on the file, not inferred from a date comparison.
+    - `.claude/workstream/programs/` currently holds 14 `*.yaml.kit-update` sidecars plus
+      `registry.yaml.kit-update`, confirming a kit upgrade is partially staged in this repo now.
+    - The nine declared classes this validator polices live at
+      `.claude/workstream/programs/prog-domain-correctness.yaml:58-134` (`problem_classes:` at `:58`,
+      the nine entries from `:59`): First-principles decision modeling; Range estimation
+      correctness; Equity calculation correctness; Game tree EV correctness; Bayesian confidence
+      representation; Villain decision model fidelity; Exploit generation soundness; Theory-spec
+      drift; Anti-pattern enforcement. Every item filed in this cluster draws from that list, and
+      the two `methodology-integrity` items draw from that program's five
+      (`prog-methodology-integrity.yaml:45-69`).
+
+  This item's own `problem_class` is "Detector Coverage Gap" from `prog-self-compliance.yaml:49-52`
+  — "A constitutional item has no detector or its detector is infeasible — the constitution is
+  declared but not watched". A detector that exists today and will be deleted by routine maintenance
+  is the same failure with a delay on it.

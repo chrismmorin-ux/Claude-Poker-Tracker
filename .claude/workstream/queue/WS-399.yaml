@@ -1,0 +1,331 @@
+id: "WS-399"
+title: "The learned range channel is algebraically inert — buildRangeProfile learns ONE number per (position, action) and multiplies all 169 cells by it, and every downstream consumer normalizes that uniform factor away, so every non-showdown hand ever recorded contributes exactly nothing to the advice or to the scored EV"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-048"
+description: |
+  THE FOUNDER'S PREMISE, IN HIS WORDS: "Whatever mechanism we use should transfer to the live data
+  and we should see it adjust right? That's the whole point of our anchor measuring process." And,
+  on being told what follows: "what you just described sounds like a limit on the engine that needs
+  to be expanded. If we adjust our range, what are the implications."
+
+  THE MECHANISM AS BUILT DOES NOT HAVE THAT PROPERTY, AND THE REASON IS NOT THIN LIVE VOLUME. It is
+  algebra. A player can be observed for a thousand hands and — absent showdowns — the range grid
+  the engine acts on is bit-for-bit the population prior.
+
+  WHAT IS LEARNED. `updateScenarioRanges` (`rangeEngine/bayesianUpdater.js:155-185`) fits exactly
+  ONE scalar per (position, action): the Bayesian effective frequency divided by the population
+  frequency, at `:179`:
+
+      effectiveFreq = (PRIOR_WEIGHT * populationFreq + observedCount) / (PRIOR_WEIGHT + totalObserved)
+      ratio         = effectiveFreq / populationFreq
+      for i in 0..168:  ranges[action][i] = Math.min(1.0, prior[i] * ratio)      (`:181-183`)
+
+  So a hundred observed opens do not say WHICH hands this player opens. They say only HOW OFTEN,
+  and that one number is smeared uniformly across all 169 cells. The SHAPE of the grid is the
+  population prior's shape, unchanged.
+
+  WHERE THE UNIFORM FACTOR IS REMOVED. Verified end to end against HEAD, following the actual
+  production and backtest path rather than assuming it:
+
+    1. `rangeEngine/index.js:30-40` — the profile built by `buildRangeProfile` is what reaches
+       consumers, ranges included.
+    2. `exploitEngine/decisionAccumulator.js:292-305` — `startingRange =
+       rangeProfile.ranges[posCategory][rangeAction]`, seeded into `openHolding` and carried as
+       `rangeBefore` (`:372`). This is the seam the whole EV harness reads.
+    3. `exploitEngine/postflopNarrower.js:1038` — `result[idx] = range[idx] * (cellWeight[idx] /
+       cellTotal[idx])`. Multiplying `range` by a constant multiplies `result` by the same
+       constant. Shape preserved, scale carried.
+    4. `pokerCore/rangeMatrix.js:278` (and the suited/offsuit branches following) —
+       `enumerateCombos` emits `weight: range[idx]`, so the constant rides along as a combo weight.
+    5. `scripts/backtest/heroPolicy.mjs:111-131` — `sampleCombos` computes `total = Σ weight` and
+       returns `sampleWeight = c.weight / total` (or `1/k` on the stratified path). **The constant
+       divides out exactly.** `heroPolicyAt` then marginalizes over exactly those sample weights.
+
+  CONCLUSION: the entire frequency-observation channel — every hand recorded that does not reach
+  showdown — contributes NOTHING to the advice, and nothing to the scored EV figure. The paired-EV
+  harness cannot see it because there is nothing to see.
+
+  THE TWO EXCEPTIONS ARE CLAMPS, NOT EVIDENCE, AND THEY MAKE THE SHAPE WORSE. `Math.min(1.0, ...)`
+  at `bayesianUpdater.js:182` and the per-cell renormalization in
+  `rangeEngine/crossRangeConstraints.js:41-46` bind only on SATURATED cells. Both act by
+  compressing the strongest cells toward each other — a shape change, but in the least useful
+  direction, and one that arrives as a side effect of a ceiling rather than as an inference.
+
+  THE ONE CHANNEL THAT DOES MOVE SHAPE IS SHOWDOWN ANCHORING, AND IT IS SPARSE BY CONSTRUCTION.
+  `applyShowdownAnchor` (`bayesianUpdater.js:335-386`) sets the revealed cell to 1.0 (`:347`) and
+  boosts semantically related cells — the alternate suitedness (`:350-353`), adjacent pairs
+  (`:356-364`), adjacent kickers (`:366-373`). That is roughly 4 of 169 cells per revealed hand,
+  and only on hands that reach showdown. The WS-321 run measured a median of **13 revealed
+  decisions per player** across 91 players. Thirteen revealed hands moving ~4 cells each is the
+  whole of the shape learning this engine does.
+
+  Note the subclass path is NOT affected by this defect and is in fact the model for the fix:
+  `updateSubclassRanges` (`:241-311`) genuinely reshapes, because it carves the parent grid cell by
+  cell (`:293-310`) using per-subclass propensity shapes. The construction the fix needs already
+  exists in this file, applied one level down.
+
+  THE EVIDENCE THAT CUTS AGAINST THE OBVIOUS FIX, STATED FIRST BECAUSE IT MUST NOT BE BURIED.
+  WS-321 ALREADY TESTED PER-PLAYER RANGE ADAPTATION AND IT LOST. `RC-per-player-width-790a6ffd-5853ae0a`
+  (`out/ws321-per-player-width-card.json`, produced by `runPerPlayerWidthProbe`,
+  `scripts/backtest/rangeCalibrationProbe.mjs:1499`), read from the artifact rather than from
+  memory:
+
+    - unshrunk per-player width MINUS population width: **-0.0252 nats/decision**, SE 0.0086,
+      95% CI **[-0.0420, -0.0083]** — clear of zero ON THE LOSING SIDE. A measured null, not an
+      inability to tell.
+    - the CALIBRATED arm chose `k = Infinity` — i.e. shrink every held-out player all the way back
+      to the population width. Headline gain exactly **0**, with
+      `heldoutPlayersMovedOffPopulation: 0`. The calibration's own verdict on per-player width was
+      "don't".
+    - 38 held-out players scored, 624 held-out decisions, three-way split (POOL / EVAL-CALIB /
+      EVAL-HELDOUT) with a temporal prefix/suffix within each EVAL player.
+    - what DID win: the population width itself. Optimum **1.2253x**, worth **+0.1137 nats/decision**
+      (SE 0.0109) over no narrowing at all, fitted on 1862 POOL revealed decisions.
+
+  WHY THIS DOES NOT KILL THE TICKET, AND WHY IT DOES CONSTRAIN IT. WS-321 tested per-player WIDTH —
+  a ONE-PARAMETER RESCALING. That is a close cousin of the very cancellation this ticket is about:
+  it is the same "learn one number, apply it everywhere" shape, just applied at the narrowing stage
+  instead of the prior stage. A per-cell or per-segment RESHAPING is a different object, and the
+  null on the first does not transfer to the second. But it is a genuine warning that per-player
+  range personalization has been tried once and did not pay, so **this ticket promises no gain**.
+  It is framed as making the channel CAPABLE of carrying information at all, with the size of any
+  gain explicitly unmeasured and expressed as an accept criterion rather than a claim.
+
+  THE IDENTIFIABILITY CEILING, WHICH IS THE REAL DESIGN CONSTRAINT. 169 cells will never be
+  identified from a few hundred hands — 13 revealed decisions per player median, and even the
+  unrevealed frequency observations run to the low hundreds. The estimation audit's recommendation
+  is a range-width percentile plus 3-5 category PIP deviations: **4-6 parameters, identifiable from
+  roughly 50-150 preflop decisions.** That is the order of magnitude the data supports.
+
+  A COORDINATE ALREADY EXISTS FOR THAT, PARTLY WIRED — AND THE BRIEF'S CLAIM THAT IT IS CONSUMED BY
+  NOTHING IS **OVERSTATED**; CORRECTED HERE. `computeAllPips` / `computePipConfidence` are imported
+  at `rangeEngine/index.js:16`, CALLED at `:35-36` (writing `profile.pips` and
+  `profile.pipConfidence`), and re-exported at `:184`. They ARE consumed downstream:
+  `analysisPipeline.js:125,168` pass `pips` into exploit generation, `exploitEngine/modelAudit.js:290`
+  reads it, and `components/ui/RangeProvenance.jsx:338-339` renders `PipDeviations` (`:371`).
+  (What IS true at `RangeProvenance.jsx:10` is that it imports only `classifyHand` and
+  `HAND_CATEGORIES` from `pipCalculator` — it reads the precomputed `profile.pips` rather than
+  recomputing. And `rangeProfile.js` genuinely has NO `pips` field: the property is attached
+  post-hoc outside `createEmptyProfile` and survives persistence only because
+  `serializeProfile:107-110` spreads `...profile`.)
+
+  THE PRECISE, DEFENSIBLE VERSION OF THAT CLAIM: **PIPs are wired into the DISPLAY and EXPLOIT-RULE
+  paths, and into NOTHING that reaches the range grid or the game-tree EV figure.** They are a
+  read-out of the grid, never an input to it. So the coordinate exists and is computed — it is the
+  feedback edge that is missing, not the measurement.
+
+  AND THE HONEST FLAG ON IT: PIPs are a DEVIATION-FROM-GTO coordinate. The coordinate the EV figure
+  actually responds to is the SEGMENTATION BUCKETS, because those are what candidate EVs are built
+  from downstream. Reshaping in PIP space and hoping it lands usefully in bucket space is an
+  assumption, not a detail. That is the first decision flag.
+
+  WHY THE FOUNDER'S OWN PREMISE IMPLIES A SENSITIVITY TEST THAT HAS NEVER BEEN RUN. "We should see
+  it adjust" is a falsifiable statement about the derivative of the policy with respect to
+  observation count, and nothing in the repo measures it. Every existing range instrument scores
+  the range against revealed holdings; none asks whether the POLICY moves at all as n grows. A
+  system can pass every calibration check while having a policy that is constant in the data.
+accept_criteria: |
+  - A NEGATIVE CONTROL RUNS FIRST, AND THIS IS NON-NEGOTIABLE. Before any range-effect readout is
+    believed, take a change to the range that is known to be LARGE — e.g. substitute a
+    deliberately different grid, or the WS-300 correction's magnitude class — and confirm the
+    instrument REPORTS it. Without this, a readout built today correctly reports ~zero for every
+    range-side improvement, and "the instrument is blind" gets read as "the change did nothing."
+    That is precisely how the present defect survived: the harness has been reporting the truth
+    about an inert channel, indistinguishably from reporting nothing.
+  - T1 SENSITIVITY, THE FOUNDER'S PREMISE MADE MEASURABLE. Holding a decision node fixed, does
+    `pi_ours` MOVE as a player's observation count grows? Report total-variation distance between
+    the policy fitted on the first n hands and the policy fitted on 0, as a function of
+    n in {0, 10, 25, 50, 100}. **Against HEAD this curve must be flat** (up to showdown anchoring),
+    and showing that it is flat today is itself a required deliverable — it is the falsification of
+    "we should see it adjust." After the fix it must be non-flat, with the curve reported.
+  - T2 IMPROVEMENT, AND T1 WITHOUT T2 IS WORSE THAN NO ADJUSTMENT. Held-out log-loss against that
+    player's revealed holdings on the temporal SUFFIX must IMPROVE with n. A model that moves (T1)
+    without improving (T2) is moving for the wrong reason, and shipping it would be strictly worse
+    than the inert channel, because the inert channel at least sits on a prior that was measured to
+    be worth +0.1137 nats. Report T1 and T2 together; T1 alone is not a result.
+  - REUSE WS-321'S SPLIT RATHER THAN REINVENTING ONE. The three-way POOL / EVAL-CALIB /
+    EVAL-HELDOUT structure with a temporal prefix/suffix inside each EVAL player already exists in
+    `rangeCalibrationProbe.mjs` and is the correct guard against the leakage recorded in project
+    doctrine (corpus-mined priors leak into corpus backtests by construction). Note also that
+    `heroEvRunner.mjs:172-193` ALREADY walks forward in checkpoints, rebuilding `trainProfile =
+    buildRangeProfile(playerId, trainHands, USER_ID)` at each — so the n-prefix structure T1 needs
+    is already present in the EV harness and does not have to be built.
+  - THE UPDATE IS PER-CELL OR PER-SEGMENT, NOT PER-ACTION. Frequency evidence must RESHAPE, not
+    RESCALE. Project doctrine constrains the construction and it is not optional: shrink toward the
+    prior where evidence is thin and move where it is thick, using the same hierarchical form
+    `updateSubclassRanges` already uses one level down (`bayesianUpdater.js:241-311`); measure
+    against `n_parent`, NOT the scenario-wide `N` (DEC-025 Amendment 1); and never normalize a
+    prior grid into a distribution — prior grids are PROPENSITIES (`:270-278`).
+  - THE PARAMETER COUNT RESPECTS THE IDENTIFIABILITY CEILING AND IS STATED AS A NUMBER. 4-6
+    parameters, identifiable from ~50-150 preflop decisions, is the recommendation. Whatever is
+    chosen, the ticket's output must state how many free parameters the update introduces and what
+    observation count identifies them, so the choice is auditable rather than implicit.
+  - THE WS-321 NULL IS CITED IN WHATEVER SHIPS, NOT JUST HERE. Any Result Card produced by this
+    work names `RC-per-player-width-790a6ffd-5853ae0a` and states that the one-parameter cousin of
+    this change was measured and LOST. A gain reported here without that context invites the reader
+    to conclude per-player range adaptation works, when the only clean measurement of it says
+    otherwise.
+  - EV ACCEPT CRITERION, WITH ITS BLOCKER STATED HONESTLY. Founder ruling: every change is tied to
+    an EV delta measured by the standardized method. **That measurement is BLOCKED today.**
+    `heroPolicyAt` (`scripts/backtest/heroPolicy.mjs:145-157`) exposes only `rakeConfig`,
+    `comboSamples`, `trials` and `refinementBudgetMs`, and `runHeroEv`'s arm axis
+    (`heroEvRunner.mjs:236-244`) varies `refinementBudgetMs` ALONE. There is no way to run two arms
+    that differ in a range-side constant. Threading a config object through `heroPolicyAt` and
+    through the depth-arm normalizer is a prerequisite for the EV number, and NO QUEUE ITEM COVERS
+    IT (checked — see status_note). Either that threading is done as the first step of this item and
+    reported as such, or it is split out and this item's `blocked_by` is updated to name it. Do not
+    report an EV delta obtained by editing a constant in place between two runs — that is not the
+    paired-delta method and is not replicable.
+  - THE READOUT DISTINGUISHES "NO EFFECT" FROM "NO INSTRUMENT". Whatever is built must be able to
+    return a third answer — that the instrument could not resolve an effect of this size — and must
+    say which of the three it is returning. The negative control is what licenses that distinction.
+effort: "L"
+files_involved:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/rangeEngine/index.js"
+  - "src/utils/rangeEngine/rangeProfile.js"
+  - "src/utils/rangeEngine/pipCalculator.js"
+  - "src/utils/rangeEngine/crossRangeConstraints.js"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND LOAD-BEARING — WHICH COORDINATE DOES THE RESHAPING HAPPEN IN: PIP SPACE, OR THE
+    SEGMENTATION BUCKETS? PIPs are the ready-made option: `computeAllPips` / `computePipConfidence`
+    already run on every profile (`rangeEngine/index.js:35-36`), they are per-position and
+    per-category, and a 3-5 category deviation vector is exactly the 4-6 parameter budget the data
+    supports. But a PIP is a DEVIATION-FROM-GTO coordinate, and the quantity candidate EVs are
+    actually built from downstream is the SEGMENTATION BUCKETS. Reshaping in PIP space and assuming
+    it lands usefully in bucket space is an unverified change of basis — the same class of
+    assumption as narrowing by bucket label, which doctrine already forbids.
+    RECOMMENDATION: reshape in PIP space, because the coordinate exists, is already computed on
+    every profile, and is the one whose parameter count matches the identifiability ceiling — BUT
+    make the first deliverable a measured Jacobian rather than a bet: perturb one PIP category by a
+    known amount and report how much the segmentation buckets and the resulting candidate EVs move.
+    If a full PIP unit moves the EV figure by less than the negative control's resolution, the
+    answer is the buckets and the ticket should say so and re-scope. That check is cheap and it is
+    the honest form of this decision.
+  - |
+    OPEN — HOW MANY PARAMETERS DO WE SPEND, GIVEN THE CEILING? The audit's recommendation is 4-6
+    (one range-width percentile plus 3-5 category deviations), identifiable from ~50-150 preflop
+    decisions. Fewer — say width alone — is EXACTLY WHAT WS-321 ALREADY MEASURED AND LOST, so the
+    one-parameter option is not merely conservative, it is the option with a measured null against
+    it. More — anything approaching per-cell freedom — is unidentifiable at 13 revealed decisions
+    per player and will fit noise, and the failure mode is T1 moving while T2 degrades, which is
+    the worst of the three outcomes.
+    RECOMMENDATION: 4 parameters for v1 — the width percentile plus 3 category deviations (pairs /
+    suited-broadway / offsuit-junk, the three that most change what a range does postflop) — with
+    the hierarchical shrinkage doing the work of adding effective parameters only as n grows, so
+    the count is a CEILING rather than a fixed spend. Expand to 6 only if T2 improves at 4 and the
+    curve has not flattened.
+  - |
+    OPEN — DOES THE CONFIG-THREADING PREREQUISITE BECOME ITS OWN ITEM? The EV accept criterion
+    cannot be met until `heroPolicyAt` and `runHeroEv`'s arm axis can carry an arbitrary engine
+    constant. That is a small, self-contained, and broadly reusable change — every future
+    range-side or constant-side EV question needs it, not just this one. Doing it inside this
+    ticket keeps the item self-sufficient; splitting it makes it available sooner to the other
+    items that will want it.
+    RECOMMENDATION: split it. It is a prerequisite for a class of measurements, not for this
+    measurement alone, and folding infrastructure into a domain ticket is how infrastructure ends
+    up shaped by one caller. File it, then set this item's `blocked_by`.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-048"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  EVERY file:line BELOW WAS RE-VERIFIED AGAINST HEAD BY READING THE CODE. Three claims in the
+  briefing did not survive verification unchanged and are corrected in the description rather than
+  propagated.
+
+  VERIFIED AS STATED:
+    - `rangeEngine/bayesianUpdater.js:155-185` — `updateScenarioRanges`. The single learned scalar
+      at `:179` (`ratio = effectiveFreq / populationFreq`) and the uniform multiply at `:181-183`
+      (`ranges[action][i] = Math.min(1.0, prior[i] * ratio)`). Read in place.
+    - `bayesianUpdater.js:335-386` — `applyShowdownAnchor`: cell set to 1.0 at `:347`, alt-suit
+      boost `:350-353`, adjacent pairs `:356-364`, adjacent kickers `:366-373`. ~4 cells touched.
+    - `bayesianUpdater.js:241-311` — `updateSubclassRanges`, the genuinely per-cell hierarchical
+      construction the fix should mirror; the propensity-not-distribution rule at `:270-278`; the
+      `n_parent` denominator at `:266-267`.
+    - `rangeEngine/crossRangeConstraints.js:41-46` — the per-cell renormalization, which binds only
+      when the per-cell sum exceeds 1.0.
+    - `pokerCore/rangeMatrix.js:278` — `enumerateCombos` emitting `weight: range[idx]`.
+    - `scripts/backtest/heroPolicy.mjs:111-131` — `sampleCombos`: `total = Σ weight` at `:111`,
+      `c.weight / total` at `:114`, `1 / k` at `:129`. The division that cancels the constant.
+    - `scripts/backtest/heroPolicy.mjs:145-157` — `heroPolicyAt`'s full parameter list: `ctx`,
+      `hand`, `rakeConfig`, `comboSamples`, `trials`, `refinementBudgetMs`. No config object.
+    - `out/ws321-per-player-width-card.json` — every WS-321 figure quoted above was read out of the
+      artifact, not recalled: -0.025167884, SE 0.008604, CI [-0.042031, -0.008305], 38 heldout
+      players, 624 heldout decisions, population optimum 1.2252977, narrowing worth 0.1136601
+      (SE 0.010906), median 13 revealed per player, 91 players total.
+    - `scripts/backtest/rangeCalibrationProbe.mjs:1499` — `runPerPlayerWidthProbe`.
+
+  CORRECTED — CLAIM 1, WRONG PATH. The briefing cited `postflopNarrower.js:1038` as living in
+  `rangeEngine/`. It is in **`exploitEngine/postflopNarrower.js`**; there is no `postflopNarrower`
+  in `rangeEngine/`. The LINE is right and the code at it is exactly as described
+  (`result[idx] = range[idx] * (cellWeight[idx] / cellTotal[idx])`, `:1038`, inside the
+  `:1032-1039` loop). Directory corrected; substance unaffected.
+
+  CORRECTED — CLAIM 2, OVERSTATED AND MATERIALLY SO. The briefing states `computeAllPips` /
+  `computePipConfidence` are "consumed by NOTHING." **They are consumed.** `rangeEngine/index.js:35-36`
+  calls both and writes `profile.pips` / `profile.pipConfidence`; `analysisPipeline.js:125` and
+  `:168` forward `pips` into exploit generation; `exploitEngine/modelAudit.js:290` reads it;
+  `components/ui/RangeProvenance.jsx:338-339` renders it via `PipDeviations` (`:371`). The
+  narrower true statements, which are what the ticket relies on: (a) `RangeProvenance.jsx:10`
+  imports only `classifyHand` and `HAND_CATEGORIES` from `pipCalculator`, reading the precomputed
+  values off the profile; (b) `rangeProfile.js` has NO `pips` field — grepped, zero hits — so the
+  property is attached outside `createEmptyProfile` and persists only via the `...profile` spread at
+  `serializeProfile:107-110`; (c) and the one that actually matters, PIPs feed DISPLAY and
+  EXPLOIT-RULE paths and nothing that reaches the range grid or the game-tree EV figure. The
+  coordinate is computed and read; what is missing is the FEEDBACK EDGE back into the grid. The
+  ticket is argued on (c), not on the overstated version.
+
+  REFINED — CLAIM 3, THE WS-321 HEADLINE. The briefing reports -0.0252 [-0.0420, -0.0083] as "the"
+  result. The card is more specific and the distinction matters: `headlineArm` is
+  `"unshrunk (k = 0)"` and those ARE its numbers, but `perPlayerMinusPopulationNatsPerDecision` is
+  **0** with `chosenShrinkageK: "Infinity"` and `heldoutPlayersMovedOffPopulation: 0` — the
+  calibration on the disjoint CALIB half chose to shrink every held-out player ALL THE WAY back to
+  the population width. So the honest summary is stronger than the briefing's, not weaker: the
+  unshrunk per-player fit LOST by a CI clear of zero, AND the calibrated version's own answer was
+  to abandon per-player width entirely. Both are stated in the description.
+
+  THE CHAIN WAS VERIFIED END TO END, NOT ASSUMED. The learned profile does reach the scored EV
+  figure: `heroEvRunner.mjs:181` builds `trainProfile = buildRangeProfile(playerId, trainHands,
+  USER_ID)` at each walk-forward checkpoint (`:172-186`) and passes it to `accumulateDecisions`
+  (`:193`), which seeds `startingRange` from `rangeProfile.ranges[posCategory][rangeAction]`
+  (`decisionAccumulator.js:292-294`) into `openHolding` (`:300-305`), surfacing as `rangeBefore`
+  (`:372`) — which is exactly what `heroPolicyAt` reads as `ctx.rangeBefore`
+  (`heroPolicy.mjs:161`) and hands to `sampleCombos` (`:166`). The cancellation therefore reaches
+  the scored number; it is not confined to the UI path.
+
+  THE CONFIG-THREADING BLOCKER: NO SUCH ITEM EXISTS. Searched the whole queue for `heroPolicyAt`,
+  `comboSamples`, `paired-delta`/`pairedDelta`, "config object", and "threading". Hits were
+  WS-316 (threading POSITION into the narrower — unrelated), WS-387 (threading a fold rate into a
+  formula — unrelated), WS-388 (multiway threading — unrelated), and archived WS-086. **Nothing
+  covers threading an arbitrary engine constant through `heroPolicyAt` / the `runHeroEv` depth-arm
+  axis.** `blocked_by` is therefore left empty and the gap is raised as the third decision flag;
+  it should be filed and linked when that decision is taken.
+
+  WS-389 IS ADJACENT AND SHOULD BE SEQUENCED BEFORE THE EV MEASUREMENT, THOUGH IT IS NOT A HARD
+  BLOCKER. It records that refinement depth is gated on wall-clock time, so the same hand scored
+  twice can give a different top action. Any EV delta this item reports inherits that
+  irreproducibility. T1/T2 are log-loss quantities and are unaffected; the EV accept criterion is
+  affected.

@@ -1,0 +1,217 @@
+id: "WS-403"
+title: "The refinement scheduler caps each stage at 40% of the TOTAL budget rather than of what remains, stages overrun that cap by 2x anyway, and at the shipped 2000 ms a flop node drops half its stage set — so every arm ever differenced against 'depth-2 @ 2000 ms' was differenced against a truncated tree"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+finding_id: ""
+description: |
+  SCOPED BY THE FOUNDER'S RULING: depth-2 is correct and required, and where it is not good enough
+  that is ours to fix. This ticket is the scheduler fix.
+
+  THE MECHANISM. `claimStageBudget` (`gameTreeEvaluator.js:930-936`) hands each refinement stage
+  `Math.min(remaining, timeBudgetMs * MAX_STAGE_SHARE)` with `MAX_STAGE_SHARE = 0.4` (`:929`). The
+  cap is a fraction of the TOTAL budget, not of what is left. The comment above it (`:924-928`)
+  argues correctly that capping beats reserving — a reserved share held for a stage that never runs
+  is simply deleted — but the implementation caps against the wrong denominator, so two stages that
+  each use their full allowance consume 80% of the run and the third gets whatever remains. There
+  are six stages.
+
+  AND THE CAP DOES NOT BIND ANYWAY. Measured on a full-range OOP flop node (A-spade 7-heart 2-diamond,
+  hero A-heart K-heart, pot 60, 1081 combos, this machine, 2026-08-05):
+
+      node          budget    actual refinement    overrun
+      facing bet     2000 ms       4282 ms           2.1x
+      facing bet     8000 ms      10059 ms           1.3x
+      facing bet    30000 ms      26199 ms           0.9x
+      check node     2000 ms       3681 ms           1.8x
+      check node     8000 ms       9093 ms           1.1x
+      check node    30000 ms      18060 ms           0.6x
+
+  A stage capped at 800 ms (0.4 x 2000) is part of a refinement pass that runs 4.3 seconds. The
+  stages accept `(startTime, timeBudgetMs)` and bail mid-loop against them, but the granularity of
+  that bail is evidently coarser than the cap it is checked against. A budget that is exceeded by
+  2x is not a budget; it is a hint.
+
+  WHAT ACTUALLY GETS DROPPED AT THE SHIPPED SETTING. Same probe, `treeMetadata.latency`:
+
+      node          budget     ranStages                                          budgetSkipped
+      facing bet     2000    callDepth2, betCallDepth2, raiseResponseDepth2      raiseResponseDepth2 x2, checkRaiseDepth2, depth3Barrel
+      facing bet     8000    callDepth2, betCallDepth2, raiseResponseDepth2      raiseResponseDepth2 x2, checkRaiseDepth2, depth3Barrel
+      facing bet    30000    callDepth2, betCallDepth2, raiseResponseDepth2 x3   (empty)
+      check node     2000    checkCheckDepth2, betCallDepth2                     raiseResponseDepth2 x2, checkRaiseDepth2, depth3Barrel
+      check node     8000    checkCheckDepth2, betCallDepth2                     raiseResponseDepth2 x2, checkRaiseDepth2, depth3Barrel
+      check node    30000    checkCheckDepth2, betCallDepth2, checkRaiseDepth2   (empty)
+
+  So at the shipped 2000 ms, a flop node runs two or three of its six stages and names four as
+  budget-dropped. `checkRaiseDepth2` — the stage that prices the plan the founder specifically wants
+  priced — is dropped at 2000 ms and at 8000 ms on both node shapes, and only runs at 30000 ms.
+
+  AND THE STAGES ARE NOT PRICED EQUALLY EVEN WHEN THEY RUN. `weightConsumed`, the fraction of runout
+  probability a stage actually averaged over, on the facing-bet node:
+
+      stage              @2000    @8000   @30000
+      callDepth2          0.248    0.872    1.000
+      betCallDepth2       0.184    0.184    1.000
+      raiseResponseDepth2 0.184    0.440    1.000
+
+  `betCallDepth2` — double-barrel planning, the single most consequential depth-2 stage — averages
+  over 18% of the runout distribution at both 2000 ms and 8000 ms. Quadrupling the budget bought it
+  nothing, because `callDepth2` ran first and ate the increase. That is the scheduler defect in one
+  row: the ORDER of stages, not their individual costs, determines which ones get to be accurate.
+
+  THE CONSEQUENCE FOR EVERY MEASUREMENT TAKEN SO FAR. `RC-depth-ablation`'s test arm is
+  `refinementBudgetMs = 2000`. So "depth-2" in that card means "two or three of six stages, two of
+  them averaging over a fifth of the runout distribution". Every per-capability number the programme
+  wants (WS-404, WS-408) is differenced against that. The card's estimand does not say so — see
+  WS-406.
+
+  THE CORRECTION THE AUDIT NOTE NEEDS, RECORDED HERE BECAUSE IT CHANGES THE FIX. The note asserted
+  that raising the budget does not help — that at 8000 and 30000 ms the same stages are skipped and
+  `betCallDepth2`'s `weightConsumed` is pinned at 0.23 throughout. Measured, that is half right.
+  8000 ms genuinely buys almost nothing (identical `ranStages`, `betCallDepth2` still at 0.184). But
+  30000 ms empties `budgetSkipped` entirely and takes every running stage to `weightConsumed = 1`.
+  So the scheduler is not unfixable-by-budget; it is BADLY SHAPED, wasting the first 8 seconds on
+  one stage. That is a better problem to have and it points at a specific fix: cap against
+  `remaining / stagesLeft` rather than against the total, and order stages by marginal information
+  rather than by source position.
+
+  ONE STAGE IS STILL UNREACHABLE AT EVERY BUDGET, AND IT IS NOT A BUDGET PROBLEM. `depth3Barrel`
+  never ran in any of the six probe configurations. At 2000 and 8000 ms it is `blockedBy: ['budget']`;
+  at 30000 ms it is `no-candidate` with an EMPTY `blockedBy` — the gate opened and the node did not
+  qualify. The disqualifier is `segmentation.totalCombos <= depth3ComboLimit` where
+  `depth3ComboLimit = street === 'turn' ? 1200 : 800` (`:1740-1741`), against a measured flop
+  `totalCombos` of 1081. That is a range-width gate, it is independent of this ticket, and it is
+  filed as WS-409. Corpus-wide it shows up as `depthReachedMax === 2` on 138 of 138 flop decisions.
+accept_criteria: |
+  - A DEMONSTRATED CONFIGURATION IN WHICH ALL SIX STAGES RUN ON A FLOP NODE. This is the ticket's
+    headline criterion, stated by the audit and kept verbatim. "All six" means `riverPerCombo` is
+    correctly street-gated out and the remaining five — `callDepth2`, `checkCheckDepth2`,
+    `betCallDepth2`, `raiseResponseDepth2`, `checkRaiseDepth2` — plus `depth3Barrel` all appear in
+    `ranStages` on at least one flop node, with the budget that made it possible recorded. If
+    `depth3Barrel` requires WS-409 to land first, say so and set `blocked_by` rather than declaring
+    five out of six sufficient.
+  - THE CAP IS AGAINST WHAT REMAINS, NOT AGAINST THE TOTAL, AND THE ARITHMETIC IS ASSERTED. After
+    the fix, no single stage may claim a share that leaves a later stage unable to run at all when
+    both have candidates. A test must construct a node where two stages each want the full budget
+    and assert that both appear in `ranStages`. `MAX_STAGE_SHARE = 0.4` against `timeBudgetMs`
+    (`:929`, `:934`) is the exact expression under test.
+  - THE OVERRUN IS EITHER ELIMINATED OR DECLARED. Refinement exceeded its budget by 2.1x at the
+    shipped setting on this machine. Either the stages' internal bail granularity is tightened so
+    `latency.overBudget` is false at 2000 ms on the probe node, or the budget is redefined as a soft
+    target and `overBudget` is reported as an expected condition with a stated tolerance. Silently
+    overrunning by 2x while naming other stages "budget-skipped" is the state that must not persist,
+    because it attributes to the budget a truncation the scheduler caused.
+  - EV-DELTA ACCEPT CRITERION, DIRECTION STATED IN ADVANCE. On the IDENTICAL 260-decision set from
+    `out/depth-ablation.json`, the paired delta of FIXED-SCHEDULER-at-2000 ms against
+    HEAD-SCHEDULER-at-2000 ms must be POSITIVE on the non-river slice. Both arms hold the budget
+    constant, so the contrast isolates the scheduler and nothing else. A null result at that sample
+    size is a legitimate outcome and must be reported as one — it would mean the stages the
+    scheduler drops are worth less than their compute, which is a real finding — but a NEGATIVE
+    delta means the reordering hurt and the ticket does not close on it.
+  - `weightConsumed` IS REPORTED PER STAGE, BEFORE AND AFTER, AT 2000 ms. The 0.184 rows above are
+    the baseline. The criterion is not "all stages reach 1.0" — that costs 30 seconds a node and is
+    not shippable — but that no stage is starved to a fifth of the runout distribution while another
+    sits at 1.0.
+  - A SHIPPABLE BUDGET IS NAMED AND JUSTIFIED WITH ITS MEASURED COST. The probe shows 30000 ms
+    empties `budgetSkipped`. That is not a live-play setting on a phone. State what budget the fix
+    makes sufficient, what it drops at that budget, and what the app should actually pass. Note the
+    standing memory entry that advice depth already tracks machine load through `Date.now()`, so any
+    recommendation here interacts with a known defect.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-406"
+  - "WS-408"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT ORDERS THE STAGES? The measured defect is not that the cap is 0.4 but that
+    `callDepth2` runs first and consumes a 4x budget increase by itself while `betCallDepth2` stays
+    pinned at 0.184. Fixing the denominator alone leaves the ordering untouched. The options are
+    (a) fixed source order with a corrected cap, (b) order by which candidate is currently closest
+    to the top of the ranking — refine the decision that is actually in doubt — or (c) order by
+    measured marginal EV movement per millisecond, which requires the per-stage flags in WS-404 to
+    exist first. (b) is the poker-correct answer: refinement that cannot change the argmax is
+    refinement that cannot change advice. (c) is the measurable one. RECOMMENDATION: implement (b),
+    and treat (c) as the follow-up that validates it once WS-404 makes per-stage attribution
+    possible.
+  - |
+    OPEN — IS THE BUDGET A CAP OR A TARGET? It is currently written as a cap, checked as a cap
+    (`isTimeBudgetExceeded`, `:906-907`), reported as a cap (`latency.overBudget`), and overrun by
+    2x. Making it a real cap means the stages must bail at much finer granularity, which costs
+    accuracy inside each stage. Declaring it a target means `budgetSkipped` becomes advisory and the
+    live surface needs a different guarantee. This matters beyond the engine: the app ships this on
+    a phone, and the standing finding that advice depth already varies with machine load
+    (`Date.now()` gating) makes a soft budget a source of NON-DETERMINISTIC ADVICE, which is a worse
+    property than slow advice. The founder should decide, because it trades table latency against
+    reproducibility.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), AND THE BUDGET-SWEEP CLAIMS RE-MEASURED RATHER THAN
+  QUOTED, BECAUSE THE AUDIT NOTE'S VERSION OF THEM WAS PARTLY WRONG AND THE ERROR CHANGED THE FIX.
+
+  Code, read in place:
+    - `:929` — `const MAX_STAGE_SHARE = 0.4`; `:930-936` — `claimStageBudget` returning
+      `timeBudgetMs: Math.min(remaining, timeBudgetMs * MAX_STAGE_SHARE)`. The multiplicand is the
+      TOTAL budget, confirming the "cap against total, not remaining" premise exactly.
+    - `:967-983` — `gateStage(stage, conditions)`: `blockedBy` is the list of failing condition keys
+      plus `'budget'` when `isTimeBudgetExceeded()`. This is why per-stage ablation in WS-404 gets
+      its observability for free.
+    - The six stage gates: `riverPerCombo` `:1413` (`street === 'river'`), `callDepth2` `:1521`,
+      `checkCheckDepth2` `:1552`, `betCallDepth2` `:1594`, `checkRaiseDepth2` `:1679` (all
+      `street !== 'river'`), `depth3Barrel` `:1732` (`street === 'flop' || street === 'turn'` and
+      `betDepth2Ran`).
+    - CORRECTION TO THE AUDIT NOTE'S LINE LIST: `raiseResponseDepth2` at `:1632` is NOT street-gated
+      in its own right — its conditions are `{ enabled: enableDepth2Raise, raiseLikely: pRaise > 0.02 }`.
+      It is street-gated only transitively, being nested inside the `betCallDepth2` block. That
+      matters for WS-404, because it is the stage whose gate already carries the `enableDepth2Raise`
+      toggle and is therefore the template for the rest.
+    - `:1740-1741` — `depth3ComboLimit = street === 'turn' ? 1200 : 800`, and the qualifying
+      condition `segmentation.totalCombos <= depth3ComboLimit`.
+
+  Measurement, run by me on HEAD via a temporary vitest probe (created, run, deleted — nothing left
+  in the tree) reusing the fixture from `depthReachability.test.js`: full 169-cell villain range,
+  board A-spade 7-heart 2-diamond, hero A-heart K-heart, pot 60, villain bet 40 for the facing-bet
+  node, `trials: 2000`, budgets 0 / 2000 / 8000 / 30000 ms. Both tables in the description are that
+  probe's output. `segmentation.totalCombos` was 1081 in every configuration.
+
+  THREE PREMISES FROM THE AUDIT NOTE DID NOT VERIFY:
+    1. "Raising the budget does not fix it — at 8000 and 30000 ms the same stages are still
+       skipped." FALSE at 30000 ms: `budgetSkipped` is EMPTY on both node shapes. TRUE at 8000 ms.
+    2. "`betCallDepth2`'s `weightConsumed` is pinned at 0.23 at all three budgets." Measured 0.184
+       at 2000 and 8000, 1.000 at 30000. Pinned across 2000 to 8000 only, and the value is 0.184.
+    3. "At the shipped 2000 ms on a flop node `ranStages` is exactly `['checkCheckDepth2']`."
+       Measured `['checkCheckDepth2', 'betCallDepth2']` on the check node and
+       `['callDepth2', 'betCallDepth2', 'raiseResponseDepth2']` facing a bet.
+  The differences are almost certainly fixture-dependent — the audit probed real corpus decisions
+  with narrowed ranges, this probe uses a full range on one board — which is itself the point: the
+  stage set that runs is a function of the node, and NOTHING RECORDS WHICH STAGE SET PRODUCED A
+  GIVEN SCORED DECISION. The claim that survives all three corrections, and the one the ticket rests
+  on, is the audit's own headline: there is no shipped budget at which a flop node runs its full
+  stage set, and every arm differenced against "depth-2 @ 2000 ms" is differenced against a
+  truncated tree. That is measured, not inferred.
+
+  The `depthReachedMax` census is separately confirmed by recomputation over
+  `out/depth-ablation.json`: flop 138/138 at depth 2 (0 of 138 ever reach 3), turn 74/77 at depth 3,
+  river 45/45 at depth 1.

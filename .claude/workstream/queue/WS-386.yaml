@@ -1,0 +1,102 @@
+id: "WS-386"
+title: "The dumpGameTreeEV scenario set has no river spots, and the effect it was used to measure lives on the river"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: ""
+claimed_at: null
+started_at: null
+completed_at: "2026-08-05T00:00:00Z"
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FILED 2026-08-05 at the close of SPR-175. This is a defect in an INSTRUMENT, and it caused
+  a wrong diagnosis that a later measurement had to correct.
+
+  WHAT HAPPENED. WS-334 used `scripts/backtest/dumpGameTreeEV.mjs` to answer "what does
+  enabling depth-2 do to advice?" Its eight scenarios are:
+
+    flop-dry-noaction-tight     flop-dry-facing-bet-tight    flop-wet-noaction-top30
+    flop-wet-facing-bet-top30   flop-wet-facing-raise-full   turn-noaction-top30
+    turn-facing-bet-tight       turn-wet-facing-bet-top50
+
+  Five flop, three turn, **zero river**. The dump reported check -11.7% and 1 of 8 top-action
+  flips, which was read as "no systematic pull toward passivity."
+
+  The WS-361 corpus ablation (260 paired decisions,
+  `docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md`) then found the pull IS real, large
+  and one-directional — 38 of 40 flips toward passivity — and concentrated almost entirely
+  on the RIVER: 36 of 45 river decisions flip (80%), against 4 of 215 flop+turn decisions.
+
+  The two results do not contradict each other. On flop and turn the corpus also shows almost
+  no flips, which is exactly what the dump measured. The dump was not WRONG about the spots
+  it covered; it was BLIND to the street where the phenomenon lives, and the conclusion drawn
+  from it was stated over the whole engine rather than over the streets sampled.
+
+  WHY IT MATTERS BEYOND ONE HARNESS. The scenario list was written for WS-292 to reach every
+  NARROWING site, and the comment above it says so. It was then reused for a question about
+  DEPTH, whose stage structure is different — `needsDepth2` is gated `street !== 'river'`, so
+  the river runs an entirely different stage (`riverPerCombo`). A fixture set inherits the
+  coverage of the question it was built for, not the question you are asking of it.
+
+  This is the same shape as the coverage census in `groundTruthCoverage.test.js`, one level
+  up: report only what a set covers and it looks healthier the narrower it is. The estimator
+  census counts the zeros. The scenario set does not.
+accept_criteria: |
+  - River scenarios are added to `dumpGameTreeEV.mjs` — at minimum a river facing a bet, a
+    river checked to, and a paired/wet river — so every stage the evaluator can run is
+    reachable by the harness.
+  - The dump output states its own street coverage (e.g. "flop 5 / turn 3 / river 0"), so a
+    reader cannot draw an engine-wide conclusion from a partial set without seeing the gap.
+    A census that hides its zeros flatters itself.
+  - The scenario list carries a comment naming which QUESTION it was built for, and the rule
+    that reusing it for a different question requires re-checking coverage against that
+    question's stage structure.
+  - Re-run the depth ablation on the widened set and confirm it reproduces the corpus
+    result's street split. If it does not, the harness and the corpus disagree, and that is
+    its own finding.
+effort: "S"
+files_involved:
+  - "scripts/backtest/dumpGameTreeEV.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: measurement
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Small in code, and filed anyway because the failure was not the missing scenarios — it was
+  concluding over a population the sample did not cover, with nothing in the output making
+  the gap visible. The fix that matters is the coverage line in the output, not the extra
+  spots.
+
+  CLOSED same session 2026-08-05 (filing it and leaving it would have been the accommodation
+  this repo's improvement-default rule exists to stop).
+
+  SHIPPED: four river scenarios (dry checked-to, dry facing a bet, wet, paired facing a bet)
+  and a street-coverage census printed before the run AND written into the JSON as
+  `streetCoverage` / `coverageGaps`, so a partial set announces its own gap.
+
+  THE HARNESS NOW AGREES WITH THE CORPUS — which is the result that makes it trustworthy
+  again, and it was the fourth accept criterion:
+
+    | street | widened harness | corpus ablation (n=260) |
+    |--------|-----------------|-------------------------|
+    | flop   | 0/5   =  0.0%   | 0.7%                    |
+    | turn   | 0/3   =  0.0%   | 3.9%                    |
+    | river  | 3/4   = 75.0%   | 80.0%                   |
+
+  All three river flips move toward passivity (bet->check, raise->call, raise->call),
+  matching the corpus's one-directional finding (38 of 40). The harness costs ~60s against
+  the corpus run, so it is now a usable cheap proxy for the same question — which it was
+  NOT before, on the street where the answer lives.

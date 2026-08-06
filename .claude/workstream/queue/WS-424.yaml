@@ -1,0 +1,312 @@
+id: "WS-424"
+title: "Build the synthesised context system: injection-point control with a compact tier that has no file, a withholding barrier that actually blocks (the shipped header says it cannot — verified false), and a pre-registered falsifier with a control vocabulary"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "change-management"
+problem_class: "Session Context Reliability"
+finding_id: ""
+description: |
+  IMPLEMENTS THE CHERRY-PICKED SYNTHESIS from `docs/context-system-comparison.md` §6 — the deliverable
+  of the pre-registered three-arm comparison specified in `docs/context-system-requirements.md`. Each
+  element below names the arm it came from and why it beat its alternative; the judgement document
+  carries the evidence.
+
+  WHY THIS IS ONE TICKET AND NOT ELEVEN. Three of the eleven elements are corrections to things
+  already shipped or already designed (S6 refutes a header that is currently in the tree and is
+  already cited; S3 overturns a composition choice; S5 rules out a generation strategy). Filing those
+  separately means the wrong versions get built first. The rest compose into four programs that share
+  one substrate — the hook surface — and splitting them means wiring that surface four times.
+
+  ── THE REFUTATION THAT COMES FIRST (S6) ──────────────────────────────────────
+
+  `kit/scripts/cwos-bundle-validate.js`'s header states: "It cannot prevent an agent from reading an
+  excluded file. Nothing in this repo can; the tools are not sandboxed per task." Both clauses are
+  FALSE and were verified false against the running repo and the official reference:
+
+    - `PreToolUse` matchers accept arbitrary pipe-separated tool names, INCLUDING `Read`, `Grep`,
+      `Glob`. Proof in this machine's own global settings: `"matcher": "Write|Edit|NotebookEdit|Bash"`.
+    - Exit code 2 blocks the tool call BEFORE it executes; the content never enters the window. Used
+      twice in this repo already — `.claude/hooks/git-guard.cjs:276` is `process.exit(2)` at exactly
+      that line, and `.claude/hooks/secrets-scan.cjs` likewise.
+    - Hooks fire INSIDE subagents, carrying `agent_id` / `agent_type` — so the delegation-laundering
+      hole the greenfield arm named as unclosed is narrower than it thought.
+    - `permissions.deny` supports `Read(<glob>)` and blocks at tool level with ZERO lines of code.
+      `.claude/settings.json` already carries an EMPTY `permissions.deny` array. The field is present
+      and unused.
+
+  THE TRUE RESIDUE, WHICH THE AMENDED HEADER MUST STATE PRECISELY: harness-injected context cannot be
+  withheld. `CLAUDE.md`, `.claude/rules/*`, and `MEMORY.md` land in the window before any hook runs —
+  the greenfield arm's own §10 disclosure is the experimental proof. So: DELIBERATE READS ARE
+  ENFORCEABLE; HARNESS INJECTION IS NOT. The shipped header generalised from the one true case to a
+  universal, and that universal then contaminated a third party who read the header as source.
+
+  ── THE ELEVEN ELEMENTS ───────────────────────────────────────────────────────
+
+  S1 (Arm A) — ORGANISE AROUND THE INJECTION POINT, NOT A STORAGE PARTITION. Position dominates
+  volume; the unit of cost is bytes × turns; reading is irreversible. The repo's one natural
+  experiment that worked (§7 of POKER_THEORY.md: most-cited at 156, and the only section with an
+  always-loaded compressed form at `CLAUDE.md:337`) varies POSITION, not partition. And the measured
+  driver of drag is an accretion RATE — 62.5% of POKER_THEORY.md written in ten days at 156 lines/day
+  against a prior-life average of 3.9 — which a partition cannot touch.
+
+  S2 (Arm A) — THE COMPACT TIER HAS NO FILE. Generated per turn to stdout by a `UserPromptSubmit`
+  hook, <=2,000 bytes, every emitted term re-verified against its source at emit time, drops printed
+  as `[dropped N]`. Two artifacts cannot drift when there is one artifact. This beats generate-and-
+  hash (Arm C) because detection tells you the tiers have ALREADY disagreed, and this repo has
+  measured what that costs: `docs/context-architecture.md` §1.4 C1 found the same measurement stated
+  five times with three different values INSIDE ONE FILE — a cross-file drift detector catches none
+  of those five.
+
+  S3 (Arm C) — ITS CONTENT IS WRITTEN AS AN EXCERPT FROM AN EXCELLENT RESPONSE. Imperatives and named
+  quantities, not term names and not descriptions of practice. THIS OVERTURNS ARM A's composition:
+  A's `VOCAB:` slot carries term NAMES ONLY on the reasoning that "the job is to make the word
+  available, not to teach it." The measurement refutes that — `Four Motivations` is a name sitting in
+  the document and occurs ZERO times anywhere else in the repo (verified independently: 3 files, all
+  of which are the document or documents about it), while `intransitiv*` occurs 114 times across 13
+  files. Names do not travel. Vocabulary in use does. And §7's working always-loaded form is not a
+  name list — it is a ~90-word imperative paragraph.
+
+  S4 (adjacent, `docs/context-architecture.md` G4/V4) — NO RE-MEASURABLE MAGNITUDE IN THE COMPACT
+  TIER. No decimals, no percentages, no parameter assignments, enforced syntactically. Re-measuring
+  anything then cannot falsify it. Doubles as a quality filter: a rule that cannot be stated without
+  a number is a lookup, and a lookup does not belong in an always-loaded tier.
+
+  S5 (adjacent) — THE COMPACT TIER IS NEVER A DIGEST. It carries what the heavy tier LACKS — a class
+  name, a count, a status — never less of what the heavy tier HAS. §8 "Common Mistakes" is the repo's
+  own controlled experiment: the only top-level section with zero external citations, and it is a
+  digest of sections drawing 132 and 156. Readers cite the source, never the summary. THIS RULES OUT
+  Arm C's marked-passage extraction, which is a digest by construction.
+
+  S6 (Arm A, plus the judge's `permissions.deny` addition) — `excludes` BECOMES A BARRIER. See above.
+
+  S7 (Arm B) — KEEP THE POST-HOC CONTROL ALONGSIDE THE BARRIER. A finding produced under a discovery
+  bundle must not cite a withheld file as its source. This is Arm B's unbuilt §8 increment and it
+  closes exactly the two holes the barrier cannot reach — subagent summarisation and harness
+  injection. Neither arm noticed that the other's mechanism completes it.
+
+  S8 (Arm B) — ADOPT THE SHIPPED BUNDLE MACHINERY UNCHANGED. Pointer-not-copy, `sha256` pins
+  (CRLF-normalised), section anchors, the closed exclude vocabulary, `mode` inverting the include
+  list, and `persona-kind-confusion` as a check distinct from `unresolved-lens`. It exists, it runs,
+  it was exercised against all eight negative cases, and its central argument — A STALE POINTER IS
+  STILL CORRECT; A STALE SUMMARY IS WRONG — is the best-argued decision in any arm.
+
+  S9 (A + C + B, one clause each) — THE THREE-CLAUSE ENFORCEMENT RULE. Block an irreversible act.
+  FAIL a check that has no legitimate exception. WARN a check whose failure may be evidence about the
+  declaration rather than about the item. Arm A supplied clause 1 and it is descriptive of where this
+  repo's blocking hooks already sit (git-guard, secrets-scan, retreat-detector). Arm C supplied
+  clause 2 and found the case A's two-clause rule got wrong: a size ceiling is a declaration, so A
+  says warn, but "a light tier over its ceiling is not evidence about the ceiling, it is a light tier
+  that has stopped working." Arm B supplied clause 3 and its recorded reasoning.
+
+  S10 (A disposal + C residue + adjacent test-is-the-record) — CORRECTIONS: DESTROY THE NARRATIVE,
+  KEEP THE COUNTER. Recurrence promotes to doctrine (`fire_count >= 2`, or `dedup_key` recurring
+  across distinct `run_id`s — both real fields, verified on `FIND-014.yaml:11,22`). A one-shot closed
+  by a test leaves THE TEST as the record. And every falsified claim keeps a `falsified Nx` marker ON
+  THE CLAIM ITSELF. Arm A's full-deletion rule is overturned here by Arm C's counter-example: §3.4's
+  taxonomy was falsified once, fixed, the correction archived — and the section still reads with
+  unqualified confidence. A tombstone at the code site answers the case where a falsified thing is
+  USED; it never reaches the reader sitting in §3.4 BELIEVING it.
+
+  S11 (adjacent + A + C) — THE FALSIFIER. See accept criteria.
+
+  ── WHAT IS DELIBERATELY NOT BUILT ────────────────────────────────────────────
+  Arm A's full deletion of archaeology (overturned by S10). Arm A's names-only `VOCAB:` (falsified by
+  S3). Arm C's marked-passage generation (a digest, per S5). Arm C's `.claude/lenses/` directory move
+  (35 files plus every reference, uncosted, and the collision is already caught by a shipped check).
+  Arm C's rival bundle schema (a thinner restatement of S8, which is on disk and running).
+
+  ── FOUR DEFECTS IN THE SHIPPED PROTOTYPE, ALL VERIFIED ───────────────────────
+
+  D1 CONFIRMED AND WORSE. `kit/scripts/cwos-reconcile.js` is at `kit/hashes-3.8.5.yaml:233`; its
+  manifest hash is `sha256:700d470d…` and the file on disk hashes to `sha256:cdc827a3…` — locally
+  modified. The Phase 2c2 delegation is at `cwos-reconcile.js:936-944`. `/kit-upgrade` reverts it.
+  The constraint is WRITTEN DOWN in this repo at `.claude/hooks/readiness-gate.cjs:12-15` and was
+  violated anyway. NOT REPORTED BY ANY ARM: `kit/scripts/cwos-bundle-validate.js` — the validator
+  itself — does not appear in `kit/hashes-3.8.5.yaml` at all (only `kit/scripts/lib/…` at :286). The
+  script is an unmanaged file inside a managed tree AND the caller is a modified managed file.
+
+  D2 CONFIRMED. Name collision: `kit/scripts/cwos-bundle-validate.js` (18,187 B, context bundles) vs
+  `kit/scripts/lib/cwos-bundle-validate.js` (8,335 B, archetype bundles), the latter required at
+  `kit/scripts/cwos-verify.js:596`. Path-qualified so it resolves today; the hazard is editing the
+  wrong one, and they are one `ls` apart.
+
+  D3 CONFIRMED PRESENT AND FALSE. The withholding header. Amend, do not delete — the true residue
+  (harness injection is unwithholdable) is worth stating precisely because it is the one thing a
+  barrier genuinely cannot do.
+
+  D4 CONFIRMED, AND THE ROOT CAUSE IS DIFFERENT AND WORSE THAN THE ARM DIAGNOSED. `.git/hooks/`
+  contains only `.sample` files and `kit/scripts/git-hooks/` ships six real hooks. BUT INSTALLING
+  THEM WOULD NOT FIX IT: `core.hooksPath` is set to
+  `C:\Users\chris\OneDrive\Desktop\Claude-Poker-Tracker\.git\hooks` — the abandoned OneDrive location
+  from before the repo was relocated. `git rev-parse --git-path hooks` returns that path. `.git/hooks/`
+  is not merely empty, IT IS NOT CONSULTED. Git looks into a quarantined tree that this fleet's own
+  global PreToolUse hook blocks writes into. Every commit-time guarantee has been unenforced since the
+  relocation, and the obvious remedy — copy the hooks in — silently does nothing.
+accept_criteria: |
+  - D4 IS FIXED FIRST AND SEPARATELY, BECAUSE IT IS THE ONLY DEFECT THAT SILENTLY VOIDS OTHER
+    GUARANTEES. `core.hooksPath` must be unset or repointed at this repo, the six hooks installed,
+    and ONE of them demonstrated firing on a real commit — not asserted, demonstrated, with the hook's
+    own output shown. Until that is done, any claim in this repo that something is enforced at commit
+    time is false, and the ticket must say which claims those were.
+
+  - THE HEADER IS AMENDED AND THE AMENDMENT IS PRECISE (D3/S6). It must state that deliberate reads
+    ARE enforceable, name the mechanism (`PreToolUse` matcher on `Read|Grep|Glob`, exit 2, or
+    `permissions.deny: ["Read(<glob>)"]`), and state the residue — harness injection is unwithholdable
+    — as the specific, true limit. A header that merely softens the claim has not been fixed.
+
+  - THE BARRIER BLOCKS, AND IT IS PROVEN BY A DENIED READ, NOT BY A PASSING TEST OF THE HOOK'S LOGIC.
+    Wire the matcher, declare a withheld path, attempt the read, and record that the content did not
+    reach the window. Then repeat the same attempt FROM A SUBAGENT, because the delegation hole is the
+    one the arm left open and the docs say hooks fire in subagents — confirm it here rather than
+    trusting it. Fails open on any internal error, expired task, or absent task file. Bypass is
+    allowed and RECORDED, per the existing `cwos-bypass-log.js` shape.
+
+  - START WITH `permissions.deny` BEFORE WRITING THE HOOK, AND REPORT WHAT IT COSTS AND WHAT IT
+    CANNOT DO. It is zero lines of code and it is static per-session; the hook is ~180 lines and it is
+    per-task. If the static form covers the actual withholding cases in the two shipped bundles, the
+    hook is not yet justified and this criterion is satisfied by saying so.
+
+  - THE COMPACT TIER HAS NO FILE AND ITS ABSENCE IS TESTED (S2). The emitter must produce <=2,000 bytes
+    by slicing its own output, so the ceiling is an invariant of the producer and not a check that can
+    fail. Assert there is no on-disk compact-tier artifact — a test that FAILS if someone later adds
+    one, because "we'll just cache it to a file" is the exact change that reintroduces the drift this
+    element exists to make impossible.
+
+  - THE EMITTED CONTENT IS IMPERATIVE, NOT NOMINAL, AND THAT IS ASSERTED SYNTACTICALLY (S3/S4/S5).
+    No bare term lists. No decimal, percentage, or parameter assignment (S4 — purely syntactic,
+    undebatable). And a digest check (S5): every emitted line must carry something the heavy tier does
+    not have — a class name, a count, a status, a marker — which is mechanically checkable as "this
+    line is not a substring-equivalent of any heavy-tier line."
+
+  - THE THREE-CLAUSE ENFORCEMENT RULE IS APPLIED PER CHECK AND THE ASSIGNMENT IS RECORDED IN CODE
+    (S9). Every check in the system declares block / fail / warn AND the reason it is in that class.
+    A check whose class cannot be argued from the rule is a finding about the rule.
+
+  - CORRECTIONS: THE COUNTER SURVIVES DELETION, AND §3.4 IS THE ACCEPTANCE CASE (S10). Destroying a
+    narrative must leave a `falsified Nx` marker ON THE CLAIM. Demonstrate on §3.4 specifically: after
+    this change, a reader arriving at the taxonomy must be able to see that it has been too small
+    before, WITHOUT reading the archive and without reading the code. That is the case Arm A's
+    tombstone rule cannot reach and it is why the marker exists.
+
+  - THE PRE-REGISTRATION IS WRITTEN AND FROZEN BEFORE THE CHANGE SHIPS (S11), CARRYING ALL FOUR THINGS
+    THE ARMS ONLY HAD SEPARATELY: (a) a CONTROL VOCABULARY, published in advance, drawn from the heavy
+    tier and deliberately excluded from the compact tier; (b) a GATE — n >= 40 new artifacts or 60
+    days, whichever is later, population attributed by `created_at` and never by mtime; (c) a
+    THRESHOLD and a decision rule stated in both directions; (d) a NAMED DELETION CONSEQUENCE — which
+    organ gets deleted on a refutation, stated in advance so it cannot be renegotiated afterwards.
+    A falsifier missing any one of the four is not accepted.
+
+  - THE CHEAPEST INVALIDATION RUNS BEFORE THE MOST EXPENSIVE ORGAN IS BUILT. Compute attributable echo
+    retrospectively over the last 30 transcripts (~2 hours) and report its session-to-session standard
+    deviation against the effect size the pre-registration needs. If the instrument is too noisy at
+    session granularity, the continuous signal does not exist and the A/B becomes the only instrument
+    — which changes the cost of the whole design and must be known before, not after.
+
+  - D1 AND D2 ARE RESOLVED WITHOUT PUTTING ANYTHING NEW INTO `kit/`. The caller moves to a repo-local
+    hook or `scripts/`, per the constraint already recorded at `readiness-gate.cjs:12-15`. The
+    validator script moves out of `kit/` too — it is unmanaged there today, which is a second exposure
+    nobody reported. Rename to `cwos-context-bundle-validate.js`. Verify by running `/kit-upgrade`
+    dry-run, or by hashing every file this design touches against `kit/hashes-*.yaml` and asserting
+    zero membership.
+
+  - THE POST-HOC CONTROL SHIPS ALONGSIDE THE BARRIER, NOT INSTEAD OF IT (S7). Findings carry
+    `context_bundle`; a discovery finding citing a withheld source is flagged. The barrier and the
+    audit trail cover different holes and the ticket must not treat one as making the other redundant.
+effort: "L"
+files_involved:
+  - ".claude/settings.json"
+  - ".claude/hooks/"
+  - "scripts/context/"
+  - "kit/scripts/cwos-bundle-validate.js"
+  - "kit/scripts/cwos-reconcile.js"
+  - ".claude/context/bundles/"
+  - "docs/context-system-comparison.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE FIRST ONE — DOES THE BARRIER SHIP AT ALL, GIVEN THAT ITS OWN FALSIFIER MAY DELETE IT?
+    The greenfield arm pre-registered that if withholding buys less than 5 points of mechanism-
+    correctness, the barrier "should be deleted", and said so in advance specifically so it could not
+    be renegotiated. That is the right discipline and it creates a real sequencing question: build the
+    barrier and risk deleting ~180 lines, or run the A/B first using `permissions.deny` (zero code) as
+    the withholding mechanism and build the hook only if the effect is real. The second is cheaper and
+    weaker — the static deny list cannot express per-task withholding, so the A/B would test a
+    coarser treatment than the one being proposed. The founder should decide, because it trades cost
+    against how much the study actually licenses.
+  - |
+    OPEN — WHETHER THE COMPACT TIER IS POKER DOCTRINE, REPO METHOD, OR BOTH. `docs/context-architecture.md`
+    designs a poker-doctrine light tier (WS-423); this ticket designs the injection channel. They are
+    orthogonal by construction — one is content, one is position — but there is exactly one compact
+    tier and it has a hard 2,000-byte ceiling, so they compete for it. Either the channel carries both
+    and the ceiling is split with a stated priority order, or WS-423's light tier becomes a FILE loaded
+    by bundle rather than an injection — which is the two-tier storage design this comparison ruled
+    against. Deciding this late means one of the two designs gets rebuilt.
+  - |
+    OPEN — WHAT HAPPENS TO THE PRE-REGISTERED NEGATIVE RESULT. `docs/context-system-comparison.md` §3
+    reports that P1 and P2 both failed and therefore, by the criterion fixed in advance, the
+    context-drag hypothesis is NOT SUPPORTED for design tasks. The post-hoc refinement (both failed on
+    the implementability clause, and the drag ordering itself came out monotone as predicted) is
+    weaker evidence than the pre-registered rule, and it is the refinement this ticket is built on. If
+    the founder weights the pre-registered negative as controlling, the honest consequence is that
+    S6/S7/S10's withholding machinery is unjustified and this ticket shrinks to S1–S5 plus the four
+    defect fixes. That is a legitimate reading of the founder's own instrument and the ticket must not
+    quietly assume otherwise.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "context-system-three-arm-comparison"
+created_at: "2026-08-05T23:30:00Z"
+status_note: |
+  EVERY LOAD-BEARING CLAIM IN THIS TICKET WAS VERIFIED AGAINST THE RUNNING REPO BY THE JUDGE, WHO
+  PRODUCED NONE OF THE ARMS. Verified directly, not taken from any arm's text:
+    - `.claude/hooks/git-guard.cjs:276` — `process.exit(2)` at exactly that line.
+    - `.claude/settings.json` — `PreToolUse` matcher `"Bash"` only; no `Read`/`Grep`/`Glob` matcher
+      exists; `permissions.deny` is present and EMPTY.
+    - Global `~/.claude/settings.json` — `PreToolUse` matcher `"Write|Edit|NotebookEdit|Bash"`, which
+      is the direct proof that matchers take arbitrary pipe-separated tool names.
+    - `kit/hashes-3.8.5.yaml:233` — `cwos-reconcile.js`, manifest `sha256:700d470d…`; the file on
+      disk hashes to `sha256:cdc827a3…`. `kit/scripts/cwos-bundle-validate.js` is ABSENT from the
+      manifest; `kit/scripts/lib/cwos-bundle-validate.js` is present at :286.
+    - `kit/scripts/cwos-verify.js:596` — `require('./lib/cwos-bundle-validate')`.
+    - `git rev-parse --git-path hooks` → `C:\Users\chris\OneDrive\Desktop\Claude-Poker-Tracker\.git\hooks`;
+      `.git/hooks/` holds only `.sample` files; `kit/scripts/git-hooks/` holds six real hooks.
+    - `.claude/hooks/readiness-gate.cjs:9` ("a banner shown every session is a banner nobody reads by
+      week three") and `:12-15` (the kit/-is-overwritten constraint), both read verbatim.
+    - `.claude/hooks/retreat-detector.cjs:6-11` — the recorded reasoning for blocking rather than
+      warning, read verbatim.
+    - `grep` for `writeFile|appendFile|cwos-event` across `.claude/hooks/*.cjs` → NOTHING. No hook
+      records that it fired; recurrence is uncountable today, which is what makes S10's `fire_count`
+      rule new rather than a restatement.
+    - `FIND-014.yaml:11,22` — `run_id` and `dedup_key` both real, so S10's promotion query is
+      runnable against existing data.
+    - `Four Motivations` occurs in 3 files repo-wide, all of which are POKER_THEORY.md or documents
+      about it — the names-do-not-travel measurement, re-run independently rather than taken from
+      `docs/context-architecture.md`.
+    - 35 files in `.claude/agents/`; 42 `.md` under `docs/design/personas/` (40 in core/situational).
+      Arm A said 35/43, Arm B said 38/40 — both close, neither exactly right, and neither claim is
+      load-bearing.
+
+  ONE ARM'S CLAIM WAS REFUTED AND IT IS THE MOST CONSEQUENTIAL ONE IN THE COMPARISON: Arms B and C
+  both asserted withholding cannot be enforced. It can. See the description.
+
+  THE COMPARISON'S OWN CONFOUNDS, CARRIED HERE SO THIS TICKET IS NOT READ AS A CLEAN 3-0: Arm B's
+  brief was written by Arm C's author, so the 2-1 majority against the greenfield arm on the
+  withholding question was never two independent judgements. Arm A was not fully greenfield — the
+  harness injected both CLAUDE.md files, all five `.claude/rules/*.md`, and MEMORY.md before its first
+  action, and it read the bundle validator's header as permitted source, which describes Arm B's
+  design. Arm A disclosed all of that unprompted and at length. Arm B answered a narrower brief
+  (roughly R7–R11), so its silence on R1–R6 is scope; its silence on R14 is not.

@@ -1,0 +1,59 @@
+id: "FIND-048"
+title: "The one per-villain estimate the live path consumes is the one data structurally cannot inform — the learned range channel is a single scalar per (position, action)"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Range estimation correctness"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  useLiveEquity.js:138 `getVillainRange(villain.tendencies.rangeProfile, position, actionKey)` and
+  :167 `estimateFoldPct(seg, 'bet')` are the COMPLETE per-villain input to the live recommendation.
+  Both are structurally incapable of carrying per-villain information.
+
+  THE RANGE HALF IS ALGEBRAICALLY INERT. rangeEngine/bayesianUpdater.js:174-183 computes one
+  Bayesian effective frequency per (position, action), divides it by the population frequency to
+  get `ratio`, and then writes `ranges[action][i] = Math.min(1.0, prior[i] * ratio)` across all 169
+  cells. ONE scalar scales the whole grid; the SHAPE is untouched by data. Any downstream consumer
+  that normalises has that uniform factor divided straight back out, so a villain observed for a
+  thousand hands — absent showdowns — presents the population prior bit for bit. More table time
+  moves volume; it cannot move WHICH hands the opponent holds.
+
+  THE INHERITED SHAPE'S PROVENANCE IS STATED IN THE CODE. bayesianConfidence.js:36-49 — "FOUNDER
+  ESTIMATE of the live 1/2 pool — informed judgment, NOT a measured dataset."
+
+  THE FOLD HALF IS A PURE POPULATION CONSTANT (cross-critic extension). useLiveEquity.js:167 calls
+  estimateFoldPct with two arguments, so playerStats and villainModel default to {} and null and
+  every personalisation branch in foldEquityCalculator.js (:443, :468) is dead on every live call.
+
+  THE IDENTIFIABLE COORDINATE EXISTS AND IS NOT WRITTEN BACK. rangeEngine/pipCalculator.js computes
+  a low-dimensional shape coordinate that is consumed only by RangeProvenance.jsx for display.
+
+  WHY THIS IS THE FOUNDER'S QUESTION, NOT A SIDE ISSUE. The stated premise is "whatever mechanism
+  we use should transfer to the live data and we should see it adjust." Against HEAD it cannot
+  adjust, and the reason is algebra rather than thin live volume — so the flatness is demonstrable
+  today and is itself the falsification.
+affected_files:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/hooks/useLiveEquity.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/rangeEngine/pipCalculator.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+recommended_fix: |
+  Make the update RESHAPE rather than RESCALE, at a parameter count the data can identify: a width
+  percentile plus 3-5 PIP-category deviations is 4-6 free parameters, identifiable from roughly
+  50-150 preflop decisions, against 169 cells that never will be. Use the hierarchical form
+  updateSubclassRanges already uses one level down (bayesianUpdater.js:241-311), measure against
+  n_parent rather than the scenario-wide N (DEC-025 Amendment 1), and never normalise a prior grid
+  into a distribution — prior grids are propensities. Report the movement curve AND held-out
+  log-loss together; a model that moves without improving is worse than the inert channel, because
+  the inert channel at least sits on a prior measured to be worth +0.1137 nats.
+theory_citation: "POKER_THEORY §11.5 admissibility; RANGE_ENGINE_DESIGN.md; memory: feedback_subclass_grids_carved_from_parent (DEC-025 Amd 1 — prior grids are propensities, never normalised)"
+dedup_key: "blindspot-domain-correctness-range-channel-scalar-scaled-prior-inert"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-399"

@@ -1,0 +1,77 @@
+id: "FIND-040"
+title: "preflopFoldResolver tier 1 keeps the hard confidence gate WS-285 removed everywhere else — and returns early, discarding the villain's observed fold counts"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-domain-correctness-delta-2026-07-30"
+  date: "2026-07-30"
+description: |
+  RE-VERIFIED AT HEAD 2026-08-05 — STILL OPEN. Line numbers corrected: the run record
+  cites :258-275 and :288-290; at HEAD the tier-1 block is preflopFoldResolver.js:294-313
+  and the comment is at :327-329. The mechanism is unchanged.
+
+  resolveSeatFoldToRaise's tier 1 (:294-313) queries the villain decision model and then
+  gates on `if (dist.confidence >= MODEL_CONFIDENCE_THRESHOLD)` (:300; the constant is 0.3,
+  villainModelData.js:33). Inside the gate it RETURNS (:302-310), bypassing the Beta
+  posterior at :314-330 entirely. Two consequences:
+
+  (1) A villain just under the threshold has model information DISCARDED OUTRIGHT rather
+  than shrunk — the exact `if (n >= K) use the specific estimate` construction that
+  POKER_THEORY §11.5 generalizes from the WS-285 fix, and that §11.4 had already recorded
+  against a minimum-N gate on preflop fold rates specifically: "a threshold label, the same
+  anti-pattern in another costume."
+
+  (2) When the gate DOES fire, the early return means `facedRaisePreflop` (:317) and the
+  fold-vs-preflop-raise count (:318-320) are never read. A villain with a thin model and
+  200 observed faced-raise hands is priced off the thin model and the 200 hands are thrown
+  away. The branch returns `priorWeight: 0` (:308), which reports FULL confidence for an
+  estimate that carries none.
+
+  THE FILE CONTRADICTS ITSELF EIGHT LINES APART. The same function's comment at :327-329
+  states "Per founder decision (WS-274): NO hard observation cutoff. The Beta posterior
+  self-weights ... A threshold would reintroduce the label anti-pattern in another guise."
+  That is true of tiers 2-4 beneath it and false of tier 1 above it.
+
+  ROOT CAUSE — DRIFT BETWEEN TWO COMMITS IN ONE WINDOW. WS-274 (2026-07-26) lifted the
+  pre-existing priority chain into the resolver verbatim, including its threshold. WS-285
+  (2026-07-27) then established shrinkage-not-thresholds and fixed queryActionDistribution's
+  internals, but did not revisit its caller.
+affected_files:
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+recommended_fix: |
+  Treat the model distribution as another level in the ladder rather than a gate on it: use
+  its estimate to prime the Beta prior (strength = dist.effectiveN) and let the observed
+  faced-raise counts update it, instead of early-returning. No cutoff. Report priorWeight
+  honestly — the returned figure should reflect how much of the posterior came from the
+  prior, which for a thin model is most of it.
+theory_citation: "POKER_THEORY §11.5 (shrinkage, not thresholds — generalized from WS-285); §11.4 (minimum-N gate on preflop fold rates is 'a threshold label, the same anti-pattern in another costume')"
+dedup_key: "delta-domain-correctness-preflopfoldresolver-tier1-hard-confidence-gate"
+created_at: "2026-07-30"
+updated_at: "2026-08-05"
+promoted_to: ""
+status_note: |
+  FILED LATE 2026-08-05. Recorded in the 2026-07-30 delta run record
+  (prog-domain-correctness.yaml:402) and in the run's evidence file, but never registered
+  as a findings/ file — which is why WS-307:78 and the program record both produced
+  finding-pointer-rot warnings. Content extracted from
+  evidence/domain-correctness/run-domain-correctness-delta-2026-07-30/delta-2026-07-30.yaml:64-100
+  and re-verified against HEAD before filing.
+
+  NOT PROMOTED. No queue item covers this. WS-393 (:72) and WS-333 (:140) both name
+  `preflopFoldResolver.resolveSeatFoldToRaise` as the correct per-seat pricing entry point,
+  but neither touches the tier-1 gate inside it — closing either would leave this open. The
+  run record's own judgement was that "FIND-040 is the one worth promoting on its own
+  merits"; it was withheld only because domain-correctness was at 37/25 items at the time.
+
+  PROBLEM CLASS. Mapped to "Bayesian confidence representation" — the declared class
+  carrying "Sample-size-aware confidence must propagate as credible intervals (Bayesian)
+  not point estimates". Tier 1 returns a point estimate with `priorWeight: 0` in place of
+  the Beta blend, which is that rule broken in both directions at once. Runner-up
+  "Villain decision model fidelity" (the estimator is the villain fold-rate model);
+  recorded here so a future re-file does not read the choice as arbitrary.

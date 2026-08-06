@@ -1,0 +1,185 @@
+id: "WS-394"
+title: "The confidence signal is ABSENT on live and DEGENERATE on Ignition — every villain at every sample size renders PARTIAL, one observation prints as '11 obs', and the honest twin of the same badge sits in the same repo with the same palette and no cross-reference"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 14.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "ignition-extension"
+program: "domain-correctness"
+finding_id: "FIND-049"
+description: |
+  ONE TICKET, TWO HALVES, FILED AGAINST THE IGNITION SURFACE. The roundtable's `do_not_file` ruling
+  is binding here: this is NOT a live-path item. The badge is absent on live because
+  `LiveAdviceBar.jsx:256` renders `<ConfidenceBadge>` only when `useGameTree` is true, and
+  `useGameTree` (`:181`, `topRec && gameTreeAdvice.heroEquity != null`) is false without the
+  extension. Filing it as a live fix would create a second orphan behind the same dead gate. It is
+  also the SAME ticket as the `evidenceN` propagation, which is why they are one item.
+
+  THE DEGENERACY, READ FROM HEAD. `ConfidenceBadge` (`LiveAdviceBar.jsx:68-72`) has three tiers:
+
+    DATA    requires  effectiveN >= 15 AND source.includes('model')
+    PARTIAL otherwise, unless
+    EST     requires  source === 'prior' | 'population', or effectiveN < 5
+
+  Neither of the two discriminating conditions can ever be satisfied.
+
+    (a) NO PRODUCER EMITS A SOURCE CONTAINING 'model'. `queryActionDistribution`
+        (`villainDecisionModel.js`) has five return sites and they emit exactly four strings:
+        `'prior'` (`:508`, `:524`, `:558`), `` `shrinkage-L${deepestLevel + 1}` `` (`:537`), and
+        `` `level-${i + 1}` `` (`:550`). None contains the substring `model`. DATA is unreachable.
+    (b) `effectiveN` HAS A FLOOR OF 10. Every construction adds `PSEUDOCOUNT`:
+        `:325` `totalN + PSEUDOCOUNT`, `:445` `evidenceN + PSEUDOCOUNT`, `:739`
+        `totalN + PSEUDOCOUNT`, `:746` bare `PSEUDOCOUNT`; and `PSEUDOCOUNT = 10` at `:36`. So
+        `effectiveN < 5` is unreachable and EST fires only on the literal `'prior'` string.
+
+  Result: every villain at every sample size for whom shrinkage found any evidence at all renders
+  PARTIAL. The badge carries zero mutual information with the thing it names.
+
+  THE SAME DEFECT PRINTS A NUMBER, AND THE NUMBER IS WRONG BY EXACTLY 10.
+  `actionClassifier.js:296-304` builds the reasoning suffix from the same object:
+  `:302` returns `` ` (${effectiveN} obs)` `` when `effectiveN >= 5`. One real observation is
+  reported to the founder as "11 obs". That is not a display nit — it is a claim about evidence,
+  stated in the engine's own reasoning narrative, inflated by the prior strength.
+
+  THE MINIMUM FIX IS SMALL, BECAUSE THE RIGHT NUMBER IS ALREADY COMPUTED.
+  `resolveByShrinkage` returns `evidenceN` (`villainDecisionModel.js:445`), the destructuring at
+  `:518` receives it, and `:535` already uses it correctly for
+  `confidence: bayesianSampleConfidence(evidenceN)`. It is simply not carried into the returned
+  object at `:537`, and it does not exist at the other four return sites. Propagate it, and carry it
+  through the three `villainPrediction` literals at `gameTreeEvaluator.js:332`, `:517` and `:757`
+  (all three identical:
+  `{ confidence: villainDist.confidence, effectiveN: villainDist.effectiveN, source: villainDist.source }`).
+
+  KEY THE BADGE ON THE HONEST TWIN THAT ALREADY EXISTS.
+  `ignition-poker-tracker/shared/stats-engine.js:34` — `sampleQualityTier(sampleSize)` takes a RAW
+  count against the same 15/5 thresholds (`SAMPLE_QUALITY_THRESHOLDS` at `:25-28`), returns all
+  three tiers, and `SAMPLE_QUALITY_COLORS` at `:44-48` carries the comment "Badge colors mirror
+  LiveAdviceBar (green/amber/grey family)". Identical thresholds, identical palette, opposite
+  behaviour, and no cross-reference in either direction. One of the two must become the other's
+  implementation.
+
+  `PSEUDOCOUNT = 10` IS NOT THE DEFECT AND MUST NOT BE TOUCHED. It is the Dirichlet prior strength
+  matched to `PRIOR_WEIGHT = 10`, validated on the WS-262 corpus in the same measurement that
+  refuted the 200 cap. The comment at `villainDecisionModel.js:352` records that pairing explicitly.
+  Changing it would un-validate a validated constant in order to fix a display bug, and it would
+  change EV on every path — the opposite of a display-only change.
+
+  THE CAVEAT THAT MUST SHIP WITH THE FIX. `evidenceN` is a sum of DECAYED weights — a fractional
+  effective sample size, not a count (`decisionAccumulator.js` writes `weightedOccurrences +=
+  recencyWeight` against a 50-hand halflife). The 15/5 thresholds in both `ConfidenceBadge` and
+  `sampleQualityTier` are calibrated on RAW counts. Feeding the ESS into a raw-count threshold
+  silently tightens both bars by the decay factor. Feed the raw count to the threshold; put the ESS
+  in the tooltip, where the distinction is informative rather than distorting.
+
+  THE TEST SUITE IS EVIDENCE AGAINST THE CODE.
+  `LiveAdviceBar.test.jsx:30` fixtures `source: 'model_blended'`, `:66` `source: 'population'`,
+  `:78` `source: 'blended'`. All three are strings the producer cannot emit. The suite passes, and
+  it certifies exactly the discrimination the shipped code cannot perform — the same failure family
+  as WS-312's 59 green tests hand-feeding an `eqVsCallRange` the engine could not produce.
+
+  RANK. Low, and deliberately so. This changes no recommendation, so it does not touch the scored
+  figure, which is the founder's stated ranking axis. It is filed because the failure is cheap to
+  close and because a badge that reads PARTIAL for everyone is worse than no badge: it converts "I
+  don't know how much support this has" into a false statement that it has some.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE EV-DELTA CRITERION, AND THE EXEMPTION IS STATED IN THE TICKET
+    RATHER THAN SILENTLY TAKEN. It alters no recommendation: `evidenceN` propagation adds a field to
+    a metadata object, and the badge is presentation. Its EV delta is structurally ZERO and writing
+    "EV delta > 0" would be dishonest. THE CRITERION INSTEAD IS DISCRIMINATION: over a real corpus
+    of villains, the badge must return all three tiers with a distribution that tracks observed hand
+    count, and the mutual information between tier and raw sample size must be non-zero — today it
+    is exactly zero. Report the tier histogram before and after.
+  - AND IT MUST BE PROVEN TO CHANGE NO EV. Run the standardized method before and after on an
+    identical decision set and assert the aggregate figure is UNCHANGED to the last digit. If it
+    moves, something in the propagation touched the estimate rather than the metadata, and that is a
+    defect in this ticket, not a benefit.
+  - DATA IS REACHABLE, DEMONSTRATED BY A TEST THAT FAILS AGAINST HEAD. Construct a villain with 30
+    real observations in one bucket and assert the badge reads DATA. Today it reads PARTIAL for
+    every input. The converse must also be asserted: a villain with one observation reads EST, not
+    PARTIAL.
+  - THE RAW COUNT REACHES THE THRESHOLD; THE ESS IS DISCLOSED SEPARATELY. Assert both: that a
+    villain whose raw count clears 15 but whose decayed ESS does not is tiered DATA, and that the ESS
+    is retrievable for display. A test must pin the two quantities as DISTINCT fields, so the next
+    reader cannot re-merge them.
+  - `PSEUDOCOUNT` IS UNCHANGED, AND A TEST PINS IT AT 10 WITH A COMMENT NAMING WHY. It is matched to
+    `PRIOR_WEIGHT = 10` and validated on the WS-262 corpus. This ticket must leave a marker that
+    makes the next reader who notices the "+10 inflation" find the reason rather than the symptom.
+  - `actionClassifier.js:302` NO LONGER PRINTS A PRIOR-INFLATED COUNT. One observation must not
+    render as "11 obs". Assert the exact string for n=1, n=8 and n=30.
+  - THE TWO BADGES BECOME ONE IMPLEMENTATION, OR THE DIVERGENCE IS DECLARED IN BOTH FILES.
+    `sampleQualityTier` and `ConfidenceBadge` share thresholds and palette by comment and diverge in
+    behaviour. Either the app imports the shared tier function, or each file states in code why it
+    cannot and what the other does differently. A comment claiming a fact the code contradicts is the
+    exact failure shape `exploitEngine/CLAUDE.md` records three instances of; when a comment states a
+    fact the code could assert, assert it.
+  - THE THREE INVENTED FIXTURES ARE REPLACED WITH STRINGS THE PRODUCER ACTUALLY EMITS, AND A TEST
+    ASSERTS THE CLOSED SET. Enumerate the source vocabulary (`prior`, `shrinkage-L*`, `level-*`) from
+    the producer and assert that every fixture in the suite belongs to it. A fixture invented to
+    demonstrate behaviour is not evidence the behaviour exists.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/components/views/TableView/__tests__/LiveAdviceBar.test.jsx"
+  - "ignition-poker-tracker/shared/stats-engine.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHICH DIRECTION THE SHARED TIER FUNCTION FLOWS. `sampleQualityTier` lives in
+    `ignition-poker-tracker/shared/`, outside the app's module graph, and the app currently imports
+    nothing from the extension. Options: lift the function into `src/utils/` and have the extension
+    import it (crosses the extension boundary the other way), duplicate it with a test asserting the
+    two stay identical, or leave them separate with declared divergence. The first is cleanest and
+    the most invasive; the second is the pattern this repo has used before for the wire schemas.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-049"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `villainDecisionModel.js:36` `const PSEUDOCOUNT = 10;` with the comment "Prior strength — at
+      n=10, prior and data are weighted equally"; `:352` records the pairing with `PRIOR_WEIGHT = 10`.
+    - The four emitted source strings and their sites: `:508`, `:524`, `:558` `'prior'`;
+      `:537` `` `shrinkage-L${deepestLevel + 1}` ``; `:550` `` `level-${i + 1}` ``. No `model`.
+    - `effectiveN` constructions at `:325`, `:445`, `:739`, `:746`, all `+ PSEUDOCOUNT` or bare
+      `PSEUDOCOUNT`. Floor of 10 confirmed.
+    - `:445` returns `evidenceN` alongside `effectiveN`; `:518` destructures it; `:535` uses it for
+      `bayesianSampleConfidence`; the returned object at `:530-536` does NOT include it. Confirmed
+      as "already computed, simply not carried forward".
+    - `gameTreeEvaluator.js:332`, `:517`, `:757` — three identical `villainPrediction` literals.
+    - `actionClassifier.js:296-304` — `confidenceSuffix`; `:301` the DATA-equivalent branch requiring
+      `source.includes('model')`; `:302` the `` ` (${effectiveN} obs)` `` string.
+    - `stats-engine.js:25-28` thresholds, `:34` `sampleQualityTier`, `:44-48` colors with the
+      "mirror LiveAdviceBar" comment.
+    - `LiveAdviceBar.test.jsx:30` `'model_blended'`, `:66` `'population'`, `:78` `'blended'`.
+
+  CORRECTED — the run record's file path for the badge was wrong:
+    - The run record and the digest both cite "LiveAdviceBar.jsx:256" without a directory, and one
+      lens implied `src/components/ui/`. At HEAD the file is
+      `src/components/views/TableView/LiveAdviceBar.jsx`. There is no `src/components/ui/LiveAdviceBar.jsx`.
+      `ConfidenceBadge` is a LOCAL component defined at `:68` in that same file — it is not exported
+      and there is no separate `ConfidenceBadge` module anywhere in the repo. That matters for the
+      shared-implementation decision flag above: there is no existing shared component to point at.
+    - Line references `:181` (the `useGameTree` definition) and `:256` (the badge render) verified
+      exactly as stated.
+
+  NOT RE-DERIVED: the claim that `PSEUDOCOUNT = 10` was validated on the WS-262 corpus "in the same
+  measurement that refuted the 200 cap" is taken from the run record and from the comment at `:352`.
+  It has not been re-run for this ticket. It is load-bearing only as a reason NOT to change the
+  constant, which is the conservative direction.

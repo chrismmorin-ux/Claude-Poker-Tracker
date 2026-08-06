@@ -1,0 +1,291 @@
+id: "WS-423"
+title: "POKER_THEORY.md grew 62.5% in ten days with no ceiling and no eviction rule; the same measurement is stated five times with three values, and the light tier that would fix it must be selected on vocabulary transmissibility — which the repo's own §8 shows a digest does not have"
+legacy_id: ""
+type: refactor
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P1"
+category: "documentation"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+finding_id: ""
+description: |
+  DESIGN DOCUMENT: `docs/context-architecture.md`. This ticket implements it. Read Part 1 before
+  touching the file — the measurement is what makes the design non-arbitrary, and two of the
+  founder's framing premises were corrected by it.
+
+  MEASURED AT HEAD fe716f59 — 2,495 lines / 31,692 words / ~50,200 tokens. Block-level
+  classification, coverage-asserted (0 unassigned, 0 overlapping):
+
+    positive doctrine        1,330 lines (53.3%)  16,100 words (50.8%)
+    measurement record         394 lines (15.8%)   4,422 words (14.0%)
+    corrections-history        313 lines (12.5%)   3,572 words (11.3%)
+    governance / meta          243 lines ( 9.7%)   2,525 words ( 8.0%)
+    implementation inventory   169 lines ( 6.8%)   2,254 words ( 7.1%)
+    changelog (frontmatter)     46 lines ( 1.8%)   2,819 words ( 8.9%)
+
+  THE FOUNDER'S HYPOTHESIS IS RIGHT ABOUT THE MECHANISM AND WRONG ABOUT WHICH CONTENT CARRIES IT.
+  Corrections-history is 12.5% of lines — smaller than the hypothesis implies, and NOT the largest
+  non-doctrine block; measurement records are. But the two are not independent: nearly every
+  measurement in this document exists to justify a correction. Corrections + their measurements +
+  the changelog is 30.2% of lines and 34.1% of words.
+
+  THE REAL MECHANISM IS ACCRETION RATE, NOT DRAG. Line count by date: 389 (2026-03-09) → 707
+  (06-19) → 936 (07-26) → 2,051 (07-31) → 2,495 (08-05). 62.5% OF THE DOCUMENT WAS WRITTEN IN THE
+  LAST TEN DAYS, at 156 lines/day against a prior-life average of 3.9 — a 40x acceleration with no
+  ceiling and no eviction rule. It is not drifting backward; it is accreting forward faster than
+  anything can read it. §11 alone is 700 lines (28% of the document) and only 15% of it is positive
+  doctrine — 29% corrections, 34% measurement. §1–§10 is 1,065 lines at 89% doctrine, 4% corrections.
+
+  CITATION ASYMMETRY — 918 valid external section citations across 502 files, from a filtered sweep
+  of 3,864 files. (Naive `§N` adjacency returns 934+ and is contaminated by refs to OTHER documents;
+  only the filtered count is reportable.) Six sections (§3 §5 §6 §7 §9 §11) absorb 723 of 918 — 79%.
+
+    §9 174 · §7 156 · §6 147 · §3 132 · §5 63 · §11 51 · §10 36 · §1 35 · §2 34 · §4 28
+    §12 25 · §14 20 · §15 9 · §13 6 · §16 1 · §8 ZERO
+
+  §8 "Common Mistakes This Document Prevents" is the ONLY top-level section with zero external
+  citations — 32 lines, 708 words, and nothing in 3,864 files has ever written `POKER_THEORY.md §8`.
+  It is a DIGEST of §3.4/§7.2/§7.3/§7.4, and the sections it digests draw 132 and 156. Readers cite
+  the source, not the summary. THAT IS THE SINGLE MOST IMPORTANT CONSTRAINT ON THIS TICKET: the
+  light tier must not be §8 with a smaller font. Thirty subsections have zero citations, including
+  all six of §16 and §11.2 (a shipped algorithm).
+
+  AND THE FINDING THAT DECIDES THE DESIGN — SECTION NUMBERS DO NOT TRAVEL, VOCABULARY DOES.
+  §16 draws 1 section-number citation and 151 occurrences of its own vocabulary (`intransitiv*` 114
+  across 13 files, `antisymmetr*` 37). §3.4 draws 19 section-number citations and its heading phrase
+  "Four Motivations" appears ZERO times anywhere else in the repo. Citation-by-number measures
+  bureaucratic uptake; vocabulary count measures cognitive uptake; they are close to uncorrelated,
+  and the founder's hypothesis is about the second.
+
+  CORROBORATION ALREADY IN THE REPO: §7 is the most-cited section (156) and is the ONLY section with
+  an always-loaded compressed form — CLAUDE.md:337, a ~90-word paragraph. No other section has one.
+  A natural experiment with n=1, pointing the founder's way. Not proof; Part 3 exists because of it.
+
+  FIVE CONTRADICTIONS / STALE CLAIMS, EACH VERIFIED BY READING THE FILE (working-tree line numbers):
+
+    C1 — THE SAME MEASUREMENT IS STATED FIVE TIMES WITH THREE VALUES, AND ONE IS STRUCTURALLY
+         INCOMPATIBLE WITH THE OTHERS. Facing-a-raise coverage pre-fix: 55% (changelog :25, §3.6.1
+         :461) vs ~60% (§11.6 :1543, "missed ~40% of the time"). Post-fix coverage: ~94% (§3.6.1
+         :460, §11.6 :1561) vs 100% (§11.9 :1921, "the floor guarantees it"). §11.9's reason is
+         correct BY CONSTRUCTION — if no combo is ever zeroed, the true hand is never excluded — so
+         the "94%" figure is measuring something other than coverage and is mislabelled in both
+         places it appears. THIS IS THE WS-291 MECHANISM (nothing forcing two numbers onto one axis)
+         REPRODUCING INSIDE THE DOCUMENT THAT EXISTS TO PREVENT IT. Most serious finding.
+
+    C2 — `§FSA` at :2353 names a section of POKER_THEORY.md that DOES NOT EXIST (verified: zero
+         `## …FSA` headings). Every other `§` in this file refers to its own sections, so the ref is
+         unresolvable by its own convention. Correct target: `.claude/projects/five-surface-atlas.md`.
+         THE BRIEF'S PREMISE NEEDS ONE CORRECTION: FSA Phase 3 is no longer unbuilt — it landed
+         2026-08-05 via WS-350 (`VOCABULARY.md:240`), so §14.4/§15.4's bindings are not aimed at
+         vapour. Only the phantom section reference is defective.
+
+    C3 — §11.4 :1376 still reads "fitted in pot-fraction units around a 0.75 midpoint". WS-283
+         (:1170, SAME DOCUMENT, 2026-08-05) moved it to 0.35 and states 0.75 was wrong by 0.40
+         pot-fractions, above 71% of all real bets. The sentence defers to WS-283 for calibration
+         while stating the refuted number. FLAGGED NOT ASSERTED: :1336's `sprMidpointMultiplier`
+         clamp (0.65, 1.20) scales that midpoint and was calibrated against 0.75; against 0.35 it
+         now spans 0.23–0.42. Whether that is still intended is an ENGINE question, not a doc one —
+         do not silently "fix" it here.
+
+    C4 — §3.4 :331 asserts "Every bet is motivated by one or more of the following" — a CLOSED
+         taxonomy that already went Three → Four (WS-256/WS-278) when protection was found missing.
+         THE DOCUMENT CONTAINS ZERO SELF-INCOMPLETENESS MARKERS OF ANY FORM (grep verified). The
+         same section is internally inconsistent: the heading says "The Four Motivations", the body
+         names five, and the fifth (inducing, :341) arrives unnumbered — at the exact spot the
+         taxonomy previously proved too small.
+
+    C5 — §4.2 :531 defines a bluff-catcher as beating "all bluffs" and losing to "all value hands".
+         §11.6's own soft narrowing guarantees villain's range is a continuum with positive weight
+         everywhere, so that set is typically EMPTY. §4.2 has 12 citations and is consumed by code; a
+         definition that cannot be satisfied is one code cannot implement.
+
+    Plus 16 dangling citation instances in 5 classes repo-wide: `§3.8` (8), `§181` (5), `§4.3` (2),
+    `§0` (1), `§FSA` (1). Nothing detects any of them.
+
+  THE "I WAS WRONG" INVENTORY — 24 CORRECTION NARRATIVES COLLAPSE TO SIX RECURRING FAMILIES PLUS
+  ELEVEN ONE-SHOT EVENTS. The recurring/one-shot test is the whole design question and it resolves
+  cleanly: ~6 named failure modes replace ~24 narratives; ~40 lines of rule replace 313 of story.
+
+    threshold standing where a posterior belongs        5 instances
+    constant standing where game state belongs          4
+    parameter transplanted across conditioning sets     4+
+    comparison across different decision sets           5
+    one site is a hypothesis, two sites is a finding    3 (in one session)
+    a large conditional is not a large aggregate        2
+
+  THE DOCUMENT ALREADY NAMES FIVE OF THESE SIX AS RECURRING, IN ITS OWN PROSE (§3.6.1 :485 "third
+  instance of the same threshold-instead-of-posterior shape"; §13.3 "the FIND-040 family"). The
+  families exist; NOTHING COLLECTS THEM. A reader meets each as a story about a ticket.
+  Six of the eleven one-shot corrections are now closed by a test assertion — for those the test is
+  a strictly better record than prose, because it runs, it fails, and it cannot go stale.
+
+  THE CHANGELOG IS ARCHAEOLOGY IN PRIME POSITION. 46 lines / 2,819 words / 18,954 chars — 8.9% of
+  the document's words in 1.8% of its lines, at lines 10–55, BEFORE `## 1. Fundamental Concepts` at
+  line 65. Every reader pays ~4,740 tokens of archaeology before the first sentence of doctrine. It
+  is cited by nothing, duplicates the sections below it at greater length (the WS-283 entry is 640
+  words; §11.1a, which it describes, is 655), and is already in git with better fidelity.
+
+  THE BUDGET THIS MUST FIT INSIDE. Always-loaded today is CLAUDE.md 33,774 + MEMORY.md 18,511 +
+  .claude/rules/*.md 7,831 = 60,116 chars (~15,000 tokens). POKER_THEORY.md is ~50,200 tokens — 3.3x
+  that entire budget — and is NOT in the path: CLAUDE.md:276 gates it on "if touching engine code"
+  and :292–296 lists it under Skip for four of six task types. THE ALWAYS-LOADED POKER CONTENT TODAY
+  IS ONE PARAGRAPH. So this is not "compress the heavy tier"; it is "create an always-loaded tier
+  where today there is a paragraph."
+accept_criteria: |
+  - THE LIGHT TIER IS SELECTED ON VOCABULARY TRANSMISSIBILITY, NOT ON SECTION IMPORTANCE, AND THE
+    §8 RESULT IS RESPECTED IN THE ARTIFACT ITSELF. §8 is a digest of the two most-cited sections in
+    the document and draws zero citations. If the shipped light tier reads as a summary of §1–§16,
+    it has reproduced §8 and the ticket has failed regardless of what else it achieved. The four
+    selection gates in `docs/context-architecture.md` §2.1 (G1 framing-not-lookup, G2 cross-cutting,
+    G3 fired-twice, G4 no re-measurable magnitude) are applied per entry, and each entry records
+    which gate admitted it.
+
+  - THE CEILING IS ENFORCED IN CODE, NOT INTENDED. 250 lines / 12,000 chars, checked by reconcile
+    as a VIOLATION. This is non-negotiable and is the accept criterion with the least judgement in
+    it: POKER_THEORY.md went 389 → 2,495 with no ceiling, 62.5% of it in ten days at 156 lines/day.
+    At that rate an unenforced light tier reaches 2,495 lines in six weeks. An intended ceiling is
+    the thing that produced the file this ticket exists to fix.
+
+  - G4 IS MECHANIZED AS A SYNTACTIC CHECK, AND IT IS THE PRIMARY CONSISTENCY MECHANISM. The light
+    tier contains no decimal, no percentage, no parameter assignment. This is not a style rule — it
+    is what makes most divergence between the tiers STRUCTURALLY IMPOSSIBLE rather than merely
+    discouraged, because re-measuring anything cannot then falsify the light tier. C1 above is proof
+    that intent is not sufficient: one document, five statements of one measurement, three values.
+
+  - FOUR VALIDATOR RULES SHIP IN `cwos-reconcile.js`, MODELLED ON `validateFindingProblemClass`
+    (:738), WITH THE SEVERITY SPLIT ARGUED PER RULE RATHER THAN COPIED. V1 dangling `binds:` pointer
+    = VIOLATION (16 measured instances; no legitimate exception exists). V2 binding heavy section
+    with no light entry = WARNING — the problem_class reasoning transfers verbatim: a binding rule
+    with no expressible light form is a FINDING ABOUT THE RULE and must persist without failing
+    reconcile. V3 ceiling = VIOLATION. V4 magnitude present = VIOLATION. Each severity choice is
+    recorded in the code comment with its reason, in the style of the precedent.
+
+  - THE SIX FAMILIES ARE NAMED IN THE LIGHT TIER AND THEIR 313 LINES OF INSTANCES ARE NOT. Naming
+    is the deliverable: a named failure mode is recognizable in a new costume, which is exactly what
+    the instances failed to make it. Block C carries names + one-line signatures + `binds:` pointers
+    and NO ticket numbers, no stories, no measured magnitudes.
+
+  - THE ONE-SHOT CORRECTIONS CLOSED BY A TEST ARE REPLACED BY A POINTER TO THE ASSERTION, AND THE
+    ASSERTION IS VERIFIED TO EXIST AND TO FAIL WHEN REVERTED. Six qualify (§11.7's critical-softness
+    boundary, §2.5.3's containment, §11.9's narrowing count, WS-283's hold-out fixture, §11.4's
+    one-seat identity, §16.3's `buildCompressionClaim` refusal). Deleting prose whose replacement
+    record does not actually fail is destroying the record, not relocating it — check each one.
+
+  - C1 IS RESOLVED BY DECIDING WHAT THE 94% FIGURE MEASURES, NOT BY PICKING A NUMBER. §11.9's 100%
+    is correct by construction; therefore ~94% is a different quantity that has been mislabelled
+    "coverage" in two places. Name it, or retract it. Do NOT harmonise the three values into one —
+    that is the WS-291 error in the opposite direction.
+
+  - C2–C5 ARE EACH RESOLVED OR EXPLICITLY DEFERRED WITH A REASON. C3's `sprMidpointMultiplier`
+    question is routed to the engine, NOT fixed in a documentation ticket. C4 gets a
+    self-incompleteness marker on the specific claim (the document currently has zero such markers,
+    anywhere, of any form) — attached to the sentence, not added as a narrative.
+
+  - THE CHANGELOG MOVES OUT OF THE FRONTMATTER and the bump requirement survives as a validator on
+    `version`, not as 46 lines every reader pays for before reaching doctrine.
+
+  - THE FALSIFIER IS PRE-REGISTERED BEFORE THE CHANGE SHIPS, WITH ITS CONTROL VOCABULARY PUBLISHED
+    AND FIXED. Primary measure: light-tier vocabulary rate minus control vocabulary rate per 1,000
+    words in artifacts CREATED after the change (by `created_at`, never mtime). The control is the
+    entire design — per §11.8/§15.3.1's standing rule a verdict is read against a control from the
+    same run, and vocabulary drifts anyway. Baseline is the Part 1 sweep, which is reproducible.
+    Gate n >= 40 artifacts or 60 days, whichever is later. A NULL RESULT DELETES THE LIGHT TIER
+    RATHER THAN TUNING IT — cheap, because G4 guarantees it holds nothing the heavy tier lacks.
+    Report light-tier CITATION count as an INVERTED indicator: a rise means it became a digest.
+
+  - BOTH TIERS ARE REGISTERED IN `docs/CANONICAL_SOURCES.md` with the conflict rule stated: the
+    heavy tier is canonical for every claim, the light tier is canonical for nothing and is a
+    projection of it. A conflict then resolves the same way every time and is never a judgement.
+effort: "L"
+files_involved:
+  - "docs/context-architecture.md"
+  - ".claude/context/POKER_THEORY.md"
+  - ".claude/context/POKER_THEORY-light.md"
+  - ".claude/context/POKER_THEORY.changelog.md"
+  - "kit/scripts/cwos-reconcile.js"
+  - "docs/CANONICAL_SOURCES.md"
+  - "CLAUDE.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE CENTRAL ONE — IS THE LIGHT TIER ACTUALLY ALWAYS-LOADED, AND BY WHAT MECHANISM?
+    The entire hypothesis rests on it being in context on every turn, and CLAUDE.md is the only
+    file with that property today. Three options, with different costs. (a) INLINE into CLAUDE.md:
+    genuinely always-loaded, but grows a 444-line file by ~250 and mixes poker doctrine into a
+    CWOS-protocol document. (b) A SEPARATE FILE with a mandatory read at session start: honest
+    separation, but "mandatory" is exactly the word POKER_THEORY.md already carries at CLAUDE.md:308
+    while being explicitly skipped for four of six task types — so this option may reproduce the
+    problem it is solving. (c) A HOOK that injects it, per the ADR-040 catch-state precedent:
+    genuinely always-loaded and per-repo, but hooks are not installable by the kit today (CLAUDE.md
+    records this) so it would be repo-local until plugins ship. The founder should decide, because
+    the answer determines whether the falsifier is testing the light tier or testing whether anyone
+    reads it — and those are different experiments with the same measurement.
+  - |
+    OPEN — DOES THE HEAVY TIER GET SMALLER, OR ONLY BETTER ORGANISED? This design as written does
+    NOT shrink POKER_THEORY.md except for the changelog (46 lines) and the six test-closed
+    corrections. §11 stays 700 lines at 15% doctrine. The argument for leaving it: the standing rule
+    "never delete for a null result", and the fact that §11's measurement records are the evidence
+    the six families rest on — deleting them would leave the families as assertions. The argument
+    for splitting: §11 is 28% of a document whose front half is 89% doctrine, it is chronological
+    rather than thematic, and a `POKER_THEORY-measurements.md` would let the doctrine sections be
+    read without it. This is a real fork and it should not be decided inside the light-tier work.
+  - |
+    OPEN — WHETHER V2 SHOULD EVER BECOME A VIOLATION. It ships as a WARNING on the
+    `validateFindingProblemClass` reasoning, which is sound today. But a warning that fires forever
+    is a warning nobody reads, and the count of binding-sections-without-a-light-entry is exactly
+    the kind of number that should ratchet rather than drift. The alternative is to pin the count
+    with an exact assertion (the `groundTruthCoverage.test.js` pattern) so it can only go down —
+    which enforces without removing the escape hatch the precedent argued for.
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-423"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Every figure in the description was measured in-session against HEAD fe716f59, not carried from a
+  commit message or a prior ticket. Reproduction paths:
+    - Composition: block-level classification, coverage-asserted (0 unassigned, 0 overlapping
+      lines). Classification method and the class/line-range map are in
+      `docs/context-architecture.md` §1.1 and its appendix.
+    - Citation sweep: 3,864 files (tracked + untracked-not-ignored), excluding POKER_THEORY.md
+      itself. `POKER_THEORY[.md]` → `§N` adjacency with an intervening-token filter, plus chained
+      refs, reverse form (`§7.3 of POKER_THEORY.md`), YAML `section:` form, and anchor form.
+      REPORTABLE FIGURE IS 918. A naive sweep returns 934+ and is contaminated by `§N` references to
+      SYSTEM_MODEL.md / VOCABULARY.md / design docs — do not quote the naive number.
+    - Growth curve: `git log --reverse -- .claude/context/POKER_THEORY.md`, line count per commit.
+    - Every contradiction in C1–C5 was verified by reading the file at the cited line.
+
+  TWO PREMISES IN THE ORIGINATING BRIEF WERE CORRECTED BY THE MEASUREMENT, AND BOTH CORRECTIONS
+  MATTER TO THE DESIGN.
+    1. "§14/§15 declare binding rules on the Five-Surface Atlas which is Phase 1 of 5 and unbuilt."
+       FSA Phase 3 LANDED on 2026-08-05 via WS-350 (`docs/standard-of-record/VOCABULARY.md:240`,
+       "CLOSED by WS-350. FSA Phase 3 landed."). The bindings are not aimed at vapour. Only the
+       phantom `§FSA` cross-reference is defective, and it is defective for a different reason —
+       it names a section of POKER_THEORY.md that has never existed.
+    2. The founder's framing that corrections-history is the drag. It is 12.5% of lines and is not
+       the largest non-doctrine block. The measurement relocates the mechanism to accretion rate
+       (40x, ten days, no ceiling) and to the digest/vocabulary distinction (§8 at zero citations;
+       §16 at 1 citation and 151 vocabulary occurrences). The hypothesis about HOW context works
+       survives intact and is in fact supported by the §7/CLAUDE.md:337 natural experiment — what
+       changes is which content the remedy should target.
+
+  WORKING-TREE STATE AT AUTHORING: `.claude/context/POKER_THEORY.md` carries an uncommitted +120
+  lines (§11.1b, WS-402). All composition figures are HEAD; all `file:line` citations are
+  working-tree, because that is what a reader opens. WS-402's §11.1b is itself a fresh instance of
+  the "parameter transplanted across conditioning sets" family (wrong axis, wrong curve, wrong
+  anchor for a raise), which is why that family is listed at "4+" rather than 4.
+
+  NOT DONE BY THIS TICKET'S AUTHORING PASS, DELIBERATELY: POKER_THEORY.md was not rewritten. A
+  rewrite of the most load-bearing document in the repo is its own change with its own review, and
+  Part 1 exists so that review has numbers to argue against rather than an impression.

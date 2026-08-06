@@ -1,0 +1,190 @@
+id: "WS-402"
+title: "Facing aggression the engine raises 91.9% of the time against a pool that raises 12.5% and a hero who raised 10.5% — a 79-point over-raise that depth-2 closes only 8 points of, so it lives in depth-1 valuation, and it is what collapses importance weights to a 15% ESS and makes every arm comparison read a seventh of its own sample"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+finding_id: ""
+description: |
+  THE FOUNDER'S RULING THAT SCOPES THIS TICKET AND THE SEVEN AROUND IT, VERBATIM: "Depth 2 is
+  correct and we HAVE to do it, and if it isn't good enough yet, that's our fault and we need to
+  improve it, not disregard it." Nothing below is a case for disabling anything. Every item in this
+  cluster is a BUILD item.
+
+  THE NUMBER. On the 86 scored decisions where hero faced aggression (`slices.facingAction` in
+  {`bet`, `raise`}) in the run that produced `RC-depth-ablation`, recomputed from
+  `out/depth-ablation.json` rather than quoted:
+
+      arm / source                        fold     call    raise
+      engine @ depth-1                     3.5%     4.7%    91.9%
+      engine @ depth-2                     7.9%     8.4%    83.7%
+      pool (behaviour policy)             52.3%    35.2%    12.5%
+      observed (what hero actually did)   47.7%    41.9%    10.5%
+
+  Read the depth-1 row against the pool row. The engine raises seven times more often than the
+  population and folds one-fifteenth as often. This is not a tuning difference; it is a different
+  game.
+
+  DEPTH IS NOT THE CAUSE, AND THIS IS THE LOAD-BEARING FACT. Turning depth-2 on moves the raise
+  share from 91.9% to 83.7% — 8.2 points against a gap of 79.4. Depth-2 is responsible for about a
+  tenth of the correction and is moving in the RIGHT direction; the residual 71 points sit in the
+  depth-1 answer, which is produced before the refinement clock ever starts
+  (`gameTreeEvaluator.js:865` builds the candidate set, `:899` is the first line that reads
+  `refinementBudgetMs`). So this is a defect in depth-1 candidate valuation or in the fold estimate
+  that feeds it, and no amount of depth-2 work will fix it.
+
+  WHERE IT MUST LIVE, MECHANICALLY. A raise candidate's EV is
+  `pFold * foldEV + pCall * callBranchEV + pRaise * raiseBranchEV` (`gameTreeEvaluator.js:719`).
+  Only two things can make raise dominate everywhere:
+    - `pFold` is too high, so `foldEV` (the whole pot, uncontested) is over-weighted on every
+      aggressive candidate simultaneously; or
+    - `callBranchEV` (`:705`, `eqVsCallRange * (potAfterCall - rake) * realization - heroInvestment`)
+      is too high, which would over-value the called branch as well.
+  These are separable and the ticket must separate them before changing anything. The fold estimate
+  is the cheaper hypothesis to test and the one with an existing measured artefact:
+  `out/fold-vs-sizing.json` and `out/fold-curve-fit.txt` (2026-08-05) already hold pool fold rates
+  against sizing. A direct comparison of the engine's `foldPct` at each scored decision against the
+  pool's realized fold rate in the matching slice localizes the defect to one term in one line.
+
+  NOTE THE SIGN CAREFULLY — A PREVIOUS SESSION GOT THIS BACKWARDS AND IT MUST NOT BE RE-DERIVED.
+  Depth-1 does NOT overfold. It UNDER-folds by 48.8 points (3.5% against a pool 52.3%). Any
+  hypothesis that starts "depth-1 is too cautious" is refuted by the table above before it is
+  written. The companion falsified hypothesis, also not to be re-derived: depth-1 does not lack the
+  check-raise action. It is built at `heroActionBuilder.js:257` and fully valued in both arms.
+
+  WHY THIS IS SIMULTANEOUSLY THE BINDING CONSTRAINT ON EVERY OTHER MEASUREMENT IN THE PROGRAMME.
+  The estimator is self-normalized IPS: each decision's weight is
+  `pi_ours(observed) / pi_pool(observed)` (`ipsEstimator.mjs:76-94`). When the engine puts 91.9% of
+  its mass on `raise` and hero was observed to `fold`, `pi_ours(fold)` is near zero and the decision
+  contributes almost nothing. The measured consequence, recomputed from the same file:
+
+      slice        n     ESS(depth-1)   ESS share
+      ALL         260        39.5          15.2%
+      flop        138        21.0          15.2%
+      turn         77        12.2          15.8%
+      river        45         7.1          15.8%
+      non-river   215        33.2          15.4%
+
+  Seven effective river decisions out of forty-five. A 45-decision river slice that behaves like a
+  7-decision one is why the river confidence interval on the paired delta is [-26.11, +2.47]. Every
+  arm comparison this programme wants to run — the per-capability ablations in WS-404 and WS-408,
+  the realization arm in WS-407 — is being read through a sample the engine itself shrank by a
+  factor of six and a half. Fixing this raises the information content of every future run without
+  collecting a single new hand, which is why it is the highest-priority item in the cluster.
+
+  THE SAMPLE-SIZE ARITHMETIC THAT MAKES THAT CONCRETE. The bootstrap resamples PLAYERS
+  (`ipsEstimator.mjs:134`), so the cluster count binds and the run had 22 contributing players
+  against a 30-cluster bar (`report.admissibility.minClustersForCI`, which is why
+  `absoluteArmsQuotable` is false). At the current ESS, reaching a plus-or-minus 0.5 bb interval
+  needs roughly 433 flop decisions, 498 non-river, 428 turn, 4,361 for ALL, and 36,754 on the river
+  — about 200x the flop cost per bit, purely because river ESS is 7.1/45. Measured compute is 23.9 s
+  per decision for a two-arm pair (`run.runtimeMs` 6,219,107 over 260). The river number is not a
+  sampling plan; it is a statement that the river cannot be measured until this ticket lands.
+accept_criteria: |
+  - THE TWO CANDIDATE MECHANISMS ARE SEPARATED BEFORE ANY FIX IS WRITTEN, AND THE ANSWER IS
+    RECORDED. Produce, for the same 86 facing-aggression decisions, the engine's `foldPct.bet` and
+    `foldPct.raise` against the pool's realized fold rate in the matching (street, sizeBucket,
+    playersInPot) slice, and separately the engine's `callBranchEV` against a realized-outcome
+    benchmark for the same slice. State which term carries the error and by how much. A fix that
+    changes both terms at once cannot be attributed and does not satisfy this.
+  - EV-DELTA ACCEPT CRITERION, DIRECTION STATED IN ADVANCE. On the IDENTICAL 260-decision set from
+    `out/depth-ablation.json` (same Deal Book, same partition, same seeds), the paired delta of
+    FIXED-engine against HEAD-engine must be POSITIVE on the non-river slice, where the current
+    depth-2-vs-depth-1 delta is +0.4231 bb [-0.22, +1.30] and the sign is at least readable. The
+    river slice is exempt from a direction requirement in THIS ticket because its ESS of 7.1 cannot
+    support one — report it, do not gate on it. If the non-river delta comes back negative, that is
+    a finding about the fix and the ticket does not close on it.
+  - THE FREQUENCY GAP CLOSES AND THE CLOSURE IS QUANTIFIED. Post-fix, the facing-aggression raise
+    share must fall from 91.9% toward the pool's 12.5%, and the fold share must rise from 3.5%
+    toward 52.3%. Do NOT accept a target of matching the pool — the engine is meant to be
+    exploitative and SHOULD deviate from population frequencies. What must be defensible is the
+    SIZE and the DIRECTION of each deviation, stated per action with the reason. "Our raise share is
+    40% against a pool 12.5% because the pool under-defends at these sizings by X" is an acceptable
+    answer; 91.9% is not an answer at all.
+  - ESS IS RE-MEASURED AND REPORTED PER STREET, AND THE IMPROVEMENT IS THE HEADLINE. Report the
+    post-fix ESS table against the five rows above. This is the number that unblocks the rest of the
+    programme, and it must be stated as a share, not only as a count.
+  - A REGRESSION TEST PINS THE FREQUENCY, NOT THE FIX. The assertion must be over the engine's
+    action distribution on a fixed decision set, so that any future change that re-opens the gap
+    fails — rather than a test of the specific arithmetic this ticket happens to change. Per the
+    WS-309 rule, demonstrate it FAILING against HEAD before writing the fix.
+  - NO POSITION, BUCKET, OR STYLE LABEL ENTERS THE FIX. Doctrine, and the standing memory entry:
+    villain decisions derive from equity, pot odds, SPR, and players remaining. If the fold estimate
+    is wrong, it is wrong as a function of those, and it is repaired as a function of those.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/foldEquityCalc.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "scripts/backtest/heroEvRunner.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-404"
+  - "WS-406"
+  - "WS-407"
+  - "WS-408"
+  - "WS-409"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT IS THE RIGHT TARGET FOR THE RAISE SHARE, GIVEN THAT MATCHING THE POOL IS EXPLICITLY
+    WRONG? An exploitative engine is supposed to deviate from population frequencies; that is its
+    entire purpose. So "91.9% is broken" is obvious but "X% is correct" is not derivable from the
+    pool row alone. The options are (a) anchor to the pool's own best-response frequency — what a
+    maximally exploitative strategy against THIS pool's measured fold curve would raise at, which
+    `out/fold-vs-sizing.json` can now answer; or (b) leave the frequency free and gate only on the
+    EV delta, accepting whatever share falls out. (a) gives a falsifiable target and risks anchoring
+    to a fold curve that is itself estimated; (b) is cleaner in principle but leaves nothing to
+    assert in a regression test, which is how this defect survived unnoticed in the first place.
+    RECOMMENDATION: (a), with the derived target recorded as data next to the assertion, so that a
+    later correction to the fold curve moves the target visibly rather than silently.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59) BY READING THE CODE AND RECOMPUTING THE DATA, NOT BY
+  TRUSTING THE AUDIT NOTE.
+
+  Code, read in place:
+    - `gameTreeEvaluator.js:705` — `callBranchEV = eqVsCallRange * (potAfterCall - rakeOnBetCall) * realization - heroInvestment`.
+    - `:719` — `let ev = pFold * foldEV + pCall * callBranchEV + pRaise * raiseBranchEV`.
+    - `:865` — `buildHeroActions(...)`; `:899` — `const timeBudgetMs = refinementBudgetMs`. The
+      candidate set is therefore constructed 34 lines BEFORE the budget is read, which is the
+      mechanical proof that both arms consider the identical candidate set and that no hero action
+      is ever missing at depth-1. Every gap between the arms is VALUATION, not GENERATION.
+    - `heroActionBuilder.js:257` — the `check-raise` candidate is pushed unconditionally of depth.
+    - `ipsEstimator.mjs:76-94` — `weightFor` is `pi_ours(observed) / pi_pool(observed)`, capped at
+      `DEFAULT_WEIGHT_CAP = 20` (`:58`); `:134` — `clusterBootstrapCI` resamples PLAYERS.
+
+  Data, recomputed from `out/depth-ablation.json` (570 KB, 2026-08-05 03:36, 260 decisions carrying
+  `piOursByArm` for both arms) with a standalone reimplementation of `weightFor` / `wisValue` /
+  `pairedDelta`, which reproduces the shipped `report` block exactly where they overlap (ALL delta
+  -0.4711, ALL depth-1 ESS 39.5) — so the recomputation is validated against the run's own output:
+    - facing-aggression n=86 (`facingAction` bet=78 plus raise=8); all four rows in the table above
+      are mine, and the depth-1 row reproduces the audit's figures exactly.
+    - Per-street ESS and paired deltas as tabulated.
+    - `run.runtimeMs` 6,219,107 / 260 = 23.9 s per decision.
+    - `report.admissibility`: 22 clusters, `minClustersForCI` 30, `absoluteArmsQuotable` false.
+
+  ONE PREMISE FROM THE AUDIT NOTE DID NOT VERIFY AND IS CORRECTED ABOVE. The note stated "depth-2
+  moves the raise frequency by 0.7 points". The measured move is 8.2 points (91.9% to 83.7% on
+  n=86; 9.0 points on the bet-only n=78 subset; 2.7 points across all 260 decisions). I could not
+  reproduce 0.7 under any slicing tried. The correction does not change the ticket's direction —
+  depth-2 closes roughly a tenth of a 79-point gap, so the defect is still overwhelmingly in
+  depth-1 — but it does mean depth-2 is measurably helping here, which is one more reason the
+  founder's ruling is the right one and one less reason to reach for the depth knob.

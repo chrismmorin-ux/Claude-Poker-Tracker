@@ -1,0 +1,443 @@
+id: "WS-410"
+title: "The Scored Readout — persist the decision-level record, then serve six EV-denominated views over it; the founder's optimizable figure does not exist today and most of its substrate already does"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 60.0
+priority_label: "P0"
+category: "measurement"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  SPEC: `docs/standard-of-record/SCORED-READOUT-SPEC.md` (authored 2026-08-05, verified against HEAD
+  `fe716f59`). New vocabulary registered in `docs/standard-of-record/VOCABULARY.md` per that file's
+  own standing rule. READ THE SPEC BEFORE ESTIMATING — this ticket is the implementation of it and
+  does not restate its arithmetic.
+
+  THE DIRECTIVE. Founder, 2026-08-05: "I want the engine to start giving out accurate fully scored
+  runs against the data sets and see what the improvements are doing to expected EV and to the
+  ranges. The goal is to optimize this figure, and I have not seen this figure." Plus two binding
+  amendments delivered mid-design:
+
+    AMENDMENT 1 — EV IS THE UNIVERSAL UNIT. "Everything should be tied closely to an EV change,
+    measured by our standardized method." Said about a real, replicated, carded result
+    (`RC-river-flip-replicate-1c560bcc-fe716f59`, systematic flip share 0.7111 -> 0.2222 over 8
+    seeded replicates) and still called insufficient — correctly, because a flip count treats a
+    marginal check/bet flip and a stack-off flip as the same event, and only an EV denomination
+    distinguishes them. Flip counts, rate changes, chi2/df, log-loss and divergence in nats are
+    DIAGNOSTICS; the claim is the EV delta. The PER-IMPROVEMENT DELTA outranks the absolute level.
+
+    AMENDMENT 2 — THE RECORD IS THE PRODUCT. "The shape of the thing we spend hours computing on
+    must be computed such that we can get extremely detailed information like this." A run costing
+    hours must persist a record whose SHAPE admits questions nobody asked when it was designed. The
+    aggregate is a VIEW over that record, never the product of it. If a new decomposition question
+    requires re-running, the record was the wrong shape.
+
+  THE HEADLINE FINDING, AND IT IS GOOD NEWS. Most of this exists and needs assembling, not building.
+  Verified at HEAD by reading the code:
+    - The EV edge of our play over the pool IS `estimateEdge` (`ipsEstimator.mjs:189`,
+      `edge = wisValue - poolValue` at `:224-227`). The founder's "edge = frame 2 minus frame 3" and
+      the shipped arithmetic are the same object. It is outcome-anchored (realized chips `R_d`,
+      `heroEvRunner.mjs:211-216`), not self-graded, and its CI clusters over players
+      (`ipsEstimator.mjs:134-157`) per POKER_THEORY 14.3.
+    - The paired EV delta on an identical decision set EXISTS and cards:
+      `depthAblationReport.pairedDelta` (`:203-268`) differences both arms INSIDE one bootstrap draw
+      (`:237-241`) and emits `discordantN` (`:250-251`). The identical-decision-set guarantee is
+      structural — a decision survives only if EVERY arm produced a policy
+      (`heroEvRunner.mjs:234-251`).
+    - Archetype separability EXISTS, is tested (26 `it()` blocks), and has a committed card:
+      `separability.mjs` + `.artifacts/study-ladder.card.json`. Its verdict is THREE-way —
+      `separates` / `underpowered` / `does-not-separate` (`:450-484`) — so it refuses to read a
+      weak-power null as absence.
+    - Determinism under a frozen clock EXISTS in one runner: `run-river-flip-replicate.mjs:83-87`
+      freezes `Date.now` and seeds mulberry32, achieving depth-2 argmax stability 1.000.
+    - The Decision Atom schema, its append-only content-addressed store, the census and the
+      atoms-self-check ALL EXIST (`schemas.js:100-153`, `atomStore.mjs`, `coverageCensus.js`,
+      `atomsSelfCheck.mjs`).
+
+  THE TWO THINGS THAT DO NOT EXIST.
+
+    (1) A DECLARED SHAPE FOR WHAT A RUN REPORTS. `RESULT_CARD_FIELDS` declares `metrics` as
+    `{type:'object', note:'The figures themselves.'}` (`schemas.js:286`) and `resultCardProblems`
+    NEVER INSPECTS IT (`resultCard.js:119-160`). Every producer invents its own metrics shape. That
+    is the exact mechanism ADR-009 exists to prevent — nothing forces two numbers onto the same axis
+    — reproduced one level down, INSIDE the object built to stop it. Two cards on disk already
+    disagree on the name of the same constant (`REFINEMENT_BUDGET_MS_DEPTH1/DEPTH2` in
+    `RC-depth-ablation.json` vs `..._FAST/_FULL` in `RC-layer-divergence.json`).
+
+    (2) THE HERO-EV PATH DOES NOT EMIT ATOMS AT ALL. This is the ticket's centre under Amendment 2.
+    `run-hero-ev.mjs` -> `heroEvReport.mjs` is the ONE fully-wired instrument in the repo (stamp +
+    Deal Book + leakage guard + Result Card, per `BASELINE-2026-08-04.md`). It builds its own private
+    row (`heroEvRunner.mjs:263-301`: `playerId, handId, order, observedAction, netBB, netBBUnraked,
+    piOurs, evStats, piOursByArm, piPool, poolEvidenceN, piPbr, piPbrBySweep, slices`) — rich in
+    exactly the fields Amendment 2 demands — AND NEVER PERSISTS IT. It lives in memory, is
+    aggregated, and is discarded. Meanwhile the Decision Atom, which is schema'd, versioned, hashed,
+    stored and additive-guarded, has ONE production producer (`layerAblation.mjs`) and carries none
+    of the IPS quantities.
+
+    THAT IS THE WS-291 MECHANISM AT THE RECORD LEVEL: two shapes for the same object, neither forced
+    onto the other's axis. The rich one is ephemeral; the durable one is thin. Every hour spent on a
+    hero-EV run today produces an aggregate and throws the record away.
+
+  THE DOCTRINE IS ALREADY WRITTEN — SEVEN WEEKS BEFORE THE FOUNDER SAID IT. `schemas.js:101`: "A
+  DECISION ATOM — one row per decision. Aggregates are VIEWS over atoms, never the record."
+  `schemas.js:131-134`: "over-capture by design. Every field below ships with the FUTURE QUESTION it
+  answers, because a field that cannot name its question is speculation rather than instrumentation."
+  So `Decision Atom` IS the right noun and must be extended, not paralleled. What the existing shape
+  lacks, each with the question it forecloses (spec 4.3): stable player identity (hero AND villain —
+  `actorSeat`/`actorRole` exist at `schemas.js:145,147` but `layerAblation.mjs:383` hashes
+  `{playerId,handId,order}` ONE-WAY into `atomId` and discards the parts); `handId`/`order` (the
+  cross-run join key); the IPS quartet stored SEPARATELY and never pre-multiplied (so a reader can
+  tell a big weight from a big outcome); per-action EVs (`alternativeScores` exists at `:135` but its
+  only producer fills it with action PROBABILITIES — `predictionAudit/atomize.js:73-84`); achieved
+  refinement depth (`evStats.depthReachedMax` is computed at `heroPolicy.mjs:368` and never stamped);
+  `budgetBound`; raw per-player observation counts; a top-level `street` (bolted into `carried` as an
+  UNDECLARED key by `layerAblation.mjs:395`, legal only because `checkAgainstSchema` ignores unknown
+  fields at `schemas.js:444-445`).
+
+  WHY THE RECORD IS THE STRONGEST ARGUMENT, IN THE FOUNDER'S OWN CONSTRAINT. An archetype must PROVE
+  it separates before it gets a channel — and that proof may not exist when the run happens. A record
+  carrying raw per-player identity and counts lets archetypes be DEFINED NEXT MONTH AND APPLIED TO
+  RUNS COMPLETED TODAY. Without identity on the row, every archetype hypothesis costs a full re-run.
+  Same for the branch ledger: with atoms keyed identically it is a JOIN
+  (`(dealBookHash, playerId, handId, order)`), seconds over runs that each cost hours.
+
+  THREE FRAMES: ONE DOES NOT EXIST, AND MUST BE REPORTED AS ABSENT. The founder's frames are not new
+  nouns — they are three of the four surface kinds already in VOCABULARY.md. Frame 2 (`Read`/
+  `Declared`) and frame 3 (`Field`, `behaviorPolicy.mjs`) exist. FRAME 1, the equilibrium anchor,
+  DOES NOT: `equilibriumPost.mjs:54` `EQUILIBRIUM_POST = null`, and substitution is blocked by a
+  THROW (`EquilibriumSubstitutionError`, `:110`) against a blacklist at `:72-79`. Consequence:
+  exploitation premium is permanently `null` — "how much money exists specifically because the pool
+  is bad" is unanswerable — and a strategy can be located below the PBR ceiling but not above the
+  equilibrium floor.
+
+  A FINDING THAT CONTRADICTS PART OF THE PREMISE, AND MUST NOT BE SOFTENED. The founder wrote "I
+  still think there are sub-archetypes, not every player plays the same." He is right that players
+  differ; the SHAPE is not what "sub-archetypes" implies. k-means on 1,390 players over six canonical
+  stats finds `bestK = 2` with silhouette 0.343 — TWICE as good as any other k, inertia falling
+  smoothly with no elbow (`out/player-clusters.json`,
+  `docs/research/player-archetypes-empirical-2026-07-26.md:33-58`). That is a CONTINUUM with one
+  dominant axis (looseness-and-stickiness), not a set of discrete types. The authored six-label
+  partition has cluster purity 0.63 and 0.44; TAG is 54% of the pool and spans both poles; 21% of
+  players fall through all six buckets into `Unknown`; and `classifyStyle`'s `vpip > 40` Fish
+  threshold cuts through a loose-cluster centroid of 40.5%. So the readout reports STRATA on measured
+  axes (quintiles of `limpRate`, `cbetRate`, the k=2 looseness pole), never named archetypes. And
+  `threeBetRate` gets NO channel: overdispersed (z = +81.2) but only 2.1pp of between-player spread
+  with split-half reliability 0.33 — the same magnitude 11.8 assigned to the NON-separating slowplay
+  conditional. Significance is not size.
+
+  THE LANDMINE TO DEFUSE FIRST. `ipsEstimator.mjs:253` emits `edgeBBPer100 = edge * 100` — a bare
+  rescale with NO denominator change, which is precisely the winrate misreading the same file warns
+  against forty lines earlier (`:21-27`), pre-computed and waiting. It has zero consumers today. It
+  must be deprecated before any readout exists that a reader might scan for a "per 100" figure.
+  Cheapest item here, worst failure mode.
+
+  WHAT THE HONEST FIRST ANSWER LOOKS LIKE. `RC-depth-ablation-1c560bcc-67e9e14e` reports
+  `depthDeltaBB: -0.4711` with CI [-2.7653, +1.3290] at n=260 decisions and 22 players, and
+  `DEPTH-ABLATION-2026-08-05.md:162-164` says it plainly: "At 260 decisions and 22 players the
+  instrument cannot separate a half-big-blind effect from nothing." NOTHING IN THE DIFF PATH COMPUTES
+  AN MDE — the repo's only one is `classifyPlayerSignal` (`rangeCalibrationProbe.mjs:1151-1206`),
+  elsewhere. Extrapolating from that single point (half-width ~2.05bb at P=22, scaling 1/sqrt(P)),
+  detecting a 0.20bb effect needs on the order of 2,300 contributing players. The corpus holds 59,848
+  player-site rows, so THE CORPUS IS NOT THE BINDING CONSTRAINT — the harness's decision cap is. That
+  is the encouraging finding and it should be stated as one.
+accept_criteria: |
+  Staged. Each stage lands independently and is separately valuable; do not batch them into one PR.
+
+  - STAGE 0 — DEPRECATE `edgeBBPer100` (`ipsEstimator.mjs:253`). Additive-only: keep the field, mark
+    it `deprecated`, and add a test asserting no consumer reads it. One line of real change. It goes
+    first because every later stage produces a document a reader will scan for a "per 100" figure.
+
+  - STAGE 1 — DECISION ATOM v3, AND `heroEvRunner` EMITS ATOMS. This is the ticket's centre and the
+    stage everything else queries. Additive-only, guarded by the EXISTING
+    `scripts/check-sor-additive.sh` against `scripts/standardOfRecord/schema-baseline.json`.
+    Every new field ships with (a) the future question it answers, in the schema note, per the v2
+    convention already established at `schemas.js:131-134`, and (b) a registered reader, enforced by
+    the EXISTING schema-diff mechanism in `atomsSelfCheck.mjs` — add a field without a reader and the
+    next run fails. Minimum set from spec 4.3: hero AND villain stable identity; `handId`; `order`;
+    `piOurs`/`piPool`/`w_d` (UNCLIPPED, with the cap as a stamped constant)/`R_d` stored SEPARATELY
+    and never pre-multiplied; per-action EVs in `alternativeScores` (its own note already promises
+    this and its only producer does not honour it); achieved refinement depth; `budgetBound`; raw
+    per-player observation counts; top-level `street`; `situationKey` on the hero-EV path (the
+    accumulator already emits it at `decisionAccumulator.js:424` and `heroEvRunner` never reads it).
+    `playersRemaining` is populated as WHO, per its own documented contract at `situationKey.js:109`,
+    or an explicit reason is recorded for why it stays null.
+    ASSERT THE INVERSION: a test must show that `estimateEdge`'s headline number is REDERIVABLE from
+    the persisted atoms alone, to within the stated tolerance. If the aggregate cannot be recomputed
+    from the record, the record is not yet the product and this stage is not done.
+
+  - STAGE 2 — DECLARE THE `metrics` SCHEMA and make `resultCardProblems` validate it. Additive-only.
+    Every figure carries its units and its conditioning set; the `{k, n, rate, conditional}` shape
+    already in use (`atomsSelfCheck.mjs:107,119,150,172,189,198,212`) is the pattern, including the
+    INVERSE conditional wherever the two readings support opposite reads. `overallEvBB100` prints
+    BOTH factors of the 14.2 decomposition (`opportunitiesPerHand` and the per-decision edge), never
+    only their product, and `opportunitiesPerHand` comes from the COVERAGE CENSUS over the Deal Book,
+    not from `n/handsRepresented` on the scored subset — otherwise the headline inherits every
+    sampling limit of the harness.
+
+  - STAGE 3 — REPRODUCIBILITY. Blocks the branch ledger entirely and is why it is separate.
+    (a) Stamp the ACHIEVED refinement depth on every atom, not only the requested budget — a budget
+        does not tell you what ran, and `evStats.depthReachedMax` is already computed at
+        `heroPolicy.mjs:368`. Highest-value single line in the ticket.
+    (b) Add `REFINEMENT_BUDGET_MS` and `MAX_STAGE_SHARE` to `REQUIRED_CONSTANTS`
+        (`manifest.js:33-37`) under ONE canonical key — which forces `MAX_STAGE_SHARE` out of module
+        scope (`gameTreeEvaluator.js:929`), where it currently cannot be stamped at all and is
+        recorded only as a `knownDivergence` with `agrees: null`.
+    (c) Promote the freeze/seed pattern from `run-river-flip-replicate.mjs:83-87` into the shared
+        harness. This is a PROMOTION, not an invention — that runner already demonstrates depth-2
+        argmax stability 1.000 across 8 replicates.
+    (d) `anchorGeneration` passed on the hero-EV card (`heroEvReport.mjs:202-233`). Three of the four
+        cards on disk currently cannot enter a Ladder (`ladder.mjs:118-123` throws on a null
+        generation), which blocks run-over-run comparison outright.
+    (e) Either ASSERT refinement monotonicity or DISCLOSE its absence in the card. WS-378 saw depth-2
+        move 38 of 40 flips toward passivity, so this is not assumable. Until it is settled the
+        ledger pins depth as a CONTROLLED variable and any change that alters depth is measured at
+        both depths or not at all.
+
+  - STAGE 4 — VIEWS 3 AND 4 (moneymakers, spot decomposition). Cheapest real stage: pure reporting
+    over data ALREADY CAPTURED — `slices` is written at `heroEvRunner.mjs:292-300` and a grep of
+    `heroEvReport.mjs` for `slices` returns ZERO hits. Group atoms, run the SAME `estimateEdge`
+    within each group (never a re-implementation — `heroEvReport.mjs:286-294` already documents why),
+    rank by CONTRIBUTION not by mean, and ASSERT that the contributions SUM to the headline. The
+    power gate `MIN_CLUSTERS_FOR_CI = 30` applies PER GROUP; a group below it reports a point
+    estimate with no interval, is excluded from the ranking, is still counted in the total, and THE
+    RESIDUAL IS PRINTED — otherwise the rows silently stop summing.
+
+  - STAGE 5 — VIEW 6, THE BRANCH LEDGER. Branch = `street x facingAction x isIP`, a PROJECTION of the
+    situation key rather than a parallel taxonomy; cell = the full `situationKey` + carried geometry,
+    carried on every atom and reported only when it clears the power gate. Report NET and GROSS
+    together and REFUSE NET WITHOUT GROSS: `GROSS/|NET|` near 1 means the change moved the tree one
+    way, and a large ratio means it REDISTRIBUTED, so a NET near zero is a cancellation rather than
+    an absence of effect. That is the failure the founder named ("a fix that helps rivers and hurts
+    turns cannot net to zero invisibly") and it is one line given the partition. Implement the ledger
+    as a JOIN over two persisted atom sets on `(dealBookHash, playerId, handId, order)` — NOT a
+    re-run. Keep `atomId` as the key AND store its parts, per the raw-over-derived rule.
+
+  - STAGE 6 — MDE PRE-FLIGHT. The readout emits a minimum detectable effect BEFORE the run, not a
+    post-hoc CI. Without it a null result is unreadable — indistinguishable between "the fix did
+    nothing" and "the instrument had no power". `classifyPlayerSignal`
+    (`rangeCalibrationProbe.mjs:1151-1206`) is the shape to follow; its docblock already states the
+    rule ("THE SEPARATOR IS POWER, NOT SAMPLE SIZE"). Compute it properly from the bootstrap rather
+    than extrapolating the single point quoted in the description.
+
+  - STAGE 7 — VIEW 2, SUB-ARCHETYPE. v1 = stratify the existing edge by villain stratum, which
+    Stage 1's identity field makes possible with NO policy change. STATE PLAINLY WHAT v1 MEASURES:
+    the pool's contribution, not our exploitation of it, because `heroPolicy.mjs:186-190,232` pins
+    the villain at population baseline (`villainModel: null`) and `heroEvReport.mjs:471-476` states
+    the posterior width is constant by design. EVERY STRATUM ROW CARRIES ITS SEPARABILITY EVIDENCE
+    FROM THE SAME RUN — chi2/df against a same-run control, between-player SD, split-half
+    reliability, disjoint-control cross-correlation — or it gets NO ROW. Not greyed, not caveated: no
+    row. chi2/df is never quoted across runs (it scales with observations per player); the comparable
+    quantity is between-player SD. Per-player leak appears ONLY as a posterior shrunk toward its
+    stratum with an interval, never as a bare ranking — at 35-51 observations per player a ranking of
+    measured leak is a ranking of noise, and reporting its top tail is the exact circularity 11.8
+    dissected. If an engine-graded self-leak figure ships, it is labelled a DIAGNOSTIC beside the
+    realized-chips figure, never the headline.
+
+  - STAGE 8 — VIEW 5, TRANSCRIPTION INTERFACE (may be deferred to its own ticket; the INTERFACE must
+    be specified here either way). The transcription produces a `Declared` surface — a Strategy Card
+    — and the readout scores it THROUGH THE SAME ARM SLOT with the SAME `estimateEdge` as every other
+    surface. Both halves already exist: `heroEvReport.mjs:502-532` is an array of arms including an
+    always-fold baseline and a pool-against-itself control that must return exactly 0, and
+    `loadStrategyCard`/`evaluateCard` already load and evaluate a Card from a CLI. Verified for this
+    ticket: 11.9's harness DOES exist and its published numbers reproduce bit-for-bit from committed
+    code plus `out/teachable-arms-{ftp,ps}.json`. Its four gaps: it scores in Delta-log against hole
+    cards (`teachableArmsProbe.mjs:301`) and therefore prices NOTHING under Amendment 1; "share of
+    the engine's edge" IS NOT CODE (repo-wide grep returns one hit, the prose at
+    `POKER_THEORY.md:1753` — the percentages are a manual transform); the 15-number table is NOT
+    version-controlled as data (`out/` is gitignored at `.gitignore:91`); and it emits no Result Card
+    and has no test. 11.9's Delta-log table STAYS — it answers a different, legitimate question, and
+    deleting an instrument for reporting the wrong currency is forbidden by standing rule. It is
+    relabelled a diagnostic.
+
+  - THE WORKED EXAMPLE IS AN ACCEPT CRITERION, NOT AN ILLUSTRATION. Price the already-merged WS-378
+    river-omniscience fix. Arms: pre-`d0a03e49` behaviour vs HEAD, BOTH AT A PINNED DEPTH WITH THE
+    CLOCK FROZEN (the fix is a river-path change and the river is exactly where refinement decides
+    the top action — `RC-depth-ablation.json` `flipShareByStreet.river = 0.80`; not pinning depth
+    confounds the two). Baseline: the Field, via `estimateEdge` — not always-fold, not the
+    equilibrium. Output: `deltaBB` with a player-clustered paired CI, decomposed by branch, with NET
+    and GROSS. AN HONEST "INDISTINGUISHABLE FROM ZERO AT THIS N" IS A PASS, provided the MDE from
+    Stage 6 is reported beside it. A number without its MDE is not.
+
+  - EVERY FIGURE THE READOUT PUBLISHES STATES ITS POPULATION. Online 2009 vs live 9-handed 1/2-1/3:
+    transferred, not measured. Register rank 1, breadth 0.90, falsifier currently BLOCKED because
+    SRC-014 lives in browser IndexedDB with no export path.
+
+  - NO STAGE SHIPS A RESULT CARD WITHOUT `manifest.disclaimerRegisterVersion`. `manifestProblems`
+    already rejects one; do not weaken it.
+effort: "XL"
+files_involved:
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "src/utils/standardOfRecord/manifest.js"
+  - "src/utils/standardOfRecord/decisionAtom.js"
+  - "src/utils/standardOfRecord/coverageCensus.js"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/atomStore.mjs"
+  - "scripts/backtest/atomsSelfCheck.mjs"
+  - "scripts/backtest/separability.mjs"
+  - "scripts/backtest/ladderAxes.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "scripts/standardOfRecord/schema-baseline.json"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    WHICH SINGLE NUMBER IS *THE* OPTIMIZABLE FIGURE. Two candidates, and they fail in opposite
+    directions. `overallEvBB100` (= `edgeBB x opportunitiesPerHand x 100`) is interpretable and moves
+    when the engine improves — but it also moves when the decision mix or the rake model moves.
+    Exploitation efficiency (`strategyPosition.mjs:80-91`) is bounded and INVARIANT TO ENGINE UPGRADE
+    by construction, because both pier posts are defined by the population rather than by us — but
+    its denominator `EV(PBR) - EV(Field)` is re-fit whenever the Field is re-mined, so it is NOT
+    invariant to corpus change. RECOMMENDATION: optimize `overallEvBB100` and report efficiency
+    beside it, using the pair to tell a better engine from a differently-mined pool. The founder
+    should confirm, because it decides what "the figure" means in every future report.
+  - |
+    HOW MUCH DOES THE RECORD OVER-CAPTURE, AND AT WHAT STORAGE COST. `atomStore.mjs:11-13` sizes an
+    atom at ~1-2 KB with ~4 decisions per hand; 100k hands is therefore ~600 MB raw, materially less
+    gzipped, and the additions in Stage 1 are small scalars. The one genuinely heavy field is
+    `beliefState` (a per-opponent range grid), which can be orders of magnitude larger.
+    RECOMMENDATION: full core row ALWAYS, `beliefState` under `fullSampleRate` — which is already an
+    atom-set manifest field (`atomsSelfCheck.mjs:37`), so partial capture of expensive fields is
+    anticipated by the existing design. Never sample the core row, because a sampled core row cannot
+    reconstruct an aggregate. This is the founder's call because it is a standing disk cost on his
+    machine traded against never re-running for a new question.
+  - |
+    ARM-FLAG DISCIPLINE ON EVERY EV-BEARING FIX, OR CROSS-RUN JOIN. `depthArms` varies a runtime
+    PARAMETER; the founder's optimization loop varies CODE. Option A: every EV-bearing fix ships
+    behind an arm flag so both behaviours exist in one process and pairing is draw-for-draw — the
+    only way to GUARANTEE an identical decision set, at the cost of flag discipline on every fix plus
+    a retirement policy for flags. Option B: join two runs on `(dealBookHash, playerId, handId,
+    order)` — cheaper per fix, correct only once Stage 3 delivers bit-reproducibility, and unable to
+    detect a decision set that silently changed. RECOMMENDATION: A primary, B as the retroactive path
+    for already-merged changes (the only way to price WS-378, which is already in HEAD). This is the
+    founder's call because option A imposes a recurring tax on every future fix.
+  - |
+    IS THE ENGINE-GRADED SELF-LEAK FIGURE PUBLISHED AT ALL. "Which players leak the most EV" has two
+    definitions. Exploitable edge (`estimateEdge` restricted to a stratum) is realized-chips
+    anchored, but with a villain-agnostic policy it measures the POOL'S CONTRIBUTION rather than our
+    exploitation. Self-leak (`EV(best) - EV(taken)` under our model) is closer to what the founder
+    literally asked for and is `FAULT-self-grading-circularity` in its purest form — the engine
+    grading the pool with the engine's own arithmetic. RECOMMENDATION: publish it, labelled a
+    diagnostic, never as the headline, and stamp it — suppressing it entirely loses the founder's
+    actual question, and the standing rule forbids deleting an instrument for being wrong. The
+    founder should rule because it decides whether a number he will want to act on carries a
+    permanent asterisk.
+  - |
+    DOES THE RESULT CARD `metrics` BLOCK GET A DECLARED SCHEMA. Declaring it makes every future run
+    carry more structure and makes a producer's convenient one-off shape illegal. Not declaring it
+    leaves `metrics` as the one place in the Standard of Record where two numbers are never forced
+    onto the same axis — which is the failure ADR-009 exists to prevent, occurring inside its own
+    artefact. RECOMMENDATION: declare it; it IS the readout, and the additive-only guard already
+    exists. Flagged anyway because it is the schema decision with the widest blast radius and, once
+    made, is expensive to reverse.
+  - |
+    WHICH AXES GET STRATA, AND HOW MANY. The measured evidence supports `limpRate` (SD 14.5pp,
+    reliability 0.83 — the strongest behavioural axis this repo has measured), `cbetRate` (SD 12.6pp,
+    reliability 0.62, and NOT merely aggression re-expressed — r = 0.180 against the DISJOINT
+    control), and the k=2 looseness/stickiness pole. It does NOT support `threeBetRate` (2.1pp
+    spread, reliability 0.33). RECOMMENDATION: those three axes, quintiles, no named archetypes.
+    Flagged because the founder has a strong prior that sub-archetypes exist as TYPES, and the
+    measured answer is a continuum with one dominant axis — he should see that disagreement and rule
+    on it rather than have it resolved silently in a schema.
+  - |
+    SPEND THE RUN BUDGET ON N OR ON BREADTH. The existing calibration point says a half-big-blind
+    effect is not separable at n=260 / 22 players. Raising `--max-decisions` and `--max-players`
+    buys power on the figures already defined; adding views buys coverage on figures that will be
+    underpowered. RECOMMENDATION: N first — an underpowered readout is worse than none, because it
+    produces confident-looking rows that cannot fail, and the corpus (59,848 player-site rows) can
+    carry far more than the harness currently asks of it.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES VERIFIED AGAINST HEAD `fe716f59` BY READING THE CODE, not by trusting a commit message or
+  a doc. Working tree was dirty in `src/utils/exploitEngine/` at the time of writing; every citation
+  below was read from the file on disk.
+
+  CONFIRMED PRESENT:
+    - `scripts/backtest/ipsEstimator.mjs:189` `estimateEdge`; `:224-227` the edge subtraction;
+      `:160-164` WIS division by the weight sum; `:175-180` `poolValue` division by decision count;
+      `:76-95` the weight and its cap at 20; `:134-157` `clusterBootstrapCI` over players;
+      `:55` the TREATMENT string; `:21-27` the units docblock; `:253` `edgeBBPer100 = edge * 100`.
+    - `scripts/backtest/depthAblationReport.mjs:203-268` `pairedDelta`, `:237-241` the in-draw
+      difference, `:250-251` `discordantN`, `:189-201` the docblock explaining why the naive delta is
+      wrong, `:261-263` `deltaBB` + CI, `:465` reaching the card, `:140-186` `adviceDivergence`
+      (flip counts, already decomposed by street while the EV delta is not).
+    - `scripts/backtest/heroEvRunner.mjs:234-251` the all-arms-or-skip guarantee; `:263-301` the
+      private row shape; `:292-300` `slices`; `:211-216` `netBB` from `resolveHandOutcome`;
+      `:169` confirming `playerId` is HERO's.
+    - `scripts/backtest/heroEvReport.mjs:502-532` the arms array; `:161-168` `passivePolicy`;
+      `:518-523` the pool-against-itself control; `:135-141` `CONTROL_DRIFT`; `:88`
+      `MIN_CLUSTERS_FOR_CI = 30`; `:286-294` the one-comparison-path note; `:471-476` constant
+      posterior width by design; `:202-233` `buildResultCard` without `anchorGeneration`.
+    - `scripts/backtest/equilibriumPost.mjs:54` `EQUILIBRIUM_POST = null`; `:57-62` the refusal
+      string; `:100-116` `refuseChartsAsEquilibrium` throwing at `:110`; `:137-145` premium null.
+    - `scripts/backtest/separability.mjs:82` `overdispersion`; `:120,:133` between-player SD;
+      `:232-254` `splitHalfReliability`; `:265-294` `crossAxisCorrelation`; `:450-484` the three-way
+      verdict with `underpowered` at `:469` and `OBS_FOR_MOVEABLE_ESTIMATE` at `:53`.
+    - `scripts/backtest/atomStore.mjs:8-13` the two-tier card/atom design and the size estimate;
+      `:23-27` `resolveAtomSet`'s closed reason enum; `:33-37` the `'ax'` exclusive-create append;
+      `:40-47` NDJSON streaming + gzip.
+    - `src/utils/standardOfRecord/schemas.js:101` the "aggregates are VIEWS" docblock; `:131-134` the
+      over-capture-by-design note; `:107-153` the 20 atom fields; `:286` the undeclared `metrics`
+      block; `:444-445` `checkAgainstSchema` ignoring unknown fields.
+    - `src/utils/exploitEngine/gameTreeEvaluator.js:814` the `refinementBudgetMs = 2000` default;
+      `:899-907` the wall-clock gate; `:929-936` module-local `MAX_STAGE_SHARE` and
+      `claimStageBudget`.
+    - `scripts/backtest/run-river-flip-replicate.mjs:83-87` the frozen clock and mulberry32;
+      `:255` both arms from one seed; `:429-437` budgets stamped into `manifest.constants`;
+      `:446-449` the "NOT an EV claim" estimand.
+    - `scripts/backtest/teachableArmsProbe.mjs:341-377` the five arms; `:253-280` `narrowByLookup`;
+      `:366` the all-five-or-none pairing; `:301` the Delta-log metric; `:399-413` and `:422-437` the
+      two falsification throws; `scripts/backtest/partition.mjs:64-72,:92` the FNV-1a split.
+    - Corpus present locally at `C:/Users/chris/data/phh-dataset/data/handhq` (FTP + PS, 50NLH,
+      July 2009 only).
+
+  CONFIRMED ABSENT (each checked by direct grep, not inferred from a filtered result set):
+    - `grep refinementBudgetMs src/utils/standardOfRecord/` -> ZERO hits.
+      `manifest.js:33-37` `REQUIRED_CONSTANTS` names only PRIOR_WEIGHT, ACTION_TAU_FRACTION,
+      MIN_CONTINUATION_WEIGHT. `replicationStamp.collectConstants` (`:59-94`) does not collect it.
+    - `grep "share of the engine|shareOfEngine|engineEdge|edgeShare"` across `scripts/ src/ docs/
+      .claude/` -> ONE hit, the prose at `POKER_THEORY.md:1753`.
+    - `grep slices scripts/backtest/heroEvReport.mjs` -> ZERO hits. The covariates are written and
+      never read.
+    - `heroEvRunner.mjs` never reads `ctx.situationKey`, though `decisionAccumulator.js:424` emits
+      it.
+    - No per-player or per-archetype breakdown anywhere in the hero-EV path; `byPlayer` is used only
+      to size the bootstrap (`ipsEstimator.mjs:207-209,:243`).
+    - No MDE in the diff path; the repo's only one is `rangeCalibrationProbe.mjs:1151-1206`.
+    - The three archetype clustering scripts (`cluster-player-types.py`, `cluster-behavioral.py`,
+      `latent-class-behaviors.py`) have real committed outputs and ZERO downstream consumers — a
+      repo-wide grep for their artifact names hits only two markdown files. Their central finding
+      (k=2 continuum) directly contradicts `classifyStyle`'s six authored thresholds and has never
+      been connected to them.
+
+  DELIBERATELY NOT FILED HERE, to avoid the duplicate-ticket failure mode:
+    - The backtest contaminants listed in the run evidence (`handStateReconstructor.js` constant
+      100bb SPR, the doubled 0.45 in `tightenRatesForContinuation`, `modelAudit.js:119` covariate
+      leak, `betaMath.js:178-184`
+      unanchored tau) contaminate the LEVEL and largely CANCEL IN THE DIFF, because `pairedDelta`'s
+      statistic is `wisValue(B) - wisValue(A)` and `poolValue` never enters. They belong to the
+      contamination audit that was running concurrently, not to this ticket. What this ticket owes
+      them is that the readout must make the level-vs-diff distinction explicit so a contaminated
+      level is not read as a contaminated delta.
+    - The transcription itself (Stage 8) is genuinely a separate task, as the founder suspected. Only
+      its INTERFACE is owned here.

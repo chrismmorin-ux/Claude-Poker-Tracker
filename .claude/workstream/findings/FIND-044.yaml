@@ -1,0 +1,69 @@
+id: "FIND-044"
+title: "The engine is not unconnected — it is fully wired to the venue the founder does not play"
+severity: CRITICAL
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Engine reachability"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  OnlineAnalysisContext.jsx:57-60 produces the full evaluateGameTree output and :68-70 pushes it to
+  the Chrome extension; ignition-poker-tracker/side-panel/render-coordinator.js:386 renders topRec;
+  LiveAdviceBar.jsx:181-390 is a complete LIVE-side renderer for the same object, gated on
+  useGameTree. useSyncBridge.js:329 is the SOLE writer of liveHandState and fires only on a
+  BRIDGE_MSG.HAND_STATE window message, so the object is permanently null without the extension.
+
+  The correct framing is a second PRODUCER for a consumer that already exists and already has a
+  rendering contract — not a build-the-connection project. Nobody costed it that way.
+
+  Also in this finding: preflopAdvisor.js:435 infers the big blind as potSize/1.5 inside
+  facing_limpers, where the pot already contains the limps — a 2.3x error at $1/$2 with two limpers,
+  on the online path only.
+affected_files:
+  - "src/contexts/OnlineAnalysisContext.jsx"
+  - "src/hooks/useSyncBridge.js"
+  - "src/hooks/useActionAdvisor.js"
+  - "src/reducers/gameReducer.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "ignition-poker-tracker/side-panel/render-coordinator.js"
+recommended_fix: |
+  Ordering is load-bearing: (0) record stacks — gameReducer has no stack field, so effectiveStack is
+  unrecordable; (1) thread multiway — gameTreeEvaluator.js:792-793 default numOpponents=1 and
+  opponentModels=[]; (2) monotonicity or depth disclosure — refinement is wall-clock gated at :814;
+  (3) wire. The one-hook edit is harmful in isolation: it ships a heads-up fold model on a 9-handed
+  table with rake omitted.
+theory_citation: "POKER_THEORY §11.5 admissibility; exploitEngine/CLAUDE.md 'players remaining means WHO, not how many'"
+dedup_key: "blindspot-domain-correctness-engine-wired-to-wrong-venue"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-393, WS-401"
+status_note: |
+  VOCABULARY REVIEW 2026-08-05 — DELIBERATELY LEFT NON-CONFORMING. `problem_class:
+  "Engine reachability"` is not one of the nine classes prog-domain-correctness.yaml
+  declares, and it is being kept, because none of the nine fits and forcing one would
+  destroy the finding.
+
+  All nine declared classes ask "is the number the engine computes correct?" — decision
+  modelling, range estimation, equity, game-tree EV, confidence representation, villain
+  model fidelity, exploit soundness, theory drift, anti-patterns. THIS finding says the
+  engine's numbers are fine and never arrive: evaluateGameTree is fully produced at
+  OnlineAnalysisContext.jsx:57-60 and pushed to the extension, while useSyncBridge.js:329
+  is the sole writer of liveHandState, so the live path gets nothing. A correct engine
+  that no surface reaches is a defect of a kind the class list cannot express.
+
+  THIS IS A FINDING ABOUT THE PROGRAM. prog-domain-correctness needs a tenth class —
+  "Engine reachability" or "surface wiring" — covering produced-but-unconsumed engine
+  output. It is the same gap FIND-046 mechanism 2 names from the other side (the program's
+  scope excludes src/hooks/** and src/components/**, the exact files this finding is
+  about), so the two should be resolved together. Until then this finding will trip the
+  problem-class warning added to cwos-reconcile.js on 2026-08-05; that warning is correct
+  and is pointing at the program, not at the finding.
+
+  (The secondary defect carried inside this finding — preflopAdvisor.js:435 inferring the
+  big blind as potSize/1.5 where the pot already contains the limps — WOULD sit under
+  "Game tree EV correctness". It is not the finding's subject and is not grounds for
+  reclassifying the whole.)

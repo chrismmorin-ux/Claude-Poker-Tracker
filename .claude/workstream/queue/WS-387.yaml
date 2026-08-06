@@ -1,0 +1,197 @@
+id: "WS-387"
+title: "tightenRatesForContinuation throws away the villain-model fold rate for a defaulted 0.45 at all eight production call sites, and on the depth-3 line applies it twice — villain's river air is 15% of his flop air, derived from a constant, inside the per-villain model"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-045"
+description: |
+  FOUND BY THE 2026-08-05 DOMAIN-CORRECTNESS BLIND-SPOT ROUNDTABLE (FIND-045), confirmed by the
+  cross-critic against source rather than taken from a lens, and re-verified here against HEAD.
+
+  THE MECHANISM, IN THREE LINES OF CODE.
+
+    `gameTreeSizingHelpers.js:162`
+      export const tightenRatesForContinuation = (rates, priorAction = 'call', foldRate = 0.45) => {
+    `:164`
+      const survivalRate = clamp(1 - foldRate, 0.2, 0.9);
+    `:167`
+      adjusted.air = clamp(rates.air * survivalRate * 0.7, 0.02, 0.99);
+
+  The third parameter is the fold rate the villain model just computed. NO PRODUCTION CALL SITE
+  PASSES IT. Read from HEAD, every one of the eight passes exactly two arguments:
+
+    gameTreeDepth2.js:744, :745      (bet-call depth-2, 'call')
+    gameTreeDepth2.js:876, :877      (raise branch, 'raise')
+    gameTreeDepth2.js:985, :986      (turn→river, 'call')
+    gameTreeDepth2.js:1073, :1074    (flop depth-3, flop call → turn rates)
+    gameTreeDepth2.js:1077, :1078    (flop depth-3, turn rates → RIVER rates — the double application)
+    gameTreeEvaluator.js:1691, :1692 (check-raise branch, 'raise')
+
+  So `foldRate` is 0.45 on every path that runs, `survivalRate` is `clamp(0.55, 0.2, 0.9) = 0.55`,
+  and the air multiplier is a fixed `0.55 * 0.7 = 0.385` regardless of whether the villain in front
+  of the engine folds 22% or 82%.
+
+  THE DOUBLE APPLICATION IS AT `:1077-1078`, AND IT IS NOT A SECOND VILLAIN ACTION BEING PRICED —
+  IT IS THE SAME CONSTANT APPLIED TO ITS OWN OUTPUT. `riverCallingRates` is
+  `tightenRatesForContinuation(turnCallingRates, 'call')`, where `turnCallingRates` is already the
+  tightened value. Air is therefore multiplied by `0.385² = 0.1482`. Villain's river air rate is
+  **14.8% of his flop air rate**, and that figure is a property of the constant, not of the villain.
+  In a module whose entire purpose is per-villain modelling, the villain has no influence on it.
+
+  Note what this is NOT: it is not the WS-303 defect. WS-303 was a third *narrowing* applied when a
+  card was dealt, and it was fixed. The comment WS-303 left at `gameTreeDepth2.js:1113-1125` says
+  explicitly that the "villain is stronger for having called" effect "is carried by `turnCallingRates`
+  / `turnBettingRates` above, which is where it belongs — a rate, not a second helping of the same
+  likelihood." WS-303 RELOCATED an effect into this channel and did not look at what the channel was
+  computing. The channel is computing a constant.
+
+  WHY NO EXISTING GUARD CATCHES IT.
+    - It is invisible to `holdingKnowledge`. The provenance counters at `gameTreeDepth2.js:1087` and
+      `:1158` count NARROWINGS, and this is a rate adjustment, not a narrowing. `maxNarrowingCount`
+      is correct at 2 while the rates have been tightened twice. The WS-303 invariant test passes.
+    - It runs in the OPPOSITE direction from the inflated-fold-equity family that most of this
+      repo's guards were built for. Tightening villain's continuing range too hard makes hero
+      UNDER-barrel; the guards in `exploitEngine/CLAUDE.md` are aimed at the reckless direction.
+    - AP-RL-01: the adjustment is keyed on bucket LABELS (air/draw/marginal/strong/nuts) with fixed
+      multipliers, which is the "DO NOT use bucket labels when per-combo equity is available"
+      anti-pattern. Per-combo equity is in scope at both `computePerComboEV` call sites.
+
+  THE TEST SUITE IS EVIDENCE AGAINST THE CODE, IN THE SHIPPED-BUT-INERT SHAPE. Every assertion in
+  `__tests__/gameTreeSizingHelpers.test.js:342-405` passes `foldRate` EXPLICITLY (`0.45`, `0.90`,
+  `0`, `1.0`) and asserts the parameter behaves correctly — including `:395` and `:402-403`, which
+  demonstrate that varying it changes the output. The parameter is therefore proven to work and
+  proven to be unreachable, in the same file. This is the `perceivedHeroRange` / `predictionAudit`
+  failure mode recorded in memory (`feedback_shipped_but_inert_capability`): a capability behind an
+  optional parameter no call site passes.
+
+  WHY IT IS P1 RATHER THAN A TIDY-UP. It is a wrong NUMBER, not absent wiring, and it is wrong today
+  in every path that runs — Ignition live play, drills, `computeDepth2Plan`, `replayAnalysis`, and
+  THE CORPUS BACKTEST. Under the founder's 2026-08-05 redirect the deliverable is a scored aggregate
+  EV figure with per-improvement deltas. Every one of those deltas is measured against a baseline
+  that contains this defect, so this contaminates the evidence used to justify every other fix in
+  this family, including the fixes whose whole purpose is to make the figure trustworthy.
+accept_criteria: |
+  - THE EV DELTA IS THE CLAIM, AND IT IS DIRECTLY AVAILABLE HERE. Re-run an existing Result Card on
+    an IDENTICAL decision set under three arms — (a) HEAD, (b) the villain-model fold rate threaded
+    instead of the defaulted 0.45, (c) single versus double application on the depth-3 river branch
+    — and report the aggregate EV delta per arm with a per-branch decomposition (which street, which
+    action family, which bucket). Flip counts and rate changes are DIAGNOSTICS and may be reported
+    alongside; they are not the claim. A flip count treats a marginal check/bet flip and a stack-off
+    flip as the same event, and only EV separates them.
+  - EXPECTED DIRECTION, STATED BEFORE MEASURING SO IT CAN BE WRONG: threading a real fold rate should
+    move hero toward MORE barrelling against villains who fold more than 45% and less against
+    villains who fold less, with the aggregate sign depending on where the corpus pool sits relative
+    to 0.45. The magnitude is UNMEASURED. That is an accept criterion, not a claim — do not state a
+    number here or in the commit message before the run produces one.
+  - THE ARITHMETIC GATE ON THE BACKTEST'S USABILITY. If top-action flips under arm (b) or (c) exceed
+    the WS-378 depth-1→2 flip rate on the same decision set, then backtest evidence gathered before
+    this fix is not usable as a baseline for any other improvement in this family, and that must be
+    written into the Result Card and reported to the founder. This is settled by arithmetic on two
+    measured numbers, not by judgement.
+  - THREADING, NOT DELETING. The parameter must be supplied at every one of the eight production call
+    sites from the fold estimate already resolved in scope, not removed and not given a "better"
+    constant. Where a call site genuinely has no per-villain fold rate available, it passes the
+    composition estimate the context computed and the code says so in one sentence at the site.
+  - THE DOUBLE APPLICATION IS RESOLVED EXPLICITLY, ONE WAY OR THE OTHER, WITH THE REASON IN CODE.
+    Either villain's two calls (flop and turn) genuinely warrant two rate adjustments — in which case
+    each must use ITS OWN street's fold rate, and the code must say why compounding is correct — or
+    the river rates derive from the flop rates once. "It has always been chained" is not a reason,
+    and the WS-303 comment two hundred lines below already establishes that this repo distinguishes
+    an effect applied per-ACTION from an effect applied per-STREET-TRANSITION.
+  - A TEST THAT FAILS AGAINST HEAD, THROUGH `evaluateGameTree` (WS-309 rule). The existing unit tests
+    pass an explicit `foldRate` and therefore cannot fail on this defect — they are the reason it
+    survived. The new test must construct two villains whose models differ materially in fold rate,
+    run the depth-3 path, and assert the resulting river rates DIVERGE. Against HEAD the two must
+    come out identical, which is the point.
+  - AP-RL-01 IS ANSWERED IN WRITING. The multipliers are bucket-label-keyed with per-combo equity in
+    scope. Either the adjustment is reformulated on the equity ratio (per `exploitEngine/CLAUDE.md`,
+    "the logistic of equity ratio is always more precise than a bucket lookup"), or a comment at
+    `gameTreeSizingHelpers.js:162` records why a label-keyed rate is correct here. Do not leave the
+    anti-pattern silently in place after touching the function.
+  - THE COMPARATIVE FIGURE RESOLVES TO A RESULT CARD per ADR-009, stamped with
+    `manifest.disclaimerRegisterVersion`. The corpus is online-2009 and the founder's game is live
+    9-handed 1/2–1/3, so any live reading of the delta is TRANSFERRED, not measured — say so.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeSizingHelpers.test.js"
+blocked_by:
+  - "WS-389"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER THE CONTINUATION EFFECT BELONGS IN A RATE AT ALL. WS-303 moved it here on the
+    argument that "villain is stronger for having called" is a rate, not a second likelihood. That
+    argument is sound and it was never followed by a measurement of whether the rate it moved into
+    is any good. The alternative — recomputing continuing-range composition from per-combo equity
+    against the pot odds villain actually faced — needs no anchor table and no bucket labels, and is
+    the construction the repo's own doctrine prefers. It is more work and it may be the right answer.
+    Price it before threading a parameter into a formula nobody has defended.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-045"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the roundtable record:
+    - `src/utils/exploitEngine/gameTreeSizingHelpers.js:162` — the signature, exactly as quoted
+      (`rates, priorAction = 'call', foldRate = 0.45`); `:164` the `clamp(1 - foldRate, 0.2, 0.9)`;
+      `:167` the `air * survivalRate * 0.7` on the 'call' branch.
+    - Every call site enumerated by grep across `src/` and `scripts/`. EIGHT production sites, all
+      two-argument: `gameTreeDepth2.js:744,:745,:876,:877,:985,:986,:1073,:1074,:1077,:1078` and
+      `gameTreeEvaluator.js:1691,:1692`.
+    - `gameTreeDepth2.js:1077-1078` — the double application, read in place. The arithmetic
+      0.55 × 0.7 = 0.385, squared = 0.1482, was computed from the source, not quoted.
+    - `gameTreeDepth2.js:1087` and `:1158` — `maxNarrowingCount`, confirming the counters track
+      narrowings and not rate adjustments, so the WS-303 invariant test cannot see this.
+    - `gameTreeDepth2.js:1113-1125` — the WS-303 comment naming `turnCallingRates`/`turnBettingRates`
+      as where the continuation effect now lives.
+    - `__tests__/gameTreeSizingHelpers.test.js:342-405` — every assertion passes `foldRate`
+      explicitly; `:395` uses 0.90 and `:402-403` use 0 and 1.0 to demonstrate the parameter varies
+      the output. Read in full rather than sampled.
+
+  ONE PREMISE CORRECTED, AND THE CORRECTION MAKES THE TICKET LARGER RATHER THAN SMALLER. The
+  roundtable record (FIND-045) says "both call sites at gameTreeDepth2.js:1073-1078 pass TWO
+  arguments." That is true and it understates the scope: there are EIGHT production call sites across
+  two files, and all eight pass two arguments. The defaulted `foldRate` is therefore not a depth-3
+  problem — it is every depth-2 and depth-3 branch plus the check-raise branch in the evaluator. The
+  DOUBLE application is specific to `:1077-1078`; the DEFAULTED constant is universal. The ticket is
+  written on the verified scope, not the reported one.
+
+  ONE STALE REFERENCE FOUND WHILE VERIFYING, RECORDED AND NOT ACTED ON.
+  `scripts/synthesize-domain-correctness-baseline.py:438` cites this same defect at
+  "gameTreeDepth2.js:818-819, 901-906" — line numbers that no longer point at
+  `tightenRatesForContinuation` calls. A baseline synthesizer carrying stale line references will
+  report on code that has moved. Not filed separately; noted here because it is the same class of
+  fact as FIND-046 (a program's own instrument naming locations that do not resolve).
+
+  ON THE `blocked_by: WS-389` — IT IS DELIBERATE AND IT IS THE FOUNDER'S OWN ORDERING RULE, NOT
+  CAUTION. The fix here can be WRITTEN at any time; what cannot be done before WS-389 is EVALUATE the
+  accept criteria, because every one of them is an EV delta between two arms measured on a harness
+  that currently returns different answers on re-run. Under "reproducibility outranks accuracy", a
+  delta measured on a non-reproducible harness cannot distinguish this fix from machine load. If the
+  founder wants the code change landed before the harness is fixed, that is defensible — but the
+  measurement, and therefore the completion of this ticket, waits.
+
+  DEPENDENCY NOT YET MACHINE-READABLE: the standardized-readout spec (which defines the harness, the
+  identical decision set, the baseline arm and the minimum detectable effect that the EV criteria
+  above depend on) did not exist in `.claude/workstream/queue/` when this was filed — checked by
+  grep. This item's EV criteria are written to that spec and should have its ID wired into
+  `blocked_by` when it lands. Filed unblocked rather than blocked on a nonexistent ID, because this
+  is also the one item in the family whose EV criterion is evaluable with the harness that already
+  produced the existing Result Cards.

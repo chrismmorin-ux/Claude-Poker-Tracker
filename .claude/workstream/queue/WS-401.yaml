@@ -1,0 +1,139 @@
+id: "WS-401"
+title: "The online preflop advisor infers the big blind from the pot in a branch where the pot already contains the limps — a ~2.3x error at $1/$2 with two limpers — while the true blind size sits unthreaded in the caller's own state"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 16.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-044"
+description: |
+  FILED AS THE ACTIONABLE FORM OF A CLAIM THE CROSS-CRITIC REJECTED IN ITS ORIGINAL SHAPE. The
+  roundtable's cto-agent lens filed `preflopAdvisor.js:435` as "an ~11% error at $1/$3, wrong in
+  every path that runs". Both halves of that were wrong: it is not on the manual live path at all,
+  and the magnitude is far larger than 11%. `do_not_file` rules the original framing
+  not-actionable-as-framed and names this version instead — thread the known blind size instead of
+  inferring it, against the ONLINE path.
+
+  THE INFERENCE, AND WHY IT IS RIGHT IN ONE PLACE AND WRONG IN THE OTHER.
+  `src/utils/exploitEngine/preflopAdvisor.js` recovers the big blind from the pot twice, with the
+  same expression, on the premise that the pot is SB + BB = 1.5bb:
+
+    `:706`  const bbFirstIn = potSize > 0 ? potSize / 1.5 : 1;
+            — inside the LIMP branch, where hero is FIRST IN. The premise holds: the pot really is
+              just the two blinds. The comment at `:700-704` states the premise explicitly and the
+              arithmetic is correct.
+
+    `:435`  const bbSize = potSize > 0 ? potSize / 1.5 : 2;
+            — inside `situation === 'facing_limpers'` (`:431`). The premise DOES NOT HOLD: by
+              definition of the branch, one or more villains have already limped and their chips are
+              in the pot.
+
+  THE MAGNITUDE. At $1/$2 with two limpers the pot is $1 + $2 + $2 + $2 = $7, so the inference
+  returns $7 / 1.5 = $4.67 against a real big blind of $2 — a factor of 2.33. The error grows with
+  limper count and is unbounded in it: three limpers gives $6, four gives $7.33. Every downstream
+  quantity in that branch scaled by `bbSize` inherits it, and the branch is the iso-raise
+  opportunity — the single most common spot in a loose low-stakes game and the one the founder
+  most wants right.
+
+  IT IS NOT REACHABLE FROM THE MANUAL LIVE TABLE. `preflopAdvisor`'s non-test importers are
+  `src/hooks/useLiveActionAdvisor.js:31`, `src/utils/liveAdvisor/computeHelpers.js:28` (itself
+  imported only by `useLiveActionAdvisor.js:44`) and `src/utils/exploitEngine/decisionTreeBuilder.js:13`
+  (which imports only `estimatePreflopFoldPct`). `useLiveActionAdvisor` is instantiated only by
+  `OnlineAnalysisContext.jsx:57`, which runs on extension-fed state. So this is an ONLINE-path
+  defect. It is filed anyway, and not filed low, because under the founder's redirect live reach is
+  not the ranking axis — the online path is the one that currently produces scored advice, and it is
+  the path a future live producer (WS-393) would duplicate. Fixing the inference before the producer
+  is duplicated is strictly cheaper than after.
+
+  THE FIX IS THREADING, NOT ARITHMETIC. The true blind size is already in the caller's state:
+  `liveGameContext.js:30` destructures `{ pot, blinds, ante, anteFormat, activeSeatNumbers, gameType }`
+  from `liveHandState` and uses `blinds.sb` / `blinds.bb` at `:34-35` to build the starting pot. The
+  quantity `preflopAdvisor` is estimating is sitting one call frame up, measured rather than inferred.
+  Do not correct the inference by subtracting the limps — that replaces one estimate with a better
+  estimate when the exact value is available, which is the "a constant standing where game state
+  belongs" anti-pattern in `exploitEngine/CLAUDE.md` wearing an arithmetic hat.
+accept_criteria: |
+  - THE BLIND SIZE IS THREADED FROM `liveHandState.blinds`, NOT RE-DERIVED. Both `:435` and `:706`
+    take the passed value. `:706` is currently correct and must stay correct — the point is to remove
+    the inference, not to fix one instance of it. If any call path genuinely cannot supply blinds,
+    that path must fail loudly or carry an explicit documented fallback, not silently divide by 1.5.
+  - THE EV DELTA IS MEASURED BY THE STANDARDIZED METHOD ON AN IDENTICAL DECISION SET, RESTRICTED TO
+    `facing_limpers` DECISIONS AND REPORTED SEPARATELY FROM THE AGGREGATE. This is the criterion that
+    matters: a 2.3x error in the unit that scales an iso-raise decision is a large per-decision effect
+    on a narrow subset, and reporting it only in an aggregate over all preflop decisions would dilute
+    it below detectability. Report both the subset delta and the aggregate delta, with the subset's
+    share of decisions stated. Direction is NOT predicted in advance — `bbSize` scales sizing
+    candidates and thresholds in ways that do not obviously sign, and predicting a direction here
+    would be reasoning where measurement is available.
+  - THE MAGNITUDE IS RE-DERIVED AGAINST THE CORPUS RATHER THAN TAKEN FROM THIS TICKET. The 2.33x
+    figure above is arithmetic for two limpers at $1/$2. Report the actual distribution of
+    `inferred bbSize / true bbSize` over the corpus's `facing_limpers` decisions. If the corpus's
+    limper counts make the typical error much smaller than the worst case, that is a finding and it
+    should downgrade this item rather than be omitted.
+  - A TEST PINS THE BRANCH PREMISE, NOT JUST THE VALUE. Assert that in `facing_limpers` with two
+    limpers at known blinds, the resolved big blind equals the true big blind — and assert the
+    CONVERSE for the first-in branch, that the same code path with an empty pot-beyond-blinds still
+    resolves correctly. Both must fail against HEAD for the limper case and pass for the first-in
+    case, which is what demonstrates the two branches were genuinely different rather than uniformly
+    broken.
+  - THE ERROR'S DEPENDENCE ON LIMPER COUNT IS RECORDED IN THE FIX COMMIT. `posContext.limperCount` is
+    already read at `:432` — the branch KNOWS how many limpers there are, and could have corrected
+    the inference at any time. Recording that in the commit message is what makes this a legible
+    instance of the general pattern (a derived estimate standing in for an available measurement)
+    rather than a one-off arithmetic slip.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/liveGameContext.js"
+  - "src/utils/liveAdvisor/computeHelpers.js"
+  - "src/utils/exploitEngine/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-393"
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-044"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `preflopAdvisor.js:431` — `else if (situation === 'facing_limpers') {`; `:432`
+      `const limperCount = posContext?.limperCount || 1;`; `:435`
+      `const bbSize = potSize > 0 ? potSize / 1.5 : 2; // Estimate BB from pot (SB+BB = 1.5bb)`.
+    - `liveGameContext.js:30` destructures `blinds` from `liveHandState`; `:34-35` reads
+      `const { sb, bb } = blinds;` and passes them to `calculateStartingPot`. The measured value is
+      in scope at the caller, exactly as `do_not_file` states.
+    - The 2.3x arithmetic: two limpers at $1/$2 gives a $7 pot; $7 / 1.5 = $4.67 vs a true $2.
+
+  CORRECTED — THE IMPORTER CENSUS WAS INCOMPLETE, AND `:706` IS NOT WHAT THE RUN RECORD SAYS IT IS:
+    - `do_not_file` states preflopAdvisor's "only non-test importers are useLiveActionAdvisor.js:31
+      and decisionTreeBuilder.js:13". There is a THIRD: `src/utils/liveAdvisor/computeHelpers.js:28`
+      imports `buildBaselineRange` and `computePreflopAdvice`. It does not change the conclusion —
+      `computeHelpers` is imported only by `useLiveActionAdvisor.js:44`, so every route still
+      terminates at the extension-fed `OnlineAnalysisContext` — but an importer census that misses a
+      module is not evidence of unreachability, and the conclusion should rest on the complete one.
+    - `do_not_file` describes `:706` as "the live-blinds-correct variant". It is not a variant and it
+      does not read live blinds: `:706` is `const bbFirstIn = potSize > 0 ? potSize / 1.5 : 1;` —
+      the IDENTICAL inference, applied in the first-in limp branch where its premise (pot = SB + BB)
+      actually holds. The comment at `:700-704` says so in as many words: "the same estimate this
+      file already uses to recover bbSize in the limped-pot branch". So the file does not contain a
+      right way and a wrong way; it contains one estimate used twice, correct once by luck of context.
+      That is a better argument for threading the measured value than the run record's version, since
+      there is no correct local variant to copy.
+
+  NOT RE-DERIVED: the claim that the error is "~11% at $1/$3" from the original lens finding is not
+  reproduced here because it was refuted by the cross-critic and the arithmetic above supersedes it.

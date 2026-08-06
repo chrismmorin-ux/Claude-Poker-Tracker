@@ -1,0 +1,134 @@
+id: "WS-419"
+title: "Two finished surfaces are unreachable in the app for different reasons and nobody owns either — CalibrationDashboardView is 1,194 LOC of built code behind a deferred flag whose adjacent comment says it is unbuilt, with a live deep link landing users on a stub; and navigation-ia.md claims Anchor Library is reachable via the sidebar when it has no nav entry in any chrome"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 19.0
+priority_label: "P2"
+category: "design"
+capability: "core"
+program: "design"
+problem_class: "Surface CATALOG drift"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Stage D findings D1 and D2, and
+  Adjudication #1). Filed because the Hole Map must choose a nav home among three disagreeing chromes
+  and the repo currently holds two worked examples of what happens when that is treated as an
+  implementation detail.
+
+  INSTANCE 1 — A BUILT VIEW BEHIND AN "UNBUILT" FLAG, WITH A LIVE DEEP LINK INTO A STUB.
+
+  src/components/views/CalibrationDashboardView/ contains 9 files — CalibrationDashboardView.jsx,
+  CalibrationTabs.jsx, AnchorCalibrationPanel.jsx, AnchorDetailPanel.jsx,
+  PrimitiveCalibrationPanel.jsx, PredicateCalibrationPanel.jsx, EnrollmentStateBanner.jsx,
+  CalibrationEmptyState.jsx, index.js — totalling 1,194 LOC, plus src/hooks/useCalibrationDashboard.js
+  and two test files. Last touched 2026-06-12 (1c0eecd1). IT IS FINISHED.
+
+  It was never deferred for cause. Gate 1 was ratified 2026-05-09 and the spec authored; an UNRELATED
+  commit (the Voice Card Entry spike) then swept in-flight import hunks into PokerTracker.jsx and broke
+  CI — recorded at .claude/failures/UNTRACKED_IMPORT_BUILD_BREAK.md — and the fix-forward reverted the
+  reference. src/constants/viewRegistry.jsx was then created on 2026-06-19 (0230d095, the Homebase nav
+  commit) CITING THAT INCIDENT, and made the non-render VISIBLE rather than finishing the job:
+  `deferred: true` at :112 renders DeferredStub at :124, a full-screen panel reading "This view isn't
+  available yet."
+
+  THE COMMENT ABOVE THE FLAG IS FALSE AT HEAD. viewRegistry.jsx:108-111 reads "Registered-but-unbuilt
+  — explicit stub so the SCREEN constant can't render nothing... Swap `deferred` for a `component` when
+  the view is built." The view IS built. That comment is now the load-bearing artifact telling every
+  future reader not to look.
+
+  AND THE DEEP LINK IS LIVE. AnchorLibraryView.jsx:136-138 calls
+  ui.openCalibrationDashboard(anchorId, SCREEN.ANCHOR_LIBRARY), wired to a rendered control at :300
+  (onOpenDashboard={handleOpenDashboard}); UIContext.jsx:203-212 dispatches SET_SCREEN ->
+  SCREEN.CALIBRATION_DASHBOARD. Anyone who takes that path today lands on the stub.
+
+  THE MECHANISM, NAMED: an incident fix that made silence VISIBLE without finishing the job, and
+  nobody owns "flip the flag". Two months and counting.
+
+  INSTANCE 2 — REACHABLE IN DOCS, UNREACHABLE IN APP.
+
+  docs/design/navigation-ia.md:64 lists Anchor Library among the long-tail destinations "reachable via
+  the in-table sidebar". Verified: the only two references to SCREEN.ANCHOR_LIBRARY in non-test source
+  are viewRegistry.jsx:98 (the registration) and AnchorLibraryView.jsx:138 (an OUTBOUND deep link).
+  There is no nav entry in any chrome. The registry closed "renders nothing"; IT DID NOT CLOSE
+  "reachable in docs, unreachable in app", and no test asserts that a surface document's navigation
+  claim resolves to a live entry.
+
+  WHAT THIS TICKET IS NOT. Gate 2 settled, permanently, that the Hole Map is NOT hosted as a fourth tab
+  on the calibration dashboard: subject mismatch (its panels calibrate the founder's own anchors and
+  primitives, not a pool — the same AP-06 framing violation Gate 1 used to rule out self-coach-view),
+  zero nav entries of its own, and src/utils/entitlement/featureMap.js:50 setting
+  CALIBRATION_DASHBOARD: TIERS.PRO, which would silently inherit an entitlement decision made for a
+  different feature. This ticket resolves reachability. It does not reopen hosting.
+accept_criteria: |
+  - SCREEN.CALIBRATION_DASHBOARD IS RESOLVED ONE WAY OR THE OTHER, AND THE REASON IS IN THE CODE.
+    Either the built component is wired, or it is deferred FOR A STATED CAUSE that is not "an incident
+    two months ago". Both are acceptable outcomes; the current state — deferred by accident — is not.
+  - THE FALSE COMMENT AT viewRegistry.jsx:108-111 IS CORRECTED EITHER WAY. It currently asserts the
+    view is unbuilt. It is the artifact most likely to keep the next reader from looking, and it costs
+    one line.
+  - THE ANCHOR LIBRARY DEEP LINK NO LONGER LANDS ON A STUB. If the dashboard stays deferred, the
+    control that calls openCalibrationDashboard must not render. A live affordance into a stub is worse
+    than no affordance, because it spends the user's trust before it fails.
+  - navigation-ia.md:64 AND REALITY AGREE. Either Anchor Library gains the sidebar entry the document
+    claims it has, or the document is corrected. Do not close this by deleting the sentence without
+    deciding whether the surface should be reachable — it has a full view, tests, and a journey.
+  - A TEST ASSERTS THAT EVERY NAV CLAIM IN docs/design/ RESOLVES TO A LIVE ENTRY. This is the point of
+    the ticket. The cross-cutting lens priced it at half a day and it would have caught both instances.
+    It must FAIL against HEAD before either instance is fixed — a guard written after the fix proves
+    nothing.
+  - THE SWEEP IS REPO-WIDE, NOT LIMITED TO THESE TWO. Run the new check across every SCREEN constant
+    and every surface document and report the full list. Two instances found by hand implies the
+    denominator is unknown.
+effort: "M"
+files_involved:
+  - "src/constants/viewRegistry.jsx"
+  - "src/components/views/AnchorLibraryView/AnchorLibraryView.jsx"
+  - "src/contexts/UIContext.jsx"
+  - "docs/design/navigation-ia.md"
+  - "docs/design/surfaces/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES THE CALIBRATION DASHBOARD SHIP, AND UNDER WHICH TIER? featureMap.js:50 puts it at
+    TIERS.PRO. That was decided when the view was specified and has not been revisited since; the app's
+    tier story has moved. Wiring it means accepting or re-deciding that gate, which is a founder call,
+    not a cleanup.
+  - |
+    OPEN — WHICH NAV CHROME. The repo has three (Homebase tiles, CollapsibleSidebar, NavShell) and
+    navigation-ia.md's tile-promotion rule says long-tail destinations stay off Homebase and live on
+    the sidebar. Both of these surfaces are long-tail by that rule, which would make the sidebar the
+    answer — but the sidebar is also where navigation-ia.md ALREADY claims Anchor Library lives, so the
+    rule has been stated and not enforced. Whether the fix is "add the entries" or "the sidebar is not
+    actually the long-tail home" is the decision.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  URGENCY, AS THE ROUNDTABLE ADJUDICATED IT (Adjudication #1). This does NOT block Gate 3's critical
+  path — persona and JTBD authoring (WS-414) can start today and is the long pole. It DOES block Gate
+  4's navigation section for the Hole Map, which cannot honestly choose among three chromes while two
+  existing surfaces are unreachable through all three. P1-and-parallel, not P1-and-serial.
+
+  Premises verified at HEAD by the Gate 2 facilitator, by reading the files:
+    - 9 files / 1,194 LOC in src/components/views/CalibrationDashboardView/, last touched 2026-06-12
+      (1c0eecd1). This REFINES the lens digest's "8 files, 1,455 LOC"; the substance is unchanged.
+    - viewRegistry.jsx:112 deferred: true; :124 the deferred branch; :68-73 DeferredStub and its
+      "This view isn't available yet." text; :108-111 the false "Registered-but-unbuilt" comment.
+    - viewRegistry.jsx created 2026-06-19 in 0230d095.
+    - AnchorLibraryView.jsx:136-138 and :300; UIContext.jsx:203-212.
+    - navigation-ia.md:64; only two non-test references to SCREEN.ANCHOR_LIBRARY exist.
+    - src/utils/entitlement/featureMap.js:50 — CALIBRATION_DASHBOARD: TIERS.PRO.
+    - .claude/failures/UNTRACKED_IMPORT_BUILD_BREAK.md exists.

@@ -1,0 +1,135 @@
+id: "WS-416"
+title: "Sixty percent of the Hole Map's portfolio ceiling is two rows the pool takes 0.7% and 0.3% of the time, and the fold rate those rows are priced on is conditioned on the range that chose that sizing — the instrument is weakest exactly where its claim is largest, which is an inversion and not a caveat"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 23.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+problem_class: "Sample Size & Statistical Validity"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Stage C finding C1 — ranked #1 of
+  the roundtable's eight follow-ups and the reason Stage C is a hard fail rather than a caution).
+
+  THE ARITHMETIC, RE-DERIVED FROM out/hole-map.json AT HEAD BY THE FACILITATOR:
+
+    portfolio.total                12.3179 bb/hour over 309 disjoint rows (disjoint: true, 0 dropped)
+    top three rows, summed         12.5461 bb/hour = 101.85% OF THE TOTAL
+    remaining 306 rows, summed     -0.2282 bb/hour
+    rows with negative bb/hour     194 of 309
+    rows carrying model-suspect    203 of 309
+
+  The top three:
+    1. bet 33% pot — flop, first in   5.193 bb/hr  n=36,644  pool takes it 13.04%  measured fold 55.2%
+    2. bet 200% pot — river, first in 3.838 bb/hr  n=551     pool takes it  0.69%  measured fold 82.9%
+    3. bet 200% pot — turn, first in  3.515 bb/hr  n=393     pool takes it  0.29%  measured fold 78.9%
+
+  59.7% OF THE ENTIRE CEILING IS TWO ROWS, both first-in bets of 200% pot, at sizings the pool takes
+  0.7% and 0.3% of the time.
+
+  THE INVERSION, WHICH IS THE ACTUAL FINDING. The 82.9% fold rate is conditioned on THE 551 BETS THE
+  POOL ACTUALLY MADE at that sizing — and a range that fires 2x pot in 2009 online 50NL IS A RANGE,
+  NOT A SIZING. Hero cannot arrive at that node carrying the range that produced the observation. So
+  the instrument's own governing thesis — "a line the pool almost never faces has no defence
+  constructed against it, so the hole in the action distribution IS the exploit"
+  (scripts/backtest/holeMap.mjs:15-17) — is PRECISELY THE PROPERTY THAT MAKES THE ESTIMATE WEAKEST
+  EXACTLY WHERE THE CLAIM IS LARGEST. Rarity is the source of the edge and the source of the
+  unreliability, and they are the same fact.
+
+  That is why this is an instrument ticket and not a design one. No adjustment to a reading surface
+  reaches it. It has to be SAID, in the row, by whoever owns the estimate.
+
+  WHAT THE ARTIFACT ALREADY DOES RIGHT, AND WHY IT IS NOT ENOUGH. portfolio.ceilingNote is honest:
+  "A CEILING, NOT A FORECAST. It assumes every untaken branch at every spot is converted, at the fold
+  rate the pool showed against the bets it ACTUALLY faced. A range that bluffed every one of these
+  nodes would be transparent within an orbit and the fold rate would collapse toward the required
+  rate. Read it as the size of the room, not as a win rate." That states the transparency problem for
+  the PORTFOLIO. It does not state the selection problem for THE ROW — that the observed fold rate at
+  200% pot is a property of the ranges that bet 200% pot, and hero's range at that node is a
+  different object.
+
+  A SECOND STRUCTURAL FACT IN THE SAME AREA (Stage C finding C2). holes[0..7] all carry spotNodeKey
+  "flop|none|na" — eight sizings of ONE flop decision occupying the top eight positions. RULE 7c's
+  disjointness refusal renders AFTER the table body (holeMapHtml.mjs:167 then :176), so a top-down
+  reader meets the eight alternatives before he meets the refusal to add them.
+
+  THIS TICKET DOES NOT NARROW THE INSTRUMENT. All three Gate 2 lenses were explicit: no row dropped,
+  no n-threshold added, and the 200%-pot rows stay wherever the sort puts them. RULE 7d's refusal of
+  a sample gate is upheld — hiding n=25 hides the subject. What is owed is disclosure and ordering.
+accept_criteria: |
+  - THE CONCENTRATION IS REPORTED AS A FIRST-CLASS FIELD, not left to be re-derived. portfolio should
+    carry the top-k share (topThreeShare = 1.0185) and the count of negative rows (194 of 309), so
+    every consumer — the HTML, the eventual React surface, a Result Card — reads it rather than
+    computing it. A number a reader has to derive is a number most readers will not derive.
+  - THE SELECTION PROBLEM IS STATED PER ROW, distinctly from ceilingNote's transparency problem. For
+    any row whose measured fold rate is conditioned on a rare action, the row must say that the
+    observed rate belongs to the ranges that chose that action. The carrier is a structured field
+    driven off poolFreq, not prose — prose matchers are the defect WS-385 exists to remove.
+  - THE FLAG'S THRESHOLD IS DERIVED AND RECORDED, not chosen by taste. FAULT-constants-by-taste is a
+    live register entry; whatever frequency separates "the pool takes this" from "this is a rare line
+    whose observations are a selected set" must state how it was picked and what would falsify it. If
+    it is genuinely a judgement call, say so in the field rather than in a comment.
+  - NO ROW IS DROPPED AND NO n-THRESHOLD IS INTRODUCED. Assert it: a test counting holes and
+    portfolio.rows that fails if either shrinks. This is the criterion most at risk of being quietly
+    violated by a well-meaning fix.
+  - THE DISJOINTNESS REFUSAL IS AVAILABLE BEFORE THE ROWS, not only after them. In the static HTML
+    that is a render-order change; for the in-app surface it is already a Gate 4 constraint in the
+    roundtable. Both should read from the same totalCheck fields.
+  - THE FINDING IS CROSS-CHECKED AGAINST THE FAULT REGISTER. Decide whether this selection effect is
+    an instance of an existing entry (FAULT-showdown-selection is nearest in shape — conditioning on
+    a selected set — though its subject is showdowns) or warrants a new one. Per
+    DISCLAIMER-AND-FAULT-REGISTER.md §7, a new entry needs a matcher and a falsifier; state both, or
+    state why neither can be written yet.
+effort: "M"
+files_involved:
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/backtest/holeMapHtml.mjs"
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE CENTRAL ONE — IS THE PORTFOLIO CEILING THE RIGHT AGGREGATE AT ALL? The Gate 2
+    external lens noted that the mechanism the instrument rejected — NODE-LOCKING (lock the villain
+    frequencies, re-solve, read one EV) — automatically accounts for hero's whole range, "which is
+    exactly why a portfolio ceiling had to be invented". If the concentration and the selection
+    effect are both properties of summing per-branch gaps, the honest fix may be a different
+    aggregate rather than a better-disclosed one. That is larger than this ticket; the founder should
+    decide whether to open it. This ticket assumes the ceiling stays.
+  - |
+    OPEN — WHETHER A RARITY FLAG SHOULD AFFECT SORT ORDER. Disclosure alone leaves the two 200%-pot
+    rows at positions 2 and 3 of the default sort, which is where the roundtable's Gate 4 constraint
+    AP-01 (preserve the artifact's order) puts them. Sorting them down is a filter by another name and
+    all three lenses refused filters. Flagging them in place is the conservative option and is what
+    this ticket assumes.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Every figure above was re-derived from out/hole-map.json at HEAD by the Gate 2 facilitator rather
+  than taken from a lens digest: portfolio.total 12.317861063482978; top-3 sum 12.546083749321697 =
+  101.85%; remaining-306 sum -0.2282226858387476; 194 of 309 negative; 203 of 309 model-suspect;
+  n=551 / poolFreq 0.0069 for the river 200% row and n=393 / poolFreq 0.0029 for the turn 200% row;
+  (3.838+3.515)/12.318 = 59.7%; holes[0..7] all spotNodeKey "flop|none|na".
+
+  NOTE ON THE ARTIFACT'S STATE WHEN MEASURED. out/hole-map.json was generated with
+  freshness.state = "dirty-source" (uncommitted engine changes on top of fe716f59), so its
+  ENGINE-DERIVED columns are unattributable. The figures used here — poolFreq, n, measured fold rate,
+  and the bb/hour denomination built on them — come from the measured arm and pot geometry, not from
+  engineFoldPct, so the finding survives regeneration. Re-derive after a clean regeneration anyway
+  and report any movement; material movement would itself be a finding.

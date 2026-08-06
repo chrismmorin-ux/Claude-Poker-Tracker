@@ -1,0 +1,166 @@
+id: "WS-407"
+title: "Equity realization is hand-independent — a nut flush draw and a gutshot in the same seat at the same SPR both take the identical 30% haircut, which over-values dominated draws and under-values nutted ones on 215 of 260 scored decisions, and its ablation arm costs zero additional compute"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P2"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Equity calculation correctness"
+finding_id: ""
+description: |
+  THE STRUCTURE. `REALIZATION_TABLE` (`gameTreeConstants.js:35-48`) is keyed on exactly three
+  things: street, position (ip/oop), and SPR zone (micro/low/medium/high/deep). A texture multiplier
+  is applied on top (`TEXTURE_REALIZATION`, `:53-57`: wet ip 0.97 / oop 0.92, dry ip 1.02 / oop
+  1.05, paired 0.97). Nothing else enters. In particular the HAND does not.
+
+  Flop OOP high-SPR is 0.70. So on that node every non-showdown-value holding hero can have —
+  a nut flush draw with two overcards, a gutshot with no overs, a weak pair, a backdoor
+  double-gutter — has its raw equity multiplied by the same 0.70. A uniform 30% haircut applied to
+  hands whose actual realization differs by more than that spread.
+
+  WHY THIS IS A DOMAIN DEFECT AND NOT A TOLERABLE APPROXIMATION. Equity realization is the answer to
+  "how much of my raw equity do I actually get to keep", and the dominant determinant of that answer
+  is whether the hand can continue profitably on later streets — which is a property of the HAND
+  (nuttedness, redraws, domination, blocker structure) at least as much as of the seat. A nut flush
+  draw realizes close to its raw equity because it can call any turn bet and shove the river; a
+  gutshot realizes far below its raw equity because it must fold to most turn barrels. Giving them
+  the same factor is not a coarse estimate of both; it is systematically wrong in OPPOSITE
+  DIRECTIONS on the two hands, which is worse than a shared bias because it cannot cancel.
+
+  It also runs against the standing doctrine that the engine computes from equity, pot odds, SPR
+  and players remaining rather than from labels. Realization keyed on (street, position, SPR zone)
+  is closer to a label lookup than to a computation, and the per-combo equity distribution needed to
+  do better is ALREADY COMPUTED on every evaluation — `comboDistribution.perCombo` is built in
+  `gameTreeContext.js` and surfaced on the result (`gameTreeEvaluator.js:1308`). The information is
+  present and discarded at the realization step.
+
+  THE BLAST RADIUS, MEASURED. `adjustedRealization` is called at `gameTreeEvaluator.js:703` (inside
+  `callBranchEV`, `:705`) and at `gameTreeEquity.js:1044` (inside `bestResponseToAggression`, `:1041`).
+  Between them those two sites price the called branch of every aggressive candidate and hero's
+  response to every villain raise. In the scored run, 215 of 260 decisions are flop or turn, where
+  the factor is below 1.0; the river rows are all 1.00 by construction (`:44-47`), correctly, since
+  there is no future street to fail to realize. So the approximation is load-bearing on 83% of the
+  sample and inert on the rest.
+
+  WHY IT IS THE CHEAPEST REAL NUMBER IN THE CLUSTER. Its ablation arm is `realizationOverride ->
+  1.0`: replace the table lookup with a constant. That is a scalar substitution inside an existing
+  code path, so the arm costs ZERO additional compute — unlike every stage ablation, which changes
+  how much of the tree is explored and therefore how long the run takes. Once WS-404 threads the
+  override, this is the first per-capability EV number the programme can produce, and it can be
+  produced in the same run as any other arm.
+
+  WHAT THE ABLATION ACTUALLY TESTS, STATED PRECISELY SO THE RESULT IS NOT MISREAD. Differencing
+  against `realizationOverride = 1.0` does NOT test "is hand-dependent realization better than
+  hand-independent realization". It tests "is the shipped table better than no haircut at all" —
+  the floor question. That is the right first question, because if a uniform 30% haircut cannot beat
+  applying no haircut, the table is not merely imprecise, it is not earning its place, and the
+  hand-dependent version should be designed from scratch rather than derived from it.
+accept_criteria: |
+  - EV-DELTA ACCEPT CRITERION #1, THE FLOOR TEST, DIRECTION STATED IN ADVANCE. On the IDENTICAL
+    260-decision set from `out/depth-ablation.json`, difference the shipped `REALIZATION_TABLE`
+    against `realizationOverride = 1.0`. Direction stated in advance: the SHIPPED TABLE must be
+    POSITIVE against the flat override on the non-river slice (215 decisions), because a haircut
+    that models a real effect should beat pretending the effect does not exist. Report flop and turn
+    separately; the river slice is a null by construction (all rows are 1.00) and is the arm's own
+    negative control — if the river delta is not zero, the override is reaching somewhere it should
+    not and the measurement is invalid before it is interpreted.
+  - EV-DELTA ACCEPT CRITERION #2, THE ACTUAL FIX, DIRECTION STATED IN ADVANCE. Hand-dependent
+    realization must be POSITIVE against the shipped table on the same identical decision set,
+    non-river slice. This is the criterion the ticket closes on. Criterion #1 is diagnostic and runs
+    first because it is free and because a negative result on it changes the design.
+  - THE HAND-DEPENDENT FACTOR IS COMPUTED, NOT LOOKED UP. Doctrine: labels are outputs, never
+    inputs. A `REALIZATION_BY_HAND_CLASS` table keyed on 'nut draw' / 'weak draw' / 'weak pair'
+    would reproduce the defect one level down. The factor must derive from quantities the engine
+    already has per combo — equity against the continuing range, the shape of the equity
+    distribution across runouts, blocker structure — at the per-combo granularity
+    `comboDistribution.perCombo` already provides.
+  - THE EXISTING (STREET, POSITION, SPR, TEXTURE) STRUCTURE IS NOT DOUBLE-COUNTED. If the new factor
+    is derived from per-combo equity across runouts, it already contains most of what the SPR zone
+    and texture multipliers were proxying for. Stacking the new computation on top of the old table
+    is the double-counting anti-pattern in `exploitEngine/CLAUDE.md` in a new costume. State
+    explicitly which of the existing dimensions survive and why.
+  - A FAILING-AGAINST-HEAD TEST EXISTS BEFORE THE FIX (WS-309 RULE). The cleanest shape: construct
+    two hero holdings with equal raw equity on the same board, seat and SPR — one nutted, one
+    dominated — and assert their realization factors DIFFER. That assertion fails against HEAD by
+    construction, since the lookup cannot see the hand. Note the standing determinism rule for
+    engine EV tests: use a river-complete board or a fixed `equityFn` stub, because flop equity is
+    Monte Carlo and the assertion must not measure machine load.
+  - THE REALIZATION FACTOR IS REPORTED ON THE DECISION RECORD. Whatever is computed must be
+    inspectable per decision, so that a future disagreement about realization can be settled from
+    stored data rather than by re-running the engine. Today the factor is an anonymous scalar inside
+    two expressions and no artefact records it.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "scripts/backtest/decisionRecord.mjs"
+blocked_by:
+  - "WS-404"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHAT IS THE HAND-DEPENDENT FACTOR A FUNCTION OF? Three candidates, all computable from
+    what the engine already has. (a) The SHAPE of the hand's equity distribution across runouts —
+    variance and skew, not just the mean — which is the direct expression of "can this hand continue
+    profitably". (b) Equity against the range that CONTINUES after a bet, versus equity against the
+    current range; the ratio of those two is close to a definition of realization and needs no new
+    concept. (c) A forward-looking estimate from the depth-2 machinery itself, which already models
+    the next street. (c) is the most correct and the most expensive, and it would make realization
+    a function of the refinement budget — reintroducing at the valuation layer the non-determinism
+    the standing memory entry already flags in the scheduler. RECOMMENDATION: (b). It is a ratio of
+    two quantities the engine computes today, it needs no new sampling, and it degrades gracefully
+    to something close to the current constants when the continuing range equals the full range.
+  - |
+    OPEN — DOES THE MULTIWAY DIMENSION SURVIVE? `adjustedRealization` takes `numOpponents` and
+    `opponentModels`, and the two call sites pass them differently: `gameTreeEvaluator.js:703`
+    passes `(street, isIP, spr, numOpponents, opponentModels, boardTexture)` while
+    `gameTreeEquity.js:1044` passes only `(street, isIP, spr, numOpponents)` — so the same node's
+    realization already differs between the two branches by whether texture is applied. That
+    inconsistency is not the subject of this ticket but it is in its blast radius and should not be
+    left unexamined while the function is being rewritten.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), READ IN PLACE.
+
+    - `gameTreeConstants.js:35-48` — `REALIZATION_TABLE`, keyed street -> ip/oop -> SPR zone, values
+      read directly: flop oop high = 0.70, flop ip high = 0.85, turn oop high = 0.82, river all
+      1.00 across both positions and all five zones (`:44-47`). Confirmed hand-independent: the
+      object has exactly three levels of keys and none of them is a holding.
+    - `gameTreeConstants.js:53-57` — `TEXTURE_REALIZATION` = { wet: {ip 0.97, oop 0.92}, dry: {ip
+      1.02, oop 1.05}, paired: 0.97 }. CORRECTION TO THE AUDIT NOTE, which cited `:52-56`: the
+      export begins at `:53`.
+    - `gameTreeEvaluator.js:703` — `const realization = adjustedRealization(street, isIP, spr,
+      numOpponents, opponentModels, boardTexture);` feeding `callBranchEV` at `:705`.
+    - `gameTreeEquity.js:1041` — `export const bestResponseToAggression = (...)`; `:1044` — its own
+      `adjustedRealization(street, isIP, spr, numOpponents)` call, WITHOUT texture or opponent
+      models. The asymmetry between the two call sites is noted in the second decision flag.
+    - `gameTreeEvaluator.js:1308` — `perCombo: comboDistribution?.perCombo || null` on the returned
+      object, confirming the per-combo equity distribution is computed and surfaced today.
+
+  Blast radius recomputed from `out/depth-ablation.json` rather than quoted: 138 flop + 77 turn =
+  215 of 260 scored decisions carry a realization factor below 1.0; the 45 river decisions carry
+  1.00. The audit note's "215 of 260" figure verified exactly.
+
+  ON THE ZERO-COMPUTE CLAIM. Verified structurally rather than by timing: `realizationOverride`
+  replaces a table lookup with a constant inside expressions that run regardless, so it changes no
+  control flow and triggers no additional sampling. This is what distinguishes it from every stage
+  ablation in WS-408, each of which changes how much of the tree is explored. It is therefore the
+  cheapest arm available once WS-404 lands, and the right one to use as WS-404's own end-to-end
+  demonstration.

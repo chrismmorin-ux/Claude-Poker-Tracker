@@ -1,0 +1,255 @@
+id: "WS-395"
+title: "Two detectors fire on noise, and the null rates at the ACTUAL production call sites are worse than the roundtable computed — position-awareness fires ~71% and ~85% under the null, the sizing-tell multiplier fires ~47% and it is the one that reaches EV"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 19.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-050"
+description: |
+  TWO DETECTORS, BOTH SETTLEABLE BY PERMUTATION ON DATA THAT ALREADY EXISTS. Neither half needs new
+  hands, a new corpus, or a new instrument. That is the reason this ranks above the rest of the
+  live-path family: it is the only item here whose central claim can be settled this week from
+  what is already on disk.
+
+  ── HALF ONE: `computePositionAwareness` (`bucketQueryUtils.js:91-116`) ──
+
+  The estimator is `spread = max(vpip_i) - min(vpip_i)` over positions clearing a minimum hand
+  count, flagged when `spread > 0.15`, with
+  `confidence = bayesianSampleConfidence(vpips.length * 5)` at `:114`.
+
+  THE CONFIDENCE ARGUMENT IS THE NUMBER OF POSITION CATEGORIES, NOT HANDS. `vpips.length` counts how
+  many positions qualified — at most five. A villain with 3 hands in each of 5 positions and a
+  villain with 300 hands in each receive IDENTICAL confidence. The quantity has ZERO mutual
+  information with sample size, which is the one thing a sample confidence exists to carry.
+
+  THE NULL FIRE RATES, COMPUTED AT THE TWO REAL CALL SITES rather than at the function's defaults.
+  Take a villain whose true VPIP is identically 25% in every position — no positional awareness at
+  all — observed at exactly the minimum qualifying sample:
+
+    `villainProfileBuilder.js:419`  { minHandsPerPosition: 5, minPositions: 2 }
+      Observed rates are multiples of 1/5 = 0.20, so ANY difference at all exceeds the 0.15
+      threshold. P(two independent Binomial(5, 0.25) counts differ) = 1 - Σ_k P(k)² = 1 - 0.2902
+      = 0.710.  → FLAGGED ~71% OF THE TIME UNDER THE NULL.
+
+    `villainObservations.js:879`    { minHandsPerPosition: 3, minPositions: 3 }
+      Rates are multiples of 1/3 = 0.333, so again any spread clears 0.15. P(three independent
+      Binomial(3, 0.25) counts are not all equal) = 1 - Σ_k P(k)³ = 1 - 0.1530 = 0.847.
+      → FLAGGED ~85% OF THE TIME UNDER THE NULL.
+
+  The mechanism is that the threshold is finer than the resolution of the estimate. At n=3 the
+  smallest non-zero spread the data can express is 0.333; at n=5 it is 0.200. Both are larger than
+  the 0.15 bar, so the bar is not a bar — it is satisfied by the first pixel of noise.
+
+  WHERE IT GOES, STATED PRECISELY BECAUSE THE ROUNDTABLE OVERSTATED IT (see status_note): the noisy
+  detector does NOT reach the game tree. It reaches `awareness.positionAware`
+  (`villainProfileBuilder.js:420-421`), which feeds the profile classification at `:520`
+  (`'position-aware'`) and two `thoughtCatalog` signature evaluators (`:40` and `:537-538`, the
+  latter scaling a thought weight by `awareness.positionAware.confidence` — the quantity that has no
+  relationship to sample size). It also drives an observation in `villainObservations.js:879` that
+  renders in `ObservationPanel`.
+
+  THE CORRECT ESTIMATOR IS ALREADY IN THE REPO, ALREADY WIRED, AND ALREADY REACHING EV.
+  `src/utils/rangeEngine/traitDetector.js:44-53` — `probRateExceedsFactor`, exact Beta quadrature,
+  no normal approximation — computes `traits.positionallyAware.posterior`, and THAT is what
+  `generateExploits.js:60` and `postflopNarrower.js:785` consume, and what
+  `villainProfileBuilder.js:353` uses for the trait label. So the repo runs TWO estimators of the
+  same construct side by side: a correct Bayesian one on the EV path, and a noise-firing spread
+  test on the display and thought-weight path, with no cross-reference between them.
+
+  `traitDetector.js:22-25` even records the reason the correct one is regularized as hard as it is:
+  "detecting a *difference* between two rates needs more regularization than estimating one rate,
+  and concluding a player 'adjusts by position' warrants a meaningful per-position sample." That
+  sentence is the general rule this half of the ticket is about, and it appears NOWHERE in
+  POKER_THEORY.md.
+
+  ── HALF TWO: the sizing-tell gates, and the one that reaches EV ──
+
+  There are TWO gates on the same aggregate Pearson r, with DIFFERENT thresholds, and the run record
+  found only the weaker-consequence one:
+
+    (a) `weaknessDetector.js:405-407` — `|r| > 0.5` at `n >= 8`. Produces the `sit-sizing-tells`
+        weakness. Under H0, t = r√(n-2)/√(1-r²) = 1.414 on 6 df ⇒ P(|r| > 0.5) ≈ 0.21.
+        → fires ~21% of the time on a villain with no sizing tell at all.
+
+    (b) `foldEquityCalculator.js:661-671` — `|r| > 0.3` at `n >= 8`, then
+        `sizingMult = 1 + corr * 0.06 * confidence` and `estimate *= sizingMult`.
+        Under H0, t = 0.770 on 6 df ⇒ P(|r| > 0.3) ≈ 0.47.
+        → fires ~47% of the time under the null, AND IT MULTIPLIES THE FOLD ESTIMATE.
+
+  (b) is the consequential one and it is the reason this ticket has a real EV delta rather than a
+  display one. It runs on every path that computes a fold estimate — Ignition play, drills,
+  `computeDepth2Plan`, `replayAnalysis`, AND THE CORPUS BACKTEST — so a coin-flip-frequency noise
+  detector is currently perturbing the scored figure itself. The perturbation is small per firing
+  (±0.06 × confidence, capped by the ±40-50% compound clamp at `:676`) but it is signed by a
+  statistic that is pure noise half the time, so it adds variance to the very number the founder
+  wants to optimize, in a direction that cannot be predicted.
+
+  AND THE SAMPLE IS SHOWDOWN-SELECTED, SO EVEN THE SIGN IS UNIDENTIFIED. Samples are pushed only
+  when the villain's hole cards were shown (`decisionAccumulator.js:584-598` requires
+  `playerShowdown[0]`/`[1]` to parse). Villains are called more often at small sizings, so small-bet
+  hands reach showdown at a higher rate than large-bet hands, and the correlation between bet
+  fraction and shown strength is conditioned on a variable that depends on both. A correlation
+  measured on a selected sample does not estimate the population correlation, and the selection here
+  runs along exactly the axis being measured.
+
+  ── ZERO MULTIPLICITY CONTROL ANYWHERE ──
+  `grep -rniE 'bonferroni|falsediscovery|fdr' src/` returns nothing. Roughly fifteen candidate
+  weaknesses are ranked per villain and the top one is surfaced. On a thin villain the surfaced
+  weakness is, by construction, the noisiest estimate in the set — the maximum of fifteen noisy
+  statistics is not a discovery, it is an order statistic.
+accept_criteria: |
+  - SETTLE BOTH HALVES BY PERMUTATION ON EXISTING DATA, AND REPORT THE EMPIRICAL NULL RATE BEFORE
+    CHANGING ANY THRESHOLD. Shuffle the position label within each villain (destroying any real
+    positional structure while preserving every marginal), re-run `computePositionAwareness` at BOTH
+    production configs, and report the empirical fire rate. Do the same for the sizing tell by
+    shuffling `strengthPct` against `betFraction` within villain. The analytic figures above are
+    predictions; the permutation is the measurement. No new data is required and that must be stated
+    in the ticket's closing note, because "we need more hands" is the reflex answer and it is wrong
+    here.
+  - THE CLAIM IS AN EV DELTA FOR THE SIZING-TELL HALF, MEASURED BY THE STANDARDIZED METHOD ON AN
+    IDENTICAL DECISION SET. `foldEquityCalculator.js:667` multiplies the fold estimate on every
+    scored decision, so the corrected gate has a measurable effect on the aggregate figure. Report
+    it. Expected direction: the aggregate should move toward the no-adjustment baseline and the
+    ACROSS-SEED VARIANCE of the figure should FALL — a noise multiplier firing on half of villains
+    adds variance without adding signal, so the reproducibility gain may exceed the accuracy gain,
+    and per the founder's redirect reproducibility outranks accuracy for this deliverable. Report
+    both.
+  - THE POSITION-AWARENESS HALF DECLARES ITS EV EXPOSURE HONESTLY. It does NOT reach the game tree
+    today (verified — see status_note), so its EV delta on the scored figure is expected to be
+    exactly ZERO and must be asserted as zero rather than claimed as positive. Its criterion is the
+    permutation null rate falling to the nominal level, plus the thought-weight and classification
+    outputs changing on villains where the flag was noise. If a future ticket routes it to EV, that
+    ticket inherits the EV criterion.
+  - THE TWO ESTIMATORS OF POSITIONAL AWARENESS ARE RECONCILED, NOT BOTH LEFT RUNNING. The repo has
+    a correct Beta-quadrature estimator (`traitDetector.js:44-53`) already feeding the EV path and a
+    noise-firing spread test feeding display and thought weights. Either `computePositionAwareness`
+    delegates to the posterior form, or both files state in code why two estimators of one construct
+    coexist and which is authoritative. Leaving them unreconciled is how the next reader picks the
+    wrong one.
+  - THE CONFIDENCE AT `bucketQueryUtils.js:114` IS A FUNCTION OF HANDS, OR IT IS DELETED. A
+    confidence with zero mutual information with sample size is worse than no confidence, because it
+    is consumed as a weight (`thoughtCatalog.js:538`). Assert with a test that two villains with the
+    same positions and 10x different hand counts receive DIFFERENT confidences — this fails against
+    HEAD, which is the point.
+  - THE SHOWDOWN SELECTION IS RECORDED AS A LIMIT ON THE ESTIMAND, IN CODE. The sizing-tell
+    correlation is measured on a showdown-conditioned sample, and `FAULT-showdown-selection` already
+    exists in the fault register for exactly this shape. Whatever gate replaces `|r| > 0.3`, the
+    quantity must be documented as "correlation among hands that reached showdown", not as
+    "correlation between sizing and strength". Naming the estimand correctly is most of the fix.
+  - THE ORPHANED PER-CONTEXT CORRELATION IS RESOLVED. `decisionAccumulator.js:635-637` computes
+    `byContextAction[*].correlation` for every context and NOTHING reads it (verified: zero non-test
+    consumers). It is either wired with a gate that survives permutation, or removed. It must not be
+    left as a computed-and-unread quantity that a future reader wires up without re-deriving its
+    null rate — which is precisely how the two gates above came to differ by 0.2 with no record of
+    why.
+  - MULTIPLICITY IS ADDRESSED OR EXPLICITLY DEFERRED WITH A REASON. ~15 candidate weaknesses are
+    ranked per villain with no correction anywhere in the repo. A full FDR treatment is out of scope
+    for this ticket; deciding that it is out of scope, and recording that the surfaced top weakness
+    on a thin villain is an order statistic rather than a finding, is not.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/bucketQueryUtils.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/rangeEngine/traitDetector.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER THE SIZING-TELL FOLD MULTIPLIER SURVIVES AT ALL. Once the gate is corrected to a
+    level that does not fire under the null, the question is whether ANY villain in the corpus clears
+    it. If the honest gate is (say) a posterior probability of a real correlation exceeding 0.8, and
+    no villain in the data reaches it, then `foldEquityCalculator.js:661-671` is dead code that has
+    been perturbing the scored figure for its whole life and should be removed rather than
+    re-thresholded. Measure the post-correction fire rate on real villains before deciding.
+  - |
+    OPEN — WHAT REPLACES A SPREAD TEST. `max - min` over 2-5 rates is the wrong statistic
+    independently of its threshold: it is an order statistic, it ignores the sample size behind each
+    rate, and it is monotonically increasing in the number of positions observed. The correct form is
+    the one `traitDetector.js` already uses — a posterior probability that one rate exceeds another
+    by a factor, with a firm prior. Adopting it wholesale means the "position aware" flag becomes
+    LP-vs-EP specific rather than any-pair-of-positions, which is a narrower and probably more useful
+    construct, but it is a change in what the flag MEANS and the founder should be told that rather
+    than have it happen silently.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-050"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code. THIS TICKET DIVERGES FROM THE RUN RECORD IN
+  THREE PLACES, TWO OF THEM MAKING THE FINDING WORSE AND ONE MAKING IT NARROWER. All three are
+  recorded here rather than propagated.
+
+  CORRECTION 1 — THE NULL FIRE RATE IS HIGHER THAN RECORDED, BECAUSE THE RUN RECORD ANALYSED THE
+  FUNCTION'S DEFAULTS AND NOT THE CALL SITES. The record states 62.4% at `minHandsPerPosition = 3`
+  with 2 positions. Neither production call site uses that combination:
+    - `villainProfileBuilder.js:419` passes `{ minHandsPerPosition: 5, minPositions: 2 }` → 71.0%
+      (1 - Σ_k P(k)² for k ~ Binomial(5, 0.25); collision probability 0.2902).
+    - `villainObservations.js:879` passes `{ minHandsPerPosition: 3, minPositions: 3 }` → 84.7%
+      (1 - Σ_k P(k)³ for k ~ Binomial(3, 0.25); all-equal probability 0.1530).
+  The 62.4% figure is arithmetically correct for the configuration it describes; that configuration
+  is not shipped. Both figures above are for the MINIMUM qualifying sample, which is the case the
+  gate admits and the case that matters — a villain with many hands per position will show a
+  genuinely smaller spread under the null, so these are the worst-case-admissible rates, not the
+  average over the population. The permutation test in the accept criteria is what produces the
+  population figure.
+
+  CORRECTION 2 — THE POSITION-AWARENESS DETECTOR DOES NOT ENTER THE GAME TREE. The run record states
+  it "enters the ENGINE as a trait weight via `villainProfileBuilder.js:28`". `:28` is the IMPORT
+  line. Tracing the value: `computePositionAwareness` is called at `:419` and its output is written
+  to `result.positionAware.detected/.confidence` at `:420-421`. Consumers of
+  `awareness.positionAware` are `villainProfileBuilder.js:513` and `:520` (profile classification
+  string) and `thoughtCatalog.js:40`, `:537-538` (thought signature weights). The EV-bearing
+  consumers — `generateExploits.js:60` and `postflopNarrower.js:785` — read
+  `traits.positionallyAware.posterior`, which comes from `rangeEngine/traitDetector.js`, a DIFFERENT
+  and correct estimator. So the noisy detector's blast radius is display, profile labelling and
+  thought weights; it is not in the EV path. This narrows the finding and is the reason the
+  position-awareness half is explicitly exempted from the EV-delta criterion above.
+
+  CORRECTION 3 — "THE CORRECT ESTIMATOR EXISTS 200 LINES AWAY" IS FALSE, AND THE TRUTH IS SHARPER.
+  `traitDetector.js` is at `src/utils/rangeEngine/`, a different module from
+  `src/utils/exploitEngine/bucketQueryUtils.js`. It is not 200 lines away; it is in another engine.
+  The sharper fact is that it is not merely available — it is ALREADY WIRED to the EV paths and
+  running in parallel with the noisy detector on the same construct. `probRateExceedsFactor` is at
+  `:44-53` (the run record said `:45-53`); the regularization rationale is at `:22-25` (the record
+  said `:20-27`); `OPEN_RATE_PRIOR = { alpha: 6, beta: 24 }` at `:26`; `POS_AWARE_FACTOR = 1.5` at
+  `:28`.
+
+  CORRECTION 4 — THERE IS NO PER-CONTEXT SIZING-TELL DETECTOR FIRING AT n=5. The run record states
+  "the per-context variant at n=5 fires ~39%". No such gate exists at HEAD. `decisionAccumulator.js`
+  builds `sizingTells.byContextAction` (`:257`, `:595-598`) and computes a per-context Pearson r at
+  `:635-637`, and a repo-wide grep for `byContextAction` returns FIVE hits, all five inside
+  `decisionAccumulator.js` itself. The per-context correlation is computed and read by nothing. That
+  is a different and cheaper defect than the one recorded, and it is filed above as its own accept
+  criterion.
+
+  ADDED, NOT IN THE RUN RECORD, AND IT IS THE HIGHEST-CONSEQUENCE HALF OF THIS TICKET:
+  `foldEquityCalculator.js:661-671` gates the SAME aggregate correlation at `|r| > 0.3` — a LOWER
+  bar than `weaknessDetector.js:406`'s 0.5, with no record anywhere of why the two differ — and it
+  multiplies the fold estimate (`:666-667`). Under H0 at n=8 that gate fires ~47% of the time
+  (t = 0.770 on 6 df). This one is EV-bearing and runs inside the corpus backtest, which is what
+  gives this ticket a real EV delta and what lifts its priority above the rest of the live-path
+  family. The run record found only the weakness-detector gate.
+
+  VERIFIED AS STATED: `bucketQueryUtils.js:91` function start, `:92` the destructured defaults
+  (3 / 2 / 0.15), `:112` `result.detected = result.spread > spreadThreshold`, `:114` the
+  `vpips.length * 5` confidence. `weaknessDetector.js:405-407` the gate, `:419` the confidence.
+  `decisionAccumulator.js:584-598` the showdown gating of samples (requires `playerShowdown[0..1]`
+  to parse). `grep -rniE 'bonferroni|falsediscovery|fdr' src/` → zero hits.

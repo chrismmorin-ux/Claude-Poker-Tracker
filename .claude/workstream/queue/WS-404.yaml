@@ -1,0 +1,192 @@
+id: "WS-404"
+title: "No per-capability EV number can be produced at all: the arm axis strips every key except refinementBudgetMs at three separate chokepoints, and the engine has exactly one per-stage toggle out of six — thread an opaque engineOverrides object and wire the remaining flags into the gate conditions that already record blockedBy"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+finding_id: ""
+description: |
+  THIS IS AN INSTRUMENT FIX, AND IT IS THE ONE THAT UNBLOCKS THE MEASUREMENT PROGRAMME. Scoped by
+  the founder's ruling that depth-2 is correct and required: to improve it we have to be able to
+  price its parts, and today we cannot price any of them.
+
+  THE THREE CHOKEPOINTS, EACH READ AT HEAD.
+    1. `normalizeDepthArms` (`heroEvRunner.mjs:62`) ends with
+       `return depthArms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs }));`
+       (`:73`). Any other key an arm declares is silently dropped. Not rejected — dropped. An arm
+       that says `{ id: 'no-realization', realizationOverride: 1.0 }` runs as a duplicate of the
+       default arm and reports a delta of exactly zero, which reads as "the capability is worthless"
+       rather than "the flag never arrived".
+    2. `heroPolicyAt` (`heroPolicy.mjs:146`) accepts `refinementBudgetMs` (`:158`) and nothing else
+       configurable. The runner passes it at `heroEvRunner.mjs:258`.
+    3. The `evaluateGameTree` call inside `heroPolicyAt` (`heroPolicy.mjs:263`) is a FIXED OBJECT
+       LITERAL. Even a value that survived (1) and (2) has no way into the engine.
+
+  THE ENGINE SIDE. `evaluateGameTree` has exactly one per-stage toggle: `enableDepth2Raise = true`
+  (`gameTreeEvaluator.js:794`), consumed in the `raiseResponseDepth2` gate at `:1632` as
+  `gateStage('raiseResponseDepth2', { enabled: enableDepth2Raise, raiseLikely: pRaise > 0.02 })`.
+  That is the existing template and it is a good one, because of what `gateStage` already does.
+
+  THE OBSERVABILITY IS FREE, WHICH IS WHY THIS IS SMALL. `gateStage(stage, conditions)`
+  (`gameTreeEvaluator.js:967-983`) computes `blockedBy` as the list of failing condition KEYS, then
+  appends `'budget'` if the clock is spent, and records the whole thing in the stage ledger that
+  surfaces as `treeMetadata.latency.stages`. So a flag added as a condition key is automatically
+  visible in the ledger of every scored decision: an ablated stage reports
+  `blockedBy: ['enableBetCallDepth2']` and is distinguishable from the same stage skipped for time
+  or for want of a candidate. No new instrumentation is needed — only the conditions.
+
+  WHAT TO BUILD.
+    - An opaque `engineOverrides` object threaded `heroEvRunner.mjs:73` -> `:258` ->
+      `heroPolicy.mjs:158` -> `:263`. Opaque means the runner and the policy module do not
+      enumerate its keys; they carry it. That is deliberate: the alternative is that every future
+      engine constant someone wants to ablate requires edits in three files, which is exactly how
+      this gap was created.
+    - Per-stage flags wired into the corresponding `gateStage` condition objects, each defaulting to
+      enabled so that omitting the object reproduces HEAD bit-for-bit:
+        `enableRiverPerCombo`      -> `:1413`
+        `enableCallDepth2`         -> `:1521`
+        `enableCheckCheckDepth2`   -> `:1552`
+        `enableBetCallDepth2`      -> `:1594`
+        `enableCheckRaiseDepth2`   -> `:1679`
+        `enableDepth3Barrel`       -> `:1732`
+      (`enableDepth2Raise` at `:1632` already exists and should be folded into the same object
+      rather than left as a separate top-level parameter.)
+    - Two non-stage overrides the programme needs immediately: `realizationOverride` (a scalar that
+      replaces the `REALIZATION_TABLE` lookup, so WS-407's arm costs zero additional compute) and
+      `enableProtectionBonus`.
+
+  WHY THIS IS NOT A DUPLICATE OF WS-399, AND WHY IT IS ALSO NOT INDEPENDENT OF IT. WS-399's third
+  decision flag asks precisely this question and answers it: "OPEN — DOES THE CONFIG-THREADING
+  PREREQUISITE BECOME ITS OWN ITEM? ... RECOMMENDATION: split it. It is a prerequisite for a class
+  of measurements, not for this measurement alone, and folding infrastructure into a domain ticket
+  is how infrastructure ends up shaped by one caller." This ticket IS that split. WS-399 wants a
+  range-side constant threaded; this cluster wants stage flags and a realization scalar. Same
+  mechanism, same three chokepoints, one implementation. Whoever executes WS-399 should set its
+  `blocked_by` to this item rather than re-opening the question; that edit is left to WS-399's owner
+  and is not made here.
+
+  THE DEPENDENCY THAT IS EASY TO MISS. This item does not need WS-402 to be BUILDABLE, but every
+  number it produces is read through a 15.2% ESS until WS-402 lands. Building the flags first and
+  measuring with them second is the right order; publishing per-capability EV figures measured at
+  the current ESS is not.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE EV-DELTA ACCEPT CRITERION, EXPLICITLY AND WITH THE REASON STATED.
+    It is the instrument fix that makes per-capability EV deltas POSSIBLE; requiring one of it is
+    circular. What it must demonstrate instead is the two criteria below, which are the falsifiable
+    substitutes.
+  - EVERY FLAG IS PROVEN TO ARRIVE, BY SHOWING THE PATHS DIVERGE. For each of the eight overrides,
+    run the SAME decision with the flag on and off and assert (a) the resulting action distribution
+    differs on at least one decision in a fixed set, and (b) the stage ledger records
+    `blockedBy: ['<flagName>']` on the disabled run and an empty `blockedBy` on the enabled run.
+    This is the standing rule from the shipped-but-inert memory entry: a capability that ships
+    behind a parameter no call site passes is not shipped. A flag that arrives but changes nothing
+    must be reported as such, not quietly accepted.
+  - THE DEFAULT PATH IS BIT-FOR-BIT UNCHANGED. Omitting `engineOverrides` entirely must produce
+    byte-identical output to HEAD on a fixed decision set. `refinementBudgetMs: undefined` on the
+    default arm is already load-bearing for exactly this reason (`heroEvRunner.mjs:58-61` explains
+    it) and the new object must follow the same discipline: absent means the engine's own
+    configuration, not this module's opinion of it.
+  - A DROPPED ARM KEY BECOMES AN ERROR, NOT A SILENT NO-OP. The present failure mode is that an
+    unrecognised arm key is discarded at `:73` and the arm runs as a duplicate of the default,
+    producing a delta of exactly zero that reads as a null result about the capability. After this
+    ticket, `normalizeDepthArms` must reject any key it does not carry. A measurement instrument
+    that silently returns "no effect" when it has been misconfigured is worse than one that refuses
+    to run.
+  - THE FIRST REAL USE IS RUN AND REPORTED. Produce one per-capability EV delta end to end — the
+    cheapest is WS-407's `realizationOverride -> 1.0`, which costs zero additional compute — on the
+    identical 260-decision set, with its confidence interval and its ESS. That is what proves the
+    instrument works. Do not close this ticket on unit tests alone.
+  - THE ATTRIBUTION LIMIT IS RECORDED IN THE OUTPUT, NOT ONLY IN THIS TICKET. Ablating a stage
+    frees its budget for the stages after it (`claimStageBudget`, `gameTreeEvaluator.js:930`), so a
+    per-stage ablation delta confounds "this stage's value" with "what the other stages did with its
+    time". The run output must carry that caveat as DATA — a per-arm record of `ranStages` and
+    `weightConsumed` — so a reader can see whether the remaining stages got more accurate. WS-403
+    is the ticket that reduces this confound; it does not eliminate it.
+effort: "M"
+files_involved:
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-405"
+  - "WS-407"
+  - "WS-408"
+  - "WS-409"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES `engineOverrides` GET A SCHEMA, OR STAY GENUINELY OPAQUE? Opaque is what makes it
+    reusable and is what stops the next ablation needing edits in three files. But opaque means a
+    typo in an arm definition reaches the engine, is ignored by `evaluateGameTree`'s destructuring
+    default, and produces a zero delta — reintroducing at the engine boundary exactly the silent
+    no-op this ticket removes at the runner boundary. The middle option is that the ENGINE, not the
+    runner, validates: `evaluateGameTree` rejects an override key it does not recognise. That keeps
+    the runner opaque and puts the check where the vocabulary actually lives.
+    RECOMMENDATION: opaque runner, validating engine. The founder should confirm, because it means
+    `evaluateGameTree` gains a throw on a bad config, and the app calls that function on every live
+    decision.
+  - |
+    OPEN — DOES THE REPLICATION MANIFEST HAVE TO CARRY THE OVERRIDES? Any Result Card produced from
+    an ablated arm is a card whose engine was not the engine at `manifest.engineCommit`. Per the
+    Standard of Record, the manifest carries "every load-bearing constant", and a stage flag is as
+    load-bearing as a seed. Adding it means a new manifest field and a register-version consequence;
+    not adding it means two cards with the same `engineCommit` can differ arbitrarily and nothing
+    says so. RECOMMENDATION: add it. It is the same argument that produced
+    `disclaimerRegisterVersion`, and the cost of retrofitting it later is a migration of every card
+    written in between.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), EVERY LINE READ IN PLACE.
+
+    - `heroEvRunner.mjs:62` — `const normalizeDepthArms = (depthArms) => {`; `:73` — the strip line,
+      verbatim: `return depthArms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs }));`.
+      `:58-61` documents why `refinementBudgetMs: undefined` on the default arm is load-bearing.
+    - `heroEvRunner.mjs:256-258` — the `heroPolicyAt` call, with `refinementBudgetMs:
+      arm.refinementBudgetMs` at `:258`. (The audit note cited `:258` for the call site; the call
+      opens at `:256` and the budget key is at `:258`.)
+    - `heroPolicy.mjs:146` — `export const heroPolicyAt = async ({`; `:158` —
+      `refinementBudgetMs = undefined,` and no other engine-configuring parameter; `:263` —
+      `result = await evaluateGameTree({`, a fixed object literal.
+    - `gameTreeEvaluator.js:794` — `enableDepth2Raise = true,` in the parameter list; `:1632` — its
+      one consumption site, `gateStage('raiseResponseDepth2', { enabled: enableDepth2Raise,
+      raiseLikely: pRaise > 0.02 })`. Confirmed by grep over the whole file: this is the ONLY
+      per-stage toggle. The other five gates carry only street and candidate conditions.
+    - `gameTreeEvaluator.js:967-983` — `gateStage` building `blockedBy` from failing condition keys
+      and appending `'budget'`, then pushing the record into the ledger. Verified empirically: a
+      temporary probe on HEAD produced `raiseResponseDepth2:skip(raiseLikely|budget)` and
+      `checkRaiseDepth2:skip(budget)` in the same ledger, so multi-blocker attribution already
+      works and a flag key will appear alongside the others without new code.
+    - The five gate lines to wire: `:1413`, `:1521`, `:1552`, `:1594`, `:1679`, plus `:1732` for
+      depth-3. One correction to the audit note's list: `:1632` (`raiseResponseDepth2`) is gated on
+      `{enabled, raiseLikely}` and is street-gated only transitively through its enclosing
+      `betCallDepth2` block, so it is the template rather than a sixth street-gated stage.
+    - `gameTreeConstants.js:35-48` — `REALIZATION_TABLE`, the lookup `realizationOverride` must
+      bypass; consumed via `adjustedRealization` at `gameTreeEvaluator.js:703` and
+      `gameTreeEquity.js:1044`.
+
+  CROSS-REFERENCE, NOT DUPLICATION. `.claude/workstream/queue/WS-399.yaml` decision_flags[2] states
+  the same gap and recommends splitting it into its own item; its `status_note` (`:320-323`) records
+  a prior-art search finding that nothing covers threading an arbitrary engine constant through
+  `heroPolicyAt` or the `runHeroEv` depth-arm axis. This ticket is that split. WS-399's own
+  `blocked_by` is deliberately NOT edited here — that is its owner's call, and editing another
+  agent's in-flight ticket to satisfy this one is the kind of quiet coupling the queue exists to
+  make visible.

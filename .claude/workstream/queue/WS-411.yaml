@@ -1,0 +1,132 @@
+id: "WS-411"
+title: "Depth-2/3 refinement is bounded by a wall clock, so identical inputs give different advice under machine load — replace the millisecond budget with a deterministic work budget"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND WHILE PREPARING THE BASELINE EV RUN (WS-393, 2026-08-05). This is the SECOND of the two
+  irreproducibility sources in the depth-2/3 subsystem. The first — six unseeded `stratifiedSample`
+  calls plus `miniRolloutEquity`'s raw `Math.random` — was fixed in WS-393 and is closed. This one
+  was deliberately left open because fixing it properly is a real change to how the engine decides
+  when to stop, not a threading exercise, and it should not have delayed a run that was ready.
+
+  THE MECHANISM. `gameTreeEvaluator.js:906-907`:
+
+      const isTimeBudgetExceeded = () => timeBudgetMs <= 0
+        || Date.now() - refinementStart > timeBudgetMs;
+
+  Every refinement stage is gated on that, and `claimStageBudget()` (`:930-936`) hands each stage
+  `Math.min(remaining, timeBudgetMs * MAX_STAGE_SHARE)`. So WHICH parts of the game tree hero gets
+  to see is decided by how fast the machine is and what else is running on it. The same decision,
+  evaluated twice, can return different advice with no code change and no randomness involved.
+
+  IT IS NOT HYPOTHETICAL AND IT IS NOT RARE. Measured on this machine during WS-393's smoke runs,
+  at the production `refinementBudgetMs = 2000`, EVERY evaluation observed reported:
+
+      {"phase":"refined","totalMs":3379,"budgetMs":2000,"preRefinementMs":394,
+       "overBudget":true,
+       "budgetSkipped":["raiseResponseDepth2","checkRaiseDepth2","depth3Barrel"],
+       "ranStages":["checkCheckDepth2","betCallDepth2","raiseResponseDepth2"],
+       "noCandidate":["callDepth2"]}
+
+  Three of six stages dropped for time, and the budget blown by 69% anyway (a stage that starts
+  inside its budget is not interruptible at arbitrary granularity). `depth3Barrel` — the stage that
+  plans hero's BARRELS — is dropped every time.
+
+  WHY THIS IS THE EXPENSIVE KIND OF DEFECT. It is not that the answer is noisy; it is that the
+  answer is a function of an input nobody records as an input. It makes every A/B unreadable: an
+  advice flip caused by the founder having a browser open is indistinguishable from one caused by a
+  code change. It also means the phone and the desktop are running DIFFERENT ENGINES, not the same
+  engine at different speeds — which is already recorded in memory as
+  `advice_depth_tracks_machine_load`.
+
+  THE SHAPE OF THE FIX. Replace the millisecond budget with a deterministic work budget: a count of
+  nodes, stages, or sampled runouts. The stage functions already accept `(startTime, timeBudgetMs)`
+  and bail mid-loop against them, so the plumbing exists; what changes is what the counter counts.
+  Two things must be preserved and are easy to lose:
+    - `MAX_STAGE_SHARE` exists because a single deadline let the FIRST stage take 82% of the budget
+      and starve the barrel-planning stage that came second. A work budget needs the same cap.
+    - `refinementBudgetMs: 0` must keep meaning "refine nothing", checked explicitly rather than
+      falling out of the arithmetic — the regression harness freezes `Date.now`, where `0 - 0 > 0`
+      is false.
+
+  THE LATENCY QUESTION IS REAL AND MUST BE ANSWERED, NOT ASSUMED AWAY. A wall clock exists because
+  the founder is at a live table on a mid-range Android phone and cannot wait. A work budget that
+  takes 9 seconds on the A22 is not an improvement. The likely resolution is a work budget CALIBRATED
+  per device — measure the machine once, convert to a node count, and record the node count on the
+  result — so the number is deterministic given the recorded budget, and the budget is a stated
+  input rather than an ambient one. That is the design decision this ticket carries.
+accept_criteria: |
+  - THE SAME EVALUATION UNDER ARTIFICIAL LOAD RETURNS BIT-IDENTICAL ADVICE. The test must FAIL
+    against HEAD (WS-309 rule): run one `evaluateGameTree` call normally and again with a busy-loop
+    stealing CPU, and assert `recommendations` are identical. Today that test fails; that is the
+    point of writing it.
+  - `treeMetadata.latency.ranStages` AND `budgetSkipped` ARE A FUNCTION OF THE INPUTS ONLY. Same
+    node, same declared budget, same stages — regardless of machine speed. Assert it.
+  - THE DECLARED BUDGET IS STAMPED ON THE RESULT CARD IN ITS NEW UNITS. `REFINEMENT_BUDGET_MS_*` is
+    already stamped by `run-depth-ablation.mjs` and `run-hero-ev.mjs`; whatever replaces
+    milliseconds must be stamped the same way, or a card names a configuration nobody can rebuild.
+  - LATENCY ON THE FOUNDER'S ACTUAL DEVICE IS MEASURED BEFORE AND AFTER, AND REPORTED. Not
+    estimated. If the fix makes the A22 slower at the same depth, say by how much and let the
+    founder decide the trade; do not silently pick a smaller budget to hide it.
+  - `MAX_STAGE_SHARE`'s GUARANTEE SURVIVES. Assert that no single stage can consume the whole
+    budget, in the new units, with the measurement WS-334 used (first stage took 82%, second 5.7%,
+    remaining three starved).
+  - RE-RUN THE BASELINE AND REPORT THE DELTA. Once this lands, the WS-393 baseline was measured on
+    an engine whose depth was machine-dependent. Re-running on the same Deal Book and differencing
+    per decision says what the clock was worth — which is a number this repo does not have and
+    cannot get any other way.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "scripts/backtest/replicationStamp.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND LOAD-BEARING — WHAT REPLACES THE MILLISECOND. A raw node count is deterministic but
+    device-blind: the same count is 200ms on the desktop and 4s on the A22, and the A22 is where the
+    founder actually is. A per-device calibration (measure once, convert to nodes, record the node
+    count) keeps determinism AND respects the phone, at the cost of a calibration step and a device
+    profile that has to live somewhere. A third option is to keep the clock for LIVE use and use a
+    work budget for MEASUREMENT only — which is honest, cheap, and means the thing measured is not
+    quite the thing shipped. The founder should pick, because the third option trades away exactly
+    the property WS-393's baseline was run to establish.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:15:00Z"
+status_note: |
+  Premises verified by reading HEAD, not by trusting a prior audit:
+    - `gameTreeEvaluator.js:900-907` — `refinementStart = Date.now()` and `isTimeBudgetExceeded`.
+    - `:930-936` — `claimStageBudget()` and `MAX_STAGE_SHARE = 0.4`.
+    - `:1314-1350` — `treeMetadata.latency` already carries `overBudget`, `budgetSkipped`,
+      `ranStages`, `errored`, `noCandidate`, `incomplete`. The ledger needed to diagnose this is
+      already there; what is missing is determinism, not observability.
+    - The `overBudget: true` / 3-stages-dropped reading above is from a live WS-393 smoke run on
+      this machine at `--refinement-ms 2000`, captured in the decision-level sidecar, not inferred.
+
+  DELIBERATELY NOT BLOCKING THE WS-393 BASELINE RUN. The founder's ruling on 2026-08-05 is that
+  depth-2 is the correct configuration and its shortcomings are ours to fix rather than to route
+  around — so the baseline runs WITH depth-2 and WITH this defect, and the runbook
+  (`docs/runbooks/baseline-ev-run.md` §9) states plainly that the achieved depth is
+  machine-dependent. The per-decision record WS-393 added carries `depthReached` and the full stage
+  ledger for every evaluation, so the baseline can diagnose its own variance from this cause
+  afterwards rather than needing another night to discover it.

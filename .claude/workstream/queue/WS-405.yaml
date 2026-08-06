@@ -1,0 +1,179 @@
+id: "WS-405"
+title: "Check-raise is the one capability the founder named that the scoring vocabulary cannot price at all — mapping it to CHECK is correct, and the consequence is that a check-raise flip never moves the argmax, never moves the IPS weight, and contributes exactly zero to every paired delta ever computed"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+problem_class: "Scoring/Classification Bias"
+finding_id: ""
+description: |
+  THIS IS A DESIGN ITEM. It states the problem and the options with their costs. It does not pick,
+  because the choice changes what a scored decision MEANS, and that is the founder's to settle.
+
+  THE MAPPING, AND WHY IT IS RIGHT. `heroPolicy.mjs:85` maps `check-raise` to
+  `PRIMITIVE_ACTIONS.CHECK`. The comment above it (`:79-81`) gives the correct reason, verbatim:
+  "`check-raise` is the one that matters: it is a plan, not an immediate action, and the action
+  taken right now is a check. Recording it as a raise would compare our advice against an action the
+  hand history could not contain." That is not a defect and this ticket does not propose reversing
+  it. A hand history records what happened at this decision node, and what happens at this node is a
+  check.
+
+  THE CONSEQUENCE, WHICH IS A DEFECT. The estimator's weight is
+  `pi_ours(observed) / pi_pool(observed)` (`ipsEstimator.mjs:76-94`). If the engine's top action
+  flips from `check` to `check-raise`, `toPrimitive` collapses both to `CHECK`, `pi_ours(observed)`
+  is unchanged, the weight is unchanged, the paired delta contribution is exactly zero, and the
+  divergence census records no flip. So:
+    - `report.divergence.topActionFlips` (40 of 260, with `flipPairs` bet->check 30, raise->call 2,
+      raise->fold 6, fold->call 1, call->fold 1) CANNOT contain a check-raise flip by construction.
+    - `pairedDelta`'s `discordantN` (95 of 260) CANNOT count one either, since `wA` and `wB` are
+      computed from the collapsed distribution.
+    - The `checkRaiseDepth2` stage exists (`gameTreeEvaluator.js:1679`), is implemented
+      (`computeRaiseResponseDepth2EV`, `gameTreeDepth2.js:873`), and — measured on HEAD — runs on a
+      flop check node at 30000 ms with `weightConsumed = 1`. It is fully functional and completely
+      unpriceable.
+
+  THE ASYMMETRY THAT MAKES THIS URGENT RATHER THAN TIDY. Everything the engine does to make hero
+  MORE aggressive at a check node is invisible to the instrument, while everything it does to make
+  hero LESS aggressive shows up as a `bet -> check` flip and is scored. 30 of the 40 measured flips
+  are `bet -> check`. We are measuring the passivity-increasing half of depth-2's behaviour and
+  blind to the aggression-increasing half. Any conclusion of the form "depth-2 makes hero more
+  passive" is therefore partly an artefact of the vocabulary, and that conclusion has already been
+  drawn once (the WS-378 34-of-34 passive bias, since fixed for a different reason).
+
+  THE OPTIONS, WITH THEIR COSTS.
+
+  A. PLAN-CONDITIONED PRIMITIVES. Keep `toPrimitive` mapping to CHECK for the propensity ratio, but
+     carry the PLAN as a second field on the decision record, and compute a second delta over
+     (primitive, plan) pairs. Cost: the second delta is not an IPS estimate of anything, because the
+     pool has no observed plan to divide by — it is a divergence statistic, not a value estimate. It
+     answers "how often does depth-2 change the plan" and never "what is that worth".
+
+  B. SEQUENCE-LEVEL SCORING. Score the check-raise against what actually happened NEXT in the hand:
+     if hero checked and then raised, the plan was executed and the outcome is attributable. Cost:
+     this leaves the one-decision horizon, which is the horizon the entire estimator is built on and
+     which `FAULT-horizon-bias` exists to police. It also conditions on villain having bet, which is
+     a selection the pool policy does not model. Highest fidelity, largest blast radius.
+
+  C. TREAT THE CHECK-RAISE PLAN AS A MIXED CHECK. Represent `check-raise` as CHECK with a recorded
+     continuation intent, and price it only through its effect on the check candidate's EV — which
+     is already what `gameTreeEvaluator` does internally, since `checkRaiseDepth2` refines a
+     candidate whose primitive is a check. Cost: zero instrument change, and it concedes that the
+     capability's value is measurable only as part of the check's value, never on its own. This is
+     the honest minimum and should be priced first, because it may be enough.
+
+  D. A THIRD ARM. Ablate `enableCheckRaiseDepth2` (WS-404) and difference. The flip itself remains
+     invisible, but the EV consequence of the whole stage is not: turning the stage off changes the
+     CHECK candidate's EV, which changes the argmax against BET, which IS scored. Cost: it measures
+     the stage, not the action, and it confounds with budget reallocation (`claimStageBudget`).
+     Cheapest real number available and available as soon as WS-404 lands.
+
+  WHAT IS NOT AN OPTION. Mapping `check-raise` to RAISE. It compares advice against an action the
+  hand history cannot contain, and it would silently inflate the raise share that WS-402 exists to
+  reduce.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE STANDING EV-DELTA ACCEPT CRITERION, AND THE REASON IS THE TICKET'S
+    SUBJECT: an EV delta on check-raise is precisely the thing that cannot currently be computed.
+    Requiring one as an entry condition would be circular. What it must demonstrate instead is
+    stated in the next three criteria.
+  - THE ZERO IS DEMONSTRATED, NOT ASSERTED. Before any design is chosen, produce a decision on which
+    the engine's top action is `check-raise` in one arm and `check` in the other, and show that its
+    paired-delta contribution and its weight difference are both exactly zero, and that it appears
+    in neither `topActionFlips` nor `discordantN`. Per the WS-309 rule this is the failing
+    demonstration that justifies the ticket, and it must exist before the fix.
+  - THE FOUNDER CHOOSES AMONG A/B/C/D, AND THE CHOICE IS RECORDED WITH ITS COST. Whichever is
+    picked, the ticket writes down what a scored decision now means, because every option except D
+    changes it. If the answer is C — the capability is priced only through the check candidate — say
+    so explicitly in the estimand vocabulary rather than leaving it implicit, because "we chose not
+    to measure this separately" and "we forgot this was unmeasurable" look identical in six months.
+  - OPTION D IS RUN REGARDLESS, AS THE FLOOR. Once WS-404 lands, ablate `enableCheckRaiseDepth2` on
+    the identical 260-decision set and report the paired delta with its interval and its ESS.
+    Direction stated in advance: POSITIVE, i.e. the stage should be worth something. A null is a
+    legitimate and reportable outcome at this ESS; a clearly negative delta would mean the
+    check-raise refinement is actively costing EV, which would be a domain finding and would want
+    its own ticket rather than closing this one.
+  - `docs/standard-of-record/VOCABULARY.md` GAINS THE PLAN-VS-PRIMITIVE DISTINCTION, WHATEVER IS
+    CHOSEN. The terms already exist for surfaces, cards, and atoms; there is no term for "an advice
+    whose immediate primitive under-describes it". Per the repo rule, do not invent a name in code
+    before the vocabulary has one.
+effort: "M"
+files_involved:
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/decisionRecord.mjs"
+  - "docs/standard-of-record/VOCABULARY.md"
+blocked_by:
+  - "WS-404"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE CENTRAL ONE — WHICH OF A / B / C / D, AND DOES THE ONE-DECISION HORIZON HOLD? B is
+    the only option that prices the check-raise as an action rather than as a component of a check,
+    and it is the only one that abandons the one-decision horizon the whole estimator rests on.
+    `FAULT-horizon-bias` is a live register entry about exactly that boundary. The founder named
+    check-raise specifically as a capability he wants priced, so "it cannot be priced" is not an
+    acceptable resting place — but "it is priced as part of the check, and here is what that
+    excludes" might be. RECOMMENDATION: run D immediately as the floor, adopt C as the standing
+    vocabulary, and treat B as a separate programme with its own charter rather than a change made
+    inside this ticket. Do not adopt A: a divergence statistic that looks like an EV number beside
+    real EV numbers is the failure mode the Standard of Record exists to prevent.
+  - |
+    OPEN — HOW MANY OTHER ACTIONS HAVE THIS PROPERTY? `toPrimitive` (`heroPolicy.mjs:83-93`) maps
+    six engine actions onto five primitives, and `check-raise` is the only collapse. But the same
+    argument applies to any future candidate that is a PLAN rather than an immediate action — a
+    delayed barrel, a probe-then-fold line, a donk-and-fold. Deciding this case in isolation means
+    deciding it again each time. Worth settling as a rule about the vocabulary rather than as a
+    ruling about one action.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59).
+
+    - `heroPolicy.mjs:83-93` — `toPrimitive`, with `case 'check-raise': return PRIMITIVE_ACTIONS.CHECK;`
+      at `:85`; the justifying comment at `:78-82`, quoted verbatim in the description because it is
+      the reason this is a vocabulary problem and not a bug.
+    - `ipsEstimator.mjs:76-94` — `weightFor` divides `pi_ours(observedAction)` by
+      `pi_pool(observedAction)`, so a change confined to a collapsed pair cannot move the weight.
+    - `depthAblationReport.mjs:251-252` — `discordant` counts rows where `Math.abs(r.wA - r.wB) > 1e-12`,
+      i.e. it counts WEIGHT differences, which is why a collapsed flip cannot enter it.
+    - `out/depth-ablation.json` `report.divergence`, read directly: `n` 260, `topActionFlips` 40,
+      `flipPairs` = { bet->check 30, raise->call 2, raise->fold 6, fold->call 1, call->fold 1 } —
+      no pair involving check-raise, as the mechanism predicts. `report.delta.discordantN` 95.
+    - `gameTreeEvaluator.js:1679` — the `checkRaiseDepth2` gate; `gameTreeDepth2.js:873` —
+      `computeRaiseResponseDepth2EV`; `heroActionBuilder.js:257` — the `check-raise` candidate is
+      built, unconditionally of depth.
+    - MEASURED ON HEAD, not inferred: a temporary probe (created, run, deleted) on a full-range OOP
+      flop check node showed `checkRaiseDepth2` in `ranStages` with `weightConsumed = 1` at a 30000 ms
+      budget, and `blockedBy: ['budget']` at 2000 and 8000 ms. The stage works; it is only ever
+      dropped for time, and when it runs its effect is invisible to the scorer.
+
+  TWO FALSIFIED HYPOTHESES RECORDED SO A FUTURE SESSION DOES NOT RE-DERIVE THEM. Depth-1 does not
+  lack the check-raise action — it is built at `heroActionBuilder.js:257` and fully valued in both
+  arms, because the candidate set is constructed at `gameTreeEvaluator.js:865`, 34 lines before
+  `refinementBudgetMs` is first read at `:899`. And depth-1 does not overfold; it under-folds by
+  48.8 points (see WS-402). Every gap between the arms is VALUATION, never GENERATION.
+
+  PROGRAM-CAP HAZARD, RECORDED BECAUSE IT WILL SUPPRESS THIS ITEM. `methodology-integrity` declares
+  `max_open_items: 3` with `priority_floor: 18` (`prog-methodology-integrity.yaml:200-201`) and was
+  already at 11 open items before this cluster was filed; adding this item and WS-406 takes it to 13,
+  a 4.33x breach. Per the standing behaviour a program over its cap has its whole backlog floored to
+  `priority_floor`, so this item's P1 score of 26.0 will be read as 18 by `/next` and it will not
+  compose. That is a pre-existing condition, not one this ticket created, and the fix is a cap
+  decision rather than a re-filing — this item's subject is the SCORING vocabulary, not poker domain
+  correctness, and moving it to `domain-correctness` (60-item cap, not breached) to dodge the floor
+  would put it under a program whose problem classes do not describe it. Flagged for the founder.

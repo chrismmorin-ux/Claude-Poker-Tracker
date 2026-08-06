@@ -1,0 +1,193 @@
+id: "WS-422"
+title: "Context bundles ship advisory with two bundles and eleven checks — the withholding rule is a declaration nobody can enforce at read time, and findings carry no bundle stamp, so a discovery run still cannot be told from a recalled one"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+problem_class: "Post-Hoc Fitting & Flexibility"
+finding_id: ""
+context_bundle: "math-measurement"
+lens: "estimation-theorist"
+description: |
+  WHAT SHIPPED, AND WHAT IT DOES NOT YET DO. `docs/context-bundles.md` designs scoped context
+  bundles with per-task lens assignment; `kit/scripts/cwos-bundle-validate.js` enforces eleven
+  structural checks, wired into `cwos-reconcile.js` Phase 2c2 as warnings; two bundles exist at
+  `.claude/context/bundles/`. That much runs. This ticket is the residual, and the residual is
+  where the mechanism's authority currently exceeds its reach.
+
+  THE PREMISE IT IS BUILT ON. Context is a prior on the output distribution, not reference
+  material — repeated vocabulary raises its own likelihood of reuse, so WHICH context a task loads
+  determines what it can notice. Two facts from 2026-08-05 made that operational rather than
+  theoretical. A six-lens roundtable over one repo with one brief found materially different
+  defects per lens (the estimation lens: a detector firing ~62% under the null; the game-theorist:
+  the live policy constant in the opponent, so no exploit is definable against it; the
+  information-theorist: a credible interval on the wire with no renderer — NONE of the others found
+  any of those). Every brief was hand-written by the coordinator, so the result is unreproducible:
+  nobody can say whether the lens or the brief did the work. Then the cross-critic showed the
+  headline was partly INHERITED — already recorded at file:line in auto-memory loaded at every
+  session start. The lens reconstructed something it had been told and the run reported it as a
+  discovery.
+
+  DEFECT 1 — THE WITHHOLDING RULE IS UNENFORCEABLE AT READ TIME, AND THE DESIGN SAYS SO.
+  `mode: discovery` requires at least one exclude with `reason: states-the-conclusion`, and
+  `math-blindspot.yaml` withholds `MEASUREMENT_OVERSIGHTS.md` on exactly that ground. But nothing
+  prevents an agent opening an excluded file — tools are not scoped per task, and auto-memory is
+  injected by the HARNESS BEFORE ANY BUNDLE IS READ. So `excludes` is a declaration and an audit
+  trail, not a barrier (`docs/context-bundles.md` §4.3). That is stated honestly rather than
+  papered over, and it is the right call — claiming enforcement would be the same category of error
+  as a prose matcher claiming to measure structure. It is still the gap that matters most.
+
+  DEFECT 2 — FINDINGS CARRY NO BUNDLE STAMP, WHICH IS WHAT WOULD GIVE §4 TEETH. A finding YAML has
+  no `context_bundle` field. Without it there is no post-hoc check either: a reviewer cannot ask
+  whether a discovery finding cited a withheld file, because nothing records which bundle the run
+  used. This is the increment that converts the withholding rule from a stated intention into
+  something checkable, and it is cheap — `validateFindingProblemClass` already reads every finding
+  from disk and could compare a finding's cited paths against its bundle's `excludes`.
+
+  DEFECT 3 — FOUR OPEN ITEMS ARE UNSCOPED, WHICH THE VALIDATOR FOUND ON ITS FIRST RUN.
+  WS-405 ("Scoring/Classification Bias"), WS-406 ("Methodology Drift"), WS-416 ("Sample Size &
+  Statistical Validity"), WS-417 ("Cross-Method Consistency") each carry a problem_class a bundle
+  claims and declare no `context_bundle`. WS-405 is the one to note: `prog-methodology-integrity.yaml`
+  records it as "a P1 the founder had specifically asked for, which could not compose because its
+  own program was over cap." It would have run against whatever the session happened to load.
+
+  DEFECT 4 — THE COVERAGE IS TWO BUNDLES WIDE. Only mathematics/measurement is scoped, because that
+  is what the founder named. Sidebar, persistence, and design work are obvious candidates and none
+  is scoped, deliberately: a bundle whose curator has not read its contents is a manifest of the
+  monolith with extra steps. But two bundles cannot demonstrate that the mechanism SCALES, and the
+  size ceiling (40,000 bytes, §5) has not yet been tested against a subject that genuinely resists
+  it.
+
+  WHAT WAS VERIFIED AND WHAT WAS CORRECTED. The ten-entry payload at
+  `.claude/context/MEASUREMENT_OVERSIGHTS.md` was checked against HEAD by reading code, not by
+  trusting the brief. FOUR OF TEN WERE OVERSTATED AS PUT, each in the same direction — rounder and
+  stronger than the evidence: a derived 0.375 reported as "0.40" (the 0.40 is the ASSERTED side at
+  `unexploitableFloor.test.js:254-255`, lifted from a comment); a 3x regularization
+  (`OPEN_RATE_PRIOR` pseudocount 30 vs `PRIOR_WEIGHT` 10) reported as "costs several times"; a
+  one-sided-informative bracket `[0.270, 1.000]` (`ADR-010:95-104`) reported as "the sign itself is
+  unidentified"; and 0.45 sitting ~11pp off a measured central value of 0.5616 within a support of
+  0.01-0.82 reported as "outside the measured support". Two carried wrong paths
+  (`decisionAccumulator.js` is under `exploitEngine/`; `traitDetector.js` is under `rangeEngine/`,
+  not `exploitEngine/`). None was fabricated — every one pointed at a real defect, which is what
+  makes the pattern dangerous. That is recorded as MO-11 in the payload itself.
+accept_criteria: |
+  - FINDINGS CARRY `context_bundle` AND THE POST-HOC CHECK EXISTS. A finding produced under a
+    discovery bundle must record which bundle it used, and a check must compare the finding's cited
+    file paths against that bundle's `excludes`. A discovery finding citing a withheld file is the
+    inherited-convergence failure caught in the act — WARNING, not violation, because the honest
+    case (the lens re-derived it independently and cites it as corroboration) is real and must be
+    able to persist. Per §4.2 an independent re-derivation is a GOOD outcome; the check
+    distinguishes derived from recalled, it does not forbid overlap.
+  - THE FOUR UNSCOPED ITEMS ARE SCOPED OR EXPLICITLY EXEMPTED, WITH THE REASON RECORDED IN THE
+    ITEM. WS-405, WS-406, WS-416, WS-417. "Exempt" is a legitimate outcome — a bundle can be the
+    wrong scope for a specific task — but it must be a written decision, not silence. After this,
+    `unbundled-task` should report zero, and that zero must be reachable rather than aspirational.
+  - THE READ-TIME LIMIT IS EITHER CLOSED OR RECORDED AS IRREDUCIBLE, IN DATA NOT PROSE. Today §4.3
+    is a paragraph. Following the WS-385 pattern: an irreducible constraint should be
+    distinguishable from an unaddressed one BY A READER OF THE DATA. If no harness mechanism can
+    scope tool access per task, that fact belongs in the bundle schema as a field, not in a design
+    doc's prose — the same argument that says a diagnostic which only logs is a comment with extra
+    steps.
+  - AT LEAST ONE BUNDLE OUTSIDE MATHEMATICS, CURATED BY SOMEONE WHO READ ITS CONTENTS. The test is
+    not that a third YAML file exists; it is whether the 40,000-byte ceiling survives contact with a
+    subject that resists it, and what the curator did when it did not. If the answer is "split it",
+    record what the second subject turned out to be — per §5 that naming is the point of the
+    ceiling.
+  - A REGRESSION TEST FOR THE VALIDATOR ITSELF, PINNING THE NEGATIVE CASES. All eight negative cases
+    were exercised manually against a throwaway probe bundle and each fired; none of that is pinned.
+    A validator whose checks are verified by hand once has the same standing as a detector verified
+    against a fixture its producer cannot emit — which is MO-7, live in this repo at
+    `LiveAdviceBar.jsx:68-87`. Do not ship the mechanism with the defect it catalogues.
+  - THE CEILING IS RE-DERIVED OR DEFENDED, NOT INHERITED. 40,000 bytes was anchored to the ~486KB
+    mandated session load and POKER_THEORY.md's 211KB. If `docs/context-architecture.md`'s
+    heavy/light split lands, the denominator moves and the ceiling should be re-argued against the
+    new numbers rather than carried forward because it is already written down.
+effort: "M"
+files_involved:
+  - "kit/scripts/cwos-bundle-validate.js"
+  - "kit/scripts/cwos-reconcile.js"
+  - ".claude/context/bundles/"
+  - ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+  - "docs/context-bundles.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE CENTRAL ONE — SHOULD A DISCOVERY RUN'S TOOL ACCESS ACTUALLY BE SCOPED, OR IS THE
+    AUDIT TRAIL THE RIGHT CEILING? Enforcing `excludes` at read time would need per-task tool
+    scoping the harness does not offer, and even then auto-memory is injected before any bundle is
+    read. The options are: (a) accept the audit trail and invest in the post-hoc check, which is
+    cheap and honest but detects only what a finding CITES; (b) pursue real scoping, which is
+    expensive, partly outside this repo's control, and would make a discovery run unable to read
+    files it might legitimately need; (c) treat the whole withholding rule as a norm and delete the
+    machinery. The founder should decide, because (a) and (c) look identical from outside and
+    differ entirely in whether anyone can later ask what a run was allowed to see.
+  - |
+    OPEN — WHETHER `unbundled-task` SHOULD STAY ON. It currently fires on four items and will fire
+    on every future item whose problem_class a bundle claims. That is the intended behaviour and it
+    is also a warning that grows with adoption: adding a bundle RETROACTIVELY makes existing items
+    non-compliant. Either that is the point (the bundle is asserting these items were unscoped all
+    along, which is true), or the check should only apply to items created after the bundle's
+    `version`. The first is more honest; the second keeps the warning list workable. Note the
+    check already skips closed items, so the list is bounded by open work rather than by history.
+source:
+  type: design
+  created_by: ai
+  finding_id: ""
+  run_id: "context-bundles-prototype-2026-08-05"
+created_at: "2026-08-05T00:00:00Z"
+status_note: |
+  Premises verified against HEAD (fe716f59) by reading code, not by trusting the brief that
+  requested this work. Where the brief was wrong, the correction is recorded rather than silently
+  applied — see MO-11 in `.claude/context/MEASUREMENT_OVERSIGHTS.md`.
+
+  VALIDATOR PRECEDENT COPIED: `cwos-reconcile.js:759` `validateFindingProblemClass()` — builds a
+  program's declared vocabulary from `problem_classes[].name`, checks findings against it, emits a
+  WARNING never a violation because an unclassifiable finding is a finding ABOUT THE PROGRAM and
+  that state must persist in the tree. `docs/context-bundles.md` §7.1 extends the reasoning: every
+  state this validator detects is one a healthy repo occupies legitimately for a while, and a
+  blocking check here would be routed around within a week — worse than no check, because it still
+  looks like coverage.
+
+  THE TWO PERSONA KINDS ARE STRUCTURALLY DISTINCT AND THE COUNT CONFIRMS IT. `.claude/agents/*.md`
+  holds 38 ANALYTICAL LENSES (who audits the code — estimation-theorist, game-theorist,
+  failure-engineer). `docs/design/personas/{core,situational}/` holds 40 PRODUCT PERSONAS (who a
+  surface is for — chris-live-player, mid-hand-chris). The field is named `lens:` rather than
+  `persona:` deliberately. The validator loads the product personas ONLY to detect the conflation,
+  never to resolve a lens: `persona-kind-confusion` fires when a bundle names a product persona as
+  a lens. Without it the failure is silent — a category error would read as a typo, and the curator
+  would fix the spelling.
+
+  RUN OUTPUT AT TIME OF FILING. `node kit/scripts/cwos-bundle-validate.js`: 2 bundles, ceiling
+  40,000 bytes, 4 findings (all `unbundled-task`: WS-405, WS-406, WS-416, WS-417). Five
+  `unpinned-include` findings were resolved by `--rehash` before filing. All 8 negative cases fired
+  correctly against a throwaway probe bundle (persona-kind-confusion, unresolved-lens,
+  missing-section, missing-include, ceiling-breach, bad-exclude-reason, no-withholding,
+  vocabulary-drift). `content-drift` confirmed by mutating a pinned file and re-running; it cleared
+  on revert. `node kit/scripts/cwos-reconcile.js --quiet`: exit 0, 0 violations, warnings 22 -> 27.
+
+  THAT DELTA IS +5, AND ONLY +4 OF IT IS THIS WORK — the distinction is recorded rather than
+  rounded, because rounding it would be MO-11 committed inside the ticket that catalogues MO-11.
+  The four are the `context-bundle [*] unbundled-task` warnings above. The fifth is
+  `queue: WS-423 has unknown status "reserved"`, a placeholder file written by a concurrently
+  running agent while this ran; it is not attributable here and will clear when that agent fills
+  its item in. No pre-existing warning changed text or disappeared.
+
+  COORDINATION. `docs/context-architecture.md` is being authored in parallel and owns the
+  poker-doctrine heavy/light tier; this owns task scoping and lens assignment. They compose through
+  one seam, stated in §6: bundles address doctrine by `path` + `section` HEADING, never by line
+  number, so a split may rename or re-tier freely and a broken pointer reports `missing-section`
+  rather than silently delivering less than it claims. Both shipped bundles point at
+  `POKER_THEORY.md § "7. First-Principles Decision Modeling"` — that heading is the assumption to
+  preserve or deliberately break.

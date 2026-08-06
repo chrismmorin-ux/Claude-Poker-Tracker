@@ -1,0 +1,80 @@
+id: "FIND-041"
+title: "The sizing-tell adjustment has two entry cliffs with divergent constants in two modules, and both multiply a finished estimate"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-domain-correctness-delta-2026-07-30"
+  date: "2026-07-30"
+description: |
+  RE-VERIFIED AT HEAD 2026-08-05 — STILL OPEN. Line numbers corrected: the run record cites
+  foldEquityCalculator.js:552-563 and gameTreeDepth2.js:210-220; at HEAD the two sites are
+  foldEquityCalculator.js:661-671 and gameTreeDepth2.js:279-295. Both constants are
+  unchanged.
+
+  TWO LAYERS OF ONE EVALUATION DISAGREE ABOUT WHETHER THE TELL EXISTS.
+  foldEquityCalculator.js:661-663 gates on `|corr| > 0.3 && n >= 8`; gameTreeDepth2.js:281-282
+  gates the same signal on `|corr| > 0.2 && samples.length >= 5`. A villain at r = 0.25 with
+  6 samples gets a depth-2 per-combo adjustment and no aggregate adjustment. Nothing records
+  why the two differ.
+
+  BOTH ENTRIES ARE CLIFFS ON A CONTINUOUS QUANTITY. r = 0.299 / n = 7 yields exactly zero;
+  r = 0.301 / n = 8 yields the full confidence-ramped effect. PREMISE REFINED AT HEAD: the
+  run record says "both are step functions", which is imprecise. The EFFECTS are continuous
+  inside their gates (`1 + corr * 0.06 * confidence` at :666; `corr * sizeDelta * 0.12` at
+  :286) — it is the ENTRY that is discontinuous. gameTreeDepth2.js:283 even comments
+  "Continuous: adjustment scales with both correlation strength and bet size deviation",
+  which is true of its effect and false of the gate two lines above it.
+
+  THE AGGREGATE SITE SCALES A POSTERIOR. foldEquityCalculator blends model and observed
+  estimates at :519-540 and then multiplies the RESULT at :667 (`estimate *= sizingMult`).
+  That is the "a label may shape a PRIOR, never scale a POSTERIOR" corollary in numeric
+  costume.
+
+  NOW A REAL SIGNAL, WHICH RAISES THE VALUE OF PRICING IT CONTINUOUSLY. FIND-038 (sizing-tell
+  circularity) was fixed in-window by WS-261, so the correlation being gated is now measured
+  against the actual shown hand rather than the model's own estimate.
+affected_files:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  One shared helper, one set of constants, effect scaled continuously by correlation
+  magnitude x sample confidence with no entry cliff. Fold the effect into the PRIOR for the
+  aggregate path rather than multiplying the blended estimate. The same shape of defect was
+  filed alongside this one and belongs in the same fix: gameTreeEvaluator.js:456-468 applies
+  two binary flag multipliers to river fold probability (`if (bt.isPaired) pFold *= 0.90`
+  and the flush-complete branch) under a comment that reads "continuous, not binary", while
+  boardTexture already exposes continuous scores.
+theory_citation: "POKER_THEORY §7 / exploitEngine/CLAUDE.md — 'DO NOT resolve context with a threshold'; the prior-vs-posterior corollary (a label may shape a PRIOR, never scale a POSTERIOR); §3.5 sizing-to-strength calibration"
+dedup_key: "delta-domain-correctness-sizing-tell-divergent-cliffs-two-modules"
+created_at: "2026-07-30"
+updated_at: "2026-08-05"
+promoted_to: ""
+status_note: |
+  FILED LATE 2026-08-05. Recorded in the 2026-07-30 delta run record
+  (prog-domain-correctness.yaml:402) and in the run's evidence file, never registered as a
+  findings/ file. Content extracted from
+  evidence/domain-correctness/run-domain-correctness-delta-2026-07-30/delta-2026-07-30.yaml:102-126
+  (and the unnumbered LOW at :149-162, which that record explicitly folds into this
+  finding's fix) and re-verified against HEAD before filing.
+
+  NOT PROMOTED, AND THE OVERLAP MATTERS. WS-395 (from FIND-050, 2026-08-05 blind-spot run)
+  re-derives the SAME aggregate gate at foldEquityCalculator.js:661-671, computes its ~47%
+  null fire rate, and requires it be re-thresholded or removed. It does NOT enumerate
+  gameTreeDepth2.js:279-295 — its files_involved list omits gameTreeDepth2.js entirely and
+  its text names only two gates (weaknessDetector's |r|>0.5 and foldEquityCalculator's
+  |r|>0.3). So closing WS-395 would leave a THIRD gate live on the depth-2 per-combo path
+  with a constant nobody has re-derived, which is precisely the mechanism WS-395's own
+  accept criteria warn about ("it must not be left as a computed-and-unread quantity that a
+  future reader wires up without re-deriving its null rate"). Linking this finding to WS-395
+  would record coverage that does not exist. The right move is to add the depth-2 gate to
+  WS-395's scope — until that happens this finding stays unpromoted.
+
+  PROBLEM CLASS. "Villain decision model fidelity" — the declared class for how villain fold
+  response is SHAPED (its examples include "Linear fold% scaling on bet size"), and the class
+  FIND-038 was filed under for the same sizing-tell machinery. Runner-up "First-principles
+  decision modeling" (a constant resolving context via a threshold).

@@ -1,0 +1,264 @@
+id: "WS-425"
+title: "The Declared surface has a validator, a hasher and a residual clause but no scorer: bridge Strategy Card to the hero-EV arm axis so an externally-published strategy produces a number in bb, and rule the abstention question before a reader assumes the flattering answer"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 26.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "strategy-of-record"
+problem_class: "Unenclosed strategy"
+finding_id: ""
+description: |
+  THE FOUNDER'S ASK: "we might glean from each absorbed strategy ran against our standard."
+  Published charts, c-bet frequencies, sizing rules and solver baselines, run against the SAME
+  decision set through the SAME estimator as the engine, each producing a number in the repo's
+  own currency. Not adopted as doctrine — encoded, scored, compared. Where a published rule
+  beats the engine on the engine's own metric, that is a MEASURED GAP IN THE ENGINE rather than
+  an argument about whose theory is better.
+
+  Design document: `docs/standard-of-record/DECLARED-ARM-SCORING-SPEC.md`. Prototype:
+  `scripts/backtest/strategyArm.mjs` + `run-strategy-arms.mjs`, run end to end 2026-08-05.
+
+  THE FINDING THAT REORGANISES THE WORK. The encoding format already exists and has never been
+  scored. A Strategy Card (`src/utils/standardOfRecord/strategyCard.js`) IS ADR-009's `Declared`
+  surface: `MATCHABLE_AXES` (`:76`), action distributions with bare actions as sugar
+  (`desugarAction`, `:99`), a REQUIRED residual clause (`:227-231`), a warrant per rule, a content
+  hash, and `evaluateCard` (`:358`) to execute it. It is validated on load — the loader throws,
+  not warns.
+
+  AND `evaluateCard` HAS NO CALLER ANYWHERE IN `scripts/backtest/`. Verified by grep. The Declared
+  surface can be authored, validated and hashed but never scored. That is the shipped-but-inert
+  pattern from the standing memory entry, in its purest form: a capability behind an interface no
+  measurement site calls. The gap between "a published strategy" and "a number in bb" was never a
+  missing format — it was one missing bridge function. This ticket does NOT define a new encoding.
+
+  WHICH HARNESS, AND THE ONE THAT LOOKS RIGHT AND IS NOT.
+    - `teachableArmsProbe.mjs` is a DEAD END for this. Its metric is `deltaLogVsUniform` (`:301`),
+      NATS not bb — POKER_THEORY 11.9's 56-57% figure is real, replicates on two sites, and is
+      range-prediction quality, not EV. Worse, its arms are the wrong KIND of object: every arm is
+      a villain range-NARROWING rule scored on P(villain's true holding), and it is
+      showdown-selected (`:167-170`). A published HERO strategy cannot be scored there without a
+      category error. What WOULD open it: published RANGE assertions encode as a replacement for
+      `buildBaselineRange` at `:180` and score as a villain-prior arm. Different question.
+    - The HERO-EV harness is the answer and it is available TODAY. `ipsEstimator.weightFor`
+      (`:76`) reads only `piOurs`/`piPool`/`observedAction`/`netBB`; `pairedDelta` (`:204`) reads
+      `piOursByArm[id]`; `buildDepthAblationReport` scores each arm by remapping `piOurs =
+      piOursByArm[armId]` into the same `estimateEdge` (`:422-423`). None of them knows where the
+      distribution came from. Scored on `edgeBB`, which is the founder's stated currency.
+
+  THE INTERFACE IS A SIBLING OF `heroPolicyAt`, NOT A CONFIGURATION OF IT — so this is NOT
+  blocked by WS-404 and WS-404 is NOT sufficient for it. WS-404 threads config INTO the engine so
+  an arm can vary its SEARCH; that is a real and different need (absorbing a publication as a
+  parameter change to our engine). A published strategy is a different FUNCTION.
+  `policyAt({ctx, hand, geo, responses}) -> {covered, actions} | {covered: false}`.
+
+  THE ONE AXIS THE CORPUS CANNOT SUPPLY, which is the substantive design content. Every matchable
+  axis is on a scored decision — `street`/`texture`/`posCategory`/`isAgg`/`isIP`/`facingAction`/
+  `contextAction` off ctx, `sprBand`/`closesAction`/`sBucket` off geometry — EXCEPT `handClass`
+  (`situationKey.js:101`). The corpus masks hole cards; a decision has a RANGE, not a hand. So a
+  card matching on `handClass` is evaluated ONCE PER SAMPLED COMBO and mixed by range weight, the
+  identical construction `heroPolicy` uses for engine advice, over the SAME `sampleCombos` sample.
+  TWO CONSEQUENCES: (1) the frequency-vs-decision problem DISSOLVES for any publication that names
+  hands — the range does the mixing and we supply no ordering; it is real only for publications
+  stating a frequency without saying which hands carry it, which is a property of the publication.
+  (2) The card path costs no engine call.
+
+  THE FREQUENCY PROBLEM, for bare frequencies. Three encodings, recorded as DATA on every arm:
+  MARGINAL (flat across the class; assumes randomisation independent of holding; THE ONLY ONE
+  that may be reported as "the published strategy" because it adds nothing), ORDERED (top X% by a
+  strength ordering; assumes an ordering the publication did not supply; HYBRID), TILT (tilt the
+  engine's own pi until the class marginal matches; assumes our hand-SELECTION is right and only
+  our FREQUENCY is wrong; HYBRID, and the most informative arm for improving the engine because
+  it varies one dimension). Ship all three per the "ship both, state the limit of each" doctrine;
+  the gap ORDERED-minus-MARGINAL is the value of OUR ordering and is its own finding.
+
+  THE ABSTENTION RULING, which is the part that can quietly lie. Every published strategy is
+  partial and the runner's existing rule keeps a decision only if EVERY arm produced a policy
+  (`heroEvRunner.mjs:262-270`) — so an abstaining arm silently shrinks the decision set for the
+  engine arm, the population control and the PBR ceiling alike.
+    FALLBACK.ENGINE (default) measures the MARGINAL CONTRIBUTION of the rule dropped into our
+      engine; diluted by coverage, so `coveredShare` must travel with it.
+    FALLBACK.POOL measures the rule ALONE, playing population poker elsewhere; edge is roughly
+      coverage x covered-edge. Right for ranking two publications, wrong for asking what one adds.
+    FALLBACK.REFUSE measures the rule on its own turf AND changes the set every other figure is
+      averaged over; REFUSED unless `allowSetChange: true`, never a headline.
+  THE DEFAULT COSTS NOTHING, which is why it can be the default: the covered-only figure REFUSE
+  is wanted for is already available from the paired delta without changing the set. Under
+  ENGINE fallback an uncovered decision produces an identical weight in both arms and carries no
+  information about the difference, and `pairedDelta` ALREADY counts exactly that as
+  `discordantN`/`discordantShare` (`depthAblationReport.mjs:252-253`). Observed live in the
+  prototype: `always-fold` covered 9/30 but discordantN was 7, because the engine folded too on
+  two of them — a distinction invisible from coverage alone.
+
+  DETERMINISM CONTROL, with its honest caveat. A strategy arm is pure — no engine call, no RNG, no
+  clock — so it is bit-reproducible while WS-411 remains open (`gameTreeEvaluator.js` gates
+  refinement on `Date.now()`, working-tree `:954`/`:961`/`:985`; the audit note's `:814,822` is
+  stale). BUT its EDGE depends on which decisions survived, and survival depends on the engine
+  arms. To measure the engine's run-to-run floor cleanly the strategy arm must run as the ONLY arm
+  (`fallback: 'pool'`, which needs no engine at all and which the runner permits). Alongside
+  engine arms it controls the ESTIMATOR AND DECISION SET, not the engine's nondeterminism.
+
+  WHAT THE PROTOTYPE ALREADY PROVES (30 decisions, 4 players, 2 of 1231 PS files, depth-1, 155s —
+  NOT quotable, both admissibility bars fail on clusters): a non-engine policy scores end to end
+  on `edgeBB` with a cluster-bootstrapped CI; the range-marginalization path works (the fixture
+  card DECLARES check .70/bet .30 and REALISES check .65/bet .35, the five points being its
+  hand-class rule firing on ~7% of range mass); abstention and both fallback rulings work in one
+  pass; arm ordering is sign-correct (engine +5.79, always-fold +4.08, uniform +1.47, card -1.04).
+
+  TWO DEFECTS THE PROTOTYPE SURFACED AND FIXED, both of which would have shipped silently:
+    - `realisedMarginal` pooled across facing classes produced `{check:.35, bet:.35, fold:.1,
+      call:.1, raise:.1}` — an average over two DIFFERENT response sets in which no cell is a
+      frequency anything can be checked against. Now keyed by `facingAction`. A "c-bet 65%" claim
+      lives in the `none` row and must be read against that row alone.
+    - `loadStrategyCardSync` computes NO content hash (only the async `loadStrategyCard` does,
+      `:197-198`). The first run stamped `strategyVersion: "schema1+nohash"` — a card whose
+      version cannot be identified. Rule order is semantic (first match wins), so a reordered card
+      is a different card and the hash is the only thing that says so.
+accept_criteria: |
+  - THE BRIDGE IS REAL AND THE PATHS DIVERGE. `evaluateCard` is called from the backtest harness
+    and a card arm's `piOursByArm` entry differs from the engine arm's on at least one decision in
+    a fixed set. Per the standing shipped-but-inert rule, a bridge that arrives and changes nothing
+    must be reported as such, not quietly accepted. (Prototype already satisfies this; the ticket
+    must not close on the prototype alone — see the last criterion.)
+  - THE DEFAULT PATH IS UNCHANGED. A `runHeroEv` call with no strategy arms produces byte-identical
+    output to HEAD on a fixed decision set. The arm reordering (engine arms first) must be a no-op
+    when there are no strategy arms, and the `geometry` block's move above the arm loop must not
+    change a single field on a decision row. The 98 tests in heroEv/heroEvPolicy/heroEvPiers/
+    heroEvAdmissibility/depthAblation are the floor, not the ceiling — add a test asserting the
+    no-strategy-arm path is identical.
+  - A STRATEGY ARM MAY NEVER BE PRIMARY, ENFORCED BY THROW. The primary arm supplies `perCombo`
+    (the PBR ceiling, `heroEvRunner.mjs:277-279`) and `evStats` (the optimizer's curse). Naming a
+    strategy arm primary would null both while every other figure kept working. Test the throw.
+  - THE ABSTENTION RULING IS RECORDED PER ARM AND `REFUSE` IS GATED. `config.strategyArms[].fallback`
+    is present on every run; `FALLBACK.REFUSE` throws without `allowSetChange: true`; and a run
+    using it carries a caveat saying its absolute edges may not be compared to any other run.
+  - THE DECLARED-VS-REALISED FREQUENCY CHECK IS DATA, KEYED BY FACING CLASS. `realisedMarginal`
+    is emitted per `facingAction`, never pooled. A publication that says 65% and realises 41% here
+    must be visible as a gap in the artifact rather than discovered later by someone re-deriving
+    it — the decision set is not the population the author had in mind, and that is a finding.
+  - THE CARD IS HASH-IDENTIFIED. Card arms load through the ASYNC `loadStrategyCard` so
+    `contentHash` reaches the arm's version string and the replication manifest. A run whose
+    `strategyVersion` contains `nohash` must fail rather than write an unidentifiable card.
+  - RESIDUAL SHARE IS REPORTED AND ACTUALLY EXERCISED. `residualMassShare` and `ruleFires` are on
+    every card arm. The prototype's residual never fired (no `facingAction: 'raise'` in a 30-
+    decision slice), so this criterion is NOT met by the prototype and requires a slice large
+    enough to hit it. An arm whose edge comes mostly from its residual has been credited for a
+    fold rule, not for the strategy it cites.
+  - THE FIRST REAL PUBLISHED CARD IS SCORED AND REPORTED, on an ADMISSIBLE run (>=30 player
+    clusters, ESS >= 20%), with `encoding`, `coveredShare`, `fallback`, `discordantN` and
+    `manifest.disclaimerRegisterVersion` all stamped. Do not close this ticket on the fixture.
+    The report must state that the corpus is online 2009 and the founder's game is live 9-handed
+    1/2-1/3, so the result is TRANSFERRED, not measured, for his game.
+  - THE EQUILIBRIUM GUARD IS EXTENDED. `refuseChartsAsEquilibrium` (`equilibriumPost.mjs:100`)
+    matches substrings against source identifiers and was written before a strategy arm could
+    produce a number at all — a solver-derived card's id would sail through. It must also refuse a
+    strategy-arm-derived value passed as `equilibrium`. See decision_flags[1] for why this is not
+    optional.
+effort: "M"
+files_involved:
+  - "scripts/backtest/strategyArm.mjs"
+  - "scripts/backtest/run-strategy-arms.mjs"
+  - "scripts/backtest/fixtures/plumbingProof.card.js"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/equilibriumPost.mjs"
+  - "src/utils/standardOfRecord/strategyCard.js"
+  - "docs/standard-of-record/DECLARED-ARM-SCORING-SPEC.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHICH ABSTENTION RULING IS THE HEADLINE FOR A PUBLISHED STRATEGY? The spec makes
+    FALLBACK.ENGINE the default because it preserves the pairing property and because the
+    covered-only figure comes free from `discordantN`. But ENGINE answers "what would this
+    publication ADD to our engine", while the founder's framing — "what might we glean from each
+    absorbed strategy" — is at least as much "how good is this strategy". That is POOL. The two
+    can differ in SIGN for a narrow, strong rule: it can add real value where it applies (positive
+    under ENGINE) while being a losing whole strategy (negative under POOL) because the pool
+    plays the other 90% of decisions.
+    RECOMMENDATION: report BOTH on every published card, with ENGINE as the headline because it
+    is the actionable one, and treat the SIGN DISAGREEMENT between them as a flagged finding
+    rather than a footnote. The founder should confirm which he wants quoted, because the two
+    answer different questions and whichever is quoted first becomes "the number".
+  - |
+    OPEN — DOES A SOLVER-DERIVED CARD GET TO BE THE EQUILIBRIUM POST? The spec says NO and the
+    argument is in DECLARED-ARM-SCORING-SPEC.md 8: a published solver output is defined over a
+    small, non-random, tree-specific subset (particular stack depths, particular bet trees, usually
+    two players), so a premium computed over it measures "money that exists because the pool
+    differs from one solver's tree" while reading as "money the pool's mistakes are worth". That is
+    FSA Finding F3's substitution, differing from the PREFLOP_CHARTS case only in being more
+    plausible and therefore MORE dangerous. Scored as an ordinary strategy arm with `coveredShare`
+    stamped it is a good number; promoted to EQUILIBRIUM_POST it is worse than having none.
+    RECOMMENDATION: refuse, and extend the guard so the refusal is mechanical rather than
+    remembered. This needs founder sign-off because it means the three-frame readout stays
+    one frame short even after solver material is absorbed, and that will be disappointing.
+  - |
+    OPEN — DOES PREFLOP GET ITS OWN TICKET NOW OR LATER? Preflop charts are the most obvious
+    published material to encode and a Strategy Card expresses one perfectly. But the hero-EV
+    decision set is postflop-only AT BOTH ENDS: `heroPolicyAt` returns EMPTY_RANGE below
+    `board.length < 3` (`heroPolicy.mjs:171`), and the mined behaviour policy has NO preflop cells
+    at all (inspected `out/behavior-policy.json`: only flop/turn/river), so pi_pool — the
+    denominator of every importance weight — does not exist there. Scoring a preflop chart requires
+    widening the decision set AND re-mining the field AND re-deriving the leakage split: cost L,
+    not M. RECOMMENDATION: separate ticket, filed now so the gap is visible, NOT folded into this
+    one. Folding a large re-mining job into a small bridge is how the bridge stops shipping.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-425-declared-arm-scoring-2026-08-05"
+created_at: "2026-08-05T23:30:00Z"
+status_note: |
+  PREMISES VERIFIED AGAINST THE WORKING TREE AT HEAD fe716f59. The working tree carries
+  substantial uncommitted work in `scripts/backtest/` and `src/utils/exploitEngine/`, so both line
+  numbers are given wherever they differ. Nothing here was committed.
+
+    - `strategyCard.js` — `MATCHABLE_AXES` `:76`; `desugarAction` `:99`; residual required
+      `:227-231`; `loadStrategyCard` (async, hashes) `:197`; `loadStrategyCardSync` (no hash)
+      `:208`; `ABSTAIN_REASONS` `:307`; `inDomain` DOMAIN_UNKNOWN `:316-320`; `evaluateCard` `:358`.
+    - NO CALLER of `evaluateCard` in `scripts/backtest/` — grep over the whole directory.
+    - `heroEvRunner.mjs` — the strip line at working-tree `:73` / HEAD `:66`, verbatim
+      `return depthArms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs }));`;
+      the every-arm-or-drop rule at `:262-270`; PBR consuming the primary arm's `perCombo`
+      `:277-279`.
+    - `heroPolicy.mjs` — `heroPolicyAt` working-tree `:146` / HEAD `:145`; the `board.length < 3`
+      gate `:171` / HEAD `:170`; the fixed `evaluateGameTree` literal `:263` / HEAD `:225`.
+    - `ipsEstimator.mjs` — `weightFor` `:76` reads exactly four fields; `estimateEdge` `:189`.
+    - `depthAblationReport.mjs` — `pairedDelta` `:204`, reads `piOursByArm` `:216-217`;
+      `discordantN`/`discordantShare` `:252-253`; per-arm remap into `estimateEdge` `:422-423`.
+    - `teachableArmsProbe.mjs` — `deltaLogVsUniform` `:301`; showdown selection `:167-170`;
+      `buildBaselineRange` as the substitutable prior `:180`; `scoreArms` `:341`.
+    - `equilibriumPost.mjs` — `EQUILIBRIUM_POST = null` `:54`; `FORBIDDEN_EQUILIBRIUM_SOURCES`
+      `:72`; `refuseChartsAsEquilibrium` throws `:100`.
+    - `situationKey.js` — `IDENTITY_AXES` `:59`; `HERO_AXIS` `:77`; `HAND_AXIS` `:101`;
+      `CARRIED_AXES` `:107`.
+    - `behaviorPolicy.mjs` — `RESPONSES_BY_FACING` `:39-43`.
+    - POKER_THEORY 11.9 at `:1870-1894` — the 57.3%/55.7% figures and the leakage control.
+    - `out/behavior-policy.json` — provenance `pool-train`, poolPct 50, 400 players, 12,191
+      observations; streets present: flop, turn, river ONLY.
+
+  ONE AUDIT-NOTE CORRECTION. The wall-clock refinement gate was passed to this work as
+  `gameTreeEvaluator.js:814,822`. At the working tree those lines are the `refinementBudgetMs`
+  parameter declaration and the function opening; the actual `Date.now()` gates are `:954`, `:961`
+  and `:985`. The substance of WS-411 is unaffected — the gating is real and still open — but the
+  cited lines were wrong and are corrected here rather than propagated.
+
+  RELATIONSHIP TO WS-404, STATED SO IT IS NOT RE-LITIGATED. WS-404 is NOT a blocker for this item
+  and this item does not subsume it. WS-404 threads configuration INTO `evaluateGameTree` so an arm
+  can vary the engine's SEARCH; that is what lets a publication be absorbed as a PARAMETER CHANGE
+  to our engine. This item adds a policy AXIS beside the engine entirely. Both are wanted, for
+  different questions, and neither's chokepoints are the other's. WS-404's own `blocked_by` is
+  deliberately not edited here.
+
+  CAP BREACH NOTED. `prog-strategy-of-record` is already over `max_open_items` (11 vs 10) with
+  `cap_breach.active: true`, which floors every item in the program to `priority_floor: 20` and
+  flattens ranking so `/next` cannot discriminate inside it. This item deepens that. The right
+  response is closing or deferring off-roadmap items in the program, not lowering this one's score.

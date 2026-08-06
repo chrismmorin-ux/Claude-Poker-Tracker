@@ -1,0 +1,196 @@
+id: "WS-391"
+title: "The only engine-independent check in the system builds its test-window range profile from a window that contains the test hands, and decays training and test by array position so every test hand is near-undecayed — the instrument that would catch a bias is itself leaking"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-047"
+description: |
+  FROM THE 2026-08-05 DOMAIN-CORRECTNESS BLIND-SPOT ROUNDTABLE — the leak is `backtest_contaminants`
+  entry 6; the decay-unit half is FIND-047's `third_defect`. Two defects in one file, filed together
+  because they interact and because both change the same walk-forward loop.
+
+  WHY THIS FILE MATTERS OUT OF PROPORTION TO ITS SIZE. `modelAudit.js` is the ONLY
+  engine-independent check in the system. Everything else that scores the model — the corpus
+  backtest, the predictionAudit readback — runs the engine and compares the engine to itself or to
+  outcomes the engine helped select. `modelAudit` walks forward over a player's hands, builds a model
+  from the past, and asks whether it predicted the future. If the aggregate EV figure is biased,
+  this is the instrument that would notice independently. It is leaking.
+
+  DEFECT 1 — COVARIATE LEAK AT `:119`. The walk-forward loop is correct in its labels and wrong in
+  its covariates. Read from HEAD:
+
+      :99   const trainingHands = sorted.slice(0, cp);
+      :100  const testHands     = sorted.slice(cp, cp + CHECKPOINT_INTERVAL);
+      ...
+      :105  const rangeProfile     = buildRangeProfile(playerId, trainingHands, userId);
+      :107  const decisionSummary  = accumulateDecisions(playerId, trainingHands, rangeProfile, userId);
+      ...
+      :119  const testRangeProfile = buildRangeProfile(playerId, sorted.slice(0, cp + CHECKPOINT_INTERVAL), userId);
+      :121  const testSummary      = accumulateDecisions(playerId, testHands, testRangeProfile, userId);
+
+  The training path (`:105`, `:107`) is clean — model built on hands up to `cp`. The test path
+  (`:119`) builds its range profile on hands up to `cp + CHECKPOINT_INTERVAL`, WHICH IS THE TRAINING
+  WINDOW PLUS THE TEST WINDOW. The test decisions at `:121` are then accumulated against a range
+  profile that has already seen the hands being tested. The LABELS are clean — `testHands` is the
+  correct out-of-sample slice — so this does not look like leakage in the obvious place. It is a
+  covariate leak: the features the test decisions are described by carry information from the test
+  period. In `feedback_backtest_split_and_leakage`'s terms, this is leakage-by-construction that a
+  by-player or by-time split cannot catch, because the split IS correct and the feature construction
+  is not.
+
+  The direction is the flattering one. A range profile informed by the test hands describes those
+  hands better than a genuinely prospective one would, so bucket assignments for the test decisions
+  are sharper than the model deserves, and the model's apparent accuracy is inflated. How much is
+  unknown — that is the measurement this ticket exists to produce.
+
+  DEFECT 2 — THE DECAY UNIT IS ARRAY POSITION, AND THE TWO WINDOWS ARE DIFFERENT LENGTHS.
+  `decisionAccumulator.js`:
+
+      :30    const DECAY_HALFLIFE = 50;  // hands — weight halves every 50 hands
+      :252   const totalHands = hands.length;
+      :403   const handAge = totalHands - 1 - handIdx;
+      :404   const recencyWeight = Math.pow(0.5, handAge / DECAY_HALFLIFE);
+
+  `handAge` is measured from the END OF WHATEVER ARRAY WAS PASSED IN. It is not a time, it is not a
+  count of hands the player has played — it is an index into the caller's slice. So the same decay
+  constant means different things depending on the caller's window size, and `modelAudit` passes two
+  windows of very different lengths into the same scoring: `:107` passes up to `cp` hands (which
+  grows with each checkpoint), `:121` passes a `CHECKPOINT_INTERVAL` slice.
+
+  The consequence is a systematic asymmetry. In a 10-hand test slice every hand has `handAge ≤ 9`, so
+  every test hand carries weight ≥ 0.5^(9/50) ≈ 0.88 — effectively undecayed. In a 200-hand training
+  window the oldest hands carry 0.5^(199/50) ≈ 0.06. Training evidence is aggressively discounted and
+  test evidence is not, in the same comparison, with neither side stating it. Whatever the model's
+  measured accuracy is, part of it is an artefact of the slice lengths the caller chose.
+
+  These two interact, which is why they are one ticket. Fixing the leak by building the test range
+  profile on `trainingHands` changes nothing about the decay asymmetry; fixing the decay to run on a
+  real clock changes nothing about the leak. Fixing either alone and re-running produces a number
+  whose movement cannot be attributed.
+
+  THE THIRD FACT, RECORDED FOR SCOPE RATHER THAN FIXED HERE. FIND-047 also finds that
+  `analysisPipeline.js:115` passes hands with no in-function chronological sort, so a decay measured
+  in array position depends on the caller having sorted. `modelAudit` DOES sort (`sorted`), so this
+  ticket's loop is safe on that axis — but any fix that makes the decay unit explicit should make the
+  ordering requirement explicit with it, because a positional decay on an unsorted array is not a
+  weaker signal, it is a meaningless one.
+accept_criteria: |
+  - THE HEADLINE IS AN EV DELTA ON THE SAME DECISION SET, PER THE FOUNDER'S 2026-08-05 RULE — AND
+    THIS ITEM'S CIRCULARITY IS NAMED RATHER THAN EXEMPTED. `modelAudit` scores PREDICTIONS, not EV
+    directly, so the honest chain is: fix the leak and the decay unit, re-run the audit on an
+    identical player set, and report (a) the change in calibration metrics as the diagnostic and
+    (b) the EV delta of any engine change that this corrected audit subsequently licenses or blocks.
+    (b) is the claim; (a) is the evidence for it. Where (b) is not yet available because no engine
+    change is in flight, say so — an unmeasured magnitude is an accept criterion, never a claim.
+  - THE LEAK IS MEASURED BEFORE IT IS FIXED, ON BOTH ARMS. Run the audit at HEAD and with `:119`
+    changed to `trainingHands`, on the same players and checkpoints, and report the difference in
+    Brier score, log-loss and calibration curve. The expected direction, stated so it can be wrong:
+    the corrected arm should score WORSE, because the leak was flattering. If it scores the same or
+    better, the leak was not load-bearing and that is a real and reportable finding — do not bury a
+    null. If it scores materially worse, then every historical claim resting on this audit was
+    resting on an inflated number, and that must be reported with the list of what depended on it.
+  - THE DECAY IS RE-EXPRESSED IN A UNIT THAT DOES NOT DEPEND ON THE CALLER'S SLICE. The constant is
+    documented as "hands — weight halves every 50 hands", so the honest unit is hands-since-the-most-
+    recent-hand-in-the-PLAYER'S history, or a real timestamp, not an index into whatever array was
+    passed. Whichever is chosen, the same decision must receive the same weight regardless of which
+    window a caller slices it into. That is the invariant, and it should be asserted by a test that
+    scores one decision inside two differently-sized windows and requires an identical weight.
+    Against HEAD that test fails, which is the point.
+  - THE TWO FIXES ARE MEASURED SEPARATELY AND THEN TOGETHER — THREE ARMS, NOT TWO. They interact, and
+    a single before/after comparison cannot attribute the movement. Report leak-only, decay-only, and
+    both, on the same decision set. This costs one extra run and buys the ability to say which defect
+    mattered.
+  - EVERY OTHER CALLER OF `accumulateDecisions` IS AUDITED FOR THE SAME SLICE-LENGTH SENSITIVITY, AND
+    THE FINDING IS RECORDED EVEN WHERE IT IS BENIGN. The recurring failure mode in this repo is a
+    ticket that fixes the call site it was written about and leaves the sibling call sites — three
+    documented occurrences, and `feedback_verify_ticket_premise_at_composition` records that closure
+    claims here are asserted rather than re-derived from the artefact. Name every caller, state the
+    window it passes, and say whether the asymmetry applies.
+  - THE ORDERING PRECONDITION IS MADE EXPLICIT WHEREVER THE DECAY IS COMPUTED. If the unit remains
+    positional anywhere, the function must require sorted input rather than assume it — per
+    `feedback_action_dispatch_legality`, prefer making the unsorted case unrepresentable to
+    validating it afterwards. `analysisPipeline.js:115` is the site to check first.
+  - NO SCOPE CREEP INTO FIND-047's DUAL-DENOMINATOR DEFECT. `decisionAccumulator.js:465-466`,
+    `:611-616` and `:622-628` — the estimate normalising by `weightedOccurrences` while
+    `bucket.confidence` reads the raw `occurrences` — is a real and separate defect from the same
+    finding. It is not filed here and must not be absorbed silently. If touching this file makes it
+    trivially fixable, file it and say so rather than folding it in; a fix that arrives inside another
+    ticket has no measurement of its own.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/analysisPipeline.js"
+  - "src/utils/exploitEngine/calibrationMetrics.js"
+blocked_by:
+  - "WS-389"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHY `:119` WAS WRITTEN THAT WAY, WHICH MUST BE ANSWERED BEFORE IT IS CHANGED. Building the
+    test range profile on the wider window is not an obvious typo; someone may have done it because a
+    range profile built on `trainingHands` alone is too sparse to bucket the test decisions at all,
+    in which case naively narrowing the window will make checkpoints silently `continue` at `:120`
+    (`if (!testRangeProfile) continue;`) and shrink the audit's effective sample without anyone
+    noticing. Check the checkpoint survival count in both arms and report it beside the metrics. If
+    the corrected arm loses a large fraction of its checkpoints, the fix is not "use `trainingHands`"
+    — it is a decision about the minimum training window, and it belongs to the founder because it
+    trades audit coverage against audit validity.
+  - |
+    OPEN — WHETHER A DECAY BELONGS IN AN AUDIT AT ALL. The decay exists so that a LIVE model tracks a
+    player who changes. An audit asking "did the model predict the next ten hands" is a different
+    question, and weighting its evidence by recency inside the test window has no obvious
+    justification — the test hands are all equally out-of-sample. It is arguable that the audit
+    should score with decay OFF on the test side and ON for the model it is auditing, which is a
+    third configuration nobody has considered. Cheap to run once the arms above exist, and it may
+    make the whole asymmetry question moot.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-047"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the roundtable record:
+    - `src/utils/exploitEngine/modelAudit.js:98-127` read in full. `:99` `trainingHands`,
+      `:100` `testHands`, `:105` the training `buildRangeProfile`, `:107` the training
+      `accumulateDecisions`, `:119` the test `buildRangeProfile` on
+      `sorted.slice(0, cp + CHECKPOINT_INTERVAL)`, `:120` the `continue` guard, `:121` the test
+      `accumulateDecisions(playerId, testHands, testRangeProfile, userId)`. The leak is exactly as
+      described and the labels really are clean.
+    - `src/utils/exploitEngine/decisionAccumulator.js:30` `DECAY_HALFLIFE = 50`; `:252`
+      `const totalHands = hands.length;`; `:403` `const handAge = totalHands - 1 - handIdx;`;
+      `:404` `recencyWeight = Math.pow(0.5, handAge / DECAY_HALFLIFE)`.
+
+  ONE CITATION CORRECTED, MINOR BUT WORTH NOT PROPAGATING. The roundtable record cites the decay as
+  "`decisionAccumulator.js:252,:402-404`". Line 252 is `const totalHands = hands.length;` — it is the
+  source of the array-length basis and is correctly part of the mechanism, but it does not contain
+  `handAge`. The `handAge` and `recencyWeight` lines are `:403` and `:404`, not `:402-404`. Cited
+  precisely above so a reader opening the file finds what the ticket says is there.
+
+  ONE FIGURE RE-DERIVED RATHER THAN QUOTED. The record says "every test hand carries weight ≥ 0.87".
+  Computed from the source: with `CHECKPOINT_INTERVAL` as the test slice length, the oldest test hand
+  has `handAge = CHECKPOINT_INTERVAL - 1`. At the interval implied by `:119`'s arithmetic and a
+  50-hand halflife, a 10-hand slice gives 0.5^(9/50) ≈ 0.883. The ≥0.87 figure is consistent with a
+  10-hand interval. `CHECKPOINT_INTERVAL`'s actual value was NOT read in this pass — the ticket's
+  argument does not depend on it (the asymmetry holds for any test window materially shorter than the
+  training window), but confirm it before quoting a specific weight in a commit message.
+
+  ON THE `blocked_by: WS-389`. `modelAudit` scores model predictions and does not itself call
+  `evaluateGameTree`, so its arms are less exposed to the wall-clock defect than the engine-side
+  items are. It is still blocked, because accept criterion 1's chain terminates in an EV delta
+  measured on the shared harness, and because running a leak measurement whose result will later have
+  to be re-run against a reproducible baseline is work done twice. If the founder wants this earlier,
+  the leak-versus-decay arms in criterion 4 are independently meaningful and could run first.

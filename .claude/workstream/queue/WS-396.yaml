@@ -1,0 +1,142 @@
+id: "WS-396"
+title: "The product's only uncertainty disclosure states an interval that excludes every dominant term — it discloses Monte Carlo sampling noise on a panel labelled 'confidence' and omits the bet-fraction assumption, four unscored estimators, and the online-2009 transfer"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 12.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-053"
+description: |
+  `src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx` is, as far as the
+  roundtable could find, the only place in the product that discloses uncertainty in a number to the
+  founder. What it discloses is Monte Carlo sampling noise:
+
+    `:70-72`  MC trials: {mcTrials}   (± rough CI = 1/√trials)
+
+  That interval is real and it is the SMALLEST term in the error budget. Every larger term is
+  omitted, and the panel is labelled with the word "confidence", so a reader who opens it comes away
+  with a narrow interval and the impression that it bounds the answer.
+
+  WHAT IS EXCLUDED, ROUGHLY IN ORDER OF SIZE:
+
+  (1) THE BET FRACTION IS AN ASSUMPTION AND THE PANEL NAMES THE METHOD WITHOUT NAMING IT. `:86`
+  renders the cascading fold probability with the annotation "— multiwayFoldPct, independent
+  multiplication per villain". The value comes from `drillModeEngine.js:808-815`, which calls
+  `multiwayFoldPct(0.55, villains.slice(1).map(...), street, texture, '*', 0.75)`. The trailing
+  `0.75` is the `betFraction` parameter (signature at `gameTreeEquity.js:1119`), passed positionally.
+  Fold probability is strongly size-dependent; naming the METHOD while silently fixing its most
+  consequential ARGUMENT is the disclosure equivalent of a comment stating a fact the code
+  contradicts.
+
+  (2) FOUR OF SIX ESTIMATORS HAVE NEVER BEEN SCORED AGAINST TRUTH.
+  `exploitEngine/__tests__/groundTruthCoverage.test.js` pins the census at 2 of 6
+  (`computeComboEquityDistribution`, `miniRolloutEquity`); the uncovered four are
+  `computeVillainEquityVsPerceived` and the three `approximate*RangeEquity` functions — which are
+  precisely the approximations feeding the aggregate. An estimator with an unmeasured error
+  contributes an unmeasured term, and an unmeasured term cannot be inside a stated interval.
+
+  (3) THE POPULATION TRANSFER. The priors behind these numbers are online-2009 (HandHQ); the
+  founder's game is live 9-handed $1/$2–$1/$3. That is rank 1 in the fault register's ranked list
+  with breadth 0.90, and `CLAUDE.md`'s standing rule is that any live claim anchored on that corpus
+  is TRANSFERRED, not measured, and must say so when reported. The panel does not say so.
+
+  THE VERDICT THE ROUNDTABLE REACHED, AND IT IS THE REASON THIS IS A DEFECT RATHER THAN AN
+  INCOMPLETENESS: a reader with NO disclosure knows he does not know. A reader with THIS disclosure
+  has a narrow interval on a panel labelled "confidence" and will size decisions to it. The
+  instrument is worse than its own absence.
+
+  THE FIX IS NOT REMOVAL, AND THIS IS BINDING. The standing rule
+  (`memory: feedback_never_delete_for_null_result`) forbids deleting an instrument for being wrong —
+  "does it make a difference" is unanswerable from an unverified state, and a deleted disclosure
+  cannot be corrected later. WIDEN IT: name what it excludes, in the panel's own idiom, and state
+  the bet fraction as a VALUE rather than leaving it inside a method name.
+
+  RANK. Low. It changes no recommendation and therefore does not touch the scored figure, which is
+  the founder's stated ranking axis. It is filed because it is small, because it is the only surface
+  of its kind, and because it is the one place where a corrected fault register entry could
+  automatically become visible to the founder.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE EV-DELTA CRITERION, AND THE EXEMPTION IS STATED RATHER THAN
+    SILENTLY TAKEN. It alters no recommendation — it is a disclosure panel. Its EV delta is
+    structurally ZERO and writing "EV delta > 0" would be dishonest. THE CRITERION INSTEAD IS
+    COVERAGE OF THE ERROR BUDGET: every term the panel omits today must be either stated in the
+    panel or listed in code as a known omission with the reason. The claim is about what the founder
+    can tell about a number's support — a decision-quality claim about the human, not the engine.
+  - AND IT MUST BE PROVEN TO CHANGE NO EV. Assert that the rendered advice, EV figures and drill
+    outcomes are byte-identical before and after. A disclosure change that moves a number is not a
+    disclosure change.
+  - THE BET FRACTION IS DISPLAYED AS A VALUE, AND IT IS DISPLAYED AS AN ASSUMPTION. Not "0.75"
+    buried in a method string — "assumes a 0.75-pot bet from each villain; fold probability is
+    strongly size-dependent and this figure is not conditioned on the sizing you are considering".
+    The value must be READ from the call rather than restated in the panel, so it cannot drift out
+    of sync with `drillModeEngine.js:814`.
+  - THE INTERVAL IS RE-LABELLED FOR WHAT IT BOUNDS. `± 1/√trials` bounds Monte Carlo sampling noise
+    and nothing else. It must say so in words a non-technical reader parses — "this ± covers
+    simulation noise only; it does not cover the assumptions below" — rather than sitting under a
+    heading that implies total uncertainty.
+  - THE UNSCORED-ESTIMATOR COUNT IS READ FROM THE CENSUS, NOT TRANSCRIBED. The ground-truth coverage
+    census is already asserted exactly by `groundTruthCoverage.test.js`. The panel should surface the
+    live count, so that raising coverage automatically improves the disclosure and dropping it
+    automatically degrades it. A hardcoded "4 of 6" is a number that will be wrong the week after it
+    ships.
+  - THE POPULATION TRANSFER IS NAMED, USING THE REGISTER'S OWN LANGUAGE. The disclaimer register
+    already has the sentence and the rank; the panel should cite the register entry and its version
+    rather than paraphrase. That is what makes a confirmed fault propagate to this surface instead of
+    requiring someone to remember this panel exists.
+  - NOTHING IS DELETED. The MC interval stays. If the widened panel is judged too long for the
+    surface, the resolution is progressive disclosure, not removal — and the decision must be
+    recorded, because the standing rule exists precisely because removal is the tempting answer here.
+effort: "S"
+files_involved:
+  - "src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx"
+  - "src/utils/postflopDrillContent/drillModeEngine.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER THIS PANEL BECOMES THE PATTERN OR STAYS A ONE-OFF. It is currently the only
+    uncertainty disclosure in the product, and the same three omitted terms apply to every EV figure
+    the app shows, not just to drills. Making it a reusable component with a declared error-budget
+    shape would let the same disclosure attach to the live advice bar and the Ignition side panel;
+    keeping it local keeps the change small. The founder should decide, because the first option
+    implies a visible change to surfaces he uses at the table.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-053"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `ConfidenceDisclosure.jsx:70-72` — the MC trials row with `(± rough CI = 1/√trials)`.
+    - `:82-88` — the `hasCFP` block rendering `cascadingFoldProbability`, with the method annotation
+      "— multiwayFoldPct, independent multiplication per villain" at `:86`. The bet fraction is
+      indeed absent from the rendered text.
+    - `gameTreeEquity.js:1119` — `multiwayFoldPct(primaryFoldPct, opponentModels, street, texture,
+      posCategory, betFraction = 0.75)`. The sixth positional argument is confirmed to be the bet
+      fraction.
+
+  CORRECTED — line drift on the `0.75`:
+    - The run record cites `drillModeEngine.js:813` for `multiwayFoldPct(..., 0.75)`. At HEAD the
+      call spans `:808-815` and the `0.75` literal is on `:814`; `:813` is the `'*'` posCategory
+      argument. The same `:813` reference appears in the run record's FIND-046 discussion of the
+      WS-283 escape route, so if that ticket is written it should use `:814` for the constant and
+      `:808` for the call.
+
+  NOT RE-DERIVED HERE: the style-midpoint range `[0.21, 0.42]` cited from `villainModelData.js:255,
+  :290`, and the fault-register rank-1 / breadth-0.90 figures. Both are quoted from the run record
+  and the register respectively; neither is load-bearing for the fix, which is to disclose rather
+  than to quantify.

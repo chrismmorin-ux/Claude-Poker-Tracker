@@ -1,0 +1,57 @@
+id: "FIND-049"
+title: "The confidence badge is ABSENT on live and DEGENERATE on Ignition"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  LIVE — absent: LiveAdviceBar.jsx:256 gates ConfidenceBadge behind useGameTree (:181), false
+  without the extension.
+
+  IGNITION — degenerate: the DATA tier needs source.includes('model'); villainDecisionModel.js emits
+  only 'prior' (:508, :524, :558), `shrinkage-L${n}` (:537) and `level-${n}` (:550). The EST tier
+  needs effectiveN < 5; every construction adds PSEUDOCOUNT = 10 (:36) — :325, :445, :739, :746 —
+  so effectiveN has a floor of 10. Every villain at every sample size renders PARTIAL.
+  actionClassifier.js:302 prints `(${effectiveN} obs)`, so ONE observation renders as "11 obs".
+  LiveAdviceBar.test.jsx:30, :66, :78 fixture source strings the producer cannot emit.
+
+  The honest twin: ignition-poker-tracker/shared/stats-engine.js:34 sampleQualityTier takes a RAW
+  count against the same 15/5 thresholds, returns all three tiers, and its palette comment says it
+  mirrors LiveAdviceBar. Identical thresholds, opposite behaviour, no cross-reference.
+affected_files:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "ignition-poker-tracker/shared/stats-engine.js"
+recommended_fix: |
+  evidenceN is ALREADY computed and returned at villainDecisionModel.js:445 and simply not carried
+  forward. Propagate it to the other four return sites and the three villainPrediction literals
+  (gameTreeEvaluator.js:332, :517, :757); key the badge on the shared sampleQualityTier.
+  PSEUDOCOUNT is NOT the defect — it is the Dirichlet prior strength matched to PRIOR_WEIGHT = 10,
+  validated on the WS-262 corpus. Caveat: evidenceN is a sum of DECAYED weights (a fractional ESS)
+  while the 15/5 thresholds are calibrated on raw counts — feed the raw count, put the ESS in a
+  tooltip.
+theory_citation: "POKER_THEORY §11.5; consequence-weighted confidence (exploitEngine/CLAUDE.md §2)"
+dedup_key: "blindspot-domain-correctness-confidence-badge-absent-and-degenerate"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-394"
+status_note: |
+  VOCABULARY NORMALISATION 2026-08-05. `problem_class` was "Uncertainty transmission" —
+  not one of the nine classes prog-domain-correctness.yaml declares. Original text
+  preserved here; nothing else in the finding changed.
+
+  Mapped to "Bayesian confidence representation", which declares "All decision-display
+  surfaces must reflect uncertainty" and lists as examples "Action recommendation
+  displayed without sample-size caveat" and "Confidence band not narrowing as samples
+  accumulate". Both are literally this finding: the badge is absent on live, and on
+  Ignition every villain renders PARTIAL because PSEUDOCOUNT = 10 floors effectiveN.
+  The old name described the MECHANISM (a computed quantity not carried to the surface);
+  the declared class names the DOCTRINE it breaks.

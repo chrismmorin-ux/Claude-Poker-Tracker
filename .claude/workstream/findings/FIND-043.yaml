@@ -1,0 +1,52 @@
+id: "FIND-043"
+title: "The live table's decision rule is three literals, and both branches violate stated doctrine"
+severity: CRITICAL
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Exploit generation soundness"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  CommandStrip.jsx:653-665 is the complete decision rule for manually entered live hands
+  (gameTreeAdvice at :88 is null without the Chrome extension): eq >= 0.55 → VALUE;
+  eq < 0.40 && fp !== null && fp >= 0.40 → BLUFF; else CHECK.
+
+  VALUE is tested with ALL-IN equity against villain's FULL range (useLiveEquity.js:152-155,
+  handVsRange), which exploitEngine/CLAUDE.md forbids explicitly — measured case Q♠J♠ at 0.4929
+  beating nothing; already fixed once in the engine by WS-312 with a two-fix history.
+
+  BLUFF is tested against a constant 0.40 where POKER_THEORY §6.3 gives breakeven as s/(1+s):
+  25% at 1/3-pot (suppresses auto-profitable bluffs), 50% at pot-sized (green-lights losing ones).
+  Both ends of that comparison are size-free — estimateFoldPct (foldEquityCalculator.js:418) takes
+  no bet-size argument, and useLiveEquity.js:167 calls it with two arguments so every
+  personalisation branch (:443, :468, :482) is dead on every live call.
+affected_files:
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/hooks/useLiveEquity.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  Fix the RULE, not the wiring. The pot-geometry breakeven is computable from potInfo
+  (CommandStrip.jsx:83) and currentBet (derived at :495), both in scope above the useMemo.
+  Re-base VALUE on a realised-value ratio rather than a filtered equity. Score the shipped
+  three-number rule as a POKER_THEORY §11.9 arm first, to price what the live path is costing.
+theory_citation: "POKER_THEORY §3.4.3, §6.3; exploitEngine/CLAUDE.md 'DO NOT test for value with ALL-IN equity'"
+dedup_key: "blindspot-domain-correctness-live-rule-three-literals"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-392"
+status_note: |
+  VOCABULARY NORMALISATION 2026-08-05. `problem_class` was "Action recommendation
+  correctness" — not one of the nine classes prog-domain-correctness.yaml declares.
+  Original text preserved here; nothing else in the finding changed.
+
+  Mapped to "Exploit generation soundness", whose declared example is verbatim
+  "Hero action recommended without game-tree EV justification" — which is precisely
+  what CommandStrip.jsx:653-665 does on the live path (three literals standing in for
+  the game tree). Runner-up was "Anti-pattern enforcement": the VALUE branch violates
+  the enumerated anti-pattern at exploitEngine/CLAUDE.md:157 ("DO NOT test for value
+  with ALL-IN equity"). Recorded because the anti-pattern reading is the sharper one
+  for the VALUE half specifically, while the class chosen covers the whole rule.

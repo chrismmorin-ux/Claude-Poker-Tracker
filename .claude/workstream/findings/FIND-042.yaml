@@ -1,0 +1,61 @@
+id: "FIND-042"
+title: "The bucket-keyed narrowing machinery AP-RL-01 forbids survives as test-only dead exports after WS-291, under a header naming a consumer that does not consume it"
+severity: LOW
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Anti-pattern enforcement"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-domain-correctness-delta-2026-07-30"
+  date: "2026-07-30"
+description: |
+  RE-VERIFIED AT HEAD 2026-08-05 — STILL OPEN. Line numbers corrected: the run record cites
+  postflopNarrower.js:458-497 and :510-616; at HEAD the section header is at :615,
+  `comboMultiplier` at :643-654 and `adaptMultipliers` at :667-794. Everything else holds.
+
+  ZERO PRODUCTION CALLERS. `comboMultiplier` (bucket-keyed: `multipliers[bucket] ?? 0` at
+  :646) and `adaptMultipliers` have no callers anywhere in src/, scripts/, or the extension —
+  only `__tests__/postflopNarrower.test.js`. WS-291 replaced the narrowing path with
+  DEFAULT_CONTINUATION_RATES (:608-613) plus soft weights.
+
+  THE HEADER STATES A FACT THE CODE CONTRADICTS. postflopNarrower.js:615 reads
+  "LEGACY MULTIPLIERS (kept for villainDecisionModel Dirichlet priors)". villainDecisionModel.js
+  imports only the `ACTION_MULTIPLIERS` CONSTANT (:24, used at :598, :649-650) — never either
+  function. So the header is true of the constant and false of the two functions beneath it.
+
+  WHY IT IS FILED RATHER THAN IGNORED. ~140 lines of bucket-label narrowing sit test-green in
+  the file the doctrine names as the AP-RL-01 hazard, ready to be wired back in by a reader
+  who trusts the header. The defect is not that it runs — it does not — but that it is
+  committed, passing tests, and labelled as load-bearing.
+affected_files:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/__tests__/postflopNarrower.test.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+recommended_fix: |
+  Delete both functions and their tests; keep `ACTION_MULTIPLIERS` with a header naming its
+  one real consumer (villainDecisionModel's Dirichlet priors). If either function is instead
+  wanted back, it needs the first-principles treatment before rewiring, not a rename.
+theory_citation: "rangeEngine/CLAUDE.md AP-RL-01 (bucket-label-keyed narrowing); exploitEngine/CLAUDE.md 'when a comment states a fact the code could assert instead, assert it'"
+dedup_key: "delta-domain-correctness-postflopnarrower-dead-bucket-multiplier-exports"
+created_at: "2026-07-30"
+updated_at: "2026-08-05"
+promoted_to: ""
+status_note: |
+  FILED LATE 2026-08-05. Recorded in the 2026-07-30 delta run record
+  (prog-domain-correctness.yaml:402) and in the run's evidence file, never registered as a
+  findings/ file. Content extracted from
+  evidence/domain-correctness/run-domain-correctness-delta-2026-07-30/delta-2026-07-30.yaml:127-147
+  and re-verified against HEAD before filing. The task brief for this back-fill named
+  `comboMultiplier` / `adaptMultipliers` without naming their file; the evidence record and
+  HEAD both put them in src/utils/exploitEngine/postflopNarrower.js.
+
+  NOT PROMOTED. No queue item covers it — `comboMultiplier` / `adaptMultipliers` appear in no
+  WS-*.yaml. The run record's own disposition was that FIND-041/042 are "cleanup that can
+  ride along with any future touch of those files", which remains the right call at LOW.
+
+  PROBLEM CLASS. "Anti-pattern enforcement" — declared as "Anti-patterns enumerated in
+  src/utils/exploitEngine/CLAUDE.md and src/utils/rangeEngine/CLAUDE.md must not appear in
+  committed code", which is this defect stated exactly: AP-RL-01-shaped bucket narrowing,
+  committed, inert, mislabelled.

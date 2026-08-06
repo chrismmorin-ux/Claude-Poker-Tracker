@@ -1,0 +1,201 @@
+id: "WS-383"
+title: "At full refinement the engine recommends the raise that a test calls a DEFECT — the assertion is calibrated against a TRUNCATED computation, so the suite's guarantee and the engine's deep advice contradict each other"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  OBSERVED DURING THE FINAL VERIFICATION PASS OF 2026-08-04/05 and recorded in commit fe716f59,
+  which fixed two flaky assertions and deliberately did NOT fix this one, recording instead why
+  the obvious fix was reverted.
+
+  THE OBSERVATION, IN ONE SENTENCE. `foldEstimateComposition.test.js:228` asserts
+  "DEFECT: raising into an uncapped nutted range is not the top action". It passes at the SHIPPED
+  `refinementBudgetMs`. Pinning the budget to 60000 so refinement runs to completion makes the
+  engine recommend `raise`, and the assertion fails.
+
+  THE SPOT. Hero holds 3s3d on a QJT board — `result.heroEquity` is asserted below 0.15, so hero
+  really is air (`:231`). Villain's range is `NUTTED_UNCAPPED`, a tight range that on QJT is
+  roughly half nuts. The assertion is that the top action is not a raise and that the best raise
+  EV is negative (`:232`, `:237`), on the plain reasoning that folding is free and a raise into a
+  range that is half nuts must not beat it. The shipped budget is
+  `refinementBudgetMs = 2000` (`src/utils/exploitEngine/gameTreeEvaluator.js:814`).
+
+  THE COMMENT IN THE TEST FILE ALREADY STATES THE SITUATION EXACTLY
+  (`foldEstimateComposition.test.js:65-77`): "The budget here is deliberately LEFT AT THE DEFAULT,
+  and that is load-bearing (WS-379). Pinning `refinementBudgetMs` high was tried and reverted:
+  with refinement allowed to run to completion the engine recommends a raise where 'DEFECT:
+  raising into an uncapped nutted range is not the top action' asserts it must not. So these
+  assertions are calibrated against the SHIPPED budget, and changing it changes what they mean. If
+  you pin it, re-derive them — do not just widen the bound."
+
+  THAT COMMENT IS AN HONEST RECORD AND IT IS ALSO THE PROBLEM. A regression assertion whose truth
+  value depends on how much of the computation was allowed to run is not asserting a property of
+  the engine. It is asserting a property of a partial evaluation of the engine. The test suite
+  currently claims to guarantee that the engine does not raise air into a nutted range; what it
+  actually guarantees is that the engine does not do so WITHIN 2000ms.
+
+  TWO READINGS, AND THIS TICKET DOES NOT ASSUME WHICH IS RIGHT. Both are live and the work is to
+  decide between them with evidence.
+
+    READING A — THE DEEPER COMPUTATION IS CORRECT AND THE ASSERTION ENCODES A SHALLOW ARTIFACT.
+    Depth-1 has no per-combo model of what actually beats hero, so its notion of "half nuts" is
+    coarse. It is conceivable that full refinement finds a genuine raise line — a leverage or
+    fold-equity branch against the part of the range that is not nutted — and that the assertion
+    encodes an intuition rather than a computed fact. Under this reading the fix is to re-derive
+    the assertion at full depth and state what the engine is actually claiming, not to clamp it.
+
+    READING B — THE DEEPER COMPUTATION IS WRONG AND THE TRUNCATION WAS ACCIDENTALLY PROTECTING US.
+    Under this reading, refinement introduces an optimism that only shows up when it runs long
+    enough, and the shipped 2000ms budget has been silently suppressing it. That would mean the
+    engine ships correct advice for a reason nobody chose, and any machine or spot where
+    refinement completes sooner gets the wrong recommendation. This reading is not exotic: WS-361
+    names `E[max(check, bet)]` optimism as an open suspect in exactly this subsystem, and the
+    behaviour here — more computation producing a MORE aggressive recommendation into a strong
+    range — is the signature that hypothesis predicts.
+
+  WHICHEVER READING HOLDS, ONE THING IS ALREADY TRUE: THE ENGINE'S ADVICE AT FULL DEPTH
+  CONTRADICTS A PROPERTY THE SUITE CLAIMS TO GUARANTEE. That contradiction exists at HEAD and is
+  not conditional on which reading wins.
+
+  THIS IS THE THIRD MEMBER OF A FAMILY, AND THE FAMILY IS THE REAL SUBJECT.
+
+    - WS-379 — ADVICE DEPTH TRACKS MACHINE LOAD. The refinement budget is wall-clock, so how much
+      of the computation runs depends on how busy the machine is. `advisorAccuracy` Scenario 8 was
+      observed producing a CHANGED RESULT under full-suite load, not a timeout: best bet 110.9
+      against check 117.1 under load, against 200.6 vs 119.0 in isolation. The founder's phone does
+      not merely get slower advice than the desktop — it gets DIFFERENT advice.
+    - WS-378 — RIVER FLIPS. The top action flipped on 80% of river decisions between depth-1 and
+      depth-2 arms, 38 of 40 toward passivity, on the street where the pot is largest.
+    - THIS TICKET — a truncated evaluation and a complete one disagree on the top action in a spot
+      the suite treats as a settled correctness property.
+
+    All three are the same statement: WHAT THE ENGINE RECOMMENDS DEPENDS ON HOW MUCH OF THE
+    COMPUTATION RAN. WS-379 establishes that the amount is not under anyone's control. WS-378
+    establishes that the disagreement is large and one-directional where it has been measured. This
+    ticket establishes that at least one such disagreement crosses a line the test suite draws as
+    a defect boundary. They should be read together and, if they resolve to one mechanism, closed
+    together.
+
+  WHAT THIS TICKET DOES NOT CLAIM. It does not claim the raise is wrong. It does not claim the
+  check is wrong. It claims that the two answers exist, that which one the founder sees is decided
+  by a wall clock, and that the suite currently records only one of them as correct without saying
+  which computation it was measuring.
+accept_criteria: |
+  - FIRST, ESTABLISH THE FACT AS A MEASUREMENT, NOT AS AN ANECDOTE. Run the `NUTTED_UNCAPPED` spot
+    across a ladder of `refinementBudgetMs` values — at minimum the shipped 2000, plus something
+    short enough to represent a loaded phone, plus 60000 — and report the top action and the best
+    raise EV at each. Multiple seeds per rung, because WS-295 measured depth-2 argmax stability as
+    low as 0.50 and a single evaluation cannot separate a budget effect from seed noise. The
+    deliverable is a table: budget, seeds, top action distribution, raise EV with spread. Do not
+    change any engine code before this exists.
+  - IDENTIFY THE BUDGET AT WHICH THE ANSWER TURNS OVER, AND SAY WHETHER IT IS SHARP OR GRADUAL. A
+    sharp threshold means a specific stage crosses its gate and the mechanism is findable. A
+    gradual drift means an estimator is accumulating optimism with sample count, which is a
+    different defect with a different fix. This distinction decides the rest of the work.
+  - NAME THE STAGE AND THE TERM. Not "refinement makes it raise" but which stage's output changes
+    sign, and which term inside it. `gameTreeEvaluator.js` gates its refinement stages
+    individually; instrument them rather than bisecting the budget. If the answer is
+    `E[max(check, bet)]` optimism, say so and hand the mechanism to WS-361 rather than fixing it
+    twice.
+  - DECIDE BETWEEN READING A AND READING B EXPLICITLY, IN WRITING, WITH THE EVIDENCE THAT DECIDED
+    IT. This is the criterion the ticket exists for. A resolution that makes the test pass without
+    stating which computation is believed to be correct has moved a bound, not settled a question.
+    If the deep answer is right, the assertion must be re-derived and its comment rewritten to say
+    what the engine is now claiming and why raising air into that range is defensible. If the deep
+    answer is wrong, the defect is in refinement and the shipped budget stops being a load-bearing
+    accident.
+  - THE ASSERTION STOPS DEPENDING ON A WALL CLOCK, WHICHEVER WAY IT GOES. After this ticket, this
+    test must pin `refinementBudgetMs` explicitly and assert a property that holds AT THAT DEPTH,
+    with the pin justified in place. A correctness assertion that silently means "within 2000ms on
+    this machine" is not a correctness assertion. Note the mechanical consequence, already recorded
+    in the same file: pinning the budget high makes the sibling test at `:249` slower, which is why
+    it already carries a 90s timeout — budget and timeout must move together.
+  - THE CONVERSE TEST IS RE-CHECKED AT THE SAME DEPTH. `foldEstimateComposition.test.js:239-246`
+    asserts the SAME hero hand IS raised against `CAPPED_WEAK`. That test is what stops a "fix"
+    from encoding "never bluff with air". If full refinement changes the nutted case, report what
+    it does to the capped case too — the pair is the point, and a change that collapses the
+    distinction between the two ranges is a worse outcome than either flip alone.
+  - CROSS-REFERENCE RECORDED IN ALL THREE TICKETS. WS-378 and WS-379 must each carry a line naming
+    this one, and this one names them. If the investigation resolves them to a single mechanism,
+    say so and close them as one; if not, say why they are separate. What is not acceptable is
+    three tickets each describing the same phenomenon from a different spot with no statement of
+    their relationship.
+  - ANY COMPARATIVE FIGURE RESOLVES TO A RESULT CARD per ADR-009 with
+    `manifest.disclaimerRegisterVersion` stamped, and `refinementBudgetMs` recorded as a
+    load-bearing constant in the replication manifest. This ticket is the proof that it is one.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND PRIOR TO EVERYTHING ELSE — IS THE DEEP ANSWER RIGHT OR WRONG? Stated as an accept
+    criterion because it is load-bearing, restated here because it needs a human decision and the
+    two branches lead to opposite work. If raising air into a half-nutted range at full depth is
+    CORRECT, then a test the repo has treated as a defect boundary has been encoding an intuition,
+    and the interesting question becomes what else in the suite is calibrated the same way. If it
+    is WRONG, then the shipped 2000ms budget is load-bearing for correctness by accident, and every
+    surface that varies it — a slower device, a busier machine, a different spot's stage gating —
+    is a surface that can produce the wrong recommendation. The second is the more expensive world
+    and neither is currently excluded.
+  - |
+    OPEN — WHETHER `refinementBudgetMs` SHOULD BE A CORRECTNESS BOUNDARY AT ALL. A time budget is a
+    performance control. If the engine's ANSWER depends on it, then it is silently also a
+    correctness control, and the honest options diverge: make refinement produce a monotone
+    improvement so more time can never make the answer worse, or make the engine report its
+    achieved depth alongside its recommendation so a truncated answer is legible as one. The first
+    is a real engineering constraint on every future stage; the second is a UI and contract change.
+    This is the design question underneath WS-379 and it should be answered once, for all three
+    tickets.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "verification-pass-2026-08-05"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+    - `src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js:228` — the test name
+      "DEFECT: raising into an uncapped nutted range is not the top action"; `:231`
+      `expect(result.heroEquity).toBeLessThan(0.15)`; `:232`
+      `expect(result.recommendations[0].action).not.toBe('raise')`; `:237`
+      `expect(raiseEV).toBeLessThan(0)`.
+    - `:56` `NUTTED_UNCAPPED = tightRange`; `:63` `CAPPED_WEAK`; `:78` the shared `SPOT`
+      (potSize 100, villain bets 75, trials 2000); `:80-82` `evaluate` calling `evaluateGameTree`
+      with board QJT and hero 33 — so the budget is NOT passed and the default applies.
+    - `:65-77` — the docblock recording that pinning the budget was tried and reverted, and why.
+      This is the direct evidence for the ticket's central claim; it is a contemporaneous record
+      written by the session that observed it.
+    - `:239-246` — the CONVERSE test, same hero hand raised vs `CAPPED_WEAK`, and `:248-255` the
+      ordering test carrying the explicit 90000ms timeout.
+    - `src/utils/exploitEngine/gameTreeEvaluator.js:814` — `refinementBudgetMs = 2000`, the shipped
+      default; `:899` `const timeBudgetMs = refinementBudgetMs`.
+
+  NOT RE-RUN AS PART OF FILING, AND DELIBERATELY SO. Reproducing the flip means pinning the budget
+  to 60000 and running the engine, which would edit a file under `src/` while another agent holds
+  the engine. The observation is taken from the contemporaneous record in the test file and the
+  commit that wrote it, and reproducing it under a seed ladder is the FIRST accept criterion rather
+  than a premise. If it does not reproduce, that is itself the finding and the ticket closes.
+
+  Filed at P1 rather than P0: no measured wrong number is in circulation, and the shipped
+  configuration currently produces the conservative answer. It is P1 rather than P2 because the
+  suite's claim and the engine's deep behaviour disagree, and because the family it belongs to
+  (WS-378, WS-379) is already large enough that treating this as an isolated flaky-test note would
+  repeat the mistake WS-378 documented — attention on the cheap street.

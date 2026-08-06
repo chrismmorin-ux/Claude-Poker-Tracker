@@ -1,0 +1,132 @@
+id: "WS-418"
+title: "The Hole Map artifact bakes its freshness verdict at generation time (checkedAt equals generatedAt), so an in-app view that renders it inherits a currency claim the CLI already knows to be false — and the artifact on disk today is dirty-source, meaning day one in-app is a full-width warning that its own columns are unattributable"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "engineering"
+capability: "core"
+program: "engineering"
+problem_class: "Architecture Drift"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Stage C findings C4 and C5, Stage E
+  finding E2 — the H-N01 pair).
+
+  THE FRESHNESS SNAPSHOT IS BAKED. Verified at HEAD, out/hole-map.json:
+
+    freshness.generatedAt  2026-08-05T21:22:11.139Z
+    freshness.checkedAt    2026-08-05T21:22:11.139Z   <- identical
+    freshness.state        "dirty-source"
+    freshness.engineCommit fe716f59...
+
+  checkedAt is written at generation. The static HTML gets away with this because
+  scripts/backtest/check-hole-map-freshness.mjs (npm run hole-map:check) RE-STAMPS the banner in place
+  between the <!--FRESHNESS:START--> / <!--FRESHNESS:END--> markers without re-running the 3-minute
+  corpus pass. A React view that renders freshness out of the artifact has no such step and would
+  claim a currency that the CLI, run one second later, would contradict.
+
+  THAT MAKES THE IN-APP SURFACE WORSE THAN WHAT ALREADY SHIPS, which is the reason this is filed
+  before the surface is built rather than after. Gate 1's own framing: "a rendered copy of this readout
+  goes wrong silently ... nothing about a rendered page announces when that commit stops being HEAD.
+  That is the exact mechanism ADR-009 exists to prevent."
+
+  THE PIECES TO DO IT RIGHT ALREADY EXIST AND ARE DELIBERATELY PURE.
+  scripts/backtest/holeMapFreshness.mjs imports nothing from node: — asserted by a real test in
+  scripts/__tests__/holeMapFreshness.test.js ("holeMapFreshness.mjs imports nothing from node: — the
+  app must be able to import it"), whose comment states the reason: "If this fails, the in-app study
+  surface can no longer reuse classifyFreshness / freshnessBannerHtml and will grow its own copy of
+  the banner. Two banners that can disagree about whether a readout is current is strictly worse than
+  one." The two git questions were kept out in scripts/backtest/holeMapGit.mjs for exactly this. The
+  work is to USE that, not to build it.
+
+  DAY-ONE STATE IS DEGRADED. freshness.state is "dirty-source" right now, and the current top-of-page
+  banner in out/hole-map.html (immediately under <h1>The Hole Map</h1>, lines 133-143) reads
+  "GENERATED FROM UNCOMMITTED ENGINE CHANGES on top of fe716f59. The commit stamped is not the code
+  that ran, so every engine-derived column here is unattributable." Unless regeneration from a clean
+  tree is part of shipping, that is the first thing the founder sees in-app.
+
+  AND THE BANNER HAS A HABITUATION PROBLEM OF ITS OWN. .claude/hooks/readiness-gate.cjs records the
+  governing lesson — "a banner shown every session is a banner nobody reads by week three". During an
+  engine sprint, dirty-source is the artifact's usual state, so this banner will be shown most
+  sessions. The same reasoning that kept a SessionStart hook OUT of the freshness design applies to
+  the in-app banner.
+
+  A SEPARATE DEGRADED SIGNAL IS RENDERED NOWHERE AT ALL. out/hole-map.json carries
+  decisionSource.degraded: "No per-decision sidecar on disk. Falling back to the depth-ablation run
+  rows, which carry piPool/piOurs/slices/evStats but NOT the ranked candidate list, NOT per-action
+  EVs, NOT per-candidate villain fold predictions, and NOT raw geometry." Verified: that string does
+  not occur in out/hole-map.html. holeMapHtml.mjs:398-399 renders only decisionSource.rows and
+  decisionSource.source, as a neutral count-and-label stat chip. The surface is in a degraded mode and
+  says so nowhere.
+accept_criteria: |
+  - FRESHNESS IS COMPUTED AT READ, NOT READ OUT OF THE ARTIFACT. The in-app surface calls
+    classifyFreshness against live HEAD at render time and ignores the artifact's baked state/checkedAt
+    for display purposes. The artifact's generatedAt and engineCommit remain what is compared AGAINST;
+    they are inputs, not the verdict.
+  - THE BANNER COMES FROM holeMapFreshness.mjs, NOT A SECOND COPY. This is the whole reason that module
+    was made pure. A test must assert the app path and the CLI path produce the same verdict for the
+    same inputs — the existing module-boundary test proves the module CAN be imported; nothing yet
+    proves it IS.
+  - decisionSource.degraded IS RENDERED AS A DEGRADED MODE, in both the static HTML and in-app, not as
+    a neutral stat chip and not dropped. A surface running on a fallback data source must say so at the
+    same visual weight as the freshness banner.
+  - REGENERATION FROM A CLEAN TREE IS A SHIPPING PRECONDITION, recorded as such. Shipping the surface
+    while out/hole-map.json is dirty-source means the founder's first encounter is a warning that the
+    engine columns are unattributable. Either regenerate as part of the release, or state explicitly
+    that the surface ships showing dirty-source and why that is acceptable.
+  - THE HABITUATION QUESTION IS ANSWERED, NOT INHERITED. readiness-gate.cjs's lesson says a
+    every-session banner is invisible by week three, and dirty-source is the normal state during an
+    engine sprint. Decide whether the in-app banner is persistent, dismissible-per-artifact-version, or
+    escalating, and record the reasoning. Copying the CLI's always-on treatment into a surface the
+    founder opens repeatedly is the failure mode, not the fix.
+  - NO NUMBER IN THE VIEW IS A LITERAL. Related and tracked separately as WS-420; noted here because
+    the same discipline (one renderer, one source) is what makes freshness-at-read meaningful.
+effort: "M"
+files_involved:
+  - "scripts/backtest/holeMapFreshness.mjs"
+  - "scripts/backtest/holeMapGit.mjs"
+  - "scripts/backtest/holeMapHtml.mjs"
+  - "scripts/backtest/check-hole-map-freshness.mjs"
+  - "scripts/__tests__/holeMapFreshness.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — HOW DOES A BROWSER LEARN THE CURRENT ENGINE COMMIT? classifyFreshness is pure precisely so
+    the app can import it, but the git questions live in holeMapGit.mjs and a browser cannot run git.
+    The options are a build-time-injected commit (accurate at deploy, stale between deploys), a
+    generated manifest fetched alongside the data, or accepting that the in-app verdict answers a
+    weaker question than the CLI's ("is this artifact older than the deployed build" rather than "older
+    than HEAD"). The third is honest if it is SAID; it is a silent downgrade if it is not.
+  - |
+    OPEN — WHETHER THE STALENESS TREATMENT IS LIFTED OR FORKED. Gate 1 recommends lifting
+    PrintableRefresherView/StalenessBanner.jsx into src/components/ui/ as a generic component rather
+    than forking it, on the grounds that a second forked treatment is how one design language becomes
+    two. That is a Gate 4 design decision but it lands in this ticket's code.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Premises verified at HEAD by the Gate 2 facilitator:
+    - out/hole-map.json — freshness.checkedAt identical to freshness.generatedAt; state "dirty-source".
+    - out/hole-map.html:133-143 — the dirty-source banner is the first thing under the h1.
+    - scripts/__tests__/holeMapFreshness.test.js — the "module boundary" describe block asserting
+      holeMapFreshness.mjs contains no `from 'node:` and no `require('node:`, with the two-banners
+      rationale stated in the test's own comment.
+    - out/hole-map.html — the decisionSource.degraded string ("No per-decision sidecar on disk...")
+      occurs zero times. holeMapHtml.mjs:398-399 renders rows and source only. This CORRECTS the lens
+      digest, which described it as rendering as a neutral stat chip; the explanation is absent
+      entirely, and only the count and label survive.

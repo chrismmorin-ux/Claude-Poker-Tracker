@@ -22,6 +22,23 @@ description: |
       piece is using board-favors-which-range (range/nut advantage, §3.2) to set bet
       sizing live. Verify heroActionBuilder's advantage object comes from a real
       range-vs-range computation, not a heuristic.
+
+  RE-RULED 2026-08-05 (run-domain-correctness-blindspot-2026-08-05): part (a) is
+  CONFIRMED-STILL-OPEN, settled in BOTH directions, and worse than "open".
+    COMPUTED: yes, and well — bayesianSampleConfidence, per-stat credible intervals against correct
+    opportunity denominators (tendencyCalculations.js:346-362), effectiveN threaded through every
+    recommendation. The math is not the problem.
+    TRANSMITTED: ABSENT on the manual live surface (LiveAdviceBar.jsx:256 gates ConfidenceBadge
+    behind useGameTree, false without the Chrome extension) and DEGENERATE on Ignition (every
+    villain at every sample size renders PARTIAL). Detail and the minimum fix are in FIND-049 —
+    treat that as the actionable form of part (a) and do not file a second live-path ticket, which
+    the run's do_not_file list rules a mis-scoped duplicate.
+  Three lenses gave three different verdicts on this finding (still-open / closed / partially-
+  closed). All three were tracing different paths and none had traced both; the online-vs-manual
+  split is the unifying explanation and it also resolves the FIND-032 disagreement.
+  Severity understated at LOW: the live surface shows a numberless opacity rather than a sample
+  size, which is the "confident-looking exploit on 3 hands" risk this finding was raised to prevent.
+  Part (b) (range-advantage sizing) was not re-examined by this run and remains as recorded.
 affected_files:
   - "src/utils/exploitEngine/exploitValidator.js"
   - "src/utils/exploitEngine/heroActionBuilder.js"
@@ -32,5 +49,5 @@ recommended_fix: |
 theory_citation: "POKER_THEORY.md §6.5, §3.2 (range/nut advantage)"
 dedup_key: "blindspot-domain-correctness-confidence-surfacing-and-range-advantage-sizing"
 created_at: "2026-06-20"
-updated_at: "2026-06-20"
-promoted_to: "WS-250"
+updated_at: "2026-08-05"
+promoted_to: "WS-250, WS-394"

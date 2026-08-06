@@ -1,0 +1,87 @@
+id: "WS-420"
+title: "The freshness half of the Hole Map earned its single-renderer guarantee with a real test; the arithmetic half has the same rule stated once, in an audit document, with nothing enforcing it — which is the WS-291 mechanism, where nothing forced two numbers onto the same axis so a wrong number never had to meet a right one"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 17.0
+priority_label: "P3"
+category: "engineering"
+capability: "core"
+program: "engineering"
+problem_class: "Test Coverage & Quality"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, follow-up #7, raised by the
+  cross-cutting lens).
+
+  THE ASYMMETRY. The Hole Map's freshness module is pure by DESIGN and pure by TEST.
+  scripts/backtest/holeMapFreshness.mjs imports nothing from node:, and
+  scripts/__tests__/holeMapFreshness.test.js has a "module boundary" describe block that reads the
+  module's source and asserts it contains neither `from 'node:` nor `require('node:`. The test states
+  its own stakes: "If this fails, the in-app study surface can no longer reuse classifyFreshness /
+  freshnessBannerHtml and will grow its own copy of the banner. Two banners that can disagree about
+  whether a readout is current is strictly worse than one." The two git questions were deliberately
+  quarantined in scripts/backtest/holeMapGit.mjs to keep that true.
+
+  THE ARITHMETIC SIDE HAS THE SAME RULE AND NO ENFORCEMENT. Gate 1 states it in bold — "no figure may
+  appear as a literal in JSX" (docs/design/audits/2026-08-05-entry-hole-map-study-surface.md:193) — and
+  a repo-wide search finds that phrase EXACTLY ONCE, in that audit. There is no test, no lint rule and
+  no invariant. It is a stated intention.
+
+  WHY THAT MATTERS MORE THAN THE USUAL "ADD A TEST" TICKET. CLAUDE.md names the mechanism this repo has
+  already been burned by: "The mechanism this prevents is the one that let WS-291 survive for the life
+  of the project — nothing forced two numbers onto the same axis, so a wrong number never had to meet a
+  right one." A React view that hard-codes even one figure from the artifact — a total, a row count, a
+  headline bb/hour — creates a second source for a number that has a first source, and the two can
+  drift apart silently. The freshness module already demonstrates what closing this looks like, in this
+  same feature, by the same author. The asymmetry is the finding.
+
+  SCOPE NOTE. This can land BEFORE the surface exists, as a guard that fails the moment the first
+  literal appears, rather than as a cleanup after. That is the cheaper order and it is why this is
+  filed separately from WS-418 rather than folded into it.
+accept_criteria: |
+  - A TEST OR LINT RULE ENFORCES THAT NO FIGURE FROM out/hole-map.json APPEARS AS A LITERAL IN THE
+    VIEW LAYER. Shape is open — a source scan of the surface's directory for numeric literals outside
+    an allowlist, or an assertion that every rendered figure traces to a field read. State which, and
+    why the other was rejected.
+  - THE ALLOWLIST IS EXPLICIT AND SMALL. Layout constants, viewport breakpoints and array indices are
+    not figures. A guard that cannot tell those apart will be disabled within a month, which is the
+    normal failure mode of literal-detection rules and must be designed against rather than discovered.
+  - THE GUARD FAILS AGAINST A DELIBERATE VIOLATION. Add a fixture or a temporary literal, watch it
+    fail, remove it. A guard nobody has seen fail is a comment with extra steps — per
+    exploitEngine/CLAUDE.md, a diagnostic that only logs enforces nothing.
+  - THE SAME QUESTION IS ASKED OF THE STATIC HTML RENDERER. scripts/backtest/holeMapHtml.mjs is the
+    other renderer of this artifact today. Report whether it contains any figure not read from doc,
+    and either fix or record what it finds. Two renderers is the condition the rule exists to survive.
+  - THE RULE IS WRITTEN DOWN WHERE THE NEXT PERSON WILL LOOK. Today it exists only in a Gate 1 audit.
+    It belongs beside the code it constrains, or in INVARIANTS.md, or both.
+effort: "S"
+files_involved:
+  - "scripts/__tests__/holeMapFreshness.test.js"
+  - "scripts/backtest/holeMapHtml.mjs"
+  - "docs/design/audits/2026-08-05-entry-hole-map-study-surface.md"
+  - ".claude/context/INVARIANTS.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Premises verified at HEAD by the Gate 2 facilitator:
+    - scripts/__tests__/holeMapFreshness.test.js — the "module boundary" describe block, its two
+      assertions, and its stated rationale, read in place.
+    - "no figure may appear as a literal in JSX" occurs exactly once in the repo, at
+      docs/design/audits/2026-08-05-entry-hole-map-study-surface.md:193. No test, lint rule or
+      invariant references it.

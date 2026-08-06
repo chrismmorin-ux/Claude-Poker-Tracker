@@ -1,0 +1,200 @@
+id: "WS-385"
+title: "Five fault-register matchers still decide contamination by reading the card's prose — escapable by deleting a sentence, hardest on the most honest card, and one of the five is FAULT-horizon-bias, whose own mechanism describes this inversion"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND BY WS-369 ITSELF (commit bef34e31, 2026-08-05), which fixed the instance that was noticed
+  and then made the residual COUNTABLE rather than leaving it to be rediscovered one entry at a
+  time.
+
+  WHAT WS-369 ESTABLISHED. `isLiveFacing` used to match on PROSE — a regex over a haystack built
+  from the card's own text, firing on phrasing like "live … TRANSFERRED, not measured". So it fired
+  on the WS-293 card precisely BECAUSE that card disclosed its own limitation, while a card leaning
+  on the online-2009 corpus for live advice without saying so did not match at all. The detector
+  was INVERTED with respect to the risk it exists to catch.
+
+  That matters for a mechanical reason, not an aesthetic one: confirming a fault returns every card
+  it contaminates flagged `suspect-pending-review`, so an under-matching matcher silently SHRINKS
+  that list. The harm is invisible by construction.
+
+  THE RULE THAT REPLACED IT. Match on what a card DEPENDS ON, which it already carries as structural
+  fact: `cardPopulation` resolves `match.dealBookId`, `match.fieldId`, `manifest.fieldVersion` and
+  `manifest.partition` against a declared anchors table into live / online / synthetic / unknown.
+  `isLiveFacing` is now `cardPopulation(card) !== 'live'` (`faultRegister.js:668`) — a card is
+  transferred unless it was MEASURED live, and `unknown` matches, because omission must not buy the
+  exemption that deleting a sentence used to. Each entry declares `matchesOn` from a closed
+  vocabulary, that declaration is bound to behaviour by a prose-invariance test, and it is HASHED
+  into `canonicalRegisterBody` — so what a matcher can SEE is now part of what the register version
+  means.
+
+  FIVE MATCHERS REMAIN PROSE-BASED. They are declared rather than hidden, and counted by
+  `proseMatchers()` (`faultRegister.js:1570-1580`), which filters entries whose `matchesOn` names a
+  field in `PROSE_CARD_FIELDS = ['estimand', 'treatment']` (`:694`). Read from HEAD:
+
+    1. FAULT-horizon-bias                (`:885`)
+       matches: /one-decision|per-decision/          matchesOn: treatment, estimand, match.surfaceId
+    2. FAULT-stat-definition-mismatch    (`:971`)
+       matches: /foldto3bet|fold-to-3bet|preflop prior|3bet/
+                                                     matchesOn: estimand, treatment, match.surfaceId, match.fieldId
+    3. FAULT-masked-hole-cards           (`:1023`)
+       matches: /range-marginalized|marginalized/    matchesOn: treatment, estimand
+    4. FAULT-showdown-selection          (`:1143`)
+       matches: /showdown|revealed|holding/          matchesOn: estimand, treatment
+    5. FAULT-multiway-approximation      (`:1217`)
+       matches: /multiway|3-way|three-way|multi-way/ matchesOn: estimand, treatment
+
+  THE ONE THAT SHOULD DECIDE THE PRIORITY IS THE FIRST. `FAULT-horizon-bias` is the entry about a
+  per-decision edge being read as a winrate — and its own stated mechanism says the fault FIRES
+  precisely where a downstream reader DROPS the treatment string. The comment beside it records
+  this without flinching (`:894-899`): "this entry's own mechanism says the fault FIRES where a
+  downstream reader DROPS the treatment string — exactly the card this matcher cannot see." An
+  entry whose matcher is blind to its own failure mode is not a partial detector; it is a detector
+  pointed away from the thing.
+
+  THE GENERIC DEFECT, IN THE REGISTER'S OWN WORDS (`:1559-1563`): "A prose matcher can be escaped by
+  DELETING A SENTENCE, and it fires hardest on the most carefully-written card. That is invisible to
+  both existing diagnostics: `registerSelfCheck` reports a matcher that matches nothing and a
+  matcher that matches everything, and a matcher that matches THE WRONG CARDS looks healthy to
+  both." That last clause is the whole problem. There is no diagnostic in the repo that can tell a
+  correctly-aimed matcher from a mis-aimed one; only reading the matcher can.
+
+  SOME OF THESE ARE IRREDUCIBLE TODAY RATHER THAN UNFIXED, AND THE TICKET MUST NOT PRETEND
+  OTHERWISE. The register says so at `:1565-1568`: horizon, hole-card knowledge, showdown
+  conditioning and player count are properties of the INSTRUMENT with no structural field on the
+  Result Card to carry them, and making them structural is a card-schema change. That is a real
+  constraint, not an excuse — but "no field exists" is a statement about the schema, and the schema
+  is ours. The question this ticket forces is per-entry: is there no field, or has nobody added one?
+
+  WHAT A STRUCTURAL BASIS WOULD LOOK LIKE, PER ENTRY — SKETCHES, NOT THE ANSWER.
+    - horizon-bias: a horizon field on the card ('per-decision' | 'per-hand' | 'per-session'),
+      written by the estimator that produced it rather than described in `treatment`.
+    - stat-definition-mismatch: which stat KEYS a surface consumed. Note that `metrics.keys` is
+      already an accepted structural basis used by four other entries (`:872`, `:925`, `:1130`,
+      `:1280`), so this one may be the cheapest to convert.
+    - masked-hole-cards: whether the instrument had hole cards — a boolean property of the Deal
+      Book and the adapter, both of which are already identified on the card.
+    - showdown-selection: whether the estimand conditions on reaching showdown — a property of the
+      estimand's definition, expressible as a flag rather than inferred from the word "showdown".
+    - multiway-approximation: the player count or player-count range the run covered, which the
+      harness knows and does not record.
+  Each of these is a card-schema addition. That is the cost, and it is why this is one ticket rather
+  than five: the schema decision should be made once, across all five, not five times.
+accept_criteria: |
+  - EVERY ONE OF THE FIVE IS RESOLVED ONE WAY OR THE OTHER, WITH ITS REASON RECORDED IN CODE. Either
+    it is given a structural basis, or it carries an explicit, recorded reason it cannot have one —
+    naming the field that would be needed and why it is not being added. `proseMatchers()` already
+    provides the declaration channel; what is missing is that an irreducible entry is currently
+    indistinguishable from an unconverted one. After this ticket a reader must be able to tell those
+    two apart from the data, not from a comment's tone.
+  - `FAULT-horizon-bias` IS ADDRESSED FIRST AND EXPLICITLY. Its matcher is blind to its own stated
+    failure mode. Whatever is decided, the resolution must state in one sentence what the matcher
+    can now see that it could not, or state that it still cannot see the case its mechanism
+    describes — which would be an honest and useful thing to have written down, and is arguably a
+    `falsifierBlocker`-shaped fact rather than a comment.
+  - A PROSE-INVARIANCE TEST FOR EVERY CONVERTED ENTRY, FAILING AGAINST HEAD (WS-309 rule). The shape
+    WS-369 established: take a card that matches, rewrite its prose to remove the words the old
+    regex keyed on while leaving every structural field identical, and assert it STILL matches. And
+    the converse: a card whose prose contains the words but whose structural fields do not qualify
+    must NOT match. Both fail today for the five, which is the point.
+  - THE COUNT `proseMatchers()` RETURNS IS ASSERTED, NOT JUST PRINTED. Whatever number remains after
+    this ticket — zero, or two irreducibles — must be pinned by an exact assertion, the same ratchet
+    pattern `groundTruthCoverage.test.js` uses for estimator pins. A count that only logs enforces
+    nothing; per `exploitEngine/CLAUDE.md`, a diagnostic that only logs is a comment with extra
+    steps.
+  - THE REGISTER VERSION MOVES, AND THE CONSEQUENCE IS STATED. `matchesOn` is hashed into
+    `canonicalRegisterBody`, so changing any entry's declared basis bumps `registerVersion()`. That
+    is intended behaviour — it is what lets a reader of an older Result Card tell it was stamped
+    under a register that could see less. Report the before and after version strings, and confirm
+    that prior stamps are left untouched rather than back-filled.
+  - RE-RUN THE MATCH ACROSS ALL EXISTING RESULT CARDS AND REPORT THE DELTA, BOTH DIRECTIONS. WS-369
+    moved matched cards from 6 of 7 to 7 of 7. A structural conversion can un-match a card as easily
+    as match one, and an un-match is the direction that shrinks a `suspect-pending-review` list —
+    the harm that is invisible by construction. Every card that CHANGES status must be named with
+    the reason.
+  - IF THE ANSWER IS A CARD-SCHEMA CHANGE, IT IS DECIDED ONCE FOR ALL FIVE. The five want five
+    different fields but they want them for the same reason and at the same cost. Adding them one at
+    a time means five register-version bumps and five migrations of the same kind.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND THE CENTRAL ONE — DOES THE RESULT CARD SCHEMA GROW? All five sketched bases are new
+    card fields: horizon, consumed stat keys, hole-card visibility, showdown conditioning, player
+    count. Adding them makes five matchers structural and makes every future card carry five more
+    declarations, which is a real cost paid by every run. Not adding them means accepting five
+    permanently prose-based matchers and saying so in data. The middle path — convert only
+    `FAULT-stat-definition-mismatch`, which may fit the ALREADY-ACCEPTED `metrics.keys` basis with
+    no schema change at all — is worth pricing first, because it may turn five into four for free
+    and sharpen what the remaining four actually need.
+  - |
+    OPEN — WHETHER AN IRREDUCIBLE PROSE MATCHER SHOULD BE ALLOWED TO CONTRIBUTE TO A CONFIRMED
+    ENTRY'S CONTAMINATION LIST AT ALL. Confirming an entry returns the cards it contaminates flagged
+    `suspect-pending-review`. If a matcher is known to be escapable and known to be biased toward
+    the most disclosing cards, then the list it produces is systematically wrong in a known
+    direction. The options are to let it stand with a recorded caveat, or to make a prose-matched
+    contamination list carry a distinct, weaker status than a structurally-matched one. The second
+    is more honest and more machinery. The founder should decide, because it changes what a
+    `suspect-pending-review` flag means.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-369"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+    - `src/utils/standardOfRecord/faultRegister.js:694` — `PROSE_CARD_FIELDS = ['estimand',
+      'treatment']`; `:1570-1580` — `proseMatchers()` filtering on it and attaching the standing
+      warning; `:1555-1568` — the docblock stating the generic defect and naming horizon, hole-card
+      knowledge, showdown conditioning and player count as today-irreducible.
+    - The five entries, each read in place: `:885` FAULT-horizon-bias (`matches`
+      `/one-decision|per-decision/`, `matchesOn` at `:901`); `:971` FAULT-stat-definition-mismatch
+      (`matchesOn` at `:983`); `:1023` FAULT-masked-hole-cards (`matchesOn` at `:1034`); `:1143`
+      FAULT-showdown-selection (`matchesOn` at `:1155`); `:1217` FAULT-multiway-approximation
+      (`matchesOn` at `:1228`). Exactly five entries name a prose field — the count was derived by
+      reading every `matchesOn` in the file, not taken from the commit message.
+    - `:894-899` — the comment on FAULT-horizon-bias recording that its own mechanism describes the
+      case its matcher cannot see.
+    - `:668` — `isLiveFacing` is now `cardPopulation(card) !== 'live'`, the structural form.
+    - `:872`, `:925`, `:1130`, `:1280` — four entries already keyed on `metrics.keys`, which is why
+      that is described above as an already-accepted structural basis rather than a proposal.
+    - `:1736-1744` — the reasoning for hashing `matchesOn` rather than the matcher source, and the
+      note that adding it moved `registerVersion()`.
+
+  THE RELATED FACT THE BRIEF ASKED ABOUT, ANSWERED RATHER THAN FILED SEPARATELY. WS-369's change made
+  `RC-depth-ablation-1c560bcc-67e9e14e` newly match, taking matched cards from 6 of 7 to 7 of 7. It
+  was reported as a finding and not acted on.
+
+  IT DOES NOT NEED SEPARATE REVIEW, AND HERE IS WHY. The new match is `isLiveFacing` firing
+  structurally: that card was produced on the HandHQ online-2009 corpus, so `cardPopulation` resolves
+  it to `online`, and under the new rule a card is live-facing unless it was MEASURED live. That is
+  the matcher working exactly as designed, on a card that genuinely does carry the transfer
+  limitation. It is not a new fact about the card — the depth-ablation card already discloses the
+  online-2009 provenance, and WS-378, which is built on that card, states the transfer caveat in its
+  own text.
+
+  What it IS, is confirmation that the pre-WS-369 matcher was under-matching, since the same card
+  was not flagged before and nothing about the card changed. That is the finding, and it is already
+  recorded. No action is required unless and until `FAULT-population-mismatch` is CONFIRMED, at
+  which point this card appears in the `suspect-pending-review` list — which is the correct outcome
+  and the reason the matcher was fixed. Note that entry remains `untested` and unsettleable: it
+  still carries 2 of 3 `falsifierBlockers`, and WS-368's fix cleared only the SRC-014 identity one.

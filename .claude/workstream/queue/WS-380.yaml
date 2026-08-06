@@ -1,0 +1,151 @@
+id: "WS-380"
+title: "run-strategy-profile reads the all-corpus reference table outside LeakageGuard — the last module on the WS-375 allowlist that is still UNGUARDED, and its safety is circumstantial"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND BY THE WS-375 SWEEP ITSELF (commit 154d6858, 2026-08-05). WS-375 fixed
+  `entryEvaluator.mjs` and then built the enforced allowlist that was its more general accept
+  criterion. That allowlist immediately named a module the ticket had not: this one. The commit
+  says so in as many words — "It also names one the ticket did not: run-strategy-profile.mjs
+  reads HANDHQ_REFERENCE_STAKES unguarded. Same shape, scores no corpus hands, listed and
+  flagged rather than fixed since it is outside this ticket's scope."
+
+  STATE THIS FIRST, PLAINLY, SO NOBODY READS IT AS A LIVE CONTAMINATION: THERE IS NO LEAK AT
+  HEAD. `run-strategy-profile.mjs` scores no corpus hands. Verified by reading it: it loads an
+  entry-map ARTIFACT from disk (`--map`, default `.artifacts/entry-map.json`, read at `:44`),
+  pulls two pool rates out of the reference table at `:41-43`
+  (`pool.HANDHQ_REFERENCE_STAKES.find(s => s.bb === STAKE_BB)`, then `stats.vpip.k / stats.vpip.n`
+  and `stats.pfr.k / stats.pfr.n`), and hands both to `profileStrategy` at `:47`. Not one hand
+  from the mining corpus is evaluated anywhere on that path. No published number is suspect on
+  this account, nothing needs rerunning, and no fault-register entry needs raising.
+
+  THE DEFECT IS THAT THE GUARD DOES NOT BIND THERE.
+
+    `scripts/backtest/run-strategy-profile.mjs:36` loads the SHIPPED, ALL-CORPUS table:
+
+        loader.load('/src/utils/exploitEngine/handhqReferencePool.js')
+
+    and a grep of the whole file for `LeakageGuard` / `leakage` / `REFERENCE_` returns exactly
+    two hits, both of them the load above and the read at `:41`. There is no guard construction
+    in the file at all.
+
+  THIS IS THE SAME SHAPE WS-375 CLOSED, AND WS-375 BUILT THE MACHINERY THAT CLOSES IT.
+  `REFERENCE_FIELD_CORPUS` now exists precisely for a caller that needs the field rows and
+  scores nothing: it hands the rows out only via `guard.fieldTable()`, leaves `referenceTable`
+  null so the prior channel gets nothing, and makes `assertEvalPlayer`, `assertWalkForward` and
+  `assertStatWindow` all THROW. That last part is the bite, and it is the whole reason this
+  ticket is worth filing: the extension anyone would naturally write next here — "and what did
+  the field actually DO in these spots, rather than what does the map say?" — begins with one
+  of those three calls. Under the guard it fails loudly. Today it would run.
+
+  THE ALLOWLIST CURRENTLY RECORDS THIS AS A KNOWN EXCEPTION, WHICH IS THE OTHER HALF OF THE FIX.
+  `scripts/__tests__/entryEvaluatorGuard.test.js:81-95` is the enforced sweep. Three of its four
+  entries end "GUARDED." The fourth, at `:91-94`, reads:
+
+      'run-strategy-profile.mjs':
+        'Reads HANDHQ_REFERENCE_STAKES for pool VPIP/PFR to compare a declared strategy '
+        + 'against. Scores NO corpus hands — it reads an entry-map artifact. UNGUARDED: same '
+        + 'shape as the WS-375 defect, filed rather than fixed here to stay in scope.'
+
+  So the allowlist is doing its job — it is a deliberate, reviewable record rather than a silent
+  omission — but an allowlist entry that says UNGUARDED is a debt marker, not a resolution. The
+  test passes today BECAUSE the module is enumerated, which means nothing about this will ever
+  fail on its own.
+
+  THE CONSEQUENCE, STATED HONESTLY. Today: none. Tomorrow: the property being lost is not
+  correctness, it is CHECKABILITY. At HEAD the run is clean because of what the script happens to
+  do; after any change it is clean only because someone remembered. A leaked profile produces a
+  scorecard indistinguishable from a clean one, which is exactly the failure class that survives
+  longest.
+
+  DOCTRINE — CORPUS-MINED PRIORS LEAK INTO CORPUS MEASUREMENTS BY CONSTRUCTION, AND THE WORD
+  THAT MATTERS IS STRUCTURALLY. The reference table was mined from the corpus. Any measurement
+  over that corpus that consults it is contaminated unless the partition is enforced. A guard
+  that binds on five of six entry points is a convention, and a convention is a thing someone
+  has to remember at the moment they are least likely to.
+accept_criteria: |
+  - THE GUARD BINDS ON `run-strategy-profile.mjs`, STRUCTURALLY, WITH AN EXPLICIT MODE.
+    `REFERENCE_FIELD_CORPUS` is very likely the right declaration — the script genuinely wants
+    the field's VPIP/PFR as a comparison baseline and scores no corpus hand, which is exactly
+    what that mode was built for in WS-375. Follow `entryEvaluator.mjs` verbatim: construct the
+    guard BEFORE the loader, take the rows through `guard.fieldTable()`, and have the catch
+    close the loader and RE-THROW rather than downgrading a refusal to a skip (that quiet-catch
+    downgrade is WS-284's recorded failure). What is not acceptable is leaving the direct load
+    and adding a comment saying it is fine.
+  - THE ALLOWLIST ENTRY STOPS SAYING UNGUARDED. `entryEvaluatorGuard.test.js:91-94` must be
+    rewritten to end "GUARDED." with the mode named, in the same shape as the other three. This
+    is the plainest statement that the debt is paid, and it is a diff a reviewer can read.
+  - A TEST THAT FAILS AGAINST HEAD (WS-309 rule). Concretely: assert that
+    `run-strategy-profile.mjs` declares a reference mode, or that a scoring assertion invoked
+    from its path refuses. A test that passes today is asserting the current unguarded access.
+    Note that simply editing the allowlist string does NOT satisfy this — the sweep test checks
+    enumeration, not guardedness, so it would go on passing either way. That gap is itself worth
+    a sentence in the resolution.
+  - THE SWEEP IS RE-RUN AND THE RESULT REPORTED, INCLUDING THE CLEAN MODULES. WS-375's sweep
+    covers `scripts/backtest/*.mjs` against `handhqReferencePool.js` and `poolBaseline.js`. Say
+    whether four is still the full set after this change, and whether any module has been added
+    to `scripts/backtest/` since. The value is the map, not just the one fix.
+  - THE CLOSING NOTE STATES THAT NO PUBLISHED RESULT WAS CONTAMINATED. A leakage fix in the log
+    reads as a retraction unless it says otherwise. No Result Card needs re-stamping and the
+    fault register needs no new confirmed entry — this is a guard-coverage gap, not a fault whose
+    damage propagated.
+  - NO SCOPE CREEP INTO `profileStrategy`. This ticket moves where two numbers come from. The
+    strategy profiling maths, the entry-map loader, and the console report are untouched.
+effort: "S"
+files_involved:
+  - "scripts/backtest/run-strategy-profile.mjs"
+  - "scripts/backtest/leakageGuard.mjs"
+  - "scripts/__tests__/entryEvaluatorGuard.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER THE SWEEP SHOULD ASSERT GUARDEDNESS, NOT JUST ENUMERATION. The current test
+    proves every reacher is LISTED. It cannot prove any of them is guarded — the reason strings
+    are prose, and a module could flip from GUARDED to unguarded without the test noticing, which
+    is the same prose-versus-structure defect WS-369 fixed in the fault register. Making it
+    structural means detecting a `LeakageGuard` construction (or a declared mode constant) in the
+    source rather than reading a sentence about one. That is a real widening of this ticket and
+    should be decided rather than absorbed.
+  - |
+    OPEN — WHETHER THIS SCRIPT SHOULD EVENTUALLY SCORE CORPUS HANDS. "What does the declared
+    strategy do" invites "and what did the field actually do at the same decisions", and the
+    corpus can answer it. If that is on the roadmap this ticket is a prerequisite rather than
+    hygiene and its priority should rise. If it is not, P2 is right. The founder should say which.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-375"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+  `run-strategy-profile.mjs:36` (`loader.load('/src/utils/exploitEngine/handhqReferencePool.js')`),
+  `:41-43` (the `HANDHQ_REFERENCE_STAKES.find` and the two k/n rate reads), `:44` (the entry map
+  read from disk — the actual data source), `:47` (`profileStrategy(map, poolRates, ...)`), and a
+  grep of the whole file for `LeakageGuard`/`leakage`/`REFERENCE_` returning no guard construction;
+  `scripts/__tests__/entryEvaluatorGuard.test.js:73` (`CORPUS_ARTIFACTS`), `:81-95` (the `ALLOWED`
+  map), `:91-94` (this module's entry, ending "UNGUARDED"), `:97-107` (the sweep that enumerates
+  reachers by import/loader-load regex).
+
+  Filed at P2 deliberately, the same call WS-375 made about itself and for the same reason: there
+  is no live consequence, and it is filed only because the failure it guards against is SILENT.
+
+  One structural observation recorded here rather than buried in the fix: the sweep enforces
+  ENUMERATION, not guardedness. Editing the allowlist string to say "GUARDED" would satisfy the
+  existing test whether or not a guard was added. That is why the accept criteria require a test
+  that fails at HEAD independently of the allowlist edit.

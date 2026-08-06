@@ -1,0 +1,122 @@
+id: "WS-397"
+title: "useActionAdvisor.js contradicts itself thirty lines apart about which surface it serves, a shipped WS-333 rake fix was justified on the false half, and a roundtable lens then built its top recommendation on the same false half"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 11.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-054"
+description: |
+  A SMALL TICKET THAT EARNS ITS OWN RECORD, BECAUSE THE THING IT BROKE WAS REASONING, NOT CODE.
+
+  `src/hooks/useActionAdvisor.js` states its purpose twice and the two statements are incompatible.
+
+  The header (`:2-11`):
+    "Used in PlayerAnalysisPanel for manual 'what-if' analysis: user selects a villain, enters board
+     + hero cards, and triggers analysis on demand. This is DISTINCT from useLiveActionAdvisor,
+     which runs automatically during live Ignition play via the extension's hand state feed."
+
+  A comment inside `compute` thirty lines later (`:37-40`):
+    "WS-333 follow-up: this advisor serves the MANUAL live table — the founder's actual 1/2 game —
+     and never passed a rake config, so `evaluateGameTree` defaulted it to null and every EV figure
+     omitted a $5-8 drop out of a pot often only $40."
+
+  THE HEADER IS RIGHT AND THE INNER COMMENT IS WRONG. The hook has exactly one non-test importer:
+  `src/components/views/AnalysisView/PlayerAnalysisPanel.jsx:14`. It is an on-demand what-if panel in
+  the Analysis view. It is not the live table — the live table's advice arrives from
+  `OnlineAnalysisContext` via `CommandStrip.jsx:88`, and is null without the extension.
+
+  THE CONSEQUENCE IS NOT THE RAKE FIX. Threading `rakeConfig` into a what-if analyser is correct on
+  its own merits, and the parameter at `:41` is fine. The consequence is that a comment asserting
+  "this is the founder's actual 1/2 game" now sits in the file, and it has already misled a reader:
+  in the 2026-08-05 blind-spot roundtable one lens adopted the false half and built its TOP
+  recommendation on it, proposing to replace the live table's decision rule with a `useActionAdvisor`
+  call on the grounds that this hook already serves that surface. The cross-critic caught it and
+  ruled the proposal harmful — `useActionAdvisor` passes no `numOpponents`, no `opponentModels`, and
+  no `effectiveStack`, so shipping it would put a heads-up fold model on a 9-handed table (see
+  WS-393). A comment that produces a harmful recommendation from a competent reader is a defect in
+  the comment.
+
+  THE GENERAL SHAPE THIS BELONGS TO. `exploitEngine/CLAUDE.md` records three prior instances of one
+  failure mode — a label asserting something the values contradict, with nothing checking (WS-285 a
+  dimension ordering nobody had measured, WS-291 a doc claim the data refuted, WS-300 a comment
+  naming hands the indices did not encode) — and its rule is: "When a comment states a fact the code
+  could assert instead, ASSERT IT." Which surface a hook serves is exactly such a fact: it is the
+  hook's importer list, and it is mechanically checkable.
+
+  RANK. Lowest of this batch. It changes no number and touches no scored figure. It is filed because
+  a false premise in a comment has now demonstrably cost an expensive roundtable one of its
+  recommendations, and because the correction is a few lines.
+accept_criteria: |
+  - THIS ITEM IS EXEMPT FROM THE EV-DELTA CRITERION AND SAYS SO. It corrects comment text and adds a
+    test; it alters no computation. Its EV delta is structurally ZERO and claiming otherwise would be
+    dishonest. THE CRITERION INSTEAD IS THAT THE FALSE PREMISE CANNOT BE RE-ASSERTED WITHOUT A TEST
+    FAILING — see below. If the diff touches any expression that feeds `evaluateGameTree`, that is
+    out of scope and belongs to WS-393.
+  - THE CONTRADICTION IS RESOLVED IN FAVOUR OF THE IMPORTER LIST, NOT IN FAVOUR OF EITHER COMMENT.
+    Rewrite `:37-40` to state what is true: this advisor serves the on-demand PlayerAnalysisPanel
+    what-if; the rake config matters here because a what-if figure is compared against real results;
+    and the MANUAL LIVE TABLE HAS NO GAME-TREE ADVISOR AT ALL, which is WS-393. Naming WS-393 in the
+    comment is what stops the next reader re-deriving the same wrong shortcut.
+  - THE SURFACE CLAIM BECOMES AN ASSERTION. Add a test that enumerates the hook's non-test importers
+    and fails if the set is anything other than `PlayerAnalysisPanel.jsx`. When a second importer is
+    legitimately added, the test forces the header comment to be updated in the same diff. This is
+    the "assert it" rule applied to the smallest possible instance of it.
+  - THE WS-333 RAKE FIX IS RE-JUSTIFIED, NOT REVERTED. `rakeConfig` threading into a what-if analyser
+    is correct; only its stated reason was false. Leave the parameter, replace the reason, and record
+    in the ticket that the fix's premise — not the fix — was the defect. Reverting a correct change
+    because its rationale was wrong would be the opposite error.
+  - CHECK WHETHER THE SAME FALSE PREMISE IS RECORDED ANYWHERE ELSE. `FAULT-status-unverified-closure`
+    (proposed in the same run) is precisely about closure claims that are asserted and never
+    re-derived. Grep for other assertions of the form "serves the manual live table" / "the founder's
+    actual 1/2 game" across `src/`, `docs/` and `.claude/`. If WS-333's own ticket, session file or
+    changelog entry carries the same premise, correct them in this diff — otherwise the false half
+    survives in the record the next audit will read.
+effort: "S"
+files_involved:
+  - "src/hooks/useActionAdvisor.js"
+  - "src/hooks/__tests__/useActionAdvisor.test.js"
+  - "src/components/views/AnalysisView/PlayerAnalysisPanel.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-054"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `useActionAdvisor.js:2-11` — the header docblock; `:7-8` "This is DISTINCT from
+      useLiveActionAdvisor, which runs automatically during live Ignition play via the extension's
+      hand state feed"; `:10` the `@see` pointing at `useLiveActionAdvisor` in `OnlineAnalysisContext`.
+    - `:37-40` — the WS-333 comment asserting "this advisor serves the MANUAL live table — the
+      founder's actual 1/2 game"; `:41` `rakeConfig = null`.
+    - Importer census by repo-wide grep: `PlayerAnalysisPanel.jsx:14` (import) and `:39` (call site)
+      are the ONLY non-test references. Every other hit is in
+      `src/hooks/__tests__/useActionAdvisor.test.js`. Confirmed single non-test importer.
+    - The live table's advice path is independent: `CommandStrip.jsx:88` reads
+      `useAnalysisContext()`, whose producer is `OnlineAnalysisContext.jsx:57`, fed by
+      `useSyncBridge.js:329` (extension-only). `useActionAdvisor` is nowhere on that path.
+    - The harm claim is verifiable in this repo's own record: the roundtable's `digest_corrections`
+      entry for the cto-agent lens is ruled `WRONG_AND_HARMFUL` on exactly this basis, and
+      `useActionAdvisor.js:59-70` does in fact pass neither `numOpponents` nor `opponentModels` nor
+      `effectiveStack` (defaults at `gameTreeEvaluator.js:791-793`).
+
+  NOTHING IN THIS TICKET REQUIRED CORRECTION. The run record's account of FIND-054 is accurate at
+  HEAD, including both line ranges. It was produced by the cross-critic and by no lens, which is
+  consistent with its content: it is a fact about two parts of one file disagreeing, visible only to
+  a reader holding both.

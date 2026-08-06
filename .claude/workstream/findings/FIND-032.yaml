@@ -1,7 +1,7 @@
 id: "FIND-032"
 title: "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)"
 severity: LOW
-status: resolved
+status: open
 category: "theory-gap"
 program: "domain-correctness"
 problem_class: "Villain decision model fidelity"
@@ -21,6 +21,22 @@ description: |
       tookMs field on action records in gameConstants.js. Requires a data-model change
       before any engine work (the Ignition extension could capture it precisely).
   Returns "no tell" rather than wrong output, so low severity (incomplete, not wrong).
+
+  RE-RULED 2026-08-05 (run-domain-correctness-blindspot-2026-08-05): the sizing-tell half is CLOSED
+  but RE-OPENED on different grounds; the timing half is CONFIRMED-STILL-OPEN.
+  (a) WS-261 genuinely unstubbed the calibration — decisionAccumulator.js:632-637 samples the shown
+      hand, so the circularity recorded in FIND-038 is gone. But it shipped with NO admissibility
+      gate: see FIND-050, where the production gates fire on noise at ~21% and ~47% under H0 and the
+      ~47% one multiplies the fold estimate that reaches EV. The half that was "fixed" now needs a
+      gate, not a stub removal.
+  (b) Timing tells remain absent AND the raw data is still not recorded:
+      `grep -rn 'timeToAct|tankTime|actionTime|decisionTime|timingTell' src/` returns nothing
+      outside session duration and compute profiling; gameReducer.js:42 action shape is
+      `{seat, action, street, order, amount?}` with no timestamp, and recordSeatAction has no
+      Date.now(). WS-253 remains backlog.
+  Status returned to open and the file moved out of archive/ on that basis. Note for the vocabulary:
+  "resolved" in this repo's finding files has meant promoted-to-ticket, not shipped — that ambiguity
+  is itself the proposed register entry FAULT-status-unverified-closure.
 affected_files:
   - "src/utils/exploitEngine/villainProfileBuilder.js"
   - "src/constants/gameConstants.js"
@@ -32,6 +48,7 @@ recommended_fix: |
 theory_citation: "POKER_THEORY.md §3.5 (sizing↔range), §5.9 (showdown ground truth)"
 dedup_key: "blindspot-domain-correctness-sizing-and-timing-tells-missing"
 created_at: "2026-06-20"
-updated_at: "2026-06-20"
-promoted_to: "WS-250"
-resolved_at: "2026-06-21T00:55:03.219Z"
+updated_at: "2026-08-05"
+promoted_to: "WS-250, WS-253"
+resolved_at: null
+prior_resolved_at: "2026-06-21T00:55:03.219Z"  # reverted 2026-08-05 — see RE-RULED note in description

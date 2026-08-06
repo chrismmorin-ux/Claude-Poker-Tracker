@@ -1,0 +1,185 @@
+id: "WS-390"
+title: "The aggregate EV figure's error bar is a measurement over a third of its estimators and an extrapolation over the rest — and the only place the repo currently states an uncertainty quotes Monte-Carlo sampling noise, which is not among the dominant terms"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 19.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+finding_id: "FIND-053"
+description: |
+  THIS IS NOT WS-384 AND MUST NOT RESTATE IT. WS-384 is the WORKLIST: pin the four unpinned
+  estimators against exact enumeration, report `mae` and `aggErr`, derive each tolerance by
+  reintroducing a defect, raise `PINNED_COUNT`. That ticket changes the DENOMINATOR. This ticket is
+  about what any figure is allowed to CLAIM while the denominator is what it is — which is a
+  different piece of work, lands on different files, and stays relevant no matter how WS-384 comes
+  out. Read WS-384 before starting; do not re-derive its census here.
+
+  THE STRUCTURAL FACT, STATED ONCE. `groundTruthCoverage.test.js` pins 2 of 6 estimators
+  (`PINNED_COUNT = 2`). The four unpinned ones are `computeVillainEquityVsPerceived`,
+  `approximateSubRangeEquity`, `approximateCallingRangeEquity` and `approximateBettingRangeEquity`.
+  Those four are not incidental — they are precisely the APPROXIMATIONS, the functions that stand in
+  for a quantity too expensive to enumerate at runtime, and they are what feeds `heroEquity`, which
+  is the number the engine argmaxes over. The two that ARE pinned are the more nearly exact ones.
+  So the system's error characterisation is a measurement over 33% of its estimators and an
+  EXTRAPOLATION over the 67% that were chosen for being approximate. That is the flattering
+  direction, and it is the direction this repo has been caught in before.
+
+  WHY THIS BECAME URGENT ON 2026-08-05. The founder's redirect asks for an aggregate expected-EV
+  figure with per-improvement deltas, and says he has never seen one. The moment such a figure
+  exists, somebody will ask how precise it is — and the honest answer today has two parts that must
+  be reported together: a measured error on two estimators, and no measurement at all on the four
+  that dominate the aggregate. A figure that reports only the first part is not conservative; it is
+  wrong in a specific and predictable way.
+
+  THE REPO ALREADY DOES EXACTLY THAT, IN ITS ONLY UNCERTAINTY DISCLOSURE (FIND-053).
+  `src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx:70-72` renders:
+
+      MC trials: {mcTrials}  (± rough CI = 1/√trials)
+
+  That is Monte-Carlo SAMPLING noise, and it is the one term in the error budget that is both
+  smallest and easiest to compute. The panel is titled for confidence, so a reader takes it as the
+  interval. What it excludes:
+
+    - the four unpinned estimators, i.e. most of the engine's approximation error;
+    - the bet-fraction assumption behind the number rendered eight lines below it. `:82-88` prints
+      `cascadingFoldProbability` and names its method ("multiwayFoldPct, independent multiplication
+      per villain") without naming the bet fraction that produced it — which is
+      `drillModeEngine.js:813`, `multiwayFoldPct(..., 0.75)`, passed positionally;
+    - the online-2009-to-live population transfer, which is rank 1 in the fault register at breadth
+      0.90.
+
+  The roundtable's verdict on this was "worse-than-none — a reader with no disclosure knows he does
+  not know; a reader with this one has a narrow interval on a panel labelled 'confidence' and will
+  size decisions to it." The fix is NOT removal. The standing rule in memory
+  (`feedback_never_delete_for_null_result`) forbids deleting an instrument for being wrong. Widen it,
+  and make it name what it excludes.
+
+  THE PANEL ITSELF IS WS-396's, NOT THIS TICKET'S. A concurrent filing from the same roundtable owns
+  FIND-053 as a surface fix: re-label the interval for what it bounds, print the bet fraction as a
+  value read from the call site, name the population transfer in the register's own language, and
+  surface the unscored-estimator count live from the census rather than transcribed. That work is
+  correctly scoped and should not be duplicated here. The panel is described above only because it is
+  the concrete demonstration of the failure this ticket generalises — it is the existing evidence,
+  not the deliverable.
+
+  THE GENERAL RULE THIS TICKET ESTABLISHES, WHICH IS WHY IT IS WORTH MORE THAN ONE PANEL EDIT.
+  An uncertainty statement must declare its own COVERAGE — which terms of the error budget it
+  includes and which it omits — or it is not an uncertainty statement, it is a number with a ± in
+  front of it. The census pattern already exists one level down: `groundTruthCoverage.test.js` prints
+  the zeros and asserts the count exactly, on the explicit reasoning that "report only what a set
+  covers and it looks healthier the narrower it is." An error bar that reports only the terms it
+  computed is the same selection effect one level up.
+accept_criteria: |
+  - EVERY UNCERTAINTY STATEMENT THE PRODUCT RENDERS DECLARES ITS COVERAGE. Not a prose caveat — a
+    structured list of error terms with each marked measured / bounded / unmeasured. The minimum set
+    for the aggregate EV figure: estimator approximation error (currently 2 of 6 measured, 4
+    unmeasured), Monte-Carlo sampling noise (measured), refinement-depth variability (see WS-389),
+    stack-depth imputation (see WS-388), population transfer online-2009 → live (unmeasured, fault
+    register rank 1). A term marked `unmeasured` is a legitimate and useful output; a term silently
+    absent is not.
+  - THE EV FIGURE ITSELF IS THE UNIT, PER THE FOUNDER'S 2026-08-05 RULE. Where a coverage gap can be
+    priced, price it in EV rather than in estimator counts. "4 of 6 estimators unpinned" is a
+    DIAGNOSTIC; "the unpinned estimators could move aggregate EV by up to X bb/100" is the claim.
+    Where it cannot be priced yet — and for at least the four unpinned estimators it cannot until
+    WS-384 lands — record the gap as unmeasured WITH the ticket that would measure it, so the error
+    budget doubles as a worklist. An unmeasured magnitude is an accept criterion, never a claim.
+  - THE ERROR BUDGET IS A SHARED STRUCTURE, AND `ConfidenceDisclosure.jsx` BECOMES ONE OF ITS
+    CONSUMERS RATHER THAN A SECOND HAND-MAINTAINED LIST. WS-396 fixes that panel's content; this
+    ticket must give it something to read, so the panel and the Result Card cannot drift apart and
+    state different things about the same run. Concretely: if WS-396 ships a hand-written omission
+    list and this ticket ships a structured budget, the repo has two uncertainty statements that can
+    disagree — which is the FIND-049 shape (an honest twin and a degenerate one, same palette,
+    opposite behaviour, no cross-reference) arriving again in a new place. Whichever lands second
+    wires to the other; say in the completion note which happened.
+  - THE RESULT CARD MANIFEST CARRIES THE ESTIMATOR-COVERAGE DENOMINATOR AT THE TIME OF THE RUN. A
+    card produced today (2 of 6) and a card produced after WS-384 (up to 6 of 6) make different
+    strength claims from the same numbers, and a reader must be able to tell them apart from the card
+    alone. This is the same mechanism as `manifest.disclaimerRegisterVersion` and should follow its
+    precedent: the stamp is what lets a coverage gap closed tomorrow find the results that depended
+    on it yesterday.
+  - THE COVERAGE DECLARATION IS ASSERTED BY TEST, NOT PRINTED. Per `exploitEngine/CLAUDE.md`, a
+    diagnostic that only logs is a comment with extra steps. If a new estimator is added to the
+    engine without appearing in the error budget, something must fail. The ratchet pattern in
+    `groundTruthCoverage.test.js` is the model to copy.
+  - CROSS-REFERENCE, DO NOT DUPLICATE — TWO NEIGHBOURS, TWO DIFFERENT BOUNDARIES. This ticket must
+    not restate WS-384's census, worklist, tolerance rule or `PINNED_COUNT` mechanics; it consumes
+    that number and states what may be claimed given it. It must not restate WS-396's panel copy,
+    labelling or bet-fraction display; it supplies the structure that panel reads. If WS-384 lands
+    first this ticket's content is unchanged and only the denominator moves; if WS-396 lands first
+    this ticket's job becomes wiring rather than authoring. Both invariances are the test of whether
+    the three are properly separated.
+effort: "S"
+files_involved:
+  - "src/utils/standardOfRecord/"
+  - "src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by:
+  - "WS-389"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER AN ERROR BUDGET WITH FOUR UNMEASURED TERMS SHOULD BE SHOWN TO THE FOUNDER AT ALL,
+    OR WHETHER THE FIGURE SHOULD SHIP WITH NO INTERVAL UNTIL THE TERMS ARE MEASURED. The roundtable's
+    argument for showing it is that a reader with no disclosure knows he does not know, which is
+    safer than a narrow wrong interval — but that argument cuts both ways, and a budget listing four
+    `unmeasured` terms may read as rigour and be treated as one. The third option, and probably the
+    right one: show the terms, and refuse to print a single ± number at all until every dominant term
+    is at least BOUNDED. A list of named unmeasured terms cannot be mistaken for an interval; a
+    number with a ± can.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: "FIND-053"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  THE FILING DECISION, MADE EXPLICITLY BECAUSE THE BRIEF ASKED FOR IT. The instruction was to read
+  WS-384 and file nothing if this is fully covered. It is NOT fully covered, and the boundary is
+  clean enough to state in one sentence: WS-384 changes the coverage denominator; this ticket governs
+  what a figure may claim while the denominator is whatever it is. Concretely, WS-384 contains no
+  accept criterion touching any rendered uncertainty, no reference to `ConfidenceDisclosure.jsx`, no
+  requirement that a Result Card record its estimator-coverage denominator, and no error-budget
+  concept at all — it is scoped, deliberately and correctly, to measuring four estimators against
+  enumerated truth and forbidden from scope creep into fixing them. The overlap is one shared fact
+  (the 2-of-6 census), which this ticket cites and does not re-derive.
+
+  Premises re-verified against HEAD by reading the code:
+    - `src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js:43-50` — the six-entry
+      `ESTIMATORS` array; `:59` `const PINNED_COUNT = 2` with the comment that it may only be
+      lowered with a recorded reason.
+    - `src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx:70-72` — the MC-trials
+      line and `(± rough CI = 1/√trials)`, read in place; `:82-88` — the `cascadingFoldProbability`
+      block naming "multiwayFoldPct, independent multiplication per villain" with no bet fraction
+      stated.
+
+  ONE THING NOT INDEPENDENTLY VERIFIED HERE, AND RESOLVED BY A NEIGHBOUR RATHER THAN LEFT OPEN. The
+  claim that the value shown by that panel comes from `multiwayFoldPct(..., 0.75)` passed
+  positionally was carried from FIND-053 and NOT re-checked at that line in this pass. WS-396, filed
+  concurrently against the same finding, cites it at `drillModeEngine.js:814` — one line off the
+  roundtable's `:813`. Since WS-396 owns the panel and cites the line it verified, that ticket is the
+  authority on the value; this one no longer depends on it. Recorded rather than dropped, because
+  "roundtable said :813, filer found :814" is exactly the drift this repo's premise-verification rule
+  exists to catch.
+
+  SCOPE RENEGOTIATED MID-FILING, AND SAID SO RATHER THAN QUIETLY TRIMMED. This ticket was drafted
+  with an accept criterion that widened `ConfidenceDisclosure.jsx` directly. WS-396 was filed
+  concurrently by another agent against FIND-053 with that exact scope, at P3. The panel criterion
+  was replaced with an integration criterion. The remaining content — the error-budget structure, the
+  Result Card coverage denominator, the assert-don't-print ratchet — is not in WS-396 and is what
+  this ticket is for. If a reviewer judges the residue too thin to stand alone, the honest merge is
+  into WS-396 rather than into WS-384, and this note is the argument for whichever call is made.
+
+  ON THE `blocked_by: WS-389`. An error budget whose largest term is "the answer depends on how busy
+  the machine was" is not a budget worth publishing, and refinement-depth variability is listed as
+  one of the terms. WS-384 is deliberately NOT a blocker: this ticket is about declaring the
+  denominator, which is possible at 2 of 6 and at 6 of 6 alike.

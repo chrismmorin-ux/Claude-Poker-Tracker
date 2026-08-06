@@ -1,0 +1,217 @@
+id: "WS-408"
+title: "Five depth-2 valuation capabilities exist in code and cannot currently be priced individually — double barrel, hero's own future decisions, future-street fold equity, villain's next-street continuation range, and post-raise-call continuation — all absent at refinementBudgetMs=0, all biasing hero toward passivity, all reachable through one scheduler and one flag set"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+finding_id: ""
+description: |
+  SCOPED BY THE FOUNDER'S RULING: depth-2 is correct and required. This is the engine-expansion item
+  — the five things depth-2 adds that depth-1 does not have, each of which must be made reachable at
+  a shippable budget and then individually priced.
+
+  WHAT DEPTH-1 IS, EXACTLY. At `refinementBudgetMs = 0` the whole answer is
+  `pFold * foldEV + pCall * callBranchEV + pRaise * raiseBranchEV` (`gameTreeEvaluator.js:719`),
+  where `callBranchEV` (`:705`) is `eqVsCallRange * (potAfterCall - rake) * realization - heroInvestment`.
+  Read that literally: when villain calls, the pot goes to showdown at this street's equity, scaled
+  by a realization factor. The hand ENDS HERE. Every capability below is a consequence of that one
+  expression, and every one of them makes hero look more passive than he should, because the value
+  of continuing is set to zero and only the cost of continuing is real.
+
+  Measured on HEAD with a temporary probe on a full-range OOP flop check node: at
+  `refinementBudgetMs = 0` the top action is `bet@120 = 62.61` and `depthReached` is 1; at 2000 ms
+  the top action is `check = 70.58` with `bet@120 = 66.12`. So depth-2 raises the stated EV of every
+  candidate, and raises the check candidate most. That direction — depth-2 making hero MORE passive
+  on this node — is the opposite of the audit note's demonstration and is discussed in the
+  status_note; it is also consistent with the corpus, where 38 of 40 measured top-action flips move
+  toward passivity (`bet->check` 30, `raise->call` 2, `raise->fold` 6).
+
+  THE FIVE CAPABILITIES, EACH WITH ITS SITE AT HEAD.
+
+    1. DOUBLE BARREL. The value of betting again on the next street. `callBranchEV` (`:705`) ends the
+       pot at this street; the second barrel is added only by `computeBetCallDepth2EV`
+       (`gameTreeDepth2.js:737`), reached through the `betCallDepth2` gate (`:1594`).
+
+    2. HERO'S OWN FUTURE DECISIONS. At depth-1, hero gets exactly one additional decision, and only
+       inside the villain-raise branch: `bestResponseToAggression` (`gameTreeEquity.js:1041`) prices
+       hero's call/fold/raise against a villain raise. Everywhere else the hand is
+       `equity x pot x realization` with no further hero agency. A hand that is worth playing because
+       hero can profitably continue on a good turn is valued as if he could not.
+
+    3. FUTURE-STREET FOLD EQUITY. The only fold-equity term in the depth-1 expression is
+       `pFold * foldEV` at THIS node (`:719`). The chance that villain calls now and folds later —
+       the entire economic basis of a two-barrel bluff — is worth zero at depth-1.
+
+    4. VILLAIN'S NEXT-STREET CONTINUATION RANGE. `narrowBranch` (`gameTreeDepth2.js:60`) and
+       `tightenRatesForContinuation` (imported at `:16`) appear ONLY in `gameTreeDepth2.js` —
+       verified by grep across `src/utils/exploitEngine/`. Depth-1 therefore treats villain's
+       flop-calling range as his river range: he never continues with less, never folds out his
+       weak calls, never re-weights. That inflates `eqVsCallRange`'s denominator in exactly the
+       direction that makes hero's bets look worse than they are.
+
+    5. POST-RAISE-CALL CONTINUATION. `computeRaiseResponseDepth2EV` (`gameTreeDepth2.js:873`),
+       reached through `raiseResponseDepth2` (`:1632`, gated
+       `{ enabled: enableDepth2Raise, raiseLikely: pRaise > 0.02 }`). What happens after hero calls a
+       raise. Absent at depth-1, so raise-then-call lines are valued as if the hand ended at the
+       call.
+
+  WHY THESE FIVE ARE ONE TICKET AND TRIPLE BARREL IS NOT. All five are implemented in
+  `gameTreeDepth2.js`, all five are reached through the same budget scheduler
+  (`claimStageBudget`, `gameTreeEvaluator.js:930`), all five are made priceable by the same flag set
+  (WS-404), and the work of making them reachable is ONE change to one scheduler (WS-403) rather
+  than five. Splitting them would produce five tickets whose implementation is identical and whose
+  only difference is which flag gets flipped in the measurement — which is a measurement matrix, not
+  five projects. Triple barrel is filed separately as WS-409 because its blocker is different in
+  kind: `depth3Barrel` is disqualified by a RANGE-WIDTH gate (`:1740-1741`,
+  `segmentation.totalCombos <= 800` on the flop) that no budget can open, so it is independently
+  shippable and independently decidable.
+
+  THE FACT THAT MUST BE RECORDED HERE AND NOT RE-DERIVED. The candidate set is IDENTICAL in both
+  arms. `buildHeroActions` runs at `gameTreeEvaluator.js:865`; the budget is not read until `:899`.
+  So NO HERO ACTION IS EVER MISSING AT DEPTH-1 — every gap above is VALUATION, never GENERATION.
+  Two hypotheses were tested against this run and FALSIFIED, and a future session must not spend
+  time on either: depth-1 does not overfold (it UNDER-folds by 48.8 points — 3.5% against a pool
+  52.3%, see WS-402), and depth-1 does not lack the check-raise action (it is built at
+  `heroActionBuilder.js:257` and fully valued in both arms; what it lacks is a way to be SCORED, see
+  WS-405).
+accept_criteria: |
+  - FIVE EV-DELTA ACCEPT CRITERIA, ONE PER CAPABILITY, EACH ON THE IDENTICAL 260-DECISION SET, EACH
+    WITH ITS DIRECTION STATED IN ADVANCE AS POSITIVE. Using WS-404's flags, difference each of
+    `enableBetCallDepth2`, `enableCheckCheckDepth2`, `enableCallDepth2`, `enableCheckRaiseDepth2`
+    and `enableDepth2Raise` off against the full stage set, holding the budget constant across arms.
+    Every one is predicted positive: each supplies value that depth-1 sets to zero, and each is
+    predicted to move hero toward aggression. Report each with its confidence interval and its ESS.
+    A null at this sample size is a legitimate and reportable outcome — at ESS 39.5 on 260 decisions
+    most of these will be nulls, and saying so is the honest result. A clearly NEGATIVE delta on any
+    capability is a domain finding and gets its own ticket rather than being absorbed here.
+  - THE PREDICTION IS RECORDED BEFORE THE RUN, PER CAPABILITY, WITH ITS REASONING. Not "positive" as
+    a blanket, but a stated expected magnitude and the mechanism: double barrel should matter most
+    on flop OOP nodes where hero has fold equity on the turn; continuation-range narrowing should
+    matter most where villain's calling range is widest. A per-capability prediction that the run
+    can contradict is what makes this a measurement rather than a confirmation.
+  - ALL FIVE ARE DEMONSTRATED REACHABLE AT A NAMED, SHIPPABLE BUDGET BEFORE ANY DELTA IS QUOTED.
+    Measured on HEAD, at 2000 ms a flop node runs two or three of six stages and names four as
+    budget-dropped; `checkRaiseDepth2` runs only at 30000 ms. Differencing a capability that never
+    ran in either arm produces a zero that reads as "worthless". State the budget, show the
+    `ranStages` ledger for both arms of every contrast, and reject any contrast where the ablated
+    stage did not run in the enabled arm.
+  - THE BUDGET-REALLOCATION CONFOUND IS REPORTED AS DATA, NOT MENTIONED AS A CAVEAT. Turning a stage
+    off frees its time for the stages after it (`claimStageBudget`, `:930`), so a per-stage delta
+    confounds the stage's value with what the survivors did with its budget. Measured on HEAD:
+    `callDepth2`'s `weightConsumed` moves 0.248 -> 0.872 -> 1.000 across 2000/8000/30000 ms while
+    `betCallDepth2` stays pinned at 0.184 through the first two. Every contrast must carry both
+    arms' per-stage `weightConsumed` so a reader can see whether the survivors got more accurate.
+  - THE PASSIVITY DIRECTION IS TESTED, NOT ASSUMED. The claim that all five bias hero toward
+    passivity when absent is a prediction about the SIGN of the action-distribution shift, and it is
+    separately checkable from the EV delta and cheaper to check. Report, per capability, the change
+    in aggression frequency (bet+raise share) on the identical set. If a capability moves EV
+    positively but hero toward passivity, that is a more interesting result than either number
+    alone.
+  - NOTHING IN THE FIX INTRODUCES A LABEL AS AN INPUT. These are valuation improvements; the
+    doctrine holds. Continuation ranges narrow by equity against the continuing range, not by bucket
+    label; fold equity on a future street derives from the fold curve, not from a style category.
+effort: "XL"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+blocked_by:
+  - "WS-403"
+  - "WS-404"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — IS THE FIVE-WAY ABLATION AFFORDABLE, AND IF NOT, WHICH TWO GET MEASURED? Measured compute
+    is 23.9 s per decision for a TWO-arm pair on 260 decisions (1.7 machine-hours). Six arms — full
+    plus five ablations — is roughly 5 machine-hours at the same scope, and that is before WS-407's
+    realization arm and WS-409's depth-3 arm want space in the same run. Against that, at the current
+    15.2% ESS most of the five will return nulls, so spending 5 hours to learn "we cannot tell" five
+    times is a poor trade. The options are (a) run all five once at current scope and accept a table
+    of nulls as a documented baseline, (b) run only the two with the largest predicted effect
+    (double barrel and continuation-range narrowing) at a larger scope, or (c) wait for WS-402 to
+    raise the ESS and then run all five. RECOMMENDATION: (c), with (b) as the interim if the founder
+    wants a number sooner. Note that (a) is not worthless — a documented table of nulls is what
+    stops the same five questions being asked again — but it should be labelled as a power
+    demonstration, not as a result.
+  - |
+    OPEN — WHAT HAPPENS TO THESE CAPABILITIES ON THE RIVER? All five are street-gated off the river
+    (see WS-406), which is correct for four of them — there is no next street to barrel into — but
+    NOT obviously correct for capability 2, hero's own future decisions. On the river hero still has
+    a decision after villain raises, and `bestResponseToAggression` still prices it, so the river is
+    depth-1 by definition rather than by omission. Worth stating explicitly in the estimand
+    vocabulary so that "depth-2 does nothing on the river" is recorded as a property of the game
+    rather than as a gap in the engine.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  PREMISES RE-VERIFIED AGAINST HEAD (fe716f59), EVERY SITE READ IN PLACE.
+
+    - `gameTreeEvaluator.js:705` and `:719` — the depth-1 expression, quoted in the description
+      verbatim from the file.
+    - `gameTreeDepth2.js:737` — `export const computeBetCallDepth2EV = async ({`; `:873` —
+      `export const computeRaiseResponseDepth2EV = async ({`; `:60` — `const narrowBranch = (...)`;
+      `:16` — `tightenRatesForContinuation` in the import list. A grep for `narrowBranch` and
+      `tightenRatesForContinuation` across `src/utils/exploitEngine/` returns hits in
+      `gameTreeDepth2.js` ONLY (lines 16, 60, 751, 757-758, 889, 895-896, 1005, 1010-1011, 1094,
+      1100-1101, 1104-1105, 1179), confirming capability 4's premise exactly.
+    - `gameTreeEquity.js:1041` — `export const bestResponseToAggression = (heroEquityVsAggroRange,
+      potBeforeAction, aggroBet, callCost, street, isIP, options = {})`, the single site where hero
+      gets an extra decision at depth-1. The audit note cited `:1059-1109`; that range is INSIDE
+      this function (the villain raise-model lookup at `:1060`, the multiway opponent loop at
+      `:1105`), so the premise holds but the function's entry point is `:1041`.
+    - `gameTreeEvaluator.js:1594` `betCallDepth2` gate; `:1632` `raiseResponseDepth2` gate, whose
+      conditions are `{ enabled: enableDepth2Raise, raiseLikely: pRaise > 0.02 }` — NOT street, as
+      the audit note's line list implied; it is street-gated only transitively, being nested inside
+      the `betCallDepth2` block.
+    - `:865` `buildHeroActions`, `:899` `const timeBudgetMs = refinementBudgetMs` — 34 lines apart,
+      the mechanical proof that the candidate set is arm-invariant.
+    - `heroActionBuilder.js:257` — the `check-raise` candidate.
+    - `:1740-1741` — `depth3ComboLimit = street === 'turn' ? 1200 : 800` and the
+      `segmentation.totalCombos <= depth3ComboLimit` qualifier, which is why triple barrel is
+      WS-409 and not a sixth bullet here.
+
+  MEASUREMENT, RUN BY ME ON HEAD via a temporary vitest probe (created, run, deleted): full 169-cell
+  range, board A-spade 7-heart 2-diamond, hero A-heart K-heart, pot 60, `trials: 2000`, budgets
+  0/2000/8000/30000 ms, on both a check node and a facing-bet node. `segmentation.totalCombos` 1081.
+  Per-stage `weightConsumed` on the facing-bet node: `callDepth2` 0.248 / 0.872 / 1.000 and
+  `betCallDepth2` 0.184 / 0.184 / 1.000 across 2000/8000/30000 ms.
+
+  ONE PREMISE FROM THE AUDIT NOTE DID NOT REPRODUCE, AND IT IS THE DIRECTION DEMONSTRATION. The note
+  offered, as evidence that the direction is demonstrated rather than assumed: "same OOP flop node,
+  top action `check` at 2000 ms -> `bet` at 30000 ms, stated bet-EV 19.48 -> 20.55 -> 21.87." On my
+  fixture the top action goes the OTHER way — `bet@120 = 62.61` at budget 0, then `check = 70.58` at
+  2000 ms, `check = 69.83` at 8000 ms, `check = 69.90` at 30000 ms — so depth-2 moves this node from
+  aggression to passivity and keeps it there at every budget. The bet candidate's stated EV DOES
+  rise monotonically with budget (66.12 -> 66.21 -> 66.22) exactly as the note describes, but the
+  check candidate rises further and the argmax never flips back.
+
+  I could not reproduce the note's node, and the difference is almost certainly the fixture — a full
+  169-cell range on one board versus a narrowed corpus range. But the honest reading is that the
+  direction is NOT demonstrated: on the one node I could measure, and on the corpus as a whole (38
+  of 40 flips toward passivity), depth-2 makes hero MORE passive, not less. That does not weaken the
+  ticket. It sharpens it: the five capabilities are all reasons hero SHOULD be more aggressive than
+  depth-1 says, and the measured net effect of depth-2 is the opposite, which means either the
+  capabilities are being outweighed by something else in the refinement (the most likely candidate
+  is `riverPerCombo`, which is the only stage that opens on the river, where 36 of the 45 flips
+  occur) or they are not being reached. Both are answerable by the per-capability ablation this
+  ticket specifies, and neither is answerable without it. The accept criteria state the predicted
+  direction as positive per capability precisely so that this contradiction has somewhere to
+  resolve.

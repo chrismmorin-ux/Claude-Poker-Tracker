@@ -1,0 +1,137 @@
+id: "WS-414"
+title: "Gate 3 research for the Hole Map study surface — two CORE personas are missing entirely (the claim-recipient and the replicator) and the primary outcome has no JTBD domain, so the surface has neither a stated reader nor a stated success criterion"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "design"
+capability: "core"
+program: "design"
+problem_class: "JTBD domain unserved"
+finding_id: ""
+description: |
+  GATE 3, TRIGGERED BY A RED GATE 2. Roundtable:
+  docs/design/roundtables/2026-08-05-hole-map-study-surface.md
+  Gate 1: docs/design/audits/2026-08-05-entry-hole-map-study-surface.md (YELLOW, gaps G1 + G2).
+
+  Gate 1 returned YELLOW reasoning that two named additions close the gap. Gate 2 found the gap is
+  wider than G1/G2 and meets the ROUNDTABLES.md rubric for a STRUCTURAL persona gap and a MISSING
+  JTBD DOMAIN, both defined as Gate-3-before-Gate-4 blockers.
+
+  PERSONA GAP, VERIFIED AT HEAD. docs/design/personas/core/ holds 16 personas. None is:
+
+  A1 CLAIM-RECIPIENT — the reader who receives a number from this surface WITHOUT the surface around
+  it. The shipped row markup (scripts/backtest/holeMapHtml.mjs:143-155) emits nine cells and carries
+  no population marker, no era, and not the word "transferred". The JSON row DOES carry
+  denom.transferNote ("The corpus is ONLINE, ... the RATE transfers worse than the per-occurrence
+  gap") and rowHtml does not render it. "transferred" (x2), "ONLINE" (x4), "2009" (x2) and "50NL"
+  (x3) occur in out/hole-map.html ONLY in prose bands above and below the table. A screenshot, a chat
+  paste, a voice memo — each strips 100% of the claim-safety apparatus, and none is misuse. This is
+  the reader CLAUDE.md presumes ("Before quoting any figure from this system, read §1") and the
+  reader ADR-009's disclaimerRegisterVersion stamp exists to protect. coach.md is a coaching
+  relationship, not this.
+
+  A2 REPLICATOR / SKEPTIC — the reader who wants to CHECK a number: pull the conditioning set, re-run
+  the falsifier, confirm the manifest. ADR-009, Result Cards, replication manifests and
+  registerVersion() all exist to serve exactly this reader. analyst-api-user models an EXTERNAL
+  consumer who wants his own data out, a different relationship from wanting the repo's claims
+  verified. GATE 1'S G2 (founder-in-analyst-mode) IS THE NARROWER HALF OF THIS, and closing G2 alone
+  leaves the wider half open.
+
+  JTBD GAP, DECIDED BY GATE 1'S OWN TEXT. Gate 1 §Output 3 found the nearest domains "all miss on
+  unit" (DS-* is skill acquisition, SR-* is your own hands, MH-* is one live spot) and proposed "open
+  a new FE/field-exploit domain that Views 1-6 can also land in". A gap closed by OPENING A DOMAIN is
+  the Stage B ❌ definition verbatim. The compounding fact: the same missing domain is the home Views
+  1-6 will need next. A domain absent for one surface is a patch; absent for seven it is a domain.
+
+  SITUATIONAL WORK IN THE SAME PASS, each raised independently by two or more lenses:
+    - study-block MUST SPLIT. study-block.md:12/:31/:42 frame it around drills; :51 lists "Feel like
+      work rather than study" as an anti-pattern. This surface IS work, correctly, and cannot inherit
+      that. Split into study-block-drill / study-block-reference. Gate 4 must not borrow
+      study-block's streak/mastery affordances for a reference document.
+    - INTERRUPTED MULTI-DAY READ — nothing covers reading one evergreen document across several
+      sittings. returning-after-break is SKILL decay, a different axis. Implies scroll and filter
+      persistence, which the proposal does not name.
+    - CAVEAT DECAY — in six months the page is fresh and the reader is stale. Nothing in the freshness
+      machinery can fire, because it watches the artifact and the thing that changed is the reader.
+    - PRE-SESSION DIGEST UNCOVERED. presession-preparer.md:42 declares 5/15/30-minute budgets. A
+      945-row document fits none, and no digest form is proposed.
+accept_criteria: |
+  - TWO NEW CORE PERSONAS AUTHORED — personas/core/claim-recipient.md and
+    personas/core/replicator-skeptic.md — each with standard front-matter, evidence status, and the
+    specific design consequence it forces. claim-recipient must state the row-level provenance
+    requirement WS-415 implements; replicator-skeptic must state what a reader needs to re-derive a
+    figure without asking its author.
+  - GATE 1'S G2 IS CLOSED EXPLICITLY, and the ticket records whether founder-analyst became a
+    situational persona in its own right or was absorbed into replicator-skeptic. Either is
+    acceptable; leaving it ambiguous is not, because G2 is the narrower half of A2 and a reader must
+    be able to tell which artifact now carries it.
+  - study-block IS SPLIT into study-block-drill and study-block-reference, and every existing
+    reference to study-block in docs/design/ is re-pointed at the correct half. A split that leaves
+    dangling references has moved the problem, not solved it.
+  - THE FIELD-EXPLOIT JTBD DOMAIN IS OPENED, with the primary job stated in Gate 1's form ("tell me
+    where this field is exploitable that I am not currently exploiting, priced in money per hour,
+    with the evidence count and the conditioning set attached"), plus the two claim-safety jobs
+    (verify a published number; repeat a figure without stripping what makes it honest). Authored so
+    Views 1-6 can land in it without a second domain decision.
+  - DS-60 IS SETTLED. Does the in-app surface REPLACE, COMPLEMENT, or EXPORT TO the offline HTML?
+    Gate 1 flagged it as a Gate 2 question; Gate 2 did not settle it. It decides whether the surface
+    must be print/export-capable, which is a precondition on the container decision rather than a
+    consequence of it.
+  - GATE 2 IS RE-RUN against the updated framework and returns GREEN, per LIFECYCLE.md §Gate 3. A
+    re-run returning YELLOW is a legitimate outcome and must be recorded rather than argued away.
+  - THE EVIDENCE LEDGER RECORDS WHAT WAS OBSERVED, not only what was authored. Per LIFECYCLE.md
+    §Gate 3, internal observation means using the app as the unmodelled persona would — here,
+    reading out/hole-map.html as someone who intends to quote a number from it.
+effort: "L"
+files_involved:
+  - "docs/design/personas/core/"
+  - "docs/design/personas/situational/"
+  - "docs/design/jtbd/"
+  - "docs/design/roundtables/2026-08-05-hole-map-study-surface.md"
+  - "docs/design/audits/2026-08-05-entry-hole-map-study-surface.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-415", "WS-416", "WS-417"]
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — IS CLAIM-RECIPIENT A CORE PERSONA OR A PROPERTY OF THE OTHERS? Stage A asks who would USE
+    the feature, and a claim-recipient receives its output rather than operating it. The roundtable
+    overruled that objection because the repo's entire fault-register apparatus exists precisely
+    because outputs travel beyond the surface that produced them — but the objection is real, and the
+    founder may prefer to model this as an attribute carried by every reading persona. The design
+    consequence (row-level provenance) is identical either way; what changes is whether the cast grows.
+  - |
+    OPEN — WHICH DOMAIN CODE. Gate 1 offered "extend DS-*" or "open a new FE/field-exploit domain".
+    Stage B's reasoning favours a new domain because the same gap recurs for Views 1-6, but extending
+    DS-* is cheaper today and the founder owns the atlas's shape.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  PROBLEM_CLASS NOTE. prog-design.yaml declares eight problem classes and none names a persona-cast
+  gap; the nearest, "PROTO persona staleness", is about verifying personas that already exist.
+  "JTBD domain unserved" is used because the JTBD half fits it exactly. The persona half has no
+  declared home, which is itself a finding about the program's class list — per
+  cwos-reconcile.js:749-754, a genuinely unclassifiable subject means the program's vocabulary is
+  incomplete, and prog-design.yaml should gain a "Persona cast gap" class.
+
+  PREMISES RE-VERIFIED AT HEAD by the Gate 2 facilitator, by reading the code and the artifact rather
+  than trusting the lens digests:
+    - personas/core/ contains exactly 16 files; none is a claim-recipient or a replicator.
+    - holeMapHtml.mjs:143-155 — rowHtml emits nine cells, none carrying population, era or transfer
+      status. denom.transferNote is present on every row of out/hole-map.json and is referenced
+      nowhere in holeMapHtml.mjs.
+    - out/hole-map.html — "transferred" x2, "ONLINE" x4, "2009" x2, "50NL" x3, all in prose bands.
+    - study-block.md:51 — "Feel like work rather than study" is a stated anti-pattern.
+    - presession-preparer.md:42 — three sub-variants, 5 / 15 / 30 minutes.

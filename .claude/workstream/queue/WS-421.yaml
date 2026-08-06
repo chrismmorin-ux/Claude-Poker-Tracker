@@ -1,0 +1,76 @@
+id: "WS-421"
+title: "The Hole Map is built entirely on a CC-BY 4.0 corpus and neither the artifact nor the generator mentions the licence, the dataset or its authors anywhere — harmless while it is a local file, an attribution failure the moment either candidate delivery shape ships the derived data into the app"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 16.0
+priority_label: "P3"
+category: "compliance"
+capability: "core"
+program: "data-provenance"
+problem_class: "Source Registration"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Stage A finding A4, raised by the
+  external lens).
+
+  THE LICENCE IS RECORDED IN THE REGISTRY. docs/provenance/data-source-registry.md, SRC-011 review
+  notes: "CORPUS: uoftcprg/phh-dataset HandHQ subset — 21.6M real-money online NLHE cash hands, 6
+  networks, 25NL-1000NL, July 2009 (CC-BY 4.0; licensing clean)."
+
+  IT IS RECORDED NOWHERE ELSE THAT MATTERS HERE. Verified at HEAD: zero occurrences of "CC-BY",
+  "Creative Commons", "phh-dataset" or "uoftcprg" in out/hole-map.json, out/hole-map.html,
+  scripts/backtest/holeMap.mjs, scripts/backtest/holeMapHtml.mjs or scripts/backtest/run-hole-map.mjs.
+  The artifact carries a full provenance manifest — engine commit, watched-path dirtiness,
+  disclaimerRegisterVersion, regen command, watched paths, inputs — and does not name the dataset its
+  every number is derived from.
+
+  WHY IT IS NOT URGENT AND WHY IT SHOULD STILL BE DONE NOW. As a local file on the founder's machine
+  this is harmless. But BOTH candidate delivery shapes for the in-app surface — a tracked
+  public/study/hole-map.json, or a generated committed ES module under src/utils/.../data/ — put
+  CC-BY-derived data into a deployed application. CC-BY 4.0 requires attribution of the original
+  author on distribution of derived works. The fix is one line in the manifest and one line in the
+  rendered provenance band, and it is far cheaper to add before the delivery decision than to
+  retrofit across two renderers and a deployed build afterwards.
+
+  IT ALSO BELONGS THERE ON THE MERITS. The Hole Map's whole claim-safety story is that a number
+  carries what it depends on. The dataset is the largest thing it depends on.
+accept_criteria: |
+  - THE ARTIFACT'S MANIFEST NAMES THE CORPUS AND ITS LICENCE. At minimum the dataset identifier
+    (uoftcprg/phh-dataset, HandHQ subset), the licence (CC-BY 4.0), and a link. It should read from
+    the registry entry rather than restating it, so the two cannot drift.
+  - THE RENDERED PAGE DISPLAYS IT in the provenance band, in both the static HTML and any in-app
+    rendering. Attribution that exists only in a JSON field is not attribution on distribution.
+  - THE SWEEP COVERS EVERY OUTPUT DERIVED FROM SRC-011 AND SRC-012, not just this one. Views 1-6 of
+    SCORED-READOUT-SPEC.md run on the same corpus, and out/ holds other artifacts. Report the full
+    list; fix them if the fix is shared code, and file the remainder if it is not.
+  - THE REGISTRY IS THE SINGLE SOURCE. If SRC-011's licence or terms are ever amended, every derived
+    artifact should follow without a second edit. A hard-coded licence string in a generator is the
+    same defect in miniature that WS-420 is about.
+effort: "S"
+files_involved:
+  - "scripts/backtest/run-hole-map.mjs"
+  - "scripts/backtest/holeMapHtml.mjs"
+  - "docs/provenance/data-source-registry.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Premises verified at HEAD by the Gate 2 facilitator: the SRC-011 review-note text quoted above, read
+  in place in docs/provenance/data-source-registry.md; and a grep for CC-BY, Creative Commons,
+  phh-dataset and uoftcprg returning zero hits across out/hole-map.json, out/hole-map.html,
+  holeMap.mjs, holeMapHtml.mjs and run-hole-map.mjs.

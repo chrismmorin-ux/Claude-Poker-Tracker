@@ -1,0 +1,181 @@
+id: "WS-388"
+title: "Every scored decision in the backtest is reconstructed at exactly 100bb because the data model records no per-seat stack — so stack depth, the variable the founder's own doctrine names as the cause of passive play, has zero variance across the entire corpus"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FROM THE 2026-08-05 DOMAIN-CORRECTNESS BLIND-SPOT ROUNDTABLE, `backtest_contaminants` entry 1.
+  Promoted by the founder's same-day redirect, which makes a scored aggregate EV figure the
+  deliverable.
+
+  WHAT THE CODE DOES. `src/utils/assumptionEngine/__backtest__/handStateReconstructor.js` is the
+  module that turns a recorded hand into engine-ready state so the engine can be scored against real
+  decisions. Its own header, at `:19`, lists what it fabricates:
+
+      *   - effectiveStack (defaults to 100×bb — no per-seat stack tracking in the data model)
+
+  and the code follows through:
+
+      :254  const effectiveStackBB = Number.isFinite(defaults.effectiveStackBB) ? defaults.effectiveStackBB : 100;
+      :330  const effectiveStack = effectiveStackBB * bb;
+      :356  effectiveStack,      ← handed to the engine
+
+  WHAT THAT DOES TO SPR. `gameTreeContext.js:216` computes `spr = effectiveStack / potSize`. Pot size
+  IS real — it is walked from the action sequence — so SPR is not literally frozen. What is frozen is
+  the NUMERATOR: every hand, every player, every stake, every seat is 100bb deep. The corpus contains
+  no short stack, no deep stack, no seat that has been losing for two hours. SPR varies only as the
+  pot varies, so all between-hand variation in stack depth — the entire dimension — has been removed
+  before the engine ever sees the data.
+
+  WHY THAT SPECIFIC DIMENSION MATTERS MORE THAN ANY OTHER MISSING ONE. The founder's own recorded
+  doctrine (`feedback_fear_drives_medium_hands_passive`) names SPR as the causal variable behind the
+  behaviour the engine is supposed to model: "afraid of getting stacked" is SPR, not a label. The
+  engine agrees with him structurally — `exploitEngine/CLAUDE.md` forbids position labels and bucket
+  labels as decision inputs precisely so that decisions derive from equity, pot odds and SPR. The
+  backtest holds one of those three constant. So the scored figure cannot exhibit, cannot refute and
+  cannot measure any effect the doctrine attributes to stack depth. It is not that the number is
+  biased in a known direction; it is that a whole axis is absent and the figure carries no marker
+  saying so.
+
+  THE UPSTREAM CAUSE, WHICH IS WHERE THE ACTUAL WORK IS. `src/reducers/gameReducer.js` records no
+  per-seat stack at all — a case-insensitive grep for `stack` across the file returns ZERO matches.
+  The recorded action shape carries seat, action, street, order and amount. There is nothing for the
+  reconstructor to read, so the imputation is not a shortcut somebody took; it is the only thing the
+  reconstructor could have done. Any fix that stops at the reconstructor is fixing the symptom.
+
+  THIS IS ALSO WHY THE CROSS-CRITIC KILLED THE "MINIMAL CUT" LIVE-PATH PROPOSAL. The roundtable's
+  `do_not_file` list rejects wiring `useActionAdvisor` into the live table partly because
+  `effectiveStack` is unrecordable — the gameReducer has no stack field — and its stated honest
+  ordering is "(0) record stacks, (1) thread multiway, (2) monotonicity or depth disclosure,
+  (3) wire". Step 0 is this ticket. It is a prerequisite for two separate pieces of work, which is
+  the argument for doing it before either.
+accept_criteria: |
+  - THE FIGURE IS DENOMINATED IN EV, AND THE MEASUREMENT IS ONLY POSSIBLE AFTER THE FIX — SAY SO
+    RATHER THAN DROPPING THE CRITERION. The EV criterion here is partly circular: the aggregate EV
+    figure computed on 100bb-everywhere data cannot be trusted to price its own correction. The
+    honest shape is a two-stage claim. Stage 1, available immediately: re-run the SAME decision set
+    with `effectiveStackBB` swept over a plausible live range (say 40 / 75 / 100 / 200) and report
+    the aggregate EV spread. That spread is a LOWER BOUND on the error the imputation is currently
+    hiding, and it is measurable today with no schema change. Stage 2, after real stacks are
+    recorded: the EV delta between the imputed run and the real-stack run on identical hands. State
+    both, and state that stage 2's magnitude is unmeasured until the recording lands.
+  - IF THE STAGE-1 SWEEP MOVES AGGREGATE EV BY LESS THAN THE HARNESS'S MINIMUM DETECTABLE EFFECT,
+    THAT IS A REAL AND REPORTABLE RESULT AND IT CHANGES THIS TICKET'S PRIORITY. A null here would say
+    the engine's EV is insensitive to stack depth over the plausible range — which would be a
+    surprising and important finding about the ENGINE, worth its own investigation, and would
+    de-escalate the recording work. Do not treat a null as a failed ticket.
+  - PER-SEAT STACK IS RECORDED AT SOURCE. `gameReducer.js` gains a per-seat chip count that updates
+    as the hand progresses, persisted with the hand. This is the load-bearing half of the ticket and
+    the reconstructor change is downstream of it. Follow the existing reducer conventions —
+    `ACTIONS.*` constants, `SEAT_ARRAY` iteration, `CONSTANTS.NUM_SEATS`, dispatch-only updates — and
+    per `feedback_action_dispatch_legality`, prefer a shape where an unrecordable state is
+    unrepresentable rather than validated after the fact.
+  - THE RECONSTRUCTOR STOPS IMPUTING WHEN REAL DATA EXISTS, AND SAYS WHICH IT USED, PER DECISION.
+    Every reconstructed decision carries a flag distinguishing a real stack from an imputed one.
+    Hands recorded before this ships have no stacks and will always be imputed — that is fine and
+    permanent, and it is exactly why the flag must be per-decision rather than per-run.
+  - THE RESULT CARD REPORTS THE IMPUTED FRACTION, AND A CARD WITH A HIGH ONE SAYS SO ON ITS FACE.
+    A figure aggregated over a decision set that is 100% imputed on stack depth is a different claim
+    from one that is 10% imputed. The manifest must carry the fraction so that a card produced today
+    and a card produced after six months of real recording can be told apart by a reader who was not
+    there.
+  - THE ENGINE'S BEHAVIOUR ACROSS THE SWEEP IS SANITY-CHECKED AGAINST DOCTRINE, NOT JUST RECORDED.
+    POKER_THEORY's five SPR zones predict qualitative direction: at low SPR, commitment and stack-off
+    thresholds dominate; at high SPR, implied odds and multi-street planning do. If the sweep shows
+    the engine's advice barely responding to a 5x change in stack depth, that contradicts the model
+    the engine claims to implement and is a finding in its own right, not a passing test.
+  - NO SCOPE CREEP INTO THE LIVE-TABLE WIRING. The roundtable's honest ordering puts stack recording
+    at step 0 and wiring at step 3, and the two must not be done together — wiring an EV number onto
+    the live table is separately argued and separately gated (it also needs multiway threading and a
+    rake config). This ticket records the data and unblocks the measurement. It does not ship advice.
+effort: "L"
+files_involved:
+  - "src/reducers/gameReducer.js"
+  - "src/utils/assumptionEngine/__backtest__/handStateReconstructor.js"
+  - "src/utils/assumptionEngine/__tests__/handStateReconstructor.test.js"
+  - "src/utils/standardOfRecord/"
+blocked_by:
+  - "WS-389"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND IT DECIDES THE SIZE OF THIS TICKET — WHAT "PER-SEAT STACK" MEANS AT A LIVE TABLE THE
+    FOUNDER IS ENTERING BY HAND MID-HAND. He is playing 9-handed live and recording actions on a
+    phone. Recording every seat's exact chip count every hand is not a data-model question, it is a
+    data-ENTRY question, and it is the kind of burden that gets abandoned in week two. Realistic
+    options, in ascending cost: (a) hero's own stack only, plus the villain at the decision node —
+    which is all `effectiveStack` needs, since effective stack is a pairwise quantity; (b) a
+    coarse per-seat bucket (short / standard / deep) set once when a player sits and adjusted on
+    visible events; (c) full per-seat chip tracking derived from bet amounts plus an initial buy-in.
+    Option (a) is probably enough for the engine and is a fraction of the entry cost of (c), and
+    option (c) may be derivable for the ONLINE corpus at no entry cost at all — which would let the
+    backtest get real stacks without the founder typing anything. Decide this before writing reducer
+    code; it changes the schema, the UI and the entry burden.
+  - |
+    OPEN — WHETHER THE HISTORIC CORPUS CAN BE BACK-FILLED. The scored runs the founder wants are
+    against the existing corpus, and that corpus is already recorded. If the source hand histories
+    carry stack information that the import dropped, back-filling is a parsing change and the
+    backtest gets real stacks immediately without waiting for a single new live hand. If they do not,
+    every historic decision stays imputed forever and the imputed-fraction flag above is doing
+    permanent work. Check the raw source before deciding; this is the difference between "the figure
+    improves next month" and "the figure improves in a year".
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the roundtable record:
+    - `src/utils/assumptionEngine/__backtest__/handStateReconstructor.js:19` — the header comment,
+      quoted verbatim above; `:230` the `@param` documenting `{ effectiveStackBB: 100 }`; `:254` the
+      resolution expression; `:330` the multiplication by `bb`; `:356` where it enters the returned
+      state.
+    - `src/reducers/gameReducer.js` — a case-insensitive grep for `stack` returns ZERO matches.
+      Verified directly, because "the data model has no stacks" is the load-bearing claim and the
+      roundtable asserted it without showing the grep.
+    - `src/utils/exploitEngine/gameTreeContext.js:216` —
+      `const spr = (effectiveStack != null && potSize > 0) ? effectiveStack / potSize : null;`
+    - Callers of the `defaults.effectiveStackBB` override, by grep across `src/` and `scripts/`:
+      `__tests__/dividendCalibrationBacktest.test.js:514` and
+      `__tests__/handStateReconstructor.test.js:257`. Both are tests.
+
+  ON THE `blocked_by: WS-389`. The stage-1 sweep in the first accept criterion is an EV comparison
+  between arms, and on a wall-clock-gated harness the arms are not comparable — a stack-depth effect
+  and a CPU-contention effect would arrive as the same number. The reducer work can start
+  immediately; the measurement that closes the ticket cannot.
+
+  DEPENDENCY NOT YET MACHINE-READABLE: the standardized-readout spec (defining the harness, the
+  identical decision set, the baseline arm and the minimum detectable effect that accept criteria 1
+  and 2 depend on) did not exist in `.claude/workstream/queue/` when this was filed — checked by
+  grep. Wire its ID into `blocked_by` when it lands.
+
+  TWO PREMISES CORRECTED. Both were overstatements in the roundtable record and both are stated
+  correctly in the description above.
+
+    1. "UNCONDITIONAL" is not literally true. `:254` honours a `defaults.effectiveStackBB` override.
+       The correct and still-damning statement is that NO NON-TEST CALLER PASSES IT, so the value is
+       100 in every scored run — verified by enumerating the override's call sites, which are two
+       test files. The distinction matters for the fix: the sweep in accept criterion 1 is available
+       today through an override that already exists, with no code change at all.
+
+    2. "SPR IS A CONSTANT IN EVERY SCORED RUN" is wrong as written. SPR is `effectiveStack / potSize`
+       and pot size is reconstructed from the real action sequence, so SPR varies within and across
+       hands. What is constant is the STACK DEPTH — the numerator — which removes all between-hand,
+       between-player and between-stake variation in the dimension. That is the accurate claim and it
+       is the one the ticket is written on. Propagating "SPR is a constant" would have been a false
+       premise that any reader could refute in one line, and refuting it would have discredited a
+       finding that is real.

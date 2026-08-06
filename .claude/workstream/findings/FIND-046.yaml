@@ -1,0 +1,73 @@
+id: "FIND-046"
+title: "The domain-correctness program's own scope patterns and detection recipes name paths that do not exist, so a literal execution reads clean forever"
+severity: HIGH
+status: open
+category: "methodology-defect"
+program: "methodology-integrity"
+problem_class: "Methodology Drift"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  MECHANISM 1 — DEAD SCOPE. prog-domain-correctness.yaml:143-150 lists `gameTreeEvaluator*.js`,
+  `bayesianConfidence*.js`, `foldEquityCalc*.js`, `preflopAdvisor*.js`, `decisionAccumulator*.js`,
+  `weaknessDetector*.js`, `actionAdvisor*.js` and `villainDecisionModel/**` at repo-root-relative
+  `src/utils/` — all eight match ZERO files, because every one of those modules lives under
+  `src/utils/exploitEngine/`. The detection recipes repeat the error: :82 names
+  `src/utils/handAnalysis/equityCalc.js` (absent), :91 names `src/utils/gameTreeEvaluator.js` and
+  `foldEquityCalc.js` (absent), :99 and :108 name `src/utils/villainDecisionModel/` (not a
+  directory). 9 of 13 named paths fail a direct existence test.
+
+  Consequence: a literal execution of this program's detection recipes greps paths that do not
+  exist and reports clean. The instrument cannot fail.
+
+  MECHANISM 2 — SCOPE EXCLUDES THE PRODUCT. `src/hooks/**` and `src/components/**` are outside
+  scope entirely, so useActionAdvisor.js, useLiveActionAdvisor.js and CommandStrip.jsx — the file
+  holding the most consequential poker-logic line in the repo (FIND-043) — are invisible to the
+  3-day delta guardrail. Five of the eight evaluateGameTree callers are likewise out of scope:
+  liveAdvisor/computeHelpers.js:249, citedDecision/computeBaselineForAssumption.js:133,
+  predictionAudit/reconstruct.js:211, postflopDrillContent/computeDepth2Plan.js:166.
+
+  ONE FINDING, TWO MECHANISMS — the WS-283 escape had two independent causes needing different
+  remedies. Route A (drillModeEngine.js:808-815, inside postflopDrillContent/, where 0.75 is passed
+  POSITIONALLY as the betFraction argument — see FIND-053) escaped because of the scope gap.
+  Route B (gameTreeEvaluator.js, IN scope) escaped because of review depth: an audit of a DEFAULTED
+  constant that does not also grep the LITERAL will miss every explicit pass. Fixing the scope file
+  alone leaves Route B open.
+
+  ROUTE B'S DEFECT IS NOT THE ONE THE EXTERNAL TICKET FILED — CORRECTED MECHANISM, VERIFIED AT HEAD.
+  The stale 0.75 at gameTreeEvaluator.js:587 and :603 was filed as a live-path contaminant. It is
+  neither. Both occurrences are divide-by-zero FALLBACKS —
+  `:587 const sizingFraction = betFraction ?? (effectivePot > 0 ? betSize / effectivePot : 0.75)`
+  and `:603 const heroBetFraction = effectivePot > 0 ? betSize / effectivePot : 0.75` — so 0.75 is
+  unreachable on ANY path where the pot is non-zero, live or scored. (The run record's framing,
+  "fires ONLY multiway and therefore specifically in the backtest", is closer than the ticket's but
+  still describes the guard rather than the constant.)
+  THE REAL DEFECT AT THAT SITE: the multiway branch at :603 RECOMPUTES the bet fraction from
+  betSize/effectivePot and silently IGNORES the caller-supplied `betFraction` that :587 honours
+  (destructured from heroAction at :259). So any caller that explicitly declares a bet size has
+  that declaration dropped for the multiway fold-equity term — multiway fold equity is not priced
+  at the size hero is actually betting. Do NOT file the 0.75-as-contaminant version.
+
+  CROSS-CRITIC RULING CARRIED FORWARD: adding a staleness rule without fixing this first is
+  harmful in isolation — a staleness rule computed over a scope that resolves to nothing reports
+  clean forever and will then be cited as evidence of health. It also needs a zero-importer census
+  beside it, since a module with no callers is invisible to a rule about callers.
+affected_files:
+  - ".claude/workstream/programs/prog-domain-correctness.yaml"
+  - ".claude/workstream/programs/prog-methodology-integrity.yaml"
+recommended_fix: |
+  (1) Repoint every scope pattern and detection recipe at the paths that exist, and add
+  `src/hooks/**` and `src/components/views/**` to scope so the surfaces the founder actually uses
+  are auditable. (2) Add a check that FAILS when a declared scope pattern or a path named in a
+  detection recipe matches zero files — the defect class is "the instrument silently addresses
+  nothing", and it recurs unless the instrument is itself instrumented. Apply the same check to
+  prog-methodology-integrity.yaml, whose scope block repeats several of the same dead paths.
+  (3) Only then add any staleness or delta rule computed over that scope.
+theory_citation: "CLAUDE.md Command Routing / envelope discipline; program contract — a detection recipe that cannot fail is not a detector"
+dedup_key: "blindspot-methodology-integrity-program-scope-patterns-match-zero-files"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: ""

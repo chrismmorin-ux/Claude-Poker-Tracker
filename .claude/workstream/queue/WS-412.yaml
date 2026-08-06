@@ -1,0 +1,122 @@
+id: "WS-412"
+title: "monteCarloEquity is the last unseeded source in the hero-EV chain, and it is the one BOTH arms share — so it sets the floor a paired delta can never get below"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 17.0
+priority_label: "P2"
+category: "engine"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  FOUND WHILE PREPARING THE BASELINE EV RUN (WS-393, 2026-08-05), and stated as the residual after
+  the two larger sources were handled.
+
+  WHERE IT STANDS AFTER WS-393. `replicationStamp.HERO_EV_UNSEEDED_SOURCES` used to name three
+  sources; one of them is now closed and this is what is left:
+
+    - CLOSED (WS-393): `gameTreeSampling.js` / `gameTreeDepth2.js` — six `stratifiedSample` calls
+      and `miniRolloutEquity` now take a board-derived deterministic rng.
+    - OPEN, DEFERRED (WS-411): the wall-clock refinement budget. Not randomness — machine
+      dependence.
+    - OPEN, THIS TICKET: `src/utils/pokerCore/monteCarloEquity.js` — `Math.random()` in the deck
+      shuffle and the weighted combo draw.
+
+  WHY THIS ONE IS DIFFERENT FROM WS-393's, AND WHY IT WAS NOT SWEPT IN WITH IT. The WS-355/WS-393
+  argument for seeding `stratifiedSample` is that stratification carries its estimate in the CATEGORY
+  WEIGHTS, so which particular flush card gets drawn is the part stratification exists to make not
+  matter — seeding it removes flicker without touching what is estimated. **That argument does not
+  transfer here.** `handVsRange` is a genuine Monte Carlo: the draws ARE the estimate. Seeding it
+  does not remove its sampling error, it FIXES the error at one particular value — and a fixed error
+  is a systematic bias that no amount of averaging will reveal, which is exactly what
+  `decisions.md:427` turned down. Seeding this without thinking is the failure mode that decision
+  exists to prevent.
+
+  SO WHY IT STILL MATTERS. `handVsRange` runs inside `buildEvaluationContext`, which is MANDATORY
+  work on every arm — depth-1 and depth-2 alike. Two consequences:
+
+    1. It is the reason the WS-393 hero-EV chain will not be bit-reproducible even after WS-411.
+       Measured on two identical 6-decision runs (2026-08-05): the headline edge matched exactly
+       (2.6667 bb both times) and `piOurs` was identical on 6 of 6 decisions, but the per-combo
+       top-candidate EV vector matched on only 3 of 6. The advice was stable; the NUMBERS
+       underneath it were not.
+    2. Because both arms share it, its noise is COMMON to them and largely cancels in the paired
+       depth2 − depth1 delta — but only largely. Whatever does not cancel is the floor that any
+       future paired improvement must clear, and nobody has measured it.
+
+  THE MEASUREMENT THAT SHOULD COME FIRST, BEFORE ANY FIX. Run the same configuration twice and
+  difference it per decision. That number — the replicate floor — is what decides whether this
+  ticket is urgent or academic. It is also the cheapest missing number in the repo and the runbook
+  (`docs/runbooks/baseline-ev-run.md` §8) already asks the founder to produce it as run 2 of the
+  baseline. Do not raise `trials` or seed anything before that number exists; both are guesses
+  without it.
+
+  THE THREE HONEST OPTIONS, once the floor is known.
+    a. RAISE `trials`. Shrinks the error for real rather than freezing it. Costs wall clock in the
+       backtest, and the backtest already runs at `trials = 200` against the app's 500 — so the
+       backtest is measuring a NOISIER engine than the one that ships, which is its own finding.
+    b. SEED IT FOR MEASUREMENT ONLY. The backtest passes an rng; production keeps `Math.random`.
+       Deterministic backtests, unchanged product, and the honest cost is that the thing measured is
+       not exactly the thing shipped.
+    c. EXACT ENUMERATION WHERE IT IS CHEAP. On the river equity is a score comparison and needs no
+       MC at all; on the turn it is 44 runouts. `__tests__/helpers/groundTruth.js` already enumerates
+       exactly for exactly this reason. The flop is the only place MC is genuinely required. Worth
+       checking how much of the run's `handVsRange` traffic is river/turn and therefore removable
+       rather than seeded.
+accept_criteria: |
+  - THE REPLICATE FLOOR IS MEASURED AND REPORTED FIRST, before any change. Two identical runs on the
+    same Deal Book, differenced PER DECISION (the two decision-level sidecars line up row for row,
+    because EVAL players are walked in the same order). Report the paired delta and its interval.
+    That number is the deliverable even if nothing else in this ticket is done.
+  - WHICHEVER OPTION IS TAKEN, THE ARGUMENT AGAINST `decisions.md:427` IS MADE EXPLICITLY IN CODE.
+    If it is seeded, the docblock must say why fixing the error is acceptable HERE when it was
+    refused THERE — and "the backtest needs it" is the beginning of that argument, not the whole of
+    it. If it is not seeded, that reasoning must be recorded too, so this is not re-litigated.
+  - `HERO_EV_UNSEEDED_SOURCES` IS UPDATED EITHER WAY. It is a positive claim about reproducibility
+    printed on every Result Card; a source that is closed must leave the list and a source that
+    stays must stay named. WS-393 has already removed the depth-2 entry.
+  - THE FRACTION OF `handVsRange` TRAFFIC THAT IS RIVER OR TURN IS MEASURED. If most of it is
+    exactly enumerable, option (c) removes the problem instead of managing it, and that should be
+    known before the other two are priced.
+  - IF `trials` IS CHANGED, THE BACKTEST/APP MISMATCH IS RESOLVED OR RECORDED. The harness runs at
+    200 and the app at 500. Whatever is decided, the two numbers should either agree or the gap
+    should be a stated, stamped configuration difference rather than an accident.
+effort: "M"
+files_involved:
+  - "src/utils/pokerCore/monteCarloEquity.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — SEED, ENUMERATE, OR SPEND. Seeding is free and freezes a bias. Enumerating is exact and
+    only available off the flop. Raising `trials` is honest and costs the wall clock of every future
+    run, which is the scarcest resource in this whole programme. The replicate floor decides which
+    of these is worth paying for, which is why this ticket refuses to pick before it exists.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:20:00Z"
+status_note: |
+  Premises verified against HEAD:
+    - `src/utils/pokerCore/monteCarloEquity.js` — named in `HERO_EV_UNSEEDED_SOURCES` and printed
+      on every hero-EV Result Card as "Math.random() in the deck shuffle and the weighted combo
+      draw".
+    - `decisions.md:427` — the standing decision against seeding an RNG to suppress MC flake, and
+      the reason `gameTreeSampling.js`'s docblock argues its way past it rather than ignoring it.
+    - The two-run comparison (edge identical, `piOurs` 6/6 identical, top-candidate EV vector 3/6
+      identical) is from live WS-393 replicate runs on 2026-08-05, not inference.
+    - `heroPolicy.mjs:63` — `DEFAULT_TRIALS = 200`, against the app's 500, already documented as a
+      cost trade in that module's header.

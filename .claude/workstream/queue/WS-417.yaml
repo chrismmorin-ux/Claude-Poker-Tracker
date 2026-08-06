@@ -1,0 +1,118 @@
+id: "WS-417"
+title: "The 20 bb/hour figure that justifies the Hole Map's whole bb/hour column is a founder assertion with no evidence behind it, it never appears on the page it justifies, and the 12.32 it is meant to be compared against is an incremental transferred ceiling while it is a total realized rate — same units, different axes, which is the thing ADR-009 exists to prevent"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "methodology"
+capability: "core"
+program: "methodology-integrity"
+problem_class: "Cross-Method Consistency"
+finding_id: ""
+description: |
+  FOUND BY GATE 2 for the Hole Map study surface
+  (docs/design/roundtables/2026-08-05-hole-map-study-surface.md, Adjudication #4).
+
+  THE ANCHOR IS LOAD-BEARING IN TWO PLACES. docs/standard-of-record/SCORED-READOUT-SPEC.md:747 and
+  scripts/backtest/holeMap.mjs:22 both carry the same sentence, and it is the stated justification
+  for denominating every hole row in bb/hour at all:
+
+    "The founder anchored the ask on a RATE — 'good players make upwards of 20bb per hour'. That is a
+    SCALE TEST. '+0.35 bb when it occurs' cannot be read as either a fifth of a good player's edge or
+    a rounding error. So every hole row carries THREE quantities..."
+
+  IT HAS A SOURCE BUT NO EVIDENCE. The Gate 2 external lens reported "no provenance anywhere in the
+  repo"; the facilitator's verification refines that — the attribution is explicit and identical at
+  both sites (the founder said it), so it is not unsourced. What is missing is EVIDENCE: no citation,
+  no measurement, no Result Card. A founder assertion is doing the work of a scale test, which is
+  precisely the relationship SRC-009-style founder estimates are trust-tiered for elsewhere in this
+  repo.
+
+  IT IS ALSO NOT ON THE PAGE. Verified: zero occurrences of "20 bb" or "20bb" in out/hole-map.html.
+  The figure that justifies the column does not appear beside the column.
+
+  THE SCALE ITSELF IS QUESTIONABLE. At the artifact's own handsPerHour = 25, 20 bb/hr is 80 bb/100.
+  Strong online 50NL regulars are single-digit bb/100; credible live low-stakes figures run roughly
+  10-30 bb/100. 80 bb/100 is not a plausible win rate. It is far more plausible that the founder
+  meant $/hr at $1/$2 — $40/hr — in which case the scale test is off by the big-blind size and the
+  column it justifies is denominated against a number that was never a bb figure.
+
+  THE AXIS PROBLEM IS THE ONE THAT MATTERS, AND IT SURVIVES EVEN IF THE ANCHOR IS SOUND.
+  portfolio.total = 12.3179 bb/hour is INCREMENTAL (edge not currently captured), a CEILING (see
+  ceilingNote), and TRANSFERRED (measured on online 2009 HandHQ, applied to live 9-handed 1/2-1/3).
+  The 20 is TOTAL and REALIZED and live. Putting them in the same units invites a subtraction that is
+  not defined. That is the mirror image of what ADR-009 exists to prevent, and the repo has already
+  named the mechanism: FAULT-horizon-bias — "a one-decision edge read as a winrate" — is rank 8 in
+  the live fault register, status untested, and one of the five prose-matched entries WS-385 flags.
+
+  A THIRD NUMBER IS ONE NAV HOP AWAY. src/components/views/SessionsView/InsightsBand.jsx:39 renders a
+  measured {money(r.hourlyRate)}/h per row. At $1/$2, 12.32 bb/hr reads as $24.64/hr. Once the Hole
+  Map ships in-app, three numbers in money-per-time on three different axes are reachable in under ten
+  seconds, and nothing stops the reading "there is more untapped edge here than I currently earn".
+accept_criteria: |
+  - THE ANCHOR IS RESOLVED ONE OF THREE WAYS, AND THE CHOICE IS RECORDED IN CODE: evidenced (a
+    citation or a measurement, registered like any other source), corrected (if it was $/hr at $1/$2,
+    say so and restate the scale test in the units it was actually made in), or RETIRED as a scale
+    test with the bb/hour column re-justified on some other basis. Leaving it as an unevidenced quote
+    doing load-bearing work is the one outcome this ticket forbids.
+  - IF THE bb/HOUR COLUMN SURVIVES, ITS AXIS IS STAMPED WITH IT. Any figure in money-per-time emitted
+    by this instrument must carry, structurally and not in prose, that it is incremental rather than
+    total, a ceiling rather than a forecast, and transferred rather than measured. denom already has
+    the right shape to hold this.
+  - THE COMPARISON THE SCALE TEST INVITES IS EITHER MADE VALID OR REFUSED IN THE OUTPUT. If 12.32 and
+    20 cannot be subtracted, the artifact should say so where a reader would try. RULE 7c already
+    demonstrates the pattern for a refusal that is itself the correct output.
+  - FAULT-horizon-bias IS RE-EXAMINED IN LIGHT OF THIS SURFACE. Its stated mechanism is that the
+    fault fires where a downstream reader DROPS the treatment string — and an in-app bb/hour column
+    is a downstream reader with no treatment string at all. Determine whether shipping this column
+    raises the entry's probability, its impact, or both, and whether it moves off "untested".
+  - THE InsightsBand ADJACENCY IS EITHER SEPARATED OR EXPLAINED. Two money-per-time numbers on
+    different axes, one nav hop apart, is a Cross-Method Consistency defect whether or not either
+    number is individually correct. Naming it is the minimum; a design remedy belongs to Gate 4.
+  - REPORT WHETHER ANY OTHER READOUT USES THE SAME ANCHOR. The scale test was written into
+    SCORED-READOUT-SPEC.md, which governs Views 1-7. If Views 1-6 inherit it, they inherit this.
+effort: "M"
+files_involved:
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - "scripts/backtest/holeMap.mjs"
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "src/components/views/SessionsView/InsightsBand.jsx"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN AND FOR THE FOUNDER SPECIFICALLY — WHAT DID "20bb per hour" MEAN? The whole ticket turns on
+    it. At 25 hands/hour it is 80 bb/100, which is not a credible win rate; as $40/hr at $1/$2 it is
+    an ordinary strong-live-player figure. Nobody but the founder can settle which was meant, and the
+    answer determines whether the bb/hour column keeps its justification, changes units, or loses it.
+  - |
+    OPEN — WHETHER A CEILING SHOULD BE DENOMINATED IN MONEY-PER-TIME AT ALL. The per-100-hands figure
+    is the repo's own currency (POKER_THEORY §14.1) and carries no pace assumption; denom.transferNote
+    says as much on every row. bb/hour exists only to satisfy the scale test. If the scale test is
+    retired, the cleanest outcome may be that bb/hour goes with it — which would resolve the axis
+    problem and the InsightsBand adjacency at the same time, at the cost of the founder's stated
+    reason for wanting the readout.
+source:
+  type: design-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "blindspot-hole-map-study-surface-2026-08-05"
+created_at: "2026-08-05T22:00:00Z"
+status_note: |
+  Premises verified at HEAD by the Gate 2 facilitator:
+    - SCORED-READOUT-SPEC.md:747 and holeMap.mjs:22 — the anchor, attributed to the founder verbatim
+      at both sites. This CORRECTS the lens digest's "no provenance anywhere in the repo": there is a
+      source, there is no evidence.
+    - out/hole-map.html — zero occurrences of "20 bb" or "20bb".
+    - out/hole-map.json — portfolio.total 12.317861063482978; handsPerHour 25.
+    - DISCLAIMER-AND-FAULT-REGISTER.md:105 — FAULT-horizon-bias, "a one-decision edge read as a
+      winrate", instrument, 0.60 x 0.70 = 0.420, rank 8, untested.
+    - InsightsBand.jsx:39 — renders {money(r.hourlyRate)}/h.

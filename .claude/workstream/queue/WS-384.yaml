@@ -1,0 +1,188 @@
+id: "WS-384"
+title: "Only 2 of 6 estimators are pinned against exact enumeration — the four gaps are the worklist, and one of them is computeVillainEquityVsPerceived, the quantity at the centre of the river work"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 21.0
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE CENSUS ASSERTS ITSELF, AND IT SAYS 2 OF 6. Ratcheted in commit 8c94a2f6 out of the WS-334
+  work. `src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js` enumerates every estimator
+  that approximates an exactly-enumerable quantity, checks which ones a test importing the
+  ground-truth helpers can reach, prints the census INCLUDING the zeros, and then asserts the count
+  EXACTLY — `expect(pinned.length).toBe(PINNED_COUNT)` with `PINNED_COUNT = 2` (`:59`, `:124`).
+
+    PINNED (2)
+      computeComboEquityDistribution   src/utils/exploitEngine/gameTreeEquity.js:685
+      miniRolloutEquity                src/utils/exploitEngine/gameTreeSampling.js:315
+
+    GAPS (4) — THE WORKLIST
+      computeVillainEquityVsPerceived  src/utils/exploitEngine/gameTreeEquity.js:639
+      approximateSubRangeEquity        src/utils/exploitEngine/gameTreeEquity.js:134
+      approximateCallingRangeEquity    src/utils/exploitEngine/gameTreeEquity.js:166
+      approximateBettingRangeEquity    src/utils/exploitEngine/gameTreeEquity.js:192
+
+  The assertion is exact rather than a floor, deliberately: a floor lets coverage be added without
+  anyone noticing and lets the constant drift from reality, while an exact match makes movement in
+  BOTH directions deliberate and visible in a diff (`groundTruthCoverage.test.js:118-123`). So this
+  ticket's completion is literally a number going up in a reviewed edit.
+
+  WHY THIS IS WORTH DOING AT ALL — THE RECORD, NOT AN ARGUMENT. From
+  `src/utils/exploitEngine/CLAUDE.md:52-58`: "WS-334's estimator changes were argued from mechanism
+  and stated as magnitudes before being measured; measurement reversed the sign of one claim, the
+  scope of another, and the headline consequence of a third. The same forty seconds of enumeration
+  also surfaced a bias that had been shipping since WS-307 with a fully green suite, because every
+  existing assertion checked SHAPES and BANDS rather than the number against truth." Four
+  estimators are currently in the pre-measurement state that produced that.
+
+  `computeVillainEquityVsPerceived` IS THE ONE TO DO FIRST, AND THE TIMING IS THE REASON. It is the
+  quantity at the centre of the river omniscience work. WS-378 measured the top action flipping on
+  80% of river decisions, 38 of 40 toward passivity, and its central accept criterion is an audit
+  of the three river estimators for whether they are on ONE SCALE, since they are compared by
+  argmax. A perceived-range equity that is systematically biased in either direction lands directly
+  on that comparison, and there is currently no measurement that could tell. Pinning it does not
+  resolve WS-378, but it removes one candidate mechanism from the list by evidence rather than by
+  argument — which is cheaper than the alternative and available now.
+
+  DOCTRINE THAT BINDS THIS WORK, FROM `exploitEngine/CLAUDE.md`. Two rules, both non-obvious, both
+  the difference between a pin that means something and a pin that certifies a defect.
+
+    (1) READ BOTH ERROR FAMILIES (`CLAUDE.md:36-40`). `mae` is what a consumer reading ONE combo
+        gets; `aggErr` is the error in the weighted mean — i.e. in `heroEquity`, which is what the
+        engine actually acts on. "Shared-runout estimators improve the first and degrade the
+        second, because correlated errors do not cancel in a mean. An estimator accepted on `mae`
+        alone can be materially wrong on the number that matters." All four gap estimators are
+        candidates for exactly that trade: they approximate a sub-range's equity from a base equity
+        and bucket anchors, which is a shared-basis construction. Reporting `mae` alone here would
+        be the specific mistake the doctrine names.
+
+    (2) SET THE TOLERANCE BY REINTRODUCING THE DEFECT (`CLAUDE.md:59-60`). "Set the tolerance by
+        reintroducing the defect you are guarding against — a tolerance chosen from the healthy
+        state alone is a guess." A band drawn around whatever the estimator currently produces
+        certifies the status quo and cannot fail. The tolerance must be derived from a perturbation
+        that the pin is supposed to catch.
+
+  THE HELPER ALREADY EXISTS AND IS SELF-VERIFYING. `src/utils/exploitEngine/__tests__/helpers/groundTruth.js`
+  provides `exactEquityForCombos`, `spreadSample` and `scoreAgainstTruth`, returning
+  `{ mae, p50, p95, max, bias, aggErr }`. It verifies ITSELF first, in `groundTruth.test.js` Part 1,
+  against an independent enumeration already in the tree — because "a ground-truth harness that is
+  wrong converts a suspicion into false confidence, which is worse than having none"
+  (`CLAUDE.md:42-44`). So this ticket is wiring, measurement and judgement, not new machinery.
+
+  THE INCLUSION RULE, SO THE CENSUS DOES NOT GET GAMED. Truth must be computable by ENUMERATION at
+  a cost a test can pay (`groundTruthCoverage.test.js:34-41`). A flop is 1081 runouts and qualifies.
+  Depth-2/3 EV does not — its "truth" needs a game-tree solve with an opponent model, and it belongs
+  to WS-361's calibration work. `estimateFoldPct` does not — a fold rate is a claim about a player,
+  not about cards. Adding something without enumerable truth would make the census dishonest in the
+  flattering direction.
+
+  ONE THING THE CENSUS MAY BE MISSING, RAISED HERE RATHER THAN ASSUMED.
+  `approximateCheckBackRangeEquity` (`src/utils/exploitEngine/gameTreeEquity.js:218`) is a fourth
+  `approximate*RangeEquity` function of the same shape and signature as the three that ARE listed,
+  and it does not appear in the `ESTIMATORS` array. It is therefore neither pinned nor named as a
+  gap — it is invisible to the instrument. Either it belongs on the list, which makes the census
+  2 of 7, or there is a reason it does not, which should be written down. A census that omits a
+  candidate is the flattering direction again, one level up.
+accept_criteria: |
+  - `computeVillainEquityVsPerceived` IS PINNED FIRST, AND ITS RESULT IS REPORTED BEFORE THE OTHERS
+    ARE STARTED. It is the quantity WS-378's river audit depends on. If it is biased, that finding
+    should reach WS-378 immediately rather than at the end of a four-estimator sweep.
+  - EVERY PIN REPORTS BOTH `mae` AND `aggErr`, WITH THE DIRECTION OF EACH. Not a pass/fail. A table
+    per estimator: `mae`, `p50`, `p95`, `max`, `bias`, `aggErr`, with the sample construction stated.
+    Where the two families point in opposite directions, say so explicitly — that is the finding the
+    doctrine exists to surface, and it is the most likely outcome for a shared-basis estimator.
+  - EACH TOLERANCE IS DERIVED BY REINTRODUCING A DEFECT, AND THE DEFECT IS NAMED IN PLACE. For each
+    estimator, state the perturbation used (e.g. the anchor table shifted, the bucket weighting
+    flattened, a shared runout imposed), the error it produced, and the tolerance chosen so that
+    perturbation FAILS. A tolerance with no named perturbation behind it does not satisfy this
+    criterion regardless of how tight it is.
+  - `PINNED_COUNT` IS RAISED IN THE SAME COMMIT AS EACH PIN. That constant is the enforcement; the
+    edit is meant to be visible in the diff. Raising it without adding the pin, or adding the pin
+    without raising it, both fail the test — which is the design working.
+  - THE `approximateCheckBackRangeEquity` QUESTION IS ANSWERED IN WRITING. Either it joins
+    `ESTIMATORS` (and the denominator becomes 7) or a comment beside the array states why it is
+    excluded. "Nobody noticed" is not an answer the census can carry.
+  - ANY ESTIMATOR FOUND TO BE MATERIALLY BIASED PRODUCES A FINDING, NOT A SILENT FIX. If a pin
+    reveals a real bias, file it — WS-334's precedent is that a forty-second enumeration surfaced a
+    bias shipping since WS-307 under a fully green suite. Say what it was, what depended on it, and
+    whether any published Result Card is affected. If a Result Card is affected, the fault register
+    is the mechanism: confirming an entry returns every card it contaminates flagged
+    `suspect-pending-review`.
+  - NO SCOPE CREEP INTO FIXING THE ESTIMATORS. This ticket MEASURES four estimators against truth
+    and records what it finds. Changing an estimator because the measurement is unflattering is a
+    separate, separately-argued piece of work — the whole point is to have the number before the
+    argument, which is the order WS-334 got wrong.
+  - IF ANY FIGURE HERE IS QUOTED COMPARATIVELY, it resolves to a Result Card per ADR-009 with
+    `manifest.disclaimerRegisterVersion` stamped. Note that these are measurements against
+    ENUMERATED truth over card combinatorics, not against a field, so the online-2009-versus-live
+    transfer caveat does not apply in the usual way — say which it is rather than pasting the
+    boilerplate.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js"
+  - "src/utils/exploitEngine/__tests__/helpers/groundTruth.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/CLAUDE.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-378"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER TO PIN ALL FOUR OR STOP AFTER THE FIRST FINDING. The three
+    `approximate*RangeEquity` functions share a construction (base equity plus bucket anchors plus a
+    rate table), so a bias found in one is likely present in all three, and pinning them
+    individually may be three measurements of one defect. The alternative is to pin
+    `approximateSubRangeEquity` first as the family representative and decide from its result
+    whether the other two are separate quantities or the same one wearing different rate tables.
+    Cheaper, and it risks missing a per-function defect. The founder or the implementer should
+    choose deliberately rather than defaulting to "do all four".
+  - |
+    OPEN — WHAT HAPPENS IF `computeVillainEquityVsPerceived` IS FINE. That is a real possible
+    outcome and it is worth something: it removes a candidate mechanism from WS-378's list by
+    evidence, which is exactly what a null result is for. The decision it forces is whether the
+    remaining three gaps still justify the effort once the urgent one is closed, or whether they
+    drop to background. Say so at that point rather than finishing the sweep by momentum.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "WS-334"
+created_at: "2026-08-05T06:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the commit message:
+    - `src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js:43-50` — the `ESTIMATORS` array,
+      six entries, exactly as listed above; `:59` `const PINNED_COUNT = 2`; `:118-123` the exact
+      assertion and the comment explaining why it is exact rather than a floor; `:124-125` the gap
+      assertion tying the two numbers together; `:34-41` the inclusion rule; `:70-73`
+      `groundTruthConsumers` matching on an import of `helpers/groundTruth`; `:75-96` `importedNames`,
+      which matches IMPORTS rather than prose — its docblock records that the first version counted a
+      comment and reported `miniRolloutEquity` as pinned when it was not.
+    - `src/utils/exploitEngine/__tests__/helpers/groundTruth.js` exists.
+    - The six estimators exist at the lines cited: `gameTreeEquity.js:134`, `:166`, `:192`, `:639`,
+      `:685`, and `gameTreeSampling.js:315`.
+    - `src/utils/exploitEngine/CLAUDE.md:36-40` (both error families, and why `mae` alone is
+      insufficient for a shared-runout estimator), `:42-44` (the harness self-verifies first),
+      `:45-51` (the ratchet, and the 2-of-6 figure stated in the doctrine file itself), `:52-60`
+      (why the instrument exists, and the reintroduce-the-defect tolerance rule).
+
+  ONE THING FOUND WHILE VERIFYING THAT THE BRIEF DID NOT CONTAIN, recorded in the description rather
+  than left out: `approximateCheckBackRangeEquity` exists at `gameTreeEquity.js:218`, is the same
+  shape as the three listed `approximate*` functions, and is absent from `ESTIMATORS`. So the census
+  may be 2 of 7 rather than 2 of 6. It is raised as a question with an accept criterion rather than
+  asserted as a defect, because there may be a reason — but if there is, it is not written anywhere.
+
+  Filed at P2. Nothing here is a known wrong number; it is the absence of a measurement that would
+  reveal one. The urgency it does carry is borrowed from WS-378, which is P0 and whose central
+  question is whether three river estimators sit on one scale — a question one of these four
+  estimators is directly part of.

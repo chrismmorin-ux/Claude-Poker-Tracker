@@ -1,0 +1,221 @@
+id: "WS-400"
+title: "Three literals in bayesianSampleConfidence map a sample size to a number the UI calls 'confidence' with no relation to any posterior — and the docblock's stated anchor is the hand-tuned step function it replaced, which makes it self-referential rather than absent"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FROM THE 2026-08-05 DOMAIN-CORRECTNESS BLIND-SPOT ROUNDTABLE, `backtest_contaminants` entry 7.
+  Filed at P2 because nothing here is a known-wrong number; it is a number with no derivation
+  standing in a place the whole system reads as if it had one.
+
+  THE FUNCTION, AT `src/utils/pokerCore/betaMath.js:178-184`:
+
+      export const bayesianSampleConfidence = (n) => {
+        if (n <= 0) return 0;
+        const tau = 12;
+        const floor = 0.10;
+        const ceiling = 0.83;
+        return Math.min(0.95, floor + ceiling * (1 - Math.exp(-n / tau)));
+      };
+
+  It takes a sample size and nothing else. Not a rate, not a variance, not a prior — a count. It
+  returns a number in [0, 0.95] that the product renders as "confidence". This quantity is a
+  monotone relabelling of `n`: it carries exactly the information `n` carries, with a saturating
+  curve laid over it, and no relation to any posterior, any credible interval, or any statement about
+  a rate. Two villains with the same `n` and wildly different observed behaviour receive identical
+  confidence, because behaviour is not an input.
+
+  WHAT IT FEEDS. It is the confidence layer for most of the engine's non-EV output. Read from HEAD,
+  nine non-test modules reference the symbol directly — `bayesianConfidence.js` (which re-exports it),
+  `bucketQueryUtils.js`, `decisionAccumulator.js`, `villainDecisionModel.js`, `villainObservations.js`,
+  `villainProfileBuilder.js`, `weaknessDetector.js`, `handAnalysis/replayAnalysis.js` and
+  `rangeEngine/pipCalculator.js` — and THIRTEEN non-test modules import from the
+  `exploitEngine/bayesianConfidence.js` re-export surface. Every weakness confidence and every bucket
+  confidence in the system resolves through it, including the confidences that gate what the founder
+  is shown.
+
+  THE ANCHOR IS STATED, AND THAT IS WORSE THAN IT BEING ABSENT — THIS IS THE CORRECTION THAT MAKES
+  THE TICKET. The roundtable reported the constants as having "no stated anchor of any kind." That
+  is false. The docblock at `:157-177` states one:
+
+      "Calibrated to approximate existing breakpoints:
+         n=2 → ~0.23, n=5 → ~0.38, n=10 → ~0.57, n=20 → ~0.77, n=50 → ~0.92
+       ...
+       The slight reduction at low n is DESIRED — the old step function was too generous at n <= 5."
+
+  So the curve is anchored — to a STEP FUNCTION THAT PREVIOUSLY OCCUPIED THE SAME SLOT. The
+  breakpoints it reproduces were themselves hand-chosen. This is a calibration to a predecessor, and
+  a predecessor's numbers are not evidence; they are the same judgement wearing a smoother shape. A
+  reader auditing this function finds a docblock full of numbers and a stated rationale and concludes
+  it was derived. It was fitted to a guess.
+
+  The docblock also offers a second anchor — "the slow tau=12 saturation already embodies the §6.5
+  prior weight (~10 observations before a read is confident)" — which is a real doctrinal reference
+  and is worth taking seriously. But note what it does NOT say: it does not say that 12 is the value
+  of tau for which the curve matches a Beta posterior at prior weight 10, nor that any such match was
+  checked. It asserts a correspondence in prose. Per `exploitEngine/CLAUDE.md`, "when a comment states
+  a fact the code could assert instead, assert it" — a rule written after three separate incidents in
+  this repo of exactly this shape.
+
+  THE GENERAL RULE THE ESTIMATION LENS PROPOSED, WHICH IS THE PART WORTH KEEPING. **Once this repo
+  has MEASURED a distribution for a quantity, any literal standing in for that quantity must lie
+  inside the measured support, or carry a recorded reason for sitting outside it.** That is a
+  falsifiable, mechanical rule and it converts a class of "is this constant any good" arguments into
+  a check. It is directly applicable here: PRIOR_WEIGHT=10 was VALIDATED on the WS-262 corpus (30M
+  hands) in the same measurement that refuted the 200 cap, so a corresponding posterior curve at that
+  prior weight is a measured object this function could be compared against.
+
+  THE ENFORCEMENT MECHANISM ALREADY EXISTS, FOR EXACTLY ONE CONSTANT, AND IT ONLY REPORTS.
+  `unexploitableFloor.js` derives a required-continuation floor from pot geometry, and
+  `floorVsAssertedConstant` compares a derived value against a shipped literal.
+  `__tests__/unexploitableFloor.test.js:250-257` exercises it against `villainObservations`'
+  `blindDefendMax`, whose own comment states the anchor ("MDF vs 2.5x open ~40%"). So the pattern —
+  derive the quantity independently, compare the shipped constant to it, report the gap in percentage
+  points rather than silently replacing the constant — is built. See the status note for what that
+  test does and does not actually assert; the answer changes what this ticket has to build.
+accept_criteria: |
+  - THE EV DELTA IS THE CLAIM, AND FOR THIS ITEM IT MAY BE SMALL AND MUST BE MEASURED ANYWAY.
+    `bayesianSampleConfidence` gates and weights output; whether it moves aggregate EV depends on
+    whether confidence enters any EV path. Re-run the standardized readout on an identical decision
+    set with the curve replaced by a derived posterior-based confidence, and report the aggregate EV
+    delta. Expected direction: UNKNOWN, and stated as unknown. If the delta is below the harness's
+    minimum detectable effect, that is the finding — it would mean this constant shapes what the
+    founder is SHOWN without changing what the engine DOES, which is a smaller defect than the
+    roundtable implied and should be reported as such rather than dressed up.
+  - THE CURVE IS COMPARED AGAINST A DERIVED QUANTITY AND THE GAP IS REPORTED IN THE UNITS THE OUTPUT
+    USES. Derive, independently, what a Beta posterior at PRIOR_WEIGHT=10 actually implies about
+    confidence as a function of `n`, and report the per-`n` gap against the shipped curve across the
+    range the product actually sees. Do not silently replace the constants — the
+    `floorVsAssertedConstant` precedent is to REPORT the divergence first, because a constant wrong by
+    3 percentage points and one wrong by 30 warrant different responses and nobody knows which this
+    is.
+  - THE DOCBLOCK'S OWN CLAIM IS TESTED. It asserts that tau=12 "embodies the §6.5 prior weight (~10
+    observations before a read is confident)". Either that correspondence holds numerically and a
+    test asserts it, or it does not and the docblock is corrected to say the curve was fitted to the
+    prior step function. Both outcomes are useful; leaving a prose claim of derivation over a fitted
+    curve is the outcome this repo's doctrine specifically forbids.
+  - THE GENERAL RULE IS ENCODED, NOT JUST STATED — AND ITS SCOPE IS BOUNDED HONESTLY. Add the rule
+    ("a literal standing for a quantity with a measured distribution must lie inside the measured
+    support or record why not") somewhere it binds: `exploitEngine/CLAUDE.md` alongside the existing
+    anti-patterns, plus at least one mechanical check. Be explicit that the rule only bites where a
+    distribution HAS been measured; asserting it over constants with no measured counterpart would
+    make it unenforceable and it would be quietly dropped, which is worse than not having it.
+  - A CENSUS OF WHICH CONSTANTS THE RULE APPLIES TO TODAY, INCLUDING THE ZEROS. Following the
+    `groundTruthCoverage.test.js` pattern: list the load-bearing literals in the confidence and prior
+    path, mark each as (a) checked against a derived quantity, (b) has a measured counterpart but is
+    unchecked, or (c) has no measured counterpart. Assert the counts exactly, so the number can only
+    move in a reviewed diff. Today (a) is at most one — see the status note — and a census reporting
+    only the checked ones would be the flattering selection effect this repo has already caught
+    itself in twice.
+  - PSEUDOCOUNT IS OUT OF SCOPE AND MUST BE LEFT ALONE. `PSEUDOCOUNT = 10` in
+    `villainDecisionModel.js` is the Dirichlet prior strength matched to PRIOR_WEIGHT=10 and was
+    VALIDATED on the WS-262 corpus in the measurement that refuted the 200 cap. It is the one nearby
+    constant that HAS an anchor. Changing it to fix a confidence display would un-validate a
+    validated constant, which the roundtable explicitly warned against.
+effort: "M"
+files_involved:
+  - "src/utils/pokerCore/betaMath.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/exploitEngine/__tests__/unexploitableFloor.test.js"
+  - "src/utils/exploitEngine/CLAUDE.md"
+blocked_by:
+  - "WS-389"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — WHETHER "CONFIDENCE" SHOULD BE A FUNCTION OF `n` ALONE AT ALL, WHICH IS THE REAL QUESTION
+    UNDER THE CONSTANTS. A monotone function of the sample size cannot distinguish 20 observations of
+    a consistent villain from 20 observations of an erratic one, yet the product uses the word
+    "confidence" for both. The alternative is a posterior-width-based quantity that responds to the
+    dispersion of what was observed, which the repo already computes elsewhere — `credibleInterval`
+    exists (`tendencyCalculations.js:22`, `skillAssessment/shapeLanguage/betaPosterior.js:17`) and
+    renders in two calibration panels, and the roundtable's confirmed finding is that NO EV or
+    DECISION path consumes one. So the better quantity is built and unwired, which makes this less a
+    "pick better constants" ticket and more a "there are two confidence notions in this codebase and
+    only the weaker one is load-bearing" ticket. Deciding that changes the size of the work by an
+    order of magnitude and the founder should see the choice.
+  - |
+    OPEN — WHETHER RE-DERIVING THE CURVE IS ALLOWED TO MOVE WHAT THE FOUNDER SEES TODAY. The shipped
+    curve was explicitly fitted to be LESS generous than its predecessor at low n. A posterior-derived
+    curve may be more generous, less generous, or differently shaped, and confidence values gate
+    display in several surfaces. If the derived curve materially changes which weaknesses and reads
+    surface at the founder's typical sample sizes, that is a product change riding inside a
+    correctness fix, and it needs to be named as one before it ships rather than discovered at the
+    table.
+source:
+  type: code-review
+  created_by: ai
+  finding_id: ""
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  ID NOTE: this item was drafted as WS-392 and re-targeted twice. A second agent filing the live-path
+  findings from the same roundtable claimed WS-392 through WS-398 concurrently, so this landed at the
+  next free ID. The backtest-integrity family is WS-387, WS-388, WS-389, WS-390, WS-391 and this
+  item.
+
+  Premises re-verified against HEAD by reading the code, not by trusting the roundtable record:
+    - `src/utils/pokerCore/betaMath.js:178-184` — the function, quoted verbatim above; tau=12,
+      floor=0.10, ceiling=0.83, cap 0.95. `:157-177` — the full docblock, also quoted.
+    - Importers enumerated by two separate greps across `src/`, excluding tests.
+
+  THE ROUNDTABLE'S HEADLINE CLAIM IS FALSE AS WRITTEN, AND THE TICKET IS REFRAMED AROUND WHAT IS
+  ACTUALLY THERE. "No stated anchor of any kind" — the docblock at `:157-177` states two: a
+  breakpoint table it was calibrated to reproduce, and a §6.5 prior-weight rationale for tau. Filing
+  the claim as reported would have been refuted by anyone who opened the file, and the finding would
+  have died with it. The accurate and still-serious version, which the description now carries, is
+  that the stated anchor is SELF-REFERENTIAL — it calibrates to the hand-tuned step function this
+  curve replaced — and that the §6.5 correspondence is asserted in prose and never checked. That is a
+  narrower claim and a defensible one.
+
+  THE IMPORTER COUNT IS AMBIGUOUS AND BOTH NUMBERS ARE GIVEN RATHER THAN PICKING THE FLATTERING ONE.
+  The roundtable says "THIRTEEN importers". Measured: NINE non-test modules reference the symbol
+  `bayesianSampleConfidence` (`bayesianConfidence.js`, `bucketQueryUtils.js`,
+  `decisionAccumulator.js`, `villainDecisionModel.js`, `villainObservations.js`,
+  `villainProfileBuilder.js`, `weaknessDetector.js`, `handAnalysis/replayAnalysis.js`,
+  `rangeEngine/pipCalculator.js`); TWELVE files reference it including tests and the definition file;
+  and THIRTEEN non-test modules import from `exploitEngine/bayesianConfidence.js`, the re-export
+  surface, which is presumably where "thirteen" came from. The 13 is defensible with that
+  denominator and is not the count of direct consumers of this symbol. Both are stated in the
+  description so no reader has to guess which was meant.
+
+  THE PRECEDENT IS WEAKER THAN THE BRIEF CLAIMED, AND THIS CHANGES ONE ACCEPT CRITERION. The brief
+  says `unexploitableFloor.test.js:252-255` "asserts shipped `blindDefendMax` against a derived 0.40".
+  Read at HEAD, the test (`:250-257`, in `describe('floorVsAssertedConstant — the divergence from
+  hand-tuned thresholds')`) computes the derived floor, calls `floorVsAssertedConstant({ derived,
+  asserted: 0.40, label: 'blindDefendMax' })`, and then asserts only:
+
+      expect(gap.label).toBe('blindDefendMax');
+      expect(typeof gap.deltaPp).toBe('number');
+
+  It asserts the label and the TYPE of the delta. It does not assert any bound on the gap, so the
+  shipped constant could diverge from the derived floor by any amount and the test would pass. The
+  mechanism therefore EXISTS and is EXERCISED for exactly one constant, but it ENFORCES nothing —
+  which is precisely the "a diagnostic that only logs is a comment with extra steps" pattern the
+  engine's own doctrine names. That is why the census criterion above says (a) is "at most one"
+  rather than "one", and why this ticket has to build enforcement rather than just extend a working
+  precedent.
+
+  ON THE `blocked_by: WS-389`. Weakest dependency in this family — this constant may not touch an EV
+  path at all, which accept criterion 1 exists to determine. It is blocked because that determination
+  is itself an EV comparison between two arms, and an arm-versus-arm comparison on a wall-clock-gated
+  harness cannot distinguish a small real effect from machine load. If the measurement shows no EV
+  path, this ticket becomes a display-honesty item and should be re-scoped and re-prioritised then.
+
+  DEPENDENCY NOT YET MACHINE-READABLE: the standardized-readout spec (defining the harness, the
+  identical decision set, the baseline arm and the minimum detectable effect that accept criterion 1
+  depends on) did not exist in `.claude/workstream/queue/` when this was filed — checked by grep.
+  Wire its ID into `blocked_by` when it lands.

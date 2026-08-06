@@ -1,0 +1,187 @@
+id: "WS-392"
+title: "The manual live table's whole decision rule is three literals, and both branches contradict stated doctrine — a size-free fold estimate compared against a size-free constant, while neither end knows what hero is betting"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-043"
+description: |
+  THE RULE, READ FROM HEAD (`src/components/views/TableView/CommandStrip.jsx:653-665`):
+
+      const eq = liveEquity.equity;
+      const fp = liveEquity.foldPct;
+      if (eq >= 0.55) return { label: 'VALUE', ... };
+      if (eq < 0.40 && fp !== null && fp >= 0.40) return { label: 'BLUFF', ... };
+      return { label: 'CHECK', ... };
+
+  That is the complete strategy the founder's ACTUAL game runs on. `gameTreeAdvice`
+  (`CommandStrip.jsx:88`) is permanently null without the Chrome extension, so on a manually
+  entered live hand the three literals above are what the app says.
+
+  BOTH BRANCHES VIOLATE DOCTRINE, IN OPPOSITE DIRECTIONS.
+
+  (1) VALUE IS TESTED WITH ALL-IN EQUITY. `eq` is the resolved Monte Carlo equity of hero's exact
+  hand against villain's FULL range (`src/hooks/useLiveEquity.js:152-155`, `handVsRange`, 2000
+  trials). `exploitEngine/CLAUDE.md` forbids exactly this, and the sentence is not hedged: "DO NOT
+  test for value with ALL-IN equity, however carefully you restrict the range." It was fixed once
+  already in the engine (WS-312) and the doc carries a TWO-FIX history, because the obvious first
+  repair — filter to the calling range — changes which range the equity is measured against and not
+  which KIND of equity it is. The measured case is in the doc: on A♠K♦6♠ against a top-25% range,
+  Q♠J♠ — a second-nut flush draw beating NOTHING — scored 0.4929 and was reported as thin value.
+  Here it is worse than in the engine, because the comparison is against villain's whole range
+  rather than the callers, so a draw's outs are counted at full weight and the 0.55 bar is cleared
+  by hands whose showdown value is zero. The correct quantity is the RATIO of realised to total
+  (`computeFilteredShowdownValue` / `computeFilteredEquity` vs `REALISED_VALUE_FLOOR`), which is
+  what the engine now uses.
+
+  (2) BLUFF IS TESTED AGAINST A CONSTANT WHERE THE ANSWER IS POT GEOMETRY. POKER_THEORY §6.3 gives
+  the bluffer's breakeven fold frequency as `s / (1 + s)` for bet fraction `s`. The rule uses a flat
+  0.40. At 1/3-pot the true bar is 25%, so the app SUPPRESSES bluffs that are auto-profitable; at
+  pot-sized it is 50%, so the app GREEN-LIGHTS bluffs that lose money. Those are opposite errors at
+  the two sizings the founder uses most, which is why no aggregate "is the bluff advice too loose or
+  too tight" question has a single answer.
+
+  AND BOTH ENDS OF THAT COMPARISON ARE SIZE-FREE. `estimateFoldPct`
+  (`src/utils/exploitEngine/foldEquityCalculator.js:418`) takes NO bet-size argument at all — its
+  signature is `(segResult, action = 'bet', playerStats = {}, villainModel = null, contextHints = {},
+  comboDistribution = null)`. `useLiveEquity.js:167` calls it with TWO arguments, so `playerStats`
+  defaults to `{}`, `villainModel` to `null`, `contextHints` to `{}` and `comboDistribution` to
+  `null`. Every personalisation branch in that function is therefore dead on every live call: the
+  villain-model branch (`:443`) needs `villainModel?._buckets`; the observed-stats branch (`:468`)
+  needs `foldToCbet` and `foldToCbetSampleSize` from `playerStats`; the exact per-combo enumeration
+  (`:482`) needs `comboDistribution`, which is also where `villainRequiredEquity` — the function that
+  DOES price real pot geometry — would have been consulted (`:483`). The live fold number is a pure
+  population constant shaped only by the range's bucket composition.
+
+  THE SCOPE OF THIS TICKET IS THE RULE, NOT THE WIRING. The pot-geometry breakeven does not require
+  the game tree. `potInfo` is in scope at `CommandStrip.jsx:83`; `currentBet` is derived from
+  `actionSequence` (also `:83`) at `CommandStrip.jsx:495` via `getCurrentBet`, and `effectiveBet`
+  at `:496` already handles the preflop-limped case — both are lexically above the `actionAdvice`
+  useMemo at `:653`. The sizing the founder is considering is already resolved into `sizingOptions`
+  (`:527`). So `s` is available without adding a single input to the component. Fixing the rule is
+  independent of, and much cheaper than, the wiring project — keep them separate.
+
+  WHY THIS IS NOT THE TOP OF THE QUEUE. Under the founder's 2026-08-05 redirect the ranking axis is
+  contamination of the SCORED figure, not live reach. This rule runs on 100% of manually entered
+  live hands and on 0% of backtest decisions, so it does not corrupt the corpus measurement the
+  backtest-integrity family (filed separately, higher) exists to make honest. It ranks at the top of
+  the live-path family instead, and it ranks there rather than lower for one reason: POKER_THEORY
+  §11.9 already has a harness that can price it, so this is the one live-path item whose EV cost is
+  answerable this week rather than after a wiring project.
+accept_criteria: |
+  - SCORE THE SHIPPED THREE-NUMBER RULE AS A §11.9 ARM, BEFORE WRITING ANY FIX. §11.9 scores small
+    human-holdable rules as arms against the engine on ONE identical decision set under the POOL/EVAL
+    FNV-1a split; it has already measured a 15-number rule recovering ~56-57% of the engine's edge.
+    The shipped 3-number live rule has never entered that harness. Report its EV against the engine
+    arm AND against a null arm on the same decisions. This single run tells the founder what the
+    live path is costing him before a line of fix is written, and it independently prices whether the
+    wiring project is worth doing at all.
+  - THE CLAIM IS AN EV DELTA, NOT A THRESHOLD CORRECTION. "The bluff bar is now sizing-aware" is a
+    diagnostic, not a result. Report the EV delta of the corrected rule against the shipped rule on
+    the same identical decision set by the standardized method, with the direction stated in advance:
+    expected POSITIVE at small sizings (auto-profitable bluffs currently suppressed) and POSITIVE at
+    pot-sized (losing bluffs currently green-lit), with a smaller and possibly negative interval in
+    the middle where 0.40 is near correct. If the magnitude at any sizing band is unmeasured, say so
+    as an open criterion — an unmeasured magnitude is never reported as a claim.
+  - THE VALUE BRANCH IS RE-BASED ON A REALISED-VALUE RATIO, NOT ON A FILTERED EQUITY. Filtering to
+    the calling range is necessary and NOT sufficient — that repair shipped twice and failed twice
+    (WS-312, POKER_THEORY §3.4.3). Use the ratio form. Assert the Q♠J♠ / A♠K♦6♠ case from
+    `exploitEngine/CLAUDE.md` explicitly: it must no longer be labelled VALUE. Show the assertion
+    FAILING against HEAD (WS-309 rule).
+  - THE BLUFF BREAKEVEN IS COMPUTED FROM POT GEOMETRY, AND THE BLUFFER'S FORMULA IS USED, NOT THE
+    CALLER'S. `s / (1 + s)`, not `s / (1 + 2s)` — those differ by 50% vs 33% at a pot-sized bet and
+    the codebase has confused them before. Do not re-derive inline: `villainRequiredEquity`
+    (`foldEquityCalculator.js`) is the caller-side function and must NOT be used here. A test must
+    pin the bar at three sizings (1/3, 2/3, pot) against the closed form.
+  - THE FOLD ESTIMATE MUST EITHER BECOME SIZE-AWARE OR THE RULE MUST STATE THAT IT IS NOT. Comparing
+    a size-free fold estimate against a size-aware bar is half a fix, and it can move the rule in the
+    wrong direction at extreme sizings. Two admissible outcomes: thread the sizing into
+    `estimateFoldPct` through `contextHints` and the per-combo path, or leave the estimate as-is and
+    record in code the residual error this leaves and its sign. Either is acceptable; silently doing
+    the first half is not.
+  - THE DEAD PERSONALISATION IS EITHER CONNECTED OR DECLARED DEAD IN CODE. `useLiveEquity.js:167`
+    passes two arguments to a six-argument function. `playerStats` and `villainModel` are available
+    on the live path (the villain is a selected, identified player). If they are threaded, assert
+    that the fold estimate DIVERGES between a villain with a model and one without — the
+    shipped-but-inert failure mode this repo has hit at least three times (WS-276, WS-284,
+    predictionAudit) is a capability that ships behind a parameter no call site passes. If they are
+    not threaded, the call site must say so in a comment naming what is being given up.
+  - NO EV NUMBER IS SURFACED TO THE FOUNDER BY THIS TICKET. This item corrects a LABEL rule
+    (VALUE / BLUFF / CHECK). It must not introduce a dollar or bb figure on the live table — that is
+    the wiring project, and shipping an EV number computed with a heads-up fold model on a 9-handed
+    table with rake omitted is the specific harm the roundtable's `do_not_file` ruling exists to
+    prevent.
+effort: "M"
+files_involved:
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/hooks/useLiveEquity.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/components/views/TableView/__tests__/"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-393"
+sprint_id: null
+decision_flags:
+  - |
+    OPEN — DOES THE LIVE RULE STAY A RULE, OR DOES IT BECOME A CHEAP EV COMPUTATION? The §11.9 arm
+    score answers this with a number rather than an argument. If a corrected three-or-four-literal
+    rule recovers most of the engine's edge on the identical decision set, the wiring project
+    (WS-393) is a large investment for a small residual and should be re-priced. If it recovers
+    little, the wiring project is justified and this ticket is an interim. The founder should see
+    the arm score before either is committed to.
+  - |
+    OPEN — WHETHER THE VALUE BAR ITSELF (0.55) SURVIVES RE-BASING. The 0.55 was calibrated against
+    all-in equity vs the full range. Re-pointing the test at a realised-value RATIO changes the
+    scale, and `exploitEngine/CLAUDE.md` warns explicitly against carrying a floor across that
+    change: "the ladder's floors are calibrated for 'chance of winning the pot', and re-pointing
+    them at a current-strength scale re-tiers hands for reasons unrelated to the bug." The new bar
+    must be derived or measured, not transcribed.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-043"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code, not by trusting the run record.
+
+  VERIFIED AS STATED:
+    - `CommandStrip.jsx:653-665` — the `actionAdvice` useMemo; `:660` `eq >= 0.55 → VALUE`;
+      `:663` `eq < 0.40 && fp !== null && fp >= 0.40 → BLUFF`; `:664` else CHECK.
+    - `CommandStrip.jsx:88` — `const { advice: gameTreeAdvice } = useAnalysisContext();`
+    - `useLiveEquity.js:167` — `estimateFoldPct(seg, 'bet')`, exactly two arguments.
+    - `foldEquityCalculator.js:418` — six-parameter signature, NO bet-size argument; `:443` the
+      villain-model branch gated on `villainModel?._buckets`; `:468` the observed branch gated on
+      `foldToCbet` + `foldToCbetSampleSize`; `:482` the per-combo branch gated on
+      `comboDistribution?.perCombo?.length > 0`, with `villainRequiredEquity` called at `:483`
+      inside it. All four are unreachable from a two-argument call.
+
+  CORRECTED — the run record's line references drifted, and one scope claim was loose:
+    - The run record cites `useLiveEquity.js:154` for the all-in equity. At HEAD the equity call is
+      `:152` (`(computeEquity || handVsRangeDirect)(heroEncoded, range, boardEncoded, { trials: 2000 })`)
+      and `:155` is `setEquity(result.equity)`. The substance is unchanged: it is all-in equity
+      against the range returned by `getVillainRange` at `:138`, i.e. villain's FULL range for that
+      (position, actionKey), with no filtering to callers.
+    - The brief states that `potInfo` and `currentBet` are "already in scope at CommandStrip.jsx:83".
+      Only `potInfo` is destructured at `:83`. `currentBet` is DERIVED at `:495` from
+      `actionSequence` (which is at `:83`) via `getCurrentBet`, with `effectiveBet` at `:496`. Both
+      sit above the `actionAdvice` useMemo at `:653`, so the conclusion — the breakeven is computable
+      without adding an input — holds; the mechanism is derivation, not destructuring.
+    - The rule at `:663` includes a `fp !== null` guard the run record omits. It is load-bearing and
+      correct (against an all-in villain `useLiveEquity.js:162` sets fold% to exactly 0, and `:159`
+      sets it to null when HERO is all-in), and it must survive any rewrite.
+
+  NOT RE-DERIVED HERE, AND FLAGGED AS SUCH: the Q♠J♠ = 0.4929 figure is quoted from
+  `exploitEngine/CLAUDE.md`, which reports it as a WS-312 measurement against a top-25% range. It has
+  not been re-measured for this ticket. The accept criterion asks for it to be asserted, which will
+  re-derive it.

@@ -1,0 +1,179 @@
+id: "WS-398"
+title: "The blind-defence bar contradicts its own comment on the same line, and the module that derives the correct value — including the rake asymmetry nobody has been measuring — has no production consumer at all"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 13.0
+priority_label: "P3"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-050"
+description: |
+  ONE TICKET, NOT TWO. The roundtable ruled `rakeAsymmetry` and `blindDefendMax: 25` duplicates of
+  each other and it is right: they are the same unwired module reached from two directions.
+
+  THE CONTRADICTION IS ON ONE LINE. `src/utils/exploitEngine/villainObservations.js:72`:
+
+      blindDefendMax: 25,        // Below this % → over-folding blinds (MDF vs 2.5x open ~40%)
+
+  The comment states the correct anchor — MDF against a 2.5x open is about 40% — and the constant
+  beside it is 25. The bar that decides whether a villain is flagged as over-folding his blinds is
+  therefore 15 percentage points below the theory the same line cites. It is used at `:239`
+  (`if (defendRate < T.blindDefendMax)`) and again at `:243` to scale the observation's strength, so
+  the gap affects both WHETHER a villain is flagged and HOW STRONGLY.
+
+  THE DERIVED VALUE ALREADY EXISTS, AND SO DOES A FUNCTION WHOSE ONLY PURPOSE IS TO REPORT THIS EXACT
+  GAP. `src/utils/exploitEngine/unexploitableFloor.js` derives the floor from the blinds outward:
+  `deriveFloor` at `:171`, `blindSeededGeometry` at `:112`, `closureCost` at `:265`,
+  `rakeAsymmetry` at `:292`, and `floorVsAssertedConstant` at `:310` — which takes exactly
+  `{ derived, asserted, label }` and returns the delta in percentage points. The module's own header
+  (`:20-25`) names `villainObservations.js`'s constants as one of three places the repo asserts what
+  this module computes. `unexploitableFloor.test.js:250-256` already runs the comparison with
+  `asserted: 0.40, label: 'blindDefendMax'`.
+
+  AND NOTHING IN PRODUCTION IMPORTS ANY OF IT. Repo-wide, `unexploitableFloor.js` is imported by
+  `__tests__/unexploitableFloor.test.js:18` and by `__tests__/rakeResolver.test.js:228`. Zero
+  production consumers. `rakeAsymmetry` — which prices the thing the module's own docblock calls
+  "the DIFFERENCE nobody has been measuring", the untaxed preflop steal against the flop-paying
+  defended pot — is exported, used once internally at `:200`, and read by no shipping code.
+
+  THIS IS NOT AN UNWIRED PRODUCT. FIND-052's taxonomy matters here and the roundtable's `do_not_file`
+  ruling on merging orphans is binding: three classes, three remedies. This is CLASS 2 — an unwired
+  SELF-CHECK of a claim that IS shipping. `villainObservations.js:239` ships an over-fold judgement
+  on every villain; `unexploitableFloor.js` is the instrument that would falsify the bar it uses;
+  the instrument runs only in the test suite. That is a doctrine violation rather than an
+  opportunity cost.
+
+  ── THE PART THE ROUNDTABLE GOT WRONG, AND IT CHANGES THE SHAPE OF THE FIX ──
+
+  The `do_not_file` entry calls this a "two-line change". It is not, and shipping it as one would
+  override an explicit founder decision recorded in the code three days before the roundtable ran.
+  `unexploitableFloor.js:303-308`, the docblock on `floorVsAssertedConstant`:
+
+      "Founder decision 2026-08-02: the hand-tuned thresholds in `villainObservations.js` are NOT
+       replaced by this module, because they drive live over-fold detection and swapping them would
+       silently re-tune which villains get flagged. This makes the divergence a recorded number
+       instead, so replacing them later is a decision with evidence attached rather than a leap."
+
+  So the constant is not an oversight that survived review — it is a deliberate hold, with the
+  reporting function built specifically to make the eventual replacement evidence-backed. The half
+  that was never finished is the EVIDENCE half: `floorVsAssertedConstant` has no production caller,
+  so the divergence has never actually been recorded anywhere the founder sees. The correct ticket
+  is to close that half and hand the founder the number, not to change the constant behind the
+  decision that deferred it.
+
+  RANK. Low. Nothing here reaches the corpus scored figure — `villainObservations` produces
+  observations, not EV — and the founder's ranking axis is contamination of that figure. It is filed
+  because it is cheap, because it is a live self-check that has been inert since the day it shipped,
+  and because a recorded founder decision has a dangling half that will otherwise be rediscovered as
+  a bug by the next audit.
+accept_criteria: |
+  - THE DIVERGENCE IS ACTUALLY RECORDED SOMEWHERE THE FOUNDER READS. `floorVsAssertedConstant` gets
+    a production caller, or the number it returns is emitted into the evidence/observation stream.
+    Today the founder decision says "make the divergence a recorded number" and no number is
+    recorded outside a unit test. Report the derived floor, the asserted 25, and the delta in
+    percentage points, at the game types the founder actually plays ($1/$2 and $1/$3 live, 9-handed)
+    — the derived floor is blind-seeded, so it is stake- and structure-dependent and a single number
+    would be a fourth asserted constant.
+  - THE CONSTANT IS NOT CHANGED IN THIS TICKET. Changing `blindDefendMax` from 25 to a derived ~40
+    would reverse a dated founder decision and would silently re-tune which villains get flagged as
+    over-folders — the exact consequence that decision names. Produce the evidence; put the change
+    to the founder as a decision with the evidence attached. If the founder approves it in the same
+    session, it becomes a second, tiny ticket with its own before/after flag census.
+  - THE FLAG-CENSUS DELTA IS COMPUTED EVEN THOUGH THE CONSTANT IS NOT CHANGED. Over the existing
+    villain population, report how many villains are flagged over-folding at 25 and how many would be
+    at the derived floor, with the identities of those that change. That is the evidence the founder
+    decision asked for and it is what makes the eventual call a decision rather than a leap. It costs
+    one pass over data already on disk.
+  - EV-DELTA CRITERION, STATED HONESTLY FOR EACH HALF. The reporting half alters no recommendation,
+    so its EV delta is structurally ZERO and must be asserted as unchanged rather than claimed as
+    positive. The rake-asymmetry half is different: if `rakeAsymmetry` is wired into any EV path, that
+    IS a change to a number, and it must carry an EV delta measured by the standardized method on an
+    identical decision set, with the direction stated in advance — defending gets WORSE relative to
+    stealing once the flop-paying pot is taxed and the preflop steal is not, so hero's blind-defence
+    frequency should FALL and the aggregate should move against loose defence. If `rakeAsymmetry` is
+    deliberately left unwired for now, say so and say what would wire it.
+  - THE ONE-LINE CONTRADICTION IS REMOVED EVEN IF THE VALUE STAYS. A constant of 25 sitting beside a
+    comment that says the correct answer is 40 is unreadable in the worst way: it looks like an
+    error, so the next reader either "fixes" it (reversing the founder decision) or distrusts the
+    comment. Rewrite the annotation to say what is true — that this is a deliberately conservative
+    bar held below the MDF anchor pending the divergence measurement, and name this ticket. That is
+    the `exploitEngine/CLAUDE.md` rule applied: when a comment states a fact the code contradicts,
+    make the code assert it or make the comment true.
+  - THE OTHER TWO ASSERTED SITES ARE COUNTED, NOT FIXED. `unexploitableFloor.js:20-23` names three
+    places the repo hand-asserts what it computes: `anchorScenarioRunner.js:146`,
+    `postflopDrillContent/planRules.js:42`, and `villainObservations.js`. Verify all three still
+    exist at HEAD and record the count. Fixing them is out of scope; leaving the count unstated is
+    how a three-site divergence becomes a four-site one.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/exploitEngine/unexploitableFloor.js"
+  - "src/utils/exploitEngine/__tests__/unexploitableFloor.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    FOUNDER DECISION REQUIRED, AND IT IS THE POINT OF THE TICKET — DOES `blindDefendMax` MOVE FROM 25
+    TO THE DERIVED FLOOR? The 2026-08-02 decision deferred exactly this and asked for evidence first.
+    This ticket produces the evidence: the derived floor at the founder's stakes, the delta in
+    percentage points, and the list of villains whose over-fold flag changes. The founder should see
+    those three things and then decide. Moving it makes the detector theory-consistent and re-tunes
+    live flagging; holding it keeps the flagging stable and keeps a constant 15pp below its own
+    stated anchor. Neither is obviously right, which is why it was deferred once already.
+  - |
+    OPEN — WHETHER `rakeAsymmetry` SHOULD REACH EV AT ALL, OR STAY A DIAGNOSTIC. It quantifies a real
+    and unmodelled asymmetry (no-flop-no-drop makes the successful steal untaxed while the defended
+    pot pays a flop rake), and WS-333 already established that rake omission is worth ~4.8pp of
+    required equity live. Wiring it changes EV on every preflop blind-defence decision, which is a
+    large blast radius for a module with no consumers today; leaving it unwired leaves a measured
+    effect out of the model on purpose. This is a genuine architectural call, not an oversight to
+    close quietly.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: "FIND-050"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+created_at: "2026-08-05T12:00:00Z"
+status_note: |
+  Premises re-verified against HEAD by reading the code.
+
+  VERIFIED AS STATED:
+    - `villainObservations.js:72` — `blindDefendMax: 25,  // Below this % → over-folding blinds
+      (MDF vs 2.5x open ~40%)`. Consumed at `:239` and `:243`.
+    - `unexploitableFloor.js` exports: `blindSeededGeometry` `:112`, `deriveFloor` `:171`,
+      `closureCost` `:265`, `rakeAsymmetry` `:292`, `floorVsAssertedConstant` `:310`.
+      `rakeAsymmetry` is called internally once at `:200`.
+    - Importer census by repo-wide grep: only `__tests__/unexploitableFloor.test.js:18` and
+      `__tests__/rakeResolver.test.js:228`. Zero production consumers, as the run record states.
+    - `unexploitableFloor.test.js:250-256` — the `floorVsAssertedConstant` describe block, with the
+      comment "villainObservations.blindDefendMax = 25, commented 'MDF vs 2.5x open ~40%'" at `:252`
+      and `asserted: 0.40, label: 'blindDefendMax'` at `:255`. The run record's `:252-255` is exact.
+
+  CORRECTED — THE RUN RECORD'S LINE NUMBER, AND MORE IMPORTANTLY ITS CHARACTERISATION OF THE FIX:
+    - The constant is at `villainObservations.js:72`, not `:69`. `:69` is the closing `*/` of the
+      `T` docblock; the object opens at `:70` and `:71` is the `// -- Preflop --` divider. (The
+      module header of `unexploitableFloor.js` cites the constants as living at
+      `villainObservations.js:51-65`, which is also stale by the same drift.)
+    - THE SUBSTANTIVE CORRECTION: `do_not_file` calls this a "two-line change". It is not. The
+      docblock on `floorVsAssertedConstant` (`:303-308`) records a FOUNDER DECISION dated 2026-08-02
+      that these constants are deliberately NOT replaced, because they drive live over-fold detection
+      and swapping them would silently re-tune which villains get flagged — with this reporting
+      function built precisely so the eventual replacement is "a decision with evidence attached
+      rather than a leap". Filing a two-line constant swap would reverse a founder decision made
+      three days before the roundtable ran, on the strength of a roundtable that did not open the
+      docblock stating it. The ticket above is rewritten around producing the evidence that decision
+      asked for and leaving the constant to the founder. This is the correction that matters most in
+      this batch.
+
+  ALSO NOTED: `unexploitableFloor.js:20-23` names two further hand-asserted sites
+  (`anchorScenarioRunner.js:146`, `postflopDrillContent/planRules.js:42`) that neither the run record
+  nor `do_not_file` mentions. They are counted, not fixed, by the accept criteria above.
