@@ -857,3 +857,27 @@ assumptions:
     revisit: "2026-09-15"
     status: proposed
 ```
+
+### DEC-037: A declared multi-agent engine may never be simulated inline
+**Date:** 2026-08-05 | **Status:** Accepted | **Detected:** implicit
+**Decision:** When a protocol, engine or command declares an execution method — an `engine:` field, a persona set, a phase structure — it MUST be executed by spawning those agents. Inline single-threaded simulation is prohibited and its output invalid: it may not be stamped as a protocol run, written to `evidence/`, filed as findings, or used to clear a block. A session instruction discouraging agents does not override a declared engine.
+**Reasoning:** Context is monotonic within a session. By the time the AI decides to audit something it is already anchored, so an inline "roundtable" is one position wearing six names and the disagreement that IS a roundtable's product cannot occur. The failure is self-concealing — an inline pass agrees with itself, reads as plausible, gets stamped, and resets the staleness clock on work that never happened. Founder: "The agents are you anyway... are you able to change context mid session? no. you hold onto it."
+**Context:** This session opened with exactly that substitution, minutes from stamping a 46-day-stale blind_spot protocol. The provenance gate then blocked a later commit on two 2026-07-22 runs with the same defect, now declared `spec_compliant: false`. Rule at `.claude/rules/engine-execution-fidelity.md`.
+
+### DEC-038: A limitation found by analysis is removed by default, not accommodated
+**Date:** 2026-08-05 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Recommending accommodation — deferral, scope reduction, routing around, a weaker configuration — is the founder's decision, never the AI's. It may be presented as a question with its cost stated; it may not be presented as a recommendation. Structural test: an analysis ending in a NARROWER scope than it started with has failed.
+**Reasoning:** The mechanism is measurability bias — preferring what can be cleanly verified, then shrinking the work to fit the instrument rather than building the instrument to fit the work. It wears the costume of rigor: "we cannot trust that number yet" is correct, and "therefore use a configuration that produces a trustworthy number" is the backwards inference from it. Founder: "it is every single session for months, and almost the theme of the repo."
+**Context:** Four instances in one session, including recommending the depth-1 arm because it was the only reproducible one. Enforced by two hooks rather than by a document, after the first response to "we need a protocol" was to write a markdown file — the same failure one level up. Rule at `.claude/rules/improvement-default.md`.
+
+### DEC-039: Enforcement lives in hooks, never in `kit/`
+**Date:** 2026-08-05 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Behavioural enforcement ships as `.claude/hooks/` or `scripts/`, never as an edit to a kit-managed file. `UserPromptSubmit` injects standing rules with a rotating concrete instance; `Stop` blocks on the failure it guards.
+**Reasoning:** `kit/` is synced from HomeBase and a local edit is silently reverted by the next `/kit-upgrade`, taking the guard with it and leaving no trace — the lesson `readiness-gate.cjs` already records. And a rule that must be *read* to work has demonstrably not worked here for months. The rotation exists because a fixed banner is invisible by week three, which the same file records.
+**Context:** The `problem_class` validator added to `cwos-reconcile.js` this session sits in a kit-managed file and will be reverted — filed as WS-413 rather than fixed in place, since a fleet-wide kit change is the founder's call.
+
+### DEC-040: The context-drag hypothesis is NOT supported for design tasks, as stated
+**Date:** 2026-08-05 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Record the pre-registered negative unhedged. A three-arm comparison (greenfield / context-laden / max-drag) with criteria and predictions fixed before any arm existed returned greenfield 33.5 vs 24/24 — and BOTH predictions failed, which by the pre-registered rule means the hypothesis is not supported in the form stated.
+**Reasoning:** Both failed on the same clause: implementability. Neither failed on novelty or drag markers, and the drag ordering came out monotone on both criteria built to detect it. The refined finding — labelled post-hoc and weaker for it — is that context-ladenness substituted for LOOKING: the max-drag arm reinvented a schema already on disk and running; the greenfield arm read the code. What was falsified is the compensating benefit context was assumed to buy.
+**Context:** `docs/context-system-requirements.md` (pre-registration), `docs/context-system-comparison.md` (judgement). Two confounds recorded: the context-laden arm's brief was written by the max-drag arm's author, and the greenfield arm was greenfield only for long-form documents — the harness injected CLAUDE.md, the rules and MEMORY.md before its first action, which it disclosed unprompted.

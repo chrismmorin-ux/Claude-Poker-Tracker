@@ -1,0 +1,51 @@
+id: "ses-20260806-0428-436c0fcc"
+status: completed
+started_at: "2026-08-06T04:28:09.233Z"
+ended_at: "2026-08-06T04:50:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-06T04:28:09.233Z"
+pid: 24280
+pid_recorded_at: "2026-08-06T04:28:09.233Z"
+host: "MorinComputer"
+agent_session_id: "436c0fcc-777e-4479-ad3d-75c8e9012a75"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".claude/workstream/programs/prog-hookproof.yaml"
+  - "scripts/context/echo-meter.mjs"
+  - ".claude/workstream/evidence/context-shift-preflight.md"
+  - "scripts/context/vocab-rate.mjs"
+  - "docs/context-shift-prereg.md"
+  - ".claude/hooks/compact-tier.cjs"
+  - ".claude/rules/dispatch-dont-assert.md"
+  - "scripts/__tests__/compactTier.test.js"
+  - ".claude/settings.json"
+  - "kit/scripts/cwos-reconcile.js"
+  - "scripts/context/cwos-context-bundle-validate.js"
+  - "scripts/context/cwos-context-bundle-validate.cjs"
+  - ".claude/hooks/context-bundle-check.cjs"
+  - "docs/context-bundles.md"
+  - ".claude/hooks/context-barrier.cjs"
+  - "scripts/__tests__/contextBarrier.test.js"
+  - ".claude/context/POKER_THEORY.md"
+  - "scripts/__tests__/falsifiedCounter.test.js"
+  - "scripts/context/enforcement-classes.cjs"
+  - "scripts/__tests__/enforcementClasses.test.js"
+
+
+
+# Closed 2026-08-06 during /session-end of ses-20260805-1521-fc271296.
+# This was a SUBAGENT's auto-registration (SessionStart hook fires per agent).
+# It locked .claude/workstream/programs/prog-hookproof.yaml — a throwaway probe
+# a bundle-validator agent created, tested against, and deleted. The lock
+# outlived the file and the provenance gate blocked a commit on it.
+#
+# FRICTION, worth a kit ticket: every spawned subagent registers a session and
+# overwrites .claude/workstream/.current-session, so that pointer named this
+# probe rather than the real session for most of the day. 52 session files now
+# exist; only 2 were ever active at once.
+handoff_notes: |
+  Probe session. No work product. See note above.

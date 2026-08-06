@@ -212,14 +212,47 @@ friction_log:
     origin_repo: "claude-poker-tracker"
     source_hash: "b33befb2b29372338a772f50cbfa085309e74da99f3c84dcb975d42dba89feb1"
 
+  - id: fr-022
+    timestamp: "2026-08-06T05:10:00Z"
+    severity: high
+    detail: "Every spawned SUBAGENT registers its own session via the SessionStart hook and overwrites .claude/workstream/.current-session. This session spawned ~25 agents; the pointer therefore named a throwaway probe session (ses-20260806-0428-436c0fcc) rather than the real one (ses-20260805-1521-fc271296) for most of a 13-hour session, so /session-end Step 1 read the wrong session. 52 session files now exist in a repo where at most 2 were ever concurrently active. Worse, one probe left files_locked pointing at .claude/workstream/programs/prog-hookproof.yaml - a fixture a bundle-validator agent created, tested against, and deleted - and the PROVENANCE GATE BLOCKED A COMMIT on that dangling lock. Severity high because it silently misdirects the session-end ceremony and can block commits on state no human created."
+    component: "cwos-session-register"
+    workaround: "Located the real session by grepping for status:active (2 hits, one obviously a probe), closed the orphan by hand with a note, and cleared the pointer at cleanup. Kit fix: subagent registrations should either not write .current-session at all, or write to a per-agent key - the pointer means 'the founder-facing session' and a subagent is not one. Separately, cwos-session-recovery --auto --force reported 'none abandoned' for a session whose pid was long dead, so its liveness check does not catch this class."
+    origin_repo: "claude-poker-tracker"
+    source_hash: "92945e58e825415c16d61dc1dcb690cca04208e3e94cd5c911967ddce9438faa"
+  - id: fr-023
+    timestamp: "2026-08-06T05:10:00Z"
+    severity: medium
+    detail: "The provenance gate (INV-F2) blocks on PRE-EXISTING violations anywhere in the program set, not only on staged paths. Committing .claude/rules/ and .claude/hooks/ was blocked by two 2026-07-22 runs in prog-domain-correctness.yaml that declare engine: domain-audit where the protocol specifies eng-engine - entries untouched by this session and unrelated to the staged files. The gate is substantively RIGHT (that substitution is exactly what the new engine-execution-fidelity rule forbids, and it had sat unflagged in the record since July), so this is not a false positive - it is scope. A gate that fails a commit over unrelated historical state trains people to reach for --no-verify."
+    component: "cwos-provenance-validate"
+    workaround: "Declared both entries spec_compliant: false with status legacy-no-provenance and a comment recording that whether the substitution was deliberate is nowhere on record. Gate then passed 15/15. Kit consideration: when invoked with --staged, scope findings to programs actually touched by the staged set, and surface untouched violations as a warning rather than a block."
+    origin_repo: "claude-poker-tracker"
+    source_hash: "8b71dd206f2b3bd4e6885af86b8bc123d48c315fae907d8743878f08b8d0c195"
+  - id: fr-024
+    timestamp: "2026-08-06T05:10:00Z"
+    severity: low
+    detail: "The OneDrive write-guard pattern-matches the COMMAND TEXT, not the write target. A heredoc writing a session handoff into C:/Users/chris/repos/... was blocked because the handoff PROSE quoted a OneDrive path (recording a finding that git config core.hooksPath still points at the pre-relocation tree). No write to a synced path was attempted or possible."
+    component: "hooks/block-cloud-sync-writes"
+    workaround: "Rephrased the note to describe the path rather than quote it literally, per the hook's own instruction not to work around it. Kit fix: match on resolved write targets (redirect targets, tee/cp/mv destinations) rather than on any occurrence of the substring in the command."
+    origin_repo: "claude-poker-tracker"
+    source_hash: "9157142f75ebf9c1e78a84dff0b763a977f1b97a26dc1978fb87221d4c5f0553"
+  - id: fr-025
+    timestamp: "2026-08-06T05:10:00Z"
+    severity: medium
+    detail: "Sub-agents repeatedly could not reach a peer identified only by agent TYPE. Three separate agents reported 'No agent named general-purpose is reachable' after being told to relay findings to a peer, and each fell back to dumping ~8,000 words into its own return value for the caller to forward. One explicitly refused to guess raw agent IDs rather than risk delivering into the wrong context - the correct call."
+    component: "Agent/SendMessage"
+    workaround: "Caller relayed manually. Consequence was duplicated content and one agent re-reporting material it had already delivered. Guidance fix: agent-to-agent relay needs the spawn-time ID or a name, and briefs that ask for peer relay should carry one; absent that, tell the sub-agent to return to the caller rather than attempt a peer send."
+    origin_repo: "claude-poker-tracker"
+    source_hash: "d6009b6fed4be17f46a511072af351176fc8c82adc36212f4a84504d888097e8"
+
 # Section C: summary (computed, not maintained)
 summary:
-  total_friction_events: 21
+  total_friction_events: 25
   total_user_feedback: 3
   by_severity:
-    high: 3
-    medium: 5
-    low: 13
+    high: 4
+    medium: 7
+    low: 14
   by_category:
     concern: 3
   by_component:

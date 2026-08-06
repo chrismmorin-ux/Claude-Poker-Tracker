@@ -1,0 +1,249 @@
+id: "ses-20260805-1521-fc271296"
+status: completed
+started_at: "2026-08-05T15:21:46.925Z"
+ended_at: "2026-08-06T04:55:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-06T04:23:09.803Z"
+pid: 10208
+pid_recorded_at: "2026-08-05T15:21:46.925Z"
+host: MorinComputer
+agent_session_id: "fc271296-afa1-4cc2-a5ef-a6f16bf43766"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - ".claude/workstream/queue/WS-380.yaml"
+  - "src/utils/exploitEngine/__tests__/riverPerComboScale.test.js"
+  - ".claude/workstream/queue/WS-381.yaml"
+  - ".claude/rules/engine-execution-fidelity.md"
+  - "CLAUDE.md"
+  - ".claude/workstream/queue/WS-382.yaml"
+  - ".claude/workstream/queue/WS-383.yaml"
+  - ".claude/workstream/queue/WS-384.yaml"
+  - ".claude/workstream/queue/WS-385.yaml"
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/CLAUDE.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-blindspot-2026-08-05/blindspot-2026-08-05.yaml"
+  - ".claude/workstream/queue/WS-387.yaml"
+  - ".claude/workstream/queue/WS-388.yaml"
+  - ".claude/workstream/queue/WS-392.yaml"
+  - ".claude/workstream/queue/WS-389.yaml"
+  - ".claude/workstream/queue/WS-393.yaml"
+  - ".claude/workstream/queue/WS-390.yaml"
+  - ".claude/workstream/queue/WS-394.yaml"
+  - ".claude/workstream/queue/WS-391.yaml"
+  - ".claude/workstream/queue/WS-395.yaml"
+  - ".claude/workstream/queue/WS-396.yaml"
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - ".claude/workstream/queue/WS-397.yaml"
+  - "scripts/backtest/decisionRecord.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - ".claude/workstream/queue/WS-398.yaml"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - ".claude/workstream/queue/WS-399.yaml"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - ".claude/workstream/queue/WS-401.yaml"
+  - ".claude/rules/improvement-default.md"
+  - ".claude/workstream/findings/FIND-043.yaml"
+  - ".claude/workstream/findings/FIND-044.yaml"
+  - ".claude/workstream/findings/FIND-049.yaml"
+  - ".claude/workstream/findings/FIND-050.yaml"
+  - "src/utils/exploitEngine/gameTreeSampling.js"
+  - ".claude/workstream/findings/FIND-053.yaml"
+  - ".claude/workstream/findings/FIND-054.yaml"
+  - ".claude/workstream/queue/WS-410.yaml"
+  - ".claude/hooks/improvement-default.cjs"
+  - ".claude/hooks/retreat-detector.cjs"
+  - ".claude/workstream/findings/FIND-045.yaml"
+  - ".claude/workstream/findings/FIND-046.yaml"
+  - ".claude/workstream/findings/FIND-047.yaml"
+  - ".claude/workstream/findings/FIND-048.yaml"
+  - ".claude/workstream/findings/FIND-051.yaml"
+  - ".claude/workstream/findings/FIND-052.yaml"
+  - ".claude/workstream/findings/FIND-031.yaml"
+  - ".claude/workstream/findings/FIND-032.yaml"
+  - ".claude/workstream/findings/FIND-033.yaml"
+  - "scripts/__tests__/decisionRecord.test.js"
+  - "docs/runbooks/baseline-ev-run.md"
+  - ".claude/workstream/findings/FIND-040.yaml"
+  - ".claude/workstream/findings/FIND-041.yaml"
+  - ".claude/workstream/queue/WS-411.yaml"
+  - ".claude/workstream/findings/FIND-042.yaml"
+  - ".claude/workstream/queue/WS-412.yaml"
+  - "kit/scripts/cwos-reconcile.js"
+  - "src/utils/exploitEngine/__tests__/zzTempAuditProbe.test.js"
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/backtest/holeMapLines.mjs"
+  - "scripts/backtest/run-hole-map.mjs"
+  - ".claude/workstream/queue/WS-402.yaml"
+  - ".claude/workstream/queue/WS-403.yaml"
+  - "scripts/backtest/holeMapHtml.mjs"
+  - ".claude/workstream/queue/WS-404.yaml"
+  - ".claude/workstream/queue/WS-405.yaml"
+  - ".claude/workstream/queue/WS-406.yaml"
+  - ".claude/workstream/queue/WS-407.yaml"
+  - ".claude/workstream/queue/WS-408.yaml"
+  - ".claude/workstream/queue/WS-409.yaml"
+  - ".claude/workstream/queue/WS-413.yaml"
+  - ".claude/workstream/programs/prog-methodology-integrity.yaml"
+  - "scripts/backtest/probeRaiseBranch.mjs"
+  - "scripts/foldCurve/fit-raise-curve.mjs"
+  - "scripts/backtest/holeMapFreshness.mjs"
+  - "scripts/backtest/check-hole-map-freshness.mjs"
+  - "scripts/backtest/refresh-hole-map.mjs"
+  - "package.json"
+  - "scripts/backtest/probeFoldSizingResponse.mjs"
+  - "scripts/__tests__/holeMapFreshness.test.js"
+  - "docs/design/audits/2026-08-05-entry-hole-map-study-surface.md"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "scripts/backtest/probeCheckRaise.mjs"
+  - "src/utils/exploitEngine/__tests__/facingAggressionFrequency.test.js"
+  - "scripts/backtest/run-ws402-frequency.mjs"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "scripts/backtest/holeMapGit.mjs"
+  - "src/utils/exploitEngine/__tests__/blockerSingleApplication.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "scripts/backtest/probeLevel.mjs"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml"
+  - "scripts/backtest/probeRepresentedRange.mjs"
+  - "scripts/backtest/probeCeilingInteraction.mjs"
+  - "scripts/backtest/probeFrequency.mjs"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "kit/scripts/cwos-bundle-validate.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEquity.test.js"
+  - ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+  - ".claude/context/bundles/math-measurement.yaml"
+  - "src/utils/exploitEngine/heroRangeBuilder.js"
+  - ".claude/context/bundles/math-blindspot.yaml"
+  - "docs/context-bundles.md"
+  - "docs/context-system-requirements.md"
+  - "docs/context-architecture.md"
+  - ".claude/workstream/queue/WS-422.yaml"
+  - "docs/arm-c-maxdrag-context-design.md"
+  - ".claude/workstream/queue/WS-423.yaml"
+  - "docs/research/live-winrate-benchmarks.md"
+  - "docs/arm-a-greenfield-context-design.md"
+  - "scripts/backtest/strategyArm.mjs"
+  - "scripts/backtest/run-strategy-arms.mjs"
+  - "docs/research/published-strategy-corpus.md"
+  - ".claude/projects/context-shift-implementation.md"
+  - "docs/context-system-comparison.md"
+  - "scripts/backtest/fixtures/plumbingProof.card.js"
+  - ".claude/workstream/queue/WS-424.yaml"
+  - "docs/standard-of-record/DECLARED-ARM-SCORING-SPEC.md"
+  - ".claude/workstream/queue/WS-425.yaml"
+  - ".claude/projects/human-transform-and-gt-primitives.md"
+  - ".claude/workstream/system-summary.yaml"
+
+
+
+handoff_notes: |
+  Started as /next. The sprint gate was blocked on a 46-day-stale
+  domain-correctness blind_spot protocol. That protocol was nearly run inline as
+  a single-threaded audit where it declares engine: eng-engine — the founder
+  stopped it, and that correction reshaped the whole session.
+
+  WHAT SHIPPED (6 commits, c51fddf3..1be3f926; 3654 tests pass, build clean,
+  reconcile 0 violations)
+
+  Engine. The fold estimate read a curve on the wrong AXIS ((R-B)/(P+2B) fitted,
+  inc/(P+B) fed — 39% overstated at the steepest point), fitted for the wrong
+  ACTION (bet curve used facing a raise; raise curve now fitted, hold-out Brier
+  0.22007 -> 0.21754), from an ANCHOR that counted sizing twice. Continue
+  probability was truncated at 0.80 against a pool-implied 0.986, and lifting it
+  exposed a latent INVERSION in shiftFoldMass where a stickier villain came out
+  calling LESS. Depth-2/3 sampling seeded (boardDerivedRng was module-private,
+  which is why it stayed unseeded through WS-355) — two identical runs now give
+  an identical edge.
+  Facing aggression: 92.2% raise -> 82.3%, ESS 26.0% -> 29.9%, pool 15.2%.
+  Price sensitivity restored (48/48 raises at every price -> 43/48 falling
+  monotonically). The gap closes ~7%; what remains is not this constant.
+
+  Measurement. The hole map prices branches the pool does NOT take — required
+  vs predicted fold, gap in bb, occurrence rate, bb/hour, with nGap and nRate
+  carried separately and a disjointness guard that refuses to sum alternatives.
+  Freshness re-stamps on READ, keyed to engine commits not age. A decision-record
+  sidecar persists per-combo candidate lists so questions can be asked later
+  without re-running. And strategyCard.js — ADR-009's Declared surface — turned
+  out complete except for a caller: evaluateCard had none in scripts/backtest/.
+  Bridge built, prototype runs end to end.
+
+  Governance. Two hard rules enforced by hooks rather than by having been read:
+  engine-execution-fidelity and improvement-default. DEC-037..040 recorded.
+
+  KEY FINDINGS
+  - The program verified CORRECTNESS and never REACHABILITY. Four things the
+    2026-06-20 run certified as "not gaps" are correct AND unreachable from the
+    live surface. ~15 instances of the shape.
+  - FIND-046: nine of thirteen paths in this program's own scope patterns match
+    ZERO files; src/hooks and src/components are out of scope entirely, so the
+    file with the most consequential poker-logic line is one it never looks at.
+  - The live decision rule is three literals violating S3.4.3 and S6.3.
+  - The learned range channel is algebraically inert — one scalar per
+    (position, action) scaling all 169 cells, divided out at the point of use.
+    So "live data will adjust it" is currently false for a CODE reason.
+  - The 20 bb/hr anchor is REAL (Goone at $5/$5 Hustler; persuadeo 18.8 at
+    $1/$3) and unfit as a scale test. Rake-adjusted onto Vegas $1/$3 it is
+    12.3-14.6, which an independent bias correction brackets at 10-16.
+  - No published live standard deviation exists anywhere; the apparent consensus
+    is one author replicated across five sites.
+  - The roundtable's convergence was PARTLY INHERITED from a memory file loaded
+    at session start — caught by the cross-critic.
+
+  NEXT SESSION SHOULD DO THIS FIRST
+  Read .claude/projects/context-shift-implementation.md and the judge's
+  synthesis at docs/context-system-comparison.md. The context rebuild is
+  deliberately handed to a FRESH session — this one carries the maximum drag the
+  shift exists to remove. Do not import this session's narrative; the handoff
+  states facts with their evidence, and that is all that should cross.
+
+  Then, in order: WS-402 (over-raising, still 82.3% vs pool 15.2% — the binding
+  constraint on every measurement at ESS ~30%), WS-403 (stage scheduler starves
+  the flop at every budget), WS-404 (per-stage ablation flags — no
+  per-capability EV number is possible without it), WS-411 (wall clock).
+
+  Then the baseline EV run: docs/runbooks/baseline-ev-run.md, ~4 hours. It has
+  never completed at >=30 clusters, which is the only thing standing between the
+  founder and the figure he asked for.
+
+  DO NOT RE-DERIVE (tested and settled this session)
+  - Depth-1 does NOT overfold — it under-folds by ~49 points.
+  - Depth-1 does NOT lack check-raise; the candidate set is identical in both
+    arms. WS-314 is already fixed at HEAD — close it.
+  - The represented range is NOT the dominant residual; its 27-48 point swing
+    was measured against the null, so it is sensitivity, not error.
+  - The truncation was NOT compensating for it — crossed probe, identical deltas.
+  - RC-depth-ablation's -0.4711 is ~90% riverPerCombo on a street where depth-2
+    never runs, on a build predating the omniscience fix. Retired.
+
+context_notes: |
+  METHOD. Six lenses ran in parallel with fresh context, were resumed with each
+  other's findings plus external evidence, then a cross-critic over all twelve
+  outputs, then a facilitator. ~1.66M subagent tokens. Nine claims the AI relayed
+  to the founder were overturned by agents dispatched to check them — that rate
+  is the health signal; zero would mean the checks stopped being adversarial.
+
+  FRICTION worth a kit ticket. Every spawned subagent registers a session via the
+  SessionStart hook and overwrites .claude/workstream/.current-session, so that
+  pointer named a throwaway probe rather than the real session for most of the
+  day. 52 session files exist; 2 were ever active at once. One probe left a lock
+  on a deleted program file and the provenance gate blocked a commit on it.
+
+  UNVERIFIED, claimed by the greenfield arm and worth checking: git config
+  core.hooksPath points at the abandoned pre-relocation tree rather than this
+  one. If true, .git/hooks is not consulted at all and six shipped pre-commit
+  hooks have been silently dead since the repo moved. Copying hooks in would do
+  nothing. Claude Code's own PreToolUse gates DO fire — both blocked work this
+  session — so this is git hooks only.
+
+  121 paths remain uncommitted: pre-session CWOS state. The git-guard refused a
+  tree-wide stage because 54 of them were dirty before this session began, which
+  was correct.

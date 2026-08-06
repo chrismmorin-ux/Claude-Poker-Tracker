@@ -14,14 +14,14 @@ command_usage:
   engine: 0
   build_engine: 0
   audit: 0
-  verify: 0
+  verify: 1
   plan: 0
   pulse: 0
   decide: 0
   # Quick fix and standard mode aren't commands but track session types
   quick_fix_sessions: 0
   standard_sessions: 0
-  strategic_sessions: 1
+  strategic_sessions: 3
 
 # Engine run tracking — which engines are actually used
 engine_runs:
@@ -32,14 +32,14 @@ engine_runs:
 # Value ledger — concrete evidence of CWOS impact
 # Each entry is a timestamped record of value delivered
 value_ledger:
-  total_findings_caught: 0
+  total_findings_caught: 15          # +15 this session (FIND-040..054)
   total_items_completed: 2
-  total_items_created: 5
+  total_items_created: 45       # +40 this session (WS-386..425)
   regressions_prevented: 0       # Findings that matched failure library patterns
-  invariant_violations_caught: 0  # Times invariant checks caught issues
-  drift_corrections: 4           # State drift detected and fixed
-  decisions_recorded: 4          # Decisions logged (institutional memory)
-  sessions_with_handoff: 1       # Sessions that wrote handoff notes (continuity)
+  invariant_violations_caught: 1  # Times invariant checks caught issues
+  drift_corrections: 9           # State drift detected and fixed — +5: 12 orphan finding refs, 3 prior-run findings recovered, problem_class vocabulary split, 2 undeclared engine substitutions, 1 orphan session lock
+  decisions_recorded: 10          # Decisions logged (institutional memory) — +4 (DEC-037..040)
+  sessions_with_handoff: 3       # Sessions that wrote handoff notes (continuity)
   # Calculated at read time:
   # value_density = total_findings_caught / max(engine_runs_total, 1)
   # session_continuity = sessions_with_handoff / max(total_sessions, 1)
