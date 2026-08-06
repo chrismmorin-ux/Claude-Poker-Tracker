@@ -1220,6 +1220,144 @@ The principled fix is to re-express the curve in the *price* villain is offered,
 `s / (1 + 2s)` (§6.2) — the variable §11.4 already uses preflop — but that is a
 functional-form change with a much wider blast radius and was deliberately not taken.
 
+#### 11.1b A fitted curve has an AXIS and an ANCHOR, and both were wrong for a raise (WS-402)
+
+§11.1a fitted the curve. WS-402 found that the EV path was **evaluating it on a different
+variable from the one it was fitted on**, with a **different curve from the one fitted for
+the action**, from an **anchor the base estimate never had** — three errors that compound
+and all push the same way. Together they made the engine raise **91.9%** of the time facing
+aggression, against a pool that raises 12.5% and a hero who raised 10.5% (n=86 scored corpus
+decisions). Nothing else can make a raise dominate for hero's *entire* range at once: only a
+term that is independent of hero's cards can, and `pFold × pot` is that term.
+
+**1 — the axis.** `mine-fold-vs-sizing.mjs` defines the fitted axis as
+`owed / (potIncludingFacedBet − owed)`. Facing a bet of `b` into `P` that is `b/P`, which is
+what `betFraction` already was. **Facing a raise to `R` over villain's bet `B` it is
+`(R − B) / (P + 2B)`** — villain's already-posted bet is in the pot and is not part of what
+they must call. `heroActionBuilder` labels a raise `increment / (P + B)`, omitting `B` from
+the denominator. On `P=100, B=65` with a 54 raise on top, the fitted axis reads **0.235** and
+the engine fed the curve **0.327** — a 39% overstatement, landing exactly where `steepnessUp`
+(6.5) is steepest. This is the same asymmetry §6.2 and `villainRequiredEquity` already carry,
+in the same direction, for the same reason.
+
+**2 — the curve.** `POPULATION_CURVE` is fitted on seats facing a live **bet**;
+`fit-fold-curve.mjs` says so in its own conditioning-set header and reports the raise
+population only as a footnote. Facing a raise is a different population and its response is
+measurably different — the marginal is **0.4242** against 0.5616, and the shipped bet curve
+leaves a residual slope of +0.0522 on it. That refit was measured and never merged, so hero's
+raises were priced with hero's-bets' instrument. `POPULATION_CURVE_RAISE` is that refit
+(`scripts/foldCurve/fit-raise-curve.mjs`, same corpus / form / partition / split):
+
+| | facing a BET | facing a RAISE |
+|---|---|---|
+| marginal fold (hold-out) | 0.5616 | **0.4242** |
+| `maxDelta` | 0.95 | **0.65** |
+| `midpoint` | 0.35 | **0.40** |
+| `steepnessUp` / `steepnessDown` | 6.5 / 0.75 | **8 / 3.25** |
+| hold-out Brier | 0.23530 | **0.21754** (bet curve on the same rows: 0.22007) |
+| hold-out residual slope | +0.0078 | **−0.0367** (bet curve: +0.0522) |
+
+The field discriminates on price much harder facing a raise: it folds far less to a small one
+and keeps folding more as the raise grows, where its response to a large *bet* flattens.
+**No per-style scaling is applied to the raise curve** — `computeFoldCurveForStyle`'s
+multipliers are explicitly unmeasured founder estimates, and attaching them to a freshly
+measured curve would be §7.4 stacking. Personalisation for raises enters through the LEVEL,
+inside `estimateFoldPct`.
+
+**3 — the anchor.** §11.1a establishes that `midpoint` is *the sizing at which the field's
+conditional fold rate equals its unconditional one*, i.e. `baseFold` must be UNCONDITIONAL.
+Since WS-307 it is not: `estimateFoldPct`'s per-combo branch prices every combo against
+`villainRequiredEquity`, which reads pot geometry, so its output is already **a fold rate at
+a sizing** — for a raise, at the representative `R = 3B`, which is a fitted-axis fraction of
+0.565. Handing that to a curve anchored at 0.35 counts the sizing response **twice**, from an
+origin the estimate never had. The estimate now reports the anchor it does have
+(`meta.sizingFraction`) and is moved along the curve as `base + d(s) − d(s₀)`.
+
+**Measured, against the pool's realized fold-to-raise rate by sizing bucket**
+(`out/fold-vs-sizing.json`, n=145,430 raise-facing decisions), sweeping eight raise sizes on
+three spots — mean absolute error of the engine's `pFold`:
+
+```
+spot                       shipped   structural-only   fixed
+flop A♠K♦6♠  P=100 B=65     0.129        0.071         0.041
+flop J♥T♥9♦  P=120 B=80     0.177        0.077         0.070
+turn A♠7♥2♦9♣ P=200 B=120   0.369        0.256         0.259
+```
+
+The bias is **positive in every cell**: the engine over-estimated folding at every sizing it
+was checked at. Inflated fold equity does not make the engine timid, it makes it **reckless**
+(§13.3), and it inflates the WEAKEST hands most, because a hand with no showdown value is
+priced almost entirely off the fold branch.
+
+**What this did NOT fix, stated so it is not mistaken for fixed.** The residual — largest on
+the third row — is a **level** error, not a shape error. WS-402 named two causes for it and
+declared them coupled and of opposite sign. §11.1c settles that.
+
+The `check-raise` path — which prices its fold rate structurally through `crVillainResponse`
+and never touches the curve — is the "structural-only" column above, and was already the better
+of the two paths before this ticket.
+
+#### 11.1c The compensator hypothesis was falsifiable, and it is false (WS-403)
+
+WS-402's hand-off said the truncated per-combo continue probability had been *compensating*
+for an over-strong `buildRepresentedHeroRange`, so neither could be corrected alone. That
+claim makes a prediction: **change the represented range, and what lifting the ceiling does
+must change too.** Crossing {represented range} × {ceiling} and recomputing the fold estimate
+from the same per-combo distribution (`scripts/backtest/probeCeilingInteraction.mjs`), the
+ceiling delta is the same across every candidate range, including one polarised at §12.4's
+balanced bluff share:
+
+| represented range | Δ fold, ceiling 0.80 → 0.96 |
+|---|---|
+| shipped (equity-monotone) | A♠K♦6♠ −0.096 · J♥T♥9♦ −0.084 · turn −0.043 |
+| polarised (balanced bluffs) | A♠K♦6♠ −0.103 · J♥T♥9♦ −0.108 · turn −0.041 |
+
+The two terms are close to independent. Three further corrections follow, and each is a
+methodological one rather than a poker one:
+
+**A sensitivity is not an error.** The 27–48 point swing was measured between "hero represents
+a raise" and "hero represents NOTHING" — an un-narrowed uniform grid, i.e. the null. A
+load-bearing input is supposed to be load-bearing. At the canonical anchor the shipped estimate
+sits on the pool's own rate on two of three spots (0.489 vs ~0.485, 0.535 vs ~0.49) and is 24
+points high on the turn only. **The residual is a property of one spot.**
+
+**A conditional may only be compared to a marginal on SLOPE.** `probeFoldSizingResponse`'s own
+header says so — the engine's estimate is conditioned on this range and this board, the pool's
+is a population marginal over all of them — and then its BIAS column was quoted as level
+evidence for the compensation story. This is §11.5's selection-effect rule in a new costume:
+scoring two things on different conditioning sets measures the sets.
+
+**The docblock's direction claim was right and was refuted against the wrong pair.** It said
+the uniform seed carries more trash than hero's true preflop range, so the represented range is
+if anything weaker — the conservative direction. Measured, seeding the identical likelihood
+from a real LATE-open prior makes the range **stronger** (nuts 0.100→0.187, air 0.290→0.126 on
+A♠K♦6♠) and the fold estimate **higher** (0.489→0.666 / 0.535→0.540 / 0.713→0.767). What WAS
+false in that docblock is its statement of the mechanism: `narrowByBoard` has not read
+`ACTION_MULTIPLIERS` since WS-291 — it scores combos by `computeComboEquity` and pins the mean
+weight to `DEFAULT_CONTINUATION_RATES[action]`. That false claim had been copied into two other
+files and aimed the next ticket at constants that are not on the path. It is now asserted by
+test rather than described.
+
+**So the ceiling was applied on its own merits**, at all four sites that ask the question, from
+`villainModelData.continueProbability`. Paired on 130 corpus decisions, facing aggression went
+`fold 6.2 / call 3.8 / raise 90.0` to `fold 10.9 / call 6.8 / raise 82.3` against a pool at
+`48.7 / 36.2 / 15.2`, with ESS up 33.8 → 38.9 on every slice. The pool is the population being
+exploited and not the target; 82% is still not a read, and what remains is not this constant.
+
+Lifting it also surfaced an inversion the old cap had hidden: `comboActionProbabilities`
+applied the villain-model stickiness shift to a finished distribution and then renormalised, so
+once `pFold` hit its clamp a **stickier** villain came out calling **less** (`pCall` 0.8301 /
+0.8363 / 0.8431 for model fold rates 0.20 / 0.30 / 0.40). §7.4's rule that a label may shape a
+prior but never scale a posterior has an arithmetic sibling: an adjustment must move mass that
+exists, or the renormalisation decides its sign.
+
+**Measured effect on the frequency, and the honest limit of it.** On a 48-decision fixture
+spanning four prices (`facingAggressionFrequency.test.js`), the pre-fix engine raised **48/48
+at every price with zero folds**; post-fix it raises 43/48, folds appear, and the raise share
+falls monotonically as villain's price rises (8/8 at 0.30× pot → 6/8 at 1.75×). Price
+sensitivity is restored; the aggregate share is still high, and that residual is items 1 and 2
+above rather than anything left in the curve.
+
 ### 11.2 SPR Zones (Descriptive) + Continuous Sizing Multiplier (Decision)
 
 Stack-to-pot ratio is classified into five **descriptive** zones (`getSPRZone`,
@@ -1935,6 +2073,28 @@ Consequence, stated plainly: **flop and turn decisions retain a residual bias** 
 villain knowing hero's hand on future streets. **River decisions — no future street — are
 fully corrected.** Measured cost of the correction: flop 1.67x, turn 1.94x, river 1.03x on
 the per-combo distribution.
+
+**"River decisions are fully corrected" was FALSE for eleven weeks, and the boundary is why
+(WS-378).** The claim was true of the depth-1 path and of `foldEquityCalculator`, which was
+the only call site of `villainDecisionEquity` in the engine. It was not true of
+`riverPerCombo` — the refinement stage that actually fires on the river, because
+`needsDepth2: street !== 'river'` means depth-2 never runs there. `computeRiverCheckEV` and
+`computeRiverBetEV` re-derived villain's decision from `1 - heroEquity` and were read as
+covered by *this* boundary, which they never were: **the river IS the current decision
+node.** The boundary covers hypothetical FUTURE streets reached from a flop or turn
+decision — `computePerComboEV` / `computePerComboCheckEV` — and nothing else.
+
+Measured cost of the gap before it was closed (`RC-river-flip-replicate-1c560bcc-f3320904`,
+45 corpus river decisions, 8 seeds each): the top action flipped in **all 8 seeds on 32 of
+45**, and **34 of 34 directions ran toward passivity** (bet→check 27, raise→fold 6,
+raise→call 1). Both terms of the defect push the same way, which is why the pull was
+one-directional rather than noisy: villain folded every worse hand to hero's bet, and hero's
+check line collected bets it always won. Both estimators now resolve villain's decision
+through `villainDecisionEquity` against the range hero represents by taking THIS action.
+
+The general lesson is about the boundary's PHRASING, not its substance. "Current node vs
+future street" is a correct distinction that was read as "depth-1 vs depth-2", and those are
+not the same partition on a street where depth-2 does not run.
 
 ### 12.7 What this does NOT license
 
