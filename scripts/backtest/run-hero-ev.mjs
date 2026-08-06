@@ -105,6 +105,27 @@ const main = async () => {
       weightCap: num(args['weight-cap'], 20),
     };
 
+    // WS-393 — the depth-2/3 refinement budget, made statable on the single-arm runner.
+    //
+    // WHY THIS FLAG HAD TO EXIST BEFORE THE BASELINE RUN. `refinementBudgetMs` was reachable
+    // only through `run-depth-ablation.mjs`, which necessarily runs BOTH arms and therefore
+    // costs roughly twice the wall clock. There was no way to run the depth-1 configuration
+    // alone — and depth-1 is the configuration that actually shipped for the life of the
+    // project (WS-334 measured zero depth-2 calls on a live evaluation) AND the only one with
+    // no wall-clock dependence in `gameTreeEvaluator.isTimeBudgetExceeded`.
+    //
+    // Omitted = the engine's own default, and the key stays ABSENT at the engine call, so a
+    // run without this flag is byte-identical to every run before it.
+    const refinementMs = args['refinement-ms'] === undefined
+      ? undefined
+      : int(args['refinement-ms'], undefined);
+    if (refinementMs !== undefined && !(refinementMs >= 0)) {
+      console.error('Refused: --refinement-ms must be >= 0 (0 means refine nothing — the depth-1 arm).');
+      process.exit(2);
+    }
+    const comboSamples = int(args['combo-samples'], 10);
+    const trials = int(args.trials, 200);
+
     // ADR-009 / WS-322 — the Deal Book and the replication stamp.
     //
     // Built AFTER the --max-files slice, deliberately: the book must describe the hands the
@@ -113,7 +134,8 @@ const main = async () => {
     // at all because it would look correct.
     const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
-    const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
+    const { buildStampInput, HERO_EV_UNSEEDED_SOURCES, REFINEMENT_CLOCK_UNSEEDED_SOURCE } =
+      await loader.load('/scripts/backtest/replicationStamp.mjs');
     const { DEFAULT_BOOTSTRAP_SEED } = await loader.load('/scripts/backtest/ipsEstimator.mjs');
 
     const dealBook = await buildDealBook({
@@ -139,7 +161,25 @@ const main = async () => {
         ? `behavior-policy@${behaviorPolicy.provenance.partition}/${behaviorPolicy.provenance.observations ?? '?'}obs`
         : null,
       partition: `pool-train@${int(args['pool-pct'], 50)}`,
+      // WS-393. This script has always run the engine at its default 2000ms refinement budget
+      // and has never declared the wall-clock dependence that comes with it — so every hero-EV
+      // card it wrote asserted a reproducibility it did not have. Declared here whenever
+      // refinement is actually enabled, and correctly ABSENT at a budget of 0.
+      unseededSources: refinementMs === 0
+        ? HERO_EV_UNSEEDED_SOURCES
+        : [...HERO_EV_UNSEEDED_SOURCES, REFINEMENT_CLOCK_UNSEEDED_SOURCE],
     });
+    // WS-393. The settings that DEFINE this configuration, stamped ON TOP of the minimum set
+    // — the same argument run-depth-ablation.mjs makes: a card that does not name the
+    // refinement budget names a configuration nobody can reconstruct, and after WS-334 the
+    // budget is the difference between two materially different engines.
+    replicationStamp.constants = {
+      ...replicationStamp.constants,
+      REFINEMENT_BUDGET_MS: refinementMs === undefined ? 'engine-default' : refinementMs,
+      HERO_POLICY_COMBO_SAMPLES: comboSamples,
+      HERO_POLICY_TRIALS: trials,
+      IPS_WEIGHT_CAP: reportOpts.weightCap,
+    };
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
     }
@@ -194,26 +234,53 @@ const main = async () => {
       }
     };
 
+    // WS-393 — the decision-level sidecar. See decisionRecord.mjs.
+    const { openDecisionSink } = await loader.load('/scripts/backtest/decisionRecord.mjs');
+    const sink = typeof args['decisions-out'] === 'string'
+      ? openDecisionSink(args['decisions-out'], {
+        run: 'hero-ev',
+        dealBookId: dealBook.dealBookId,
+        dealBookHash: dealBook.contentHash,
+        engineCommit: replicationStamp.engineCommit ?? null,
+        engineDirty: replicationStamp.engineDirty ?? null,
+        arms: [{ id: 'default', refinementBudgetMs: refinementMs ?? 'engine-default' }],
+        constants: replicationStamp.constants,
+      })
+      : null;
+    if (sink) console.log(`Decision-level record streaming to ${sink.path}`);
+
     const started = Date.now();
     const run = await runHeroEv({
       files,
       reference,
       behaviorPolicy,
       onPartial: writePartial,
+      onDecisionRecord: sink ? (rec) => sink.write(rec) : null,
       poolPct: int(args['pool-pct'], 50),
       maxPlayers: int(args['max-players'], Infinity),
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
       minTrainHands: int(args['min-train-hands'], 15),
       checkpointInterval: int(args['checkpoint-interval'], 10),
       maxDecisions: int(args['max-decisions'], Infinity),
-      comboSamples: int(args['combo-samples'], 10),
-      trials: int(args.trials, 200),
+      comboSamples,
+      trials,
       rakeConfig,
       dealBook,
       replicationStamp,
+      // Spread, so an unstated budget leaves `depthArms` absent and the engine's own default
+      // applies — the pre-WS-393 path, unchanged.
+      ...(refinementMs === undefined
+        ? {}
+        : { depthArms: [{ id: 'default', refinementBudgetMs: refinementMs }] }),
       log: (m) => console.log(`  ${m}`),
     });
     run.runtimeMs = Date.now() - started;
+    if (sink) {
+      sink.close();
+      console.log(`Decision-level record: ${sink.count} row(s) in ${sink.path}`);
+      run.decisionRecordPath = sink.path;
+      run.decisionRecordRows = sink.count;
+    }
 
     const report = buildHeroEvReport(run, reportOpts);
     console.log(renderHeroEvReport(report));
@@ -222,6 +289,17 @@ const main = async () => {
       mkdirSync(dirname(args.out), { recursive: true });
       writeFileSync(args.out, JSON.stringify({ report, run }, null, 2));
       console.log(`\nWrote ${args.out}`);
+      // WS-393. `buildHeroEvReport` has produced a Result Card since WS-322 and this script
+      // has never written it anywhere — it existed only nested inside the `--out` blob, which
+      // is not a place a Ladder or a fault-register sweep can find it. Same flag, same
+      // semantics as run-depth-ablation.mjs.
+      if (typeof args.card === 'string' && report.resultCard) {
+        mkdirSync(dirname(args.card), { recursive: true });
+        writeFileSync(args.card, JSON.stringify(report.resultCard, null, 2));
+        console.log(`Wrote ${args.card}`);
+      } else if (typeof args.card === 'string') {
+        console.log(`No Result Card written — ${(report.resultCardProblems ?? ['unknown reason']).join('; ')}`);
+      }
       if (partialWrites > 0) {
         // The completed artifact supersedes every snapshot; leaving the last partial on
         // disk beside it invites someone to read the wrong one.

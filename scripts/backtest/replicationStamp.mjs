@@ -108,6 +108,25 @@ export const collectConstants = async (loader) => {
  * look. `sampleCombos` is deliberately NOT on this list: it is systematic weight-proportional
  * sampling over a strength-sorted list, with no RNG at all.
  */
+/**
+ * The refinement clock, as an unseeded source (WS-393).
+ *
+ * CANONICAL HERE, imported by every reporter that needs it. It used to be declared only in
+ * `depthAblationReport.mjs`, which meant `run-hero-ev.mjs` — which has ALWAYS run the engine at
+ * its default 2000ms refinement budget — stamped cards asserting a reproducibility it did not
+ * have. `unseededSources` is a positive claim; a runner that reaches this code path and omits
+ * the entry is making a false one.
+ */
+export const REFINEMENT_CLOCK_UNSEEDED_SOURCE = Object.freeze({
+  source: 'src/utils/exploitEngine/gameTreeEvaluator.js (refinement budget clock)',
+  reached_via: 'refinementBudgetMs enforced against Date.now()',
+  mechanism: 'WALL-CLOCK DEPENDENCE, not randomness. Which refinement stages complete '
+    + 'depends on machine speed and load, capped per stage by MAX_STAGE_SHARE.',
+  consequence: 'A run with refinement ENABLED is NOT reproducible on a different machine, or '
+    + 'on this one under different load: a re-run can differ because a stage that finished '
+    + 'before did not finish again. A budget of 0 has no such dependence and IS stable.',
+});
+
 export const HERO_EV_UNSEEDED_SOURCES = Object.freeze([
   {
     source: 'src/utils/pokerCore/monteCarloEquity.js',

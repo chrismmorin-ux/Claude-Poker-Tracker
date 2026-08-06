@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "resultCardId": "RC-river-flip-replicate-1c560bcc-fe716f59",
+  "match": {
+    "surfaceId": "engine-read",
+    "dealBookId": "handhq-allsites-50NLH-1c560bcc",
+    "fieldId": "pool-mined-behavior-policy"
+  },
+  "estimand": "Share of RIVER decisions (from the WS-334 AC5 paired set) at which the top action differs between refinementBudgetMs=0 and refinementBudgetMs=2000 in EVERY ONE of R seeded replicates. Outcome-free: it is a property of the engine, not of realized chips. NOT an EV claim, NOT a winrate, and NOT a verdict on riverPerCombo.",
+  "treatment": "Paired within-decision contrast between two configurations of the same surface, replicated R times per decision with Math.random seeded per replicate (mulberry32) and Date.now frozen. Both arms of a replicate draw from the same seed.",
+  "metrics": {
+    "systematicFlipShare": 0.2222,
+    "systematicFlipCiLow": 0.1395,
+    "systematicFlipCiHigh": 0.3256,
+    "systematicFlipCiLowBinomialOverDecisions": 0.1254,
+    "systematicFlipCiHighBinomialOverDecisions": 0.3627,
+    "seedDependentShare": 0.0667,
+    "singleEvaluationFlipShare": 0.8,
+    "n": 45,
+    "players": 16,
+    "replicates": 8,
+    "flipDirections": {
+      "bet->check": 10,
+      "call->raise": 1,
+      "check->bet": 1
+    },
+    "perArmArgmaxStability": {
+      "depth1": {
+        "meanStability": 0.9778,
+        "minStability": 0.625,
+        "decisionsWithAnyInstability": 3
+      },
+      "depth2": {
+        "meanStability": 1,
+        "minStability": 1,
+        "decisionsWithAnyInstability": 0
+      }
+    },
+    "notAVerdict": true
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "admissible": true,
+    "blockers": [],
+    "warnings": [
+      {
+        "code": "FIXED_NODE_SET",
+        "detail": "The 45 river nodes are the ones the WS-334 pass happened to reach, not a random sample of river spots. The player-clustered interval is the generalising one; the binomial-over-decisions interval reported beside it is the precision AT THESE NODES and must not be quoted as generalisation."
+      },
+      {
+        "code": "TOO_FEW_CLUSTERS",
+        "detail": "16 contributing players is below the 30-cluster bar used elsewhere in this harness. The share is a structural tally and does not depend on the absolute arm edges, but its player-clustered interval is wide and should be read as such."
+      }
+    ]
+  },
+  "manifest": {
+    "engineCommit": "fe716f591fe82521903ee676495aa9611795d9ad",
+    "engineDirty": true,
+    "dealBookHash": "sha256:1c560bcc8ba77b640ce38341f6bfbecb723903332c9e877e65adf60356a112df",
+    "fieldVersion": "behavior-policy@pool-train/12191obs",
+    "partition": "pool-train@50",
+    "seeds": {
+      "rngReplicates": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007
+      ],
+      "generator": "mulberry32"
+    },
+    "unseededSources": [
+      {
+        "source": "process-global Math.random patch",
+        "reached_via": "freeze(seed) around every heroPolicyAt call",
+        "mechanism": "The patch is in-process only. Any randomness reached through a worker, a native binding, or a module that captured Math.random at import time would escape it.",
+        "consequence": "Bit-reproducibility is claimed for this process on this commit, not proven across engines. The measured per-arm argmax stability is the empirical check."
+      }
+    ],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "REFINEMENT_BUDGET_MS_DEPTH1": 0,
+      "REFINEMENT_BUDGET_MS_DEPTH2": 2000,
+      "HERO_POLICY_COMBO_SAMPLES": 10,
+      "HERO_POLICY_TRIALS": 200,
+      "RIVER_PER_COMBO_MAX_COMBOS": 200,
+      "FROZEN_NOW": 1700000000000
+    },
+    "disclaimerRegisterVersion": "FR-1+746d7b4aaea4",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:563",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null
+}

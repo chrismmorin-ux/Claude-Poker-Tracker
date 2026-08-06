@@ -55,6 +55,7 @@ import { buildPlayerStats } from '../../src/utils/exploitEngine/liveGameContext.
 import { PRIMITIVE_ACTIONS } from '../../src/constants/primitiveActions.js';
 import { RESPONSES_BY_FACING } from './behaviorPolicy.mjs';
 import { decisionGeometry, liveOpponentCount } from './decisionGeometry.mjs';
+import { comboLabel, comboClass, compactCandidate, compactLatency } from './decisionRecord.mjs';
 
 /** Default number of holdings sampled from hero's range per decision. */
 export const DEFAULT_COMBO_SAMPLES = 10;
@@ -155,6 +156,14 @@ export const heroPolicyAt = async ({
   // a live evaluation). That makes the depth-1 arm a REAL historical configuration rather
   // than a hypothetical one.
   refinementBudgetMs = undefined,
+  // WS-393 — capture the per-combo detail this loop already computes and currently drops.
+  //
+  // OFF BY DEFAULT so every existing caller is byte-identical and pays nothing. When on,
+  // `comboDetail` comes back alongside `actions`: one entry per sampled holding, carrying
+  // the engine's WHOLE ranked candidate list with EVs, the equity, and the refinement stage
+  // ledger. Nothing here feeds `actions` — the array is built beside the counters, never
+  // into them — so a run with capture on and one with it off produce the same policy.
+  captureComboDetail = false,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
@@ -219,7 +228,36 @@ export const heroPolicyAt = async ({
   // aggregate below is therefore taken over hero's RANGE POSTERIOR — see `evStats`.
   const evSamples = [];
 
+  // WS-393. Pushed at the TOP of the iteration and mutated in place as facts arrive, so
+  // that the `continue` paths below — engine error, no recommendation, action out of the
+  // corpus vocabulary — each leave a row saying exactly which one happened. Collecting
+  // only the combos that survived to the bottom would silently make this a record of the
+  // spots the engine could handle.
+  const comboDetail = captureComboDetail ? [] : null;
+
   for (const combo of combos) {
+    const detail = comboDetail && {
+      card1: combo.card1,
+      card2: combo.card2,
+      combo: comboLabel(combo.card1, combo.card2),
+      comboClass: comboClass(combo.card1, combo.card2),
+      sampleWeight: combo.sampleWeight,
+      rangeWeight: combo.weight,
+      strength: combo.strength,
+      heroEquity: null,
+      engineError: false,
+      noRecommendation: false,
+      advisedAction: null,
+      advisedPrimitive: null,
+      inResponseSet: null,
+      candidates: null,
+      depthEligible: null,
+      depthReached: null,
+      latency: null,
+      modelQuality: null,
+    };
+    if (detail) comboDetail.push(detail);
+
     let result;
     try {
       result = await evaluateGameTree({
@@ -253,7 +291,19 @@ export const heroPolicyAt = async ({
       });
     } catch {
       engineErrors++;
+      if (detail) detail.engineError = true;
       continue;
+    }
+
+    if (detail) {
+      detail.heroEquity = Number.isFinite(result?.heroEquity) ? result.heroEquity : null;
+      detail.candidates = Array.isArray(result?.recommendations)
+        ? result.recommendations.map(compactCandidate)
+        : null;
+      detail.depthEligible = result?.treeMetadata?.depth ?? null;
+      detail.depthReached = result?.treeMetadata?.depthReached ?? null;
+      detail.latency = compactLatency(result?.treeMetadata?.latency);
+      detail.modelQuality = result?.modelQuality ?? null;
     }
 
     // Recorded BEFORE the recommendation is inspected. A combo whose engine advice falls
@@ -264,7 +314,12 @@ export const heroPolicyAt = async ({
     }
 
     const top = result?.recommendations?.[0];
-    if (!top) { engineErrors++; continue; }
+    if (!top) {
+      engineErrors++;
+      if (detail) detail.noRecommendation = true;
+      continue;
+    }
+    if (detail) detail.advisedAction = top.action ?? null;
 
     // Recorded BEFORE the corpus-vocabulary filter below, for the same reason `perCombo` is:
     // whether the engine's advice maps onto an action the hand history could contain is a fact
@@ -286,6 +341,10 @@ export const heroPolicyAt = async ({
     }
 
     const primitive = toPrimitive(top.action);
+    if (detail) {
+      detail.advisedPrimitive = primitive;
+      detail.inResponseSet = Boolean(primitive && responses.includes(primitive));
+    }
     if (!primitive || !responses.includes(primitive)) { outOfSet++; continue; }
 
     counts[primitive] += combo.sampleWeight;
@@ -303,6 +362,10 @@ export const heroPolicyAt = async ({
       // already computed would make the ceiling's decision set a subset of the engine's —
       // which would flatter the engine on exactly the spots it could not handle.
       perCombo,
+      // Returned on the failure path too: a node where the engine had no admissible
+      // recommendation is one of the more interesting rows in the whole file, and the
+      // caller cannot ask why after the fact if the evidence is dropped here.
+      comboDetail,
     };
   }
 
@@ -314,7 +377,11 @@ export const heroPolicyAt = async ({
   const actions = {};
   for (const a of responses) actions[a] = counts[a] / used;
 
-  return { ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo, evStats: summarizeEv(evSamples) };
+  return {
+    ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo,
+    evStats: summarizeEv(evSamples),
+    comboDetail,
+  };
 };
 
 /**

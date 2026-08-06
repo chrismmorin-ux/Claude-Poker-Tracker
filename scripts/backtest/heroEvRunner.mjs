@@ -23,11 +23,22 @@ import { validateBehaviorPolicy, queryPolicy } from './behaviorPolicy.mjs';
 import { indexEvalPlayers } from './runner.mjs';
 import { resolveHandOutcome } from './handOutcome.mjs';
 import { heroPolicyAt, DEFAULT_COMBO_SAMPLES, DEFAULT_TRIALS } from './heroPolicy.mjs';
-import { decisionGeometry, sizeBucketFor, liveOpponentCount } from './decisionGeometry.mjs';
+import {
+  decisionGeometry, sizeBucketFor, liveOpponentCount,
+  sprFor, sprBandFor, closesAction,
+} from './decisionGeometry.mjs';
+import { holdingTruth } from '../../src/utils/holdingKnowledge/index.js';
+import {
+  DECISION_RECORD_SCHEMA_VERSION, cardLabel, compactHeroTruth,
+} from './decisionRecord.mjs';
 import {
   validatePbrHeldOut, poolBestResponseAt, poolBestResponseSweep,
   PBR_SHRINK_SWEEP, PBR_SURFACE_ID,
 } from './poolBestResponse.mjs';
+import {
+  FALLBACK, validateStrategy, validateFallback, strategyPolicyAt,
+  newCoverage, summarizeCoverage,
+} from './strategyArm.mjs';
 
 const USER_ID = 'backtest';
 
@@ -52,8 +63,8 @@ const bump = (o, k) => { o[k] = (o[k] || 0) + 1; };
  * at the engine call, so the default arm is the engine's own configuration rather than this
  * module's opinion of it.
  */
-const normalizeDepthArms = (depthArms) => {
-  if (!depthArms) return [{ id: 'default', refinementBudgetMs: undefined }];
+const normalizeDepthArms = (depthArms, { allowSetChange = false } = {}) => {
+  if (!depthArms) return [{ id: 'default', refinementBudgetMs: undefined, strategy: null }];
   if (!Array.isArray(depthArms) || depthArms.length === 0) {
     throw new Error('runHeroEv: depthArms must be a non-empty array of { id, refinementBudgetMs }');
   }
@@ -63,7 +74,46 @@ const normalizeDepthArms = (depthArms) => {
     if (ids.has(a.id)) throw new Error(`runHeroEv: duplicate depth arm id "${a.id}"`);
     ids.add(a.id);
   }
-  return depthArms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs }));
+
+  // WS-425 — the STRATEGY axis, which is orthogonal to the depth axis above.
+  //
+  // A depth arm varies the engine's search budget; a strategy arm replaces the policy
+  // entirely with an externally-published rule. Both land a distribution in `piOursByArm`,
+  // which is the only thing `estimateEdge` and `pairedDelta` read — so the two axes share
+  // every downstream figure and neither needs to know about the other.
+  //
+  // Engine arms are ordered FIRST unconditionally, so that a strategy arm falling back to
+  // the engine at a decision it does not cover always has its fallback source in hand. The
+  // reorder is invisible to every existing caller because a run with no strategy arms is
+  // reordered onto itself.
+  const engineArms = depthArms.filter((a) => !a.strategy);
+  const stratArms = depthArms.filter((a) => a.strategy);
+  if (stratArms.length && engineArms.length === 0
+    && stratArms.some((a) => (a.fallback ?? FALLBACK.ENGINE) === FALLBACK.ENGINE)) {
+    throw new Error(
+      'runHeroEv: a strategy arm with fallback "engine" needs at least one engine arm in the '
+      + 'run to fall back TO. Use fallback "pool" for a strategy-only run.',
+    );
+  }
+
+  return [
+    ...engineArms.map((a) => ({
+      id: a.id, refinementBudgetMs: a.refinementBudgetMs, strategy: null,
+    })),
+    ...stratArms.map((a) => {
+      const strategy = validateStrategy(a.strategy, { armId: a.id });
+      const fallback = validateFallback(a.fallback ?? FALLBACK.ENGINE, {
+        armId: a.id, allowSetChange,
+      });
+      const fallbackArmId = a.fallbackArmId ?? engineArms[engineArms.length - 1]?.id ?? null;
+      if (fallback === FALLBACK.ENGINE && !ids.has(fallbackArmId)) {
+        throw new Error(`runHeroEv: strategy arm "${a.id}" names fallbackArmId "${fallbackArmId}", which is not an arm in this run`);
+      }
+      return {
+        id: a.id, refinementBudgetMs: undefined, strategy, fallback, fallbackArmId,
+      };
+    }),
+  ];
 };
 
 /**
@@ -113,14 +163,44 @@ export const runHeroEv = async ({
   // Called with a PARTIAL snapshot (`complete: false`) every 25 scored decisions. Default
   // no-op, so nothing changes for callers that do not want it.
   onPartial = () => {},
+  // WS-393 — the full decision-level record, one call per scored decision, as it is scored.
+  //
+  // Null (the default) leaves every existing caller unchanged and, importantly, leaves the
+  // per-combo capture OFF inside `heroPolicyAt` — so a run that does not want the record
+  // does not pay for it in memory or time.
+  //
+  // Supplying it does NOT change what lands in `--out`. The heavy per-combo payload goes to
+  // the callback (a JSONL sidecar, in practice) and is never retained on `decisions`,
+  // because `decisions` is what the report re-reads and what a human opens.
+  onDecisionRecord = null,
+  // WS-425. Opt-in to a strategy arm whose `fallback: 'refuse'` changes the decision set the
+  // OTHER arms are averaged over. Off by default because that change is invisible in the
+  // output it produces and visible only in the one it does not.
+  allowSetChange = false,
 }) => {
   // All guards run at construction, before any work: a run that could leak must not
   // be able to start, let alone produce a number someone might quote.
-  const arms = normalizeDepthArms(depthArms);
-  const primaryId = primaryArmId ?? arms[arms.length - 1].id;
+  const captureRecord = typeof onDecisionRecord === 'function';
+  const arms = normalizeDepthArms(depthArms, { allowSetChange });
+  const engineArms = arms.filter((a) => !a.strategy);
+  const strategyArms = arms.filter((a) => a.strategy);
+  // The primary arm supplies `perCombo` (which PBR consumes) and `evStats` (which the
+  // optimizer's-curse figures consume). A strategy arm computes neither — it never calls the
+  // engine — so making one primary would silently null the ceiling and the curse for the
+  // whole run while every other figure kept working.
+  const defaultPrimary = (engineArms[engineArms.length - 1] ?? arms[arms.length - 1]).id;
+  const primaryId = primaryArmId ?? defaultPrimary;
   if (!arms.some((a) => a.id === primaryId)) {
     throw new Error(`runHeroEv: primaryArmId "${primaryId}" is not one of ${arms.map((a) => a.id).join(', ')}`);
   }
+  if (engineArms.length && strategyArms.some((a) => a.id === primaryId)) {
+    throw new Error(
+      `runHeroEv: primaryArmId "${primaryId}" is a strategy arm. The primary arm supplies `
+      + 'perCombo (the PBR ceiling) and evStats (the optimizer\'s curse), neither of which a '
+      + 'strategy arm computes — naming one primary would null both without saying so.',
+    );
+  }
+  const coverageByArm = Object.fromEntries(strategyArms.map((a) => [a.id, newCoverage()]));
 
   const guard = new LeakageGuard({ poolPct, reference });
   const policy = validateBehaviorPolicy(behaviorPolicy, poolPct);
@@ -216,6 +296,40 @@ export const runHeroEv = async ({
         if (!Number.isFinite(netBB)) { counters.heroSeatNotInOutcome++; continue; }
 
         const sizeBucket = sizeBucketFor(geo.facingBetBB, geo.potBB);
+
+        // WS-393 — the RAW coordinates of the node, derived from the SAME `geo` object the
+        // policy and the slices already used. Nothing here is a new notion of the pot; `spr`
+        // and `closesAction` are the two coordinates `decisionGeometryFull` adds, taken
+        // through the shared derivation rather than re-derived locally.
+        //
+        // Stored raw and unbucketed ALONGSIDE the buckets in `slices`, not instead of them:
+        // a bucket boundary is a decision someone made before the data existed, and keeping
+        // only `sizeBucket: '33-66'` forecloses every question that wants the real 0.51.
+        //
+        // WS-425 MOVED THIS ABOVE THE ARM LOOP. It used to be built after the arms, which was
+        // fine while only the engine consumed geometry. A Strategy Card matches on `sprBand`
+        // and `closesAction` (both `CARRIED_AXES`), so a card arm needs them BEFORE it is
+        // asked for a policy. Deriving them a second time inside the arm would be a second
+        // notion of the same coordinate, which is what this block's own comment forbids —
+        // so it moves rather than being copied. Nothing here depends on any arm, so the move
+        // is pure and the resulting row is byte-identical.
+        const spr = sprFor(geo);
+        const geometry = {
+          bb: geo.bb,
+          potChips: geo.potChips,
+          betChips: geo.betChips,
+          potBB: geo.potBB,
+          facingBetBB: geo.facingBetBB,
+          enginePotChips: geo.enginePotChips,
+          stackChips: geo.stackChips,
+          stackBB: Number.isFinite(geo.stackChips) ? geo.stackChips / geo.bb : null,
+          spr,
+          sprBand: sprBandFor(spr),
+          betToPot: geo.potBB > 0 ? geo.facingBetBB / geo.potBB : null,
+          closesAction: closesAction(ctx.hand, ctx.order, ctx.street, ctx.playerSeat),
+          sBucket: sizeBucket,
+        };
+
         const policyCtx = {
           facingAction: ctx.facingAction,
           isAgg: ctx.isAgg,
@@ -233,15 +347,32 @@ export const runHeroEv = async ({
         // hard spots, say) enter the contrast as if it were a depth effect.
         const byArm = {};
         let armFailure = null;
-        for (const arm of arms) {
+        for (const arm of engineArms) {
           // eslint-disable-next-line no-await-in-loop -- the engine call is the cost; arms are 1-2
           const res = await heroPolicyAt({
             ctx, hand: ctx.hand, rakeConfig, comboSamples, trials,
             refinementBudgetMs: arm.refinementBudgetMs,
+            captureComboDetail: captureRecord,
           });
           counters.engineErrors += res.engineErrors ?? 0;
           if (!res.ok) { armFailure = { arm: arm.id, reason: res.reason }; break; }
           byArm[arm.id] = res;
+        }
+        // WS-425 — strategy arms, evaluated AFTER the engine arms so an arm falling back to
+        // the engine has its fallback source. Pure functions of the decision: no engine call,
+        // no clock, no RNG, so this pass adds no wall-clock dependence to the run and a
+        // strategy arm's own distribution is bit-reproducible.
+        if (!armFailure) {
+          for (const arm of strategyArms) {
+            const res = strategyPolicyAt({
+              arm, ctx, hand: ctx.hand, geo: geometry,
+              engineActions: byArm[arm.fallbackArmId]?.actions ?? null,
+              poolActions: pool.actions ?? null,
+              coverage: coverageByArm[arm.id],
+            });
+            if (!res.ok) { armFailure = { arm: arm.id, reason: res.reason }; break; }
+            byArm[arm.id] = res;
+          }
         }
         if (armFailure) {
           bump(counters.policySkips, arms.length > 1
@@ -265,8 +396,23 @@ export const runHeroEv = async ({
           handId: ctx.handId,
           order: ctx.order,
           observedAction: ctx.action,
+          observedAmount: ctx.amount ?? null,
           netBB,
           netBBUnraked,
+          // ── WS-393 raw context. Additive; no consumer of this row reads any of it. ──
+          street: ctx.street,
+          heroSeat: ctx.playerSeat,
+          buttonSeat: ctx.buttonSeat ?? null,
+          opponentSeat: ctx.opponentSeat ?? null,
+          board: Array.isArray(ctx.board) ? [...ctx.board] : null,
+          boardLabels: Array.isArray(ctx.board) ? ctx.board.map(cardLabel) : null,
+          situationKey: ctx.situationKey ?? null,
+          contextAction: ctx.contextAction ?? null,
+          isAgg: ctx.isAgg,
+          isIP: ctx.isIP,
+          rangeEquityPct: ctx.rangeEquityPct ?? null,
+          segmentation: ctx.segmentation ?? null,
+          geometry,
           piOurs: ours.actions,
           // WS-295 — the engine's OWN stated EV at this node, from the primary arm.
           //
@@ -299,6 +445,55 @@ export const runHeroEv = async ({
             wentToShowdown: raked.wentToShowdown,
           },
         });
+
+        // WS-393 — the full record, emitted once, never retained. See decisionRecord.mjs
+        // for why the heavy payload does not live on `decisions`.
+        if (captureRecord) {
+          const row = decisions[decisions.length - 1];
+          try {
+            onDecisionRecord({
+              schemaVersion: DECISION_RECORD_SCHEMA_VERSION,
+              ...row,
+              // pi_ours, pi_pool, w and R kept SEPARATE and never pre-multiplied: the
+              // question "was this decision's contribution driven by a big weight or a big
+              // outcome" is unanswerable from a product. `wRawByArm` is uncapped — the
+              // weight cap is a property of the ESTIMATOR, applied at read time, so a run
+              // recorded at cap 20 can still be re-read at cap 5.
+              pPoolObserved: pool.actions?.[ctx.action] ?? null,
+              pOursObservedByArm: Object.fromEntries(
+                arms.map((a) => [a.id, byArm[a.id].actions?.[ctx.action] ?? null]),
+              ),
+              wRawByArm: Object.fromEntries(arms.map((a) => {
+                const po = byArm[a.id].actions?.[ctx.action];
+                const pp = pool.actions?.[ctx.action];
+                return [a.id, (Number.isFinite(po) && Number.isFinite(pp) && pp > 0) ? po / pp : null];
+              })),
+              // Hero's ACTUAL hand where the corpus showed it. Read the docblock on
+              // compactHeroTruth before conditioning on this — it is showdown-selected.
+              heroTruth: compactHeroTruth(
+                ctx.holding ? holdingTruth(ctx.holding, { board: ctx.board }) : null,
+              ),
+              evStatsByArm: Object.fromEntries(
+                arms.map((a) => [a.id, byArm[a.id].evStats ?? null]),
+              ),
+              // The whole ranked candidate set, per sampled combo, per arm. This is the
+              // heavy part and the reason the sidecar exists.
+              combosByArm: Object.fromEntries(
+                arms.map((a) => [a.id, byArm[a.id].comboDetail ?? null]),
+              ),
+              policyDiagByArm: Object.fromEntries(arms.map((a) => [a.id, {
+                samples: byArm[a.id].samples ?? null,
+                engineErrors: byArm[a.id].engineErrors ?? null,
+                outOfSet: byArm[a.id].outOfSet ?? null,
+              }])),
+              pbrSkipReason: pbr.ok ? null : (pbr.reason ?? null),
+            });
+          } catch (err) {
+            // A sidecar write must never be able to kill a multi-hour scoring pass.
+            counters.decisionRecordErrors = (counters.decisionRecordErrors || 0) + 1;
+            counters.decisionRecordLastError = err?.message || String(err);
+          }
+        }
 
         if (decisions.length % 25 === 0) {
           log(`scored ${decisions.length} decisions`);
@@ -352,7 +547,25 @@ export const runHeroEv = async ({
         rakeConfig, rakeIsModelled: true, maxDecisions,
         depthArms: arms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs ?? null })),
         primaryArmId: primaryId,
+        // WS-425. Recorded per arm, in the config rather than only in the report, because
+        // `encoding` is what says whether the arm IS the publication or a hybrid carrying
+        // something we supplied — and a reader who loses that distinction reads a hybrid's
+        // win as the publication's.
+        strategyArms: strategyArms.map((a) => ({
+          id: a.id,
+          strategyId: a.strategy.id,
+          strategyVersion: a.strategy.version ?? null,
+          encoding: a.strategy.encoding,
+          sourceRef: a.strategy.sourceRef,
+          fallback: a.fallback,
+          fallbackArmId: a.fallback === 'engine' ? a.fallbackArmId : null,
+        })),
       },
+      // Coverage is a PROPERTY OF THE RUN, not of the report: it depends on which decisions
+      // the corpus produced, so it cannot be recomputed from the artifact afterwards.
+      strategyCoverage: Object.fromEntries(
+        strategyArms.map((a) => [a.id, summarizeCoverage(coverageByArm[a.id])]),
+      ),
       // Carried, not computed here — the runner measures, the report assembles the card.
       dealBook,
       replicationStamp,

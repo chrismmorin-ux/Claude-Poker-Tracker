@@ -101,6 +101,23 @@ const main = async () => {
     //   - flop  => computeDepth3BarrelEV flop path (sites 914 + 986) + computeBetCallDepth2EV (641)
     //   - turn  => computeDepth3BarrelEV turn path (site 831)
     //   - facing a bet => raise branch (site 754) + evaluator refinement (site 747)
+    // WS-386: THIS LIST WAS BUILT FOR A DIFFERENT QUESTION. Its original comment (above)
+    // explains that the scenarios were chosen to reach every NARROWING site for WS-292.
+    // WS-334 then reused it to ask what enabling DEPTH does to advice — a question with a
+    // different stage structure — and the set had FIVE flop, THREE turn and ZERO river
+    // spots. Every depth-2 branch is gated `street !== 'river'`, so on the river an
+    // entirely different stage runs (`riverPerCombo`), and the set could not see it.
+    //
+    // The dump reported "1 of 8 top-action flips" and that was read as "no systematic pull
+    // toward passivity". The WS-361 corpus ablation (260 paired decisions) then found the
+    // pull is real, large and one-directional — and that 36 of 45 RIVER decisions flip
+    // (80%) against 4 of 215 flop+turn decisions. The dump was not wrong about the spots it
+    // covered; it was blind to the street where the effect lives, and the conclusion was
+    // stated over the whole engine rather than over the streets sampled.
+    //
+    // A fixture set inherits the coverage of the question it was BUILT for, not the question
+    // you are asking of it. Before reusing this list, check it against the stage structure
+    // of your question — and read the coverage census the run prints.
     const SCENARIOS = [
       { name: 'flop-dry-noaction-tight', board: cards('A♠', '7♥', '2♦'), hero: cards('K♦', 'Q♦'),
         range: () => tightRange(), villainAction: null, villainBet: 0, pot: 100, stack: 900 },
@@ -118,9 +135,37 @@ const main = async () => {
         range: () => tightRange(), villainAction: 'bet', villainBet: 120, pot: 200, stack: 600 },
       { name: 'turn-wet-facing-bet-top50', board: cards('J♥', 'T♥', '9♦', '2♥'), hero: cards('A♥', 'J♠'),
         range: () => topRange(50), villainAction: 'bet', villainBet: 140, pot: 260, stack: 540 },
+
+      // RIVER (WS-386). Where `riverPerCombo` fires and where the corpus ablation found 80%
+      // of top-action flips. `computeRiverCheckEV` and `computeRiverBetEV` replace the check
+      // and bet candidates' EV with DIFFERENT functions, so any asymmetry between the two
+      // lands straight on the recommendation — which is exactly what these spots expose.
+      { name: 'river-dry-noaction-top30', board: cards('A♠', '7♥', '2♦', '9♣', '4♠'), hero: cards('A♥', 'K♣'),
+        range: () => topRange(30), villainAction: null, villainBet: 0, pot: 260, stack: 500 },
+      { name: 'river-dry-facing-bet-tight', board: cards('A♠', '7♥', '2♦', '9♣', '4♠'), hero: cards('7♠', '7♦'),
+        range: () => tightRange(), villainAction: 'bet', villainBet: 160, pot: 260, stack: 500 },
+      { name: 'river-wet-noaction-top50', board: cards('J♥', 'T♥', '9♦', '2♥', '5♥'), hero: cards('A♥', 'J♠'),
+        range: () => topRange(50), villainAction: null, villainBet: 0, pot: 300, stack: 460 },
+      { name: 'river-paired-facing-bet-full', board: cards('J♥', 'T♥', '9♦', '9♠', '3♣'), hero: cards('K♥', 'Q♥'),
+        range: () => fullRange(), villainAction: 'bet', villainBet: 180, pot: 300, stack: 460 },
     ];
 
-    const out = { frozenNow: LIVE_CLOCK ? null : FROZEN_NOW, liveClock: LIVE_CLOCK, scenarios: {} };
+    // WS-386: the census, INCLUDING THE ZEROS. Printed before the run and written into the
+    // output, so no reader can draw an engine-wide conclusion from a partial set without
+    // seeing the gap. Reporting only the streets a set covers makes it look healthier the
+    // narrower it is — the same selection effect recorded against the fallback-level quality
+    // table (WS-285), pointed at our own fixtures.
+    const STREETS = ['flop', 'turn', 'river'];
+    const streetOf = (sc) => STREETS[sc.board.length - 3] ?? 'unknown';
+    const coverage = Object.fromEntries(STREETS.map(st => [st, 0]));
+    for (const sc of SCENARIOS) coverage[streetOf(sc)] = (coverage[streetOf(sc)] ?? 0) + 1;
+    const gaps = STREETS.filter(st => coverage[st] === 0);
+    console.log(`Street coverage: ${STREETS.map(st => `${st} ${coverage[st]}`).join(' / ')}`
+      + (gaps.length ? `  ** GAP: no ${gaps.join(', ')} scenarios — conclusions do not `
+        + `generalise to ${gaps.length > 1 ? 'those streets' : 'that street'} **` : ''));
+
+    const out = { frozenNow: LIVE_CLOCK ? null : FROZEN_NOW, liveClock: LIVE_CLOCK,
+      streetCoverage: coverage, coverageGaps: gaps, scenarios: {} };
 
     for (const s of SCENARIOS) {
       // Same seed per scenario so scenario N is independent of scenario N-1's draw count.

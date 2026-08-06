@@ -181,12 +181,29 @@ const main = async () => {
       }
     };
 
+    // WS-393 — the decision-level sidecar. See decisionRecord.mjs for why a run that costs
+    // hours must leave behind a record whose shape admits questions nobody asked yet.
+    const { openDecisionSink } = await loader.load('/scripts/backtest/decisionRecord.mjs');
+    const sink = typeof args['decisions-out'] === 'string'
+      ? openDecisionSink(args['decisions-out'], {
+        run: 'depth-ablation',
+        dealBookId: dealBook.dealBookId,
+        dealBookHash: dealBook.contentHash,
+        engineCommit: replicationStamp.engineCommit ?? null,
+        engineDirty: replicationStamp.engineDirty ?? null,
+        arms: [{ id: 'depth1', refinementBudgetMs: 0 }, { id: 'depth2', refinementBudgetMs: refinementMs }],
+        constants: replicationStamp.constants,
+      })
+      : null;
+    if (sink) console.log(`Decision-level record streaming to ${sink.path}`);
+
     const started = Date.now();
     const run = await runHeroEv({
       files,
       reference,
       behaviorPolicy,
       onPartial: writePartial,
+      onDecisionRecord: sink ? (rec) => sink.write(rec) : null,
       poolPct: int(args['pool-pct'], 50),
       maxPlayers: int(args['max-players'], Infinity),
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
@@ -209,6 +226,12 @@ const main = async () => {
       log: (m) => console.log(`  ${m}`),
     });
     run.runtimeMs = Date.now() - started;
+    if (sink) {
+      sink.close();
+      console.log(`Decision-level record: ${sink.count} row(s) in ${sink.path}`);
+      run.decisionRecordPath = sink.path;
+      run.decisionRecordRows = sink.count;
+    }
 
     const report = buildDepthAblationReport(run, reportOpts);
     console.log(renderDepthAblationReport(report));

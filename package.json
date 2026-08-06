@@ -9,6 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build && firebase deploy --only hosting",
+    "hole-map": "node scripts/backtest/refresh-hole-map.mjs",
+    "hole-map:check": "node scripts/backtest/check-hole-map-freshness.mjs",
     "preflight": "node scripts/check-untracked-imports.mjs",
     "preflight:staged": "node scripts/check-untracked-imports.mjs --staged",
     "test": "vitest run",

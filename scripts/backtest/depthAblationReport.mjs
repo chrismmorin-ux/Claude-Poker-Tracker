@@ -66,6 +66,7 @@ import {
   TREATMENT, DEFAULT_BOOTSTRAP_SEED, DEFAULT_WEIGHT_CAP,
 } from './ipsEstimator.mjs';
 import { MIN_CLUSTERS_FOR_CI } from './heroEvReport.mjs';
+import { REFINEMENT_CLOCK_UNSEEDED_SOURCE } from './replicationStamp.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
 import { buildReplicationManifest, knownDivergence } from '../../src/utils/standardOfRecord/manifest.js';
 
@@ -378,7 +379,7 @@ export const unreadableConstants = () => [
  * Randomness the depth-2 arm cannot seed, ON TOP of the hero-EV chain already named in
  * `replicationStamp.HERO_EV_UNSEEDED_SOURCES`.
  *
- * The second entry is the one that matters and it is not ordinary Monte Carlo noise. The
+ * The remaining entry is the one that matters and it is not ordinary Monte Carlo noise. The
  * refinement budget is enforced against `Date.now()`, so WHICH refinement stages complete
  * depends on machine load. The depth-2 arm is therefore not reproducible even in principle on
  * a different machine, or on this one under different load — a re-run can differ because a
@@ -386,21 +387,19 @@ export const unreadableConstants = () => [
  * to be said, because an empty array is a POSITIVE claim of bit-reproducibility.
  */
 export const DEPTH_ABLATION_UNSEEDED_SOURCES = Object.freeze([
-  {
-    source: 'src/utils/exploitEngine/gameTreeSampling.js, gameTreeDepth2.js',
-    reached_via: 'heroPolicy -> evaluateGameTree -> refinement stages',
-    mechanism: 'Math.random() in stratified sampling and mini-rollout equity inside depth-2/3',
-    consequence: 'The depth-2 arm carries Monte Carlo noise the depth-1 arm does not.',
-  },
-  {
-    source: 'src/utils/exploitEngine/gameTreeEvaluator.js (refinement budget clock)',
-    reached_via: 'refinementBudgetMs enforced against Date.now()',
-    mechanism: 'WALL-CLOCK DEPENDENCE, not randomness. Which refinement stages complete '
-      + 'depends on machine speed and load, capped per stage by MAX_STAGE_SHARE.',
-    consequence: 'The depth-2 arm is NOT reproducible on a different machine, or on this one '
-      + 'under different load: a re-run can differ because a stage that finished before did '
-      + 'not finish again. The depth-1 arm (budget 0) has no such dependence and IS stable.',
-  },
+  // WS-393 CLOSED THE FIRST ENTRY THAT USED TO SIT HERE. The six `stratifiedSample` calls in
+  // `gameTreeDepth2.js` and `miniRolloutEquity`'s raw `Math.random` now take a board-derived
+  // deterministic rng, so depth-2 no longer carries sampling noise the depth-1 arm does not.
+  //
+  // The entry is REMOVED rather than reworded, because this array is a positive claim and a
+  // stale entry is as wrong as a missing one — it would tell a reader to discount a difference
+  // that is now real. Its removal is recorded here rather than in the diff alone, since a
+  // reader comparing a WS-393 card against an earlier one needs to know the list SHRANK for a
+  // reason and not because someone tidied it.
+  // Imported, not restated (WS-393): `run-hero-ev.mjs` reaches the same clock and needs the
+  // same declaration, and two copies of a reproducibility claim are two chances to disagree
+  // about it.
+  REFINEMENT_CLOCK_UNSEEDED_SOURCE,
 ]);
 
 /**
