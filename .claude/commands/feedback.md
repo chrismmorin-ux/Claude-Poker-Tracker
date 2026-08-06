@@ -37,27 +37,36 @@ Determine category from content:
 - User already has tools or processes they want to keep → `integration`
 - User wishes something existed or asks for a new capability → `feature_request`
 
-### 3. Write to Feedback File
+### 3. Record it
 
-Append to `.cwos-feedback.yaml` under `user_feedback`:
+One command:
 
-```yaml
-- id: fb-NNN          # Scan existing entries, use max+1
-  timestamp: "<now>"
-  category: <classified category>
-  summary: "<1-sentence summary>"
-  detail: "<full user input>"
-  resolved: false
-  resolution: null
+```bash
+node kit/scripts/cwos-capture.js feedback "<1-sentence summary>" \
+  --category objection|preference|concern|integration|feature_request \
+  --detail "<full user input>"
 ```
 
-Update `summary` counts:
-- Increment `total_user_feedback`
-- Increment `unresolved_feedback`
-- Update `most_recent_feedback`
-- Update `by_category` count
+That is the whole step. Do not open `.cwos-feedback.yaml`, do not allocate an
+`fb-NNN` id, do not update a `summary:` block.
 
-If `.cwos-feedback.yaml` doesn't exist, create it from the template first.
+> **Why this replaced hand-editing the YAML (WS-578).** This step used to say
+> "append under `user_feedback`, scan existing entries for max+1, update the
+> summary counts". Three problems, all measured on 2026-08-04. It is a
+> read-modify-write on a shared file with a derived section — the shape that
+> lost a write on 2026-07-26 when two sessions shared a tree. The max+1 id
+> scan collides in practice: region-desk's entries run `fr-009`,
+> `fr-dev-server-zombie`, `fr-reconcile-mispromote` *before* `fr-001..008`.
+> And the "auto-maintained" summary drifts — region-desk's claimed 8 friction
+> events against 11 real ones.
+>
+> `.cwos-feedback.yaml` is now a **generated view** of the event log, carrying
+> a do-not-edit header. Anything written into it by hand is lost at the next
+> regeneration. The event log is the store.
+
+If the command reports `NOT captured`, say so to the user rather than
+retrying silently — it exits 0 by design so it can never block the
+conversation, which means the message is the only signal.
 
 ### 4. Acknowledge
 

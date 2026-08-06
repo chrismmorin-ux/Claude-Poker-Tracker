@@ -48,17 +48,24 @@ const {
   globFiles,
   todayISO,
   withFileLock,
+  upsertYAMLScalarField,
+  findRepoRoot,
 } = require('./lib/cwos-utils');
 const { loadEventDeps } = require('./lib/cwos-utils');
 // WS-533: session identity + item claims. `claimed_by`/`claimed_at` have existed on
 // every queue item since adoption and nothing ever wrote them — /next's own docs said
 // approve "claims items"; it did not. See lib/cwos-claims.js for the incident.
+// WS-564: the conflict list is only meaningful alongside the state that produced
+// it — hence registryHealth / listLiveSessions / staleActiveSessions here too.
 const {
   resolveSessionId,
   touchSession,
   findClaimConflicts,
   claimItems,
   releaseItems,
+  registryHealth,
+  listLiveSessions,
+  staleActiveSessions,
 } = require('./lib/cwos-claims');
 const { classifySource, classifyMode } = require('./cwos-classify');
 
@@ -95,10 +102,24 @@ function loadStore() {
   return store;
 }
 
+// WS-576: two different questions that used to have one answer.
+//
+// `repoRoot()` is WHERE MY CODE IS — the checkout this process is running in.
+// In a linked worktree that is the worktree, and it must stay that way: it is
+// the cwd for `git rev-parse --short HEAD` (whose answer becomes an item's
+// completion_commit), and the base for repo content like system/context.md and
+// .cwos-config.yaml, all of which are per-branch.
+//
+// `stateDir()` is WHERE MY STATE IS — the ONE canonical .claude/workstream/ for
+// this repo, shared by every worktree. Deriving repoRoot from it (as this did
+// before) silently fused the two, so canonicalizing state resolution would have
+// made a worktree record the MAIN tree's HEAD as its completion commit.
 function repoRoot() {
-  // findWorkstreamDir returns the .claude/workstream dir; repo root is two up.
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 // WS-269 (fb-002 / fr-012 / fr-017 / fr-019): the resume-check used to match
@@ -131,7 +152,7 @@ function findResumableSprint(sprints) {
 function readSprintsFromDir() {
   const out = [];
   try {
-    const dir = path.join(repoRoot(), '.claude', 'workstream', 'sprints');
+    const dir = path.join(stateDir(), 'sprints');
     if (!fs.existsSync(dir)) return out;
     for (const f of fs.readdirSync(dir)) {
       if (!/^SPR-\d{3,4}\.yaml$/.test(f)) continue;
@@ -169,7 +190,7 @@ function resolveResumableSprint(store) {
 
   absorb((store && store.sprints && store.sprints.all && store.sprints.all()) || []);
 
-  const idxPath = path.join(repoRoot(), '.claude', 'workstream', 'sprint-index.yaml');
+  const idxPath = path.join(stateDir(), 'sprint-index.yaml');
   if (fs.existsSync(idxPath)) {
     const r = readYAMLFile(idxPath);
     if (r.ok && r.data && Array.isArray(r.data.sprints)) absorb(r.data.sprints);
@@ -198,6 +219,37 @@ function readContextOverrideClass() {
   } catch { return null; }
 }
 
+/**
+ * Coerce a config value to a number, tolerating an inline YAML comment riding
+ * along on the scalar (WS-569).
+ *
+ * WS-497 taught the shared YAML reader to strip ` # comment` tails, so on a
+ * current kit `max_items: 5   # Max items per sprint` already parses as 5. This
+ * guard stays anyway, for two reasons that are not belt-and-braces:
+ *
+ *   1. **Adopted repos run older parsers.** Every adopted repo is on kit
+ *      3.7.1-3.8.5 with its own copy of cwos-utils. A consumer-side coercion
+ *      fixes the cap for them without waiting on a kit upgrade.
+ *   2. **The failure is silent and total.** `8 >= "5 # ..."` is false, not an
+ *      error — the cap simply never fires, and the sprint that results looks
+ *      deliberate. This defect was found independently by region-desk
+ *      (2026-05-13), ServeYourNote (2026-07-25) and HomeBase (2026-08-02): 83
+ *      days, three discoveries, because nothing about it is loud.
+ *
+ * Returns `fallback` for anything that is not a finite number, INCLUDING a
+ * string that parses to NaN. Note `0` is honoured rather than falling through:
+ * the previous `||` treated a legitimate zero cap as "unset".
+ */
+function configNumber(v, fallback) {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const head = v.split('#')[0].trim();
+    const n = Number(head);
+    if (head !== '' && Number.isFinite(n)) return n;
+  }
+  return fallback;
+}
+
 function loadConfig() {
   // Standard defaults if `.cwos-config.yaml` is absent. Per next.md Step 1b.
   const defaults = { ceremony: 'standard', sprints: { max_items: 5, max_effort_sessions: 2 } };
@@ -207,11 +259,13 @@ function loadConfig() {
     const r = readYAMLFile(p);
     if (!r.ok || !r.data) return defaults;
     const c = r.data;
+    const s = c.sprints || {};
     return {
-      ceremony: c.ceremony || defaults.ceremony,
+      // ceremony can carry a comment tail on an older parser too.
+      ceremony: (typeof c.ceremony === 'string' ? c.ceremony.split('#')[0].trim() : c.ceremony) || defaults.ceremony,
       sprints: {
-        max_items: (c.sprints && c.sprints.max_items) || defaults.sprints.max_items,
-        max_effort_sessions: (c.sprints && c.sprints.max_effort_sessions) || defaults.sprints.max_effort_sessions,
+        max_items: configNumber(s.max_items, defaults.sprints.max_items),
+        max_effort_sessions: configNumber(s.max_effort_sessions, defaults.sprints.max_effort_sessions),
       },
     };
   } catch { return defaults; }
@@ -354,7 +408,18 @@ function runGate(args) {
     drift_items: [],
     replenishment: { needed: [], note: null },
     token_budget: { available: false, exit: null, note: null },
-    session: { id: null, claim_conflicts: [] },
+    // WS-564: `claim_conflicts` NEVER travels alone. It is computed by filtering
+    // on liveness, so an empty list means one of two opposite things — "N peers
+    // are live and hold other items" or "liveness is UNKNOWN and this check just
+    // failed open". The conditioning set travels with the answer.
+    session: {
+      id: null,
+      claim_conflicts: [],
+      conflicts_conditioning: 'unknown',
+      live_sessions: [],
+      stale_active: [],
+      registry: { ok: false, reason: 'not evaluated' },
+    },
     blocked: false,
     state_refreshed: stateRefreshed,
   };
@@ -383,6 +448,20 @@ function runGate(args) {
     // creation, and a safety check that degrades to "no conflicts" on stale input is
     // worse than no check.
     result.session.claim_conflicts = findClaimConflicts(wsDirForClaims, mySession, null);
+
+    // WS-564: the conditioning set. On 2026-08-02 this gate reported
+    // `claim_conflicts: []` to a session about to implement WS-312 while three
+    // sessions were concurrently editing the repo — the list was empty because
+    // the heartbeat hook had been dead for two days and every peer filtered out
+    // as not-live. That session's own claim then became reclaimable 90 minutes
+    // in, WHILE it was implementing the item. An empty list is only an all-clear
+    // when the registry that produced it can be believed.
+    result.session.registry = registryHealth(wsDirForClaims);
+    result.session.live_sessions = listLiveSessions(wsDirForClaims, mySession)
+      .map((s) => ({ id: s.id, host: s.host, foreign_host: s.foreign_host, claimed_items: s.claimed_items }));
+    result.session.stale_active = staleActiveSessions(wsDirForClaims, { selfId: mySession })
+      .map((s) => ({ id: s.id, minutes_stale: s.minutes_stale, claimed_items: s.claimed_items }));
+    result.session.conflicts_conditioning = result.session.registry.ok ? 'known' : 'unknown';
   } catch (e) {
     // Claim bookkeeping must never take the gate down: worst case we degrade to the
     // pre-WS-533 behaviour, which is what shipped for months.
@@ -409,7 +488,7 @@ function runGate(args) {
   result.config = loadConfig();
 
   // Step 1d-pre: program activation gate
-  const programsDir = path.join(repoRoot(), '.claude', 'workstream', 'programs');
+  const programsDir = path.join(stateDir(), 'programs');
   let installed = 0;
   let activeProgs = 0;
   if (fs.existsSync(programsDir)) {
@@ -520,7 +599,9 @@ function runGate(args) {
             reason: 'first-run-required',
             tier: d.tier,
             protocols_never_run: cadenced.map(([pname]) => pname),
-            hint: `/pulse run ${d.id} <protocol> — first run required to clear block_sprint`,
+            hint: `/pulse run ${d.id} <protocol> --completed — first run required to clear block_sprint. `
+              + `Run the protocol's engine first; --completed records last_run_by_protocol.<protocol>.date, `
+              + `which is the field this gate reads. Without --completed the CLI records intent only and the block persists.`,
           });
           continue;
         }
@@ -602,6 +683,17 @@ function runGate(args) {
     for (const c of result.session.claim_conflicts) {
       result.sprint_blocks.push({ reason: 'claimed-by-other-session', item: c.id, hint: c.message });
     }
+  } else if (result.session.conflicts_conditioning === 'unknown') {
+    // NOT a block — a broken registry must not fence the queue, or the founder
+    // loses the ability to work at all in exactly the state where the tooling is
+    // already failing them. But it must not read as an all-clear either. This is
+    // reported so the composed sprint carries its own caveat.
+    result.sprint_blocks.push({
+      reason: 'claim-conflicts-unknown',
+      item: null,
+      hint: `No claim conflicts found, but the session registry cannot be believed: ${result.session.registry.reason}. `
+          + 'Treat "no conflicts" as UNKNOWN and check with the other sessions before editing shared files.',
+    });
   }
 
   // Step 1e: replenishment — detect-and-report.
@@ -634,7 +726,7 @@ function runGate(args) {
   // an item_closed event exists but the queue YAML write fails). Successful
   // auto-reconciles are surfaced as advisory in compose --human output.
   if (validateStateDrift) {
-    const queueDir = path.join(repoRoot(), '.claude', 'workstream', 'queue');
+    const queueDir = path.join(stateDir(), 'queue');
     const queueItems = [];
     if (fs.existsSync(queueDir)) {
       for (const f of globFiles(queueDir, 'WS-*.yaml')) {
@@ -643,7 +735,7 @@ function runGate(args) {
       }
     }
     try {
-      const drifts = validateStateDrift(repoRoot() + path.sep + '.claude' + path.sep + 'workstream', queueItems, null);
+      const drifts = validateStateDrift(stateDir(), queueItems, null);
       if (Array.isArray(drifts) && drifts.length > 0) {
         const reconciled = drifts.filter((d) => d.auto_reconciled);
         const blocked = drifts.filter((d) => !d.auto_reconciled);
@@ -954,8 +1046,12 @@ function runCompose(args) {
 
   const config = loadConfig();
   const cap = ceremonyDefaults(config.ceremony);
-  if (config.sprints && config.sprints.max_items) cap.max_items = config.sprints.max_items;
-  if (config.sprints && config.sprints.max_effort_sessions) cap.max_effort_sessions = config.sprints.max_effort_sessions;
+  // configNumber already normalised these; assign unconditionally so an
+  // explicit 0 is honoured rather than read as "unset" by a truthiness test.
+  if (config.sprints) {
+    cap.max_items = configNumber(config.sprints.max_items, cap.max_items);
+    cap.max_effort_sessions = configNumber(config.sprints.max_effort_sessions, cap.max_effort_sessions);
+  }
 
   // Step 3a: anchor = top adjusted_score candidate.
   let anchor = candidates[0];
@@ -1030,9 +1126,19 @@ function runCompose(args) {
       rotationNote,
       effortSessions: usedSessions,
       cap,
+      itemCount: classified.length,
       breachedPrograms: candidatesPayload.breached_programs || [],
     }),
-    cap_used: { items: classified.length, effort_sessions: usedSessions, ceremony: config.ceremony },
+    cap_used: {
+      items: classified.length,
+      effort_sessions: usedSessions,
+      ceremony: config.ceremony,
+      max_items: cap.max_items,
+      max_effort_sessions: cap.max_effort_sessions,
+      // WS-569: machine-readable, so a caller never has to re-derive whether a
+      // composition fits by parsing the prose notes.
+      over_cap: capOvershoot(classified.length, usedSessions, cap),
+    },
   };
 
   // FIND-314 fix: always persist the canonical sidecar atomically before
@@ -1105,7 +1211,7 @@ function candidatesInline(store) {
   };
 }
 
-function buildCompositionNotes({ anchor, candidates, saturated, lastClasses, rotationNote, effortSessions: used, cap, breachedPrograms }) {
+function buildCompositionNotes({ anchor, candidates, saturated, lastClasses, rotationNote, effortSessions: used, cap, itemCount, breachedPrograms }) {
   const lines = [];
   lines.push(`Anchor: ${anchor.id} selected (${anchor.raw_score} × ${anchor.soft_block_factor !== 1 ? `${anchor.soft_block_factor} soft-block × ` : ''}${anchor.source_damping !== 1 ? `${anchor.source_damping} source-damping` : 'no damping'} = ${anchor.adjusted_score}).`);
   if (saturated.length > 0) {
@@ -1125,7 +1231,33 @@ function buildCompositionNotes({ anchor, candidates, saturated, lastClasses, rot
     lines.push(`priority_floor applied: ${sample}${more}.`);
   }
   lines.push(`Cap usage: ${used} session(s) / ${cap.max_effort_sessions} (${cap.max_items} items max).`);
+
+  // WS-569 second half. Capping the LOOP is not the same as capping the SPRINT:
+  // the anchor is seated before the loop runs, so a single L item (3 sessions)
+  // overshoots a standard 2-session ceiling and every later break is a no-op.
+  // SPR-028's stored record read "Cap usage: 10 session(s) / 2" as a neutral
+  // line, which is how a 5x overshoot survived review. An overshoot that does
+  // not announce itself is indistinguishable from a sprint that fits.
+  const over = capOvershoot(itemCount, used, cap);
+  if (over) lines.push(`⚠ OVER CEREMONY CAP — ${over}. Approving accepts the overshoot.`);
+
   return lines.join('\n');
+}
+
+/**
+ * Describe how a composition exceeds its ceremony caps, or null if it fits.
+ * Exported so the JSON path and the --human path cannot disagree about whether
+ * a sprint is over cap.
+ */
+function capOvershoot(itemCount, usedSessions, cap) {
+  const parts = [];
+  if (Number.isFinite(cap.max_items) && itemCount > cap.max_items) {
+    parts.push(`${itemCount} items against a ${cap.max_items}-item cap`);
+  }
+  if (Number.isFinite(cap.max_effort_sessions) && usedSessions > cap.max_effort_sessions) {
+    parts.push(`${usedSessions} session(s) against a ${cap.max_effort_sessions}-session ceiling`);
+  }
+  return parts.length ? parts.join(' and ') : null;
 }
 
 function runConstitutionalAuditCheck(text) {
@@ -1312,7 +1444,7 @@ function runApprove(args) {
     }
   }
 
-  const sprintsDir = path.join(repoRoot(), '.claude', 'workstream', 'sprints');
+  const sprintsDir = path.join(stateDir(), 'sprints');
   if (!fs.existsSync(sprintsDir)) fs.mkdirSync(sprintsDir, { recursive: true });
   const sprintId = nextSprintId(sprintsDir);
   const yamlPath = path.join(sprintsDir, `${sprintId}.yaml`);
@@ -1375,6 +1507,20 @@ function runApprove(args) {
     claimedIds = claimItems(wsDir, sessionId, itemIds, approvedAt);
   } catch (e) {
     process.stderr.write(`approve: claim write failed (non-fatal): ${e.message}\n`);
+  }
+
+  // WS-529: claimItems now reports what LANDED, so a shortfall is real
+  // information rather than an artifact. Say it out loud. An approved sprint
+  // whose items are not claimed is precisely what let SPR-194 sit for three
+  // hours advertising WS-519 and WS-563 to every other session's /next — and
+  // the reason nobody noticed is that approve reported success either way.
+  const unclaimed = itemIds.filter((id) => !claimedIds.includes(id));
+  if (unclaimed.length) {
+    process.stderr.write(
+      `approve: WARNING — ${unclaimed.length} of ${itemIds.length} item(s) were NOT claimed: ${unclaimed.join(', ')}. ` +
+      `Another session may hold them, or the queue file is unwritable. ` +
+      `They remain visible to other sessions' /next. Check with: node kit/scripts/cwos-item.js show <id>\n`
+    );
   }
 
   writeJson({ ok: true, sprint_id: sprintId, sprint_path: yamlPath, event_id: eventId, claimed: claimedIds, payload });
@@ -1516,7 +1662,7 @@ function runDone(args) {
     process.stderr.write('done: --sprint SPR-NNN is required\n');
     process.exit(2);
   }
-  const sprintsDir = path.join(repoRoot(), '.claude', 'workstream', 'sprints');
+  const sprintsDir = path.join(stateDir(), 'sprints');
   const sprintPath = path.join(sprintsDir, `${sprintId}.yaml`);
   if (!fs.existsSync(sprintPath)) {
     process.stderr.write(`done: sprint file not found: ${sprintPath}\n`);
@@ -1563,7 +1709,7 @@ function runDone(args) {
   // mutate the queue YAML. Event-log-first: the event is the commit point,
   // YAML mutation is the materialized view. Idempotent — re-running done()
   // emits zero new events for already-closed items.
-  const queueDir = path.join(repoRoot(), '.claude', 'workstream', 'queue');
+  const queueDir = path.join(stateDir(), 'queue');
   for (const spItem of sprintItems) {
     if (!spItem || !spItem.id) continue;
     if (!/^WS-\d+$/.test(spItem.id)) continue;
@@ -1617,20 +1763,16 @@ function runDone(args) {
       withFileLock(queuePath + '.lock', () => {
         const raw = fs.readFileSync(queuePath, 'utf8');
         let patched = raw.replace(/^status:\s*.*$/m, `status: done`);
-        if (!/^completed_at:/m.test(patched)) {
-          patched = patched.replace(
-            /^status:\s*done$/m,
-            `status: done\ncompleted_at: "${completedAt}"`
-          );
+        // WS-561: these three used to test `!/^key:/m` — key PRESENCE, not
+        // value. An item scaffolding `completed_at: null` while open matched,
+        // so the write no-opped and `done` reported ok. upsertYAMLScalarField
+        // fills absent-or-null and leaves a real value alone.
+        patched = upsertYAMLScalarField(patched, 'completed_at', completedAt, { after: 'status' }).content;
+        if (completionCommit) {
+          patched = upsertYAMLScalarField(patched, 'completion_commit', completionCommit, { after: 'completed_at' }).content;
         }
-        if (completionCommit && !/^completion_commit:/m.test(patched)) {
-          patched = patched.replace(
-            /^completed_at:.*$/m,
-            (m) => `${m}\ncompletion_commit: "${completionCommit}"`
-          );
-        }
-        if (itemEventId && !/^closed_by_event:/m.test(patched)) {
-          patched = patched.trimEnd() + `\nclosed_by_event: "${itemEventId}"\n`;
+        if (itemEventId) {
+          patched = upsertYAMLScalarField(patched, 'closed_by_event', itemEventId).content;
         }
         writeFileAtomic(queuePath, patched);
       }, { ownerLabel: 'next:done', maxWaitMs: 5000 });
@@ -1744,8 +1886,8 @@ function runDone(args) {
   // compute-health when that CLI lands.
   if (computeHealthScore) {
     try {
-      const programsDir = path.join(repoRoot(), '.claude', 'workstream', 'programs');
-      const findingsPath = path.join(repoRoot(), '.claude', 'workstream', 'findings-index.yaml');
+      const programsDir = path.join(stateDir(), 'programs');
+      const findingsPath = path.join(stateDir(), 'findings-index.yaml');
       let findingsIndex = [];
       if (fs.existsSync(findingsPath)) {
         const fr = readYAMLFile(findingsPath);
@@ -1790,7 +1932,23 @@ function main() {
   const args = process.argv.slice(2);
   const sub = args[0];
   if (!sub || sub === '--help' || sub === '-h') {
-    process.stdout.write('usage: cwos-next <gate|candidates|compose|approve|done|allocate-ws-id> [options]\n');
+    process.stdout.write(
+      'usage: cwos-next <gate|candidates|compose|approve|done|allocate-ws-id> [options]\n' +
+      '\n' +
+      'subcommands:\n' +
+      '  gate            check for an active sprint, blocks, drift and claim conflicts\n' +
+      '  candidates      ranked backlog candidates (JSON)\n' +
+      '  compose         compose a sprint; --human renders the preview\n' +
+      '  approve         write the sprint YAML and claim its items\n' +
+      '  done            close a sprint and its items\n' +
+      '  allocate-ws-id  allocate an id, reserving it so the next call differs\n' +
+      '\n' +
+      'allocate-ws-id options:\n' +
+      '  --kind <ws|spr|find|inv|adr>   which id kind (default: ws)\n' +
+      '        ws/spr/find scan workstream state; inv/adr scan the repo tree.\n' +
+      '        The returned id is reserved for 24h, so consecutive calls never\n' +
+      '        collide even when no file is written between them (WS-574).\n'
+    );
     process.exit(sub ? 0 : 1);
   }
   try {
@@ -1819,17 +1977,53 @@ function main() {
 // that still lives in queue/archive/ and in a done sprint is what let reconcile
 // force-complete a brand-new item (the SPR-018 incident). Output is JSON:
 //   { "ok": true, "ws_id": "WS-041" }
-function runAllocateWsId() {
+// WS-574: this returned the same id on every consecutive call, because it took
+// the unlocked scan path and reserved nothing — so until a file existed at the
+// returned id, the next caller got it again. It now reserves what it returns.
+// `--kind` extends the same guarantee to SPR, FIND, INV and ADR ids, which
+// previously had no allocator at all (two sessions both allocated INV-067 on
+// 2026-08-03; the collision was caught by hand during a rebase).
+function runAllocateWsId(argv = []) {
   const ws = findWorkstreamDir(process.cwd());
-  let allocateNextWsId;
-  try { ({ allocateNextWsId } = require('./lib/cwos-finding-promote')); }
+
+  let kind = 'ws';
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--kind') { kind = String(argv[i + 1] || '').toLowerCase(); i++; }
+    else if (argv[i].startsWith('--kind=')) kind = argv[i].slice(7).toLowerCase();
+    else {
+      // ADR-063: an unrecognised flag is fatal rather than silently ignored.
+      process.stderr.write(`cwos-next allocate-ws-id: unknown option "${argv[i]}"\n`);
+      process.exit(2);
+    }
+  }
+
+  let allocateId, kindNames, KINDS;
+  try { ({ allocateId, kindNames, KINDS } = require('./lib/id-allocator')); }
   catch (e) {
     process.stdout.write(JSON.stringify({ ok: false, error: `allocator lib unavailable: ${e.message}` }) + '\n');
     process.exit(0);
   }
-  const wsId = allocateNextWsId(ws);
-  process.stdout.write(JSON.stringify({ ok: true, ws_id: wsId, scanned: 'queue + queue/archive + queue-index.yaml' }) + '\n');
-  return wsId;
+
+  if (!KINDS[kind]) {
+    process.stderr.write(`cwos-next allocate-ws-id: --kind must be one of ${kindNames().join(', ')}\n`);
+    process.exit(2);
+  }
+
+  // Code root and state root are separate questions on purpose (CLAUDE.md):
+  // INV/ADR are branch content and live under the repo root; WS/SPR/FIND are
+  // shared state. Never derive one from the other.
+  const repoRoot = KINDS[kind].root === 'code' ? findRepoRoot(process.cwd()) : undefined;
+
+  const id = allocateId(kind, { wsDir: ws, repoRoot, reservedBy: `cwos-next:pid:${process.pid}` });
+  process.stdout.write(JSON.stringify({
+    ok: true,
+    kind,
+    id,
+    ...(kind === 'ws' ? { ws_id: id } : {}),   // back-compat for existing callers
+    scanned: KINDS[kind].describe,
+    reserved: true,
+  }) + '\n');
+  return id;
 }
 
 if (require.main === module) main();
@@ -1839,6 +2033,7 @@ module.exports = {
   runGate, runCandidates, runCompose, runApprove, runDone, runAllocateWsId,
   candidatesInline, buildCompositionNotes, renderSprintYaml, renderSprintYamlClosed,
   readContextOverrideClass, ceremonyDefaults, effortSessions,
+  configNumber, capOvershoot, loadConfig,
   nextSprintId,
   findResumableSprint, readSprintsFromDir, resolveResumableSprint,
   loadProgramCapsByProgram,

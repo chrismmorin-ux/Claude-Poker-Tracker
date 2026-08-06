@@ -107,7 +107,10 @@ function main() {
     process.exit(0);
   }
 
-  const result = syncRegistry(wsDir);
+  // Pass repoRoot explicitly rather than letting it be derived from wsDir:
+  // findWorkstreamDir can return a non-standard depth, and skill_path resolution
+  // (WS-558) is only correct relative to the actual repo root.
+  const result = syncRegistry(wsDir, { repoRoot: opts.repoPath });
   if (result.warnings && result.warnings.length > 0 && !opts.quiet) {
     for (const w of result.warnings) process.stderr.write(`warning: ${w}\n`);
   }
@@ -119,12 +122,25 @@ function main() {
     });
   }
   if (opts.json) {
-    process.stdout.write(JSON.stringify({ ok: true, written: result.written, engines_count: result.count, added_from_scan: result.addedFromScan }, null, 2) + '\n');
+    process.stdout.write(JSON.stringify({
+      ok: true, written: result.written, engines_count: result.count,
+      added_from_scan: result.addedFromScan,
+      repaired: result.repaired, pruned: result.pruned,
+    }, null, 2) + '\n');
   } else if (!opts.quiet) {
     if (result.written) {
       process.stdout.write(`engines-registry-sync: wrote ${result.count} entries (${result.addedFromScan} from installed-commands scan)\n`);
     } else {
       process.stdout.write(`engines-registry-sync: no change (${result.count} engines already registered)\n`);
+    }
+    // WS-558: a repair rewrites a founder-visible file and a prune deletes an
+    // entry. Both are named even outside --json, because the warnings above go
+    // to stderr and a silent delete is how this class of bug starts.
+    if (result.repaired.length) {
+      process.stdout.write(`  repaired ${result.repaired.length} dead skill_path(s): ${result.repaired.map(r => r.id).join(', ')}\n`);
+    }
+    if (result.pruned.length) {
+      process.stdout.write(`  pruned ${result.pruned.length} entry/entries with no installed engine: ${result.pruned.map(r => r.id).join(', ')}\n`);
     }
   }
   process.exit(0);

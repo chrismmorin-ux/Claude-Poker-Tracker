@@ -140,8 +140,48 @@ function isCwosCommand(tag, workstreamDir) {
 }
 
 /**
+ * Index of the line that ENDS the command started at boundaryIdx — the next
+ * genuine user turn — or lines.length when the command ran to the end of the
+ * session.
+ *
+ * WS-560. Without this bound, scanFromBoundary ran to the end of the
+ * transcript, so every tool call made after the session's last slash command
+ * was billed to that command. INV-cli-envelope-consumed-completely reads
+ * tool_rounds_by_type.Read from these envelopes and enforces a per-invocation
+ * ceiling of 5, and it was reporting Read=25 against a /next whose actual
+ * envelope-consumption was fine: the session simply kept working afterwards.
+ * All four of its standing "violations" were this artifact. The rule it
+ * enforces (ADR-037 Prohibited Reads) is real; the sensor was measuring the
+ * session tail instead of the command.
+ *
+ * A genuine user turn is a `user` event whose content carries text — the
+ * transcript's tool_result turns are also role `user`, and those are part of
+ * the command's own execution, not the end of it.
+ */
+function findCommandEnd(lines, boundaryIdx) {
+  for (let i = boundaryIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    let ev;
+    try { ev = JSON.parse(line); } catch { continue; }
+    if (ev.type !== 'user') continue;
+    const c = ev.message && ev.message.content;
+    if (typeof c === 'string') {
+      if (c.trim() !== '') return i;
+      continue;
+    }
+    if (!Array.isArray(c)) continue;
+    const hasText = c.some(b => b && typeof b === 'object' && b.type === 'text' &&
+                               typeof b.text === 'string' && b.text.trim() !== '');
+    if (hasText) return i;
+  }
+  return lines.length;
+}
+
+/**
  * Given the transcript line array and the boundary index, count tool rounds
- * and total characters from boundary forward.
+ * and total characters for the command that starts there — bounded at the next
+ * genuine user turn (see findCommandEnd).
  *
  * A "tool round" is one assistant message with at least one tool_use content
  * block. text+tool_use blocks all contribute their text to chars_total.
@@ -156,7 +196,8 @@ function scanFromBoundary(lines, boundaryIdx) {
   // tool calls per /next invocation against the per_invocation_max
   // threshold.
   const roundsByType = {};
-  for (let i = boundaryIdx; i < lines.length; i++) {
+  const endIdx = findCommandEnd(lines, boundaryIdx);
+  for (let i = boundaryIdx; i < endIdx; i++) {
     const line = lines[i];
     if (!line) continue;
     scanned++;

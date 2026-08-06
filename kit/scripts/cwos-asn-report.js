@@ -26,7 +26,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { parseYAML, readYAMLFile, globFiles, todayISO, findWorkstreamDir, findRepoRoot } = require('./lib/cwos-utils');
+const { parseYAML, readYAMLFile, globFiles, todayISO, findWorkstreamDir, findRepoRoot, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -337,6 +339,11 @@ function emitFindings(agg, opts = {}) {
         sourceRel, dedupKey, createdAt,
       });
       fs.writeFileSync(path.join(findingsDir, `${findingId}.yaml`), yaml, 'utf8');
+      // WS-560 (INV-028): a finding that appears with no emission cannot be
+      // traced back to the sweep that produced it.
+      emitEvent('T8:audit', 'asn-finding-written', {
+        finding_id: findingId, asn_id: it.id, artifact: artifactId, dedup_key: dedupKey,
+      });
       dedup.add(dedupKey);
       written.push({ id: findingId, dedup_key: dedupKey, asn_id: it.id, artifact: artifactId });
     }

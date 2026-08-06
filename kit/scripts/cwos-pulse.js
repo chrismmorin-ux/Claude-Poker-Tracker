@@ -48,8 +48,7 @@ const {
   readYAMLFile,
   globFiles,
   todayISO,
-  loadEventDeps,
-} = require('./lib/cwos-utils');
+  loadEventDeps, findRepoRoot, } = require('./lib/cwos-utils');
 
 let healthMod = null;
 try { healthMod = require('./core/health-scoring'); }
@@ -115,17 +114,27 @@ function hasFlag(args, name) {
   return args.includes(`--${name}`);
 }
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 function programsDir() {
-  return path.join(repoRoot(), '.claude', 'workstream', 'programs');
+  return path.join(stateDir(), 'programs');
 }
 
 function findingsIndexPath() {
-  return path.join(repoRoot(), '.claude', 'workstream', 'findings-index.yaml');
+  return path.join(stateDir(), 'findings-index.yaml');
 }
 
 function loadFindingsIndex() {
@@ -137,11 +146,115 @@ function loadFindingsIndex() {
   return r.data.findings;
 }
 
+// Resolve a program to its YAML path. The `id:` field inside the file is
+// canonical (that is what /next's gate reports and what the founder sees),
+// so an exact id match wins over any filename convention. Filename lookup
+// stays as a fallback for the bare-slug form (`financial` -> prog-financial.yaml).
+//
+// Previously this ONLY tried `prog-<arg>.yaml`, which made the gate's own
+// hint ("/pulse run prog-financial delta") unresolvable — it looked for
+// prog-prog-financial.yaml — while `run financial` silently recorded the
+// intent under a program name that does not exist.
+function programFilePath(programId) {
+  const dir = programsDir();
+  if (!fs.existsSync(dir)) return null;
+
+  let files;
+  try { files = fs.readdirSync(dir); } catch { return null; }
+
+  for (const f of files) {
+    if (!/^prog-.+\.yaml$/.test(f) || f === 'prog-template.yaml') continue;
+    const full = path.join(dir, f);
+    const r = readYAMLFile(full);
+    if (r.ok && r.data && r.data.id === programId) return full;
+  }
+
+  for (const cand of [`prog-${programId}.yaml`, `${programId}.yaml`]) {
+    const full = path.join(dir, cand);
+    if (fs.existsSync(full)) return full;
+  }
+  return null;
+}
+
 function readProgram(programId) {
-  const p = path.join(programsDir(), `prog-${programId}.yaml`);
-  if (!fs.existsSync(p)) return null;
+  const p = programFilePath(programId);
+  if (!p) return null;
   const r = readYAMLFile(p);
   return (r.ok && r.data) ? r.data : null;
+}
+
+// Record that a protocol actually RAN, into the top-level
+// `last_run_by_protocol:` map that /next's gate already reads
+// (cwos-next.js: d.last_run_by_protocol[pname].date).
+//
+// This block is the real recording surface and is already populated by hand
+// on some programs (dates plus engine + run_id + result narrative). No CLI
+// path ever wrote it, which is why programs whose cadenced protocols were
+// never hand-recorded could not clear a `first-run-required` sprint block.
+// We match the existing house style rather than inventing a new shape.
+//
+// Text-level edit rather than a YAML round-trip: these files are hand-curated
+// and comment-heavy, and the kit ships no YAML serializer — reserializing
+// would strip the comments. Entries come in two forms in the wild, both of
+// which must be handled:
+//     delta:
+//       date: "2026-05-13"
+//     sweep: { date: null, engine: null, run_id: null, result: null }
+//
+// Replacing (not appending) is correct: the field is "last run", singular.
+function recordProtocolCompletion(filePath, protocol, fields) {
+  const original = fs.readFileSync(filePath, 'utf8');
+  const eol = original.includes('\r\n') ? '\r\n' : '\n';
+  const lines = original.split(/\r?\n/);
+
+  const entry = [`  ${protocol}:`];
+  for (const [k, v] of Object.entries(fields)) {
+    if (v == null) continue;
+    entry.push(`    ${k}: ${JSON.stringify(String(v))}`);
+  }
+
+  const headerIdx = lines.findIndex((l) => /^last_run_by_protocol:\s*$/.test(l));
+  if (headerIdx === -1) {
+    return {
+      text: original.replace(/\s*$/, '') + eol + eol
+        + 'last_run_by_protocol:' + eol + entry.join(eol) + eol,
+      created_block: true,
+      replaced: false,
+    };
+  }
+
+  // Block extends until the next column-0 key.
+  let end = headerIdx + 1;
+  while (end < lines.length && (lines[end].trim() === '' || /^\s/.test(lines[end]))) end += 1;
+
+  const body = [];
+  let replaced = false;
+  let i = headerIdx + 1;
+  while (i < end) {
+    // An entry starts at exactly two spaces of indent — block or inline form.
+    const m = lines[i].match(/^ {2}([A-Za-z_][\w-]*):/);
+    if (!m) { body.push(lines[i]); i += 1; continue; }
+
+    let j = i + 1;
+    while (j < end && (lines[j].trim() === '' || /^ {3,}/.test(lines[j]))) j += 1;
+
+    if (m[1] === protocol) {
+      body.push(...entry);
+      replaced = true;
+    } else {
+      body.push(...lines.slice(i, j));
+    }
+    i = j;
+  }
+
+  if (!replaced) body.push(...entry);
+  while (body.length && body[body.length - 1].trim() === '') body.pop();
+
+  return {
+    text: [...lines.slice(0, headerIdx + 1), ...body, ...lines.slice(end)].join(eol),
+    created_block: false,
+    replaced,
+  };
 }
 
 function listAllPrograms({ skipMonitorOnly = true } = {}) {
@@ -183,7 +296,7 @@ const DRIFT_MIN_SIGNAL = 5;
 const DRIFT_WARN_THRESHOLD = 20; // percentage
 
 function computeDirectionDrift(programId) {
-  const findingsDir = path.join(repoRoot(), '.claude', 'workstream', 'findings');
+  const findingsDir = path.join(stateDir(), 'findings');
   if (!fs.existsSync(findingsDir)) return null;
   const files = fs.readdirSync(findingsDir).filter(f => /^FIND-.+\.yaml$/.test(f));
   const rows = [];
@@ -485,7 +598,7 @@ function collectPromotionGapCriticalLines() {
   catch { return []; }
   if (!reconcileMod || typeof reconcileMod.validateFindingPromotion !== 'function') return [];
 
-  const ws = path.join(repoRoot(), '.claude', 'workstream');
+  const ws = path.join(stateDir());
   let queueItems = [];
   let findingItems = [];
   try {
@@ -638,6 +751,16 @@ function runRun(args) {
   // /engine prose. cwos-pulse run records the INTENT and lets prose
   // drive the actual run. Once an engine-CLI ships, this subcommand
   // will dispatch to it.
+  // `--completed` closes the loop: the caller asserts the protocol's engine
+  // actually ran, and we persist last_run_by_protocol.<protocol>.date so
+  // /next's gate can see it. Without this, nothing in the kit ever wrote
+  // last_run_date / last_run_by_protocol — every reference was a read — so
+  // a `first-run-required` sprint block could never be cleared by any
+  // supported path. Recording stays a separate, explicit step from intent so
+  // "I mean to run this" and "this ran" remain distinguishable.
+  const completed = hasFlag(args, 'completed');
+  const canonicalId = prog.id || programId;
+
   let eventId = null;
   if (appendEvent && ensureCommandId) {
     try {
@@ -648,8 +771,8 @@ function runRun(args) {
         track_tag: '/pulse',
         command_id: commandId,
         payload: {
-          type: 'protocol_run_intent',
-          program: programId,
+          type: completed ? 'protocol_run_completed' : 'protocol_run_intent',
+          program: canonicalId,
           protocol,
           authorized_by: aiAutonomous ? 'ai-autonomous' : 'founder',
           composed_by: 'cli-deterministic',
@@ -662,13 +785,47 @@ function runRun(args) {
     }
   }
 
+  if (!completed) {
+    writeJson({
+      ok: true,
+      program: canonicalId,
+      protocol,
+      status: 'intent_recorded',
+      event_id: eventId,
+      note: 'Engine invocation remains in /engine prose; this CLI records the intent only. Re-run with --completed once the engine has actually run to clear the sprint gate.',
+    });
+    return;
+  }
+
+  const filePath = programFilePath(programId);
+  const protoDef = (prog.protocols && prog.protocols[protocol]) || {};
+  let recorded = false;
+  let createdBlock = false;
+  try {
+    const res = recordProtocolCompletion(filePath, protocol, {
+      date: today,
+      engine: protoDef.engine || null,
+      run_id: readFlag(args, 'run-id') || `run-${canonicalId}-${protocol}-${today}`,
+      result: readFlag(args, 'result') || null,
+      run_by: aiAutonomous ? 'ai-autonomous' : 'founder',
+      event_id: eventId,
+    });
+    fs.writeFileSync(filePath, res.text, 'utf8');
+    recorded = true;
+    createdBlock = res.created_block;
+  } catch (e) {
+    process.stderr.write(`run: failed to record completion in ${filePath}: ${e.message}\n`);
+  }
+
   writeJson({
-    ok: true,
-    program: programId,
+    ok: recorded,
+    program: canonicalId,
     protocol,
-    status: 'intent_recorded',
+    status: recorded ? 'run_recorded' : 'record_failed',
+    recorded_date: recorded ? today : null,
+    created_block: createdBlock,
+    program_file: filePath,
     event_id: eventId,
-    note: 'Engine invocation remains in /engine prose; this CLI records the intent only.',
   });
 }
 

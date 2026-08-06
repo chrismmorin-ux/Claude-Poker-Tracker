@@ -37,7 +37,9 @@ require('./lib/preflight');
 const path = require('path');
 const fs = require('fs');
 const { spawnSync } = require('child_process');
-const { readYAMLFile, withFileLock } = require('./lib/cwos-utils');
+const { readYAMLFile, withFileLock, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const { resolveRepoVersion } = require('./lib/kit-version');
 // WS-503: the snapshot/rollback mechanism this file pioneered now lives in a
 // shared lib so /adopt can reuse it rather than grow a second implementation.
@@ -427,14 +429,32 @@ function printDiff(repoPath, classification, schemaPlan, localMods, baselineInfo
   else lines.push('  • program schema: up to date');
   lines.push('  • state-store schema: brought current (idempotent)');
   lines.push('');
-  lines.push(`Files — ${M} overwrite, ${A} add, ${C} customized (.kit-update sidecar):`);
+  const P = (classification.skipped || []).length;
+  lines.push(`Files — ${M} overwrite, ${A} add, ${C} customized, ${P} preserved:`);
   const show = (label, arr) => arr.slice(0, 50).forEach(e => lines.push(`  [${label}] ${e.destination}`));
+
+  // WS-559: report by DECLARED strategy, not just by bucket.
+  //
+  // The old report collapsed every customized file into one ".kit-update" line,
+  // which was wrong in both directions once strategies started being honoured: a
+  // CLAUDE.md merged in place and a rules file sidecarred are different
+  // outcomes, and the founder has to act on one and not the other. Splitting on
+  // merge_strategy is the only way this report can say which is which — and say
+  // that the preserved files were left alone on purpose rather than missed.
+  const byStrategy = (arr, value) => (arr || []).filter(e => (e.merge_strategy || 'overwrite') === value);
   show('overwrite', classification.stock);
   show('add', [...classification.new, ...classification.needsInstall]);
-  show('.kit-update', classification.customized);
-  const total = M + A + C;
+  show('preserve', byStrategy(classification.skipped, 'skip-if-exists'));
+  show('merge', byStrategy(classification.customized, 'additive'));
+  show('preamble', byStrategy(classification.customized, 'preamble-replace'));
+  show('.kit-update', byStrategy(classification.customized, 'overwrite'));
+  const total = M + A + C + P;
   if (total > 150) lines.push(`  … (${total} files total)`);
   lines.push('');
+  if (P) {
+    lines.push(`${P} file(s) are yours — seeded once at install and preserved, not overwritten.`);
+    lines.push('');
+  }
   const drifted = classification.driftedScripts || [];
   if (drifted.length) {
     // WS-557: these diverged from baseline but are machinery, so they are
@@ -671,6 +691,10 @@ function applyUpgrade(ctx) {
   if (isFile(hbHashes)) {
     ensureDir(path.join(repoPath, 'kit'));
     fs.copyFileSync(hbHashes, path.join(repoPath, 'kit', `hashes-${targetVersion}.yaml`));
+    // WS-560 (INV-028): this baseline is what the NEXT /kit-upgrade diffs local
+    // modifications against. Seeding it unrecorded is how a repo ends up
+    // reporting zero local mods against a baseline nobody can date.
+    emitEvent('T6:workstream', 'kit-baseline-seeded', { version: targetVersion });
   }
 
   // 3g. ADR-058 state-cache migration: gitignore block + untrack domain JSONs.

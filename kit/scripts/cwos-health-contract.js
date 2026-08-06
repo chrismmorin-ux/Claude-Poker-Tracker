@@ -33,7 +33,9 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const { readYAMLFile, findRepoRoot, todayISO } = require('./lib/cwos-utils');
+const { readYAMLFile, findRepoRoot, todayISO, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 const CONTRACT_FILENAME = '.cwos-health.yaml';
 const TEMPLATE_REL = path.join('kit', 'templates', 'cwos-health.yaml');
@@ -280,6 +282,9 @@ function runInit(args) {
   }
 
   fs.writeFileSync(dest, body);
+  // WS-560 (INV-028): the health contract is the repo's declared, falsifiable
+  // definition of healthy (ADR-060). Creating one is a governance event.
+  emitEvent('T11:vital-signs', 'health-contract-created', { path: CONTRACT_FILENAME, stage: 'building' });
   writeJson({
     ok: true, created: dest, stage: 'building',
     next: 'Edit the file, then run: node kit/scripts/cwos-health-contract.js validate',

@@ -32,7 +32,9 @@
 const fs = require('fs');
 const path = require('path');
 const { runNode } = require('./lib/shell-safe');
-const { tokenize, tokenJaccard, loadCorpus, findRepoRoot, findWorkstreamDir } = require('./lib/cwos-utils');
+const { tokenize, tokenJaccard, loadCorpus, findRepoRoot, findWorkstreamDir, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 // ─── Input sanitization (WS-273) ───────────────────────────────────────────
 //
@@ -1004,6 +1006,12 @@ if (require.main === module) {
     if (!fs.existsSync(scoresDir)) fs.mkdirSync(scoresDir, { recursive: true });
     const scoreFile = path.join(scoresDir, `score-${opts.persist}.yaml`);
     fs.writeFileSync(scoreFile, yamlify(result));
+    // WS-560 (INV-028): the compliance score is a vital sign; persisting one
+    // without an event leaves a score nobody can trace to a run.
+    emitEvent('T11:vital-signs', 'compliance-score-persisted', {
+      run: opts.persist,
+      score: result && result.compliance_score,
+    });
     appendTrend(result, opts.persist);
   }
   if (opts.writeFindings) {

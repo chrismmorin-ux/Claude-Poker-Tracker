@@ -15,7 +15,7 @@ Schedule hours of autonomous work via Remote Task triggers. The cloud sessions t
 - **Every cycle appends to** `.claude/workstream/autopilot-cycles.jsonl` regardless of outcome (bootstrap, guard_rail_exit, work_attempted, work_completed, work_failed, teardown).
 - **`scheduled_end_at`** is computed by cycle 1 as `first_cycle_at + duration_hours`. Setup delays never eat into work time.
 - **Dynamic scheduling** compresses the happy path (each success schedules the next fire 10–60 min out); hourly cron is the heartbeat fallback.
-- **Eligibility filter (preserved):** `status: backlog`, `effort: S`, `type: bug|finding`, no `decision_flags`, ≤2 top-level dirs, no open blockers.
+- **Eligibility filter (two-stage, WS-560):** stage A from `queue-index.yaml` — `status: backlog`, `effort: S`, `type: bug|finding`, no `decision_flags`, no open blockers; stage B from the surviving item files — `files_involved` present, path-shaped, ≤2 top-level dirs. **Stage B fails closed:** undeclared scope is not eligible.
 
 ---
 
@@ -93,13 +93,40 @@ the dirty file is intentionally held locally.
 ```
 
 ### 1d. Count Eligible Items
-Read `.claude/workstream/queue-index.yaml`. Filter to items that are ALL of:
+
+Eligibility is a **two-stage filter**. Stage A runs against the index; stage B
+opens only the handful of item files that survive stage A. Do not try to run
+the whole filter against the index — `files_involved` is deliberately not
+projected there (see below).
+
+**Stage A — cheap prefilter, from `.claude/workstream/queue-index.yaml`:**
 - `status: backlog`
 - `effort: S`
 - `type: bug` OR `type: finding`
 - `decision_flags` empty/absent/`[]`
 - `blocked_by` empty OR all blockers `status: done`
-- `files_involved` spans ≤ 2 distinct top-level directories
+
+**Stage B — scope ceiling, from each surviving `queue/WS-NNN.yaml`:**
+- `files_involved` is present, non-empty, and every entry looks like a repo
+  path (contains `/` or a file extension, no prose, no `: ` label prefix)
+- those entries span ≤ 2 distinct top-level directories
+
+**Stage B fails CLOSED.** An item whose `files_involved` is missing, empty, or
+prose rather than paths is NOT eligible. Phase 5 instructs the cycle to modify
+"only files in `files_involved`" — with nothing to bind to, that instruction
+constrains nothing, and the scope guard this filter advertises would not exist.
+An undeclared scope is exactly the item an autonomous cycle should not be
+handed. Say so in the output rather than silently dropping it: an item that is
+one `files_involved:` line away from eligible is worth the founder's ten
+seconds.
+
+> **Why the split (WS-560).** `files_involved` is not projected into the index
+> on purpose: it averages 3.2 paths across the 97 items that have it, and
+> projecting it would roughly double a file whose entire job is to spare
+> consumers from opening 244 item files. Stage A cuts 65 backlog items to a
+> handful; opening those few is cheap. `type`, `claimed_by` and
+> `decision_flags` ARE projected — they are scalars, and consumers filtering on
+> a field the index omits is what broke this command (see below).
 
 If 0 eligible items:
 ```
@@ -108,12 +135,14 @@ Autopilot blocked: no eligible items in the queue.
 Queue has <N> backlog items, but none qualify as "Just do it":
 - <N> items are effort M or L
 - <N> items have decision_flags
-- <N> items span 3+ directories
 - <N> items are type improvement (not bug/finding)
 - <N> items are blocked
+- <N> items span 3+ directories
+- <N> items declare no files_involved (scope undeclared — not autopilot-safe)
 
 To add eligible work: run `/audit` to generate findings, or `/next`
-interactively to handle design-first items.
+interactively to handle design-first items. To make a scope-undeclared item
+eligible, add a `files_involved:` list to its queue YAML.
 ```
 
 ### 1e. Estimate Throughput
@@ -404,17 +433,36 @@ PHASE 3: STALE CLAIM RECOVERY
 
 Read .claude/workstream/queue-index.yaml. Look for items with status=in_progress AND claimed_by starting with "autopilot-". For each, reset to status=backlog, clear claimed_by/claimed_at/started_at. Run `node kit/scripts/cwos-reconcile.js --quiet`.
 
+`claimed_by` is projected into the index (WS-560). If you find it absent on
+every entry, the repo is running a pre-WS-560 reconcile: fall back to reading
+the `queue/WS-*.yaml` files for items with status=in_progress. Do NOT conclude
+"no stale claims" from a field that is not there — that is the exact bug
+WS-560 fixed, and it silently stranded the claims of every crashed cycle.
+
 ======================================================================
 PHASE 4: SELECT WORK
 ======================================================================
 
-Filter eligible items (ALL of):
+Two-stage filter. STAGE A against queue-index.yaml, STAGE B against the item
+files that survive A. `files_involved` is not in the index by design — see
+Step 1d in the command doc.
+
+STAGE A (from .claude/workstream/queue-index.yaml):
   - status: backlog
   - effort: S
   - type: bug OR finding
   - decision_flags empty/absent/[]
   - blocked_by empty OR all blockers status: done
-  - files_involved spans ≤ 2 distinct top-level directories
+
+STAGE B (open each surviving queue/WS-NNN.yaml):
+  - files_involved present, non-empty, and every entry is a repo path
+    (has a / or a file extension; not prose, not a "Label: value" string)
+  - those paths span ≤ 2 distinct top-level directories
+
+STAGE B FAILS CLOSED. Missing, empty, or prose files_involved => NOT eligible.
+PHASE 5 tells you to touch "only files in files_involved"; if that list is not
+a list of files, you have no scope ceiling at all. Skip the item and continue
+down the sorted list. Do not infer scope from the title or description.
 
 Sort eligible by priority_score DESC. Select TOP.
 

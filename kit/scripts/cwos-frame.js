@@ -36,7 +36,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const { findWorkstreamDir, readYAMLFile, parseYAML, todayISO, loadEventDeps } = require('./lib/cwos-utils');
+const { findWorkstreamDir, readYAMLFile, parseYAML, todayISO, loadEventDeps, findRepoRoot, } = require('./lib/cwos-utils');
 const deferTranslators = require('./core/defer-translators');
 
 const { appendEvent, ensureCommandId } = loadEventDeps();
@@ -82,9 +82,19 @@ function hasFlag(args, name) {
   return args.includes(`--${name}`);
 }
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 function loadFrameConfig() {
@@ -586,7 +596,7 @@ function runCompose(args) {
 
   const config = loadFrameConfig();
   const registry = loadReadinessRegistry(config.engine_readiness_rules);
-  const wsDir = path.join(repoRoot(), '.claude', 'workstream');
+  const wsDir = path.join(stateDir());
 
   const modeInf = inferMode(engine, repoRoot());
   const readinessInf = inferReadiness({ engineName: engine, target, wsDir, registry, today, now });
@@ -638,7 +648,7 @@ function runCompose(args) {
   // WS-299: Layer-3 pre-fill from catch-state suggestion if one exists
   // matching engine+target within CATCH_STATE_WINDOW_MS. Suggestion's
   // suggested_contract overrides defaults; provenance recorded for confirm.
-  const eventsDir = path.join(repoRoot(), '.claude', 'workstream', 'events');
+  const eventsDir = path.join(stateDir(), 'events');
   const recentEvents = readEventLogTail(eventsDir, 200);
   const matchedSuggestion = findRecentSuggestion(recentEvents, engine, target, now);
   let prefillProvenance = null;
@@ -761,7 +771,7 @@ function runConfirm(args) {
       }
       preflightForced = { reason: String(forcePreflight).trim() };
     } else {
-      const eventsDir = path.join(repoRoot(), '.claude', 'workstream', 'events');
+      const eventsDir = path.join(stateDir(), 'events');
       const recent = readEventLogTail(eventsDir, 300);
       const missing = unackedFields(recent, contract.engine, fieldPrompts);
       if (missing.length > 0) {
@@ -839,7 +849,7 @@ function runConfirm(args) {
   const dismissedEmitted = [];
   if (!noEmit && appendEvent && ensureCommandId) {
     try {
-      const eventsDir = path.join(repoRoot(), '.claude', 'workstream', 'events');
+      const eventsDir = path.join(stateDir(), 'events');
       const recent = readEventLogTail(eventsDir, 200);
       const nowMs = Date.parse(ackAt) || Date.now();
       const outstanding = findOutstandingSuggestions(recent, contract.engine, contract.target || '', nowMs);

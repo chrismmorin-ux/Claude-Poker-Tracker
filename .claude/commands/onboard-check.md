@@ -224,9 +224,18 @@ If Step 4b emitted a milestone-transition briefing, append it after the envelope
 ### 6. Log Friction (if any)
 
 If any check reveals a kit deficiency (not "not done yet" but "broken"):
-- Phantom engine in registry → log to `.cwos-feedback.yaml` friction_log
-- Missing command file referenced by preamble → log
-- Platform-specific failure → log with platform field
+
+```bash
+node kit/scripts/cwos-capture.js friction "<what is broken>" --severity high|medium|low --component <name>
+```
+
+- Phantom engine in registry → `--component engine-registry`
+- Missing command file referenced by the preamble → `--component <command name>`
+- Platform-specific failure → mention the platform in the text
+
+Capture into the event log, never into `.cwos-feedback.yaml` — that file is a
+generated view since WS-578, and hand-written entries are lost when it is
+regenerated.
 
 
 ---

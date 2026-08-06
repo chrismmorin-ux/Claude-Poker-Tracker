@@ -37,12 +37,24 @@ const {
   findWorkstreamDir,
   withFileLock,
   resolveEvolutionDir,
-} = require('./lib/cwos-utils');
+  makeEventEmitter, findRepoRoot, } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const { hashEvent } = require('./core/canonical-json');
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 // Tests pass --feedback-path / --manifest-path / --lock-path to point the
@@ -104,6 +116,12 @@ function writeManifest(manifest, mp) {
   const dir = path.dirname(mp);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   writeFileAtomic(mp, JSON.stringify(manifest, null, 2) + '\n');
+  // WS-560 (INV-028): the calibration manifest is the content-hash anchor for
+  // findings feedback; rewriting it silently makes drift unattributable.
+  emitEvent('T8:audit', 'findings-feedback-manifest-written', {
+    prior_count: manifest && manifest.prior_count,
+    schema_version: manifest && manifest.schema_version,
+  });
 }
 
 function rewriteContentHash(rawText, newHash) {

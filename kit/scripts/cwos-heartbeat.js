@@ -147,6 +147,40 @@ function stampHookLiveness(wsDir, fieldName, verbose) {
   }
 }
 
+/**
+ * Flip an `abandoned` record back to `active`, and clear the tombstone with it.
+ *
+ * `ended_at` has to go too. Recovery sets it alongside the status, and a record
+ * that says `status: active` while carrying an end time is a contradiction that
+ * every later reader has to guess about — /status counts it, session-recovery
+ * re-scans it, and INV-026 cannot tell which field to believe.
+ *
+ * The claims that recovery released are NOT re-acquired here. Releasing them
+ * may have been wrong, but another session could have picked one up in the
+ * meantime, and silently taking it back is the double-claim that WS-533 and
+ * WS-561 exist to prevent. Reviving restores the session's ability to claim;
+ * re-claiming is /next's decision, made against the queue as it stands now.
+ */
+function reviveSession(sessionPath, verbose) {
+  try {
+    let text = fs.readFileSync(sessionPath, 'utf8');
+    text = text.replace(/^status:\s*.+$/m, 'status: active');
+    if (/^ended_at:\s*.+$/m.test(text)) text = text.replace(/^ended_at:\s*.+$/m, 'ended_at: null');
+    // Leave a trace: a session that came back should be visible as such rather
+    // than looking like it was never away.
+    if (!/^revived_at:/m.test(text)) {
+      text = text.replace(/^status: active$/m, `status: active\nrevived_at: "${new Date().toISOString()}"`);
+    } else {
+      text = text.replace(/^revived_at:\s*.+$/m, `revived_at: "${new Date().toISOString()}"`);
+    }
+    writeFileAtomic(sessionPath, text);
+    return true;
+  } catch (err) {
+    if (verbose) process.stderr.write(`heartbeat: revive failed — ${err.message}\n`);
+    return false;
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
   const verbose = args.includes('--verbose');
@@ -199,18 +233,52 @@ function main() {
     return 0;
   }
 
-  // Only heartbeat sessions with status: active. Completed/abandoned sessions
-  // should not have their last_heartbeat drift forward.
+  // Which sessions may beat, and the one that may be brought BACK.
+  //
+  // QUOTES. This used to compare the raw regex capture against 'active', so a
+  // record written `status: "active"` failed the test and was silently skipped
+  // — the same quote-blindness that made INV-039 read a deprecated cache
+  // (WS-548) and made an emptied lease unfillable (WS-561). Recovery reads this
+  // same field through a YAML parser and sees `active` either way, so the two
+  // disagreed about the same bytes. Strip the quotes and they agree.
   const content = fs.readFileSync(sessionPath, 'utf8');
-  const statusMatch = content.match(/^status:\s*(\S+)/m);
-  if (!statusMatch || statusMatch[1] !== 'active') {
-    if (verbose) process.stderr.write(`heartbeat: session ${sessionId} status=${statusMatch?.[1] || 'unknown'}, skipping\n`);
+  const statusMatch = content.match(/^status:\s*(.+?)\s*$/m);
+  const status = statusMatch ? statusMatch[1].trim().replace(/^["'](.*)["']$/, '$1') : 'unknown';
+
+  // ABANDONMENT IS A GUESS; A BEAT IS PROOF (WS-578 follow-up).
+  //
+  // Recovery was one-way. Once it marked a session abandoned, this check
+  // refused to beat it, so nothing could ever move `last_heartbeat` again and
+  // the session stayed dead for as long as it kept running. Measured
+  // 2026-08-05: this session was abandoned at 20:12 over a stale pid, then
+  // worked for another 20 hours as a corpse — claims released, unable to
+  // reclaim them, while `last_heartbeat_hook_fired_at` advanced on every
+  // response and `last_heartbeat_hook_at` sat 23 hours behind.
+  //
+  // A beat arriving from the process whose agent_session_id the record names is
+  // direct evidence the guess was wrong. Reviving on that evidence is safe in
+  // the way adopting the pointer is not: resolveSessionId matched us by harness
+  // identity, so this can only ever revive OUR OWN record.
+  //
+  // `completed` is deliberately NOT revivable. That status is a decision
+  // somebody made, not an inference — /session-end wrote it on purpose, and a
+  // late hook firing afterwards must not undo it.
+  if (status === 'abandoned') {
+    const revived = reviveSession(sessionPath, verbose);
+    if (!revived) {
+      if (verbose) process.stderr.write(`heartbeat: session ${sessionId} is abandoned and could not be revived\n`);
+      return 0;
+    }
+    if (verbose) process.stdout.write(`heartbeat: revived ${sessionId} — it is alive and beating\n`);
+  } else if (status !== 'active') {
+    if (verbose) process.stderr.write(`heartbeat: session ${sessionId} status=${status}, skipping\n`);
     return 0;
   }
 
-  // touchSession also (re)stamps `host`, so a record that has moved machines —
-  // or predates the field — corrects itself here rather than being judged
-  // against the wrong process table forever (WS-564).
+  // touchSession also (re)stamps `host` and `pid`, so a record that has moved
+  // machines, or whose Claude process restarted under the same conversation,
+  // corrects itself here rather than being judged against the wrong process
+  // table forever (WS-564, and the pid half added alongside this revive).
   const advanced = touchSession(wsDir, sessionId);
   if (!advanced) {
     if (verbose) process.stderr.write(`heartbeat: could not advance ${sessionId}\n`);

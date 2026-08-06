@@ -38,12 +38,12 @@ require('./lib/preflight');
 const fs = require('fs');
 const path = require('path');
 const { cliGate } = require('./lib/cli');
-const { findWorkstreamDir, writeFileAtomic, withFileLock, makeEventEmitter } = require('./lib/cwos-utils');
+const { findWorkstreamDir, writeFileAtomic, patchYAMLFile, withFileLock, makeEventEmitter } = require('./lib/cwos-utils');
 
 const emitEvent = makeEventEmitter();
 const {
   listLiveSessions, registryHealth, touchSession, findByAgentSessionId,
-  staleActiveSessions, localHost, patchOrInsert,
+  staleActiveSessions, localHost,
 } = require('./lib/cwos-claims');
 
 const CLI = {
@@ -78,15 +78,11 @@ function register(wsDir, agentId, pid) {
   const existing = findByAgentSessionId(wsDir, agentId);
   if (existing) {
     touchSession(wsDir, existing.id);
-    // Re-assert the pid: a resumed session runs in a new process. DATE it in the
-    // same write (WS-351) — an undated pid cannot be told apart from one recycled
-    // across a reboot, and `patchYAMLFile` alone silently drops a key the record
-    // does not already carry, so every pre-WS-351 record would keep a pid whose
-    // age nothing could establish. patchOrInsert is what makes the field
-    // self-healing, exactly as it did for `host` in WS-564.
-    try {
-      patchOrInsert(existing.file, { pid, pid_recorded_at: new Date().toISOString() }, 'pid');
-    } catch { /* best-effort */ }
+    // Re-assert the pid: a resumed session runs in a new process.
+    // insertMissing because two records on disk predate the field, and a pid
+    // that silently fails to land leaves liveness judging a stale process
+    // (WS-529 — the same replace-only drop that broke claims).
+    try { patchYAMLFile(existing.file, { pid }, { insertMissing: true }); } catch { /* best-effort */ }
     return { id: existing.id, created: false };
   }
 
@@ -105,17 +101,10 @@ function register(wsDir, agentId, pid) {
       'ended_at: null',
       'mode: auto',
       `last_heartbeat: "${ts}"`,
-      // The session's process. `process.pid` here would be this short-lived hook,
-      // useless the moment it exits; the caller passes CLAUDE_PID or `process.ppid`
-      // — the Claude Code harness — which outlives the whole session.
-      //
-      // This IS load-bearing now (WS-351): a dead pid recovers the session without
-      // waiting on the heartbeat timeout. What makes that safe is the stamp below.
-      // A pid alone cannot be told apart from a pid recycled after a reboot, so
-      // `sessionOwnerVerdict` reads a pid recorded before the current boot as dead
-      // outright rather than consulting the process table.
+      // The session's process, best effort: process.pid here would be this
+      // short-lived hook, useless the moment it exits. Diagnostic only — liveness
+      // is decided by heartbeat vs boot time, never by this. See cwos-claims.
       `pid: ${pid}`,
-      `pid_recorded_at: "${ts}"`,
       // WS-564: which machine that pid belongs to. `sessions/` is tracked, so
       // records travel between nodes by git pull — without this, the pid above
       // and the boot-time proof in cwos-claims are both evaluated against

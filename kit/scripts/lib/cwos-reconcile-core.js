@@ -86,6 +86,20 @@ function rebuildQueueIndex(wsDir, opts = {}) {
       continue;
     }
 
+    // WS-560: `type`, `claimed_by` and `decision_flags` are projected because
+    // consumers FILTER on them against this index, and a field the index omits
+    // reads as `undefined` rather than as an error. Every such filter therefore
+    // fails silently, and which way it fails is a coin toss:
+    //   - /autopilot's eligibility filter requires type ∈ {bug, finding}. With
+    //     `type` absent it excluded all 244 items, reported "0 eligible", and
+    //     blocked every launch — the command could never start, in any repo.
+    //   - /autopilot's stale-claim recovery looks for claimed_by starting with
+    //     "autopilot-". With `claimed_by` absent it matched nothing, so the
+    //     recovery pass was a no-op that logged success.
+    // The first fails closed and is merely broken; the second fails open and
+    // leaves crashed cycles' claims stranded. The index template has documented
+    // `type` and `claimed_by` as index fields since it was written — this is the
+    // projection catching up to the contract, not a new one.
     const entry = {
       id: String(data.id),
       title: data.title || '',
@@ -93,9 +107,14 @@ function rebuildQueueIndex(wsDir, opts = {}) {
       priority_score: data.priority_score ?? 0,
       category: data.category || '',
       effort: data.effort || 'S',
+      type: data.type ? String(data.type) : '',
     };
     if (data.blocked_by && Array.isArray(data.blocked_by) && data.blocked_by.length > 0) {
       entry.blocked_by = data.blocked_by;
+    }
+    if (data.claimed_by) entry.claimed_by = String(data.claimed_by);
+    if (Array.isArray(data.decision_flags) && data.decision_flags.length > 0) {
+      entry.decision_flags = data.decision_flags.map(f => String(f));
     }
     if (data.sprint_id) entry.sprint_id = String(data.sprint_id);
     if (data.finding_id) entry.finding_id = String(data.finding_id);
@@ -189,7 +208,14 @@ function buildQueueIndexYAML(items, byStatus, byCategory) {
     lines.push(`    priority_score: ${item.priority_score}`);
     lines.push(`    category: ${item.category}`);
     lines.push(`    effort: ${item.effort}`);
+    // Quoted: real type values contain spaces ("Design first"), so bare-scalar
+    // emission would depend on the reader's tolerance for them.
+    lines.push(`    type: "${escapeYAMLString(item.type)}"`);
     if (item.blocked_by) lines.push(`    blocked_by: [${item.blocked_by.map(b => `"${b}"`).join(', ')}]`);
+    if (item.claimed_by) lines.push(`    claimed_by: "${escapeYAMLString(item.claimed_by)}"`);
+    if (item.decision_flags) {
+      lines.push(`    decision_flags: [${item.decision_flags.map(f => `"${escapeYAMLString(f)}"`).join(', ')}]`);
+    }
     if (item.sprint_id) lines.push(`    sprint_id: "${item.sprint_id}"`);
     if (item.finding_id) lines.push(`    finding_id: "${item.finding_id}"`);
     if (item.opt_id) lines.push(`    opt_id: "${item.opt_id}"`);

@@ -21,6 +21,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const { findWorkstreamDir, withFileLock } = require('../lib/cwos-utils');
+const { assertMainTree } = require('../lib/worktree-guard');
 const { canonicalize, hashEvent } = require('./canonical-json');
 
 const SCHEMA_VERSION = 1;
@@ -443,6 +444,14 @@ function chainHead(workstreamDir) {
 
 function appendEvent(fields, opts = {}) {
   const workstreamDir = opts.workstreamDir || findWorkstreamDir();
+  // WS-532: this is the single chokepoint for canonical mutation — the
+  // state-store dispatch below runs downstream of it — so guarding here covers
+  // the whole write path. events/ is gitignored and never merges back, so an
+  // append from a linked worktree is a silent, unrecoverable audit gap.
+  // Intentionally NOT swallowed: a silent failure here IS the defect.
+  // Event type lives in payload.type (see cwos-event.js:101), not at top level.
+  const _t = (fields && fields.payload && fields.payload.type) || (fields && fields.track_tag) || 'unknown';
+  assertMainTree(`append_event (${_t})`, { fromDir: workstreamDir });
   return withWriteLock(workstreamDir, () => {
     const ev = buildEvent(fields, { workstreamDir, priorHashOverride: opts.priorHashOverride });
     const v = validate(ev);

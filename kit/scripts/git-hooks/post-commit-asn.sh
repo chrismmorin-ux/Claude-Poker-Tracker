@@ -14,7 +14,13 @@
 set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-STAMP="$REPO_ROOT/.git/cwos/last-precommit-run"
+# WS-532: resolve the gitdir rather than assuming "$REPO_ROOT/.git" is a
+# directory. In a linked worktree it is a FILE holding a gitdir pointer, so the
+# old path made every write fail with "Not a directory" and broke this
+# handshake silently. --git-dir gives the worktree's own dir (correct: the
+# stamp is a per-tree pre/post-commit handshake, not shared state).
+GIT_DIR_PATH=$(git rev-parse --git-dir)
+STAMP="$GIT_DIR_PATH/cwos/last-precommit-run"
 LOGGER="$REPO_ROOT/kit/scripts/cwos-bypass-log.js"
 
 # No stamp yet → first-ever commit after install. Nothing to detect.

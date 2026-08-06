@@ -106,11 +106,22 @@ Commands must work at any milestone. When encountering missing state:
 | **OPTIONAL** | Skip silently | No custom personas → default analysis. No `usage.yaml` → skip telemetry. |
 
 - Never show YAML paths or milestone names to user. Never say "you need to reach M3 first."
-- When auto-scaffolding: prefer minimal creation. Log to `.cwos-feedback.yaml` friction_log. Read HomeBase path from `.cwos-version.homebase_path`.
+- When auto-scaffolding: prefer minimal creation. Capture the friction (below). Read HomeBase path from `.cwos-version.homebase_path`.
 
 ## Friction & Feedback
-- If a command fails or needs a workaround: fix silently, log to `.cwos-feedback.yaml` at session end.
-- If user expresses frustration or preference about CWOS: log to `.cwos-feedback.yaml` under `user_feedback`, acknowledge briefly, don't argue.
+
+Record it **when it happens**, with one command. Not at session end — that
+arrives about 12% of the time, which is why the friction log stayed empty.
+
+```bash
+node kit/scripts/cwos-capture.js friction "<what fought back>" --severity high|medium|low --component <name>
+node kit/scripts/cwos-capture.js feedback "<what the founder said>" --category objection|preference|concern|integration|feature_request
+```
+
+- If a command fails or needs a workaround: fix it, keep working, capture the friction. `--component` is optional; a capture with no component still counts. Every field demanded at capture time is a reason not to capture.
+- If the user expresses frustration or a preference about CWOS: capture it as feedback, acknowledge briefly, don't argue.
+- Capture **cannot block you** — it exits 0 on every path, including when it fails to write. For the same reason, if it prints `NOT captured`, that message is the only signal you will get; surface it rather than assuming it landed.
+- Do **not** hand-edit `.cwos-feedback.yaml`. It is a generated view of the event log (`cwos-feedback-view.js generate`) and carries a do-not-edit header; anything written there by hand is lost on the next regeneration.
 - Platform (from `.cwos-onboarding.yaml`): on Windows, prefer Python for datetime, avoid `set -euo pipefail` in hooks, avoid `$$` for PID.
 
 ## Standard Commands
@@ -211,23 +222,36 @@ Flag a choice when it matches any pattern:
 
 ### Detection Rules
 - Flag inline: `**Decision noted:** [summary]` — don't stop working.
-- If significant trade-offs: escalate with `**Decision with trade-offs:** [summary]. This means [consequence].`
+- **Then capture it, in the same breath.** One command, no ceremony:
+  ```bash
+  node kit/scripts/cwos-capture.js decision "<summary>" --weight heavy|medium|light --why "<reasoning>"
+  ```
+- If significant trade-offs: escalate with `**Decision with trade-offs:** [summary]. This means [consequence].` and capture with `--weight heavy`.
 - If multiple valid approaches and user hasn't specified: state choice + reasoning before implementing.
-- Decisions accumulate; formalized at session end via `/session-end`. Weight classification (Heavy/Medium/Light) handled there.
 
-## The Improvement Default (HARD RESTRICTION)
-When analysis surfaces a limitation, **the default recommendation is to REMOVE the limitation.** Recommending accommodation — deferral, scope reduction, routing around, using a weaker configuration, "measure the easy thing instead" — is the **founder's decision, never the AI's**. It may be presented as a question with its cost stated; it may not be presented as a recommendation.
+**Why capture now instead of at session end.** This protocol used to say
+"decisions accumulate; formalized at session end". Flagging inline wrote
+nothing, and `/session-end` runs about 12% of the time — so on 2026-08-03,
+`system/decisions.md` held 47 entries and **not one** was marked
+`Detected: implicit`. Every decision in the log had come through `/decide`. The
+passive path had never once produced a record. An event survives a session that
+dies; an intention to write something later does not.
 
-The mechanism this stops is **measurability bias**: preferring what can be cleanly verified, then shrinking the work to fit the instrument instead of building the instrument to fit the work. It wears the costume of rigor — "we can't trust that number yet" is a correct observation, and *therefore use a configuration that produces a trustworthy number* is the backwards inference.
+Weight decides destination, and you set it at capture time because you are the
+one who knows: **Heavy** (multiple features, hard to reverse, sets precedent)
+and **Medium** (shapes one feature, reversible but costly) are written into
+`system/decisions.md` when the buffer drains. **Light** (minor choice, easily
+changed) stays in the event log and is queryable there.
 
-**Structural test: a deep analysis that ends in a NARROWER scope than it started with has failed.** The output of an engine run is a list of things to build, not a list of things to avoid. Stop and re-derive on any of: recommending a path because it is easier to measure; describing a limitation as a fact to plan around; saying a result will be inconclusive without stating what would make it conclusive; deferring something on the path to the goal as "not blocking"; accepting a partial result as the answer. The words *pragmatic*, *for now*, *good enough*, *start simple*, *route around* are this failure's vocabulary. Full rule: `.claude/rules/improvement-default.md`.
+Draining is automatic — `cwos-reconcile` does it, and reconcile runs from the
+SessionStart hook. `cwos-capture pending` shows what has not been formalized yet.
 
-## Engine Execution Fidelity (HARD RESTRICTION)
-When a protocol, engine, or command **declares an execution method** (an `engine:` field, a persona set, a multi-agent phase structure), you MUST execute it by spawning those agents. **Inline single-threaded simulation of a declared multi-agent engine is prohibited and its output is invalid** — it may not be stamped as a protocol run, written to `evidence/`, filed as findings, or used to clear a block.
-
-Why, in one paragraph: the agents *are* you — the value is not that they are smarter, it is where they start from. Context is monotonic within a session; you accumulate and cannot shed. By the time you audit something you are already anchored, so an inline "roundtable" is one position wearing six names, and the disagreement that is the entire product of a roundtable cannot occur. A fresh context with a curated framing genuinely holds different priors and will contradict you. The failure is self-concealing — an inline pass agrees with itself, reads as plausible, gets stamped, and resets the staleness clock on work that did not happen.
-
-A session instruction discouraging agents does not override a declared engine — invoking the command IS the request. If you truly cannot spawn them: stop, say why, and produce nothing. **Never do the least accurate option.** Full rule: `.claude/rules/engine-execution-fidelity.md`.
+**Friction works the same way.** When a command fails, a file referenced by kit
+infrastructure is missing, or you have to work around something:
+```bash
+node kit/scripts/cwos-capture.js friction "<what fought back>" --severity high|medium|low --component <name>
+```
+Capture must never block work — if it errors, note it and carry on.
 
 ## Proactive Automation
 These rules run automatically, every session, without prompting.

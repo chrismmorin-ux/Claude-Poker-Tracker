@@ -113,63 +113,6 @@ function isPidAlive(pid, recordHost, opts = {}) {
   }
 }
 
-/**
- * What can this machine PROVE about the process that owns a session record?
- *
- * → 'dead'    the owning process is gone. Decisive, and independent of the clock.
- * → 'live'    a process with that pid is running here, right now.
- * → 'unknown' the question is not answerable from this record on this machine.
- *
- * WHY THIS OVERRIDES THE "PID IS NEVER A DEATH TEST" RULE ABOVE (WS-351). That rule
- * was written against `resolveSessionId`'s pid, which is `process.pid` — the minting
- * script, gone milliseconds later. It is NOT true of the pid
- * `cwos-session-register` records, which is `process.ppid`: the Claude Code harness.
- * Measured in claude-poker-tracker on 2026-08-05 — pid 10208 alive for the whole of
- * the session that recorded it, pid 15224 alive and shared by two records written
- * the previous day. The two writers were stamping different things into one field.
- * That is now fixed at the source: the registrar dates its pid with
- * `pid_recorded_at`, and the minting path records no pid at all rather than a
- * decoy. Only then is the field safe to read.
- *
- * THE ASYMMETRY IS STILL REAL, and 'live' is deliberately weaker than 'dead'.
- * One harness process serves several session records, so a live pid does NOT prove
- * that THIS session is live — only that something is still there. Callers use
- * 'dead' as proof and 'live' as a veto on destructive action, never as a licence to
- * keep a session open past its heartbeat timeout.
- *
- * PID REUSE. Handled for the case that actually happens — a reboot. A pid recorded
- * before the current boot cannot name a surviving process, so it reads 'dead' no
- * matter what the local process table says, which is both correct and the common
- * crash case. Reuse WITHIN a single boot is NOT handled: it would need a per-process
- * start-time probe that has no portable Node API, and the residual error is the
- * cheap direction (a dead session read as live costs a stale warning, never a
- * stolen claim).
- *
- * HOST GATE, as everywhere else here: a pid from another machine is asked of the
- * wrong process table, so a foreign or unknown host degrades to 'unknown'.
- */
-function sessionOwnerVerdict(doc, opts = {}) {
-  if (!doc) return 'unknown';
-  const pid = doc.pid == null ? NaN : Number(doc.pid);
-  if (!Number.isInteger(pid) || pid <= 0) return 'unknown';
-  if (!isLocalHost(doc.host, opts)) return 'unknown';
-
-  const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
-  if (boot != null) {
-    // `started_at` is the fallback because that is when both writers stamped the
-    // pid before this field existed; records self-heal on the next SessionStart.
-    const stamp = doc.pid_recorded_at || doc.started_at;
-    const at = stamp ? Date.parse(String(stamp).replace(/^"|"$/g, '')) : NaN;
-    if (!Number.isFinite(at)) return 'unknown';   // undateable pid — reuse unrulable-out
-    if (at < boot) return 'dead';                 // predates the boot: gone, whoever holds it now
-  }
-
-  const alive = isPidAlive(pid, doc.host, opts);
-  if (alive === false) return 'dead';
-  if (alive === true) return 'live';
-  return 'unknown';
-}
-
 const POINTER = '.current-session';
 
 const nowISO = () => new Date().toISOString();
@@ -235,19 +178,14 @@ function minutesSinceHeartbeat(sessionFile, now = Date.now()) {
  *      claims mid-work.
  *   2. Otherwise, the staleness window.
  *
- * PID DEATH IS NOW TEST (0), AND IT OUTRANKS BOTH (WS-351). This used to say pid
- * liveness could never be a death test, because the recorded pid was a short-lived
- * hook. That was true of one of the two writers and false of the other, and the
- * field meant different things depending on which had written it — see
- * `sessionOwnerVerdict`, where the reasoning and the fix at the source now live.
- * With the writers made honest, a dead pid is the strongest death proof available:
- * it does not wait for a timer, so a crashed session stops fencing its claims the
- * moment the next hook fires rather than up to `staleMinutes` later.
- *
- * The asymmetry that produced the old rule is unchanged and still respected: a LIVE
- * pid buys nothing here. It cannot extend a session past its heartbeat window,
- * because one harness pid serves several session records and a stale record sharing
- * a live pid would otherwise read as a peer forever.
+ * WHY PID LIVENESS IS *NOT* A DEATH TEST, despite being tempting. The pid on a
+ * session record is written by a short-lived hook process, so it is gone moments
+ * later — testing it declared every session dead the instant it registered. Even
+ * recording the parent pid is unreliable: the parent may be a transient shell.
+ * And the error is not symmetric. Reading a LIVE session as dead releases its
+ * claims and re-enables the concurrent clobbering this module exists to prevent,
+ * whereas reading a dead session as live merely costs a stale warning. So we fail
+ * conservative: pid is recorded for humans and diagnostics, never for the verdict.
  */
 function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now(), opts = {}) {
   if (!id) return false;
@@ -259,8 +197,6 @@ function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now()
     if (!doc) return false;
     const status = String(doc.status || '').toLowerCase();
     if (status && status !== 'active') return false;
-
-    if (sessionOwnerVerdict(doc, opts) === 'dead') return false;                 // (0)
 
     if (isLocalHost(doc.host, opts)) {
       const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
@@ -503,7 +439,9 @@ function findByAgentSessionId(wsDir, agentId) {
  * same shape `/session-end` and `cwos-session-recovery` already read. It is deliberately
  * not a substitute for `/session-start`'s richer record.
  */
-function resolveSessionId(wsDir, { create = true, clock = null, agentId: agentIdOverride = null } = {}) {
+function resolveSessionId(wsDir, {
+  create = true, clock = null, agentId: agentIdOverride = null, pointer = true,
+} = {}) {
   // A hook process is handed the harness id on stdin rather than in the environment;
   // it passes that in here so there is ONE resolver instead of a second, subtly
   // different copy per hook. cwos-heartbeat.js had such a copy and fell through to
@@ -540,16 +478,9 @@ function resolveSessionId(wsDir, { create = true, clock = null, agentId: agentId
       'ended_at: null',
       'mode: auto',
       `last_heartbeat: "${ts}"`,
-      // CLAUDE_PID is the actual Claude process. `process.pid` — what this line
-      // used to fall back to — is THIS script, which exits milliseconds later, so
-      // the field said "dead process" about a perfectly healthy session. Harmless
-      // while nothing read it; a trap the moment something did (WS-351). A session
-      // minted here has no durable owner to point at, so it now points at nothing
-      // and liveness falls back to the heartbeat, which is what it was doing
-      // anyway. `pid_recorded_at` is written only when the pid is real.
-      ...(process.env.CLAUDE_PID
-        ? [`pid: ${Number(process.env.CLAUDE_PID)}`, `pid_recorded_at: "${ts}"`]
-        : ['pid: null']),
+      // CLAUDE_PID is the actual Claude process; process.pid here is this
+      // short-lived script. Diagnostic only either way — see isSessionLive.
+      `pid: ${process.env.CLAUDE_PID || process.pid}`,
       // The machine that owns this record. Without it, every pid and boot-time
       // test on a git-synced session file is asked of the wrong process table
       // (WS-564). Recorded at mint AND re-stamped on every heartbeat, so a record
@@ -568,7 +499,16 @@ function resolveSessionId(wsDir, { create = true, clock = null, agentId: agentId
   }
   // Best-effort legacy pointer. Not the identity of record: it holds one id and
   // cannot represent concurrent sessions.
-  try { writeFileAtomic(path.join(wsDir, POINTER), id); } catch { /* non-fatal */ }
+  //
+  // `pointer: false` exists for CROSS-REPO minting (WS-564 follow-up). A session
+  // whose cwd is repo A can edit files in repo B — the founder's normal pattern —
+  // and B's registry should learn about it. But repointing B's `.current-session`
+  // at a session that merely touched one file would be a genuinely wrong claim
+  // about who is working there, and the pointer's remaining consumers read it as
+  // "the session in this repo". Register the identity, leave the pointer alone.
+  if (pointer) {
+    try { writeFileAtomic(path.join(wsDir, POINTER), id); } catch { /* non-fatal */ }
+  }
   return id;
 }
 
@@ -593,6 +533,26 @@ function touchSession(wsDir, id, clock = null) {
       patchOrInsert(file, {
         last_heartbeat: (clock ? new Date(clock) : new Date()).toISOString(),
         host: localHost() || '',
+        // PID travels with the beat, for the same reason `host` does (WS-564):
+        // a record judged against a stale identity is judged wrong forever.
+        //
+        // pid was written ONCE at registration and never again, so when the
+        // Claude process restarts while the CONVERSATION continues — same
+        // CLAUDE_CODE_SESSION_ID, new OS process — the record keeps pointing at
+        // a pid that no longer exists. session-liveness then returns DEAD_PID,
+        // correctly by its own rule and wrongly in fact, and recovery abandons
+        // a session that is actively working. Measured 2026-08-05: record held
+        // pid 10808 (gone) while the live process was 5732; the session was
+        // abandoned mid-work and its claims released.
+        //
+        // Whoever is beating IS the session, so the beat is the authoritative
+        // moment to re-anchor which process that is.
+        // Number, not the raw env string: CLAUDE_PID arrives as a string and
+        // would serialize quoted, silently changing the field's type on every
+        // record that beats. Liveness copes, but registration writes a bare
+        // number and a field that is sometimes 10808 and sometimes "10808" is
+        // a trap for the next reader.
+        pid: Number(process.env.CLAUDE_PID || process.pid) || undefined,
       }, 'pid');
       return true;
     } catch { /* best-effort: liveness is an optimisation, never a hard dependency */ }
@@ -698,14 +658,40 @@ function claimItems(wsDir, sessionId, itemIds, clock = null) {
     if (!fs.existsSync(queuePath)) continue;
     try {
       // Same lock the done-path uses, so a concurrent reconcile cannot interleave.
+      //
+      // WS-529: this used patchYAMLFile, which REPLACES but cannot INSERT. No
+      // HomeBase queue item scaffolds `claimed_by`, so every claim since WS-533
+      // wrote nothing and returned the id anyway — approve reported
+      // `claimed: [WS-519, WS-563]` over two items that stayed `backlog` with
+      // `claimed_by: null`, free for any other session's /next to pick up. The
+      // fix WS-561 built for exactly this shape already existed here; claims
+      // never adopted it.
       withFileLock(queuePath + '.lock', () => {
-        patchYAMLFile(queuePath, { claimed_by: sessionId, claimed_at: at });
+        let text = fs.readFileSync(queuePath, 'utf8');
+        // `after: 'status'` keeps the lease fields next to the field they
+        // qualify, matching where the done-path puts closure metadata.
+        text = upsertYAMLScalarField(text, 'claimed_by', sessionId, { after: 'status' }).content;
+        text = upsertYAMLScalarField(text, 'claimed_at', at, { after: 'claimed_by' }).content;
+        writeFileAtomic(queuePath, text);
       }, { ownerLabel: 'next:claim', maxWaitMs: 5000 });
-      claimed.push(id);
+
+      // Report what LANDED, not what was attempted. A claim list that counts
+      // writes it never made is worse than a short one: it is what let an
+      // unclaimed sprint look approved for three hours.
+      if (readClaimant(queuePath) === sessionId) claimed.push(id);
     } catch { /* non-fatal: a failed claim degrades to today's behaviour, never blocks */ }
   }
   mirrorIntoSession(wsDir, sessionId, claimed);
   return claimed;
+}
+
+/** Read back the claimant a queue file actually carries, for write verification. */
+function readClaimant(queuePath) {
+  try {
+    const m = fs.readFileSync(queuePath, 'utf8').match(/^claimed_by:\s*(.*)$/m);
+    if (!m) return null;
+    return m[1].trim().replace(/^["'](.*)["']$/, '$1') || null;
+  } catch { return null; }
 }
 
 /** Clear claims — called when items close, so the queue does not accrete dead holds. */
@@ -840,8 +826,6 @@ module.exports = {
   localHost,
   isLocalHost,
   isPidAlive,
-  sessionOwnerVerdict,
-  patchOrInsert,
   readSessionPointer,
   readSessionDoc,
   agentSessionIdFromEnv,

@@ -593,17 +593,58 @@ function formatInlineArray(arr) {
 /**
  * Patch specific top-level scalar fields in a YAML file.
  * Preserves comments, ordering, and unmodified content.
+ *
+ * REPLACE-ONLY, AND THAT IS A LOADED GUN (WS-529).
+ *
+ * A patch whose key is absent from the file is DROPPED. The write still
+ * happens, the function still returns, and the caller has no way to tell the
+ * difference between "updated" and "silently did nothing" — which is the exact
+ * shape of WS-561, one layer further down.
+ *
+ * It cost a real defect. `cwos-claims.claimItems` patches
+ * `{ claimed_by, claimed_at }` onto a queue item, and HomeBase queue YAMLs do
+ * not scaffold those keys. So every claim since WS-533 wrote nothing and
+ * reported the item claimed: SPR-194 sat `approved` with both of its items
+ * still `status: backlog, claimed_by: null`, visible to any other session's
+ * `/next` as free work. WS-564 hit the same edge on `host:` and worked around
+ * it by re-stamping on every heartbeat.
+ *
+ * Two changes, neither of which alters what an existing caller writes:
+ *
+ *   1. It RETURNS `{ patched, missing }`. A caller that cares can now tell.
+ *      Nothing forces it to look — but "the information was unavailable" stops
+ *      being true, and that is the difference between a bug and a decision.
+ *   2. `opts.insertMissing` appends absent keys instead of dropping them.
+ *      Opt-in, because inserting a key the caller only meant to update would
+ *      change the shape of files some callers deliberately treat as fixed.
+ *
+ * For a field that must land, prefer `upsertYAMLScalarField` — it inserts,
+ * fills an explicit null, leaves a real value alone, and preserves line
+ * endings. This function stays for the callers that genuinely mean
+ * update-if-present.
+ *
+ * @returns {{ patched: string[], missing: string[] }}
  */
-function patchYAMLFile(filePath, patches) {
+function patchYAMLFile(filePath, patches, opts = {}) {
   let content = fs.readFileSync(filePath, 'utf8');
+  const patched = [];
+  const missing = [];
   for (const [key, value] of Object.entries(patches)) {
     const regex = new RegExp(`^(${escapeRegex(key)}:\\s*).*$`, 'm');
     const formatted = formatScalar(value);
     if (regex.test(content)) {
       content = content.replace(regex, `$1${formatted}`);
+      patched.push(key);
+    } else if (opts.insertMissing) {
+      const eol = /\r\n/.test(content) ? '\r\n' : '\n';
+      content = content.replace(/\s*$/, '') + eol + `${key}: ${formatted}` + eol;
+      patched.push(key);
+    } else {
+      missing.push(key);
     }
   }
   writeFileAtomic(filePath, content);
+  return { patched, missing };
 }
 
 function escapeRegex(str) {
@@ -637,6 +678,15 @@ function isUnsetYAMLScalar(raw) {
   if (v === '') return true;                       // `key:` with nothing after it
   if (v === '~') return true;                      // YAML null shorthand
   if (v === 'null' || v === 'Null' || v === 'NULL') return true;
+  // Quoted empty is an emptied field, not a value. This is the shape a RELEASED
+  // lease has: `releaseClaimedItems` (cwos-session-recovery) and the queue-item
+  // template in commands/workstream.md both write `claimed_by: ""`. Reading it
+  // as a real value made the field permanently unfillable — an item released by
+  // recovery, or scaffolded from the template, could never be claimed again.
+  // Measured 2026-08-04: SPR-196 approved with claimed: [] over all 4 items,
+  // every one of them sitting at `claimed_by: ""` and free for a peer's /next.
+  // Distinct from quoted "null" below, which stays a real string on purpose.
+  if (v === '""' || v === "''") return true;
   return false;                                    // includes "null" and 'null'
 }
 
@@ -1001,10 +1051,77 @@ function serializeMarkdownTable(columns, rows) {
 // ─── Workstream Directory Finder ────────────────────────────────────────────
 
 /**
- * Find the .claude/workstream/ directory by walking up from startDir.
+ * Resolve the ONE canonical `.claude/workstream/` for a repo (WS-576).
+ *
+ * A linked git worktree has `.claude/workstream/` checked out — it is tracked —
+ * so the plain upward walk below finds the worktree's own forked copy on its
+ * very first iteration and never reaches the main tree. Deterministic, not
+ * probabilistic:
+ *
+ *     cwd: .claude/worktrees/probe
+ *     walk -> .claude/worktrees/probe/.claude/workstream    (the fork)
+ *
+ * That fork is the root of the whole worktree-state problem. `allocateNextWsId`
+ * scanning "the local queue dir" and `events/` "not travelling into a worktree"
+ * — the two reasons `worktree-guard.js` gives for refusing state writes — are
+ * both consequences of it, not independent facts.
+ *
+ * It also quietly violates the replay contract. INV-031/044 assume
+ * state = f(replay(THE event log)) — one well-defined object. Two worktrees
+ * accumulating separate writes makes "the log" ambiguous, with no fact of the
+ * matter about which is canonical. ADR-058 already settled the identical
+ * question between nodes: exactly one write-authoritative copy of tracked
+ * state, everything else derived and rebuildable. This is that rule applied
+ * inside a repo.
+ *
+ * ENFORCEMENT IS STRUCTURAL, NOT ADVISORY. `assertMainTree` was the guard
+ * against forked writes and had exactly ONE live consumer (`core/events.js`
+ * `appendEvent`) while 57 files resolve state — so 56 write paths were never
+ * gated at all. Rather than add 56 assertions to remember, the fork is removed
+ * at the source: no caller can write to a forked path because no caller can
+ * obtain one. The guard is left in place and becomes a VERIFICATION that this
+ * resolver did its job — it inspects the resolved directory, so it passes
+ * naturally once resolution is correct, and fires again if this ever regresses.
+ *
+ * Cost is two filesystem calls, cached per repo root by `describeTree`. There
+ * is deliberately no `git` subprocess: `worktree-guard.js` recovers the main
+ * tree by reading the `.git` file's `gitdir:` pointer, so a non-worktree costs
+ * one `statSync` and a directory with no `.git` at all — every temp-dir test
+ * fixture — falls straight through to the walk below, unchanged.
+ *
+ * Returns null when `start` is not inside a linked worktree, or when the main
+ * tree has no workstream dir (an odd setup that should degrade to the walk
+ * rather than to an error).
+ */
+function canonicalWorkstreamDir(start) {
+  try {
+    // Guarded require: the established idiom here for a dependency whose
+    // absence must degrade rather than crash (see the factory comment below).
+    const { describeTree } = require('./worktree-guard');
+    const info = describeTree(start);
+    if (!info || !info.linked || !info.mainTree) return null;
+    const candidate = path.join(info.mainTree, '.claude', 'workstream');
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+      return candidate;
+    }
+  } catch { /* not a worktree, or the guard is unavailable — use the walk */ }
+  return null;
+}
+
+/**
+ * Find the canonical .claude/workstream/ directory for `startDir`.
+ *
+ * Resolution order, and the order matters: the linked-worktree redirect runs
+ * FIRST, because the defect being fixed is precisely that the local copy wins.
+ * Checking locally first would reproduce it.
  */
 function findWorkstreamDir(startDir) {
-  let dir = path.resolve(startDir || process.cwd());
+  const start = path.resolve(startDir || process.cwd());
+
+  const canonical = canonicalWorkstreamDir(start);
+  if (canonical) return canonical;
+
+  let dir = start;
   for (let depth = 0; depth < 10; depth++) {
     const candidate = path.join(dir, '.claude', 'workstream');
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
@@ -1014,7 +1131,15 @@ function findWorkstreamDir(startDir) {
     if (parent === dir) break;
     dir = parent;
   }
-  throw new Error('Could not find .claude/workstream/ directory');
+  // Throwing (rather than returning `start` the way findRepoRoot does on a
+  // miss) is the deliberate choice for this resolver: every caller writes
+  // state, and a silent wrong answer here corrupts the queue. The two
+  // resolvers in this file answer different questions and are allowed to
+  // differ — but each states its policy rather than inheriting one by copy.
+  throw new Error(
+    `Could not find .claude/workstream/ directory (searched up from ${start}). ` +
+    'If this is a linked git worktree, the primary tree has no workstream dir either.'
+  );
 }
 
 // ─── Repo Root Finder ──────────────────────────────────────────────────────
@@ -1109,6 +1234,37 @@ function makeEventEmitter() {
       /* swallow per AS-23 */
     }
   };
+}
+
+/**
+ * The real payload of an event, following a spill to blobs/ when there was one.
+ *
+ * core/events.js replaces any payload over PAYLOAD_INLINE_CAP_BYTES (2 KB) with
+ * a `{payload_ref, payload_hash}` stub and writes the content to
+ * `events/blobs/<sha>.json`. Every reader that reaches for a payload FIELD
+ * rather than just the envelope has to undo that, and until WS-578 not one did
+ * — `core/render-events.js` prints `blob:<ref>` and everything else silently
+ * read `undefined`.
+ *
+ * That is a quiet, size-dependent data loss: short events read fine and long
+ * ones come back empty, so the failure hides until something important is
+ * verbose. It surfaced when a migrated 1,629-character friction entry rendered
+ * as `detail: ""` while seven shorter ones beside it were perfect.
+ *
+ * Returns the inline payload unchanged when there is no spill, and an empty
+ * object when the blob cannot be read — never the stub, which is the shape
+ * that reads as "this event has no content".
+ */
+function resolveEventPayload(workstreamDir, ev) {
+  const p = (ev && ev.payload) || {};
+  if (!p.payload_ref) return p;
+  try {
+    const blob = path.join(workstreamDir, 'events', p.payload_ref);
+    const inner = JSON.parse(fs.readFileSync(blob, 'utf8'));
+    return (inner && typeof inner === 'object') ? inner : {};
+  } catch {
+    return {};
+  }
 }
 
 // Loads { appendEvent, ensureCommandId } from core/events + core/composition with
@@ -1307,6 +1463,7 @@ module.exports = {
   serializeYAML,
   patchYAMLFile,
   upsertYAMLScalarField,
+  resolveEventPayload,
   isUnsetYAMLScalar,
   readYAMLFile,
   writeFileAtomic,

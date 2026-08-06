@@ -135,16 +135,23 @@ function validateArchetypeBundle(bundle, opts) {
     }
   }
 
-  // archetype / stage: optional scalar strings.
+  // archetype / stage / resolved_at: optional scalar strings.
+  //
+  // WS-560: these are "optional", and in YAML the way you write an optional
+  // field you have not filled in yet is `resolved_at: null` — which is exactly
+  // what the bundle template and HomeBase's own .cwos-onboarding.yaml do. A
+  // `!== undefined` guard counts that explicit null as PRESENT and then fails
+  // it for not being a string, so writing the field the documented way was an
+  // error. `!= null` covers both absent and explicitly-null.
   for (const key of ['archetype', 'stage', 'resolved_at']) {
-    if (bundle[key] !== undefined && typeof bundle[key] !== 'string') {
+    if (bundle[key] != null && typeof bundle[key] !== 'string') {
       errors.push(`${key} must be a string when present`);
     }
   }
 
   // tiers: optional plain object (prog-id -> tier).
-  if (bundle.tiers !== undefined
-      && (typeof bundle.tiers !== 'object' || bundle.tiers === null || Array.isArray(bundle.tiers))) {
+  if (bundle.tiers != null
+      && (typeof bundle.tiers !== 'object' || Array.isArray(bundle.tiers))) {
     errors.push('tiers must be an object when present');
   }
 

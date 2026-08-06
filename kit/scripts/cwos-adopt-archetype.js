@@ -28,8 +28,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readYAMLFile, writeFileAtomic } = require('./lib/cwos-utils.js');
+const { readYAMLFile, writeFileAtomic, makeEventEmitter } = require('./lib/cwos-utils.js');
 const tm = require('./lib/tier-mapper.js');
+
+const emitEvent = makeEventEmitter();
 
 function readFlag(args, name) {
   const i = args.indexOf(`--${name}`);
@@ -211,6 +213,11 @@ function cmdApply(args) {
   const raw = fs.readFileSync(onboardingPath, 'utf8');
   const patched = patchOnboarding(raw, archetype, stage, bundle);
   writeFileAtomic(onboardingPath, patched);
+  // WS-560 (INV-028): the resolved archetype bundle decides which programs,
+  // engines and personas a repo installs. Applying one is a config mutation.
+  emitEvent('T12:program-management', 'archetype-bundle-applied', {
+    onboarding: path.basename(onboardingPath),
+  });
 
   writeJson({ ok: true, target: onboardingPath, bundle });
 }

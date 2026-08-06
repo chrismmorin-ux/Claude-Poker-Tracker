@@ -148,7 +148,7 @@ programs:
     name: Launch Readiness
     status: NEW
     tier: active
-    health_score: 3
+    health_score: 2
     last_run_date: null
     founder_priority: 2
   - id: methodology-integrity
@@ -176,6 +176,6 @@ programs:
     name: Strategy of Record
     status: NEW
     tier: active
-    health_score: 0
+    health_score: null
     last_run_date: null
-    founder_priority: 1
+    founder_priority: 3

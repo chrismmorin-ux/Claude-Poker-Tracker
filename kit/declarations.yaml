@@ -1,0 +1,157 @@
+# kit/declarations.yaml — declared mechanisms that gate behavior (WS-562)
+#
+# WHY THIS FILE EXISTS
+#
+# SPR-193 turned out to be one bug class wearing three hats: something is
+# DECLARED, the system reports success, and no consumer ever reads the
+# declaration — so it fails open, silently, indefinitely.
+#
+#   WS-561  closure fields declared as null; the write guard tested text
+#           presence rather than value, so the write no-opped and returned ok.
+#   WS-559  merge_strategy declared on 394 MANIFEST rows; read 32x on the adopt
+#           path and 0x on the upgrade path. `additive` and `skip-if-exists`
+#           have been inert on every upgrade ever run.
+#   WS-558  the engine registry materializes entries for engines never
+#           installed; the gate then correctly refuses them.
+#   WS-560  the queue index omitted the very fields its consumers filter on.
+#
+# Plus the WS-532 worktree guard exiting 0 into a swallowing emitter, and three
+# git hooks stamping a path that does not exist in a worktree. Six instances.
+#
+# The common failure is not a coding error. It is that CWOS had no mechanism
+# asserting that a declaration it ships is actually consumed. Declarations
+# accumulate, consumers drift away from them, and nothing notices — because the
+# absence of a consumer produces no error. It produces silence.
+#
+# HOW THIS FILE IS READ
+#
+# `cwos-declaration-liveness.js` enforces it at kit-publish time (inside
+# cwos-hash-manifest.js, alongside the INV-064 dependency gate — same place,
+# same release-blocking posture) and as INV-068 in cwos-verify.js.
+#
+# Values are DISCOVERED from `declared_in`, never listed here. A value someone
+# adds to kit/MANIFEST.yaml tomorrow is subject to the gate immediately, with no
+# edit to this file. That is deliberate: a registry that must be hand-updated to
+# stay correct is the same class of defect it is meant to catch.
+#
+# What this file does declare is the part no scanner can infer: WHERE a
+# declaration lives and WHO is obliged to consume it.
+#
+# WAIVERS ROT LOUDLY
+#
+# Every waiver requires `tracked_by` and `expires`. An expired waiver is itself
+# a violation. A waiver with no expiry would reproduce the disease — a declared
+# exemption nobody ever reads again.
+
+version: 1
+
+declarations:
+  - id: manifest-merge-strategy
+    summary: >-
+      How an install path reconciles a file the kit ships with the copy the
+      adopted repo already has. Declared on every row of kit/MANIFEST.yaml.
+    declared_in: kit/MANIFEST.yaml
+    key: merge_strategy
+    kind: enum
+    # Every path that installs or refreshes kit files must interpret the
+    # strategy. All three do as of WS-559 (2026-08-02): the upgrade path honours
+    # skip-if-exists by diverting to a `skipped` bucket and additive by merging
+    # in place, and cwos-kit-upgrade.js reports the outcome per strategy so the
+    # founder can tell a file left alone from a file the upgrade missed.
+    consumers:
+      - kit/scripts/cwos-adopt-install.js
+      - kit/scripts/cwos-migrate.js
+      - kit/scripts/cwos-kit-upgrade.js
+    # An enum that gates file installation is exhaustive by nature: a consumer
+    # that silently ignores `skip-if-exists` overwrites a file the manifest
+    # promised to preserve.
+    exhaustive: true
+    # No waivers. Two consumer-scoped ones lived here between WS-562 and WS-559
+    # (2026-08-01 → 2026-08-02), recording that cwos-migrate.js read only
+    # `preamble-replace` and cwos-kit-upgrade.js read nothing. Both were removed
+    # when WS-559 landed rather than left to expire, which is the whole point of
+    # a dated waiver: it names a defect and dies with it.
+    #
+    # The gate's first run also found kit/MANIFEST.yaml row 3218 declaring
+    # `skip_if_exists` with an underscore where all 18 other rows use the hyphen,
+    # so no consumer matched it and the file took the `overwrite` default at
+    # cwos-adopt-install.js:643. WS-562 read that as a clobber and corrected the
+    # row to `skip-if-exists`; WS-559 corrected it again, to `overwrite`, after
+    # checking what the file actually is. kit/templates/cwos-health.yaml is the
+    # blank template `cwos-health-contract init` copies FROM
+    # (cwos-health-contract.js:41) to scaffold .cwos-health.yaml — the founder
+    # edits the scaffolded copy and never this one. It is kit machinery, so
+    # overwrite is correct and template improvements keep reaching adopted repos.
+    # Founder decision, 2026-08-02.
+
+  - id: manifest-install-phase
+    summary: >-
+      When a shipped file is installed — with the M1 core bundle, or later when
+      the founder asks for the deferred group.
+    declared_in: kit/MANIFEST.yaml
+    key: install_phase
+    kind: enum
+    # enum, not membership: cwos-adopt-install.js:414-416 branches on the
+    # literal to build two buckets, and anything matching neither bucket is in
+    # no bucket — it is not installed at all. That makes an unread value here
+    # strictly worse than a wrong default, so every value must have a reader.
+    consumers:
+      - kit/scripts/cwos-adopt-install.js
+      - kit/scripts/cwos-kit-health.js
+    # No waivers. The gate's first run on this declaration found two rows
+    # declaring `install_phase: immediate`, a value neither filter matches:
+    # kit/scripts/cwos-health-contract.js and kit/templates/cwos-health.yaml
+    # were silently never installed in any adopted repo, and cwos-kit-health.js
+    # (which treats non-deferred as expected-present) then reported them as a
+    # gap. Both rewritten to `m1`, which is what `immediate` was reaching for.
+
+  - id: manifest-capability
+    summary: >-
+      The capability tier a shipped file belongs to (ADR-016). Gates whether a
+      repo at a given tier installs the file at all.
+    declared_in: kit/MANIFEST.yaml
+    key: capability
+    # membership, NOT enum: cwos-adopt-install.js:143 is
+    # `enabledCapabilities.has(entry.capability)` — a set test against a set
+    # computed elsewhere. No value literal appears at the call site and none
+    # should; adding one would be the bug. lib/capability-map.js holds the
+    # values in CAPABILITY_ORDER, which is why key matching had to become
+    # case-insensitive — the source of truth for this enum spells it in caps.
+    kind: membership
+    consumers:
+      - kit/scripts/cwos-adopt-install.js
+      - kit/scripts/lib/capability-map.js
+
+  - id: manifest-install-group
+    summary: >-
+      Which deferred bundle a file belongs to, so the founder can install one
+      group without the rest.
+    declared_in: kit/MANIFEST.yaml
+    key: install_group
+    kind: membership   # cwos-adopt-install.js:1222 groups by the value, never branches on it
+    consumers:
+      - kit/scripts/cwos-adopt-install.js
+
+  - id: manifest-level
+    summary: >-
+      Historical L1-L5 tier. Deprecated as runtime state by ADR-016 but still
+      the fallback when a row lacks `capability`.
+    declared_in: kit/MANIFEST.yaml
+    key: level
+    # membership: the live consumption is a lookup-table read at
+    # cwos-adopt-install.js:145 — `CAPABILITY_ORDER[LEVEL_NUM[entry.level]-1]`.
+    # Declaring this `enum` reported L2 (161 rows) and L5 (6 rows) dead, which
+    # was wrong twice over: the "readers" it credited for L1/L3/L4 were a CLI
+    # default (`config.level = 'L3'`) and a `.cwos-version` field, neither of
+    # them a manifest-entry read at all.
+    kind: membership
+    consumers:
+      - kit/scripts/cwos-adopt-install.js
+
+  # NOT DECLARED: `category`. The coverage report lists it (16 values over 399
+  # rows) and it should keep listing it. Only one value gates behavior —
+  # cwos-migrate.js:523 `entry.category === 'scripts'` — and the other 15 are
+  # descriptive labels. Declaring it `enum` would manufacture 15 false dead
+  # values; declaring it `membership` would claim governance it does not have.
+  # A key that is metadata rather than mechanism belongs in the coverage
+  # report, visible and ungoverned, which is what that report is for.

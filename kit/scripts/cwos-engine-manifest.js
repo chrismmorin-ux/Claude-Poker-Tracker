@@ -58,7 +58,10 @@ const path = require('path');
 const {
   parseYAML, readYAMLFile, serializeYAML, writeFileAtomic,
   findWorkstreamDir, todayISO, withFileLock,
+  makeEventEmitter,
 } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 const GRANDFATHER_DATE = '2026-05-07';
 const DEFAULT_MIN_BYTES = 1000;
@@ -124,6 +127,17 @@ function saveManifest(manifestPath, manifest) {
   withFileLock(lockPath, () => {
     const yaml = serializeYAML(manifest);
     writeFileAtomic(manifestPath, yaml + (yaml.endsWith('\n') ? '' : '\n'));
+  // WS-560 (INV-028): the run manifest is what the WS-305 completion gate reads
+  // to decide whether an engine run may emit engine_run_completed.
+  // T7:engines is strict — the payload MUST carry a `type` matching a schema
+  // under core/schemas/payloads/engines/, and a missing one is fatal. Since
+  // makeEventEmitter swallows throws per AS-23, getting this wrong would not
+  // fail loudly; it would produce a script that looks instrumented and records
+  // nothing. Schema: engine_manifest_written.json.
+  emitEvent('T7:engines', 'engine-manifest-written', {
+    type: 'engine_manifest_written',
+    manifest: path.basename(manifestPath),
+  });
   }, { ownerLabel: 'engine-manifest', maxWaitMs: 10000 });
 }
 

@@ -1,0 +1,152 @@
+# Stage Detection Signals — repo signals that imply minimum stage
+# Canonical reference: docs/STAGES.md
+# Stage definitions: kit/data/stages.yaml
+# Consumed by: kit/scripts/cwos-stage-detect.js (WS-251)
+# Generated: 2026-04-30 (WS-248 / SPR-095). Restructured 2026-05-03 (SPR-112)
+# to flatten detection branches — cwos-utils YAML parser cannot represent
+# `- key:\n    nested_key:` deeper than 2 levels (drops the outer key).
+# New shape: each detection rule is a flat object with a `type:` discriminator.
+
+schema_version: 2
+last_updated: "2026-05-03"
+
+# Threshold rule: **single-hit fires the implication**. Signals are narrow
+# enough that single-hit doesn't false-positive in practice. Founder always
+# retains override (note exception in system/context.md).
+
+signals:
+  - id: payment-processing
+    description: "Repo integrates a payment processor"
+    detections:
+      - type: source_imports
+        packages: [stripe, square, braintree, adyen, paypal-sdk, "@stripe/stripe-js"]
+      - type: file_glob
+        pattern: "**/webhooks/{stripe,square,braintree,adyen,paypal}.{js,ts,py,rb,go}"
+    implies_stage_min: S3
+    # implies_stage_min_non_commercial intentionally omitted — not applicable to non-commercial
+    rationale: "Payment integration means real money is being moved or about to be — Stage 3+ regulatory + reliability posture required"
+
+  - id: live-deploy-url
+    description: "README points at a live production deployment"
+    detections:
+      - type: readme_url
+        scheme: https
+        excludes: ["localhost*", "127.0.0.1", "*.local", "example.com", "example.org", "staging.*", "*.staging.*", "*.dev", "*.test"]
+        requires_dns_resolves: true
+    implies_stage_min: S4
+    implies_stage_min_non_commercial: N2
+    rationale: "Live URL = customers can reach the product = operating posture"
+
+  - id: recent-deploys
+    description: "Active deploy cadence in last 30 days"
+    detections:
+      - type: git_log
+        on_branch: ["main", "master"]
+        within_days: 30
+        commit_msg_matches: "(?i)\\b(deploy|release)\\b"
+        min_count: 1
+      - type: file_grep
+        files: [".github/workflows/*.yml", ".gitlab-ci.yml", ".circleci/config.yml"]
+        pattern: "(?i)deploy.*on:.*tags"
+    implies_stage_min: S4
+    implies_stage_min_non_commercial: N2
+    rationale: "Recent deploys indicate operating posture; CI deploy-on-tag is operating infrastructure"
+
+  - id: telemetry-analytics
+    description: "Repo imports telemetry / analytics SDK"
+    detections:
+      - type: source_imports
+        packages: [segment, "@segment/*", mixpanel, "@mixpanel/*", posthog, "posthog-js", amplitude, "@amplitude/*", "@google-analytics/data", datadog-rum, "@datadog/browser-rum", honeycomb, sentry, "@sentry/*"]
+      - type: file_glob
+        pattern: "**/{telemetry,analytics,instrumentation}.{js,ts,py,rb,go}"
+    implies_stage_min: S3
+    implies_stage_min_non_commercial: N2
+    rationale: "Telemetry implies the founder is measuring real user behavior — Stage 3+ posture"
+
+  - id: multi-tenant-data
+    description: "Schema defines multi-tenant boundary"
+    detections:
+      - type: schema_table_name_matches
+        schema_files: ["**/schema.prisma", "**/migrations/**.sql", "**/models.py", "**/models/*.{ts,js}"]
+        pattern: "(?i)\\b(organization|tenant|workspace|team|account)\\b"
+        requires_fk_to_user_table: true
+    implies_stage_min: S4
+    # implies_stage_min_non_commercial intentionally omitted
+    rationale: "Multi-tenancy is operating-level data isolation concern"
+
+  - id: customer-support
+    description: "Repo surfaces customer-support contact or ticketing"
+    detections:
+      - type: file_grep
+        files: ["README.md", "**/contact.{md,html,tsx,jsx}", "**/support.{md,html}"]
+        pattern: "(?i)\\b(support|help|contact)@[a-z0-9.-]+\\.[a-z]{2,}"
+      - type: schema_table_name_matches
+        schema_files: ["**/schema.prisma", "**/migrations/**.sql", "**/models.py"]
+        pattern: "(?i)\\b(tickets?|support_tickets?|issues_user|customer_inquiries)\\b"
+    implies_stage_min: S4
+    # implies_stage_min_non_commercial intentionally omitted
+    rationale: "Customer-support tooling implies real customers, real operations"
+
+  - id: released-semver
+    description: "Repo has released v1.0.0 or higher"
+    detections:
+      - type: git_tag_matches
+        pattern: "^v?[1-9]\\d*\\.\\d+\\.\\d+$"
+    implies_stage_min: S4
+    implies_stage_min_non_commercial: N3
+    rationale: "v1.0+ is the public-stable signal; commercial = operating, non-commercial = stable-reference"
+
+  - id: large-test-suite
+    description: "Test suite indicates beyond-MVP development"
+    detections:
+      - type: file_count
+        globs: ["**/*.test.{js,ts,py,rb,go}", "**/test_*.py", "**/*_test.go", "**/spec/**/*_spec.rb", "**/__tests__/**/*"]
+        min: 100
+      - type: test_function_count
+        min: 500
+        count_method: "AST scan for test/it/describe/def test_"
+    implies_stage_min: S2
+    implies_stage_min_non_commercial: N2
+    rationale: ">100 test files or >500 tests means the founder is past throw-away MVP code"
+
+  - id: production-feature-flags
+    description: "Repo uses production feature-flag SDK"
+    detections:
+      - type: source_imports
+        packages: [launchdarkly, "@launchdarkly/*", statsig, "@statsig/*", unleash, "unleash-client", flagsmith, "@growthbook/*", split, "@splitsoftware/*"]
+      - type: file_grep
+        files: ["**/feature-flags.{yaml,yml,json}", "**/flags.{yaml,yml,json}"]
+        pattern: "(?i)(active|enabled).*:.*true"
+    implies_stage_min: S4
+    # implies_stage_min_non_commercial intentionally omitted
+    rationale: "Production feature flags imply operating-level deploy strategy with rollout control"
+
+  - id: customer-auth
+    description: "Repo has customer-facing authentication"
+    detections:
+      - type: schema_table_name_matches
+        schema_files: ["**/schema.prisma", "**/migrations/**.sql", "**/models.py"]
+        pattern: "(?i)^(users?|accounts?)$"
+        requires_login_field: true
+      - type: source_imports
+        packages: [next-auth, "@auth/core", clerk, "@clerk/*", auth0, "@auth0/*", supabase-auth, firebase-auth, lucia-auth, devise]
+    implies_stage_min: S3
+    # implies_stage_min_non_commercial intentionally omitted
+    rationale: "Customer auth means real user accounts; minimum S3, paired with deploy URL signal escalates to S4"
+    pair_escalation_with: live-deploy-url
+    pair_escalation_to: S4
+
+# ---------------------------------------------------------------------------
+# Detection scope rules
+# ---------------------------------------------------------------------------
+
+scope_include: ["src/**", "app/**", "lib/**", "packages/**", "apps/**", "services/**", "**/*.{js,ts,jsx,tsx,py,rb,go,sql,prisma,yaml,yml,json,md,html}"]
+scope_exclude: ["node_modules/**", ".git/**", "dist/**", "build/**", "coverage/**", "**/*.test.*", "**/__tests__/**", "fixtures/**", "test-data/**"]
+
+# ---------------------------------------------------------------------------
+# Mismatch behavior
+# ---------------------------------------------------------------------------
+
+on_mismatch_severity: medium
+on_mismatch_persistence_threshold_days: 30
+on_mismatch_description: "When detected stage_min > declared stage, /audit emits a stage-mismatch finding. Founder either updates declaration via /stage declare <new>, or notates the exception in system/context.md. Mismatch persisting > 30 days without action is itself an /audit finding (escalation, not yet implemented). AS-104 (from ADR-035) tracks this."

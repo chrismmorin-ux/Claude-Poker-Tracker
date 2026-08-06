@@ -2,12 +2,15 @@
 /**
  * cwos-session-recovery — Detect and recover abandoned sessions.
  *
- * A session is "abandoned" when its recorded process is provably gone, OR — when
- * that cannot be established — when last_heartbeat is older than
- * session_abandon_timeout_hours (from config.yaml, default 4h). A session whose
- * process is provably RUNNING is never abandoned, including under --force.
- * WS-351: the clock alone got this wrong in both directions. See
- * `sessionOwnerVerdict` in lib/cwos-claims.js for what "provably" means here.
+ * A session is abandoned when lib/session-liveness proves its process is gone
+ * (a dead PID, or a heartbeat predating the last boot) — no timeout, because
+ * nothing about a dead process becomes truer by waiting. Failing proof, a
+ * heartbeat older than session_abandon_timeout_hours (config.yaml, default 4h)
+ * is treated as suspicion and still honours that timeout.
+ *
+ * Until 2026-08-03 the timeout was the ONLY test, and `pid` was read off the
+ * session record and thrown away. Cost: 14 dead records across four repos, one
+ * of them fencing WS-567/569/574/575 with hours left on its clock.
  *
  * Recovery synthesizes handoff notes from observable state (git log, sprint
  * progress, queue changes) so no context is lost even when /session-end is
@@ -40,7 +43,7 @@ const {
   todayISO,
   withFileLock,
 } = require('./lib/cwos-utils');
-const { sessionOwnerVerdict } = require('./lib/cwos-claims');
+const { classifySession, STALE_HEARTBEAT } = require('./lib/session-liveness');
 
 // Session-recovery is high-frequency (fires on every session-start hook);
 // the liveness-stamp write at line 78 is intentionally NOT emitted —
@@ -111,7 +114,8 @@ const CLI = {
     auto: { type: 'boolean', describe: 'recover automatically (used by the SessionStart hook)' },
     quiet: { type: 'boolean', describe: 'silent unless recovery actually happened' },
     'dry-run': { type: 'boolean', describe: 'compute and report, but write nothing' },
-    force: { type: 'boolean', describe: 'recover even if still within the abandon timeout (never touches a session whose process is running)' },
+    force: { type: 'boolean', describe: 'act on a stale heartbeat without waiting out the abandon timeout (never touches a session proven alive)' },
+    'no-hook-stamp': { type: 'boolean', describe: 'do not stamp .hooks-liveness.yaml — for callers that are NOT the SessionStart hook (cwos-session-sweep)' },
     verbose: { type: 'boolean', describe: 'print stack traces on failure' },
     'workstream-dir': { type: 'string', placeholder: 'path', describe: 'override workstream dir discovery' },
   },
@@ -146,15 +150,25 @@ function main() {
   //
   // WS-228 / FAIL-007 S1: stamp acquisition is mutex-protected against
   // concurrent fires from cwos-heartbeat.js.
-  const livenessLockPath = path.join(wsDir, '.hooks-liveness.yaml.lock');
-  try {
-    withFileLock(
-      livenessLockPath,
-      () => stampHookLiveness(wsDir, 'last_session_recovery_hook_at', !quiet),
-      { maxWaitMs: 2000, ownerLabel: 'recovery' }
-    );
-  } catch (err) {
-    if (!quiet) process.stderr.write(`session-recovery: stamp lock contention — ${err.message}\n`);
+  //
+  // --no-hook-stamp exists because the stamp means "the SessionStart hook fired
+  // in THIS repo", and cwos-session-sweep is not that hook. A fleet sweep
+  // spawning recovery in 17 repos every 15 minutes would stamp all 17 and hold
+  // INV-026 green forever, including in repos whose hooks are dead — the exact
+  // failure WS-564 fixed ("stamping this at entry meant a hook that resolved
+  // nobody still certified liveness, and INV-026 read GREEN over data that had
+  // been dead for two days"), reintroduced at fleet scale.
+  if (!values['no-hook-stamp']) {
+    const livenessLockPath = path.join(wsDir, '.hooks-liveness.yaml.lock');
+    try {
+      withFileLock(
+        livenessLockPath,
+        () => stampHookLiveness(wsDir, 'last_session_recovery_hook_at', !quiet),
+        { maxWaitMs: 2000, ownerLabel: 'recovery' }
+      );
+    } catch (err) {
+      if (!quiet) process.stderr.write(`session-recovery: stamp lock contention — ${err.message}\n`);
+    }
   }
 
   // WS-228 / FAIL-007 S3: SessionStart hook + /session-start Step 0b can race.
@@ -191,43 +205,28 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
     return 0;
   }
 
-  const nowMs = Date.now();
-  const timeoutMs = timeoutHours * 60 * 60 * 1000;
+  // Recovery only ever runs against a workstream dir it found on THIS machine's
+  // filesystem, so a record with no `host` was almost certainly written here —
+  // that is the independent evidence session-liveness wants before it will use
+  // a hostless record's pid. An explicit foreign `host` still wins over this.
+  const classifyOpts = { timeoutHours, assumeLocal: true };
 
-  // WS-351: abandonment used to be read off the clock ALONE, which got it wrong in
-  // both directions on the same run. A session registered 40s after a reboot whose
-  // process was already gone stayed "active" for the whole timeout window — and the
-  // documented escape hatch for that, `--force`, swept every active session
-  // including the live one issuing the command. Ask the OS first; the timer is the
-  // fallback for when the OS cannot answer.
   const abandoned = [];
   for (const session of active) {
-    const heartbeatMs = parseHeartbeatMs(session);
-    const ageMs = heartbeatMs === null ? Infinity : (nowMs - heartbeatMs);
-    const owner = sessionOwnerVerdict(session.raw);
+    const verdict = classifySession(session, classifyOpts);
 
-    // A running process is a veto on the destructive path. `--force` exists to
-    // recover a session INSIDE its timeout; it was never meant to close one that
-    // is still working, and recovery is always invoked from a session, so without
-    // this the flag is unsafe whenever anyone is at the keyboard.
-    if (owner === 'live') continue;
+    // Proof of death (dead pid, or a heartbeat predating boot) needs no
+    // timeout and no --force: the process is gone. Waiting out a 4h timeout on
+    // a corpse is what left WS-567/569/574/575 fenced on 2026-08-03.
+    // Suspicion (a stale heartbeat with an unreadable pid) still honours the
+    // timeout, or --force to skip it.
+    // `unknown` — a foreign host, or hostless where we lack local evidence — is
+    // never acted on, by --force or otherwise. The owning node's sweep does it.
+    const act = verdict.proof
+      || verdict.verdict === STALE_HEARTBEAT && (force || verdict.age_hours === null || verdict.age_hours > timeoutHours);
 
-    // A dead process is proof, and proof does not wait for a timer.
-    if (owner === 'dead') {
-      abandoned.push({
-        ...session,
-        age_hours: ageMs === Infinity ? null : ageMs / (60 * 60 * 1000),
-        reason: 'dead-process',
-      });
-      continue;
-    }
-
-    if (force || ageMs > timeoutMs) {
-      abandoned.push({
-        ...session,
-        age_hours: ageMs === Infinity ? null : ageMs / (60 * 60 * 1000),
-        reason: 'timeout',
-      });
+    if (act) {
+      abandoned.push({ ...session, age_hours: verdict.age_hours, verdict });
     }
   }
 
@@ -240,13 +239,7 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
   if (!auto) {
     process.stdout.write(`session-recovery: ${abandoned.length} abandoned session(s) detected:\n`);
     for (const s of abandoned) {
-      // Say WHICH evidence condemned it. The report is what the founder reads before
-      // deciding to run --auto, and "0.2h stale" for a session whose process is gone
-      // is the reading that made this bug survive.
-      const ageStr = s.reason === 'dead-process'
-        ? `process ${s.raw && s.raw.pid != null ? s.raw.pid : '?'} is gone`
-        : (s.age_hours === null ? 'no heartbeat' : `${s.age_hours.toFixed(1)}h stale`);
-      process.stdout.write(`  - ${s.id} (${ageStr})\n`);
+      process.stdout.write(`  - ${s.id} [${s.verdict.verdict}] ${s.verdict.reason}\n`);
     }
     process.stdout.write('\nRun with --auto to recover, or manually close via /session-end.\n');
     return 1;
@@ -260,7 +253,7 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
   if (!quiet) {
     process.stdout.write(`session-recovery: recovered ${abandoned.length} abandoned session(s).\n`);
     for (const s of abandoned) {
-      process.stdout.write(`  - ${s.id} → status: abandoned\n`);
+      process.stdout.write(`  - ${s.id} → status: abandoned (${s.verdict.verdict}: ${s.verdict.reason})\n`);
     }
   }
 
@@ -281,6 +274,10 @@ function scanActiveSessions(sessionsDir) {
         path: f,
         started_at: data.started_at,
         last_heartbeat: data.last_heartbeat,
+        // pid + host feed session-liveness. Both were previously dropped on the
+        // floor here, which is why heartbeat age was the only available test.
+        pid: data.pid,
+        host: data.host,
         claimed_items: Array.isArray(data.claimed_items) ? data.claimed_items : [],
         goals: Array.isArray(data.goals) ? data.goals : [],
         raw: data,
@@ -339,9 +336,11 @@ function recoverSession(wsDir, session, opts) {
   emitEvent('T15:session-end', 'session-abandoned', {
     session_id: session.id,
     path: path.relative(process.cwd(), session.path).replace(/\\/g, '/'),
-    // Which evidence closed it. Was hardcoded 'timeout', which is now only one of
-    // two answers — and the one that is NOT true of a crash (WS-351).
-    reason: session.reason || 'timeout',
+    // Was 'timeout' unconditionally, back when a timeout was the only test.
+    // The verdict distinguishes proof of death from mere suspicion, which is
+    // exactly what someone auditing an unexpected recovery needs to see.
+    reason: session.verdict ? session.verdict.verdict : 'timeout',
+    detail: session.verdict ? session.verdict.reason : null,
   });
 
   // 4. Remove lock file.
@@ -386,7 +385,13 @@ function releaseClaimedItems(wsDir, sessionId, claimedIds) {
     const owner = String(claimedBy || '').trim().replace(/^["']|["']$/g, '');
     if (!owner || owner === 'null' || owner === '~') continue;   // nothing held
     if (sessionId && owner !== sessionId) continue;              // someone else's
-    patchYAMLFile(itemPath, { claimed_by: '', claimed_at: '' });
+    // `null`, not `''` — patchYAMLFile serializes '' as `claimed_by: ""`, the one
+    // shape that used to read back as a REAL value, making a released item
+    // permanently unclaimable. Matches cwos-claims.releaseItems, which is the
+    // other release path and already wrote null. The read side no longer cares
+    // (isUnsetYAMLScalar accepts both), but a release should not leave behind a
+    // shape whose emptiness is only legible to one parser.
+    patchYAMLFile(itemPath, { claimed_by: null, claimed_at: null });
   }
 }
 

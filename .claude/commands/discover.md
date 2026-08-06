@@ -359,3 +359,7 @@ If no capabilities are in `intended` state, replace the body with: `All capabili
    - Always include "session startup" and "more files" (these apply to every repo)
    - Every trade-off must have a `→` reassurance that addresses the specific concern with a concrete mitigation, not a dismissal
 7. **Never minimize real concerns.** If the repo has a sophisticated existing system (like 10 agents and 4 programs), acknowledge that CWOS adds complexity on top of something that already works. The value proposition for mature repos is cross-repo visibility and standardization, not "we're better than what you have."
+
+## Shadow-event envelope
+
+`node kit/scripts/cwos-event.js append command_completed --track T6:workstream --tag /discover --payload '{"command":"/discover"}'` — non-fatal; never gate output on it.

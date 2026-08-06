@@ -32,6 +32,7 @@ const { capabilitiesForLevel } = require('./lib/capability-map');
 const { ensureCapabilityDirs, expectedCapabilityDirs, enabledCapabilities } = require('./lib/cwos-kit-dirs');
 const { corpusHash } = require('./lib/cwos-corpus-hash');
 const { mergePreamble } = require('./lib/preamble-merge');
+const { mergeAdditive, KNOWN_STRATEGIES } = require('./lib/merge-strategy');
 
 // 11 mutation sites across 5 logical phases (schema-migrate, file-update,
 // index-rebuild, snapshot, version-stamp). Emit one phase event at the end
@@ -197,6 +198,10 @@ function main() {
   const classification = classifyFiles(repoPath, homebasePath, fromVersion);
   printClassification(classification);
 
+  // WS-559 Guard C: a declared merge_strategy the code cannot honour. Refuses
+  // ahead of Guard B because a manifest this broken makes the ratio meaningless.
+  assertKnownStrategies(classification);
+
   // WS-547 Guard B: the baseline resolved, but its contents did not. Same
   // refusal, still before any write.
   assertClassificationBaselined(classification, baseline);
@@ -252,7 +257,22 @@ function main() {
 
   // Update files
   updateFiles(repoPath, homebasePath, classification);
-  console.log(`  Files: ${classification.stock.length} overwritten, ${classification.new.length + classification.needsInstall.length} installed, ${classification.customized.length} .kit-update created`);
+  const merged = classification.additiveMerged || [];
+  const sidecars = classification.customized.length - merged.filter(m => !m.unmergedNested.length).length;
+  console.log(`  Files: ${classification.stock.length} overwritten, ${classification.new.length + classification.needsInstall.length} installed, ${sidecars} .kit-update created`);
+  if ((classification.skipped || []).length) {
+    console.log(`  Preserved: ${classification.skipped.length} (seeded once, left as yours)`);
+  }
+  if (merged.length) {
+    const fields = merged.reduce((n, m) => n + m.added.length, 0);
+    console.log(`  Merged: ${merged.length} config(s) gained ${fields} new field(s) without losing your values`);
+    for (const m of merged) {
+      if (m.added.length) console.log(`    ${m.destination}: +${m.added.join(', ')}`);
+      if (m.unmergedNested.length) {
+        console.log(`    ${m.destination}: ${m.unmergedNested.length} nested field(s) need a look — see ${m.destination}.kit-update`);
+      }
+    }
+  }
 
   // WS-403: backfill procedural directory sets (WORKSTREAM_SUBDIRS +
   // DOCS_EVOLUTION_SUBDIRS) the upgrade path would otherwise skip. Runs AFTER
@@ -349,6 +369,7 @@ function detectState(repoPath, homebasePath, fromVersion) {
 // a way to skip the check.
 
 const EXIT_NO_BASELINE = 3;
+const EXIT_BAD_STRATEGY = 4;
 
 /**
  * Resolve WHERE the baseline for `version` comes from, without reading it.
@@ -456,6 +477,44 @@ function assertClassificationBaselined(classification, baseline) {
 }
 
 /**
+ * Guard C — the manifest declares a strategy the code cannot honour.
+ *
+ * WS-559. The enum was hand-rolled at each call site with an `else` meaning
+ * overwrite, so a typo failed OPEN: `skip_if_exists` with an underscore sat in
+ * kit/MANIFEST.yaml declaring preserve-if-present and doing the opposite, and
+ * nothing anywhere said so. Overwriting a file whose declared intent you could
+ * not parse is the worst available answer — it is unrecoverable, and it is
+ * exactly the outcome the declaration was written to prevent.
+ *
+ * So: refuse, name every offending row, and write nothing. Runs before any
+ * apply. This is the runtime half of the protection; INV-067
+ * (cwos-declaration-liveness.js) is the release-time half, and neither
+ * substitutes for the other — INV-067 gates what HomeBase ships, this gates what
+ * an already-adopted repo will accept.
+ */
+function assertKnownStrategies(classification) {
+  const bad = classification.strategyViolations || [];
+  if (bad.length === 0) return;
+
+  console.error('\nERROR: kit/MANIFEST.yaml declares merge strategies this kit cannot honour.');
+  for (const v of bad) {
+    console.error(`  ${v.source} → ${v.destination}`);
+    console.error(`      merge_strategy: ${JSON.stringify(v.value)}`);
+  }
+  console.error('');
+  console.error(`  Known values: ${KNOWN_STRATEGIES.join(', ')}`);
+  console.error('');
+  // Deliberately unquoted: a quoted literal here would register as a "reader" to
+  // INV-067's proximity scan and manufacture a false green out of an error
+  // message. Prose stays prose.
+  console.error('  Refusing to migrate. Falling back to the overwrite default would clobber');
+  console.error('  whatever the row was written to protect. Nothing was modified.');
+  console.error('');
+  console.error('  Fix: correct the merge_strategy on the row(s) above in HomeBase.');
+  process.exit(EXIT_BAD_STRATEGY);
+}
+
+/**
  * Report scripts that diverged from baseline and are being replaced anyway.
  *
  * WS-557: replacing machinery silently would trade one invisible failure for
@@ -482,7 +541,12 @@ function classifyFiles(repoPath, homebasePath, fromVersion) {
   // reasons used to be indistinguishable — which is defect 3 above. Entries are
   // pushed to both lists: classification behaviour is unchanged, the counter is
   // purely what Guard B reads.
-  const result = { stock: [], customized: [], new: [], needsInstall: [], nullBaseline: [], driftedScripts: [] };
+  // `skipped` and `strategyViolations` are WS-559. See assertKnownStrategies and
+  // the skip-if-exists branch below for what each one means.
+  const result = {
+    stock: [], customized: [], new: [], needsInstall: [], nullBaseline: [],
+    driftedScripts: [], skipped: [], strategyViolations: [],
+  };
 
   const { ok, data: manifest } = readYAMLFile(path.join(homebasePath, 'kit', 'MANIFEST.yaml'));
   if (!ok || !manifest.files) {
@@ -537,6 +601,46 @@ function classifyFiles(repoPath, homebasePath, fromVersion) {
     entry.destination = resolveDestination(entry.destination, systemDir);
     const destPath = path.join(repoPath, entry.destination);
     const srcRelative = entry.source;
+
+    // ── WS-559: the merge_strategy dispatch ────────────────────────────────
+    //
+    // Stated exhaustively, as a switch over every value rather than an if for
+    // the one value that diverts, because "which strategies does the upgrade
+    // path handle?" has to be answerable by reading the upgrade path. It was
+    // not: the answer was none, for 394 rows, and nothing said so.
+    //
+    // skip-if-exists is the value that changes the bucket. It marks per-repo
+    // data seeded once — a claims-policy draft, a design token file, a domain
+    // spec the founder fills in. On disk means it is theirs: the upgrade
+    // neither overwrites it nor writes a sidecar it never asked for. Absent, it
+    // falls through into new/needsInstall and gets installed, which is the
+    // "seeded once" half of the contract. Before this branch existed these
+    // landed in `stock` whenever they still matched baseline and were
+    // overwritten — the exact clobber the strategy exists to prevent. It looked
+    // safe only because "matches baseline" usually implies untouched.
+    // Coincidence, not structure.
+    //
+    // The other three are classified normally and honoured in updateFiles.
+    // An unrecognized value is collected, not thrown, so a bad manifest is
+    // reported whole; assertKnownStrategies then refuses before any write.
+    //
+    // The `|| 'overwrite'` default is for a row that OMITS the field, which is
+    // documented and fine. A row that declares something unrecognized is the
+    // opposite case and must never reach it.
+    const declared = entry.merge_strategy || 'overwrite';
+    switch (declared) {
+      case 'skip-if-exists':
+        if (fs.existsSync(destPath)) { result.skipped.push(entry); continue; }
+        break;
+      case 'additive': break;         // merged in place by updateFiles
+      case 'preamble-replace': break; // merged in place by mergePreamble (WS-523)
+      case 'overwrite': break;        // stock replaced, customized sidecarred
+      default:
+        result.strategyViolations.push({
+          source: entry.source, destination: entry.destination, value: declared,
+        });
+        continue;
+    }
 
     // Check if file exists in repo
     if (!fs.existsSync(destPath)) {
@@ -1077,7 +1181,18 @@ function updateFiles(repoPath, homebasePath, classification) {
   // Build existing program ID map for duplicate detection
   const existingPrograms = buildProgramIdMap(repoPath);
 
-  // Stock files: overwrite
+  // Stock files: overwrite.
+  //
+  // WS-559 deliberately leaves this loop alone, including for `additive` rows. A
+  // stock file is byte-identical to its baseline, so there is nothing the
+  // founder wrote to lose — and overwriting is the ONLY way the kit can ever
+  // retire a config key it no longer supports. Routing these through the
+  // additive merger would preserve dead keys forever and buy nothing. The
+  // additive contract binds where it matters, on files the founder has actually
+  // edited; those are `customized`, handled below.
+  //
+  // `skip-if-exists` rows never reach this loop — classifyFiles diverts them to
+  // `skipped` before classification, which is the WS-559 fix.
   for (const entry of classification.stock) {
     const src = path.join(homebasePath, entry.source);
     const dest = path.join(repoPath, entry.destination);
@@ -1127,6 +1242,35 @@ function updateFiles(repoPath, homebasePath, classification) {
       }
       // No marker to merge against — fall through to the sidecar rather than
       // guess which region of the founder's instructions file is ours.
+    }
+
+    // WS-559: `additive` means config-shaped files that should GAIN new kit
+    // fields without resetting what the founder set. Sidecarring them, which is
+    // what happened before, meant the new fields never arrived at all — the
+    // founder does not open .kit-update files, which is the entire reason the
+    // strategy exists.
+    //
+    // The merge is text-level and never removes anything; see lib/merge-strategy.js
+    // for why it is not a parse-and-reserialize. When it cannot cover the whole
+    // change — a field nested under a key the founder already has — the sidecar
+    // is written IN ADDITION to the in-place merge, so the incomplete case keeps
+    // the safety net instead of quietly claiming success.
+    if (entry.merge_strategy === 'additive') {
+      const destAbs = path.join(repoPath, entry.destination);
+      const merged = fs.existsSync(destAbs)
+        ? mergeAdditive(fs.readFileSync(destAbs, 'utf8'), fs.readFileSync(src, 'utf8'), entry.destination)
+        : { ok: false, reason: 'destination missing' };
+      if (merged.ok) {
+        ensureDir(path.dirname(destAbs));
+        fs.writeFileSync(destAbs, merged.content);
+        classification.additiveMerged = classification.additiveMerged || [];
+        classification.additiveMerged.push({
+          destination: entry.destination,
+          added: merged.added,
+          unmergedNested: merged.unmergedNested,
+        });
+        if (!merged.sidecarStillNeeded) continue;
+      }
     }
 
     const dest = path.join(repoPath, entry.destination + '.kit-update');
@@ -1218,9 +1362,18 @@ function createSnapshot(repoPath, classification, programMigrations) {
   const snapshotDir = path.join(repoPath, '.cwos-snapshots', timestamp);
   fs.mkdirSync(snapshotDir, { recursive: true });
 
-  // Snapshot files that will be modified
+  // Snapshot files that will be modified.
+  //
+  // `customized` is here because it is no longer true that customized files are
+  // left untouched. WS-523 began writing CLAUDE.md in place via mergePreamble,
+  // and WS-559 does the same for `additive` configs — both edit a file the
+  // founder authored. An in-place write with no snapshot is not rollback-able,
+  // which is the one guarantee /kit-upgrade makes. Snapshotting the whole bucket
+  // rather than just the merge candidates keeps it correct if a future strategy
+  // also writes in place; the bucket is small by construction.
   const filesToSnapshot = [
     ...classification.stock.map(e => e.destination),
+    ...classification.customized.map(e => e.destination),
     ...programMigrations.map(p => path.relative(repoPath, p.path)),
     '.cwos-version',
   ];
@@ -1271,8 +1424,13 @@ function bootstrapHashes(repoPath, homebasePath, classification) {
     } catch {}
   }
 
-  // Also hash customized files (their current version, not the kit-update)
-  for (const entry of classification.customized) {
+  // Also hash customized files (their current version, not the kit-update) and
+  // skipped ones. WS-559: skipped files used to be classified as `stock` and so
+  // were hashed by the loop above. Diverting them without hashing them here
+  // would silently drop them out of the installed-files baseline that
+  // /kit-upgrade uses to detect local modifications — a file preserved on
+  // purpose must not also become a file nobody is tracking.
+  for (const entry of [...classification.customized, ...(classification.skipped || [])]) {
     const filePath = path.join(repoPath, entry.destination);
     if (!fs.existsSync(filePath)) continue;
     try {
@@ -1380,6 +1538,14 @@ function printClassification(c) {
   for (const e of c.new.slice(0, 5)) console.log(`    ${e.destination}`);
   if (c.new.length > 5) console.log(`    ... and ${c.new.length - 5} more`);
   console.log(`  Missing (will install):    ${c.needsInstall.length}`);
+  // WS-559: name what the upgrade is deliberately NOT touching. A file left
+  // alone and a file the upgrade forgot look identical from the outside, and
+  // the whole point of skip-if-exists is that the founder can tell.
+  if ((c.skipped || []).length > 0) {
+    console.log(`  Preserved (yours, seeded once): ${c.skipped.length}`);
+    for (const e of c.skipped.slice(0, 5)) console.log(`    ${e.destination}`);
+    if (c.skipped.length > 5) console.log(`    ... and ${c.skipped.length - 5} more`);
+  }
 }
 
 function printProgramAnalysis(migrations) {
@@ -1505,10 +1671,14 @@ function ensureDir(dirPath) {
 module.exports = {
   detectState,
   classifyFiles,
+  updateFiles,
+  createSnapshot,
   resolveBaselineSource,
   assertBaselineResolvable,
   assertClassificationBaselined,
+  assertKnownStrategies,
   EXIT_NO_BASELINE,
+  EXIT_BAD_STRATEGY,
   RATIO_MIN_FILES,
   RATIO_REFUSE_ABOVE,
   migrateSchemaV2ToV3,

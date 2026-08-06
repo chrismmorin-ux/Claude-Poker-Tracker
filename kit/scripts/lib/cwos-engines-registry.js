@@ -168,10 +168,20 @@ function inferImpact(fm, id) {
 // additive, not destructive. Returns { aliasesText, engines (object
 // keyed by id) } so writeRegistry can preserve the aliases section
 // from the existing file unchanged.
+//
+// WS-558: "existing entries win" used to be unconditional, which made a wrong
+// skill_path permanent and a phantom entry immortal. Both are the same missing
+// question — does this entry point at a real file? — so it is asked here, once,
+// and each existing entry resolves to keep / repair / prune. See
+// reconcileExistingEntry below for what each outcome means and why.
 function materializeRegistry(workstreamDir, opts = {}) {
   const enginesDir = path.join(workstreamDir, 'engines');
   const commandsDir = opts.commandsDir
     || path.resolve(workstreamDir, '..', 'commands');
+  // Registry skill_paths are repo-relative, so resolving one needs the repo
+  // root: .claude/workstream -> .claude -> repo. Same relationship
+  // lib/cwos-registry-paths.js assumes when the upgrade gate checks these.
+  const repoRoot = opts.repoRoot || path.resolve(workstreamDir, '..', '..');
   const registryPath = path.join(enginesDir, REGISTRY_FILENAME);
 
   const { engines: installed, warnings } = readInstalledEngines(commandsDir);
@@ -189,12 +199,35 @@ function materializeRegistry(workstreamDir, opts = {}) {
     aliasesText = extractAliasesSection(registryPath);
   }
 
-  // Merge: existing entries win for the id-level metadata (caller may
-  // have customized fields), but newly-installed engines that the
-  // registry doesn't know about are added with the heuristic defaults.
-  const merged = Object.assign({}, existingEngines);
+  const scanned = new Map(installed.map(e => [e.id, e]));
+  const merged = {};
+  const repaired = [];
+  const pruned = [];
+
+  for (const [id, entry] of Object.entries(existingEngines)) {
+    const verdict = reconcileExistingEntry(repoRoot, id, entry, scanned.get(id));
+    if (verdict.action === 'prune') {
+      pruned.push({ id, path: verdict.deadPath });
+      warnings.push(
+        `pruned engine "${id}" — skill_path ${verdict.deadPath} resolves to nothing and no ` +
+        `engine file exists at .claude/commands/${id}.md either. A registry entry is a promise ` +
+        `that /engine ${id} works; it will be re-added when the engine is installed.`
+      );
+      continue;
+    }
+    if (verdict.action === 'repair') {
+      repaired.push({ id, from: verdict.deadPath, to: verdict.entry.skill_path });
+      warnings.push(
+        `repaired engine "${id}" — skill_path ${verdict.deadPath} -> ${verdict.entry.skill_path}`
+      );
+    }
+    merged[id] = verdict.entry;
+  }
+
+  // Newly-installed engines the registry doesn't know about, with heuristic
+  // defaults. Unchanged behaviour.
   for (const eng of installed) {
-    if (merged[eng.id]) continue; // existing entry preserved
+    if (merged[eng.id]) continue;
     merged[eng.id] = {
       skill_path: eng.skill_path,
       category: eng.category,
@@ -209,7 +242,76 @@ function materializeRegistry(workstreamDir, opts = {}) {
     if (eng.extends) merged[eng.id].extends = eng.extends;
   }
 
-  return { aliasesText, engines: merged, warnings, addedFromScan: installed.length };
+  return {
+    aliasesText, engines: merged, warnings,
+    addedFromScan: installed.length, repaired, pruned,
+  };
+}
+
+/**
+ * Decide what to do with one entry already in the registry.
+ *
+ *   keep    — its skill_path resolves. Left byte-identical, whatever the path
+ *             looks like. This is what protects a founder's custom engine and
+ *             HomeBase's own registry, whose entries legitimately point into
+ *             engines/ rather than .claude/commands/.
+ *
+ *   repair  — the path is dead but the engine IS installed, so the entry is
+ *             right about the engine and wrong about where it lives. Rewrite
+ *             skill_path only; every other field is the founder's.
+ *
+ *             This is WS-558's actual defect. kit/templates/workstream/engines/
+ *             registry.yaml shipped 8 entries reading engines/standard/<id>.md,
+ *             which is HomeBase's SOURCE layout — adopted repos install engines
+ *             to .claude/commands/<id>.md. Authored in HomeBase, where those
+ *             paths resolve, and never checked against the destinations the
+ *             MANIFEST actually declares. ai-content-ecosystem's 3.8.2 upgrade
+ *             overwrote its registry with that template, produced 8 dead paths
+ *             at once, and the upgrade gate rolled the whole thing back.
+ *
+ *   prune   — dead path, no installed engine. The entry claims /engine <id>
+ *             works when it cannot. Dropping it is what lets the path-resolution
+ *             gate stay strict, which is the only reason it caught this.
+ */
+function reconcileExistingEntry(repoRoot, id, entry, scannedEngine) {
+  if (!entry || typeof entry !== 'object') return { action: 'keep', entry };
+
+  const declared = typeof entry.skill_path === 'string' ? entry.skill_path.trim() : '';
+  // An entry with no skill_path at all is not a path claim — leave it be.
+  if (!declared) return { action: 'keep', entry };
+
+  let resolves = false;
+  try { resolves = fs.statSync(path.join(repoRoot, declared)).isFile(); } catch { resolves = false; }
+  if (resolves) return { action: 'keep', entry };
+
+  // Where the engine would live if it is installed. Prefer the scan, which is
+  // authoritative about the filename (an engine's id comes from frontmatter
+  // `name` and need not match its file). Fall back to the conventional path.
+  //
+  // The fallback is not belt-and-braces, it is the difference between a repair
+  // and a wrong delete. readInstalledEngines only counts a file as an engine if
+  // its frontmatter carries one of the marker fields, and older shipped engines
+  // carry none: ai-content-ecosystem's persona-validator.md, sitting right there
+  // at .claude/commands/, declares only name/description/model/tools. Pruning on
+  // "the scan didn't recognize it" would delete a live engine's entry over a
+  // frontmatter convention it predates. Existence on disk is the honest test,
+  // and it is the same test the upgrade gate applies.
+  const conventional = `.claude/commands/${id}.md`;
+  let target = scannedEngine ? scannedEngine.skill_path : null;
+  if (!target) {
+    let onDisk = false;
+    try { onDisk = fs.statSync(path.join(repoRoot, conventional)).isFile(); } catch { onDisk = false; }
+    if (onDisk) target = conventional;
+  }
+
+  if (target) {
+    return {
+      action: 'repair',
+      deadPath: declared,
+      entry: Object.assign({}, entry, { skill_path: target }),
+    };
+  }
+  return { action: 'prune', deadPath: declared };
 }
 
 // Returns text from start of file through the blank line preceding
@@ -325,11 +427,16 @@ function syncRegistry(workstreamDir, opts = {}) {
   const projected = renderRegistry(materialized);
   let existing = '';
   if (fs.existsSync(registryPath)) existing = fs.readFileSync(registryPath, 'utf8');
-  if (projected === existing) {
-    return { written: false, count, warnings: materialized.warnings, addedFromScan: materialized.addedFromScan };
-  }
+  const outcome = {
+    count,
+    warnings: materialized.warnings,
+    addedFromScan: materialized.addedFromScan,
+    repaired: materialized.repaired || [],
+    pruned: materialized.pruned || [],
+  };
+  if (projected === existing) return Object.assign({ written: false }, outcome);
   writeFileAtomic(registryPath, projected);
-  return { written: true, count, warnings: materialized.warnings, addedFromScan: materialized.addedFromScan };
+  return Object.assign({ written: true }, outcome);
 }
 
 // Detect engines referenced by programs but missing from registry. Wraps
@@ -374,6 +481,7 @@ module.exports = {
   parseFrontmatter,
   readInstalledEngines,
   materializeRegistry,
+  reconcileExistingEntry,
   renderRegistry,
   writeRegistry,
   syncRegistry,

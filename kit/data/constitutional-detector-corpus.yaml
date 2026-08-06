@@ -1,0 +1,200 @@
+# Constitutional Detector Phrasing Corpus
+#
+# Used by kit/scripts/cwos-constitutional-audit.js to catch paraphrased
+# violations that escape the hand-wired regex patterns. Each detector's
+# canonical_phrases list is the corpus of "what this violation looks like
+# when humans write it." The audit script computes token-Jaccard similarity
+# (with stopword removal) between every line of every kit/commands/*.md
+# file and every canonical phrase. A match at >= similarity_threshold tags
+# the line as a near-miss violation.
+#
+# Why a corpus + Jaccard instead of more regex: regex catches exact phrasing
+# only. Founders write commands in many ways. The 2026-04-25 pre-mortem
+# (FAIL-016) flagged that detectP2's 5 hardcoded regexes miss obvious
+# paraphrases ("does this anchor look right?", "any issues with this
+# YAML?"). This corpus is extensible — when AS-700 quarterly seeding
+# surfaces a paraphrase that escapes detection, add it here.
+#
+# AS-700 commits to: ≥70% of seeded synthetic violations flagged HIGH or
+# CRITICAL within one sweep. Recall failure = corpus needs more entries.
+#
+# Threshold tuning notes:
+#   - 0.50: strict — requires substantial token overlap. Few false positives,
+#     misses softer paraphrases.
+#   - 0.40: moderate — catches paraphrases sharing verb + object. Default.
+#   - 0.30: loose — catches near-topic phrases. Risk of false positives.
+
+schema_version: 1
+last_updated: "2026-04-25"
+
+# Stopwords stripped before token comparison. Keep this list narrow —
+# removing too many tokens collapses distinct phrases. Include only
+# words that contribute zero discriminating signal.
+stopwords:
+  - "a"
+  - "an"
+  - "and"
+  - "are"
+  - "at"
+  - "be"
+  - "but"
+  - "by"
+  - "for"
+  - "from"
+  - "has"
+  - "have"
+  - "if"
+  - "in"
+  - "is"
+  - "it"
+  - "of"
+  - "on"
+  - "or"
+  - "that"
+  - "the"
+  - "this"
+  - "to"
+  - "was"
+  - "were"
+  - "will"
+  - "with"
+
+detectors:
+  P2:
+    description: >
+      Asks the non-technical founder to make technical judgments
+      (validate code, debug YAML, resolve agent disagreement, fix JSON
+      parse errors, confirm schemas).
+    similarity_threshold: 0.45
+    canonical_phrases:
+      # Existing regex-equivalent phrasings (kept for parity)
+      - "confirm the schema"
+      - "validate the yaml"
+      - "validate this yaml"
+      - "resolve agent disagreement"
+      - "debug the config"
+      - "debug the yaml"
+      - "fix the json parse error"
+      - "fix the json syntax"
+      # Paraphrases identified by 2026-04-25 pre-mortem (FAIL-016)
+      - "does this anchor look right"
+      - "any issues with this config"
+      - "any issues with this yaml"
+      - "review the yaml structure"
+      - "review the config"
+      - "check this config"
+      - "check this yaml"
+      - "is this yaml valid"
+      - "is this json valid"
+      - "approve this technical decision"
+      - "verify the schema"
+      - "verify the yaml"
+      - "look at the yaml"
+
+  P3:
+    description: >
+      Prescriptive hard-blocks — commands that gate progress on milestone
+      or configuration completion rather than degrading gracefully.
+    similarity_threshold: 0.45
+    canonical_phrases:
+      # Existing regex-equivalent phrasings
+      - "must configure first"
+      - "must configure before"
+      - "must complete m3"
+      - "must complete m4"
+      - "stop configure before"
+      - "cannot proceed until m2"
+      - "cannot proceed until m3"
+      # Paraphrases
+      - "you cannot continue without"
+      - "blocked until you finish"
+      - "first complete the prerequisite"
+      - "you must finish setup before"
+      - "configuration required before"
+      - "halt configure first"
+      - "wait until configuration"
+
+# Anti-goals from system/intention.md — sprint goals + item titles tested
+# against this corpus by /next Step 4a (WS-227). A match means the proposed
+# work would push CWOS toward something it has explicitly committed not to
+# become. Founder must EXEMPT with reason or remove the offending item.
+anti_goals:
+  similarity_threshold: 0.40
+  canonical_phrases:
+    # AG-1: "Not a CI/CD system." Does not run tests, deploy code, or execute between sessions.
+    - "run tests automatically"
+    - "deploy code between sessions"
+    - "deploy code in pipeline"
+    - "execute in the background"
+    - "execute between sessions"
+    - "run as a background service"
+    - "run as a daemon"
+    - "ci cd pipeline integration"
+    - "automated deployment system"
+    # AG-2: "Not a project management tool." Not Jira, not Linear.
+    - "replace jira"
+    - "replace linear"
+    - "build project management surface"
+    - "kanban board interface"
+    - "issue tracker replacement"
+    - "ticket management ui"
+    # AG-3: "Not standalone software." Nothing runs between sessions.
+    - "between session daemon"
+    - "long running daemon"
+    - "always on background process"
+    - "persistent service worker"
+    - "always running service"
+    - "scheduled job runner"
+    # AG-4: "Not one-size-fits-all." Archetype + goal determine footprint.
+    - "every repo gets the same configuration"
+    - "uniform configuration across all repos"
+    - "single template for all archetypes"
+    - "remove archetype distinction"
+
+# Failed states from system/intention.md — concrete dystopias. Sprint
+# composition matching one of these is a stronger signal than an anti-goal
+# match because failed states are testable per-repo. Same usage as anti_goals.
+failed_states:
+  similarity_threshold: 0.40
+  canonical_phrases:
+    # FS-1: Ceremony theater
+    - "ritual without action"
+    - "run rituals without changing anything"
+    - "more session ceremony"
+    # FS-2: Tool-shaped hammer
+    - "install for the archetype"
+    - "install programs the repo does not need"
+    - "default install all engines"
+    # FS-3: Compliance over value
+    - "improve adoption compliance score"
+    - "compliance over goal value"
+    - "boost adoption level metric"
+    # FS-4: Fleet as lock-in
+    - "increase fleet stickiness"
+    - "make it harder to churn cwos"
+    - "fleet retention mechanism"
+    # FS-5: AI-session dependency
+    - "files only make sense mid conversation"
+    - "require active session to read state"
+    - "encode runtime ids into state files"
+    # FS-6: Founder becomes CWOS operator
+    - "more time feeding cwos than using cwos"
+    - "founder maintenance burden"
+    - "operator workload increase"
+    # FS-7: Findings noise
+    - "thirty item finding dump"
+    - "increase finding count"
+    - "lower the finding threshold"
+    # FS-8: Silent drift between kit and fleet
+    - "kit silently rotting in adopted repos"
+    - "no fleet update notification"
+    - "skip fleet update detection"
+    # FS-9: Non-technical founder asked to be technical
+    # (covered by P2 corpus above — duplicated minimally here for goal-text matching)
+    - "ask founder to validate the schema"
+    - "ask founder to debug the config"
+    # FS-10: Self-aggrandizing complexity
+    - "engines justifying each other"
+    - "build a new policy dsl"
+    - "add a new framework on top of cwos"
+    - "create cwos meta system"

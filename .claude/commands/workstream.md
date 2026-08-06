@@ -254,7 +254,7 @@ Update the session's `last_heartbeat` in its YAML file on every invocation.
 2. Verify status is `backlog` (not already claimed)
 3. Update: `status: claimed`, `claimed_by: <session-id>`, `claimed_at: <timestamp>`
 4. Add to session's `claimed_items` list
-5. Add item's `files_involved` to session's `files_locked`
+5. Add item's `files_involved` to session's `files_locked` — or let it accrue naturally: `cwos-git.js record` (PostToolUse hook) locks each file as it is actually edited, and `cwos-git.js stage` locks what it stages. Both are unions, so declaring intended files up front and recording actual edits compose (WS-564).
 6. Output confirmation with item details
 
 ---
@@ -600,12 +600,19 @@ source:
   engine: <engine-name>
   finding_id: "FIND-NNN"
   run_id: "run-NNN"
-claimed_by: ""
-claimed_at: ""
-started_at: ""
-completed_at: ""
-completion_notes: ""
-blocked_reason: ""
+# Lease + closure scalars scaffold as `null`, never `""`. Both read as "unset",
+# but only `null` does so for every parser: patchYAMLFile serializes an empty
+# string back as `claimed_by: ""`, and until 2026-08-04 upsertYAMLScalarField
+# read that shape as a REAL value and refused to overwrite it. An item scaffolded
+# with `""` could therefore never be claimed (SPR-196 approved with claimed: [])
+# and never have `completed_at` written — reintroducing the WS-561 defect at the
+# template. The read side now accepts both; this keeps the writer honest anyway.
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_notes: null
+blocked_reason: null
 created_at: "<timestamp>"
 ```
 

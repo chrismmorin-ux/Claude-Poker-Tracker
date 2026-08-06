@@ -36,7 +36,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const { writeFileAtomic, parseYAML, verifyHardlink } = require('./lib/cwos-utils');
+const { writeFileAtomic, parseYAML, verifyHardlink, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const { hostedOnStamp } = require('./lib/fleet-nodes');
 const { validateTargetDir } = require('./lib/shell-safe');
 const { resolveDistRoot, resolveHomeBaseRoot } = require('./lib/kit-paths');
@@ -592,6 +594,10 @@ function main() {
     const versionPath = path.join(targetAbs, '.cwos-version');
     writeFileAtomic(versionPath, buildVersionFile(now, kitVersion));
     created.push(versionPath);
+    // WS-560 (INV-028): .cwos-version is the marker that an install happened
+    // at all, and the prerequisite for --repair. Writing it is the moment a
+    // directory becomes a CWOS repo.
+    emitEvent('T6:workstream', 'genesis-scaffolded', { repo: repoName, kit_version: kitVersion });
 
     // 9. Register in fleet
     const fleetRegistered = appendToFleetRegistry(targetAbs, repoName, kitVersion, now, errors);

@@ -236,3 +236,78 @@ deferred_file_manifest:
     install_group: core
     impact: First-session guided walkthrough
     merge_strategy: overwrite
+
+# WS-321 — Genesis adoption phase.
+# Top-level field gating dormant-mode behavior. Distinct from `milestones` map below
+# (which tracks M1–M5 promotion checks). Set to "M0" by /genesis; flipped to "M1"
+# by /intend after ignition completes. Default ships as M1 (preserves /adopt path —
+# /adopt skips M0 entirely).
+# Readers gate behavior on this field: /status renders dormant section + suppresses
+# standard sections when M0; /welcome exits silently when M0; /session-start renders
+# lean briefing when M0; /next refuses when M0.
+# Valid: M0 | M1 | M2 | M3 | M4 | M5
+adoption_phase: M1
+
+# WS-321 — Dormant-mode block.
+# Populated by /genesis at scaffold time. Read by /status (for dormant section)
+# and /session-start Step 0c (intention.md edit-detection fallback).
+# The three integrity flags (kit_files_installed, capture_buffer_present,
+# intention_template_present) are NOT completion checks — they are integrity
+# assertions. /status warns "dormant infrastructure damaged" if any goes false
+# post-install. M0→M1 transition is event-driven (founder declares), not
+# check-completion driven; that's why M0 is not in the milestones[] map below.
+m0_dormant:
+  entered_at: null               # ISO timestamp set by /genesis
+  exited_at: null                # set by cwos-genesis-ignite.js apply
+  exit_trigger: null             # "intend_command" | "intention_md_edit_detected" | null
+  capture_buffer_path: ".claude/workstream/events/current.jsonl"
+  intention_content_hash: null   # SHA-256 of intention.md non-comment content; updated by /session-start Step 0c
+  kit_files_installed: false     # integrity flag — true after /genesis scaffold completes
+  capture_buffer_present: false  # integrity flag — events/ dir exists with valid header
+  intention_template_present: false  # integrity flag — system/intention.md is placeholder template
+
+# ADR-035 identity archetype (NEW — WS-250).
+# Drives bundle selection (kit/scripts/cwos-adopt-archetype.js) and tier defaults (kit/scripts/lib/tier-mapper.js).
+# Orthogonal to `repo_archetype` above (which is the tech-stack tag); both fields coexist.
+# Valid: A1 | A2 | A3 | A4 | A5 | NONE
+archetype: null
+
+declared_archetype: null   # Founder-confirmed value during /adopt Step 4b. == archetype unless founder later overrides.
+
+detected_archetype: null   # Auto-detected from /adopt Step 3 signals. Informational; declaration is canonical.
+
+# ADR-035 lifecycle stage (NEW — WS-250).
+# Drives per-program tier defaults via kit/scripts/lib/tier-mapper.js.
+# Hybrid declared+detected — WS-251 will add detection logic; this sprint only seeds the field.
+# Valid: S1 | S2 | S3 | S4 | S5 | N1 | N2 | N3
+stage: null
+
+declared_stage: null       # Founder-confirmed value during /adopt Step 4c. Defaults to archetypes.yaml#archetype_entry_stages[archetype].
+
+detected_stage: null       # Set by /audit (WS-251). Result of cwos-stage-detect.js scan; informational unless > declared.
+
+last_recorded_stage: null  # Set by /session-end. /session-start Step 3d compares against current stage to detect cross-session transitions and surface a one-line prompt.
+
+# Archetype declaration history (NEW — WS-252).
+# Appended by /archetype re when the founder migrates between archetypes.
+# Each entry archives the prior archetype declaration. Latest entry is the
+# most recently archived; the active archetype is `archetype:` above.
+# Schema: [{ archetype: "A5", declared_at: "...", archived_at: "...", reason: "..." }]
+archetype_history: []
+
+# Per-consequence override mechanism (NEW — WS-253, ADR-035 Stage 4 condition #2).
+# Founder can opt out of archetype-derived programs or override their tier.
+# Schema documented in docs/ARCHETYPES.md "Per-consequence override" section.
+# Read by kit/scripts/lib/tier-mapper.js (applyProgramOptOuts + applyTierOverrides).
+archetype_overrides:
+  programs: []   # [{ id: "prog-X", status: "opted-out", reason: "..." }]
+  tiers: []      # [{ program_id: "prog-Y", override_tier: "critical|active|watch|dormant", reason: "..." }]
+
+# Resolved bundle (NEW — WS-250). Output of cwos-adopt-archetype.js.
+# Cached for /audit + /pulse readers; canonically derivable from (archetype, stage, archetype_overrides).
+archetype_bundle_resolved:
+  programs: []
+  engines: []
+  personas: []
+  tiers: {}      # { "prog-X": "watch", "prog-Y": "critical", ... }
+  resolved_at: null

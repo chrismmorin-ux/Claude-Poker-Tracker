@@ -73,3 +73,7 @@ Restores the most recent `kit-pre-upgrade-*` snapshot (deletes files the upgrade
 - **Local-mod baseline:** detection prefers the per-version hash manifest shipped into the repo at install/upgrade (`kit/hashes-<installed>.yaml`), falling back to `.cwos-version#installed_files`, then git-tag reconstruction. If no baseline is available it says so — customized files are still protected via `.kit-update` sidecars (never silently clobbered).
 - **What's preserved:** everything outside the HomeBase-authored surface — `.claude/workstream/` (queue, programs, findings, sprints, runs, events, indexes), `system/`, `.cwos-config.yaml`, `.cwos-onboarding.yaml`, `.cwos-feedback.yaml`, `notes/`, and your own `.claude/rules/` additions.
 - Full procedure + design rationale: `docs/guides/kit-upgrade-guide.md`.
+
+## Shadow-event envelope
+
+`node kit/scripts/cwos-event.js append command_completed --track T6:workstream --tag /kit-upgrade --payload '{"command":"/kit-upgrade"}'` — non-fatal; never gate output on it.

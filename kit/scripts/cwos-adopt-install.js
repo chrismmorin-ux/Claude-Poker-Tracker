@@ -50,6 +50,7 @@ const {
 const { appendEvent: rawAppendEvent, ensureCommandId: rawEnsureCommandId } = loadEventDeps();
 
 const { emitBundle, bundleError } = require('./lib/cwos-orchestrate');
+const { validateStrategies, KNOWN_STRATEGIES } = require('./lib/merge-strategy');
 
 // WS-503 / FIND-330: crash recovery. main() mutates CLAUDE.md at Phase 3 but
 // writes the .cwos-version marker at Phase 7 — a crash between them used to
@@ -349,6 +350,26 @@ function loadManifest(homebase) {
   if (!ok) bundleError(`Cannot read kit/MANIFEST.yaml: ${error}`);
   const files = data.files;
   if (!Array.isArray(files)) bundleError('kit/MANIFEST.yaml has no files array');
+
+  // WS-559: refuse a manifest declaring a strategy no code can honour, before a
+  // single file is copied. The branches below are written as `=== 'additive'`
+  // with an else meaning overwrite, so an unrecognized value used to fail OPEN —
+  // `skip_if_exists` with an underscore sat on kit/templates/cwos-health.yaml
+  // declaring preserve-if-present and doing the exact opposite, and nothing
+  // said so. Overwriting a file whose declared intent you could not parse is
+  // unrecoverable; refusing is not.
+  //
+  // Every caller of loadManifest inherits this, including cwos-kit-upgrade.js.
+  const strategyCheck = validateStrategies(files);
+  if (!strategyCheck.ok) {
+    const rows = strategyCheck.violations
+      .map(v => `${v.source} → ${v.destination}: ${JSON.stringify(v.value)}`)
+      .join('; ');
+    bundleError(
+      `kit/MANIFEST.yaml declares unknown merge_strategy value(s) — ${rows}. ` +
+      `Known: ${KNOWN_STRATEGIES.join(', ')}.`
+    );
+  }
   return files;
 }
 

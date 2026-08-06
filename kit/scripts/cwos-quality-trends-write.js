@@ -33,7 +33,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { readYAMLFile, writeFileAtomic, findWorkstreamDir, withFileLock, resolveEvolutionDir } = require('./lib/cwos-utils');
+const { readYAMLFile, writeFileAtomic, findWorkstreamDir, withFileLock, resolveEvolutionDir, makeEventEmitter, findRepoRoot, } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 let spearmanCorrelation = null;
 try { ({ spearmanCorrelation } = require('./cwos-reconcile')); }
@@ -46,9 +48,19 @@ function readFlag(args, name) {
 }
 function hasFlag(args, name) { return args.includes(`--${name}`); }
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 // ─── Paths ────────────────────────────────────────────────────────────────
@@ -434,6 +446,9 @@ function modeWriteTrends(paths) {
   updated = spliceTopLevelBlock(updated, 'global', emitGlobal(engines));
 
   writeFileAtomic(paths.trendsFile, updated);
+  // WS-560 (INV-028): quality trends feed /evolve's engine-performance reads;
+  // an unrecorded rewrite makes a trend shift impossible to attribute.
+  emitEvent('T9:evolution', 'quality-trends-written', { engines: Object.keys(engines).length });
   process.stdout.write(JSON.stringify({
     ok: true,
     mode: 'write-trends',
@@ -533,6 +548,7 @@ function modeWriteCalibration(paths) {
     ].join('\n');
 
     writeFileAtomic(paths.calibrationFile, updated);
+    emitEvent('T9:evolution', 'calibration-appended', { file: 'calibration' });
   }, { ownerLabel: 'quality-trends:write-calibration', maxWaitMs: 5000 });
 
   process.stdout.write(JSON.stringify({

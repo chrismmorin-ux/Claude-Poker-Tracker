@@ -55,7 +55,7 @@ require('./lib/preflight');
 const fs = require('fs');
 const path = require('path');
 
-const { findWorkstreamDir, readYAMLFile, loadEventDeps } = require('./lib/cwos-utils');
+const { findWorkstreamDir, readYAMLFile, loadEventDeps, findRepoRoot, } = require('./lib/cwos-utils');
 
 const { appendEvent, ensureCommandId } = loadEventDeps();
 
@@ -87,9 +87,19 @@ function hasFlag(args, name) {
   return args.includes(`--${name}`);
 }
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 function loadConfigThreshold(tag) {
@@ -135,7 +145,7 @@ function loadFromEngineCompleted({ engineId, tag, eventsDir, workstreamDir }) {
   // them unmodified. Skips events without numeric tokens_derived — those flow
   // through as insufficient_data, which is the documented behavior until
   // run-016 F2 wires up tokens_derived stamping on engine_run_completed.
-  const dir = eventsDir || path.join(workstreamDir || path.join(repoRoot(), '.claude', 'workstream'), 'events');
+  const dir = eventsDir || path.join(workstreamDir || path.join(stateDir()), 'events');
   if (!fs.existsSync(dir)) return [];
   const files = fs.readdirSync(dir)
     .filter((f) => /^\d{4}-\d{2}-\d{2}\.jsonl$/.test(f))
@@ -191,7 +201,7 @@ function loadFromStateStore(tag) {
 function loadFromEventLog({ tag, eventsDir, workstreamDir }) {
   // Direct scan: pair command_completed (command=tag) with
   // command_telemetry_stamped (matching command_id).
-  const dir = eventsDir || path.join(workstreamDir || path.join(repoRoot(), '.claude', 'workstream'), 'events');
+  const dir = eventsDir || path.join(workstreamDir || path.join(stateDir()), 'events');
   if (!fs.existsSync(dir)) return [];
   const files = fs.readdirSync(dir)
     .filter((f) => /^\d{4}-\d{2}-\d{2}\.jsonl$/.test(f))

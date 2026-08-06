@@ -31,7 +31,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
-const { readYAMLFile, writeFileAtomic, todayISO } = require('./lib/cwos-utils');
+const { readYAMLFile, writeFileAtomic, todayISO, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const { resolveBundle } = require('./cwos-adopt-archetype');
 
 // WS-549: every path below is kit/data, kit/templates or kit/scripts — all
@@ -995,6 +997,9 @@ function setWelcomeCompleted(targetDir) {
     content = content.replace(/\n*$/, '\n') + 'welcome_completed: true\n';
   }
   writeFileAtomic(usagePath, content);
+  // WS-560 (INV-028): ignition takes a repo M0 -> M1. Marking welcome complete
+  // is the last write of that transition.
+  emitEvent('T6:workstream', 'genesis-ignited', { usage: path.basename(usagePath) });
 }
 
 function emitConsumedEvent(targetDir, payload) {

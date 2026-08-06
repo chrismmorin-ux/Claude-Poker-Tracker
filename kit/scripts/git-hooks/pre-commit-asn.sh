@@ -137,7 +137,10 @@ fi
 
 # Stamp successful hook execution so post-commit can detect --no-verify bypass
 # by comparing this stamp's mtime against HEAD's commit timestamp.
-mkdir -p "$REPO_ROOT/.git/cwos" 2>/dev/null || true
-date +%s > "$REPO_ROOT/.git/cwos/last-precommit-run" 2>/dev/null || true
+# WS-532: use the resolved gitdir — in a linked worktree "$REPO_ROOT/.git" is a
+# file, so this wrote nothing and printed "Not a directory" on every commit.
+GIT_DIR_PATH=$(git rev-parse --git-dir)
+mkdir -p "$GIT_DIR_PATH/cwos" 2>/dev/null || true
+date +%s > "$GIT_DIR_PATH/cwos/last-precommit-run" 2>/dev/null || true
 
 exit 0

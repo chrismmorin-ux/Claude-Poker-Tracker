@@ -98,8 +98,15 @@ Read `.claude/workstream/sprint-index.yaml`. If a sprint has `status: active`:
 For each item in `claimed_items` (including sprint items):
 - If `status: done` → good
 - If `status: in_progress` → ask: "WS-NNN is still in progress. Mark as done, or leave for next session?"
-  - If leaving: release claim, set back to `backlog` (if in a sprint, set sprint item to `pending`)
-- If `status: claimed` (never started) → release, set back to `backlog` (if in a sprint, set sprint item to `pending`)
+  - If leaving: release the claim (clear `claimed_by` / `claimed_at`), set status back to `backlog` (if in a sprint, set sprint item to `pending`)
+- Otherwise, if the item is claimed but was never started → release the claim, set back to `backlog` (if in a sprint, set sprint item to `pending`)
+
+> **A claim is `claimed_by`, never a status.** This step used to say "if
+> `status: claimed`" — a value nothing has ever written. `cwos-claims` says so
+> in its own header, and the identical bug in `cwos-session-recovery.js` matched
+> nothing and released nothing while reporting recovery complete (WS-564: eight
+> abandoned records in claude-poker-tracker still held WS-300 and WS-276). The
+> script was fixed; this prose was not, until ADR-065.
 
 ### 3. Run Verification (skip if --force)
 If `--force` is NOT set:
@@ -136,11 +143,24 @@ context_notes: |
   <any context the next session needs to know>
 ```
 
-### 5.4. Formalize Detected Decisions
+### 5.4. Formalize Detected Decisions — **mostly automatic now (ADR-065)**
 
-Review the conversation for decisions flagged by the Decision Detection Protocol (inline "Decision noted:" and "Decision with trade-offs:" callouts). Also scan for any implicit decisions that weren't flagged inline — choices made during implementation that match the decision signal patterns in the preamble.
+Decisions are captured at the moment of detection with `cwos-capture decision`
+and drained into `system/decisions.md` by `cwos-reconcile`, which runs from the
+SessionStart hook. If you have been capturing as you work, there is nothing to
+do here — run `node kit/scripts/cwos-capture.js pending` to confirm.
 
-For each detected decision:
+Why it moved: this step is the reason the passive path never worked. On
+2026-08-03 `system/decisions.md` held 47 entries and **zero** were marked
+`Detected: implicit` — every one had come through `/decide`. A step that only
+executes at a boundary reached 12% of the time does not execute.
+
+**What is still worth doing here:** a last sweep for decisions you made but
+never captured — the ones that felt too small to stop for at the time. Capture
+them now with `cwos-capture decision`, then let the drain place them. Use the
+classification below to pick `--weight`.
+
+For each such decision:
 
 1. **Classify weight:**
    - **Heavy** — Affects multiple features, hard to reverse, establishes precedent
@@ -197,7 +217,15 @@ Update `.claude/workstream/usage.yaml` with this session's activity:
 
 ### 5.5b. Friction Logging (silent — no output to user)
 
-Review the current session's conversation for friction events and log to `.cwos-feedback.yaml`:
+**Capture friction when it happens** — `cwos-capture friction "<what fought
+back>" --severity <high|medium|low> --component <name>` — for the same reason
+decisions moved: reconstructing "what went wrong" from conversation history at
+the one moment least likely to be reached is how the record stayed empty.
+
+What remains here is the sweep for anything you hit but did not capture. The
+categories below are the ones worth capturing. **The destination is the event
+log, in every repo** — `cwos-capture` is `capability: core` since WS-578, so
+it is present even in a repo that has enabled nothing else.
 
 1. **Command failures:** Any CWOS command that returned a non-zero exit code or produced an error. Log: command, error, what was done instead.
 2. **File not found:** Any attempt to read a file referenced by CWOS infrastructure (registry, config, program definitions) where the file didn't exist. Log: expected path, component.
@@ -205,15 +233,34 @@ Review the current session's conversation for friction events and log to `.cwos-
 4. **Workarounds:** Any time Claude chose an alternative approach because the standard one failed (e.g., Python instead of bash date). Log: standard approach, why it failed, alternative used.
 5. **Platform issues:** Any error attributable to the OS/shell (OneDrive locks, Git Bash limitations, path separators). Log: error, cause, workaround.
 
-For each event:
-- Generate sequential `fr-NNN` ID (scan existing friction_log for max)
-- Set `session_id` to current session
-- Set `severity`: high if it blocked work, medium if workaround needed, low if cosmetic
-- Set `component` to the kit component that caused it (e.g., session-start, engine-registry, queue-index)
-- Append to `.cwos-feedback.yaml` `friction_log`
-- Update `summary` counts
+For each event, one command — no id allocation, no YAML editing, no summary
+arithmetic:
 
-If `.cwos-feedback.yaml` doesn't exist, skip this step silently.
+```bash
+node kit/scripts/cwos-capture.js friction "<what happened>" \
+  --severity high|medium|low \
+  --component <kit component that caused it> \
+  --workaround "<what was done instead, if anything>"
+```
+
+`--severity`: **high** if it blocked work, **medium** if a workaround was
+needed, **low** if cosmetic. `--component` is optional — a capture with no
+component is inferred at aggregation and still counts. Never withhold a
+capture because you are unsure what to attribute it to; every field demanded
+at capture time is a reason not to capture.
+
+> **Superseded (WS-578).** This step used to say: allocate a sequential
+> `fr-NNN` by scanning for the max, append to `.cwos-feedback.yaml`, update
+> the summary counts, and skip silently if the file is absent. Every clause
+> was a problem. The id scan collides where ids are non-sequential
+> (region-desk has `fr-dev-server-zombie` sitting among numbered ones). The
+> append is a read-modify-write on a shared file. The summary drifted — 8
+> claimed against 11 actual. And "skip silently if absent" meant the repos
+> with the least set up recorded nothing at all, which is backwards: those
+> are the repos hitting the most friction.
+>
+> `.cwos-feedback.yaml` is now a generated view (`cwos-feedback-view.js`),
+> not a write target.
 
 ### 5.6a. Reconcile Findings & Health Scores (safety net)
 
@@ -232,37 +279,35 @@ Catch any finding→health drift that Step 6b of `/next` missed (e.g., items com
 
 This step is idempotent — if `/next` Step 6b already resolved everything, this finds nothing to do.
 
-### 5.5d. Record stage marker (WS-251 / ADR-035)
+### 5.5d. Record stage marker — **moved to `/session-start` Step 3d (ADR-065)**
 
-If `.cwos-onboarding.yaml#stage` is non-null, copy its value into `last_recorded_stage` so the next session's `/session-start` Step 3d can detect cross-session declaration changes.
+`/session-start` now stamps `last_recorded_stage` immediately after it compares
+against it. Nothing to do here.
 
-```bash
-# Pragmatic: read current stage, write into last_recorded_stage. No-op if stage is null.
-node -e '
-const fs=require("fs"), p=".cwos-onboarding.yaml";
-if (!fs.existsSync(p)) process.exit(0);
-let txt=fs.readFileSync(p,"utf8");
-const m=txt.match(/^stage:\s*"?([SN]\d)"?/m);
-if (!m) process.exit(0);
-const re=/^(last_recorded_stage:[ \t]*)([^\n#]*?)([ \t]*(?:#[^\n]*)?)$/m;
-if (re.test(txt)) { txt=txt.replace(re,`$1"${m[1]}"$3`); fs.writeFileSync(p,txt); }
-'
-```
+Why it moved: leaving it at session close meant a stage change went unreported
+whenever the prior session was not closed by hand — about 88% of the time.
+Note it could *not* move into `cwos-reconcile` with the other mechanical steps,
+because reconcile runs at SessionStart and would stamp the marker before the
+comparison that reads it, permanently suppressing the very transition the marker
+exists to detect.
 
-Silent — the stage marker is housekeeping, not founder-facing.
+### 5.6. Regenerate System Summary — **no longer this command's job (ADR-065)**
 
-### 5.6. Regenerate System Summary
+`cwos-reconcile.js` regenerates `.claude/workstream/system-summary.yaml`, and
+reconcile runs from the SessionStart hook. Nothing to do here.
 
-Rebuild `.claude/workstream/system-summary.yaml` for fast orientation in future Standard Mode sessions:
-- `vital_signs_ok`: true if all vital sign checks pass, false otherwise
-- `red_vitals`: list of failing vital sign names
-- `queue_counts`: count items by status from `queue-index.yaml`
-- `top_3_unclaimed`: top 3 backlog items by priority_score from index
-- `stale_programs`: scan `programs/prog-*.yaml` for programs past `staleness_threshold_days`
-- `active_context_count`: count active items in `system/context.md`
-- `critical_findings`: count open findings with severity critical from `findings-index.yaml`
-- `convergence_trend`: from `usage.yaml` convergence section
-- `last_updated`: current timestamp
+Why it moved: this command was the file's only writer, and it runs ~12% of the
+time. The summary sat **10 days stale** (last written 2026-07-24) while
+`claude-preamble.md` told every Standard-Mode session to read it *first* for
+fast orientation. Every field in it is a pure function of reconciled state, so
+it never needed a session boundary.
+
+One field is deliberately **not** recomputed by reconcile: `vital_signs_ok` /
+`red_vitals`. Reconcile does not run the invariant suite, so it carries the
+previous values forward with `vitals_observed_at` stamped beside them rather
+than fabricating a green line. If you have just run `/verify` and the vitals
+picture changed, update those two fields — that is the only part of this step
+that still belongs to a session.
 
 ### 5.6b. Optimization Signal Summary
 
@@ -294,6 +339,17 @@ GC reads thresholds and entity types from `config.yaml`. Skip graduation checks 
 - Remove `.claude/workstream/.active-sessions/{session-id}.lock` (if it exists)
 - Remove `.claude/workstream/.current-session` (backward compatibility)
 - Release any file locks
+
+> **If this command never runs, this still happens.** `cwos-session-sweep.js`
+> closes any session whose process is gone — releasing claims, synthesizing
+> handoff notes from git log and sprint state, clearing locks — every 15 minutes
+> via the `Fleet-SessionSweep` task, across every repo on the node. A dead PID
+> is proof of death and needs no timeout (ADR-065).
+>
+> So running `/session-end` is a courtesy, not a safety requirement. What it
+> still uniquely provides is the part a machine cannot reconstruct from disk:
+> the decisions and friction of the conversation itself, and your own words in
+> the handoff notes.
 
 ### 7. Output Summary
 

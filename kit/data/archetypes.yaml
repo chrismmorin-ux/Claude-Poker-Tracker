@@ -1,0 +1,294 @@
+# Archetype System — machine-readable spec
+# Canonical reference: docs/ARCHETYPES.md
+# Decision: docs/adrs/ADR-035.md (Tier-1 causal kit branching on identity)
+# Stage cross-references: kit/data/stages.yaml
+# Generated: 2026-04-30 (WS-247 / SPR-095)
+
+schema_version: 1
+last_updated: "2026-04-30"
+
+# ---------------------------------------------------------------------------
+# Per-axis consequences — composed orthogonally.
+# When an archetype has multiple axis values that reference the same program,
+# the program installs once (deduped). Label-level extras add on top.
+# ---------------------------------------------------------------------------
+
+axes:
+  output:
+    Application:
+      programs: [prog-engineering]
+      engines: [eng-engine]
+      personas: [senior-engineer, product-ux]
+      prompts:
+        - "engineering quality posture"
+        - "deploy cadence"
+
+    Knowledge-artifact:
+      programs: [prog-claims-policy, prog-methodology-integrity]
+      engines: [claims-audit, research-review]
+      personas: [research-scientist, cross-critic]
+      prompts:
+        - "claim-evidence standards"
+        - "methodology rigor"
+
+    Tool/framework:
+      programs: [prog-engineering, prog-change-management]
+      engines: [eng-engine]
+      personas: [failure-engineer, performance-engineer]
+      prompts:
+        - "rollback discipline"
+        - "public API surface"
+
+  sensitivity:
+    Public-no-PII:
+      programs: []
+      engines: []
+      personas: []
+      prompts: []
+
+    Private-PII:
+      programs: [prog-security]
+      engines: [legal-safety]
+      personas: [legal-guardian]
+      prompts:
+        - "PII handling"
+        - "consent surfaces"
+        - "retention policy"
+
+    Regulated:
+      programs: [prog-compliance, prog-security, prog-vendor-risk]
+      engines: [compliance-audit, legal-safety]
+      personas: [legal-guardian]
+      prompts:
+        - "regulatory regime"
+        - "statutes"
+        - "audit cadence"
+
+  verification:
+    Empirical:
+      programs: []
+      engines: []
+      personas: []
+      prompts:
+        - "regression suite cadence"
+      notes: >
+        Empirical verification folds into prog-engineering's regression
+        cadence — no separate program. eng-engine includes the empirical
+        verification phase by default.
+
+    Symbolic:
+      programs: [prog-methodology-integrity]
+      engines: [claims-audit]
+      personas: [research-scientist]
+      prompts:
+        - "computation verification harness (e.g., SymPy)"
+      notes: >
+        prog-methodology-integrity covers symbolic rigor across both
+        Knowledge-artifact and other Output values when Verification=Symbolic
+        is declared. claims-audit runs with its symbolic-verification phase.
+
+    Adversarial:
+      programs: [prog-anti-hallucination]
+      engines: [claims-audit]
+      personas: [cross-critic]
+      prompts:
+        - "falsification criteria"
+        - "adversarial review cadence"
+      notes: >
+        claims-audit runs with its adversarial-review phase when
+        Verification=Adversarial. prog-anti-hallucination piggybacks on
+        design-audit FDBs per ADR-034.
+
+# ---------------------------------------------------------------------------
+# Archetypes — five named coordinates in axis-space + default-no-archetype.
+# Each archetype label resolves to axis values; consequences fire from
+# the axes (not the labels). label_extras are additive. tier_overrides
+# apply per (archetype, stage) and override the stage-default from
+# kit/data/stages.yaml.
+# ---------------------------------------------------------------------------
+
+archetypes:
+  - id: A1
+    label: "Regulated commercial product"
+    axis_coordinates:
+      output: Application
+      sensitivity: Regulated
+      verification: Empirical
+    canonical_examples: [SYN]
+    description: >
+      Application destined for paying customers under regulatory oversight
+      (financial / healthcare / SOX-style). Empirical verification (tests,
+      regression, preflight gates) drives the verification posture.
+    label_extras:
+      programs: [prog-financial-accuracy, prog-launch]
+      engines: [financial-audit]
+      personas: [financial-auditor]
+      prompts:
+        - "financial invariants (Decimal-not-float)"
+        - "audit trail integrity"
+        - "payment-flow invariants"
+    tier_overrides: {}
+
+  - id: A2
+    label: "Civic / public-data platform"
+    axis_coordinates:
+      output: Application
+      sensitivity: Regulated
+      verification: Adversarial
+    canonical_examples: [PA]
+    description: >
+      Application that publishes public-interest data with legal posture
+      load-bearing on every record. Adversarial verification (source
+      attribution, evidence tiers, defamation review) drives the
+      verification posture.
+    label_extras:
+      programs: [prog-data-provenance]
+      engines: [provenance-audit]
+      personas: [community-voice]
+      prompts:
+        - "civilian-PII boundary"
+        - "scraping ToS"
+        - "defamation risk surfaces"
+    tier_overrides:
+      # Identity-conditional Tier 0: civic-data exposure starts before launch,
+      # not after. prog-data-provenance escalates at Stage 1 / N1, unlike most
+      # programs which escalate at Stage 3+.
+      prog-data-provenance:
+        S1: critical
+        S2: critical
+        S3: critical
+        S4: critical
+        S5: critical
+        N1: critical
+        N2: critical
+
+  - id: A3
+    label: "Real-time consumer app"
+    axis_coordinates:
+      output: Application
+      sensitivity: Public-no-PII
+      verification: Empirical
+    canonical_examples: [CPT]
+    description: >
+      Application that runs in front of consumers in real-time. Performance
+      and UX are load-bearing; perf budget invariants live at the program
+      level. No regulated data exposure.
+    label_extras:
+      programs: [prog-design]
+      engines: [design-audit]
+      personas: []
+      prompts:
+        - "perf budget targets"
+        - "user-flow invariants"
+    tier_overrides:
+      # Perf-critical apps run engineering hotter than the Application default
+      prog-engineering:
+        S2: active
+        S3: critical
+        S4: critical
+        S5: critical
+      # Real-time consumer UX matters more than other Application archetypes
+      prog-design:
+        S2: active
+        S3: active
+        S4: critical
+        S5: critical
+
+  - id: A4
+    label: "Research framework with falsification"
+    axis_coordinates:
+      output: Knowledge-artifact
+      sensitivity: Public-no-PII
+      verification: Adversarial
+    canonical_examples: [PU, AP]
+    description: >
+      Knowledge artifact (research framework, theory, decision support)
+      where claims must be falsifiable and adversarially reviewed. Output
+      consumers are humans reading derivations or decisions. Commercial
+      vs. non-commercial split lives in the stage axis, not the archetype.
+    label_extras:
+      programs: []
+      engines: []
+      personas: []
+      prompts:
+        - "falsification criteria"
+        - "assumption register"
+        - "evidence standards"
+    tier_overrides:
+      # Research frameworks run claims-policy and anti-hallucination at
+      # critical from N2 (active-use) — falsification is core, not optional
+      prog-claims-policy:
+        N2: critical
+        N3: active
+      prog-anti-hallucination:
+        N2: critical
+        N3: active
+
+  - id: A5
+    label: "Self-modifying tool"
+    axis_coordinates:
+      output: Tool/framework
+      sensitivity: Public-no-PII
+      verification: Empirical
+    canonical_examples: [AAI, HomeBase]
+    description: >
+      Tool or framework that modifies its own state, schema, or
+      distributed kit between runs. Rollback discipline and safe
+      self-modification are load-bearing. AAI optimizes other systems;
+      HomeBase distributes a kit. Both share rollback + change-management;
+      HomeBase opts in to additional fleet/design programs via override.
+    label_extras:
+      programs: [prog-optimization]
+      engines: []
+      personas: []
+      prompts:
+        - "rollback discipline"
+        - "safe self-modification invariants"
+        - "public API contract"
+    tier_overrides:
+      # Self-modifying tools run change-management at critical from N2
+      prog-change-management:
+        N2: critical
+        N3: critical
+
+# ---------------------------------------------------------------------------
+# Default-no-archetype — first-class state for repos that decline declaration.
+# Kit ships its lightest config; no identity-driven programs auto-installed.
+# Personal knowledge bases (e.g., CF) and exploratory repos use this state.
+# ---------------------------------------------------------------------------
+
+default_no_archetype:
+  id: NONE
+  label: "(no archetype declared)"
+  canonical_examples: [CF]
+  description: >
+    First-class state. Kit ships its lightest config. Founder declares
+    per-axis values manually if any axis-driven consequences are wanted.
+    No nagging from /audit or /next about missing archetype.
+  programs: []
+  engines: [eng-engine]
+  personas: []
+  prompts:
+    - "core invariants for this repo (free-form)"
+
+# ---------------------------------------------------------------------------
+# Per-consequence override mechanism — implemented in WS-253.
+# Repos can opt out of any program in this map via .cwos-onboarding.yaml.
+# Schema location: .cwos-onboarding.yaml#archetype_overrides
+# ---------------------------------------------------------------------------
+
+override_schema_ref: ".cwos-onboarding.yaml#archetype_overrides"
+
+# ---------------------------------------------------------------------------
+# Notes for downstream consumers
+# ---------------------------------------------------------------------------
+
+notes:
+  - "Per-axis consequences are composed additively; duplicates dedupe at install."
+  - "label_extras add on top of axis composition; never subtract."
+  - "tier_overrides specify per-(archetype, stage) tier values that override the stage-default tier from kit/data/stages.yaml."
+  - "Identity-conditional Tier 0: A2's prog-data-provenance escalates at S1, not S3+. Captured in tier_overrides."
+  - "prog-fleet-health is intentionally NOT in A5 — HomeBase opts in via .cwos-onboarding.yaml override; AAI does not."
+  - "compliance-officer persona does not exist; legal-guardian fills both legal and compliance roles. Future split is out of scope."
+  - "Verification=Symbolic uses prog-methodology-integrity, not a dedicated prog-mathematical-rigor."
+  - "WS-248 (kit/data/stages.yaml) provides per-stage tier defaults that this map's tier_overrides shadow when present."

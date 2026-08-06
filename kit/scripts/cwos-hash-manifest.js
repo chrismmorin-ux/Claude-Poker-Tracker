@@ -58,7 +58,9 @@ require('./lib/preflight');
 const path = require('path');
 const fs = require('fs');
 const { loadManifest, sha256 } = require('./cwos-adopt-install');
-const { parseYAML } = require('./lib/cwos-utils');
+const { parseYAML, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 const { runGitInRepo, validateGitRef } = require('./lib/shell-safe');
 
 function findHomeBase(override) {
@@ -292,6 +294,37 @@ function assertManifestComplete(homebase, opts) {
   process.exit(1);
 }
 
+// WS-562: the mirror image of the gate above. INV-064 asks whether every
+// consumer's dependency ships; this asks whether every shipped declaration has
+// a consumer. Both failures are invisible from inside HomeBase and both surface
+// only in an adopted repo, which is why both block the release rather than
+// warning at it.
+//
+// Registry absence degrades to PASS here (exit_code 2), unlike a violation. A
+// distribution root without kit/declarations.yaml is a repo that predates this
+// gate, not a repo shipping a dead declaration.
+function assertDeclarationsLive(homebase, opts) {
+  let checkDeclarationLiveness, renderHuman;
+  try { ({ checkDeclarationLiveness, renderHuman } = require('./cwos-declaration-liveness')); }
+  catch { return; }
+
+  const result = checkDeclarationLiveness(homebase);
+  if (result.ok || result.exit_code === 2) return;
+
+  if (opts.json) {
+    process.stdout.write(JSON.stringify({
+      ok: false,
+      error: 'declaration liveness gate failed',
+      violations: result.violations,
+    }) + '\n');
+  } else {
+    process.stderr.write('ERROR: declaration liveness gate failed — refusing to baseline a kit that declares mechanisms nothing reads.\n');
+    process.stderr.write(renderHuman(result));
+    process.stderr.write('\nFix the violations above, waive them with a tracked_by + expires in kit/declarations.yaml, or run:\n  node kit/scripts/cwos-declaration-liveness.js --human\n');
+  }
+  process.exit(1);
+}
+
 /**
  * Write one backfilled baseline. Returns a per-tag result record.
  *
@@ -318,6 +351,9 @@ function backfillTag(homebase, tag, opts) {
     return { tag, version, ok: false, skipped: false, error: `no files resolved at ${tag} — is the tag present in this clone?` };
   }
 
+  emitEvent('T6:workstream', 'kit-baseline-backfilled', {
+    version, tag, files: Object.keys(hashes).length, hash_basis: 'git-blob',
+  });
   fs.writeFileSync(outPath, renderYAML(version, hashes, new Date().toISOString(), {
     hashBasis: 'git-blob',
     sourceList,
@@ -395,31 +431,20 @@ function main() {
   }
 
   assertManifestComplete(homebase, opts);
+  assertDeclarationsLive(homebase, opts);
 
   const { hashes, missing } = computeHashes(homebase);
   const outPath = opts.out || path.join(homebase, 'kit', `hashes-${version}.yaml`);
 
   if (opts.check) {
-    // Compare freshly-computed hashes against the committed manifest.
-    if (!fs.existsSync(outPath)) {
-      const msg = `hash manifest missing: ${path.relative(homebase, outPath)} (run without --check to generate)`;
-      if (opts.json) process.stdout.write(JSON.stringify({ ok: false, error: msg }) + '\n');
-      else process.stderr.write(`ERROR: ${msg}\n`);
+    const res = compareAgainstBaseline(homebase, version, hashes, outPath);
+    if (!res.ok) {
+      if (opts.json) process.stdout.write(JSON.stringify({ ok: false, error: res.error, out: outPath }) + '\n');
+      else process.stderr.write(`ERROR: ${res.detail}\n`);
       process.exit(1);
     }
-    const committed = fs.readFileSync(outPath, 'utf8');
-    const expected = renderYAML(version, hashes, '__IGNORE__');
-    // Compare only the files: section (ignore generated_at line).
-    const stripTs = s => s.replace(/^generated_at:.*$/m, 'generated_at: __IGNORE__');
-    const drift = stripTs(committed).replace(/^generated_at:.*$/m, 'generated_at: __IGNORE__') !==
-                  stripTs(expected);
-    if (drift) {
-      if (opts.json) process.stdout.write(JSON.stringify({ ok: false, error: 'hash manifest stale', out: outPath }) + '\n');
-      else process.stderr.write(`ERROR: hash manifest is stale — regenerate: node kit/scripts/cwos-hash-manifest.js --version ${version}\n`);
-      process.exit(1);
-    }
-    if (opts.json) process.stdout.write(JSON.stringify({ ok: true, version, file_count: Object.keys(hashes).length }) + '\n');
-    else process.stdout.write(`Hash manifest current (${Object.keys(hashes).length} files, v${version}).\n`);
+    if (opts.json) process.stdout.write(JSON.stringify({ ok: true, version, file_count: res.file_count }) + '\n');
+    else process.stdout.write(`Hash manifest current (${res.file_count} files, v${version}).\n`);
     process.exit(0);
   }
 
@@ -446,10 +471,76 @@ function main() {
   }
 }
 
+/**
+ * Is the committed baseline still a true description of the working tree?
+ *
+ * Split out of main() so the CLI and INV-071 share ONE definition of "stale"
+ * — the same shape INV-064 and INV-068 use for their gates. main() exits on
+ * the result; this returns it, because an invariant cannot call process.exit.
+ */
+function compareAgainstBaseline(homebase, version, hashes, outPath) {
+  if (!fs.existsSync(outPath)) {
+    const rel = path.relative(homebase, outPath).replace(/\\/g, '/');
+    return {
+      ok: false,
+      error: 'hash manifest missing',
+      detail: `hash manifest missing: ${rel} (run without --check to generate)`,
+      file_count: Object.keys(hashes).length,
+    };
+  }
+  const stripTs = s => s.replace(/^generated_at:.*$/m, 'generated_at: __IGNORE__');
+  const drift = stripTs(fs.readFileSync(outPath, 'utf8')) !==
+                stripTs(renderYAML(version, hashes, '__IGNORE__'));
+  if (drift) {
+    return {
+      ok: false,
+      error: 'hash manifest stale',
+      detail: `hash manifest is stale — regenerate: node kit/scripts/cwos-hash-manifest.js --version ${version}`,
+      file_count: Object.keys(hashes).length,
+    };
+  }
+  return { ok: true, file_count: Object.keys(hashes).length };
+}
+
+/**
+ * INV-071's entry point: has kit/ moved since the version in kit/VERSION was
+ * baselined?
+ *
+ * This is the question nothing asked. 3.9.0 was cut over 33 commits, 107 files
+ * and 31 new scripts that had accumulated behind 3.8.5 with the version
+ * unchanged — and because BOTH propagation paths key on that number
+ * (/fleet-update enters its loop only when kit_version_at_install <
+ * kit/VERSION; /kit-upgrade returns early on exact equality), every adopted
+ * repo correctly reported itself current while running four-day-old code.
+ * Third instance of the shape: 3.8.4 shipped a preamble fix that never
+ * arrived, 3.8.5 fixed the cause, and then 3.8.5 itself never shipped.
+ *
+ * Deliberately NOT reused: INV-039. It bounds FLEET drift as repo-version vs
+ * kit/VERSION, so when nothing is released every repo reads drift = 0 and it
+ * passes. It cannot see this class from where it stands, and its watched paths
+ * (fleet/, kit/VERSION) mean it does not even re-run when kit/scripts/ changes.
+ */
+function checkReleaseDrift(homebase) {
+  const versionPath = path.join(homebase, 'kit', 'VERSION');
+  if (!fs.existsSync(versionPath) || !fs.existsSync(path.join(homebase, 'kit', 'MANIFEST.yaml'))) {
+    return { applicable: false, reason: 'not a kit source repo' };
+  }
+  let version;
+  try { version = fs.readFileSync(versionPath, 'utf8').trim(); }
+  catch (e) { return { applicable: false, reason: `kit/VERSION unreadable — ${e.message}` }; }
+  if (!version) return { applicable: false, reason: 'kit/VERSION is empty' };
+
+  const { hashes } = computeHashes(homebase);
+  const outPath = path.join(homebase, 'kit', `hashes-${version}.yaml`);
+  const res = compareAgainstBaseline(homebase, version, hashes, outPath);
+  return { applicable: true, version, ...res };
+}
+
 module.exports = {
   computeHashes, renderYAML, findHomeBase,
   sourcesFromManifestFiles, computeHashesFromTag, sourcesAtTag,
   versionFromTag, listKitTags, backfillTag,
+  compareAgainstBaseline, checkReleaseDrift,
 };
 
 if (require.main === module) main();

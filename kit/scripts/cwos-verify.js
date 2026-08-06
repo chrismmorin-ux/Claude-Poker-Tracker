@@ -33,7 +33,7 @@ require('./lib/preflight');
 
 const fs = require('fs');
 const path = require('path');
-const { globFiles, readYAMLFile, findWorkstreamDir, todayISO, findRepoRoot, makeEventEmitter } = require('./lib/cwos-utils');
+const { globFiles, readYAMLFile, findWorkstreamDir, todayISO, findRepoRoot, makeEventEmitter, writeFileAtomic } = require('./lib/cwos-utils');
 const { cliGate } = require('./lib/cli');
 const { parseSemver, resolveRepoVersion, baselineTag } = require('./lib/kit-version');
 
@@ -155,6 +155,11 @@ const INVARIANT_CHECKS = [
   { id: 'INV-064', name: 'kit/MANIFEST.yaml ships every module its registered scripts require (WS-544)', check: checkManifestDepsComplete },
   { id: 'INV-065', name: 'Every fleet .cwos-version resolves to a version with a real kit baseline (WS-547 / ADR-064 P1)', check: checkVersionStampsResolvable },
   { id: 'INV-066', name: 'No script resolves a root by counting parent dirs up from __dirname (WS-549 / ADR-064 P3)', check: checkPathRootResolution },
+  { id: 'INV-067', name: 'No closure field is written behind a key-presence guard — value-aware upsert only (WS-561)', check: checkClosureGuardShape },
+  { id: 'INV-068', name: 'Every mechanism kit/declarations.yaml declares has a live consumer — no declaration fails open (WS-562)', check: checkDeclarationsHaveConsumers },
+  { id: 'INV-069', name: 'files_locked has a live writer AND a live reader — the session-schema field that shipped with neither (WS-564)', check: checkFilesLockedIsLive },
+  { id: 'INV-070', name: 'Verify itself completes: fast-mode stays inside its budget and replay-purity is actually confirmed (WS-566)', check: checkVerifyLiveness },
+  { id: 'INV-071', name: 'kit/ matches the baseline of the version it claims — unreleased changes cannot propagate (WS-578)', check: checkReleaseDrift },
 ];
 
 // ─── Incremental-selection + fast-mode metadata (WS-429 / FIND-296) ──────────
@@ -184,7 +189,14 @@ const INVARIANT_META = {
   'INV-028': { watched_paths: ['kit/scripts/', 'docs/'] },
   'INV-029': { watched_paths: ['docs/', 'kit/scripts/'] },
   'INV-030': { watched_paths: ['kit/scripts/core/'] },
-  'INV-031': { watched_paths: ['.claude/workstream/'], fast: true },
+  // NOT fast (WS-566). Measured at 281s on a 10k-event log, and the cost grows
+  // with the log forever — it replays every event from origin. It sat in the
+  // fast set against an 8-second SessionStart timeout, so it was launched and
+  // killed every session and ADR-020's replay-purity guarantee was verified
+  // never. It still runs in the full set and in --since-git-commit mode when
+  // workstream state changed; INV-070 fails if its last confirmed pass goes
+  // stale, so demoting it does not mean forgetting it.
+  'INV-031': { watched_paths: ['.claude/workstream/'] },
   'INV-032': { watched_paths: ['kit/scripts/'] },
   'INV-033': { watched_paths: ['kit/commands/'] },
   'INV-034': { watched_paths: ['.claude/workstream/programs/', 'kit/templates/workstream/programs/'] },
@@ -229,6 +241,22 @@ const INVARIANT_META = {
   // fast: a regex over ~170 files. Any script edit can reintroduce the pattern,
   // so kit/scripts/ is watched whole — the same reasoning as INV-064.
   'INV-066': { watched_paths: ['kit/scripts/'], fast: true },
+  'INV-067': { watched_paths: ['kit/scripts/'], fast: true },
+  // A consumer can stop reading a declared value in any script edit, and a
+  // declaring file can gain a value in any manifest edit, so both are watched
+  // whole. fast: it scans one registry plus its listed consumers, not the tree.
+  'INV-068': { watched_paths: ['kit/declarations.yaml', 'kit/MANIFEST.yaml', 'kit/scripts/'], fast: true },
+  'INV-069': { watched_paths: ['kit/scripts/'], fast: true },
+  // Deliberately fast AND cheap: it reads one small stamp file. A budget check
+  // that could itself blow the budget would be its own first violation.
+  'INV-070': { watched_paths: ['kit/scripts/cwos-verify.js', '.claude/workstream/'], fast: true },
+  // Watches kit/ WHOLE, deliberately. INV-039 watches only ['fleet/',
+  // 'kit/VERSION'] and so never re-runs when kit/scripts/ changes — which is
+  // exactly how 33 commits of kit changes reached no repo without any
+  // invariant noticing. Measured at 97ms over 405 files, so it is cheap
+  // enough for the fast set that runs every session (cf. INV-031, demoted
+  // for costing 281s).
+  'INV-071': { watched_paths: ['kit/'], fast: true },
   'INV-program-fields-have-runtime-effect': { watched_paths: ['kit/templates/workstream/programs/', 'kit/scripts/'] },
   'INV-preflight-gate-not-bypassed': { watched_paths: ['.claude/workstream/events/'], fast: true },
   // ALWAYS-RUN (no watched_paths, intentionally): INV-004 (broad persona scan),
@@ -1122,23 +1150,37 @@ function checkStateFreshness(rootDir) {
   };
 }
 
+// WS-560: this used to ALSO require that kit/commands/audit.md mention
+// "convergence". That condition was written before ADR-049 split engines into
+// standard / library / homebase-only, and it has been backwards ever since.
+//
+// audit.md ships (MANIFEST L4, no homebase_only flag). convergence.md does not
+// (engines/homebase-only/, homebase_only: true, enforced by INV-049). So the
+// condition demanded that a file installed into every adopted repo point at an
+// engine those repos are guaranteed never to receive — a dangling reference,
+// shipped deliberately, to satisfy an invariant. Commit f768d03 removed the
+// reference during a skeleton refactor and INV-013 has been red ever since,
+// telling us to reintroduce the defect.
+//
+// What remains is the part that still earns its keep: the engine exists and is
+// discoverable from the engine index. The propagation boundary itself is
+// enforced from the MANIFEST side by INV-049, which is the load-bearing guard.
 function checkConvergenceEngine(rootDir) {
   const enginePath = path.join(rootDir, 'engines/homebase-only/convergence.md');
   const indexPath = path.join(rootDir, 'engines/INDEX.md');
-  const auditPath = path.join(rootDir, 'kit/commands/audit.md');
 
   const engineExists = fs.existsSync(enginePath);
   const inIndex = fs.existsSync(indexPath) && fs.readFileSync(indexPath, 'utf8').includes('convergence');
-  const inAudit = fs.existsSync(auditPath) && fs.readFileSync(auditPath, 'utf8').includes('convergence');
 
   const issues = [];
   if (!engineExists) issues.push('engines/homebase-only/convergence.md missing');
   if (!inIndex) issues.push('not referenced in engines/INDEX.md');
-  if (!inAudit) issues.push('not referenced in kit/commands/audit.md');
 
   return {
     passed: issues.length === 0,
-    detail: issues.length === 0 ? 'convergence engine present in all 3 locations' : issues.join('; '),
+    detail: issues.length === 0
+      ? 'convergence engine present and indexed (homebase-only; propagation boundary enforced by INV-049)'
+      : issues.join('; '),
   };
 }
 
@@ -1146,19 +1188,40 @@ function checkRegistrySkillPaths(rootDir) {
   const registryPath = path.join(rootDir, 'kit/templates/workstream/engines/registry.yaml');
   if (!fs.existsSync(registryPath)) return { passed: false, detail: 'registry template not found' };
 
-  // Parse line-by-line to find active (uncommented) skill_path entries.
+  // Parse line-by-line to find active (uncommented) skill_path entries, and
+  // check them against kit/MANIFEST.yaml destinations — NOT against HomeBase's
+  // own filesystem.
   //
-  // Post-WS-139: skill_path is expected to point at an actual file that exists
-  // in both HomeBase and in adopted repos post-install. Standard engines live
-  // at `engines/standard/<name>.md`; library engines at
-  // `engines/library/<category>/<name>/SKILL.md`. Both are distributed by
-  // kit/MANIFEST.yaml (:1153-1277 for standard, library blocks below) so the
-  // destination paths are stable across /adopt.
+  // WS-558 rewrote this check because its previous premise was false. It read:
+  // "skill_path is expected to point at an actual file that exists in both
+  // HomeBase and in adopted repos post-install." No such path exists. HomeBase
+  // keeps engines at engines/standard/<id>.md and its .claude/commands/ holds
+  // only the 34 command hardlinks; an adopted repo gets the engine AT
+  // .claude/commands/<id>.md, which is what the MANIFEST declares, and gets no
+  // engines/standard/ tree at all (one row excepted).
   //
-  // The prior loose fallback (tried .claude/commands/, kit/commands/, AND
-  // engines/standard/) masked phantom entries because engines/standard/ always
-  // exists in HomeBase even when no command wrapper exists. That was the
-  // INV-014 loophole flagged by FIND-068.
+  // So the two halves were never satisfiable together, and this check enforced
+  // HomeBase's half. That is exactly backwards: the file it validates is a
+  // TEMPLATE, shipped to adopted repos, and it made the template correct for
+  // the one repo that never uses it. The invariant was guarding the bug —
+  // ai-content-ecosystem's 3.8.2 upgrade installed that template, produced 8
+  // dead paths, failed the path-resolution gate, and rolled back to 3.3.
+  //
+  // The question that actually matters is whether the path will exist in the
+  // repo the template lands in. A MANIFEST destination is the only honest
+  // answer, so that is what is checked. The source is checked too, so a
+  // destination whose file does not ship is still caught — the original
+  // phantom-entry concern from FIND-068, kept.
+  const manifest = cachedReadYAMLFile(path.join(rootDir, 'kit', 'MANIFEST.yaml'));
+  if (!manifest.ok || !Array.isArray(manifest.data && manifest.data.files)) {
+    return { passed: false, detail: 'kit/MANIFEST.yaml unreadable — cannot validate registry skill_paths' };
+  }
+  const sourceForDest = new Map();
+  for (const f of manifest.data.files) {
+    const dest = String(f.destination || '').replace(/\\/g, '/');
+    if (dest) sourceForDest.set(dest, String(f.source || ''));
+  }
+
   const content = fs.readFileSync(registryPath, 'utf8');
   const lines = content.split('\n');
   const phantoms = [];
@@ -1167,17 +1230,21 @@ function checkRegistrySkillPaths(rootDir) {
     if (line.trim().startsWith('#')) continue;
     const m = line.match(/^\s*skill_path:\s*(.+?)\s*$/);
     if (!m) continue;
-    const skillPath = m[1].replace(/^["']|["']$/g, '');
-    const resolved = path.join(rootDir, skillPath);
-    if (!fs.existsSync(resolved)) {
-      phantoms.push(skillPath);
+    const skillPath = m[1].replace(/^["']|["']$/g, '').replace(/\\/g, '/');
+    if (!sourceForDest.has(skillPath)) {
+      phantoms.push(`${skillPath} (no MANIFEST row installs to this path — dead in every adopted repo)`);
+      continue;
+    }
+    const src = sourceForDest.get(skillPath);
+    if (src && !fs.existsSync(path.join(rootDir, src))) {
+      phantoms.push(`${skillPath} (MANIFEST source ${src} missing in HomeBase)`);
     }
   }
 
   return {
     passed: phantoms.length === 0,
     detail: phantoms.length === 0
-      ? 'All active registry skill_paths resolve to existing files'
+      ? 'All active registry skill_paths are MANIFEST destinations whose sources ship'
       : `${phantoms.length} phantom entries: ${phantoms.join(', ')}`,
   };
 }
@@ -1588,8 +1655,14 @@ function checkDistributionRefs(rootDir) {
 // config→1, registry→3).
 function checkSchemaVersionConsistency(rootDir) {
   const SCHEMA_VERSION_RE = /^\s*schema_version:\s*(.+?)\s*$/;
+  // WS-560: the program family moved to 4 with ADR-053's registered
+  // migrateSchemaV3ToV4, but this pin stayed at 3 and had been reporting 13
+  // false violations against files that were correctly migrated. Keep the pin —
+  // a single expected value per family is what makes drift visible — but keep
+  // it CURRENT. When a family's schema moves, this table moves with it, in the
+  // same commit as the migration.
   const EXPECTED_BY_FAMILY = [
-    { re: /programs[\\/]prog-[^\\/]+\.ya?ml$/,       expected: 3 },
+    { re: /programs[\\/]prog-[^\\/]+\.ya?ml$/,       expected: 4 },
     { re: /programs[\\/]registry\.ya?ml$/,            expected: 3 },
     { re: /programs[\\/]skeleton[\\/]prog\.ya?ml$/,   expected: 3 },
     { re: /workstream[\\/]config\.ya?ml$/,            expected: 1 },
@@ -1649,69 +1722,102 @@ function checkSchemaVersionConsistency(rootDir) {
   };
 }
 
-// ─── INV-026: Hook Liveness (WS-138 / FIND-067) ───────────────────────────
+// ─── INV-026: Hook Liveness (WS-138 / FIND-067, rebuilt WS-564) ───────────
 //
 // Stop + SessionStart hooks run with `2>/dev/null || true`, suppressing every
 // error. If cwos-heartbeat.js or cwos-session-recovery.js crashes (bad
 // require chain, permission error, YAML parse fail), the failure is invisible
 // and session state rots silently. This check reads the liveness stamp file
-// that both scripts write at the top of their main() and flags staleness.
+// those scripts write and flags staleness.
+//
+// WHY IT NO LONGER STARTS FROM `.current-session` (WS-564). The pointer holds
+// exactly ONE id — cwos-claims calls it "legacy… not the identity of record"
+// precisely because it cannot represent N concurrent sessions. Resolving
+// through it made this check vacuous in the two states that matter most:
+//
+//   * pointer DELETED by a concurrent session (observed 2026-08-02) → the
+//     check returned PASS/"no active session" while three sessions were live
+//     and the heartbeat hook had been dead for two days;
+//   * pointer naming a session that had since ended → PASS/"N/A", again while
+//     other sessions were active.
+//
+// A vacuous pass is the fail-open shape this whole item exists to remove. So
+// the population is now every `status: active` record, and a missing pointer
+// with active records present is a FAILURE (the pointer's own consumers are
+// broken), not an excuse to skip.
 //
 // Decision logic:
-//   (1) No .current-session pointer or it points nowhere → PASS, N/A (no
-//       active session means no hook should be firing; nothing to verify).
-//   (2) Active session exists, stamp file missing → FAIL (hook likely never
-//       runs — Node missing? path wrong? permissions?).
-//   (3) Active session exists, stamp older than 2 hours → FAIL (hook is
-//       firing elsewhere but not updating the stamp — script crashed between
-//       require and stamp-write, or file is read-only, etc.).
-//   (4) Otherwise → PASS.
+//   (1) No active session records at all → PASS, N/A. Genuinely nothing to
+//       verify: no session means no hook should be firing.
+//   (2) Active records exist, stamp file missing → FAIL.
+//   (3) Active records exist, no `last_heartbeat_hook_at` → FAIL. Note the
+//       stamp now proves a session was actually ADVANCED, not merely that the
+//       script started (that is `last_heartbeat_hook_fired_at`). A hook that
+//       fires and advances nobody used to certify itself as healthy.
+//   (4) Stamp older than 2 hours → FAIL.
+//   (5) Every active record's own last_heartbeat older than 2h → FAIL, even
+//       when the stamp is fresh: the hook is running for SOME session while
+//       these rot, which is the concurrency case the pointer hid.
+//   (6) Otherwise → PASS.
 //
 // The 2-hour threshold is conservative: the Stop hook fires on every Claude
 // response, so during an active session the stamp updates in minutes. Two
 // hours absorbs long tool-waits (remote agents, browser automation) without
 // false-positive-ing.
 function checkHookLiveness(rootDir) {
+  const STALE_H = 2;
   const wsDir = path.join(rootDir, '.claude/workstream');
   if (!fs.existsSync(wsDir)) {
     return { passed: true, detail: 'no workstream dir (INV-026 N/A)' };
   }
 
-  const currentPtr = path.join(wsDir, '.current-session');
-  if (!fs.existsSync(currentPtr)) {
-    return { passed: true, detail: 'no active session (hook-liveness N/A)' };
+  const sessDir = path.join(wsDir, 'sessions');
+  let sessionFiles = [];
+  try { sessionFiles = fs.readdirSync(sessDir).filter((f) => f.endsWith('.yaml')); } catch { /* none */ }
+
+  // Every record that SAYS it is active — the whole population, not one pointer.
+  const active = [];
+  for (const f of sessionFiles) {
+    let raw;
+    try { raw = fs.readFileSync(path.join(sessDir, f), 'utf8'); } catch { continue; }
+    // Quote-tolerant, like the id and last_heartbeat reads three lines down.
+    // This one was not, which made it fail OPEN: a record written
+    // `status: "active"` is skipped, and if every active record were quoted the
+    // population would be empty and INV-026 would return "no sessions marked
+    // active (N/A)" — a PASS over total blindness. Same shape WS-564 fixed for
+    // the liveness stamp itself.
+    if (!/^status:\s*["']?active["']?\s*$/m.test(raw)) continue;
+    const id = (raw.match(/^id:\s*"?([^"\n]+?)"?\s*$/m) || [])[1] || f.replace(/\.yaml$/, '');
+    const hb = (raw.match(/^last_heartbeat:\s*"?([^"\n]+?)"?\s*$/m) || [])[1];
+    const t = hb ? Date.parse(hb.trim()) : NaN;
+    active.push({ id: id.trim(), beatMs: Number.isFinite(t) ? t : null });
   }
 
-  const sessionId = fs.readFileSync(currentPtr, 'utf8').trim();
-  if (!sessionId) {
-    return { passed: true, detail: '.current-session is empty (hook-liveness N/A)' };
+  if (active.length === 0) {
+    return { passed: true, detail: 'no session records marked active (hook-liveness N/A)' };
   }
 
-  const sessionPath = path.join(wsDir, 'sessions', `${sessionId}.yaml`);
-  if (!fs.existsSync(sessionPath)) {
-    return { passed: true, detail: `pointer to missing session ${sessionId} (hook-liveness N/A)` };
-  }
-
-  const sessionContent = fs.readFileSync(sessionPath, 'utf8');
-  const statusMatch = sessionContent.match(/^status:\s*(\S+)/m);
-  if (!statusMatch || statusMatch[1] !== 'active') {
-    return { passed: true, detail: `session ${sessionId} status=${statusMatch?.[1] || 'unknown'} (hook-liveness N/A)` };
-  }
+  const ptrPath = path.join(wsDir, '.current-session');
+  const ptrNote = fs.existsSync(ptrPath) ? '' : ' (and .current-session is absent — its consumers are blind)';
 
   const livenessPath = path.join(wsDir, '.hooks-liveness.yaml');
   if (!fs.existsSync(livenessPath)) {
     return {
       passed: false,
-      detail: `active session ${sessionId} but .hooks-liveness.yaml missing — hooks may never have fired. Check .claude/settings.local.json and kit/scripts/cwos-heartbeat.js.`,
+      detail: `${active.length} active session(s) but .hooks-liveness.yaml missing${ptrNote} — hooks may never have fired. Check .claude/settings.local.json and kit/scripts/cwos-heartbeat.js.`,
     };
   }
 
   const livenessContent = fs.readFileSync(livenessPath, 'utf8');
   const stampMatch = livenessContent.match(/^last_heartbeat_hook_at:\s*"?([^"\n]+)"?\s*$/m);
+  const firedMatch = livenessContent.match(/^last_heartbeat_hook_fired_at:\s*"?([^"\n]+)"?\s*$/m);
   if (!stampMatch) {
+    const firedNote = firedMatch
+      ? ` The script DID start (last_heartbeat_hook_fired_at ${firedMatch[1].trim()}) but advanced no session — it is resolving nobody.`
+      : '';
     return {
       passed: false,
-      detail: `active session ${sessionId} but liveness stamp has no last_heartbeat_hook_at — hook script may have crashed before stamping.`,
+      detail: `${active.length} active session(s) but liveness stamp has no last_heartbeat_hook_at${ptrNote}.${firedNote}`,
     };
   }
 
@@ -1724,16 +1830,28 @@ function checkHookLiveness(rootDir) {
   }
 
   const ageHours = (Date.now() - stampTime) / (60 * 60 * 1000);
-  if (ageHours > 2) {
+  if (ageHours > STALE_H) {
     return {
       passed: false,
-      detail: `active session ${sessionId} but last heartbeat hook fired ${ageHours.toFixed(1)}h ago — hook likely broken (check Node install and kit/scripts/cwos-heartbeat.js).`,
+      detail: `${active.length} active session(s) but last heartbeat hook advanced one ${ageHours.toFixed(1)}h ago — hook likely broken (check Node install and kit/scripts/cwos-heartbeat.js).`,
     };
   }
 
+  // (5) The stamp says SOMEBODY is beating. Say who is not.
+  const rotting = active.filter((a) => a.beatMs == null || (Date.now() - a.beatMs) / 3600000 > STALE_H);
+  if (rotting.length === active.length) {
+    return {
+      passed: false,
+      detail: `heartbeat hook is current (${ageHours.toFixed(2)}h) but all ${active.length} active record(s) are stale: `
+            + `${rotting.slice(0, 5).map((r) => r.id).join(', ')}${rotting.length > 5 ? ', …' : ''}. `
+            + 'The hook is advancing nobody these records know about — run cwos-session-recovery.js --auto.',
+    };
+  }
+
+  const rot = rotting.length ? `; ${rotting.length}/${active.length} active record(s) stale (run cwos-session-recovery.js --auto)` : '';
   return {
     passed: true,
-    detail: `active session ${sessionId}; last heartbeat hook ${ageHours.toFixed(2)}h ago (threshold 2h)`,
+    detail: `${active.length} active session(s); last heartbeat hook ${ageHours.toFixed(2)}h ago (threshold ${STALE_H}h)${rot}`,
   };
 }
 
@@ -1857,6 +1975,23 @@ function checkOutputShapeCoverage(rootDir) {
 // { passed: <coverage_ok>, detail: <summary> } and surfaces the uncovered
 // site list in `detail`. Fails only when coverage < 95%.
 
+// WS-560: scripts whose ONLY writes fall outside the scope this check declares
+// above — `.claude/workstream/`, `system/`, and the kit index/counter files.
+// The detector greps for write-function NAMES anywhere in a file and never looks
+// at the target, so these seven counted against coverage for writing a log to
+// the home directory or regenerating a doc. Explicit and tracked, in the same
+// spirit as INV-059's EVOLUTION_PATH_ALLOWLIST — not silent suppression. Each
+// entry names the path it actually writes; if one of these ever starts writing
+// CWOS state, delete its line rather than widening the comment.
+const INSTRUMENTATION_SCOPE_EXCLUSIONS = new Map([
+  ['cwos-admin-escalation-audit.js', '~/.claude/admin-escalation.log — machine-local, outside any repo'],
+  ['cwos-adr038-pass.js', 'a generated pass report under docs/'],
+  ['cwos-fleet-recognition.js', "ai-personal's nodes/*.md + *.trust.json — another repo's files"],
+  ['cwos-node-bootstrap.js', '.claude/commands/ hardlinks — gitignored, regenerated on demand'],
+  ['cwos-phone-publish.js', 'build/phone-outbox/ — build output'],
+  ['generate-commands-doc.js', 'docs/COMMANDS.md — a generated doc'],
+]);
+
 function checkShadowInstrumentationCoverage(rootDir) {
   const THRESHOLD = 0.95;
 
@@ -1873,6 +2008,7 @@ function checkShadowInstrumentationCoverage(rootDir) {
     const text = fs.readFileSync(full, 'utf8');
     const mutates = /writeFileAtomic|writeFileSync|appendFileSync|renameSync|unlinkSync|copyFileSync/.test(text);
     if (!mutates) continue;
+    if (INSTRUMENTATION_SCOPE_EXCLUSIONS.has(f)) continue;
     mutatingScripts.push(f);
     if (/require\(['"]\.\/core\/events['"]\)|require\(['"]\.\.\/core\/events['"]\)|makeEventEmitter\(\)|loadEventDeps\(\)/.test(text)) {
       instrumentedScripts.push(f);
@@ -1900,7 +2036,12 @@ function checkShadowInstrumentationCoverage(rootDir) {
   const scriptUncovered = mutatingScripts.filter((f) => !instrumentedScripts.includes(f));
   const detail = passed
     ? `Coverage ${(overallCov * 100).toFixed(0)}% — scripts ${instrumentedScripts.length}/${mutatingScripts.length}, commands ${commandsInstrumented.length}/${cmds.length}.`
-    : `Coverage ${(overallCov * 100).toFixed(0)}% < ${(THRESHOLD * 100).toFixed(0)}% — scripts ${instrumentedScripts.length}/${mutatingScripts.length} (${scriptUncovered.slice(0, 5).join(', ')}${scriptUncovered.length > 5 ? `, +${scriptUncovered.length - 5} more` : ''}), commands ${commandsInstrumented.length}/${cmds.length} (${commandsUncovered.slice(0, 5).join(', ')}${commandsUncovered.length > 5 ? `, +${commandsUncovered.length - 5} more` : ''}). Uncovered sites are candidates for the instrumentation long-tail WS; escape valve at §Alternatives #8 if <95% after 1 month.`;
+    // WS-560: this used to advise "escape valve at §Alternatives #8 if <95%
+    // after 1 month". ADR-018 §Alternatives #8 says the opposite — the wrapper
+    // alternative is "retired as a sleeping option, NOT a calendar-scheduled
+    // escape valve", because WS-187 closed this to 100% with the script layer.
+    // A red invariant pointing at a retired remedy invites the wrong fix.
+    : `Coverage ${(overallCov * 100).toFixed(0)}% < ${(THRESHOLD * 100).toFixed(0)}% — scripts ${instrumentedScripts.length}/${mutatingScripts.length} (${scriptUncovered.slice(0, 5).join(', ')}${scriptUncovered.length > 5 ? `, +${scriptUncovered.length - 5} more` : ''}), commands ${commandsInstrumented.length}/${cmds.length} (${commandsUncovered.slice(0, 5).join(', ')}${commandsUncovered.length > 5 ? `, +${commandsUncovered.length - 5} more` : ''}). Fix by instrumenting the listed sites (makeEventEmitter + a real emit at the mutation point), or — if a script's writes fall outside .claude/workstream/, system/ and the kit index files — add it to INSTRUMENTATION_SCOPE_EXCLUSIONS with its actual write target named.`;
 
   return { passed, detail };
 }
@@ -2535,9 +2676,34 @@ function checkFleetVersionDrift(rootDir) {
     if (!repo.adopted_at) continue;                // unadopted — no drift to measure
     checkedCount++;
 
-    const repoVersionRaw = repo.kit_version;
+    // WS-560: read the repo's REAL stamp, not the registry's `kit_version`
+    // cache. That cache is deprecated — INV-065 exists precisely because it
+    // lies (see checkVersionStampsResolvable's header: physical-therapy-by-ai
+    // "resolved three releases ahead of reality"). On 2026-08-02 it was still
+    // lying in the other direction: it reported Claude-Poker-Tracker at 3.5.0
+    // and Physical-Therapy-by-AI at 3.3 when both had been on 3.8.5 for days.
+    // Three of this invariant's four "violations" were cache staleness, which
+    // is worse than a wrong number — it points a fleet-wide upgrade at repos
+    // that do not need one, and hides the one that does.
+    //
+    // resolveRepoVersion is the shared resolver INV-065 uses. Deliberately not
+    // a second precedence of my own: a fifth reader with its own rules is the
+    // exact class WS-547 closed.
+    let repoVersionRaw = null;
+    let versionSource = 'stamp';
+    const resolvedStamp = repo.path && fs.existsSync(path.join(repo.path, '.cwos-version'))
+      ? resolveRepoVersion(repo.path)
+      : null;
+    if (resolvedStamp && resolvedStamp.version) {
+      repoVersionRaw = String(resolvedStamp.version);
+    } else if (repo.path && !fs.existsSync(repo.path)) {
+      // Hosted on another node (ADR-057) — the stamp is unreadable from here,
+      // so the cache is the only evidence available. Say which one we used.
+      repoVersionRaw = typeof repo.kit_version === 'string' ? repo.kit_version : null;
+      versionSource = 'registry-cache (repo not on this node)';
+    }
     if (typeof repoVersionRaw !== 'string' || !repoVersionRaw.length) {
-      warnings.push(`${repo.name || '?'}: missing kit_version (adopted but field absent)`);
+      warnings.push(`${repo.name || '?'}: no resolvable kit version (.cwos-version unreadable and no registry cache)`);
       continue;
     }
     const repoParsed = parseSemver(repoVersionRaw);
@@ -2551,14 +2717,14 @@ function checkFleetVersionDrift(rootDir) {
     // Major mismatch = unconditional violation (drift is conceptually infinite).
     if (repoMajor !== headMajor) {
       if (openMigrationsByRepo.has(repo.name)) continue;
-      violations.push(`${repo.name}: kit_version ${repoVersionRaw} → HEAD ${headVersionRaw} (major mismatch — migration required)`);
+      violations.push(`${repo.name}: ${repoVersionRaw} [${versionSource}] → HEAD ${headVersionRaw} (major mismatch — migration required)`);
       continue;
     }
 
     const drift = headMinor - repoMinor;
     if (drift > MAX_DRIFT_MINOR) {
       if (openMigrationsByRepo.has(repo.name)) continue;
-      violations.push(`${repo.name}: kit_version ${repoVersionRaw} → HEAD ${headVersionRaw} (drift = ${drift} minor)`);
+      violations.push(`${repo.name}: ${repoVersionRaw} [${versionSource}] → HEAD ${headVersionRaw} (drift = ${drift} minor)`);
     }
   }
 
@@ -3009,12 +3175,17 @@ function main() {
     process.exit(1);
   }
 
+  // WS-566: time every check. Without durations, "fast" is an assertion nobody
+  // measures — INV-031 sat in the fast set for months at 281 seconds against an
+  // 8-second SessionStart timeout, so it was launched and killed every session
+  // and no signal said so.
   const results = [];
   for (const inv of checks) {
     let result;
+    const t0 = Date.now();
     try { result = inv.check(rootDir); }
     catch (e) { result = { passed: false, detail: `Check threw: ${e.message}` }; }
-    results.push({ ...inv, ...result });
+    results.push({ ...inv, ...result, duration_ms: Date.now() - t0 });
   }
 
   const failed = results.filter(r => !r.passed);
@@ -3035,6 +3206,16 @@ function main() {
     if (!quiet) console.log(`Updated "Last Verified" date in invariants.md for ${results.length} passing checks`);
   }
 
+  // WS-566: a run that COMPLETED says so, with what it cost. A killed run
+  // writes nothing, which is what makes "killed" distinguishable from "clean"
+  // — the distinction the SessionStart wiring (`--quiet 2>/dev/null || true`,
+  // timeout 8) otherwise destroys.
+  try {
+    stampVerifyLiveness(rootDir, results, { fastMode, sinceMode, onlyId });
+  } catch (e) {
+    if (!quiet) console.error(`verify-liveness stamp failed: ${e.message}`);
+  }
+
   // WS-376: update per-INV consecutive-failure log. Only updates checks that
   // actually ran (--only narrows the set; we only mutate what we observed).
   try {
@@ -3045,6 +3226,82 @@ function main() {
   }
 
   if (strict && failed.length > 0) process.exit(1);
+}
+
+// ─── WS-566: proof that a verify run finished, and what it cost ─────────────
+//
+// The SessionStart hook runs `cwos-verify.js --fast-mode --since-git-commit
+// --quiet 2>/dev/null || true` with an 8-second timeout. Every part of that
+// line discards evidence: the timeout kills it, `2>/dev/null` eats the stderr,
+// and `|| true` eats the exit code. A run that never finished is therefore
+// indistinguishable from a clean one — which is how INV-031 spent months being
+// launched and killed while ADR-020's replay-purity guarantee went unverified.
+//
+// The fix is the same shape as .hooks-liveness.yaml: only a run that REACHES
+// THE END writes the stamp, so absence is the signal. Durations are recorded
+// per invariant, which turns `fast: true` from an assertion into a measurement
+// INV-070 can check.
+const VERIFY_LIVENESS_FILE = '.verify-liveness.yaml';
+
+function stampVerifyLiveness(rootDir, results, { fastMode, sinceMode, onlyId }) {
+  const wsDir = path.join(rootDir, '.claude', 'workstream');
+  if (!fs.existsSync(wsDir)) return;
+  const p = path.join(wsDir, VERIFY_LIVENESS_FILE);
+
+  // Preserve what this run did not observe: a --fast-mode run must not erase
+  // the record of the last FULL run, or the staleness check it feeds becomes a
+  // measure of how recently someone ran the cheap subset.
+  const prior = {};
+  try {
+    for (const line of fs.readFileSync(p, 'utf8').split('\n')) {
+      const m = line.match(/^([a-z_]+):\s*"?([^"\n]*)"?\s*$/);
+      if (m) prior[m[1]] = m[2].trim();
+    }
+  } catch { /* first write */ }
+
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const mode = onlyId ? `only:${onlyId}` : (fastMode ? 'fast' : (sinceMode ? 'since-git-commit' : 'full'));
+  const total = results.reduce((n, r) => n + (r.duration_ms || 0), 0);
+
+  const out = { ...prior };
+  out.last_run_completed_at = now;
+  out.last_run_mode = mode;
+  out.last_run_ms = String(total);
+  if (fastMode) {
+    out.last_fast_completed_at = now;
+    out.last_fast_ms = String(total);
+    // Slowest fast-mode check, so a budget regression is visible without
+    // re-running anything.
+    const slowest = results.slice().sort((a, b) => (b.duration_ms || 0) - (a.duration_ms || 0))[0];
+    if (slowest) {
+      out.slowest_fast_id = slowest.id;
+      out.slowest_fast_ms = String(slowest.duration_ms || 0);
+    }
+  }
+  if (!fastMode && !sinceMode && !onlyId) out.last_full_completed_at = now;
+
+  // Replay-purity is the guarantee this item exists to keep honest, so its last
+  // CONFIRMED pass is recorded by name wherever it runs from.
+  const replay = results.find((r) => r.id === 'INV-031');
+  if (replay && replay.passed) {
+    out.last_replay_purity_ok_at = now;
+    out.last_replay_purity_ms = String(replay.duration_ms || 0);
+  }
+
+  const order = [
+    'last_run_completed_at', 'last_run_mode', 'last_run_ms',
+    'last_fast_completed_at', 'last_fast_ms', 'slowest_fast_id', 'slowest_fast_ms',
+    'last_full_completed_at', 'last_replay_purity_ok_at', 'last_replay_purity_ms',
+  ];
+  const body = [
+    '# Written by cwos-verify.js ONLY on a run that reached the end (WS-566).',
+    '# Absence or staleness is the signal: the SessionStart hook runs verify',
+    '# with a timeout, 2>/dev/null and || true, so a killed run is otherwise',
+    '# indistinguishable from a clean one. Read by INV-070.',
+    ...order.filter((k) => out[k] !== undefined && out[k] !== '').map((k) => `${k}: "${out[k]}"`),
+  ].join('\n') + '\n';
+
+  writeFileAtomic(p, body, { skipSizeGate: true });
 }
 
 // WS-376 / FIND-251: persistent firing log so consecutive-failure thresholds
@@ -3273,20 +3530,40 @@ function checkCapabilityBriefSchema(rootDir) {
     return { passed: true, detail: 'cwos-program-schema-validate.js not present — INV-041 N/A (pre-WS-166)' };
   }
   const { execFileSync } = require('child_process');
+
+  // WS-560: the validator exits 1 when it FINDS violations — correct CLI
+  // behaviour, and exactly what ADR-063 asks of these scripts. execFileSync
+  // throws on any non-zero exit, so the previous `catch` swallowed every real
+  // violation and reported "validator threw ... INV-041 cannot run" instead.
+  // The invariant was reporting itself broken while the validator was working
+  // perfectly and naming a genuine problem (prog-security shipping 6
+  // problems_prevented against a 3-5 schema).
+  //
+  // A non-zero exit whose stdout is still parseable JSON is a RESULT. Only an
+  // unparseable one is a crash.
+  let result = null;
+  let crash = null;
   try {
-    const out = execFileSync('node', [validatorPath, '--quiet'], { cwd: rootDir, encoding: 'utf8' });
-    const result = JSON.parse(out);
-    if (result.ok) {
-      return { passed: true, detail: `${result.programs_checked} product program(s) all ship valid capability_brief (${result.programs_skipped} skipped: monitor_only or template)` };
-    }
-    const sample = result.failures.slice(0, 3).map(f => `${f.program}: ${f.errors[0]}`).join('; ');
-    return {
-      passed: false,
-      detail: `${result.failures.length} program(s) failed capability_brief schema: ${sample}${result.failures.length > 3 ? ` (+${result.failures.length - 3} more)` : ''}. Run \`node kit/scripts/cwos-program-schema-validate.js\` for full output.`,
-    };
+    result = JSON.parse(execFileSync('node', [validatorPath, '--quiet'], { cwd: rootDir, encoding: 'utf8' }));
   } catch (err) {
-    return { passed: false, detail: `capability_brief validator threw: ${err.message}. INV-041 cannot run.` };
+    try {
+      result = JSON.parse(err.stdout || '');
+    } catch {
+      crash = err;
+    }
   }
+  if (crash) {
+    return { passed: false, detail: `capability_brief validator crashed (no parseable output): ${crash.message}. INV-041 cannot run.` };
+  }
+
+  if (result.ok) {
+    return { passed: true, detail: `${result.programs_checked} product program(s) all ship valid capability_brief (${result.programs_skipped} skipped: monitor_only or template)` };
+  }
+  const sample = result.failures.slice(0, 3).map(f => `${f.program}: ${f.errors[0]}`).join('; ');
+  return {
+    passed: false,
+    detail: `${result.failures.length} program(s) failed capability_brief schema: ${sample}${result.failures.length > 3 ? ` (+${result.failures.length - 3} more)` : ''}. Run \`node kit/scripts/cwos-program-schema-validate.js\` for full output.`,
+  };
 }
 
 // ─── INV-043: CLI-bypass-via-command (FIND-119 / WS-276) ───────────────────
@@ -3527,8 +3804,24 @@ function checkReadRestraint(rootDir) {
     return ackTimestamps.some((ackT) => t >= ackT && t - ackT <= ACK_WINDOW_MS);
   }
 
+  // WS-560 — sensor cutover. Until 2026-08-02, scanFromBoundary in
+  // cwos-stop-telemetry.js counted tool calls from the session's LAST slash
+  // command to the end of the transcript, so everything the session did after
+  // a /next was billed to that /next. Every one of this invariant's four
+  // standing violations was that artifact — one reported Read=25 for a session
+  // that ran /next and then worked for hours. The scan is now bounded at the
+  // next genuine user turn (+7 tests), but the bad measurements are already in
+  // a hash-chained append-only log and cannot be rewritten.
+  //
+  // Enforcing a threshold against readings from a sensor known to be broken
+  // does not measure compliance, it just keeps the light red. Same treatment
+  // INV-053 gives its pre-cutover findings: exempt, counted, and named.
+  const SENSOR_CUTOVER = '2026-08-02';
+  const preCutover = nextRuns.filter(i => String(i.completed_at || '') < SENSOR_CUTOVER);
+  const measurable = nextRuns.filter(i => String(i.completed_at || '') >= SENSOR_CUTOVER);
+
   const violations = [];
-  for (const inv of nextRuns) {
+  for (const inv of measurable) {
     if (isAcknowledged(inv)) continue;
     const reads = (inv.tool_rounds_by_type && typeof inv.tool_rounds_by_type.Read === 'number') ? inv.tool_rounds_by_type.Read : 0;
     if (reads > max) {
@@ -3536,10 +3829,16 @@ function checkReadRestraint(rootDir) {
     }
   }
 
+  const exemptNote = preCutover.length
+    ? ` (${preCutover.length} pre-${SENSOR_CUTOVER} invocation(s) exempt — measured by the unbounded sensor WS-560 fixed)`
+    : '';
+
   if (violations.length === 0) {
     return {
       passed: true,
-      detail: `clean — last ${nextRuns.length} /next invocation(s) with telemetry all ≤ ${max} Reads`,
+      detail: measurable.length === 0
+        ? `no post-${SENSOR_CUTOVER} /next telemetry yet — awaiting readings from the corrected sensor${exemptNote}`
+        : `clean — ${measurable.length} /next invocation(s) all ≤ ${max} Reads${exemptNote}`,
     };
   }
 
@@ -3894,6 +4193,282 @@ function checkManifestDepsComplete(rootDir) {
   return { passed: false, detail: `${v.length} manifest dependency violation(s) — ${summary}` };
 }
 
+// ─── INV-071: unreleased kit changes cannot propagate (WS-578) ───────────────
+//
+// Delegates to cwos-hash-manifest.js — one definition of "stale", two entry
+// points (here, and the CLI's --check), the shape INV-064 and INV-068 use.
+//
+// What it catches: kit/ has moved since the version in kit/VERSION was
+// baselined. That state is invisible everywhere else and silently disables
+// BOTH propagation paths, because each keys on the version number rather than
+// on content — /fleet-update enters its loop only when kit_version_at_install
+// < kit/VERSION, and /kit-upgrade returns early on exact equality. So every
+// adopted repo reports itself current, truthfully, while running old code.
+//
+// Absence degrades to PASS on the same reasoning as INV-064/068: an adopted
+// repo is not a kit source and has nothing to release.
+function checkReleaseDrift(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-hash-manifest.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-hash-manifest.js not present — N/A' };
+  }
+  let checkFn;
+  try { ({ checkReleaseDrift: checkFn } = require(script)); }
+  catch (e) { return { passed: true, detail: `hash-manifest not loadable — ${e.message}` }; }
+  if (typeof checkFn !== 'function') {
+    return { passed: true, detail: 'hash-manifest predates the release-drift entry point — N/A' };
+  }
+
+  let res;
+  try { res = checkFn(rootDir); }
+  catch (e) { return { passed: true, detail: `release-drift check errored — ${e.message} (N/A)` }; }
+
+  if (!res.applicable) return { passed: true, detail: `${res.reason} — N/A` };
+  if (res.ok) {
+    return { passed: true, detail: `kit/ matches the v${res.version} baseline (${res.file_count} files)` };
+  }
+  return {
+    passed: false,
+    detail: `kit/ has changed since v${res.version} was baselined — ${res.error}. `
+      + `Until kit/VERSION is bumped and re-baselined, /fleet-update and /kit-upgrade are both no-ops `
+      + `and every adopted repo will report itself current while running older code.`,
+  };
+}
+
+// ─── INV-068: no declaration fails open (WS-562) ─────────────────────────────
+// Delegates to cwos-declaration-liveness.js — one definition, two entry points
+// (here, and the publish gate inside cwos-hash-manifest.js), the same shape
+// INV-064 uses.
+//
+// Absence degrades to PASS on the same reasoning as INV-064: a repo that never
+// received the registry is not in violation. Note the asymmetry this preserves
+// — a MISSING registry passes, a registry declaring something nothing reads
+// fails. The gate is about declarations that lie, not about having one.
+//
+// Waived violations do NOT fail the invariant. They are dated and tracked in
+// kit/declarations.yaml, so they are already visible work items rather than
+// silent drift; failing on them would make /verify permanently red and teach
+// people to ignore it. An EXPIRED waiver does fail — that is the point of the
+// expiry.
+function checkDeclarationsHaveConsumers(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-declaration-liveness.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-declaration-liveness.js not present — N/A' };
+  }
+  if (!fs.existsSync(path.join(rootDir, 'kit', 'declarations.yaml'))) {
+    return { passed: true, detail: 'no kit/declarations.yaml — N/A (not a kit source repo)' };
+  }
+
+  let checkDeclarationLiveness;
+  try { ({ checkDeclarationLiveness } = require(script)); }
+  catch (e) { return { passed: true, detail: `validator not loadable — ${e.message}` }; }
+
+  const result = checkDeclarationLiveness(rootDir);
+  if (result.exit_code === 2) {
+    return { passed: true, detail: `registry unreadable — ${result.error} (N/A)` };
+  }
+  const waivedNote = result.waived.length ? `, ${result.waived.length} waived` : '';
+  if (result.ok) {
+    const values = result.report.reduce((n, r) => n + r.values_discovered, 0);
+    return {
+      passed: true,
+      detail: `${result.declarations_checked} declaration(s), ${values} declared value(s) — every one has a live consumer${waivedNote}`,
+    };
+  }
+
+  const v = result.violations;
+  const summary = v.slice(0, 4).map((x) => `[${x.kind}] ${x.consumer || x.value || x.target || x.declaration}`).join(' | ')
+    + (v.length > 4 ? ` (+${v.length - 4} more)` : '');
+  return { passed: false, detail: `${v.length} declaration liveness violation(s) — ${summary}` };
+}
+
+// ─── INV-069: files_locked is written and read, not merely declared (WS-564) ─
+//
+// `files_locked` sat in the session schema from adoption with ZERO writers
+// anywhere in the kit — scaffolded to `[]` by /session-start, by
+// cwos-session-register, and by cwos-claims' mint, then never touched again.
+// That is the identical shape WS-533 diagnosed for `claimed_by` ("nothing ever
+// ACQUIRED one"), except that fix stopped at items and never reached files. The
+// cost was concrete: claude-poker-tracker's git guard had to infer ownership
+// from file mtimes, and documented its own gap — a session that started before
+// ours and edits after we begin is invisible to that proof.
+//
+// WHY THIS IS ITS OWN INVARIANT AND NOT AN INSTANCE OF INV-068. That gate reads
+// kit/declarations.yaml, which discovers the VALUES a key takes in a declaring
+// YAML file — the right shape for an enum like merge_strategy. `files_locked`
+// has no enum of values; it is a list field whose defect is the absence of a
+// writer. The general class is WS-562's; this asserts the specific mechanism
+// this item shipped, so that losing the writer again fails loudly rather than
+// reverting to a scaffolded [] that looks exactly like working code.
+//
+// Both directions are checked. A writer with no reader is a field being
+// diligently maintained for nobody — the same fail-open wearing a different hat.
+function checkFilesLockedIsLive(rootDir) {
+  const scriptsDir = path.join(rootDir, 'kit', 'scripts');
+  if (!fs.existsSync(scriptsDir)) {
+    return { passed: true, detail: 'no kit/scripts/ — N/A (not a kit source repo)' };
+  }
+
+  const claimsPath = path.join(scriptsDir, 'lib', 'cwos-claims.js');
+  if (!fs.existsSync(claimsPath)) {
+    return { passed: true, detail: 'no lib/cwos-claims.js — N/A' };
+  }
+  const claims = fs.readFileSync(claimsPath, 'utf8');
+  if (!/function\s+lockFiles\s*\(/.test(claims) || !/files_locked/.test(claims)) {
+    return {
+      passed: false,
+      detail: 'lib/cwos-claims.js no longer exports a files_locked acquire path (lockFiles). '
+            + 'The field is back to being scaffolded and never written — WS-564 all over again.',
+    };
+  }
+
+  // Callers, excluding the library that defines the function and the tests that
+  // exercise it: a mechanism whose only caller is its own test is not live.
+  const writers = [];
+  const readers = [];
+  const walk = (dir) => {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name === '__tests__' || e.name === 'node_modules') continue;
+        walk(p);
+        continue;
+      }
+      if (!e.name.endsWith('.js')) continue;
+      if (p === claimsPath) continue;
+      let text;
+      try { text = fs.readFileSync(p, 'utf8'); } catch { continue; }
+      const rel = path.relative(rootDir, p).split('\\').join('/');
+      if (/\blockFiles\s*\(/.test(text)) writers.push(rel);
+      if (/\b(listFileLocks|findFileLockConflicts)\s*\(/.test(text)) readers.push(rel);
+    }
+  };
+  walk(scriptsDir);
+
+  if (!writers.length) {
+    return {
+      passed: false,
+      detail: 'files_locked has an acquire function (lockFiles) that NOTHING calls. A field with a '
+            + 'writer nobody invokes is indistinguishable from one that never had a writer — wire it '
+            + 'from cwos-git.js record (PostToolUse) or stage, or delete the field.',
+    };
+  }
+  if (!readers.length) {
+    return {
+      passed: false,
+      detail: `files_locked is written by ${writers.join(', ')} but read by nothing — ownership is being `
+            + 'recorded for no consumer. The reader is the point: cwos-git.js guard/stage uses it to '
+            + 'decide what belongs to whom.',
+    };
+  }
+
+  return {
+    passed: true,
+    detail: `files_locked: ${writers.length} writer(s) [${writers.slice(0, 3).join(', ')}], `
+          + `${readers.length} reader(s) [${readers.slice(0, 3).join(', ')}]`,
+  };
+}
+
+// ─── INV-070: verify itself completes, and `fast` means fast (WS-566) ───────
+//
+// Three assertions disagreed silently and nothing reconciled them: INV-031 was
+// DECLARED `fast: true`, MEASURED at 281s, and RUN by a hook with an 8-second
+// timeout, `2>/dev/null` and `|| true`. Launched and killed every session for
+// months, reported as nothing at all.
+//
+// This closes the loop with the only two facts that can be checked cheaply:
+//   1. did the fast set stay inside its budget the last time it ran, and
+//   2. has replay-purity been CONFIRMED recently, now that it is no longer in
+//      the fast set and could otherwise quietly stop running altogether.
+//
+// It reads the stamp cwos-verify writes at the END of a run. It deliberately
+// does not re-run anything: a budget check that costs seconds to answer "are we
+// under budget" is its own first violation.
+const FAST_BUDGET_MS = 15000;      // whole fast set, per run
+const FAST_SINGLE_BUDGET_MS = 8000; // any single fast check — the hook's own timeout
+const REPLAY_STALE_DAYS = 14;
+
+function checkVerifyLiveness(rootDir) {
+  const wsDir = path.join(rootDir, '.claude', 'workstream');
+  if (!fs.existsSync(wsDir)) {
+    return { passed: true, detail: 'no workstream dir (INV-070 N/A)' };
+  }
+  const p = path.join(wsDir, VERIFY_LIVENESS_FILE);
+  if (!fs.existsSync(p)) {
+    // First run after adopting this check writes the stamp on its way out, so
+    // this is a one-time N/A rather than a failure.
+    return { passed: true, detail: 'no .verify-liveness.yaml yet — this run creates it' };
+  }
+
+  const stamp = {};
+  try {
+    for (const line of fs.readFileSync(p, 'utf8').split('\n')) {
+      const m = line.match(/^([a-z_]+):\s*"?([^"\n]*)"?\s*$/);
+      if (m) stamp[m[1]] = m[2].trim();
+    }
+  } catch (e) {
+    return { passed: false, detail: `.verify-liveness.yaml unreadable — ${e.message}` };
+  }
+
+  const problems = [];
+  const notes = [];
+
+  const fastMs = Number(stamp.last_fast_ms);
+  if (Number.isFinite(fastMs)) {
+    notes.push(`fast set ${(fastMs / 1000).toFixed(1)}s`);
+    if (fastMs > FAST_BUDGET_MS) {
+      problems.push(`the fast set took ${(fastMs / 1000).toFixed(1)}s (budget ${FAST_BUDGET_MS / 1000}s) — `
+        + 'it is run at SessionStart under a timeout, so over-budget means silently truncated');
+    }
+    const slowMs = Number(stamp.slowest_fast_ms);
+    if (Number.isFinite(slowMs) && slowMs > FAST_SINGLE_BUDGET_MS) {
+      problems.push(`${stamp.slowest_fast_id || 'a fast check'} alone took ${(slowMs / 1000).toFixed(1)}s `
+        + `(single-check budget ${FAST_SINGLE_BUDGET_MS / 1000}s) — it cannot finish inside the hook's timeout`);
+    }
+  }
+
+  // Replay-purity left the fast set in WS-566. That is only safe while its
+  // absence is loud — but only where there is something to verify.
+  //
+  // A freshly adopted repo has no event log, so demanding a replay confirmation
+  // would put a brand-new invariant in the red on day one and point the founder
+  // at a check that takes minutes to say "nothing to compare". That is the
+  // documented route to a gate being switched off (see INV-068's notes), and
+  // ADR-020's guarantee is vacuous until events exist anyway.
+  const eventsDir = path.join(wsDir, 'events');
+  let eventFiles = [];
+  try { eventFiles = fs.readdirSync(eventsDir).filter((f) => f.endsWith('.jsonl')); } catch { /* none */ }
+  if (eventFiles.length === 0) {
+    notes.push('no event log yet — replay-purity N/A');
+    return problems.length
+      ? { passed: false, detail: problems.join(' | ') }
+      : { passed: true, detail: notes.join('; ') };
+  }
+
+  const okAt = Date.parse(stamp.last_replay_purity_ok_at || '');
+  if (!Number.isFinite(okAt)) {
+    problems.push('replay-purity (INV-031) has never been confirmed on this repo — '
+      + 'run `node kit/scripts/cwos-verify.js --only INV-031` (slow by design; it replays the whole event log)');
+  } else {
+    const days = (Date.now() - okAt) / 86400000;
+    notes.push(`replay-purity confirmed ${days.toFixed(1)}d ago`);
+    if (days > REPLAY_STALE_DAYS) {
+      problems.push(`replay-purity last confirmed ${Math.floor(days)}d ago (max ${REPLAY_STALE_DAYS}d) — `
+        + 'ADR-020 says state/*.json is derivable from the event log; that is a claim, not an observation, until this runs');
+    }
+  }
+
+  if (problems.length) {
+    return { passed: false, detail: problems.join(' | ') };
+  }
+  return {
+    passed: true,
+    detail: notes.length ? notes.join('; ') : `stamped ${stamp.last_run_completed_at || 'unknown'}`,
+  };
+}
+
 // ─── INV-066: nothing finds a root by counting parent dirs (WS-549) ──────────
 // Delegates to cwos-pathroot-lint.js. Same absence-degrades-to-PASS contract as
 // INV-064 above: a repo that never received the linter is not in violation.
@@ -3927,8 +4502,48 @@ function checkPathRootResolution(rootDir) {
   };
 }
 
+// ─── INV-067: no key-presence guard on a closure field (WS-561) ──────────────
+// Delegates to cwos-closure-guard-lint.js. Absence-degrades-to-PASS, matching
+// INV-064/INV-066.
+//
+// This guards the GUARD, not the data. Null-scaffolded items are legal — they
+// arrive via migration, and cwos-adopt-install.js:1630 already treats
+// `completed_at: null` as the canonical pre-closure form — so a data check
+// would fail on correct input forever. What must never recur is the
+// presence-test, which asks whether a key exists when it means whether the key
+// has a value, and silently drops the write when the answer differs.
+//
+// It exists because WS-561's fix is TOLERANCE, and tolerance suppresses the
+// signal that would reveal a sixth site hand-rolling the old shape. Five sites
+// carried it, two byte-for-byte identical, and nothing failed for months.
+function checkClosureGuardShape(rootDir) {
+  const script = path.join(rootDir, 'kit', 'scripts', 'cwos-closure-guard-lint.js');
+  if (!fs.existsSync(script)) {
+    return { passed: true, detail: 'cwos-closure-guard-lint.js not present — N/A' };
+  }
+
+  let scan;
+  try { ({ scan } = require(script)); }
+  catch (e) { return { passed: true, detail: `linter not loadable — ${e.message}` }; }
+
+  const result = scan(rootDir);
+  if (result.ok) {
+    return {
+      passed: true,
+      detail: `${result.files_scanned} script(s) scanned — no key-presence guards on closure fields`,
+    };
+  }
+
+  const summary = result.violations.slice(0, 4).map(v => `${v.file}:${v.line}`).join(' | ')
+    + (result.violations.length > 4 ? ` (+${result.violations.length - 4} more)` : '');
+  return {
+    passed: false,
+    detail: `${result.violation_count} closure field(s) written behind a key-presence guard — ${summary}. Use cwos-utils.upsertYAMLScalarField.`,
+  };
+}
+
 if (require.main === module) {
   main();
 }
 
-module.exports = { checkCliBypassViaCommand, checkReadRestraint, checkPersonaDispatch, checkProgramYamlSchema, checkAdopterValueRelation, checkCommandManifestCoverage, checkAdoptInstallAtomicWrites, checkDistributionRefs, checkNoHardcodedEvolutionPaths, checkPreflightGateNotBypassed, checkEngineModelTiers, checkSecurityPostureMatchesDeclaration, checkPhoneSurfaceDeclared, checkManifestDepsComplete, checkPathRootResolution, INVARIANT_CHECKS, INVARIANT_META, selectChecks, getChangedFiles, fileMatchesPrefix, clearVerifyCache, cachedReadYAMLFile };
+module.exports = { checkClosureGuardShape, checkCliBypassViaCommand, checkReadRestraint, checkPersonaDispatch, checkProgramYamlSchema, checkAdopterValueRelation, checkCommandManifestCoverage, checkAdoptInstallAtomicWrites, checkDistributionRefs, checkNoHardcodedEvolutionPaths, checkPreflightGateNotBypassed, checkEngineModelTiers, checkSecurityPostureMatchesDeclaration, checkPhoneSurfaceDeclared, checkManifestDepsComplete, checkPathRootResolution, INVARIANT_CHECKS, INVARIANT_META, selectChecks, getChangedFiles, fileMatchesPrefix, clearVerifyCache, cachedReadYAMLFile };

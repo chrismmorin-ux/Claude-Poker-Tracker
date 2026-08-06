@@ -45,8 +45,7 @@ const {
   readYAMLFile,
   globFiles,
   todayISO,
-  dateDiffDays,
-} = require('./lib/cwos-utils');
+  dateDiffDays, findRepoRoot, } = require('./lib/cwos-utils');
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
@@ -68,13 +67,23 @@ function hasFlag(args, name) {
   return args.includes(`--${name}`);
 }
 
+// WS-576: two questions that used to share one answer.
+//   repoRoot() = WHERE MY CODE IS  — this checkout (a worktree, when in one).
+//   stateDir() = WHERE MY STATE IS — the one canonical .claude/workstream/.
+// Deriving the first from the second fused them. Invisible in the main tree
+// where they coincide; wrong in a worktree, where it would make this script
+// read the main tree's branch content. Same anti-pattern INV-066 outlaws for
+// __dirname, counting up from the workstream dir instead.
 function repoRoot() {
-  const ws = findWorkstreamDir(process.cwd());
-  return path.resolve(ws, '..', '..');
+  return findRepoRoot(process.cwd());
+}
+
+function stateDir() {
+  return findWorkstreamDir(process.cwd());
 }
 
 function findingsIndexPath() {
-  return path.join(repoRoot(), '.claude', 'workstream', 'findings-index.yaml');
+  return path.join(stateDir(), 'findings-index.yaml');
 }
 
 function loadFindingsIndex() {
@@ -90,7 +99,7 @@ function loadOpenFindings() {
 }
 
 function loadProgramsList() {
-  const dir = path.join(repoRoot(), '.claude', 'workstream', 'programs');
+  const dir = path.join(stateDir(), 'programs');
   if (!fs.existsSync(dir)) return [];
   const out = [];
   for (const f of fs.readdirSync(dir)) {
@@ -102,7 +111,7 @@ function loadProgramsList() {
 }
 
 function loadQueueIndex() {
-  const p = path.join(repoRoot(), '.claude', 'workstream', 'queue-index.yaml');
+  const p = path.join(stateDir(), 'queue-index.yaml');
   if (!fs.existsSync(p)) return [];
   const r = readYAMLFile(p);
   if (!r.ok || !r.data || !Array.isArray(r.data.items)) return [];
@@ -197,7 +206,7 @@ function computeFailuresSummary() {
 function computeProgramsRegistryDrift() {
   try {
     const { detectDrift } = require('./lib/cwos-program-registry');
-    const programsDir = path.join(repoRoot(), '.claude', 'workstream', 'programs');
+    const programsDir = path.join(stateDir(), 'programs');
     if (!fs.existsSync(programsDir)) return { entries: [] };
     return { entries: detectDrift(programsDir) };
   } catch {

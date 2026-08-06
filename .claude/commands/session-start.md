@@ -276,7 +276,7 @@ The script locates HomeBase from the cwd, matches the current repo's entry by `p
 Re-use the `.cwos-onboarding.yaml` content read in Step 3b. Compare two fields:
 
 - `stage` (or `declared_stage`) — current declared stage
-- `last_recorded_stage` — set by `/session-end` at the prior session's close
+- `last_recorded_stage` — the stage as of the last session that got this far
 
 If both are non-null AND they differ, surface a one-line prompt at the top of the Step 9 briefing (above the adoption-arc block):
 
@@ -286,6 +286,29 @@ If both are non-null AND they differ, surface a one-line prompt at the top of th
 ```
 
 If they match, or `last_recorded_stage` is null (first session post-WS-251 or template-default), no prompt.
+
+**Then stamp it — right here, after the comparison (ADR-065).** Copy `stage`
+into `last_recorded_stage`:
+
+```bash
+node -e '
+const fs=require("fs"), p=".cwos-onboarding.yaml";
+if (!fs.existsSync(p)) process.exit(0);
+let txt=fs.readFileSync(p,"utf8");
+const m=txt.match(/^stage:\s*"?([SN]\d)"?/m);
+if (!m) process.exit(0);
+const re=/^(last_recorded_stage:[ \t]*)([^\n#]*?)([ \t]*(?:#[^\n]*)?)$/m;
+if (re.test(txt)) { txt=txt.replace(re,`$1"${m[1]}"$3`); fs.writeFileSync(p,txt); }
+'
+```
+
+This used to be `/session-end` Step 5.5d, which meant a stage change went
+unreported whenever the prior session was not closed by hand — about 88% of the
+time. It cannot move into `cwos-reconcile` with the rest of the mechanical
+steps: reconcile runs *at* SessionStart, so it would stamp the marker before
+this comparison and the transition would never be detected at all. Stamping
+immediately after the comparison is what makes it independent of `/session-end`
+while preserving the semantics. Silent — housekeeping, not founder-facing.
 
 **Do NOT call `cwos-stage-detect.js` here** — signal-scan latency belongs in `/audit`, which surfaces stage-mismatch as an ephemeral envelope finding (see `kit/commands/audit.md` `compose` subcommand). Step 3d catches *cross-session declaration changes only*; signal-driven escalation is `/audit`'s job.
 
@@ -446,8 +469,12 @@ id: <session-id>
 status: active
 started_at: <timestamp>
 last_heartbeat: <timestamp>
+host: <os.hostname()>       # WS-564: sessions/ is tracked, so records travel between
+                            # machines. Without this, pid and boot-time liveness are
+                            # judged against whichever machine happens to be reading.
+agent_session_id: <harness session_id, when available>
 claimed_items: []
-files_locked: []
+files_locked: []            # written by cwos-git.js record/stage — see INV-069
 current_program: ""  # set when user focuses on a program via /next
 handoff_notes: ""
 context_notes: ""

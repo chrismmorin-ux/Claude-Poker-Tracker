@@ -27,7 +27,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const { withFileLock, findRepoRoot, resolveEvolutionDir } = require('./lib/cwos-utils');
+const { withFileLock, findRepoRoot, resolveEvolutionDir, makeEventEmitter } = require('./lib/cwos-utils');
+
+const emitEvent = makeEventEmitter();
 
 // WS-421: basename only — the directory is resolved per repo scope via
 // resolveEvolutionDir (docs/evolution/ in HomeBase, .claude/workstream/ in adopters).
@@ -205,6 +207,14 @@ function capture(opts, repoRoot) {
     if (newEntries.length) {
       const updated = appendEntries(text, newEntries);
       fs.writeFileSync(filePath, updated, 'utf8');
+      // WS-560 (INV-028): findings-feedback is the calibration signal /evolve
+      // reads to judge whether findings were worth acting on. It lives under
+      // docs/evolution/ rather than .claude/workstream/, but it is CWOS state
+      // by every other measure — so it emits like CWOS state.
+      emitEvent('T9:evolution', 'findings-feedback-captured', {
+        count: newEntries.length,
+        signals: newEntries.map((e) => e.signal),
+      });
     }
 
     return {

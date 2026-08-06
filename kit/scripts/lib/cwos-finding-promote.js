@@ -54,68 +54,30 @@ const FINDINGS_DIRNAME = 'findings';
 // items — keeping the auto-promote namespace separate from manual
 // prefixed runs makes dedup + sort behavior simpler.
 //
-// Concurrency (WS-424 / FIND-289): when two engine runs allocate at the
-// same instant the unlocked scan returns the same max+1 to both, then
-// both write WS-N.yaml — the second clobbers the first. Callers that
-// also write the WS file should pass `opts.writer(wsId)` so the lock
-// spans scan + write. The lock primitive lives at .ws-counter.lock in
-// wsDir; see kit/scripts/lib/cwos-utils.js:withFileLock for details.
+// Concurrency (WS-424 / FIND-289, closed by WS-574): callers that also
+// write the WS file should still pass `opts.writer(wsId)` — the lock then
+// spans scan + write, which is the strongest guarantee available. Callers
+// that do NOT write now get a reservation instead of an unreserved guess,
+// so there is no longer an unsafe way to call this. See
+// kit/scripts/lib/id-allocator.js for the mechanics and the other four
+// id kinds that share them.
 function allocateNextWsId(wsDir, opts = {}) {
-  const compute = () => {
-    const queueDir = path.join(wsDir, QUEUE_DIRNAME);
-    const archiveDir = path.join(queueDir, 'archive');
-    const indexPath = path.join(wsDir, QUEUE_INDEX_NAME);
-
-    const ids = new Set();
-    const PURE_NUMERIC = /^WS-(\d+)\.yaml$/;
-
-    function harvestDir(dir) {
-      if (!fs.existsSync(dir)) return;
-      for (const f of fs.readdirSync(dir)) {
-        const m = PURE_NUMERIC.exec(f);
-        if (m) ids.add(parseInt(m[1], 10));
-      }
-    }
-    harvestDir(queueDir);
-    harvestDir(archiveDir);
-
-    if (fs.existsSync(indexPath)) {
-      const r = readYAMLFile(indexPath);
-      if (r.ok && r.data && Array.isArray(r.data.items)) {
-        for (const item of r.data.items) {
-          // cwos-utils parses single-key list items as strings (e.g.,
-          // '- id: "WS-007"' becomes the literal string 'id: "WS-007"'),
-          // and multi-key items as objects. Handle both shapes.
-          let idStr = null;
-          if (typeof item === 'string') {
-            const sm = /id:\s*"?(WS-\d+)"?/.exec(item);
-            if (sm) idStr = sm[1];
-          } else if (item && item.id) {
-            idStr = String(item.id);
-          }
-          const m = /^WS-(\d+)$/.exec(idStr || '');
-          if (m) ids.add(parseInt(m[1], 10));
-        }
-      }
-    }
-
-    let max = 0;
-    for (const n of ids) if (n > max) max = n;
-    const next = max + 1;
-    return `WS-${String(next).padStart(3, '0')}`;
-  };
-
-  if (typeof opts.writer === 'function') {
-    const lockPath = path.join(wsDir, '.ws-counter.lock');
-    return withFileLock(lockPath, () => {
-      const wsId = compute();
-      opts.writer(wsId);
-      return wsId;
-    }, { ownerLabel: 'allocateNextWsId', maxWaitMs: 10_000 });
-  }
-  // Legacy unlocked path — safe only for single-threaded read-only callers
-  // (tests, /audit drift scans). Concurrent writers MUST pass a writer.
-  return compute();
+  // WS-574: the scan/lock/reserve mechanics moved to lib/id-allocator.js, which
+  // implements the same shape for SPR, FIND, INV and ADR ids too. This function
+  // is now a thin adapter kept for its existing callers.
+  //
+  // The unlocked path this used to fall back to is GONE. It was documented as
+  // "safe only for single-threaded read-only callers" and the CLI surface used
+  // it anyway, which is why `allocate-ws-id` returned the same id on three
+  // consecutive invocations with no concurrency involved. A caller that does
+  // not write now gets a *reservation* rather than an unreserved guess.
+  const { allocateId } = require('./id-allocator');
+  return allocateId('ws', {
+    wsDir,
+    writer: typeof opts.writer === 'function' ? opts.writer : undefined,
+    reservedBy: opts.reservedBy,
+    ttlMs: opts.ttlMs,
+  });
 }
 
 // Pure projection — turn a finding object into the queue-item shape.

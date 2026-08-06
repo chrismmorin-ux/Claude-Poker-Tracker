@@ -1,0 +1,219 @@
+# Stage System — machine-readable spec
+# Canonical reference: docs/STAGES.md
+# Decision: docs/adrs/ADR-035.md (Tier-1 causal kit branching on stage)
+# Archetype cross-references: kit/data/archetypes.yaml
+# Detection signals: kit/data/stage-detection-signals.yaml
+# Generated: 2026-04-30 (WS-248 / SPR-095)
+
+schema_version: 1
+last_updated: "2026-04-30"
+
+# ---------------------------------------------------------------------------
+# Commercial stages (5) — for repos with Application output that intend
+# public release. Each stage defines: founder posture, kit posture,
+# default tier for archetype-driven programs, engine cadence, audit
+# blocking behavior.
+# ---------------------------------------------------------------------------
+
+stages:
+  - id: S1
+    label: "Exploration"
+    founder_posture: >
+      Figuring out what to build. No PMF hypothesis declared.
+    kit_posture: >
+      All identity-driven programs at dormant. Lightweight engine cadence.
+      /audit is informational, never blocks sprints. Kit gets out of the way.
+    archetype_default_tier: dormant
+    engine_cadence: "monthly delta"
+    audit_blocking: false
+    sprint_caps:
+      max_items: 5     # standard
+      max_effort_sessions: 2
+    notes: >
+      Some archetype-specific programs may override to active even at S1
+      via tier_overrides — e.g., A2 (civic) escalates prog-data-provenance
+      to critical at S1 because civic-data exposure starts immediately.
+
+  - id: S2
+    label: "MVP iteration"
+    founder_posture: >
+      PMF hypothesis declared. Building + testing it. Velocity is the
+      governing constraint; ceremony is overhead.
+    kit_posture: >
+      Identity-driven programs at watch. Engine cadence weekly. /audit
+      runs but doesn't block. Compliance programs stay dormant for
+      Sensitivity=Regulated until S3.
+    archetype_default_tier: watch
+    engine_cadence: "weekly delta"
+    audit_blocking: false
+    sprint_caps:
+      max_items: 5
+      max_effort_sessions: 2
+
+  - id: S3
+    label: "Pre-launch hardening"
+    founder_posture: >
+      PMF signal found. Preparing to launch publicly. Ceremony increases;
+      kit becomes a launch checklist.
+    kit_posture: >
+      Identity-driven programs escalate to active or critical per archetype.
+      Compliance + security + audit programs activate (escalate to critical
+      for Sensitivity=Regulated). Engine cadence tightens to 3-day delta.
+      /audit can block ship-related sprints. Founder checkpoint required
+      before sprints touching production-impacting changes.
+    # Sensitivity=Regulated programs (compliance + vendor-risk) and
+    # Sensitivity=Private-PII / Regulated programs (security) escalate to
+    # critical at S3 even though the archetype default is `active`.
+    archetype_default_tier: active
+    archetype_compliance_tier: critical
+    archetype_security_tier: critical
+    engine_cadence: "3-day delta + weekly sweep"
+    audit_blocking: true
+    audit_blocking_scope: "ship-related sprints"
+    sprint_caps:
+      max_items: 5
+      max_effort_sessions: 2
+
+  - id: S4
+    label: "Operating"
+    founder_posture: >
+      Live, customer-facing. Real consequences for code that ships.
+      Defensive posture dominates feature work.
+    kit_posture: >
+      All identity-driven programs at full tier. Customer-success surfaces
+      activate (if applicable to archetype). /audit blocks production-impact
+      sprints. Engine cadence steady.
+    archetype_default_tier: critical
+    engine_cadence: "weekly delta + biweekly sweep"
+    audit_blocking: true
+    audit_blocking_scope: "production-impact sprints"
+    sprint_caps:
+      max_items: 5
+      max_effort_sessions: 2
+
+  - id: S5
+    label: "Scaling / mature"
+    founder_posture: >
+      Stable product, growth + new feature lines + (potentially) team growth.
+    kit_posture: >
+      All programs at full tier + team-coordination + multi-track surfaces.
+      Cadence steady; can use strategic ceremony for sprints by default.
+    archetype_default_tier: critical
+    engine_cadence: "weekly delta + biweekly sweep + monthly challenge"
+    audit_blocking: true
+    audit_blocking_scope: "production-impact sprints"
+    sprint_caps:
+      max_items: 8     # strategic
+      max_effort_sessions: 4
+    additional_surfaces:
+      - "team-coordination (placeholder; future)"
+      - "multi-track development (placeholder; future)"
+
+# ---------------------------------------------------------------------------
+# Non-commercial collapse (3 stages) — for Knowledge-artifact + Tool/framework
+# repos and personal-use repos. Maps to commercial stages for shared kit
+# logic; non-commercial repos use these labels in declarations and audits.
+# ---------------------------------------------------------------------------
+
+non_commercial_stages:
+  - id: N1
+    label: "Exploration"
+    maps_to: [S1]
+    rationale: "Same posture as S1: programs dormant, monthly cadence, no /audit blocking"
+
+  - id: N2
+    label: "Active-use"
+    # Collapsed — non-commercial doesn't distinguish hardening from operating.
+    # Tier resolution takes the LATER stage (S4) for full operating-tier protections.
+    maps_to: [S3, S4]
+    rationale: >
+      Non-commercial repos don't have a launch event distinguishing
+      pre-launch hardening from operating. The moment they become useful,
+      they ARE in active use. Hardening and operating happen together.
+      Tier defaults are taken from the LATER stage in the maps_to list (S4)
+      to ensure non-commercial repos get full operating-tier protections,
+      not just hardening-tier.
+    cadence_modifier: null
+
+  - id: N3
+    label: "Stable-reference"
+    maps_to: [S5]
+    rationale: >
+      Stable-reference repos have long lifespans with low feature velocity;
+      scaling-style cadence relaxation fits. Cadences may relax further
+      via cadence_modifier when desired.
+    cadence_modifier: relaxed
+
+# ---------------------------------------------------------------------------
+# Archetype-specific entry-stage rules — when an archetype is first declared,
+# this is the stage the kit assumes unless founder declares otherwise.
+# ---------------------------------------------------------------------------
+
+archetype_entry_stages:
+  A1: S1   # Regulated commercial product enters at Exploration
+  A2: S1   # Civic / public-data platform enters at Exploration
+  A3: S1   # Real-time consumer app enters at Exploration
+  A4: N2   # Research framework with falsification skips to Active-use
+  A5: N2   # Self-modifying tool skips to Active-use
+  default_no_archetype: S1   # or N1 if non-commercial
+  notes: >
+    A4 and A5 skip directly to N2 because their canonical examples
+    (PU, AP, AAI, HomeBase) are in active-use from declaration. There is
+    no "research-MVP-iteration" stage distinct from active-use for these
+    output types.
+
+# ---------------------------------------------------------------------------
+# Stage transition rules — what happens when stage changes (declared or
+# detected). First-class events that trigger re-tier + founder checkpoint
+# + audit rebaseline + sprint-composition update.
+# ---------------------------------------------------------------------------
+
+transitions:
+  re_tier:
+    description: >
+      When stage changes, walk all installed programs and re-evaluate their
+      tier against the new stage's archetype_default_tier (and any
+      tier_overrides from kit/data/archetypes.yaml). Produce a
+      per-program tier-change list.
+    function: "kit/scripts/cwos-stage.js --re-tier"
+
+  founder_checkpoint:
+    description: >
+      After re-tier diff is computed, surface a /session-start-style prompt
+      to the founder: "You're transitioning from [old] to [new]. The
+      following programs are escalating: [list]. The following are
+      de-escalating: [list]. Confirm or override per-program."
+    surface: "/session-start"
+
+  audit_rebaseline:
+    description: >
+      /audit --constitutional runs against the new stage's expected
+      invariants, surfacing any gaps the previous stage didn't enforce.
+    function: "/audit --constitutional --rebaseline"
+
+  sprint_composition_update:
+    description: >
+      /next re-reads the stage; sprint caps adjust per stage.sprint_caps.
+      Existing sprint compositions are not re-shaped retroactively.
+    function: "/next (next invocation reads new stage)"
+
+  forward_only_default:
+    description: >
+      Most stage transitions are forward (S1→S2→S3→S4→S5). Backward
+      transitions are allowed but require founder confirmation (e.g.,
+      "scaling repo decides to retreat to operating-only mode").
+      Backward transitions DO NOT auto-de-escalate critical security or
+      compliance programs without explicit founder confirmation per program.
+    backward_allowed: true
+    backward_critical_program_protection: true
+
+# ---------------------------------------------------------------------------
+# Notes for downstream consumers
+# ---------------------------------------------------------------------------
+
+notes:
+  - "Stage is hybrid declared+detected. Founder declares; kit reads signals from kit/data/stage-detection-signals.yaml. Mismatch surfaces as /audit finding."
+  - "tier_defaults here are starting points; archetype tier_overrides in kit/data/archetypes.yaml shadow these when present."
+  - "Identity-conditional Tier 0: A2's prog-data-provenance escalates at S1 (not S3). The override lives in archetypes.yaml, not here."
+  - "WS-251 (Implement stage-aware program tiering) consumes this YAML to drive /checkpoint declare-stage and /audit stage-mismatch detection."
+  - "WS-247 (Archetype spec) cross-references this YAML for stage-default tiers."

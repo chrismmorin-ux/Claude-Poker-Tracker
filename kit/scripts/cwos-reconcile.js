@@ -21,7 +21,7 @@ require('./lib/preflight');
 const path = require('path');
 const fs = require('fs');
 const { rebuildAll } = require('./lib/cwos-reconcile-core');
-const { findWorkstreamDir, globFiles, readYAMLFile, writeFileAtomic, todayISO, withFileLock, loadEventDeps, resolveEvolutionDir } = require('./lib/cwos-utils');
+const { findWorkstreamDir, findRepoRoot, globFiles, readYAMLFile, writeFileAtomic, serializeYAML, todayISO, dateDiffDays, withFileLock, loadEventDeps, resolveEvolutionDir, upsertYAMLScalarField } = require('./lib/cwos-utils');
 
 const { appendEvent } = loadEventDeps();
 let renderEventsLog = null;
@@ -241,6 +241,12 @@ function main() {
   //   engine was later retired. Routed as warnings to prog-program-integrity.
   validateProgramProtocolEngineRefs(wsDir, warnings);
 
+  // Phase 2h2: Approved-sprint claim drift (WS-529).
+  //   An approved sprint whose items carry no `claimed_by` is a sprint that
+  //   believes it owns work the queue is still advertising as free. Routed as
+  //   warnings to prog-program-integrity.
+  validateApprovedSprintClaims(wsDir, warnings);
+
   // Phase 2i: Findings→Work-Item promotion validator (WS-371 / FIND-253).
   //   For each program protocol_history entry where findings > 0 AND
   //   spec_compliant !== false, assert (a) the authored work_items count
@@ -385,6 +391,42 @@ function main() {
     printSummary(result, violations, warnings, dryRun, promotions);
   }
 
+  // Phase 3b: regenerate system-summary.yaml (WS ADR-065 follow-through).
+  //   Until 2026-08-03 the ONLY writer of this file was /session-end Step 5.6.
+  //   /session-end runs about 12% of the time, so the file sat 10 days stale
+  //   while claude-preamble.md told every Standard-Mode session to read it
+  //   FIRST for fast orientation. It is a pure function of reconciled state,
+  //   so it belongs here — reconcile already runs from the SessionStart hook.
+  if (!dryRun) {
+    try {
+      regenerateSystemSummary(wsDir, result, violations);
+    } catch (err) {
+      warnings.push(`Phase 3b (system-summary): ${err.message}`);
+    }
+  }
+
+  // Phase 3c: drain the capture buffer into system/decisions.md (ADR-065).
+  //   Decisions captured mid-session with cwos-capture are formalized here so
+  //   they survive a session that never reaches /session-end — which is ~88% of
+  //   them. Purely mechanical: weight, reasoning and context were supplied by
+  //   whoever made the decision, at the moment they made it. Same precedent as
+  //   Phase 2k, which already materializes findings into queue items.
+  if (!dryRun) {
+    try {
+      const { spawnSync } = require('child_process');
+      const capture = path.join(__dirname, 'cwos-capture.js');
+      if (fs.existsSync(capture)) {
+        const r = spawnSync(process.execPath, [capture, 'drain'], {
+          cwd: path.resolve(wsDir, '..', '..'), encoding: 'utf8', timeout: 20000,
+        });
+        const out = String(r.stdout || '').trim();
+        if (!quiet && out && !/nothing to formalize/.test(out)) console.log(out);
+      }
+    } catch (err) {
+      warnings.push(`Phase 3c (capture-drain): ${err.message}`);
+    }
+  }
+
   // WS-207 (SPR-064): reducer auto-refresh. Emit one T6:workstream +
   // one T11:vital-signs event with track_tag 'reconcile-refresh' so the
   // queue/findings/sprints/programs reducers re-materialize state/*.json
@@ -405,6 +447,165 @@ function main() {
   maybeRegenView();
 
   if (strict && violations.length > 0) process.exit(1);
+}
+
+// ─── Phase 3b: system-summary regeneration ─────────────────────────────────
+//
+// Everything here is derived from state reconcile has just rebuilt, with ONE
+// deliberate exception: vitals.
+//
+// Reconcile does not run the invariant suite, so it cannot know whether vital
+// signs pass. Writing `vital_signs_ok: true` here would be a fabrication, and
+// carrying the previous value forward silently is worse — a session would read
+// a green vitals line sourced from data ten days old and treat it as current.
+// So the prior value is preserved WITH its provenance stamped beside it, plus
+// when cwos-verify last actually completed. A stale value stays visible as
+// stale instead of masquerading as a fresh check.
+
+function regenerateSystemSummary(wsDir, result, violations) {
+  const summaryPath = path.join(wsDir, 'system-summary.yaml');
+
+  // Carry forward vitals rather than inventing them.
+  let priorVitalsOk = null;
+  let priorRedVitals = [];
+  let priorVitalsAt = null;
+  const prior = readYAMLFile(summaryPath);
+  if (prior.ok && prior.data) {
+    if (typeof prior.data.vital_signs_ok === 'boolean') priorVitalsOk = prior.data.vital_signs_ok;
+    if (Array.isArray(prior.data.red_vitals)) priorRedVitals = prior.data.red_vitals;
+    priorVitalsAt = prior.data.vitals_observed_at || prior.data.last_updated || null;
+  }
+
+  // When cwos-verify last reached the end. Absence is itself the signal —
+  // the SessionStart hook runs verify under a timeout with `|| true`, so a
+  // killed run is otherwise indistinguishable from a clean one (WS-566).
+  let verifyAt = null;
+  const vl = readYAMLFile(path.join(wsDir, '.verify-liveness.yaml'));
+  if (vl.ok && vl.data) verifyAt = vl.data.last_run_completed_at || vl.data.last_fast_completed_at || null;
+
+  const queue = Array.isArray(result.queue && result.queue.items) ? result.queue.items : [];
+  const findings = Array.isArray(result.findings && result.findings.items) ? result.findings.items : [];
+
+  const counts = {};
+  for (const it of queue) {
+    const s = String(it.status || 'unknown');
+    counts[s] = (counts[s] || 0) + 1;
+  }
+
+  // Unclaimed: backlog AND nobody holding a lease. Claims live in claimed_by,
+  // never in status — the WS-564 lesson.
+  const unclaimed = queue
+    .filter(it => String(it.status) === 'backlog')
+    .filter(it => !String(it.claimed_by || '').trim())
+    .sort((a, b) => (Number(b.priority_score) || 0) - (Number(a.priority_score) || 0))
+    .slice(0, 3)
+    .map(it => ({
+      id: it.id,
+      // Ellipsis so a cut title reads as cut. Bare slicing produced
+      // "...aggregation is a comma", which looks like a finished sentence.
+      title: truncate(String(it.title || ''), 100),
+      score: Number(it.priority_score) || 0,
+      category: it.category || null,
+    }));
+
+  const criticalFindings = findings.filter(f =>
+    String(f.severity || '').toLowerCase() === 'critical' && String(f.status || '') === 'open').length;
+
+  const summary = {
+    last_updated: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    generated_by: 'cwos-reconcile',
+    vital_signs_ok: priorVitalsOk,
+    red_vitals: priorRedVitals,
+    vitals_observed_at: priorVitalsAt,
+    verify_last_completed_at: verifyAt,
+    reconcile_integrity_ok: Array.isArray(violations) ? violations.length === 0 : null,
+    queue_counts: counts,
+    top_3_unclaimed: unclaimed,
+    stale_programs: listStalePrograms(wsDir),
+    active_context_count: countActiveContext(wsDir),
+    critical_findings: criticalFindings,
+  };
+
+  const header =
+    '# System Summary — compressed orientation for Standard Mode sessions.\n' +
+    '#\n' +
+    '# Regenerated by cwos-reconcile.js, which runs from the SessionStart hook.\n' +
+    '# Until 2026-08-03 the only writer was /session-end Step 5.6 — a command that\n' +
+    '# runs ~12% of the time — so this file sat 10 days stale while the preamble\n' +
+    '# told every Standard-Mode session to read it FIRST. See ADR-065.\n' +
+    '#\n' +
+    '# vital_signs_ok / red_vitals are NOT computed here: reconcile does not run\n' +
+    '# the invariant suite. They are carried forward from the last writer that did,\n' +
+    '# with vitals_observed_at naming when that was. Check that date before\n' +
+    '# trusting them, and run /verify if it is old.\n';
+
+  writeFileAtomic(summaryPath, header + serializeYAML(summary));
+}
+
+function truncate(s, max) {
+  return s.length <= max ? s : s.slice(0, max - 1).trimEnd() + '…';
+}
+
+/**
+ * Programs with overdue protocols, from the ONE authority on cadence.
+ *
+ * The first cut of this read `staleness_threshold_days` off each program YAML
+ * and reported `stale_programs: []` — because no program carries that field.
+ * It belongs to an older template schema; real cadence lives per-protocol in
+ * `protocols.<name>.cadence_days` against `last_run_by_protocol.<name>.date`.
+ * The summary cheerfully said "no stale programs" while the SessionStart hook,
+ * two lines earlier in the same session, reported 26 overdue across 10.
+ *
+ * cwos-protocol-cadence-check.js already computes this and already runs at
+ * SessionStart. Spawning it keeps one implementation: a second one here could
+ * disagree with the hook, and a summary that contradicts the banner above it
+ * is worse than no summary.
+ */
+function listStalePrograms(wsDir) {
+  try {
+    const { spawnSync } = require('child_process');
+    const checker = path.join(__dirname, 'cwos-protocol-cadence-check.js');
+    if (!fs.existsSync(checker)) return [];
+    const r = spawnSync(process.execPath, [checker, '--json'], {
+      cwd: path.resolve(wsDir, '..', '..'), encoding: 'utf8', timeout: 20000,
+    });
+    if (r.error || !r.stdout) return [];
+    const data = JSON.parse(r.stdout);
+    if (!data || !Array.isArray(data.items)) return [];
+
+    // Roll protocols up to programs — the field names programs, not protocols.
+    const byProgram = new Map();
+    for (const it of data.items) {
+      const key = it.program;
+      if (!byProgram.has(key)) byProgram.set(key, { id: key, tier: it.tier, overdue_protocols: [] });
+      byProgram.get(key).overdue_protocols.push(
+        it.kind === 'never-run' ? `${it.protocol} (never run)` : `${it.protocol} (${it.days_overdue}d overdue)`);
+    }
+    return [...byProgram.values()];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Active items in system/context.md.
+ *
+ * system/ is per-CHECKOUT (branch content) while the workstream dir is
+ * canonical and shared, so this resolves the repo root independently rather
+ * than deriving it as wsDir/../.. — the fusion DEC-047 unpicked in eight
+ * scripts, invisible in the main tree and wrong in a worktree.
+ */
+function countActiveContext(wsDir) {
+  let root;
+  try { root = findRepoRoot(process.cwd()); } catch { return null; }
+  if (!root) return null;
+  const p = path.join(root, 'system', 'context.md');
+  if (!fs.existsSync(p)) return null;
+  try {
+    const txt = fs.readFileSync(p, 'utf8');
+    const matches = txt.match(/^###\s+/gm);
+    return matches ? matches.length : 0;
+  } catch { return null; }
 }
 
 // ─── Phase 2k: Auto-promote findings → queue items (kit-v3.7.0 / Bug A) ───
@@ -536,13 +737,12 @@ function promoteStaleQueueItemsFromSprints(wsDir, dryRun) {
         /^status:\s*.*$/m,
         `status: done`
       );
-      // Insert completed_at if missing; otherwise leave existing value alone.
-      if (!/^completed_at:/m.test(patched)) {
-        patched = patched.replace(
-          /^status:\s*done$/m,
-          `status: done\ncompleted_at: "${completedAt}"`
-        );
-      }
+      // WS-561: fill completed_at when it is absent OR explicitly null; leave a
+      // real value alone. The old test was key-presence, which silently skipped
+      // every item that scaffolds `completed_at: null` while open — and since
+      // this IS the ADR-045 repair path, the healer reproduced the very gap it
+      // exists to close.
+      patched = upsertYAMLScalarField(patched, 'completed_at', completedAt, { after: 'status' }).content;
       // Append an auto-promotion note so the paper trail is obvious.
       const note = `auto_promoted_by_reconcile: "${todayISO()} — sprint ${sprintId} was status=done but queue item was ${qData.status || 'unknown'}"`;
       if (!/^auto_promoted_by_reconcile:/m.test(patched)) {
@@ -1103,20 +1303,13 @@ function _autoReconcileQueueYaml(queueDir, wsId, closure) {
   catch (err) { return { ok: false, error: `read-failed: ${err.message}` }; }
   let patched = raw.replace(/^status:\s*.*$/m, `status: done`);
   const completedAt = closure.completed_at || todayISO();
-  if (!/^completed_at:/m.test(patched)) {
-    patched = patched.replace(
-      /^status:\s*done$/m,
-      `status: done\ncompleted_at: "${completedAt}"`
-    );
+  // WS-561: value-aware, not presence-aware. See upsertYAMLScalarField.
+  patched = upsertYAMLScalarField(patched, 'completed_at', completedAt, { after: 'status' }).content;
+  if (closure.completion_commit) {
+    patched = upsertYAMLScalarField(patched, 'completion_commit', closure.completion_commit, { after: 'completed_at' }).content;
   }
-  if (closure.completion_commit && !/^completion_commit:/m.test(patched)) {
-    patched = patched.replace(
-      /^completed_at:.*$/m,
-      (m) => `${m}\ncompletion_commit: "${closure.completion_commit}"`
-    );
-  }
-  if (closure.event_id && !/^closed_by_event:/m.test(patched)) {
-    patched = patched.trimEnd() + `\nclosed_by_event: "${closure.event_id}"\n`;
+  if (closure.event_id) {
+    patched = upsertYAMLScalarField(patched, 'closed_by_event', closure.event_id).content;
   }
   // Audit note so the founder can see at a glance which path closed this item.
   if (!/^auto_reconciled_by_drift_detector:/m.test(patched)) {
@@ -1318,6 +1511,67 @@ function validateProgramProtocolEngineRefs(wsDir, warnings) {
     }
   }
   return dangling;
+}
+
+/**
+ * An approved sprint whose items are not claimed by it (WS-529).
+ *
+ * `cwos-next.js approve` claims each item as part of approving — that is what
+ * makes a sprint's hold on its work visible to a second session's `/next`.
+ * When the claim does not land, the sprint still reads `approved` and the items
+ * still read `backlog`, so the queue advertises them as free while a sprint
+ * believes it owns them. Two sessions then compose over the same item, which is
+ * the collision this repo has hit repeatedly.
+ *
+ * That is not hypothetical: SPR-194 sat approved for three hours with WS-519
+ * and WS-563 unclaimed, because claimItems patched a key the queue files did
+ * not have and reported success anyway. The write bug is fixed; this is the
+ * detector, so the next way it breaks is loud rather than silent.
+ *
+ * Deliberately checks the CLAIM, not the sprint_id: `claimed_by` is the field
+ * another session's gate actually reads. A sprint_id written without a claim
+ * would look correct here and still lose the race.
+ *
+ * Pushes warnings of the form:
+ *   prog-program-integrity [sprint-claim-drift]: SPR-N approved but WS-X is unclaimed
+ *
+ * Returns the array of unclaimed (sprint, item) pairs for testability.
+ */
+function validateApprovedSprintClaims(wsDir, warnings) {
+  const sprintsDir = path.join(wsDir, 'sprints');
+  if (!fs.existsSync(sprintsDir)) return [];
+
+  const drift = [];
+  const files = fs.readdirSync(sprintsDir)
+    .filter((f) => f.startsWith('SPR-') && f.endsWith('.yaml'))
+    .sort();
+
+  for (const f of files) {
+    const r = readYAMLFile(path.join(sprintsDir, f));
+    if (!r.ok || !r.data) continue;
+    const status = r.data.status;
+    if (status !== 'approved' && status !== 'active') continue;
+    const sprintId = r.data.id || f.replace('.yaml', '');
+    const items = Array.isArray(r.data.items) ? r.data.items : [];
+
+    for (const it of items) {
+      if (!it || typeof it.id !== 'string') continue;
+      // A finished item needs no live claim — closing releases it by design.
+      if (it.status === 'done' || it.status === 'skipped') continue;
+      const q = readYAMLFile(path.join(wsDir, 'queue', `${it.id}.yaml`));
+      if (!q.ok || !q.data) continue; // archived/missing is a different check
+      if (q.data.status === 'done') continue;
+      if (q.data.claimed_by) continue;
+
+      drift.push({ sprint: sprintId, item: it.id, item_status: q.data.status || 'unknown' });
+      if (warnings) {
+        warnings.push(
+          `prog-program-integrity [sprint-claim-drift]: ${sprintId} is ${status} but ${it.id} is unclaimed (queue status: ${q.data.status || 'unknown'}) — another session's /next will offer it as free work. Resolve: re-run approve for this sprint, or abandon it if the work is not in flight.`
+        );
+      }
+    }
+  }
+  return drift;
 }
 
 // ─── Phase 2m: Program Accountability Cap Enforcement (WS-350) ──────────────
@@ -1989,6 +2243,7 @@ module.exports = {
   stateCacheMissing,
   validateStateDrift,
   validateProgramProtocolEngineRefs,
+  validateApprovedSprintClaims,
   validateFindingPointers,
   validateFindingPromotion,
   validateProgramCaps,
