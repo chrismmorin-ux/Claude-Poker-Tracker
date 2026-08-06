@@ -1,7 +1,16 @@
 # Context Bundles — scoped sub-contexts with per-task lens assignment
 
-**Status:** prototype shipped, advisory. Validator: `kit/scripts/cwos-bundle-validate.js`, wired
-into `cwos-reconcile.js` Phase 2c2. Bundles: `.claude/context/bundles/*.yaml`.
+**Status:** prototype shipped, advisory. Validator:
+`scripts/context/cwos-context-bundle-validate.cjs`, called from the repo-local SessionStart hook
+`.claude/hooks/context-bundle-check.cjs`. Bundles: `.claude/context/bundles/*.yaml`.
+
+> **Moved out of `kit/` on 2026-08-05 (WS-424 / D1, D2).** It previously sat at
+> `kit/scripts/cwos-bundle-validate.js`, delegated from `cwos-reconcile.js` Phase 2c2. That was two
+> exposures at once: the script was *unmanaged inside a managed tree* (absent from
+> `kit/hashes-3.8.5.yaml` entirely) and its only caller was a *locally-modified managed file*, so the
+> next `/kit-upgrade` would have reverted the wiring silently. It also collided by basename with
+> `kit/scripts/lib/cwos-bundle-validate.js` (archetype bundles — a different subject, one directory
+> apart). §4.3 below is superseded: see the note there.
 
 **Why this file lives here.** `docs/design/` is the *product* design framework — personas, surfaces,
 lifecycle gates — and putting an AI-context-architecture document inside it would collide with the
@@ -67,7 +76,7 @@ When the source changes, the validator emits:
 [content-drift] math-measurement pins .claude/context/MEASUREMENT_OVERSIGHTS.md at sha256
 e43b8a8f4112…, but it now hashes to 1d191248132e…. The pointer is still correct — the REVIEW
 is stale. Re-read the changed source, confirm the bundle still scopes what it claims, then:
-node kit/scripts/cwos-bundle-validate.js --rehash
+node scripts/context/cwos-context-bundle-validate.cjs --rehash
 ```
 
 Re-pinning is one command, and is deliberately a **separate, explicit act** from editing the source.
@@ -200,12 +209,35 @@ outcome — it is independent replication, and the entry should be marked replic
 only valuable when the lens *could* have seen the answer. The goal is not ignorance; it is knowing
 which findings were derived and which were recalled.
 
-### 4.3 The honest limit — this is an audit trail, not a sandbox
+### 4.3 The limit — REFUTED 2026-08-05, and corrected here
 
-**Withholding cannot be enforced at read time.** Nothing stops an agent from opening an excluded file;
-the tools are not scoped per task, and auto-memory in particular is injected by the harness *before
-any bundle is read*. `excludes` is therefore a **declaration**, and the control is **post-hoc**: the
-bundle records what should not have informed the finding, so a reviewer can ask whether it did.
+> **This section was wrong, and it is left standing with its correction rather than deleted, because
+> it did measurable damage.** It asserted an impossibility it had not tested; a third arm of the
+> comparison read it as a source and inherited the claim. It is the sentence anyone would have cited
+> as the reason not to build the control. `falsified 1×`.
+
+**The original claim:** *"Withholding cannot be enforced at read time. Nothing stops an agent from
+opening an excluded file; the tools are not scoped per task."*
+
+**Both clauses are false.** A `PreToolUse` matcher accepts arbitrary pipe-separated tool names,
+including `Read`, `Grep`, and `Glob`; exit code 2 blocks the call **before it executes**, so the
+content never enters the window. This repo already does exactly that twice
+(`.claude/hooks/git-guard.cjs:276`, `.claude/hooks/secrets-scan.cjs`). Hooks also fire *inside*
+subagents. And `permissions.deny` supports `Read(<glob>)` with zero lines of code — the field was
+already present in `.claude/settings.json`, and empty.
+
+**The true residue, which is what this section should always have said:**
+
+> **Deliberate reads are enforceable. Harness injection is not.**
+
+`CLAUDE.md`, `.claude/rules/*`, and auto-memory land in the window before any hook runs — 51,684
+bytes of it, measured. The original generalised from that one true case to a universal.
+
+**So the declaration is not replaced by the barrier; the two close different holes and both ship.**
+The barrier (`.claude/hooks/context-barrier.cjs`) stops a deliberate read. The post-hoc control below
+covers what the barrier cannot reach: harness injection, and a subagent returning a withheld file's
+content as a summary. The bundle still records what should not have informed a finding, so a reviewer
+can ask whether it did.
 
 Claiming otherwise would be the same category of error the fault register already names — a prose
 matcher claiming to measure structure. The mechanism is worth having anyway, for the same reason a
@@ -272,7 +304,7 @@ it slots in without reshaping the schema.
 
 ## 7. The validator
 
-`kit/scripts/cwos-bundle-validate.js`, delegated from `cwos-reconcile.js` Phase 2c2 via the same
+`scripts/context/cwos-context-bundle-validate.cjs`, called from `.claude/hooks/context-bundle-check.cjs` (SessionStart) via the same
 `spawnSync --json` pattern as `validatePlanDocs` and `validateStaleness`. Absent script or malformed
 output → skip silently, so a repo that has not adopted bundles reconciles exactly as before.
 

@@ -1,0 +1,139 @@
+id: "ses-20260806-1312-3acf26b5"
+status: completed
+started_at: "2026-08-06T13:12:48.549Z"
+ended_at: "2026-08-06T15:25:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-06T13:17:28.912Z"
+pid: 5668
+pid_recorded_at: "2026-08-06T13:12:48.549Z"
+host: MorinComputer
+agent_session_id: "3acf26b5-f81c-4f83-b8dd-f4d5ffe0bfcf"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+
+handoff_notes: |
+  FOUNDER'S VERDICT: THIS SESSION FAILED. Not partially — it built the wrong thing because it never
+  understood the problem. Read `.claude/projects/accuracy-program-handoff.md` before anything else;
+  that handoff is the real deliverable of this session.
+
+  WHAT WENT WRONG. The session implemented WS-424 against the framing in
+  `.claude/projects/context-shift-implementation.md`, which frames the problem as context drag and
+  vocabulary priors. That framing is wrong. The actual problem — founder, 2026-08-06 — is SYSTEMIC
+  ACCURACY: "the problem is in your accuracy over the past few weeks, which has many things that
+  could have been prevented with proper context. how is this not in the handoff??" The previous
+  handoff never once used the word "accuracy" (verified: zero occurrences in its original body), so
+  everything downstream aimed at the wrong target for two days — including a frozen pre-registration
+  whose primary instrument measured VOCABULARY UPTAKE and therefore could not detect a false claim.
+
+  THE MEASUREMENT THAT MATTERS. At the founder's instruction, five fresh-context adversaries were
+  dispatched against this session's own output. One audited every load-bearing claim:
+    85 checked · 39 held · 38 REFUTED · 8 unverifiable · 45.9% survival
+  against a >=95% gate this session had itself written. Treat 45.9% as the program's first datapoint.
+
+  ITEMS COMPLETED: none. No queue item was claimed or closed. WS-424 remains `status: backlog`. Its
+  13 sub-tasks were all executed but the result does not meet its own accept criteria and must NOT
+  be marked done.
+
+  WHAT HELD under adversarial review:
+    - D4: the git-hooks outage was real and is fixed. `core.hooksPath` pointed at an abandoned
+      OneDrive tree, so none of the six shipped hooks had run since the repo relocated (~134
+      commits). Now unset, dispatchers installed, demonstrated blocking a real commit with exit 1.
+      BUT zero regression detection: `.git/hooks/` is untracked, `.git/config` is local, nothing
+      watches `core.hooksPath`, and `install-git-hooks.sh` is invoked from nowhere.
+    - The `kit/scripts/cwos-reconcile.js` surgery — clean, no orphans, a concurrent session's
+      86-line feature undamaged. The one item with no caveat.
+    - D1/D2: validator moved out of `kit/`, renamed, collision resolved, zero membership in
+      `kit/hashes-3.8.5.yaml` verified.
+    - All five POKER_THEORY growth figures reproduce exactly from git.
+    - `matcher: "*"` dispatches to all tools; hooks fire inside subagents.
+
+  WHAT IS BROKEN OR REFUTED (do not inherit):
+    - `docs/context-shift-prereg.md` is INVALID — DEC-045. Threshold not reproducible from its own
+      inputs; estimand not identified; 1,080 "independent" blocks are 44 creation days with 9.05x
+      variance inflation; true MDE 99%, not 36%.
+    - The compact tier is ~95% redundant with always-injected content (~118 B novel of 2,304), and
+      8 of 18 anchors are vacuous — three anchor doctrine ABSENT from the file they name.
+    - The barrier does not stop `Grep`, Bash quote-splitting, or base64. It gates on declared
+      intent, not data access — DEC-044.
+    - The harness-injection figure was stated three times with three values (51,684 / 56,435 / real
+      ~71,953), reproducing the exact pathology the design exists to prevent.
+
+  ERROR SIGNATURE TO CARRY FORWARD:
+    1. CHANGED AFTER VERIFIED, NEVER RE-VERIFIED — three times this session. Worst: the barrier was
+       completely dead for a full revision after a return-shape change, its own test file 7/7 red
+       and unrun, while its header claimed unqualified that it blocks.
+    2. INHERITED AND REPEATED AS FACT — "accretion is the driver of drag" drove a whole design and
+       was never tested.
+    3. MEASURED ONCE, THEN DESCRIBED FROM MEMORY.
+    Inversion worth internalising: the session predicted its INHERITED numbers would fail and its
+    OWN would hold. The opposite happened — all five inherited growth figures reproduce to three
+    significant figures; every failure was in a number describing the new machinery.
+
+  NEXT RECOMMENDED ACTION: fresh session pointed at `.claude/projects/accuracy-program-handoff.md`.
+  Do NOT continue building on the current design. First acts: (a) verify the handoff's own claims —
+  it was written by the session that scored 45.9%; (b) `git add` the entire body of work, which is
+  ENTIRELY UNTRACKED; (c) bring the five open scope decisions in Part 5 to the founder.
+
+  Autopilot eligible: NO. Nothing here is safe to run autonomously.
+
+  LATE FINDING AT SESSION-END VERIFICATION — the anchor mechanism fired for real. `CLAUDE.md` was
+  rewritten by a concurrent session while this one was running. Two compact-tier anchors —
+  `contradict` and `Improvement Default` — stopped resolving, so both rules dropped and the tier
+  emitted `[dropped 2]`. THE MECHANISM WORKED: it refused to emit doctrine its named source no
+  longer carries, and the test suite went red rather than silently shipping less. It also confirmed
+  the adversarial review's D4/anchor finding in production: `contradict` was an ACCIDENTAL anchor
+  matching "will contradict you" in a paragraph that has now been deleted. Both were re-anchored to
+  `.claude/rules/*`, the canonical homes, which are harness-injected. Re-anchoring is a pointer fix,
+  not a tuning — the doctrine moved and the pointer followed it. 42/42 green after.
+
+  Two stale header claims in `compact-tier.cjs` were also corrected at close: the header still
+  described a DECAYING ceiling after the code became flat (header contradicting the implementation
+  directly beneath it), and still said "16 rules / 1,912 B" against an actual 18 / 2,304. Both are
+  the exact stale-number failure class this session scored 45.9% on.
+
+  VERIFICATION RESULT: full suite 14,848 passed / 3 failed / 20 skipped (630 files, 592s). Both
+  failing files are 5000ms timeouts under worker contention, NOT logic breaks — `equityOperator.test.js`
+  passes 31/31 in isolation. That is WS-379's class and it remains open. Vital signs set to AMBER.
+
+context_notes: |
+  UNCOMMITTED AND UNTRACKED — the most important operational fact. Everything this session produced
+  is untracked: both new hooks, the relocated validator, all four test files, the pre-registration,
+  the preflight evidence, and `.claude/rules/dispatch-dont-assert.md`. A fresh clone has none of it,
+  and `scripts/__tests__/contextBarrier.test.js` fails immediately on a clean checkout because its
+  fixture (`.claude/context/bundles/math-blindspot.yaml`) is untracked too. `dispatch-dont-assert.md`
+  argues it exists BECAUSE auto-memory is not version-controlled, while itself not being
+  version-controlled, and four compact-tier rules anchor to it.
+
+  CONCURRENCY: a second session (fc271296) was live for most of this one and holds staged changes,
+  including in `.claude/settings.json`, which this session also edited (added two `UserPromptSubmit`
+  hooks, one `SessionStart` hook, and a `PreToolUse` matcher `"*"`). Coordinate before committing.
+
+  LIVE GATE THAT WILL BITE: the ASN pre-commit gate is running for the first time since the repo
+  relocated. `prog-strategy-of-record.yaml` is modified in the tree and WILL block the next commit
+  touching it — its `assumptions:` entries (AS-SOR-1/2/3) are missing `type, claim, falsifies_if,
+  revisit` plus four Stage-6 field errors. The other eight modified `prog-*.yaml` files are silently
+  grandfathered forever because they never had an `assumptions:` key — the gate rewards never
+  starting over starting incompletely, which is worth fixing.
+
+  BARRIER STATE: `.claude/context/active-bundle.json` is deliberately ABSENT, so the barrier is
+  inert and fails open. Do not leave a declaration armed — it blocks tool calls for every session in
+  the repo, there is exactly one such file with no session scoping and no lock, and two concurrent
+  sessions will clobber each other's withholding scope.
+
+  PER-TOOL-CALL COST: `context-barrier.cjs` runs on EVERY tool call via matcher `"*"` and costs
+  ~30ms measured (an adversary reported 90-116ms under load) — a permanent latency tax for a feature
+  dormant almost always.
+
+  SHIPPED-BUT-INERT, AGAIN: the S7/B9 `withheld-source-cited` check is built and running, and zero
+  findings carry `context_bundle`, so it can never fire. The repo's own named recurring failure mode,
+  recurring inside the work meant to address recurring failure modes.
+
+  EVIDENCE ARTIFACTS: `.claude/workstream/evidence/context-shift-preflight.md` (measurements; §2
+  superseded by §2a, and §2a itself partly wrong),
+  `.claude/workstream/evidence/adversarial-review-predictions.md` (predictions recorded BEFORE the
+  review — P0 wrong in the author's favour, P3 and P6 confirmed and much worse than predicted),
+  `.claude/workstream/evidence/echo-baseline-30.json` (raw per-session echo data).

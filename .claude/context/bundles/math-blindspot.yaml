@@ -1,0 +1,91 @@
+id: math-blindspot
+name: "Mathematics & Measurement — discovery"
+version: 1
+program: methodology-integrity
+
+# DISCOVERY mode: this task is looking for a defect NOBODY HAS NAMED YET.
+#
+# The failure this mode exists to prevent has already happened here. A blind-spot
+# roundtable produced a headline finding, and the cross-critic then showed the
+# finding was partly INHERITED — the same conclusion was already recorded at
+# file:line in the auto-memory that loads at every session start. The lens did not
+# derive it; it reconstructed something it had been told, and the roundtable
+# reported it as a discovery.
+#
+# So a discovery bundle is defined as much by its `excludes` as its `includes`.
+# The validator requires at least one exclude with reason `states-the-conclusion`
+# before it will accept mode: discovery.
+mode: discovery
+
+default_lens: estimation-theorist
+lenses:
+  - estimation-theorist
+  - information-theorist
+  - game-theorist
+  - geometer-topologist
+  - operator-analyst
+
+budget_bytes: 26000
+
+includes:
+  - path: .claude/context/POKER_THEORY.md
+    section: "7. First-Principles Decision Modeling"
+    sha256: "3bf81bdbb2909365fa755368488bf3f7a46f625effeac1ea3edf626fb7f03779"
+    reason: >
+      The domain rule a lens needs to evaluate an estimator at all. Included even in
+      discovery mode because it states a CONSTRAINT, not a conclusion — knowing that
+      labels must not be decision inputs does not tell you where that rule is being
+      broken.
+
+  - path: src/utils/exploitEngine/CLAUDE.md
+    section: "Check estimators against ground truth — it is cheap, so there is no excuse"
+    sha256: "77230f0877ba1066202cb320e78ece89b9a4ace99c40f38f5c6a388fd1fd7186"
+    reason: >
+      The method for grounding an estimator claim, not any particular estimator's verdict.
+      Same test as above: a method is a tool the lens uses, a verdict is an answer it
+      should have to reach on its own.
+
+excludes:
+  - path: .claude/context/MEASUREMENT_OVERSIGHTS.md
+    reason: states-the-conclusion
+    note: >
+      THE CENTRAL WITHHOLDING, and the reason this bundle exists as a separate file rather
+      than a flag on math-measurement.yaml. That document lists ten measurement defects with
+      their file:line instances. A lens asked "what is wrong with the measurement here" that
+      has just read the list of what is wrong with the measurement here will return the list.
+      It would score well and teach nothing. Withheld so that a finding is a derivation.
+      COROLLARY, and the test of whether this is working: if a discovery run re-derives an
+      entry already in MEASUREMENT_OVERSIGHTS.md, that is a GOOD outcome — it is independent
+      replication, and the entry should be marked as replicated. It is only worthless when
+      the lens could see the answer.
+
+  - path: .claude/context/MEASUREMENT_OVERSIGHTS.md#MO-11
+    reason: raises-vocabulary-likelihood
+    note: >
+      Recorded separately because it withholds for a different reason. MO-11 catalogues the
+      SHAPE of past overstatements ("a derived 0.375 became 0.40"). A lens primed with that
+      shape looks for that shape. Per the founder's premise that repeated vocabulary raises
+      its own likelihood of reuse, this is the entry most likely to steer a discovery run
+      toward re-finding a known pattern instead of an unknown one.
+
+  - path: USER_MEMORY/project_allin_side_pots.md
+    reason: states-the-conclusion
+    note: >
+      The specific file that caused the recorded inherited-convergence failure — line 19
+      carried the conclusion a roundtable then reported as a discovery. It lives in the
+      user-scoped auto-memory directory outside the repo, which is why the path is written
+      with a USER_MEMORY/ sentinel rather than a real relative path: it is a DECLARATION of
+      intent, not a resolvable file, and the validator does not check exclude paths for
+      existence precisely because some of what most needs withholding is not in the repo.
+      This is also the honest limit of the mechanism — auto-memory is injected by the
+      harness before any bundle is read, so this exclusion cannot be enforced at load time.
+      It is auditable after the fact and nothing more. See docs/context-bundles.md §4.3.
+
+vocabulary:
+  - estimand
+  - Result Card
+
+applies_to:
+  problem_classes:
+    - "Post-Hoc Fitting & Flexibility"
+    - "Methodology Drift"

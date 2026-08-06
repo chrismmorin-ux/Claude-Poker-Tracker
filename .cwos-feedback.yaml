@@ -245,14 +245,44 @@ friction_log:
     origin_repo: "claude-poker-tracker"
     source_hash: "d6009b6fed4be17f46a511072af351176fc8c82adc36212f4a84504d888097e8"
 
+  - id: fr-026
+    session_id: "ses-20260806-1312-3acf26b5"
+    severity: medium
+    component: "platform-gitbash"
+    detail: "echo with single-quoted JSON mangles backslashes in Git Bash, so a hook payload carrying Windows paths arrived corrupted and a barrier test read as a false PASS."
+    workaround: "Write the JSON to a file and redirect stdin. Never build a JSON payload containing paths with echo."
+  - id: fr-027
+    session_id: "ses-20260806-1312-3acf26b5"
+    severity: medium
+    component: "platform-gitbash"
+    detail: "node -e with single quotes strips backslashes, corrupting regex literals and producing either a SyntaxError or a wrong result that looks plausible."
+    workaround: "Put the script in a .cjs file and run it rather than inlining with -e."
+  - id: fr-028
+    session_id: "ses-20260806-1312-3acf26b5"
+    severity: high
+    component: "repo-module-type"
+    detail: "Root package.json sets type=module, so a CommonJS script moved out of kit/ into scripts/ was parsed as ESM and crashed on require. kit/ is unaffected, which hides the problem until a file is relocated."
+    workaround: "Rename to .cjs when moving any CommonJS file out of kit/, and RUN it after moving."
+  - id: fr-029
+    session_id: "ses-20260806-1312-3acf26b5"
+    severity: low
+    component: "bash-tool-timeout"
+    detail: "A repo-wide grep -rn exceeded the 120s Bash timeout twice and was backgrounded, splitting output across notifications."
+    workaround: "Use the Grep tool rather than shelling out for whole-tree searches."
+  - id: fr-030
+    session_id: "ses-20260806-1312-3acf26b5"
+    severity: medium
+    component: "vitest-default-timeout"
+    detail: "A new test walking the whole repo synchronously passed in isolation (~2.4s) but TIMED OUT at vitest's 5000ms default under full-suite contention - the same class fixed the same day in fe716f59 (WS-379)."
+    workaround: "Bound the walk (extension filter + size cap) and set an explicit timeout. A test whose result depends on machine load measures the machine."
 # Section C: summary (computed, not maintained)
 summary:
-  total_friction_events: 25
+  total_friction_events: 30
   total_user_feedback: 3
   by_severity:
-    high: 4
-    medium: 7
-    low: 14
+    high: 5
+    medium: 10
+    low: 15
   by_category:
     concern: 3
   by_component:

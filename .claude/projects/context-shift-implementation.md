@@ -9,6 +9,62 @@ drag rather than leave it behind — which is the thing being fixed.
 
 ---
 
+## THE PROBLEM THIS ARTIFACT OMITTED — added 2026-08-06, founder correction
+
+**Everything below this section frames the problem as vocabulary priors and drag. That is not the
+problem. The problem is ACCURACY, and this file never once names it.** Founder, 2026-08-06:
+*"the problem is in your accuracy over the past few weeks, which has many things that could have
+been prevented with proper context. how is this not in the handoff??"*
+
+The omission was not cosmetic. Every artifact produced downstream of this file inherited its
+target — including a frozen pre-registration whose primary instrument measured **vocabulary
+uptake**, which cannot detect a wrong claim at all. A context system could have passed that study
+while the error rate stayed exactly where it is.
+
+**Two things belong at the top of any future crossing artifact, and did not appear in this one:**
+
+**1. The objective is claim accuracy.** Not vocabulary uptake, not document size, not drag.
+Concretely: load-bearing claims — a `file:line`, a measured quantity, a capability assertion —
+being *true*. The failures of the past weeks are wrong claims that proper context and independent
+checking would have prevented.
+
+**2. Greenfield is the measured standard, and it won every time it was measured.**
+`docs/context-system-comparison.md` §3 carries the number and this file buries it:
+
+| Arm | Claims checked | Held | Refuted |
+|---|---:|---:|---:|
+| **A — greenfield** | 11 | **11** | **0 — 100%** |
+| B — context-laden | 4 | 4 | 1 (the most consequential claim in the study) |
+| C — maximum drag | 4 | 4 | 1 (same claim, inherited) |
+
+The pre-registered negative recorded below — *"the context-drag hypothesis is NOT SUPPORTED"* —
+is about **design-task quality scores**, and both predictions failed on the **implementability**
+clause. **On accuracy nothing failed: greenfield was perfect and both laden arms were not.**
+Relaying that negative without the distinction understated the only result that bears on the real
+problem, and it is why the withholding machinery was nearly descoped.
+
+**So: a load-bearing claim asserted from accumulated session context, without an independent
+fresh-context check, is below standard by default — however confident it reads.** Dispatch is not
+a stylistic preference. It is the only configuration that has ever measured 100% here.
+
+**Live confirmation from the implementing session (2026-08-05/06), recorded unhedged:** 8 errors
+by the implementing agent. Two reached the founder. Three were shipped as code or stated as fact
+before anything caught them — including a turn counter that was 66× wrong and silently disabled
+the feature it governed, and a withholding barrier with an open `Bash` hole that leaked content
+with no record. **Every error caught internally was caught by dispatching or measuring. None was
+caught by reasoning more carefully from context.**
+
+**And the accretion framing below is wrong.** "62.5% growth in ten days, no ceiling" is recorded
+here as the driver of drag. It is the *return on a large exploration and testing phase* — the
+project learned that much, that fast. Treating knowledge production as the disease, then building
+machinery to cap and evict it, inverts cause and asset. The real limitation is that the
+always-loaded channel does not scale with what the project learns; the fix is to route conditional
+content to on-demand channels and spend the freed budget on the spine, which is what the founder
+did to the fleet context the same day. Correction recorded in
+`.claude/workstream/evidence/context-shift-preflight.md` §2a.
+
+---
+
 ## The problem, in one paragraph
 
 Context is a prior on the model's output distribution, not reference material. Terms present in

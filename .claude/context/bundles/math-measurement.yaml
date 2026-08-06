@@ -1,0 +1,66 @@
+id: math-measurement
+name: "Mathematics & Measurement — verification"
+version: 1
+program: methodology-integrity
+
+# VERIFICATION mode: this task is checking a KNOWN defect, or fixing one, or
+# confirming a claim someone else made. Loading the recorded conclusion is
+# correct here — you WANT the lens to check its work against what is on file.
+# The discovery counterpart is math-blindspot.yaml, which withholds exactly the
+# file this one leads with. Same subject, opposite loading rule; see
+# docs/context-bundles.md §4.
+mode: verification
+
+default_lens: estimation-theorist
+lenses:
+  - estimation-theorist
+  - information-theorist
+  - research-scientist
+  - failure-engineer
+
+budget_bytes: 36000
+
+includes:
+  - path: .claude/context/MEASUREMENT_OVERSIGHTS.md
+    sha256: "e43b8a8f41128c54230cee3d6920d750dd9bddd88b48b80eb63cdf5da6708620"
+    reason: >
+      The ten recurring measurement defects with live file:line instances and falsifiers.
+      This is the payload — in verification mode it is the first thing read.
+
+  - path: .claude/context/POKER_THEORY.md
+    section: "7. First-Principles Decision Modeling"
+    sha256: "3bf81bdbb2909365fa755368488bf3f7a46f625effeac1ea3edf626fb7f03779"
+    reason: >
+      AP-RL-01 and the labels-are-outputs rule. Section-scoped: the whole file is ~211KB
+      and would blow the ceiling nine times over. This pointer is the interface assumed
+      with the heavy/light split being designed in docs/context-architecture.md — if that
+      work renumbers or renames the section, this include reports missing-section rather
+      than silently shrinking.
+
+  - path: docs/standard-of-record/VOCABULARY.md
+    section: "The replication manifest"
+    sha256: "7a37c7aa10104874a7101dbeed96d13dabd610d37d50afb18c6eee8fe49f7d96"
+    reason: >
+      What a comparative claim must carry to be a claim (ADR-009). Scoped to the manifest
+      section rather than the whole vocabulary, because a verification task needs to know
+      what to STAMP, not to re-learn every term.
+
+excludes:
+  - path: .claude/context/POKER_THEORY.md
+    reason: budget
+    note: >
+      The other fifteen sections. Not withheld for bias reasons — purely size. If a task
+      needs §14 (the hand is the denominator) it should say so and compose a second bundle.
+
+vocabulary:
+  - estimand
+  - Result Card
+  - Deal Book
+  - replication manifest
+  - partition
+
+applies_to:
+  problem_classes:
+    - "Sample Size & Statistical Validity"
+    - "Scoring/Classification Bias"
+    - "Cross-Method Consistency"

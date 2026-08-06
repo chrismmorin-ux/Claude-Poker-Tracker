@@ -328,6 +328,14 @@ The preflop aggressor bets the flop. Theory:
 
 ### 3.4 Why Players Bet — The Four Motivations
 
+> **`falsified 1×` — this list has been too small before. Do not read it as closed.**
+> It said *three* motivations until WS-256 found that protection / equity denial is neither value
+> nor bluff and had no home, and a fifth (inducing) was recorded as its inverse in the same pass.
+> The failure mode is specific and is why the marker sits on the claim rather than in an archive:
+> **a missing category does not produce a blank, it produces a misfile** — the classifier scored
+> correct protection bets as "over-values medium hands." If you are here to check whether a bet
+> motive is expressible, the prior is that the list is incomplete, not that it is complete.
+
 Every bet is motivated by one or more of the following. Each is distinguished by **what it profits from** — not by bet size, and not by hand strength alone. Two motives can share a bet; the sizing implication comes from whichever dominates.
 
 1. **Value**: Profits from being **called by worse**. The bet is +EV because the calling range contains enough hands with less equity. A value bet is correct when hero's hand has >50% equity **against the opponent's calling range** (not their full range).
