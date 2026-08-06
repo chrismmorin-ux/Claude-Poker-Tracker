@@ -1,7 +1,7 @@
 id: "ses-20260806-1312-3acf26b5"
 status: completed
 started_at: "2026-08-06T13:12:48.549Z"
-ended_at: "2026-08-06T15:25:00.000Z"
+ended_at: "2026-08-06T18:45:22Z"
 mode: auto
 last_heartbeat: "2026-08-06T13:17:28.912Z"
 pid: 5668
@@ -13,9 +13,78 @@ agent_session_id: "3acf26b5-f81c-4f83-b8dd-f4d5ffe0bfcf"
 # Registration is deliberately NOT dependent on anyone running /session-start —
 # that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
 claimed_items: []
-files_locked: []
+files_locked:
+  - ".claude/hooks/compact-tier.cjs"
+  - "scripts/__tests__/compactTier.test.js"
+  - ".claude/workstream/sessions/ses-20260806-1312-3acf26b5.yaml"
+
+
 
 handoff_notes: |
+  ── CONTINUATION, 2026-08-06 (same agent_session_id, record was closed early by a
+     concurrent process while this session kept running) ───────────────────────
+
+  WHAT THIS LEG DID: audited the handoff below rather than inheriting it, then built two things.
+
+  AUDIT RESULT — the handoff below scores like the session that wrote it. Six fresh-context
+  agents scored 45 discrete load-bearing claims: 24 held, 21 refuted or materially overstated
+  (~53% by the prereg's own held/(held+refuted) statistic). Hand-tally by the orchestrating
+  agent, biased upward in difficulty by claim selection. Corrections that must NOT be inherited:
+    - "45.9% survival" is 39/85, which counts the 8 UNVERIFIABLE as refuted. The pre-registered
+      statistic (prereg:144) is held/(held+refuted) = 39/77 = 50.6%. Both figures are live.
+    - THE 85 PER-CLAIM VERDICTS DO NOT EXIST ON DISK. `system/decisions.md:889` is a one-line
+      summary written by the session being scored. The program's founding datapoint is
+      unreproducible. This is the single most important open item.
+    - "EVERYTHING is untracked" — FALSE. context-system-comparison.md and -requirements.md were
+      tracked and committed in 54a4ce84. (Moot now: 938429ba tracked the rest.)
+    - "~134 commits since relocation" — 139 (bdcb32b9..HEAD).
+    - "harness-injected ~71,953 B" — 77,189 B. The correction omitted dispatch-dont-assert.md
+      (5,236 B) while indicting its predecessors for omitting a component.
+    - "compact tier is 95% redundant, ~118 B novel" — REFUTED. 84.2% novel vs CLAUDE.md
+      (~1,703 B); 0 rules near-verbatim restate CLAUDE.md. The delete-it case was built on this.
+    - "~30 ms on every tool call" — it is UserPromptSubmit, once per prompt, ~136 ms wall clock.
+    - prereg attack is founded but rounded: deff ~10 not 9.05, MDE ~103% not 99%, rest-of-corpus
+      V=1.81 not 2.02, and "three independent reasons" is one-and-a-half.
+    - "six shipped git hooks" — five live; pre-commit-graph-closure.sh self-disables because its
+      target test file was never installed.
+    - ASN gate on prog-strategy-of-record: 7 blocking findings / 12 field misses, not 4. And the
+      shell gate's `grep -q "^assumptions:"` suppresses the validator's own grandfather rule,
+      silently exempting 6 active/critical programs including the only critical-tier one.
+  Pattern: every defect matches MO-11 (MEASUREMENT_OVERSIGHTS.md:274) — true observation, rounded
+  in the direction of the argument. Nothing fabricated.
+
+  BUILT (1) compact-tier repair, committed b6cce98d. Drops now NAME themselves
+  (`basename:"anchor" cause`), the three causes are separated, truncation uses break not continue
+  so priority order survives, the drop line is capped so it cannot breach its own ceiling, and the
+  discarded transcript parse is off the hook path. Proven end-to-end by stripping a real anchor and
+  running the real hook, not by unit test. 43/43 green.
+  LIVE INCIDENT THIS SESSION: the kit upgrade c116a816 rewrote CLAUDE.md and silently dropped the
+  Improvement Default — a HARD RESTRICTION — from every turn. Signal was a bare `[dropped 2]`.
+  That is why this repair was done first.
+
+  BUILT (2) automatic commit of orphaned work — founder: "this needs to be automated. We end up
+  with a ton of uncommitted work when i forget and close a session." New
+  `homebase/kit/scripts/cwos-session-commit.js`, wired into `cwos-session-sweep.js` (15-min timer),
+  committed 4347f6a in HomeBase. Diagnosis: wip-snapshot.ps1 already backs work up every 15 min but
+  DELIBERATELY never touches a branch; the sweeper closes sessions with no commit logic at all — so
+  work was never lost, only orphaned. Safety: never --no-verify (blocked gates surface loudly and
+  the index is reset), never commits under a live session (PID checked on EVERY record regardless of
+  its `status:` — a live session recorded as `completed` is not hypothetical, it was this session),
+  never invents a branch, skips on index.lock. `--only` scoping lets /session-end land its own files
+  while a concurrent session is live.
+
+  NEXT SESSION SHOULD START WITH: the accuracy instrument — a durable per-claim record so audits
+  land on disk instead of in transcripts. Today's 45 claims are datapoint #2 and exist only in
+  agent transcripts, which is the same defect as the 85.
+  KNOWN GAP CAPTURED AS FRICTION: the unscoped auto-commit path would sweep transient lock files
+  (.dialogue.lock, .session-recovery.mutex, .hooks-liveness.yaml) into history. Gitignore them
+  before the unscoped path runs widely.
+  FOUNDER DECISIONS STILL OPEN: compact-tier re-target vs repair-only; barrier PostToolUse result
+  filtering (input-string matching cannot close it — `cp` to a new name defeats the whole class);
+  prereg rebuild on session-level randomization vs retire; ASN grandfather removal.
+
+  ── ORIGINAL NOTES FROM THE FIRST LEG ────────────────────────────────────────
+
   FOUNDER'S VERDICT: THIS SESSION FAILED. Not partially — it built the wrong thing because it never
   understood the problem. Read `.claude/projects/accuracy-program-handoff.md` before anything else;
   that handoff is the real deliverable of this session.
