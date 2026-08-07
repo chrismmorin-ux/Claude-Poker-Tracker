@@ -2,5 +2,5 @@
 # Read by cwos-verify.js INV-026 to detect silently-failing hooks.
 # Stamp is written at the START of each hook run to prove the script
 # entrypoint executed, independent of any business-logic crashes.
-last_heartbeat_hook_at: "2026-07-30T20:48:11Z"
+last_heartbeat_hook_at: "2026-08-07T01:50:46Z"
 last_session_recovery_hook_at: "2026-07-30T03:25:52Z"

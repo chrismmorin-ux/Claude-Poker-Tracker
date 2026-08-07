@@ -1,0 +1,21 @@
+id: "ses-20260807-0137-59c5aa1e"
+status: completed
+started_at: "2026-08-07T01:37:52.007Z"
+ended_at: "2026-08-07T01:55:00Z"
+mode: auto
+last_heartbeat: "2026-08-07T01:50:46Z"
+pid: 528
+agent_session_id: "59c5aa1e-fdbc-58f8-9702-21a5984b0580"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+
+# Session summary: founder hand review — AKs squeeze 4-way all-in (1/3 live,
+# BTN straddle). Exact-enumeration + range-based EV analysis via app engines;
+# record validated through real reducer pipeline. Deliverables:
+# docs/hand-reviews/2026-08-07-aks-squeeze-4way.md +
+# src/test/aksSqueezeHandEval.test.js (heavy parts gated behind HAND_EVAL=1).
+# state.md Recent Sessions row added. Commit ef6b994.
