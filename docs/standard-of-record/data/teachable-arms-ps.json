@@ -1,0 +1,311 @@
+{
+  "handsRead": 124190,
+  "nPlayersPool": 350,
+  "nPlayersEval": 350,
+  "nMinedDecisions": 3762,
+  "nScoredDecisions": 3703,
+  "a3Table": {
+    "table": {
+      "raise": {
+        "strong": {
+          "n": 208,
+          "classTotal": 1702,
+          "p": 0.12220916568742655,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 1.7614976295635965,
+          "oddsRatio": 1.867516041176199
+        },
+        "medium": {
+          "n": 47,
+          "classTotal": 1486,
+          "p": 0.031628532974428,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 0.45588713045899665,
+          "oddsRatio": 0.43811554959143084
+        },
+        "weak": {
+          "n": 6,
+          "classTotal": 574,
+          "p": 0.010452961672473868,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 0.150666826865313,
+          "oddsRatio": 0.14169499757163673
+        }
+      },
+      "call": {
+        "strong": {
+          "n": 358,
+          "classTotal": 1702,
+          "p": 0.21034077555816685,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 1.1272108228629967,
+          "oddsRatio": 1.1610958485958487
+        },
+        "medium": {
+          "n": 287,
+          "classTotal": 1486,
+          "p": 0.19313593539703902,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 1.0350105255892603,
+          "oddsRatio": 1.0433908599046213
+        },
+        "weak": {
+          "n": 57,
+          "classTotal": 574,
+          "p": 0.09930313588850175,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 0.5321629589922273,
+          "oddsRatio": 0.4805832465406934
+        }
+      },
+      "check": {
+        "strong": {
+          "n": 595,
+          "classTotal": 1702,
+          "p": 0.3495887191539365,
+          "baseRate": 0.4920255183413078,
+          "ratioToBase": 0.7105093254765582,
+          "oddsRatio": 0.5549113567850967
+        },
+        "medium": {
+          "n": 844,
+          "classTotal": 1486,
+          "p": 0.5679676985195155,
+          "baseRate": 0.4920255183413078,
+          "ratioToBase": 1.1543460193573296,
+          "oddsRatio": 1.357255739509333
+        },
+        "weak": {
+          "n": 412,
+          "classTotal": 574,
+          "p": 0.7177700348432056,
+          "baseRate": 0.4920255183413078,
+          "ratioToBase": 1.4588065213831114,
+          "oddsRatio": 2.6256477979870736
+        }
+      },
+      "bet": {
+        "strong": {
+          "n": 541,
+          "classTotal": 1702,
+          "p": 0.31786133960047,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 1.2613864552499665,
+          "oddsRatio": 1.3831866897807432
+        },
+        "medium": {
+          "n": 308,
+          "classTotal": 1486,
+          "p": 0.2072678331090175,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 0.8225122237933796,
+          "oddsRatio": 0.7761062517461477
+        },
+        "weak": {
+          "n": 99,
+          "classTotal": 574,
+          "p": 0.17247386759581881,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 0.6844374365985975,
+          "oddsRatio": 0.6186675549633577
+        }
+      }
+    },
+    "classTotals": {
+      "strong": 1702,
+      "medium": 1486,
+      "weak": 574
+    },
+    "grandTotal": 3762,
+    "actionTotals": {
+      "raise": 261,
+      "call": 702,
+      "check": 1851,
+      "bet": 948
+    }
+  },
+  "a4Table": {
+    "table": {
+      "raise": {
+        "strong": {
+          "n": 208,
+          "classTotal": 1702,
+          "p": 0.12220916568742655,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 1.7614976295635965,
+          "oddsRatio": 1.867516041176199
+        },
+        "medium": {
+          "n": 47,
+          "classTotal": 1486,
+          "p": 0.031628532974428,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 0.45588713045899665,
+          "oddsRatio": 0.43811554959143084
+        },
+        "weak": {
+          "n": 6,
+          "classTotal": 574,
+          "p": 0.010452961672473868,
+          "baseRate": 0.06937799043062201,
+          "ratioToBase": 0.150666826865313,
+          "oddsRatio": 0.14169499757163673
+        }
+      },
+      "call": {
+        "strong": {
+          "n": 358,
+          "classTotal": 1702,
+          "p": 0.21034077555816685,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 1.1272108228629967,
+          "oddsRatio": 1.1610958485958487
+        },
+        "medium": {
+          "n": 287,
+          "classTotal": 1486,
+          "p": 0.19313593539703902,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 1.0350105255892603,
+          "oddsRatio": 1.0433908599046213
+        },
+        "weak": {
+          "n": 57,
+          "classTotal": 574,
+          "p": 0.09930313588850175,
+          "baseRate": 0.18660287081339713,
+          "ratioToBase": 0.5321629589922273,
+          "oddsRatio": 0.4805832465406934
+        }
+      },
+      "check-back": {
+        "strong": {
+          "n": 151,
+          "classTotal": 1702,
+          "p": 0.08871915393654524,
+          "baseRate": 0.1467304625199362,
+          "ratioToBase": 0.6046403208501506,
+          "oddsRatio": 0.5661494687859165
+        },
+        "medium": {
+          "n": 297,
+          "classTotal": 1486,
+          "p": 0.19986541049798115,
+          "baseRate": 0.1467304625199362,
+          "ratioToBase": 1.3621262215460237,
+          "oddsRatio": 1.4525816360112624
+        },
+        "weak": {
+          "n": 104,
+          "classTotal": 574,
+          "p": 0.18118466898954705,
+          "baseRate": 0.1467304625199362,
+          "ratioToBase": 1.2348129071352825,
+          "oddsRatio": 1.28677150786309
+        }
+      },
+      "check-OOP": {
+        "strong": {
+          "n": 444,
+          "classTotal": 1702,
+          "p": 0.2608695652173913,
+          "baseRate": 0.3452950558213716,
+          "ratioToBase": 0.755497539913646,
+          "oddsRatio": 0.6692025540008151
+        },
+        "medium": {
+          "n": 547,
+          "classTotal": 1486,
+          "p": 0.36810228802153433,
+          "baseRate": 0.3452950558213716,
+          "ratioToBase": 1.0660514299746053,
+          "oddsRatio": 1.1045286740599183
+        },
+        "weak": {
+          "n": 308,
+          "classTotal": 574,
+          "p": 0.5365853658536586,
+          "baseRate": 0.3452950558213716,
+          "ratioToBase": 1.5539908747817273,
+          "oddsRatio": 2.1954539929500427
+        }
+      },
+      "bet": {
+        "strong": {
+          "n": 541,
+          "classTotal": 1702,
+          "p": 0.31786133960047,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 1.2613864552499665,
+          "oddsRatio": 1.3831866897807432
+        },
+        "medium": {
+          "n": 308,
+          "classTotal": 1486,
+          "p": 0.2072678331090175,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 0.8225122237933796,
+          "oddsRatio": 0.7761062517461477
+        },
+        "weak": {
+          "n": 99,
+          "classTotal": 574,
+          "p": 0.17247386759581881,
+          "baseRate": 0.25199362041467305,
+          "ratioToBase": 0.6844374365985975,
+          "oddsRatio": 0.6186675549633577
+        }
+      }
+    },
+    "classTotals": {
+      "strong": 1702,
+      "medium": 1486,
+      "weak": 574
+    },
+    "grandTotal": 3762,
+    "actionTotals": {
+      "raise": 261,
+      "call": 702,
+      "check-back": 552,
+      "check-OOP": 1299,
+      "bet": 948
+    }
+  },
+  "arms": {
+    "A0": {
+      "n": 3703,
+      "coverage": 1,
+      "retainedFraction": 1,
+      "coverageLift": 1,
+      "deltaLogVsUniform": 0.544512221038876
+    },
+    "A1": {
+      "n": 3703,
+      "coverage": 1,
+      "retainedFraction": 1,
+      "coverageLift": 1,
+      "deltaLogVsUniform": 0.6762149399203734
+    },
+    "A2": {
+      "n": 3703,
+      "coverage": 1,
+      "retainedFraction": 1,
+      "coverageLift": 1,
+      "deltaLogVsUniform": 0.5974949742857646
+    },
+    "A3": {
+      "n": 3703,
+      "coverage": 1,
+      "retainedFraction": 1,
+      "coverageLift": 1,
+      "deltaLogVsUniform": 0.6146669646862537
+    },
+    "A4": {
+      "n": 3703,
+      "coverage": 1,
+      "retainedFraction": 1,
+      "coverageLift": 1,
+      "deltaLogVsUniform": 0.6179127376169113
+    }
+  }
+}

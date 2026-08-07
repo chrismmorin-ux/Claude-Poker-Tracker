@@ -44,6 +44,8 @@
  */
 
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
+import { buildResultCard } from '../../src/utils/standardOfRecord/resultCard.js';
+import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
 import { buildRangeProfile } from '../../src/utils/rangeEngine/index.js';
 import { accumulateDecisions } from '../../src/utils/exploitEngine/decisionAccumulator.js';
 import {
@@ -446,4 +448,122 @@ export const runTeachableArmsProbe = async ({
     a4Table: a4,
     arms: armsSummary,
   };
+};
+
+// ─── THE HEADLINE TRANSFORM, IN CODE (WS-437) ────────────────────────────────
+//
+// POKER_THEORY §11.9's "~56%" was, until this function existed, a MANUAL
+// (A_x − A0) / (A1 − A0) transform on emitted Δlog — SCORED-READOUT-SPEC §8.2 gap #2:
+// "nothing computes, asserts or guards them." Now something does. The committed artifacts in
+// `docs/standard-of-record/data/teachable-arms-{ftp,ps}.json` are asserted against this
+// function in `scripts/__tests__/teachableArms.test.js`.
+//
+// CURRENCY, stated where the number is minted: this is a share of the engine's NARROWING
+// INFORMATION — deltaLogVsUniform, mean log-probability assigned to the villain's REVEALED
+// hole cards — not a share of EV. It prices nothing (Amendment 1). Any performance reading
+// of it is a category error the Result Card below exists to prevent.
+
+/**
+ * shareOfEngineEdge — fraction of the engine's narrowing edge (A1 − A0, in Δlog vs uniform)
+ * each memorable arm recovers: (arm − A0) / (A1 − A0).
+ *
+ * Returns null when the engine edge is not positive — a share of a non-existent edge is not
+ * a number, and returning one anyway is how a degenerate run would print a plausible figure.
+ */
+export const shareOfEngineEdge = (arms) => {
+  const d = (k) => arms?.[k]?.deltaLogVsUniform;
+  const a0 = d('A0');
+  const a1 = d('A1');
+  if (typeof a0 !== 'number' || typeof a1 !== 'number') return null;
+  const engineEdgeDeltaLog = a1 - a0;
+  if (!(engineEdgeDeltaLog > 0)) return null;
+  const share = (k) => (typeof d(k) === 'number' ? (d(k) - a0) / engineEdgeDeltaLog : null);
+  return { A2: share('A2'), A3: share('A3'), A4: share('A4'), engineEdgeDeltaLog };
+};
+
+/**
+ * teachableArmsResultCard — the Result Card for one site's run (WS-437, ADR-009).
+ *
+ * "A fifteen-number rule recovers ~56% of the engine" is a number someone could act on or
+ * cite, so it is not allowed to exist outside a Result Card. The card is explicit about what
+ * it is: A DIAGNOSTIC, NOT A RESULT (SCORED-READOUT-SPEC §8.2 / Amendment 1) — the metric is
+ * Δlog against revealed hole cards, which prices nothing.
+ *
+ * @param {Object} input
+ * @param {Object} input.result - `runTeachableArmsProbe` output (or a parsed committed artifact)
+ * @param {Object} input.stamp - `buildStampInput` output (replicationStamp.mjs); carries
+ *                               engineCommit, dealBookHash, constants, disclaimerRegisterVersion
+ * @param {string} input.dealBookId
+ * @param {string} input.fieldId
+ * @param {string} input.site - lowercase site tag for the card id, e.g. 'ftp'
+ */
+export const teachableArmsResultCard = ({ result, stamp, dealBookId, fieldId, site }) => {
+  const shares = shareOfEngineEdge(result.arms);
+  if (!shares) {
+    throw new Error(
+      'teachableArmsResultCard: the engine edge (A1 − A0) is not positive, so no share of it '
+      + 'exists to report. Refusing to mint a card whose headline figure would be undefined.',
+    );
+  }
+
+  const manifest = buildReplicationManifest(stamp);
+  const hash8 = String(stamp.dealBookHash).replace('sha256:', '').slice(0, 8);
+
+  return buildResultCard({
+    resultCardId: `RC-teachable-arms-${site}-${hash8}`,
+    match: {
+      surfaceId: 'SURF-teachable-arms-diagnostic',
+      dealBookId,
+      fieldId,
+    },
+    estimand:
+      'DIAGNOSTIC, NOT A RESULT (SCORED-READOUT-SPEC §8.2 / Amendment 1). The share of the '
+      + 'engine\'s range-NARROWING information a human-memorable rule recovers, where '
+      + 'information is deltaLogVsUniform — mean log-probability assigned to the villain\'s '
+      + 'REVEALED hole cards, minus the uniform baseline — over EVAL-player decisions, and '
+      + 'shareOfEngineEdge = (arm − A0) / (A1 − A0) on that axis. This is a Delta-log figure '
+      + 'against revealed hole cards, NOT an EV claim: it prices nothing, and no EV or bb/100 '
+      + 'statement may be anchored on it.',
+    treatment:
+      'five arms (A0 no narrowing, A1 engine as shipped, A2 legacy 20-number table, A3 '
+      + 'measured 12-number likelihood table, A4 = A3 + check-position split, 15 numbers) '
+      + 'scored PAIRED on one identical EVAL decision set — a decision counts only when all '
+      + 'five arms produced a valid score · A3/A4 likelihood tables mined EXCLUSIVELY from '
+      + 'POOL players (FNV-1a player partition, independent per site), so the leakage control '
+      + 'is structural, never a convention · deterministic: no Monte Carlo equity and no '
+      + 'refinement clock on this path · single-street likelihoods only — POKER_THEORY §11.7 '
+      + 'shows chaining them across streets destroys information, so nothing here licenses '
+      + 'that · population is online cash, 2009 (HandHQ), so per HC-011 '
+      + '(system/constraints.md) ANY CLAIM ABOUT THE FOUNDER\'S LIVE 9-HANDED 1/2-1/3 GAME IS '
+      + 'TRANSFERRED, NOT MEASURED — the top-ranked entry of the Suspected-Fault Register '
+      + '(FAULT-population-mismatch).',
+    clusterUnit: 'players',
+    metrics: {
+      arms: result.arms,
+      shareOfEngineEdge: shares,
+      handsRead: result.handsRead ?? null,
+      nPlayersPool: result.nPlayersPool ?? null,
+      nPlayersEval: result.nPlayersEval ?? null,
+      nMinedDecisions: result.nMinedDecisions ?? null,
+      nScoredDecisions: result.nScoredDecisions ?? null,
+      // The fifteen numbers themselves (plus A3's twelve): per-cell n, P(action|class),
+      // base rate, ratio-to-base. Committed alongside the card so the rule a human is meant
+      // to hold in their head is a citable artifact, not a table in gitignored output.
+      a3Table: result.a3Table?.table ?? null,
+      a4Table: result.a4Table?.table ?? null,
+    },
+    admissibility: {
+      quotable: true,
+      reasons: [],
+      caveats: [
+        'DIAGNOSTIC, NOT A RESULT: Delta-log against revealed hole cards — not an EV claim; '
+        + 'it prices nothing (Amendment 1, SCORED-READOUT-SPEC §8.2).',
+        'TRANSFERRED, NOT MEASURED for live 9-handed 1/2-1/3 (HC-011): the corpus is online '
+        + '2009. Say so when quoting.',
+        'Only quote likelihood-table cells that replicate across both sites — see POKER_THEORY '
+        + '§11.9 for the per-cell replication verdicts.',
+      ],
+    },
+    manifest,
+  });
 };

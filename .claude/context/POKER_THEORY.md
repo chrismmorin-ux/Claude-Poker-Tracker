@@ -1875,7 +1875,20 @@ SAME decisions, difference per decision (§11.5) — and it is the test to run b
 any archetype channel, including this one. A positive answer justifies the channel even where
 the overdispersion test was underpowered.
 
-### 11.9 A Fifteen-Number Rule Recovers ~56% of the Engine (WS-303, measured)
+### 11.9 Diagnostic, not a result — A Fifteen-Number Rule Recovers ~56% of the Engine (Delta-log against revealed hole cards — not an EV claim; see SCORED-READOUT-SPEC §8.2) (WS-303, measured)
+
+**Currency and population, before any number in this section (WS-437).** Every figure here is
+measured in Δlog vs uniform against revealed hole cards — a *narrowing-information*
+**diagnostic, not a result** (SCORED-READOUT-SPEC §8.2 / Amendment 1). It prices nothing; no
+EV or bb/100 claim may be anchored on it. Population: online 6–9-handed cash, 2009 (HandHQ
+FTP + PS) — per HC-011 (`system/constraints.md`), for the founder's live 9-handed 1/2–1/3
+game every figure here is **transferred, not measured** (fault-register top entry,
+`FAULT-population-mismatch`). The source artifacts are version-controlled at
+`docs/standard-of-record/data/teachable-arms-ftp.json` / `teachable-arms-ps.json`; the share
+transform is computed by `shareOfEngineEdge` (`scripts/backtest/teachableArmsProbe.mjs`), the
+published percentages are asserted against those committed artifacts in
+`scripts/__tests__/teachableArms.test.js`, and a persisted `run-teachable-arms.mjs` run emits
+an ADR-009 Result Card (`teachableArmsResultCard`) stamped with the fault-register version.
 
 Founder doctrine: the **teachable** model may differ from the **engine** model, provided it is
 run against the population corpus and scored on the same metric on the same decisions. A
@@ -1896,10 +1909,12 @@ set. PS 3,762 mined / 3,703 scored; FTP 5,732 / 5,403.
 | **A4 = A3 + check-back/check-OOP split** | **15** | **57.3%** | **55.7%** |
 | A1 engine as shipped | — | 100% | 100% |
 
-(share of the engine's edge over not narrowing). Ordering replicates on both sites. **A rule a
-human can hold in their head recovers just over half the engine's narrowing edge on players it
-was never fitted to.** The remaining ~44% is per-combo enumeration, texture and equity
-quantiles — implementation, not teachable content.
+(share of the engine's edge over not narrowing, in Δlog vs uniform — computed by
+`shareOfEngineEdge`, asserted against the committed artifacts). Ordering replicates on both
+sites. **A rule a human can hold in their head recovers just over half the engine's narrowing
+edge on players it was never fitted to** (Delta-log against revealed hole cards — not an EV
+claim; see SCORED-READOUT-SPEC §8.2). The remaining ~44% is per-combo enumeration, texture and
+equity quantiles — implementation, not teachable content.
 
 **The table (ratio to base rate). Only quote cells that replicate:**
 
