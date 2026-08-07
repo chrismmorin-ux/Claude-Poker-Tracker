@@ -36,6 +36,41 @@ const getActiveSessionKey = (userId) => `active_${userId || GUEST_USER_ID}`;
 // =============================================================================
 
 /**
+ * Build the common session record shape.
+ *
+ * Shared by `createSession` (live, in-progress) and `createCompletedSession`
+ * (backfilled, already finished) so their defaults cannot drift apart. Every
+ * field that differs between the two is passed in via `overrides`.
+ *
+ * @param {Object} sessionData - caller-supplied fields
+ * @param {string} userId
+ * @param {Object} overrides - startTime / endTime / isActive / cashOut / tipAmount
+ * @returns {Object} session record
+ */
+const buildSessionRecord = (sessionData, userId, overrides) => ({
+  venue: sessionData.venue || 'Online',
+  gameType: sessionData.gameType || '1/2',
+  buyIn: sessionData.buyIn || null,
+  rebuyTransactions: sessionData.rebuyTransactions || [],
+  // AUDIT-2026-04-21-SV F2: optional tip amount logged at cash-out.
+  // JTBD-SM-21 names tip logging explicitly; prior to this addition net P&L
+  // silently overcounted by the tip amount for every tipped session.
+  // Backward-compat: legacy sessions without the field read as undefined →
+  // treated as 0 downstream via `(session.tipAmount || 0)` pattern.
+  reUp: sessionData.reUp || 0,
+  goal: sessionData.goal || null,
+  notes: sessionData.notes || null,
+  // Straddle config must survive an app restart WITHIN the session —
+  // HYDRATE_SESSION restores from this record, and pot math downstream
+  // depends on it. (It still never carries across to a NEW session.)
+  straddle: sessionData.straddle || null,
+  handCount: sessionData.handCount || 0,
+  userId,
+  version: '1.4.0',  // Updated version for v7 schema (userId)
+  ...overrides,
+});
+
+/**
  * Create a new session
  * @param {Object} sessionData - Session data (buyIn, goal, notes, etc.)
  * @param {string} userId - User ID (defaults to 'guest')
@@ -43,32 +78,14 @@ const getActiveSessionKey = (userId) => `active_${userId || GUEST_USER_ID}`;
  */
 export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) => {
   try {
-    const sessionRecord = {
+    const sessionRecord = buildSessionRecord(sessionData, userId, {
       startTime: Date.now(),
       endTime: null,
       isActive: true,
-      venue: sessionData.venue || 'Online',
-      gameType: sessionData.gameType || '1/2',
-      buyIn: sessionData.buyIn || null,
-      rebuyTransactions: sessionData.rebuyTransactions || [],
       cashOut: null,  // Always null when creating session
-      // AUDIT-2026-04-21-SV F2: optional tip amount logged at cash-out.
-      // JTBD-SM-21 names tip logging explicitly; prior to this addition net P&L
-      // silently overcounted by the tip amount for every tipped session.
-      // Backward-compat: legacy sessions without the field read as undefined →
-      // treated as 0 downstream via `(session.tipAmount || 0)` pattern.
       tipAmount: null,
-      reUp: sessionData.reUp || 0,
-      goal: sessionData.goal || null,
-      notes: sessionData.notes || null,
-      // Straddle config must survive an app restart WITHIN the session —
-      // HYDRATE_SESSION restores from this record, and pot math downstream
-      // depends on it. (It still never carries across to a NEW session.)
-      straddle: sessionData.straddle || null,
-      handCount: 0,
-      userId,
-      version: '1.4.0'  // Updated version for v7 schema (userId)
-    };
+      handCount: 0,   // A live session always starts at zero hands
+    });
 
     // Validate session record before saving
     const validation = validateSessionRecord(sessionRecord);
@@ -82,6 +99,56 @@ export const createSession = async (sessionData = {}, userId = GUEST_USER_ID) =>
     return sessionId;
   } catch (error) {
     logError('Error in createSession:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create an ALREADY-FINISHED session — the backfill path.
+ *
+ * `createSession` stamps `Date.now()` and `isActive: true`, which is correct for
+ * a session you are about to sit down and play but useless for logging one you
+ * played last night. This writer takes explicit start/end times and a cash-out,
+ * and never produces an active session, so backfilling can never collide with a
+ * live session or leave a second one running.
+ *
+ * Times are supplied as epoch ms by the caller (SessionLogForm derives them from
+ * a date + two clock fields, wrapping past midnight when the end reads earlier
+ * than the start).
+ *
+ * @param {Object} sessionData - startTime, endTime, cashOut, venue, gameType,
+ *   buyIn, rebuyTransactions, tipAmount, goal, notes
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<number>} The auto-generated sessionId
+ */
+export const createCompletedSession = async (sessionData = {}, userId = GUEST_USER_ID) => {
+  try {
+    if (!sessionData.startTime) {
+      throw new Error('createCompletedSession requires an explicit startTime');
+    }
+
+    const sessionRecord = buildSessionRecord(sessionData, userId, {
+      startTime: sessionData.startTime,
+      endTime: sessionData.endTime ?? null,
+      // Never active. A backfilled session is history by definition, and an
+      // active one here would shadow whatever the founder is actually playing.
+      isActive: false,
+      cashOut: sessionData.cashOut ?? null,
+      tipAmount: sessionData.tipAmount ?? null,
+      origin: 'manual-log',
+    });
+
+    const validation = validateSessionRecord(sessionRecord);
+    if (!validation.valid) {
+      logValidationErrors('createCompletedSession', validation.errors);
+      throw new Error(`Invalid session data: ${validation.errors.join(', ')}`);
+    }
+
+    const sessionId = await writeTx(SESSIONS_STORE_NAME, (store) => store.add(sessionRecord));
+    log(`Completed session logged (ID: ${sessionId})`);
+    return sessionId;
+  } catch (error) {
+    logError('Error in createCompletedSession:', error);
     throw error;
   }
 };
@@ -182,6 +249,75 @@ export const getAllSessions = async (userId = GUEST_USER_ID) => {
   } catch (error) {
     logError('Error in getAllSessions:', error);
     return [];
+  }
+};
+
+/**
+ * Import historical session records additively.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM `importAllData` (src/utils/exportUtils.js):
+ * that path calls `clearAllData()` first — it restores a full backup and is
+ * destructive by design. Importing a bankroll history must never wipe tracked
+ * hands, players, or existing sessions, so this writer only ever adds.
+ *
+ * IDEMPOTENT: every record carries a deterministic `importKey`. Keys already
+ * present are skipped, so re-running the import is safe and reports how many
+ * rows it recognised. `sessionId` is deliberately not accepted from callers —
+ * IndexedDB assigns it — so a record can never overwrite an unrelated session.
+ *
+ * @param {Array<Object>} records - Session records (see sheetImport.toSessionRecord)
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<{imported:number, skipped:number, errors:Array<string>}>}
+ */
+export const importHistoricalSessions = async (records = [], userId = GUEST_USER_ID) => {
+  const result = { imported: 0, skipped: 0, errors: [] };
+  if (!Array.isArray(records) || records.length === 0) return result;
+
+  try {
+    const existing = await getAllSessions(userId);
+    const seenKeys = new Set(
+      existing.map((session) => session.importKey).filter(Boolean)
+    );
+
+    for (const record of records) {
+      const { sessionId, ...rest } = record || {};
+
+      if (rest.importKey && seenKeys.has(rest.importKey)) {
+        result.skipped += 1;
+        continue;
+      }
+
+      const sessionRecord = {
+        ...rest,
+        isActive: false,
+        userId,
+        version: '1.4.0',
+      };
+
+      const validation = validateSessionRecord(sessionRecord);
+      if (!validation.valid) {
+        logValidationErrors('importHistoricalSessions', validation.errors);
+        result.errors.push(
+          `Skipped ${rest.importKey || 'unkeyed row'}: ${validation.errors.join(', ')}`
+        );
+        continue;
+      }
+
+      try {
+        await writeTx(SESSIONS_STORE_NAME, (store) => store.add(sessionRecord));
+        if (rest.importKey) seenKeys.add(rest.importKey);
+        result.imported += 1;
+      } catch (error) {
+        result.errors.push(`Failed to import ${rest.importKey || 'row'}: ${error.message}`);
+      }
+    }
+
+    log(`Imported ${result.imported} historical sessions (${result.skipped} already present)`);
+    return result;
+  } catch (error) {
+    logError('Error in importHistoricalSessions:', error);
+    result.errors.push(`Import failed: ${error.message}`);
+    return result;
   }
 };
 
@@ -317,7 +453,7 @@ export const createSessionAtomic = async (sessionData = {}, userId = GUEST_USER_
  */
 // AUDIT-2026-04-21-SV F2: `tipAmount` is additive-optional. Legacy sessions without
 // the field remain valid; readers treat undefined as 0. No IDB version bump needed.
-export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID, tipAmount = null) => {
+export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST_USER_ID, tipAmount = null, endTime = null) => {
   let sessionMissing = false;
   try {
     const activeKey = `active_${userId || GUEST_USER_ID}`;
@@ -334,7 +470,9 @@ export const endSessionAtomic = async (sessionId, cashOut = null, userId = GUEST
             return;
           }
 
-          session.endTime = Date.now();
+          // Explicit endTime when the founder corrected it at cash-out (racked
+          // up earlier, ended the session late); otherwise now.
+          session.endTime = endTime ?? Date.now();
           session.isActive = false;
           session.cashOut = cashOut;
           // AUDIT-2026-04-21-SV F2: persist tip when provided; skip field when null

@@ -1,0 +1,134 @@
+id: "ses-20260806-2347-91644756"
+status: completed
+started_at: "2026-08-06T23:47:26.646Z"
+ended_at: "2026-08-07T04:35:00Z"
+mode: auto
+last_heartbeat: "2026-08-07T04:08:00.271Z"
+pid: "510"
+agent_session_id: "91644756-9671-5033-9517-69b976b6272f"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []
+
+# Founder-directed work, not queue-composed. No sprint, no claims to release.
+work_type: founder-directed
+commits:
+  - "f012db1 feat(sessions): bankroll history capture + variance stats"
+  - "86d0d08 feat(sessions): log/edit any session + all-in EV adjusted win rate"
+branch: "claude/bankroll-session-variance-mct79d"
+
+handoff_notes: |
+  Two features shipped, both founder-directed, both pushed to
+  claude/bankroll-session-variance-mct79d. No PR opened (not requested).
+
+  ITEMS COMPLETED
+  - Bankroll history capture: 78 rows transcribed from the founder's Google
+    Sheet ("Strategy" → bank roll, Nov 2024 → Aug 2026), normalised, and
+    imported additively. Plus the Bankroll & Variance band: true-win-rate
+    confidence intervals, risk of ruin, required bankroll, downswing
+    expectation, Kelly sizing.
+  - Session logging that replaces the spreadsheet: SessionLogForm serving both
+    "Log past session" and "Edit session", createCompletedSession writer,
+    editable active-session start time, optional finish time at cash-out.
+  - All-in EV adjusted win rate (utils/handStats/allInEquity.js).
+
+  ITEMS REMAINING
+  None claimed or in progress. Follow-ups below are unfiled — the founder can
+  run /next to triage them.
+
+  KEY FINDINGS
+
+  1. THE SHEET WAS WRONG BY ~$4,500. Its Profit/Loss formula stopped at row 69,
+     leaving the last nine sessions blank, so its stated lifetime total read
+     -$6,175 against a true -$1,693.66. Its `hours` column is unusable
+     throughout (Google parsed the HHMM clock cells as durations, "4800:00:00"),
+     which made every $/hr in it wrong. Three rows carry a year typo. All
+     corrected on import; P&L is now always recomputed, never read.
+
+  2. THE FOUNDER CANNOT YET PROVE HE IS A WINNING PLAYER. All-time: 52 cash
+     sessions, +$16.27/hr, 95% CI -$29…+$62. The band says so in words rather
+     than letting the point estimate imply otherwise. This was the single most
+     valuable output of the work and it is deliberately unflattering.
+
+  3. JUNE-FORWARD IS A DIFFERENT REGIME. 26 cash sessions since 1 Jun 2026,
+     63.1h, +$4,768, +$75.56/hr, 70% CI +$32…+$119, 95% CI -$6.52…+$157.65 —
+     versus -$11.83/hr before June, on an identical session count. Flagged to
+     the founder that the cut point, though independently motivated (a strategy
+     change predating June), still flatters the result, and that the $2,194
+     bankroll it implies is fragile next to the all-time $9,624.
+
+  4. MANUAL VARIANCE TAGGING WAS PROPOSED AND REFUSED. The founder wanted to tag
+     hands he won or lost to luck and feed them into the win rate. Pushed back:
+     bad beats get logged, suckouts do not, so it would inflate the number while
+     presenting as rigorous. He chose the mechanical all-in EV path instead.
+     Recorded as DEC-030.
+
+  5. FOUR SILENT-FAILURE BUGS CAUGHT IN BUILD, none by the test suite:
+     - `NotebookPen` does not exist in this lucide-react version — it would have
+       blanked the entire Sessions view. Caught only by Playwright.
+     - `updateSessionField` merely dispatches; persistence runs through a
+       debounced auto-save with a hardcoded field list. The editable start time
+       updated the UI and vanished on reload until `startTime` was added.
+     - `parseAndEncode` returns -1, not NaN, for an unparseable card — a
+       `Number.isInteger` guard passes it straight into the equity evaluator.
+     - SessionDetailModal and SessionLogForm are both `fixed inset-0 z-50`; the
+       detail backdrop swallowed the edit form's Save tap.
+
+  UNFILED FOLLOW-UPS (recommend /next to triage)
+  - HIGH: there is no SessionsView component test. That gap is why a
+    view-blanking icon import reached the browser. Everything around it is
+    tested; the view that composes them is not.
+  - MED: shared modal-stack primitive — two `fixed inset-0 z-50` overlays cannot
+    currently coexist, and this is the second time it has mattered.
+  - MED: repeatable CSV import. The founder deferred it explicitly ("not a csv
+    importer (yet)"), but the current path is a one-time seed, so any sheet rows
+    after 5 Aug 2026 need the seed file regrown by hand.
+  - LOW: multiway all-in equity across side pots (declined, not approximated).
+  - LOW: bb/100 normalisation — blocked on hand counts the imported history
+    does not carry.
+
+  NEXT RECOMMENDED ACTION
+  Log ~20 sessions through the new form. That is the only thing that settles
+  whether +$75/hr is real, and it is now a one-minute job per session. If the
+  founder wants engineering work first, the SessionsView test gap is the
+  highest-value item.
+
+  Autopilot eligible: 0 items currently in the queue match (backlog + effort:S +
+  type:bug|finding). The follow-ups above are unfiled.
+
+context_notes: |
+  BRANCH STATE: two commits on claude/bankroll-session-variance-mct79d, both
+  pushed. main is untouched. No PR opened — the founder did not ask for one.
+
+  VERIFICATION: full suite 13,581 passed / 0 failed (20 skipped) with a clean
+  build (68 precache entries). The known `gameTreeEvaluator` "high fold model
+  increases bet EV" Monte Carlo flake was GREEN this run; it fails ~1 in 3 runs
+  in isolation and exploitEngine imports nothing either change touched. A
+  1,224-test confirmation pass over the touched modules ran at session end
+  against byte-identical src/.
+
+  DOCTRINE APPLIED: POKER_THEORY §14.3/§14.4 is load-bearing on all of the
+  variance work — the cluster unit is the SESSION throughout, never the hand,
+  every estimator carries `clusterUnit` and `n`, and projected figures render
+  with a visible "modelled" tag. Any future work on these modules must preserve
+  that; the estimators are written so a caller cannot obtain a figure without
+  its sample size.
+
+  DESIGN GATES: two Gate 1 entry audits, both GREEN, Gate 2 not triggered for
+  either (no new surface, persona, or interaction primitive). sessions-view.md
+  updated twice; the SM-22 "session backfill flow" gap it had listed under
+  *Potentially missing* is now marked SERVED.
+
+  ADJUSTED-RATE COVERAGE IS ZERO TODAY and this is expected, not a bug. All 78
+  imported sessions carry handCount: 0, so there is nothing to adjust. The UI
+  says so explicitly rather than printing a number equal to the raw rate. It
+  accrues only from future sessions where hands are tracked AND villain cards
+  entered AND the board runs out.
+
+  ENVIRONMENT: this container needed a manual `npm install` before any test or
+  build could run (logged as fr-021). Visual verification needs a gitignored
+  .env.local with placeholder Firebase values, and the app requires a landscape
+  viewport — 1600×720 works, portrait shows a rotate prompt. Both cleaned up.

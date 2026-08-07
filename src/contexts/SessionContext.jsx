@@ -27,6 +27,8 @@ export const SessionProvider = ({ sessionState, dispatchSession, userId = GUEST_
     endCurrentSession,
     updateSessionField: persistenceUpdateSessionField,
     loadAllSessions,
+    logCompletedSession,
+    editSession,
     deleteSessionById,
   } = useSessionPersistence(sessionState, dispatchSession, userId);
 
@@ -87,6 +89,8 @@ export const SessionProvider = ({ sessionState, dispatchSession, userId = GUEST_
     startNewSession,
     endCurrentSession,
     loadAllSessions,
+    logCompletedSession,
+    editSession,
     deleteSessionById,
   }), [
     currentSession,
@@ -103,6 +107,8 @@ export const SessionProvider = ({ sessionState, dispatchSession, userId = GUEST_
     startNewSession,
     endCurrentSession,
     loadAllSessions,
+    logCompletedSession,
+    editSession,
     deleteSessionById,
   ]);
 

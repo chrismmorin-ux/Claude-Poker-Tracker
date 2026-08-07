@@ -254,7 +254,29 @@ describe('useSessionPersistence', () => {
 
       // AUDIT-2026-04-21-SV F2: endSessionAtomic signature extended with tipAmount;
       // legacy callers pass null, preserving backward compatibility.
-      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest', null);
+      // 2026-08-07: extended again with an explicit endTime. Callers that omit it
+      // get `Date.now()` resolved in the hook, so the session still ends now.
+      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest', null, expect.any(Number));
+    });
+
+    it('passes an explicit end time through when the founder corrected it', async () => {
+      sessionState = {
+        ...sessionState,
+        currentSession: { ...sessionState.currentSession, sessionId: 10 },
+      };
+
+      const { result } = createHook();
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      const finishedAt = new Date(2026, 7, 5, 21, 0).getTime();
+      await act(async () => {
+        await result.current.endCurrentSession(500, null, finishedAt);
+      });
+
+      expect(endSessionAtomic).toHaveBeenCalledWith(10, 500, 'guest', null, finishedAt);
     });
 
     it('dispatches END_SESSION action', async () => {

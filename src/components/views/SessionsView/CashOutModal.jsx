@@ -7,6 +7,12 @@ import React from 'react';
  * before this change, lifetime bankroll silently overcounted by the tip amount for
  * every tipped session. Tip is optional (null = 0) and backward-compatible with
  * legacy session records.
+ *
+ * End-time override (2026-08-07): the session ends when you tap, which is wrong
+ * whenever you rack up and cash out twenty minutes later, or remember to end the
+ * session the next morning. Hours drive every figure in the Variance band, so an
+ * over-long session quietly deflates $/hr. Blank keeps the previous behaviour
+ * (end = now).
  */
 export const CashOutModal = ({
   isOpen,
@@ -14,6 +20,8 @@ export const CashOutModal = ({
   onCashOutAmountChange,
   tipAmount = '',
   onTipAmountChange,
+  endTime = '',
+  onEndTimeChange,
   onConfirm,
   onCancel,
 }) => {
@@ -70,6 +78,26 @@ export const CashOutModal = ({
             Included in P&L. Leave empty if you didn&apos;t tip.
           </p>
         </div>
+
+        {/* End-time override. Optional: blank = now. */}
+        {onEndTimeChange && (
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-300 mb-2" htmlFor="cashout-end-time">
+              Finished at (optional)
+            </label>
+            <input
+              id="cashout-end-time"
+              type="time"
+              value={endTime}
+              onChange={(e) => onEndTimeChange(e.target.value)}
+              className="w-full px-4 min-h-[44px] bg-gray-700 border border-gray-600 text-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              data-testid="cashout-end-time"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to use right now. Set it if you actually finished earlier.
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button
