@@ -27,6 +27,12 @@
  * runs every time. That is slower but it is the only way the comparison covers the code
  * this ticket touches.
  *
+ * WS-432: source (2) NO LONGER EXISTS — refinement gates read a logical work meter, so the
+ * `Date.now` freeze below is inert for them, and a budget now trips DETERMINISTICALLY at
+ * the same point on every machine. Consequence for this instrument: at the default
+ * `refinementBudgetMs` the dump is a reproducible BUDGETED tree, not the full one; pass a
+ * large `WS334_REFINEMENT_MS` (e.g. 600000) when a full-tree dump is what the diff needs.
+ *
  * Seeding is valid as a bit-identity check specifically because the refactor does not
  * consume randomness: wrapping `narrowByBoard` in `narrowHolding` neither draws nor
  * reorders a random call. If the diff moves, something real moved.
@@ -66,6 +72,11 @@ const realNow = Date.now;
  *
  *   node scripts/backtest/dumpGameTreeEV.mjs out/full.json            # full tree
  *   WS361_LIVE_CLOCK=1 node scripts/backtest/dumpGameTreeEV.mjs out/budgeted.json
+ *
+ * WS-432: this whole distinction is now moot for refinement gates — the logical clock makes
+ * the budgeted path deterministic, so `WS361_LIVE_CLOCK` no longer changes which stages run;
+ * the budget itself (WS334_REFINEMENT_MS) is the only lever, and every setting of it is
+ * bit-comparable between invocations.
  */
 const LIVE_CLOCK = process.env.WS361_LIVE_CLOCK === '1';
 
@@ -190,6 +201,8 @@ const main = async () => {
         // With `Date.now` frozen the budget never trips, so the non-zero run explores the
         // FULL tree — which is what makes the difference attributable to depth rather than
         // to where a bailout happened to land.
+        // WS-432: the freeze no longer buys that — the budget is logical and CAN trip here,
+        // deterministically. For a full-tree dump set WS334_REFINEMENT_MS to a large value.
         refinementBudgetMs: process.env.WS334_REFINEMENT_MS != null
           ? Number(process.env.WS334_REFINEMENT_MS)
           : 2000,

@@ -167,7 +167,16 @@ const stampFixture = () => ({
   partition: 'pool-train@50',
   seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },
   unseededSources: [{ source: 'src/utils/pokerCore/monteCarloEquity.js', mechanism: 'Math.random()' }],
-  constants: { PRIOR_WEIGHT: 10, ACTION_TAU_FRACTION: { check: 1 }, MIN_CONTINUATION_WEIGHT: 0.05 },
+  constants: {
+    PRIOR_WEIGHT: 10,
+    ACTION_TAU_FRACTION: { check: 1 },
+    MIN_CONTINUATION_WEIGHT: 0.05,
+    // WS-432: refinement configuration joined REQUIRED_CONSTANTS (canonical scalar form here).
+    REFINEMENT_BUDGET_MS: 0,
+    MAX_STAGE_SHARE: 0.4,
+    REFINEMENT_UNITS_PER_MS: 300,
+    KL_FLOOR: 1e-6, // FIND-090
+  },
   // WS-330: a Result Card must name the register version it stood under, so a fault confirmed
   // later can find the results that depended on it. A literal keeps this fixture stable across
   // register edits; `replicationStamp.buildStampInput` supplies the real value in production.

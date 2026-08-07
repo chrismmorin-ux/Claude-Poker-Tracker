@@ -1,0 +1,26 @@
+id: "FIND-090"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: LOW
+status: resolved
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unreplicable measurement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "KL_FLOOR is documented as manifest-stamped and is absent from REQUIRED_CONSTANTS - WS-322 shadow-constant class recurring"
+description: |
+  manifest.js:33-37 omits KL_FLOOR; VOCABULARY.md:46 states it is stamped into manifest.constants as a rule; collectConstants (replicationStamp.mjs:59-94) never reads it; only layerAblation.mjs:490-501 spreads it manually. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/standardOfRecord/manifest.js"
+  - "scripts/backtest/replicationStamp.mjs"
+recommended_fix: |
+  Add KL_FLOOR to REQUIRED_CONSTANTS and collectConstants - extend WS-432 scope (it already adds REFINEMENT_BUDGET_MS/MAX_STAGE_SHARE) rather than filing new work.
+dedup_key: "sor-kl-floor-unstamped"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"
+resolution: |
+  Resolved by WS-432 implementation 2026-08-07: KL_FLOOR added to REQUIRED_CONSTANTS (manifest.js) and read in collectConstants from its definition site (divergence.js). Verified by manifest rejection test.

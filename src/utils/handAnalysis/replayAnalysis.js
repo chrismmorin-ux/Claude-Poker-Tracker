@@ -6,17 +6,17 @@
  * The hook (useHandReplayAnalysis) is now a thin orchestrator calling these.
  */
 
-import { getPositionName, getRangePositionCategory, isInPosition } from '../positionUtils';
-import { parseBoard, parseAndEncode, getCardsForStreet } from '../pokerCore/cardParser';
-import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
+import { getPositionName, getRangePositionCategory, isInPosition } from '../positionUtils.js';
+import { parseBoard, parseAndEncode, getCardsForStreet } from '../pokerCore/cardParser.js';
+import { analyzeBoardFromStrings } from '../pokerCore/boardTexture.js';
 // RT-35: These 4 symbols are injected via deps parameter to analyzeTimelineAction
 // to avoid handAnalysis → exploitEngine import (INV-08 violation).
 // Defaults provide graceful degradation when deps are not supplied.
-import { handVsRange } from '../pokerCore/monteCarloEquity';
-import { bayesianSampleConfidence } from '../pokerCore/betaMath';
-import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
-import { getPopulationPrior } from '../rangeEngine/populationPriors';
-import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
+import { handVsRange } from '../pokerCore/monteCarloEquity.js';
+import { bayesianSampleConfidence } from '../pokerCore/betaMath.js';
+import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions.js';
+import { getPopulationPrior } from '../rangeEngine/populationPriors.js';
+import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis.js';
 
 /**
  * Classify a bet/raise as value, thin value, or bluff based on the actor's

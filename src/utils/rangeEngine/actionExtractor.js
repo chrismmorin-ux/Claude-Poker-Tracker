@@ -9,13 +9,13 @@
  * and the no-action fallback, not the taxonomy.
  */
 
-import { buildTimeline, getStreetTimeline } from '../handAnalysis';
-import { getRangePositionCategory } from '../positionUtils';
-import { findPlayerSeat } from '../tendencyCalculations';
-import { ACTIONS } from '../../constants/gameConstants';
-import { parseCard } from '../pokerCore/cardParser';
-import { rangeIndex } from '../pokerCore/rangeMatrix';
-import { derivePreflopDecisions } from './lineTaxonomy';
+import { buildTimeline, getStreetTimeline } from '../handAnalysis/index.js';
+import { getRangePositionCategory } from '../positionUtils.js';
+import { findPlayerSeat } from '../tendencyCalculations.js';
+import { ACTIONS } from '../../constants/gameConstants.js';
+import { parseCard } from '../pokerCore/cardParser.js';
+import { rangeIndex } from '../pokerCore/rangeMatrix.js';
+import { derivePreflopDecisions } from './lineTaxonomy.js';
 
 /**
  * Resolve the seat's showdown hand index, if the hand recorded one.

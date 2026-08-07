@@ -13,11 +13,11 @@
  *     -> DecisionAnalysis
  */
 
-import { getPositionName, isInPosition } from '../positionUtils';
-import { analyzeBoardFromStrings } from '../pokerCore/boardTexture';
-import { getCardsForStreet } from '../pokerCore/cardParser';
-import { findLastRaiser, getStreetTimeline } from './handTimeline';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { getPositionName, isInPosition } from '../positionUtils.js';
+import { analyzeBoardFromStrings } from '../pokerCore/boardTexture.js';
+import { getCardsForStreet } from '../pokerCore/cardParser.js';
+import { findLastRaiser, getStreetTimeline } from './handTimeline.js';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions.js';
 
 // =============================================================================
 // BOARD TEXTURE DESCRIPTION

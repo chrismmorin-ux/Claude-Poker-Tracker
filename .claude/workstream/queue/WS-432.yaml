@@ -1,0 +1,117 @@
+id: "WS-432"
+title: "Freezing the clock to make runs reproducible would silently measure an UNBOUNDED engine while stamping the card `2000 ms` — refinement is wall-clock gated at seven sites and a constant clock disables every one of them"
+legacy_id: ""
+type: bug
+status: claimed
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 50.0
+priority_label: "P0"
+category: "reproducibility"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-410 Stage 3(c) says promoting the freeze/seed pattern from `run-river-flip-replicate.mjs:83-87`
+  into the shared harness is "a PROMOTION, not an invention". **That is wrong for every stage except
+  the one it was built on**, and shipping the naive promotion would corrupt every EV figure produced
+  afterwards in a way that looks like success.
+
+  THE MECHANISM, read at HEAD (`18f49f22`).
+  `freeze(seed)` sets `Date.now = () => FROZEN_NOW` — a CONSTANT, not an advancing clock. Refinement
+  is gated on elapsed wall time at seven independent sites:
+    - `gameTreeEvaluator.js:954-961` — `isTimeBudgetExceeded = () => timeBudgetMs <= 0 ||
+      Date.now() - refinementStart > timeBudgetMs`
+    - `gameTreeDepth2.js:695,844,978,1088,1185,1261` — six mid-loop bail points, each
+      `Date.now() - startTime > timeBudgetMs`, where `startTime` itself comes from
+      `claimStageBudget()`'s `Date.now()` (`gameTreeEvaluator.js:987`).
+
+  Under a constant clock, `Date.now() - startTime` is **0, always**. No stage ever bails. The
+  harness runs refinement to completion and reports it as the budgeted configuration.
+
+  It works in `run-river-flip-replicate.mjs` only because `riverPerCombo` is bounded by
+  `maxCombos: 200` rather than by time — that stage takes no `timeBudgetMs`. The pattern is correct
+  there and structurally wrong everywhere else.
+
+  THE CONSEQUENCE. DEC-036 states that at the shipped `refinementBudgetMs = 2000` most stages return
+  `partial` — "partials are now the normal case, not the exception". A card built under a frozen
+  clock would report `depth-2, budget 2000 ms` while having run FULL refinement on every decision.
+  Not a wrong number: a **differently-configured number wearing the label of the shipped one**. Every
+  figure downstream would describe an engine that never reaches the founder's phone.
+
+  It also nullifies `MAX_STAGE_SHARE` entirely. DEC-036 records that `claimStageBudget` exists to
+  stop first-come-first-served stages starving later ones of an 82% budget share. Under a frozen
+  clock there is no draining pool, so the dynamic it guards against cannot occur — and the guard's
+  effect becomes unmeasurable at exactly the moment it is stamped as controlled.
+
+  WHY THIS BLOCKS THINGS. Bit-reproducibility is the prerequisite for the cross-run join (WS-410 D3
+  option B) and for any run-over-run Ladder comparison. Today the wall clock is the ONLY remaining
+  nondeterminism source in the scoring path — WS-393 already gave depth-2's sampling a board-derived
+  deterministic RNG, and `DEPTH_ABLATION_UNSEEDED_SOURCES` dropped its Monte-Carlo entry
+  accordingly. One problem left, not two. But it is not a small one, and it is not a promotion.
+
+  ENUMERATED NONDETERMINISM SOURCES (from the same pass, for whoever implements this):
+    - `Date.now()` — dominant, seven sites above.
+    - `Math.random()` — injectable; `gameTreeSampling.js:165,386` both default to it and a global
+      mulberry32 patch reaches them. No module-scope alias captured at import time was found.
+    - Object/Map iteration order — `gameTreeDepth2.js:751,889,1128,1401` iterate
+      `Object.entries(fractionVotes)`; keys are non-integer-like so V8 uses insertion order, which is
+      deterministic given deterministic combo order. Not a live risk, but fragile — nothing asserts
+      the key shape stays non-integer-like.
+    - Parallelism — none in the scoring hot path today (see WS-433, which will introduce it and must
+      not introduce nondeterminism with it).
+    - Floating-point accumulation order — unverified, flagged rather than asserted clean.
+accept_criteria: |
+  - Wall-clock gating in the refinement path is replaced by a DETERMINISTIC LOGICAL CLOCK — an
+    engine-internal work-unit counter — at all seven gate sites, so budget exhaustion remains a
+    controlled, reproducible EVENT rather than being deleted. The budget must still BIND; a
+    configuration that never exhausts is not the shipped engine.
+  - A test proves the point directly: the same inputs at the same logical budget produce the same
+    argmax AND the same set of stages that completed, across repeated runs and under artificial load.
+  - `budgetBound` (proposed as a Decision Atom field in WS-410 Stage 1) is stamped per decision, and
+    a test asserts it is NOT uniformly `false` on a run at the shipped budget — that uniformity is
+    the tell that the gate has been disabled rather than made deterministic.
+  - `REFINEMENT_BUDGET_MS` and `MAX_STAGE_SHARE` are added to `REQUIRED_CONSTANTS`
+    (`src/utils/standardOfRecord/manifest.js:33-37`) under one canonical key. This forces
+    `MAX_STAGE_SHARE` out of module scope (`gameTreeEvaluator.js:983-990`), where it currently
+    cannot be stamped at all and is recorded only as a `knownDivergence` with `agrees: null`.
+    NOTE the naming collision already on disk: `RC-depth-ablation.json:110-111` uses
+    `REFINEMENT_BUDGET_MS_DEPTH1/DEPTH2` while `RC-layer-divergence.json:1330-1332` uses
+    `..._FAST/_FULL`. Pick one and migrate.
+  - The relationship between the logical budget and the shipped 2000 ms wall budget is CALIBRATED and
+    documented, so a logical-clock figure can be read as describing the real device.
+  - Either ASSERT refinement monotonicity or DISCLOSE its absence in the card. WS-378 saw depth-2
+    move 38 of 40 flips toward passivity, so monotonicity is not assumable. Until settled, depth is
+    pinned as a CONTROLLED variable and any change altering depth is measured at both depths or not
+    at all.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "src/utils/standardOfRecord/manifest.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: "SPR-177"
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the experimental-design architect in the 2026-08-06 nine-agent decision-enhance pass on
+  WS-410, by reading all seven gate sites at HEAD.
+
+  RECORDED DISAGREEMENT BETWEEN AGENTS, not smoothed over: the experimental-design FAILURE ENGINEER
+  in the same pass repeated WS-410's framing ("Stage 3c is a promotion, not new code") without
+  testing it. The architect's refutation is backed by specific code reading; the failure engineer's
+  agreement was inherited from the ticket. The architect's finding is treated as the live one. If a
+  later session overturns it, that reversal belongs here.

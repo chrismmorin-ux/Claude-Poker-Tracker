@@ -26,7 +26,7 @@
  * WS-270 will claim.
  */
 
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions.js';
 
 /** Retained parent aggregates — pre-taxonomy semantics, unchanged. */
 export const PARENT_ACTIONS = {

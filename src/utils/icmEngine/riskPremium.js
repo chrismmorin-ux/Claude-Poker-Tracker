@@ -12,7 +12,7 @@
  * than winning gains, so you need extra equity (rises near the bubble / pay jumps).
  */
 
-import { computeIcmEquity } from './malmuthHarville';
+import { computeIcmEquity } from './malmuthHarville.js';
 
 const cloneWithTransfer = (stacks, heroIndex, villainIndex, heroDelta, villainDelta) => {
   const next = stacks.slice();

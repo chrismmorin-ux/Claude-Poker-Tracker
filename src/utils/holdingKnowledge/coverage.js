@@ -46,7 +46,7 @@
  * random.
  */
 
-import { enumerateCombos } from '../pokerCore/rangeMatrix';
+import { enumerateCombos } from '../pokerCore/rangeMatrix.js';
 
 /** All available combos ignoring the range — the denominator for `retainedFraction`. */
 const totalAvailableCombos = (board, dead) => {

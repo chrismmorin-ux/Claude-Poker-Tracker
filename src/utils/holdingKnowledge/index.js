@@ -58,13 +58,13 @@
  * the villain-side counterpart of the Hero State Primitive.
  */
 
-import { narrowByBoard } from '../exploitEngine/postflopNarrower';
+import { narrowByBoard } from '../exploitEngine/postflopNarrower.js';
 import {
   BASIS, openProvenance, appendNarrowing, markRevealed, isPurelyObserved,
-} from './provenance';
-import { scoreCoverage } from './coverage';
+} from './provenance.js';
+import { scoreCoverage } from './coverage.js';
 
-export { BASIS } from './provenance';
+export { BASIS } from './provenance.js';
 
 /**
  * Open a holding at its starting range.
@@ -186,5 +186,5 @@ export const holdingKnowledge = (handle, { board, deadCards = [], includeTruth =
   truth: includeTruth ? holdingTruth(handle, { board, deadCards }) : null,
 });
 
-export { scoreCoverage } from './coverage';
-export { isPurelyObserved, streetFromBoardLength } from './provenance';
+export { scoreCoverage } from './coverage.js';
+export { isPurelyObserved, streetFromBoardLength } from './provenance.js';

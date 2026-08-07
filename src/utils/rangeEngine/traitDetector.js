@@ -7,9 +7,9 @@
  * - positionallyAware: Do the player's frequencies differ significantly by position?
  */
 
-import { RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex } from '../pokerCore/rangeMatrix';
-import { betaPosterior, betaCDF, betaQuantile } from '../pokerCore/betaMath';
+import { RANGE_POSITIONS } from './rangeProfile.js';
+import { decodeIndex } from '../pokerCore/rangeMatrix.js';
+import { betaPosterior, betaCDF, betaQuantile } from '../pokerCore/betaMath.js';
 
 const GRID_SIZE = 169;
 

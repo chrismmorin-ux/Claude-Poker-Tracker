@@ -4,16 +4,16 @@
  * Orchestrates the pipeline: extract actions → update profile → normalize.
  */
 
-import { createEmptyProfile, RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
-import { extractAllActions } from './actionExtractor';
-import { extractAllSubActions } from './subActionExtractor';
-import { updateProfileFromActions, updateSubActionCounts } from './bayesianUpdater';
-import { normalizeAllPositions } from './crossRangeConstraints';
-import { rangeWidth } from '../pokerCore/rangeMatrix';
-import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
-import { PARENT_SUBCLASSES } from './lineTaxonomy';
-import { detectTraits } from './traitDetector';
-import { computeAllPips, computePipConfidence } from './pipCalculator';
+import { createEmptyProfile, RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile.js';
+import { extractAllActions } from './actionExtractor.js';
+import { extractAllSubActions } from './subActionExtractor.js';
+import { updateProfileFromActions, updateSubActionCounts } from './bayesianUpdater.js';
+import { normalizeAllPositions } from './crossRangeConstraints.js';
+import { rangeWidth } from '../pokerCore/rangeMatrix.js';
+import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors.js';
+import { PARENT_SUBCLASSES } from './lineTaxonomy.js';
+import { detectTraits } from './traitDetector.js';
+import { computeAllPips, computePipConfidence } from './pipCalculator.js';
 
 /**
  * Build a complete range profile for a player from hand history.
@@ -166,22 +166,22 @@ export const getSubActionSummary = (profile) => {
 };
 
 // Re-exports for convenience
-export { RANGE_ACTIONS, RANGE_PARENT_ACTIONS, RANGE_SUBCLASS_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
+export { RANGE_ACTIONS, RANGE_PARENT_ACTIONS, RANGE_SUBCLASS_ACTIONS, RANGE_POSITIONS } from './rangeProfile.js';
 export {
   derivePreflopDecisions,
   PARENT_ACTIONS,
   SUBCLASS_ACTIONS,
   SUBCLASS_PARENT,
   PARENT_SUBCLASSES,
-} from './lineTaxonomy';
-export { SUBCLASS_SPLIT, SUBCLASS_PRIOR_WEIGHT, NO_RAISE_SUBCLASSES, FACED_RAISE_SUBCLASSES } from './populationPriors';
-export { extractPreflopDecisions } from './actionExtractor';
-export { createEmptyProfile, serializeProfile, deserializeProfile, PROFILE_VERSION } from './rangeProfile';
-export { extractPreflopAction, extractAllActions } from './actionExtractor';
-export { updateProfileFromActions, applyShowdownAnchor, updateSubActionCounts } from './bayesianUpdater';
-export { extractSubAction, extractAllSubActions } from './subActionExtractor';
-export { detectTraits } from './traitDetector';
-export { computePips, computeAllPips, computePipConfidence, formatPips, pipConfidenceLabel, classifyHand, HAND_CATEGORIES } from './pipCalculator';
-export { normalizeAcrossActions, normalizeAllPositions } from './crossRangeConstraints';
-export { getPopulationPrior, NO_RAISE_FREQUENCIES, FACED_RAISE_FREQUENCIES, PRIOR_WEIGHT } from './populationPriors';
-export { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors';
+} from './lineTaxonomy.js';
+export { SUBCLASS_SPLIT, SUBCLASS_PRIOR_WEIGHT, NO_RAISE_SUBCLASSES, FACED_RAISE_SUBCLASSES } from './populationPriors.js';
+export { extractPreflopDecisions } from './actionExtractor.js';
+export { createEmptyProfile, serializeProfile, deserializeProfile, PROFILE_VERSION } from './rangeProfile.js';
+export { extractPreflopAction, extractAllActions } from './actionExtractor.js';
+export { updateProfileFromActions, applyShowdownAnchor, updateSubActionCounts } from './bayesianUpdater.js';
+export { extractSubAction, extractAllSubActions } from './subActionExtractor.js';
+export { detectTraits } from './traitDetector.js';
+export { computePips, computeAllPips, computePipConfidence, formatPips, pipConfidenceLabel, classifyHand, HAND_CATEGORIES } from './pipCalculator.js';
+export { normalizeAcrossActions, normalizeAllPositions } from './crossRangeConstraints.js';
+export { getPopulationPrior, NO_RAISE_FREQUENCIES, FACED_RAISE_FREQUENCIES, PRIOR_WEIGHT } from './populationPriors.js';
+export { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors.js';

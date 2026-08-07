@@ -61,6 +61,15 @@ export const collectConstants = async (loader) => {
   const soft = await loader.load('/src/utils/pokerCore/softWeights.js');
   const narrower = await loader.load('/src/utils/exploitEngine/postflopNarrower.js');
   const foldEq = await loader.load('/src/utils/exploitEngine/foldEquityCalculator.js');
+  // WS-432: the logical refinement clock's own constants, read from their definition site.
+  // MAX_STAGE_SHARE used to be a module-local const inside gameTreeEvaluator.js, unreadable
+  // through the loader and recorded only as a knownDivergence with `agrees: null`; it now
+  // lives in refinementWork.js precisely so this read is a real one.
+  const refinement = await loader.load('/src/utils/exploitEngine/refinementWork.js');
+  // FIND-090: KL_FLOOR from its canonical definition site. VOCABULARY.md documents it as
+  // manifest-stamped by rule; before this only layerAblation.mjs spread it manually, so
+  // every other card omitted a constant the doc said it carried.
+  const divergence = await loader.load('/src/utils/standardOfRecord/divergence.js');
 
   const constants = {
     PRIOR_WEIGHT: priors.PRIOR_WEIGHT,
@@ -68,9 +77,13 @@ export const collectConstants = async (loader) => {
     ACTION_TAU_FRACTION: { ...narrower.ACTION_TAU_FRACTION },
     TAU_FRACTION: soft.TAU_FRACTION,
     MIN_CONTINUATION_WEIGHT: soft.MIN_CONTINUATION_WEIGHT,
+    MAX_STAGE_SHARE: refinement.MAX_STAGE_SHARE,
+    REFINEMENT_UNITS_PER_MS: refinement.REFINEMENT_UNITS_PER_MS,
+    REFINEMENT_CLOCK_VERSION: refinement.REFINEMENT_CLOCK_VERSION,
+    KL_FLOOR: divergence.KL_FLOOR,
   };
 
-  // The shadow. `foldEquityCalculator.js:563` declares a LOCAL `const PRIOR_WEIGHT = 10` that
+  // The shadow. `foldEquityCalculator.js:661` declares a LOCAL `const PRIOR_WEIGHT = 10` that
   // is not exported and does not read the canonical one. Today both are 10, so nothing is
   // wrong — and that is exactly the condition under which the divergence is invisible.
   // Recording it means the day they drift, the manifest already says where to look.
@@ -81,7 +94,7 @@ export const collectConstants = async (loader) => {
     knownDivergence({
       name: 'PRIOR_WEIGHT',
       canonical: constants.PRIOR_WEIGHT,
-      shadowAt: 'src/utils/exploitEngine/foldEquityCalculator.js:563',
+      shadowAt: 'src/utils/exploitEngine/foldEquityCalculator.js:661',
       shadowValue: foldEq.PRIOR_WEIGHT ?? null,
       note:
         'foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical ' +
@@ -109,23 +122,20 @@ export const collectConstants = async (loader) => {
  * sampling over a strength-sorted list, with no RNG at all.
  */
 /**
- * The refinement clock, as an unseeded source (WS-393).
+ * RETIRED 2026-08-07 (WS-432): `REFINEMENT_CLOCK_UNSEEDED_SOURCE`.
  *
- * CANONICAL HERE, imported by every reporter that needs it. It used to be declared only in
- * `depthAblationReport.mjs`, which meant `run-hero-ev.mjs` — which has ALWAYS run the engine at
- * its default 2000ms refinement budget — stamped cards asserting a reproducibility it did not
- * have. `unseededSources` is a positive claim; a runner that reaches this code path and omits
- * the entry is making a false one.
+ * The entry (introduced by WS-393, canonical here so `run-hero-ev.mjs` and the depth
+ * ablation shared one declaration) named the wall-clock refinement budget — "which
+ * refinement stages complete depends on machine speed and load". WS-432 replaced the wall
+ * clock with the deterministic logical work-unit clock (`refinementWork.js`,
+ * REFINEMENT_CLOCK_VERSION 'logical-v1'): budget exhaustion is now a pure function of the
+ * inputs, so the dependence the entry declared no longer exists on ANY code path.
+ *
+ * The export is DELETED rather than left empty, because `unseededSources` is a positive
+ * claim and a stale entry is as wrong as a missing one — it would tell a reader to
+ * discount a difference that is now real. Cards stamped before WS-432 keep the entry in
+ * their own JSON, which is correct: it was true of the engine that produced them.
  */
-export const REFINEMENT_CLOCK_UNSEEDED_SOURCE = Object.freeze({
-  source: 'src/utils/exploitEngine/gameTreeEvaluator.js (refinement budget clock)',
-  reached_via: 'refinementBudgetMs enforced against Date.now()',
-  mechanism: 'WALL-CLOCK DEPENDENCE, not randomness. Which refinement stages complete '
-    + 'depends on machine speed and load, capped per stage by MAX_STAGE_SHARE.',
-  consequence: 'A run with refinement ENABLED is NOT reproducible on a different machine, or '
-    + 'on this one under different load: a re-run can differ because a stage that finished '
-    + 'before did not finish again. A budget of 0 has no such dependence and IS stable.',
-});
 
 export const HERO_EV_UNSEEDED_SOURCES = Object.freeze([
   {
@@ -137,6 +147,28 @@ export const HERO_EV_UNSEEDED_SOURCES = Object.freeze([
       'noise, not exactly. Do not read a small difference between two Result Cards as a change.',
   },
 ]);
+
+/**
+ * WS-433. This entry is CLOSED when the run passes `--equity-seed`: the runner threads a
+ * mulberry32 stream per engine call through the `equityFn` seam, seeded from position in
+ * the stable work enumeration (`heroEvEnumeration.seedForCombo`), and the seed lands in
+ * `seeds.equityMc`. A seeded run drops HERO_EV_UNSEEDED_SOURCES from its stamp — at
+ * `refinementBudgetMs: 0` that makes `unseededSources: []` a TRUE positive claim,
+ * verified by the parallel-vs-serial bit-identity gate.
+ */
+
+/**
+ * RETIRED 2026-08-07 (WS-432): `WORKER_CONTENTION_SOURCE`.
+ *
+ * The entry (WS-433) named CPU contention under the WALL-CLOCK refinement budget: N
+ * contended workers completed fewer stages per budget, so a parallel refined run measured
+ * a differently-loaded engine than a serial one. Its own declaration promised retirement
+ * "when WS-432's logical work-unit clock replaces the wall clock at all seven gate
+ * sites" — that is this change. Under 'logical-v1', which stages complete is independent
+ * of core count and load, so a parallel refined run and a serial one at the same seeds
+ * are the SAME measurement. Deleted rather than kept-but-unused for the same
+ * positive-claim reason as the retirement above.
+ */
 
 /**
  * Assemble everything a Result Card's manifest needs, except the Deal Book hash.

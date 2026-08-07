@@ -66,8 +66,12 @@ const stampFixture = () => ({
     PRIOR_WEIGHT: 10,
     ACTION_TAU_FRACTION: { check: 1 },
     MIN_CONTINUATION_WEIGHT: 0.05,
-    REFINEMENT_BUDGET_MS_DEPTH1: 0,
-    REFINEMENT_BUDGET_MS_DEPTH2: 2000,
+    // WS-432: ONE canonical key keyed by arm id (the suffixed _DEPTH1/_DEPTH2 keys retired),
+    // plus the two clock constants that joined REQUIRED_CONSTANTS.
+    REFINEMENT_BUDGET_MS: { depth1: 0, depth2: 2000 },
+    MAX_STAGE_SHARE: 0.4,
+    REFINEMENT_UNITS_PER_MS: 300,
+    KL_FLOOR: 1e-6, // FIND-090
   },
   disclaimerRegisterVersion: 'FR-1+000000000000',
   knownDivergences: [],
@@ -183,27 +187,32 @@ describe('buildDepthAblationReport — the Result Card', () => {
     }));
     const c = report.resultCard.manifest.constants;
     for (const name of REQUIRED_CONSTANTS) expect(c).toHaveProperty(name);
-    expect(c.REFINEMENT_BUDGET_MS_DEPTH1).toBe(0);
-    expect(c.REFINEMENT_BUDGET_MS_DEPTH2).toBe(2000);
+    // WS-432: one canonical key, keyed by arm id.
+    expect(c.REFINEMENT_BUDGET_MS).toEqual({ depth1: 0, depth2: 2000 });
   });
 
-  it('records MAX_STAGE_SHARE as a KNOWN DIVERGENCE, not as a verified constant', () => {
+  it('WS-432: MAX_STAGE_SHARE is a VERIFIED constant now, not a knownDivergence', () => {
+    // Pre-WS-432 it was a module-local const inside gameTreeEvaluator.js, unreadable
+    // through the loader, and honestly recorded as a divergence with `agrees: null`. It
+    // moved to refinementWork.js precisely so the stamp could READ it — so an entry here
+    // would now mean the move regressed.
     const report = buildDepthAblationReport(runFixture(manyPlayers(40), {
       replicationStamp: stampFixture(), dealBook: { dealBookId: 'x' },
     }));
+    expect(report.resultCard.manifest.constants.MAX_STAGE_SHARE).toBe(0.4);
     const entry = report.resultCard.manifest.knownDivergences.find((k) => k.name === 'MAX_STAGE_SHARE');
-    expect(entry).toBeDefined();
-    // `agrees: null` is the honest three-valued statement: not read at run time.
-    expect(entry.agrees).toBeNull();
+    expect(entry).toBeUndefined();
   });
 
-  it('names wall-clock dependence, so the card cannot claim reproducibility it lacks', () => {
+  it('WS-432: the depth-2 arm no longer declares wall-clock dependence', () => {
+    // The logical work-unit clock made stage completion a pure function of the inputs, so
+    // DEPTH_ABLATION_UNSEEDED_SOURCES is empty — a POSITIVE bit-reproducibility claim for
+    // the refined arm, which is exactly what the old wall-clock entry said it could not make.
+    expect(DEPTH_ABLATION_UNSEEDED_SOURCES).toHaveLength(0);
     const report = buildDepthAblationReport(runFixture(manyPlayers(40), {
       replicationStamp: stampFixture(), dealBook: { dealBookId: 'x' },
     }));
-    const sources = report.resultCard.manifest.unseededSources;
-    expect(sources.length).toBeGreaterThan(0);
-    expect(JSON.stringify(sources)).toMatch(/WALL-CLOCK DEPENDENCE/);
+    expect(JSON.stringify(report.resultCard.manifest.unseededSources)).not.toMatch(/WALL-CLOCK DEPENDENCE/);
   });
 
   it('carries `notAVerdict` on the card itself, not only in a doc', () => {

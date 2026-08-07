@@ -290,6 +290,13 @@ try {
       partition: 'EVAL(50%) by fnv1a32(site:playerId); walk-forward N/A — the Read surface is a '
         + 'STATIC population prior, fitted nowhere in this run',
     });
+    // WS-432 floor: REFINEMENT_BUDGET_MS is REQUIRED on every manifest. This pass never
+    // evaluates the game tree, and a fabricated zero would read as "depth-1 by request" —
+    // the honest value is an explicit n/a.
+    stamp.constants = {
+      ...stamp.constants,
+      REFINEMENT_BUDGET_MS: 'n/a — no game-tree evaluation on this path',
+    };
 
     return sor.buildResultCard({
       resultCardId,

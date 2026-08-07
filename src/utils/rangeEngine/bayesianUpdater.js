@@ -20,10 +20,10 @@ import {
   SUBCLASS_SPLIT,
   SUBCLASS_PRIOR_WEIGHT,
   PRIOR_WEIGHT,
-} from './populationPriors';
-import { RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex, rangeIndex } from '../pokerCore/rangeMatrix';
-import { logger } from '../errorHandler';
+} from './populationPriors.js';
+import { RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile.js';
+import { decodeIndex, rangeIndex } from '../pokerCore/rangeMatrix.js';
+import { logger } from '../errorHandler.js';
 
 const GRID_SIZE = 169;
 

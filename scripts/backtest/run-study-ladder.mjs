@@ -110,6 +110,12 @@ try {
       `pool/eval @ poolPct=${POOL_PCT}, FNV-1a over player-site id; `
       + 'walk-forward = per-player temporal split-half (early window ends where late window begins)',
   });
+  // WS-432 floor: REFINEMENT_BUDGET_MS is REQUIRED on every manifest; the ladder is exact
+  // counting with no game-tree evaluation, so the honest value is an explicit n/a.
+  stamp.constants = {
+    ...stamp.constants,
+    REFINEMENT_BUDGET_MS: 'n/a — no game-tree evaluation on this path',
+  };
 
   const card = ladderResultCard({
     analysis,

@@ -4,16 +4,16 @@
  * Pure analysis utilities for hand replay, review, and significance scoring.
  */
 
-export { analyzeDecisionPoint, getAvailableStreets } from './handReviewAnalyzer';
-export { analyzeWithHindsight } from './hindsightAnalysis';
+export { analyzeDecisionPoint, getAvailableStreets } from './handReviewAnalyzer.js';
+export { analyzeWithHindsight } from './hindsightAnalysis.js';
 export {
   initializeSeatRanges, analyzeTimelineAction, buildHeroCoaching,
   buildCounterfactualTree,
-} from './replayAnalysis';
+} from './replayAnalysis.js';
 export {
   buildTimeline, getStreetTimeline, getPlayerTimeline,
   findLastRaiser, didPlayerFaceRaise, getCbetInfo, sortByPositionalOrder,
-} from './handTimeline';
-export { computeHandSignificance } from './handSignificance';
-export { buildSeatNameMap, getPlayerName } from './playerNameMap';
-export { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis';
+} from './handTimeline.js';
+export { computeHandSignificance } from './handSignificance.js';
+export { buildSeatNameMap, getPlayerName } from './playerNameMap.js';
+export { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis.js';

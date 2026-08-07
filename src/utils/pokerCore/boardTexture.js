@@ -4,8 +4,8 @@
  * Classifies community cards as wet/dry/paired/etc for board-aware exploit rules.
  */
 
-import { cardRank, cardSuit, parseBoard } from './cardParser';
-import { clamp } from '../mathUtils';
+import { cardRank, cardSuit, parseBoard } from './cardParser.js';
+import { clamp } from '../mathUtils.js';
 
 /**
  * Analyze board texture from encoded card array.

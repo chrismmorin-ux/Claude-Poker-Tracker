@@ -34,6 +34,19 @@ export const REQUIRED_CONSTANTS = Object.freeze([
   'PRIOR_WEIGHT',
   'ACTION_TAU_FRACTION',
   'MIN_CONTINUATION_WEIGHT',
+  // WS-432. The refinement configuration is load-bearing for any engine-derived figure:
+  // after WS-334 the budget is the difference between two materially different engines, and
+  // under the logical clock (refinementWork.js) these three fully determine which
+  // refinement stages complete. `REFINEMENT_BUDGET_MS` is the ONE canonical key — an
+  // object keyed by arm id for multi-arm runs (the `_DEPTH1/_DEPTH2` vs `_FAST/_FULL`
+  // suffix collision on the pre-WS-432 cards is exactly what a canonical key prevents).
+  'REFINEMENT_BUDGET_MS',
+  'MAX_STAGE_SHARE',
+  'REFINEMENT_UNITS_PER_MS',
+  // FIND-090 (WS-432 scope extension). VOCABULARY.md has stated since WS-336 that KL_FLOOR
+  // is stamped into manifest.constants as a rule; only layerAblation actually did it — the
+  // WS-322 shadow-constant class recurring. Canonical site: standardOfRecord/divergence.js.
+  'KL_FLOOR',
 ]);
 
 /**

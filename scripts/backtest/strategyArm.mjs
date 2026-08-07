@@ -268,6 +268,34 @@ export const newCoverage = () => ({
 });
 
 /** Read a coverage accumulator into the shape that goes in the artifact. */
+/**
+ * Fold a per-player coverage fragment into a run-level accumulator (WS-433).
+ *
+ * MUST be called in canonical enumeration order: `outOfSetMassSum` and `residualMass` are
+ * order-sensitive float accumulations. Counts are ints and order-free, but one rule for
+ * the whole merge is simpler to hold than two.
+ */
+export const mergeCoverage = (acc, frag) => {
+  acc.n += frag.n;
+  acc.covered += frag.covered;
+  acc.fellBackToEngine += frag.fellBackToEngine;
+  acc.fellBackToPool += frag.fellBackToPool;
+  acc.refusedDecisions += frag.refusedDecisions;
+  acc.outOfSetMassSum += frag.outOfSetMassSum;
+  acc.residualDecisions += frag.residualDecisions;
+  acc.residualMass += frag.residualMass;
+  for (const [rid, w] of Object.entries(frag.ruleFires)) {
+    acc.ruleFires[rid] = (acc.ruleFires[rid] || 0) + w;
+  }
+  for (const [facing, row] of Object.entries(frag.realisedByFacing)) {
+    const dst = acc.realisedByFacing[facing]
+      || (acc.realisedByFacing[facing] = { n: 0, mass: {} });
+    dst.n += row.n;
+    for (const [a, m] of Object.entries(row.mass)) dst.mass[a] = (dst.mass[a] || 0) + m;
+  }
+  return acc;
+};
+
 export const summarizeCoverage = (c) => {
   if (!c || !c.n) return null;
   const realisedMarginal = {};

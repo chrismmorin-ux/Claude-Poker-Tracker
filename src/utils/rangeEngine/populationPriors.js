@@ -19,9 +19,9 @@
  * these are conditional on different game states, not competing.
  */
 
-import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../pokerCore/rangeMatrix';
-import { softContinuationWeights, MIN_CONTINUATION_WEIGHT, quantile } from '../pokerCore/softWeights';
-import { EQUITY_VS_OPEN } from '../pokerCore/preflopEquityTable';
+import { createRange, rangeIndex, decodeIndex, PREFLOP_CHARTS, averageCharts } from '../pokerCore/rangeMatrix.js';
+import { softContinuationWeights, MIN_CONTINUATION_WEIGHT, quantile } from '../pokerCore/softWeights.js';
+import { EQUITY_VS_OPEN } from '../pokerCore/preflopEquityTable.js';
 
 const GRID_SIZE = 169;
 const TOTAL_COMBOS = 1326;

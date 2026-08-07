@@ -1263,6 +1263,55 @@ export const SUSPECTED_FAULTS = Object.freeze([
   }),
 
   buildFaultEntry({
+    faultId: 'FAULT-refinement-depth-non-monotonicity',
+    title: 'More refinement is not known to be better — depth is a controlled variable, not a rung',
+    site: 'ev',
+    mechanism:
+      'The depth-2/3 refinement stages REPLACE candidate EVs with differently-computed ones, '
+      + 'and nothing establishes that a larger refinement budget moves advice toward money. '
+      + 'The measured evidence points the other way in places: WS-378 saw depth-2 flip the '
+      + 'top action on 32 of 45 river decisions with 34 of 34 directions toward passivity, '
+      + 'and DEC-036 records that at the shipped budget most stages return partial — so the '
+      + 'shipped engine is a specific truncation of the tree, not an approximation ordered '
+      + 'below a better one. A figure produced at one budget therefore does not bound the '
+      + 'figure at any other budget, in either direction. WS-432\'s logical clock made the '
+      + 'truncation DETERMINISTIC and stampable; it did not make it monotone.',
+    contaminates:
+      'Any result produced with refinement enabled (a nonzero REFINEMENT_BUDGET_MS in any '
+      + 'arm): its figure describes exactly that budget, and reading it as a bound on a '
+      + 'deeper or shallower configuration assumes a monotonicity nobody has measured.',
+    // Structural: the manifest floor (WS-432) stamps REFINEMENT_BUDGET_MS on every card —
+    // a scalar on single-arm runs, an object keyed by arm id on multi-arm runs, and the
+    // legacy 'engine-default' sentinel when the run took the engine's own (nonzero) default.
+    matches: (card) => {
+      const v = card?.manifest?.constants?.REFINEMENT_BUDGET_MS;
+      if (v == null) return false;
+      if (v === 'engine-default') return true; // the engine's default budget is nonzero
+      if (typeof v === 'number') return v !== 0;
+      if (typeof v === 'object') {
+        return Object.values(v).some((x) => (typeof x === 'number' ? x !== 0 : x === 'engine-default'));
+      }
+      return false;
+    },
+    matchesOn: ['manifest.constants'],
+    falsifier:
+      'The WS-361 one-scale comparison, run as a budget LADDER: score the same paired '
+      + 'decision set through the hero-EV arm at logical budgets 0, the shipped 2000ms-'
+      + 'equivalent, and effectively unbounded, all seeded. A monotone non-decreasing edge '
+      + 'across the ladder (within the paired-delta intervals) retires the entry for that '
+      + 'decision class; a measured inversion CONFIRMS it and bounds its size in bb. The '
+      + 'logical clock is what makes this runnable at all — under the wall clock the ladder '
+      + 'rungs were not stable configurations.',
+    probability: 0.6,
+    probabilityBasis:
+      'The WS-378 river flips were real, measured, and one-directional, and the depth-2 EV '
+      + 'path is explicitly unvalidated (WS-361). Against that, the river gap that produced '
+      + 'the 38-of-40 pull has since been closed, so the surviving magnitude is unknown '
+      + 'rather than demonstrated.',
+    priorBreadth: 0.5,
+  }),
+
+  buildFaultEntry({
     faultId: 'FAULT-hand-clustering',
     title: 'Hands are not independent within a session',
     site: 'statistics',

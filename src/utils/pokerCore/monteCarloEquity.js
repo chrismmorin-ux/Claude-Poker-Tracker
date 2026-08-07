@@ -5,9 +5,9 @@
  * hand evaluations. Uses chunked async to avoid blocking the UI.
  */
 
-import { TOTAL_CARDS } from './cardParser';
-import { bestFiveFromSeven } from './handEvaluator';
-import { enumerateCombos } from './rangeMatrix';
+import { TOTAL_CARDS } from './cardParser.js';
+import { bestFiveFromSeven } from './handEvaluator.js';
+import { enumerateCombos } from './rangeMatrix.js';
 
 /**
  * Build a deck in-place, filtering by a Uint8Array dead-card lookup.
@@ -29,10 +29,11 @@ const buildDeckFast = (deckBuf, deadLookup) => {
  * @param {number[]} arr
  * @param {number} len - Number of live elements in arr
  * @param {number} count - How many elements to shuffle to the front
+ * @param {() => number} rng - Uniform [0,1) source
  */
-const partialShuffle = (arr, len, count) => {
+const partialShuffle = (arr, len, count, rng) => {
   for (let i = 0; i < count && i < len - 1; i++) {
-    const j = i + Math.floor(Math.random() * (len - i));
+    const j = i + Math.floor(rng() * (len - i));
     const tmp = arr[i];
     arr[i] = arr[j];
     arr[j] = tmp;
@@ -57,8 +58,8 @@ const buildCumWeights = (combos) => {
 /**
  * Sample a combo index using cumulative weights.
  */
-const sampleCombo = (cumWeights, totalWeight) => {
-  const r = Math.random() * totalWeight;
+const sampleCombo = (cumWeights, totalWeight, rng) => {
+  const r = rng() * totalWeight;
   let lo = 0, hi = cumWeights.length - 1;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
@@ -73,7 +74,7 @@ const sampleCombo = (cumWeights, totalWeight) => {
  * Uses pre-allocated buffers to minimize GC pressure.
  * @returns {{ win: number, tie: number, lose: number, skipped: number }}
  */
-const runBatch = (heroCards, combos, cumWeights, totalWeight, board, batchSize) => {
+const runBatch = (heroCards, combos, cumWeights, totalWeight, board, batchSize, rng) => {
   let win = 0, tie = 0, lose = 0, skipped = 0;
   const boardLen = board.length;
   const cardsNeeded = 5 - boardLen;
@@ -94,7 +95,7 @@ const runBatch = (heroCards, combos, cumWeights, totalWeight, board, batchSize) 
   for (let b = 0; b < boardLen; b++) sevenBuf[2 + b] = board[b];
 
   for (let t = 0; t < batchSize; t++) {
-    const ci = sampleCombo(cumWeights, totalWeight);
+    const ci = sampleCombo(cumWeights, totalWeight, rng);
     const villain = combos[ci];
     const v0 = villain.card1, v1 = villain.card2;
 
@@ -111,7 +112,7 @@ const runBatch = (heroCards, combos, cumWeights, totalWeight, board, batchSize) 
 
     // Build deck and partial-shuffle only the cards we need
     const deckLen = buildDeckFast(deckBuf, deadLookup);
-    partialShuffle(deckBuf, deckLen, cardsNeeded);
+    partialShuffle(deckBuf, deckLen, cardsNeeded, rng);
 
     // Build 7-card hands in-place
     sevenBuf[0] = h0;
@@ -299,7 +300,11 @@ const exactEnumerateEquity = (heroCards, combos, board) => {
  * @param {number[]} heroCards - 2 encoded hero cards
  * @param {Float64Array} villainRange - 13x13 range grid
  * @param {number[]} board - Encoded board cards (0-5)
- * @param {{ trials?: number, batchSize?: number, convergenceThreshold?: number, minTrials?: number }} options
+ * @param {{ trials?: number, batchSize?: number, convergenceThreshold?: number, minTrials?: number, rng?: () => number }} options
+ *   options.rng — uniform [0,1) source; defaults to Math.random. Passing a seeded
+ *   generator makes the sampled combos, dealt runouts, AND the early-convergence
+ *   trial count deterministic (WS-433). Absent, behavior is bit-identical to before
+ *   the option existed.
  * @returns {Promise<{ equity: number, win: number, tie: number, lose: number, trials: number, elapsed: number, stdDev: number, ciHalf: number, ciLow: number, ciHigh: number, convergedEarly: boolean }>}
  */
 export const handVsRange = (heroCards, villainRange, board = [], options = {}) => {
@@ -308,6 +313,7 @@ export const handVsRange = (heroCards, villainRange, board = [], options = {}) =
     batchSize = 500,
     convergenceThreshold = 0.02,
     minTrials = 200,
+    rng = Math.random,
   } = options;
 
   return new Promise((resolve) => {
@@ -349,7 +355,7 @@ export const handVsRange = (heroCards, villainRange, board = [], options = {}) =
       const inflated = Math.ceil(remaining / Math.max(0.1, 1 - skipRate));
       const size = Math.min(batchSize, inflated);
 
-      const result = runBatch(heroCards, combos, cumWeights, totalWeight, board, size);
+      const result = runBatch(heroCards, combos, cumWeights, totalWeight, board, size, rng);
 
       // Update Welford accumulators for each outcome category
       const batchOutcomes = [
@@ -412,7 +418,7 @@ export const handVsRange = (heroCards, villainRange, board = [], options = {}) =
  *
  * @returns {{ win, tie, lose, skipped, totalEquityContrib, perVillainBeats: Int32Array, tieByK: Int32Array }}
  */
-const runBatchMW = (heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, batchSize) => {
+const runBatchMW = (heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, batchSize, rng) => {
   const N = villainCombosArr.length;
   let win = 0, tie = 0, lose = 0, skipped = 0;
   let totalEquityContrib = 0;
@@ -438,7 +444,7 @@ const runBatchMW = (heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr,
   for (let t = 0; t < batchSize; t++) {
     // Sample one combo per villain
     for (let i = 0; i < N; i++) {
-      const ci = sampleCombo(cumWeightsArr[i], totalWeightsArr[i]);
+      const ci = sampleCombo(cumWeightsArr[i], totalWeightsArr[i], rng);
       const villain = villainCombosArr[i][ci];
       villainCardsBuf[i * 2] = villain.card1;
       villainCardsBuf[i * 2 + 1] = villain.card2;
@@ -459,7 +465,7 @@ const runBatchMW = (heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr,
 
     // Deal remaining board
     const deckLen = buildDeckFast(deckBuf, deadLookup);
-    partialShuffle(deckBuf, deckLen, cardsNeeded);
+    partialShuffle(deckBuf, deckLen, cardsNeeded, rng);
     for (let d = 0; d < cardsNeeded; d++) sevenBuf[2 + boardLen + d] = deckBuf[d];
 
     // Score hero
@@ -556,7 +562,8 @@ const buildResultMW = (totalWin, totalTie, totalLose, totalEquityContrib, welfor
  * @param {number[]} heroCards - 2 encoded hero cards
  * @param {Float64Array[]} villainRanges - N villain 13×13 range grids
  * @param {number[]} board - Encoded board cards (0-5)
- * @param {{ trials?: number, batchSize?: number, convergenceThreshold?: number, minTrials?: number }} options
+ * @param {{ trials?: number, batchSize?: number, convergenceThreshold?: number, minTrials?: number, rng?: () => number }} options
+ *   options.rng — uniform [0,1) source; defaults to Math.random (see handVsRange).
  * @returns {Promise<{ equity, win, tie, lose, trials, elapsed, stdDev, ciHalf, ciLow, ciHigh, convergedEarly, perVillainBeatRate: Array<{index, beatRate}> }>}
  */
 export const handVsRangesMW = (heroCards, villainRanges, board = [], options = {}) => {
@@ -565,6 +572,7 @@ export const handVsRangesMW = (heroCards, villainRanges, board = [], options = {
     batchSize = 500,
     convergenceThreshold = 0.02,
     minTrials = 200,
+    rng = Math.random,
   } = options;
 
   return new Promise((resolve) => {
@@ -617,7 +625,7 @@ export const handVsRangesMW = (heroCards, villainRanges, board = [], options = {
       const inflated = Math.ceil(remaining / Math.max(0.1, 1 - skipRate));
       const size = Math.min(batchSize, inflated);
 
-      const result = runBatchMW(heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, size);
+      const result = runBatchMW(heroCards, villainCombosArr, cumWeightsArr, totalWeightsArr, board, size, rng);
 
       // Welford accumulation: each trial contributes its fractional equity value.
       // Wins contribute 1.0, ties at k contribute 1/(1+k), losses contribute 0.0.

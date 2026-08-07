@@ -243,3 +243,62 @@ describe('exactComboEquity — deterministic per-combo equity (WS-205)', () => {
     expect(() => exactComboEquity(hero, villain, cards('2c 7d Th 9s 4d 5h'))).toThrow(RangeError);
   });
 });
+
+// WS-433: the opts.rng seam. A seeded generator must make the WHOLE result —
+// sampled combos, dealt runouts, and the early-convergence trial count —
+// deterministic; leaving it absent must keep routing through Math.random.
+const mulberry32 = (seed) => () => {
+  seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+const stripElapsed = ({ elapsed, ...rest }) => rest;
+
+describe('handVsRange — opts.rng seam (WS-433)', () => {
+  const heroCards = () => canonicalCards('AKo');
+  const villainRange = () => buildSingleCellRange('T9s');
+
+  test('same seed ⇒ identical result including trial count', async () => {
+    const opts = { trials: 3000, minTrials: 500, convergenceThreshold: 0.02 };
+    const a = await handVsRange(heroCards(), villainRange(), [], { ...opts, rng: mulberry32(42) });
+    const b = await handVsRange(heroCards(), villainRange(), [], { ...opts, rng: mulberry32(42) });
+    expect(stripElapsed(b)).toEqual(stripElapsed(a));
+  }, 30000);
+
+  test('different seeds ⇒ different draw sequences', async () => {
+    // No convergence exit, few trials: identical (win,tie,lose) across two
+    // distinct 1000-draw streams on a live-variance matchup is ~impossible.
+    const opts = { trials: 1000, minTrials: 1000, convergenceThreshold: 0 };
+    const a = await handVsRange(heroCards(), villainRange(), [], { ...opts, rng: mulberry32(1) });
+    const b = await handVsRange(heroCards(), villainRange(), [], { ...opts, rng: mulberry32(2) });
+    expect([b.win, b.tie, b.lose]).not.toEqual([a.win, a.tie, a.lose]);
+  }, 30000);
+
+  test('rng absent ⇒ still routes through Math.random (legacy path preserved)', async () => {
+    const realRandom = Math.random;
+    const opts = { trials: 2000, minTrials: 500, convergenceThreshold: 0.02 };
+    try {
+      Math.random = mulberry32(7);
+      const a = await handVsRange(heroCards(), villainRange(), [], opts);
+      Math.random = mulberry32(7);
+      const b = await handVsRange(heroCards(), villainRange(), [], opts);
+      expect(stripElapsed(b)).toEqual(stripElapsed(a));
+    } finally {
+      Math.random = realRandom;
+    }
+  }, 30000);
+});
+
+describe('handVsRangesMW — opts.rng seam (WS-433)', () => {
+  test('same seed ⇒ identical result including trial count', async () => {
+    const hero = canonicalCards('AKo');
+    const v1 = buildSingleCellRange('T9s');
+    const v2 = buildSingleCellRange('66');
+    const opts = { trials: 2000, minTrials: 500, convergenceThreshold: 0.02 };
+    const a = await handVsRangesMW(hero, [v1, v2], [], { ...opts, rng: mulberry32(42) });
+    const b = await handVsRangesMW(hero, [v1, v2], [], { ...opts, rng: mulberry32(42) });
+    expect(stripElapsed(b)).toEqual(stripElapsed(a));
+  }, 30000);
+});

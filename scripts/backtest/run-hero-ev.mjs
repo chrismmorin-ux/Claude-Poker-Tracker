@@ -126,6 +126,27 @@ const main = async () => {
     const comboSamples = int(args['combo-samples'], 10);
     const trials = int(args.trials, 200);
 
+    // ── WS-433: seeding, workers, waves, chunks ────────────────────────────────────
+    const { DEFAULT_EQUITY_SEED } = await loader.load('/scripts/backtest/seededEquity.mjs');
+    const equitySeed = args['equity-seed'] === 'none'
+      ? null
+      : int(args['equity-seed'], DEFAULT_EQUITY_SEED);
+    const os = await import('node:os');
+    const workers = args.workers === 'auto'
+      ? Math.max(1, os.availableParallelism() - 1)
+      : int(args.workers, 0);
+    const waveSizeArg = int(args['wave-size'], null);
+    const maxDecisionsPerPlayer = int(args['max-decisions-per-player'], null);
+    const targetContributingPlayers = int(args['target-contributing-players'], null);
+    const chunkDir = typeof args['chunk-dir'] === 'string'
+      ? args['chunk-dir']
+      : (typeof args.out === 'string' ? `${args.out}.chunks` : null);
+    const resume = Boolean(args.resume);
+    if (resume && !chunkDir) {
+      console.error('Refused: --resume needs a chunk dir (--chunk-dir, or --out to derive one).');
+      process.exit(2);
+    }
+
     // ADR-009 / WS-322 — the Deal Book and the replication stamp.
     //
     // Built AFTER the --max-files slice, deliberately: the book must describe the hands the
@@ -134,8 +155,9 @@ const main = async () => {
     // at all because it would look correct.
     const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
-    const { buildStampInput, HERO_EV_UNSEEDED_SOURCES, REFINEMENT_CLOCK_UNSEEDED_SOURCE } =
-      await loader.load('/scripts/backtest/replicationStamp.mjs');
+    const {
+      buildStampInput, HERO_EV_UNSEEDED_SOURCES,
+    } = await loader.load('/scripts/backtest/replicationStamp.mjs');
     const { DEFAULT_BOOTSTRAP_SEED } = await loader.load('/scripts/backtest/ipsEstimator.mjs');
 
     const dealBook = await buildDealBook({
@@ -155,19 +177,28 @@ const main = async () => {
 
     const replicationStamp = await buildStampInput({
       loader,
-      seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },
+      seeds: {
+        clusterBootstrap: DEFAULT_BOOTSTRAP_SEED,
+        // WS-433. The run-level equity seed; every engine call derives its stream from it
+        // via stable work coordinates (heroEvEnumeration.seedForCombo).
+        ...(equitySeed !== null ? { equityMc: equitySeed } : {}),
+      },
       dealBookHash: dealBook.contentHash,
       fieldVersion: behaviorPolicy?.provenance?.partition
         ? `behavior-policy@${behaviorPolicy.provenance.partition}/${behaviorPolicy.provenance.observations ?? '?'}obs`
         : null,
       partition: `pool-train@${int(args['pool-pct'], 50)}`,
-      // WS-393. This script has always run the engine at its default 2000ms refinement budget
-      // and has never declared the wall-clock dependence that comes with it — so every hero-EV
-      // card it wrote asserted a reproducibility it did not have. Declared here whenever
-      // refinement is actually enabled, and correctly ABSENT at a budget of 0.
-      unseededSources: refinementMs === 0
-        ? HERO_EV_UNSEEDED_SOURCES
-        : [...HERO_EV_UNSEEDED_SOURCES, REFINEMENT_CLOCK_UNSEEDED_SOURCE],
+      // WS-393/WS-433/WS-432. `unseededSources` is a positive claim, assembled from what
+      // is actually live in THIS configuration:
+      //   - Monte Carlo entry: present only when the run is UNSEEDED (--equity-seed none).
+      //   - Refinement clock + worker contention: RETIRED by WS-432 — the logical
+      //     work-unit clock (refinementWork.js, 'logical-v1') makes stage completion a
+      //     pure function of the inputs at ANY budget and ANY worker count.
+      // At the default seed this is [] — bit-reproducibility at every budget, verified by
+      // the parallel-vs-serial identity gate.
+      unseededSources: [
+        ...(equitySeed === null ? HERO_EV_UNSEEDED_SOURCES : []),
+      ],
     });
     // WS-393. The settings that DEFINE this configuration, stamped ON TOP of the minimum set
     // — the same argument run-depth-ablation.mjs makes: a card that does not name the
@@ -179,6 +210,7 @@ const main = async () => {
       HERO_POLICY_COMBO_SAMPLES: comboSamples,
       HERO_POLICY_TRIALS: trials,
       IPS_WEIGHT_CAP: reportOpts.weightCap,
+      HERO_EV_WORKERS: workers,
     };
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
@@ -199,17 +231,13 @@ const main = async () => {
       try {
         const report = buildHeroEvReport(run, reportOpts);
 
-        // THE PARTIAL IS NOT A RANDOM SUBSAMPLE, and saying so is the whole point of this
-        // stamp. The runner walks EVAL players sequentially, so an early snapshot contains
-        // every decision of the first player(s) and none of anyone else's. Observed live on
-        // the first run that used this: at 300 scored decisions the headline arm had
-        // `players = 1` — one individual's result, carrying a perfectly confident-looking
-        // edge of +16.06 bb and `ciLow: null`, because a cluster bootstrap over one cluster
-        // is undefined (ipsEstimator.clusterBootstrapCI returns null below k=2).
-        //
-        // An edge without a CI, drawn from one player, is exactly the kind of number that
-        // gets quoted. The artifact has to refuse that reading itself rather than rely on
-        // whoever opens it.
+        // THE PARTIAL IS NOT A VALIDATED RESULT, and saying so is the whole point of this
+        // stamp. Since WS-433 the runner admits players in canonical-enumeration WAVES with
+        // a per-player decision cap, so an early snapshot is a canonical PREFIX of the
+        // planned players — no longer the old sequential-walk pathology where one heavy
+        // player monopolized 300 decisions (`players = 1`, edge +16.06 bb, `ciLow: null`).
+        // A prefix of a deterministic enumeration is still not the completed run: the CI
+        // needs clusters, and the admissibility gate needs the full player set.
         const contributingPlayers = report?.arms?.engineRaked?.players ?? 0;
         const partialStamp = {
           complete: false,
@@ -217,12 +245,11 @@ const main = async () => {
           contributingPlayers,
           ciAvailable: report?.gate?.heroEvCiLow !== null && report?.gate?.heroEvCiLow !== undefined,
           caveat:
-            'PARTIAL SNAPSHOT — NOT a validated result and NOT a random subsample. EVAL '
-            + 'players are processed sequentially, so this contains all decisions from the '
-            + `first ${contributingPlayers} player(s) and none from the rest. The edge is `
-            + 'therefore player-biased, and no confidence interval exists until at least 2 '
-            + 'players have contributed (the CI is a cluster bootstrap over players). Do not '
-            + 'quote the edge from this file; wait for the completed run.',
+            'PARTIAL SNAPSHOT — NOT a validated result. It contains the completed waves '
+            + `so far (${contributingPlayers} contributing player(s), a canonical prefix of `
+            + 'the planned enumeration), not the full planned player set. Do not quote the '
+            + 'edge from this file; wait for the completed run, or resume it with --resume '
+            + '(chunks in the --chunk-dir survive a kill).',
         };
 
         mkdirSync(dirname(partialPath), { recursive: true });
@@ -267,6 +294,14 @@ const main = async () => {
       rakeConfig,
       dealBook,
       replicationStamp,
+      // WS-433 — seeding, worker pool, wave admission, chunk persistence + resume.
+      equitySeed,
+      workers,
+      waveSize: waveSizeArg,
+      maxDecisionsPerPlayer,
+      targetContributingPlayers,
+      chunkDir,
+      resume,
       // Spread, so an unstated budget leaves `depthArms` absent and the engine's own default
       // applies — the pre-WS-393 path, unchanged.
       ...(refinementMs === undefined
@@ -275,6 +310,22 @@ const main = async () => {
       log: (m) => console.log(`  ${m}`),
     });
     run.runtimeMs = Date.now() - started;
+
+    // WS-433 AC4 — the supply line. `qualifying` is the count that had never been shown
+    // (players with >= minTrainHands + 1 hands, i.e. at least one train/test window);
+    // 2,300 contributing players is WS-410's MDE target for a 0.20 bb effect.
+    console.log(
+      `\nPlayer supply: ${run.counters.evalPlayers} EVAL indexed · `
+      + `${run.counters.qualifyingPlayers} qualifying (>= ${int(args['min-train-hands'], 15) + 1} hands) · `
+      + `planned ${run.counters.plannedPlayers} · contributing ${run.counters.contributingPlayers} `
+      + '(power target for 0.20bb MDE: ~2,300 contributing — WS-410)',
+    );
+    if (run.counters.playerTaskErrors > 0) {
+      console.log(`  WARNING: ${run.counters.playerTaskErrors} player task(s) failed and were skipped — see log lines above.`);
+    }
+    if (run.config.resumedWaves > 0) {
+      console.log(`  Resumed ${run.config.resumedWaves} wave(s) from ${chunkDir}${run.config.resumedEngineDirty ? ' (some chunks were produced on a DIRTY tree)' : ''}`);
+    }
     if (sink) {
       sink.close();
       console.log(`Decision-level record: ${sink.count} row(s) in ${sink.path}`);

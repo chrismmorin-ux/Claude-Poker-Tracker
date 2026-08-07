@@ -10,10 +10,10 @@
  * C. Structural Factors (0.25) — hand complexity and pot size
  */
 
-import { BETTING_STREETS } from '../../constants/gameConstants';
-import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions';
-import { getRangePositionCategory } from '../positionUtils';
-import { tryParseSituationKey } from '../pokerCore/situationKey';
+import { BETTING_STREETS } from '../../constants/gameConstants.js';
+import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions.js';
+import { getRangePositionCategory } from '../positionUtils.js';
+import { tryParseSituationKey } from '../pokerCore/situationKey.js';
 
 /**
  * Build approximate situationKeys from action sequence without full board texture.

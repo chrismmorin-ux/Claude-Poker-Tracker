@@ -144,6 +144,12 @@ const main = async () => {
       // `pool-train@50` here would assert a discipline only half the run has.
       partition: `acting:eval@poolPct=${poolPct}; villain:seat-keyed-unpartitioned`,
     });
+    // WS-432 floor: REFINEMENT_BUDGET_MS is REQUIRED on every manifest; this probe never
+    // evaluates the game tree, so the honest value is an explicit n/a, not a fake zero.
+    replicationStamp.constants = {
+      ...replicationStamp.constants,
+      REFINEMENT_BUDGET_MS: 'n/a — no game-tree evaluation on this path',
+    };
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
     }

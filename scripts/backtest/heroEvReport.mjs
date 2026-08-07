@@ -646,6 +646,32 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
       integrity: run.integrity,
       runtimeMs: run.runtimeMs ?? null,
     },
+    // WS-433 — the contention instrument. Under a wall-clock refinement budget, worker
+    // contention systematically lowers the depth the engine reaches per decision; this
+    // histogram is what makes that MEASURED rather than assumed. `depthReachedMax` is the
+    // primary arm's per-decision maximum over its sampled combos; a parallel refined run
+    // whose distribution sits below a serial run's is the bias, made visible.
+    depthReached: (() => {
+      const hist = {};
+      let absent = 0;
+      for (const d of run.decisions) {
+        const v = d.evStats?.depthReachedMax;
+        if (Number.isFinite(v)) hist[v] = (hist[v] || 0) + 1; else absent++;
+      }
+      return { hist, absent };
+    })(),
+    // WS-432 — does the logical refinement budget BIND at this configuration? Aggregated
+    // over decisions from the primary arm's `evStats.budgetBoundAny`. At a nonzero budget
+    // a uniformly-false column is the tell that the gate has been disabled rather than made
+    // deterministic (WS-432 accept criteria); at budget 0 uniformly false is correct.
+    budgetBound: (() => {
+      let bound = 0; let notBound = 0; let absent = 0;
+      for (const d of run.decisions) {
+        const v = d.evStats?.budgetBoundAny;
+        if (v === true) bound++; else if (v === false) notBound++; else absent++;
+      }
+      return { bound, notBound, absent };
+    })(),
     arms,
     gate,
     foldShiftPp,
@@ -865,6 +891,14 @@ export const renderHeroEvReport = (r) => {
   L.push('  INTEGRITY');
   L.push('  ' + '─'.repeat(90));
   L.push(`    eval players ${c.evalPlayers}, hands read ${c.handsRead}, checkpoints ${c.checkpoints}`);
+  // WS-433 AC3/AC4 — the power ledger. `n` alone invites the assumption that power scaled
+  // with it; it did not — the cluster bootstrap resamples PLAYERS, so contributing players
+  // is the power figure, and qualifying players is the supply ceiling behind it.
+  if (c.qualifyingPlayers !== undefined) {
+    L.push(`    player supply: ${c.qualifyingPlayers} qualifying → ${c.plannedPlayers} planned → `
+      + `${c.contributingPlayers} contributing (power lever is --max-players; --max-decisions is a ceiling)`);
+    if (c.playerTaskErrors > 0) L.push(`    ! ${c.playerTaskErrors} player task(s) failed and were skipped`);
+  }
   L.push(`    behaviour policy: ${r.generatedFrom.integrity.behaviorPolicy.observations} pool decisions from ` +
          `${r.generatedFrom.integrity.behaviorPolicy.players} POOL players (${r.generatedFrom.integrity.behaviorPolicy.partition})`);
   L.push(`    walk-forward assertions: ${r.generatedFrom.integrity.decisionsChecked ?? '—'}`);
@@ -878,6 +912,20 @@ export const renderHeroEvReport = (r) => {
     const p = r.generatedFrom.integrity.pbr;
     L.push(`    PBR: ${p.surfaceId} fit on ${p.fitPartition}, evaluated on ${p.evaluatedOn} `
       + `(held out: ${p.heldOut}, poolPct ${p.poolPct})`);
+  }
+  if (r.depthReached && Object.keys(r.depthReached.hist).length) {
+    const parts = Object.entries(r.depthReached.hist)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([depth, n]) => `depth ${depth}: ${n}`);
+    // WS-432: the budget-bound share travels beside the depth histogram — the two together
+    // say how deep the engine got AND whether the budget was what stopped it.
+    const bb = r.budgetBound ?? { bound: 0, notBound: 0, absent: 0 };
+    const bbKnown = bb.bound + bb.notBound;
+    const bbNote = bbKnown > 0
+      ? ` · budget-bound: ${bb.bound}/${bbKnown} (${(100 * bb.bound / bbKnown).toFixed(1)}%)`
+      : '';
+    L.push(`    depth reached (primary arm, per decision): ${parts.join(', ')}`
+      + `${r.depthReached.absent ? ` (no evStats: ${r.depthReached.absent})` : ''}${bbNote}`);
   }
   L.push(`    rake: ${r.generatedFrom.config.rakeConfig ? JSON.stringify(r.generatedFrom.config.rakeConfig) + ' (MODELLED — corpus records none)' : 'none'}`);
   L.push(`    runtime ${((r.generatedFrom.runtimeMs ?? 0) / 1000).toFixed(1)}s`);

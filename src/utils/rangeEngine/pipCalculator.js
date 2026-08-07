@@ -5,9 +5,9 @@
  * by comparing player range widths to GTO baselines per hand category.
  */
 
-import { RANGE_POSITIONS } from './rangeProfile';
-import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../pokerCore/rangeMatrix';
-import { bayesianSampleConfidence } from '../pokerCore/betaMath';
+import { RANGE_POSITIONS } from './rangeProfile.js';
+import { decodeIndex, POSITION_GTO_KEYS, averageCharts } from '../pokerCore/rangeMatrix.js';
+import { bayesianSampleConfidence } from '../pokerCore/betaMath.js';
 
 const GRID_SIZE = 169;
 

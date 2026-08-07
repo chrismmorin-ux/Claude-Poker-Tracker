@@ -66,9 +66,8 @@ import {
   TREATMENT, DEFAULT_BOOTSTRAP_SEED, DEFAULT_WEIGHT_CAP,
 } from './ipsEstimator.mjs';
 import { MIN_CLUSTERS_FOR_CI } from './heroEvReport.mjs';
-import { REFINEMENT_CLOCK_UNSEEDED_SOURCE } from './replicationStamp.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
-import { buildReplicationManifest, knownDivergence } from '../../src/utils/standardOfRecord/manifest.js';
+import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manifest.js';
 
 export const DEPTH_ABLATION_SCHEMA_VERSION = 1;
 
@@ -353,38 +352,24 @@ export const assessDepthAdmissibility = (run, delta, divergence, control) => {
 /**
  * Constants this run depends on that are NOT reachable through the loader.
  *
- * `MAX_STAGE_SHARE` is a module-local `const` in `gameTreeEvaluator.js` and is not exported.
- * It decides how much of the refinement budget any single stage may take, so it is squarely
- * load-bearing for the depth-2 arm — a different value produces different advice. It is
- * recorded through `knownDivergence` rather than dropped into `constants`, because
- * `agrees: null` is the honest three-valued statement: this is the value read from source at
- * authoring time and NOTHING VERIFIED IT AT RUN TIME. Putting it in `constants` would assert
- * a reading that did not happen — the exact failure `replicationStamp` refuses to commit for
- * `PRIOR_WEIGHT`.
+ * EMPTY SINCE WS-432 (2026-08-07). The one entry it held was `MAX_STAGE_SHARE`, a
+ * module-local `const` inside `gameTreeEvaluator.js` that could not be read through the
+ * harness loader and was therefore recorded as a `knownDivergence` with `agrees: null` —
+ * a value transcribed from source and verified by nothing. WS-432 moved the constant to
+ * `src/utils/exploitEngine/refinementWork.js` exactly so it could be READ:
+ * `replicationStamp.collectConstants` now stamps it into `constants` from its definition
+ * site, and the manifest floor (`REQUIRED_CONSTANTS`) refuses a card without it. The
+ * function is kept (returning []) so the divergence channel stays wired for the next
+ * constant that ends up unreachable.
  */
-export const unreadableConstants = () => [
-  knownDivergence({
-    name: 'MAX_STAGE_SHARE',
-    canonical: 0.4,
-    shadowAt: 'src/utils/exploitEngine/gameTreeEvaluator.js:783',
-    shadowValue: null,
-    note: 'Module-local const, not exported, so it cannot be read through the harness loader. '
-      + 'It caps any single refinement stage at this fraction of refinementBudgetMs and '
-      + 'therefore decides which stages complete in the depth-2 arm. Value transcribed from '
-      + 'source; unverified at run time.',
-  }),
-];
+export const unreadableConstants = () => [];
 
 /**
  * Randomness the depth-2 arm cannot seed, ON TOP of the hero-EV chain already named in
  * `replicationStamp.HERO_EV_UNSEEDED_SOURCES`.
  *
- * The remaining entry is the one that matters and it is not ordinary Monte Carlo noise. The
- * refinement budget is enforced against `Date.now()`, so WHICH refinement stages complete
- * depends on machine load. The depth-2 arm is therefore not reproducible even in principle on
- * a different machine, or on this one under different load — a re-run can differ because a
- * stage that finished last time did not finish this time. `unseededSources` is where that has
- * to be said, because an empty array is a POSITIVE claim of bit-reproducibility.
+ * EMPTY SINCE WS-432 (2026-08-07) — and an empty array is a POSITIVE claim of
+ * bit-reproducibility for the depth-2 arm, which is now true and gate-verified.
  */
 export const DEPTH_ABLATION_UNSEEDED_SOURCES = Object.freeze([
   // WS-393 CLOSED THE FIRST ENTRY THAT USED TO SIT HERE. The six `stratifiedSample` calls in
@@ -396,10 +381,13 @@ export const DEPTH_ABLATION_UNSEEDED_SOURCES = Object.freeze([
   // that is now real. Its removal is recorded here rather than in the diff alone, since a
   // reader comparing a WS-393 card against an earlier one needs to know the list SHRANK for a
   // reason and not because someone tidied it.
-  // Imported, not restated (WS-393): `run-hero-ev.mjs` reaches the same clock and needs the
-  // same declaration, and two copies of a reproducibility claim are two chances to disagree
-  // about it.
-  REFINEMENT_CLOCK_UNSEEDED_SOURCE,
+  //
+  // WS-432 CLOSED THE SECOND (2026-08-07): `REFINEMENT_CLOCK_UNSEEDED_SOURCE`, the
+  // wall-clock refinement budget imported from `replicationStamp.mjs`. The logical
+  // work-unit clock (`refinementWork.js`, 'logical-v1') makes stage completion a pure
+  // function of the inputs, so the dependence the entry declared no longer exists. Same
+  // removal discipline as above; the retirement note lives at the old definition site in
+  // `replicationStamp.mjs`.
 ]);
 
 /**

@@ -8,12 +8,12 @@
  * - limpNoRaise: limped, no raise followed (saw flop unraised)
  */
 
-import { buildTimeline, getStreetTimeline } from '../handAnalysis';
-import { getRangePositionCategory } from '../positionUtils';
-import { findPlayerSeat } from '../tendencyCalculations';
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
-import { parseCard } from '../pokerCore/cardParser';
-import { rangeIndex } from '../pokerCore/rangeMatrix';
+import { buildTimeline, getStreetTimeline } from '../handAnalysis/index.js';
+import { getRangePositionCategory } from '../positionUtils.js';
+import { findPlayerSeat } from '../tendencyCalculations.js';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions.js';
+import { parseCard } from '../pokerCore/cardParser.js';
+import { rangeIndex } from '../pokerCore/rangeMatrix.js';
 
 /**
  * Extract a player's sub-action after limping in a single hand.

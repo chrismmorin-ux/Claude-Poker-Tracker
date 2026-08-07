@@ -7,7 +7,7 @@
  * @module primitiveActions
  */
 
-import { ACTIONS } from './gameConstants';
+import { ACTIONS } from './gameConstants.js';
 
 /**
  * The 6 primitive poker actions - the atomic building blocks of all betting.

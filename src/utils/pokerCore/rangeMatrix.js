@@ -9,7 +9,7 @@
  * Rank indices: 0=2, 1=3, ..., 12=A (matching cardParser)
  */
 
-import { TOTAL_CARDS, encodeCard, cardRank, cardSuit } from './cardParser';
+import { TOTAL_CARDS, encodeCard, cardRank, cardSuit } from './cardParser.js';
 
 const GRID_SIZE = 169;
 

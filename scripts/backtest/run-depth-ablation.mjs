@@ -125,14 +125,35 @@ const main = async () => {
     const trials = int(args.trials, 200);
     const weightCap = num(args['weight-cap'], 20);
 
+    // WS-433 — worker pass-through. WS-432's logical work-unit clock made the depth-2 arm
+    // contention-independent: a parallel ablation at the same seeds is the same
+    // measurement as a serial one, so the old WORKER_CONTENTION_SOURCE stamp is retired.
+    const { DEFAULT_EQUITY_SEED } = await loader.load('/scripts/backtest/seededEquity.mjs');
+    const equitySeed = args['equity-seed'] === 'none'
+      ? null
+      : int(args['equity-seed'], DEFAULT_EQUITY_SEED);
+    const osMod = await import('node:os');
+    const workers = args.workers === 'auto'
+      ? Math.max(1, osMod.availableParallelism() - 1)
+      : int(args.workers, 0);
+
     const replicationStamp = await buildStampInput({
       loader,
-      seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },
-      // BOTH lists. The hero-EV chain's Monte Carlo noise is present in both arms; the
-      // depth-2 entries are additional and one of them is wall-clock dependence rather than
-      // randomness. An `unseededSources` array is a positive claim about reproducibility, so
-      // it has to carry everything or it is asserting something false.
-      unseededSources: [...HERO_EV_UNSEEDED_SOURCES, ...DEPTH_ABLATION_UNSEEDED_SOURCES],
+      seeds: {
+        clusterBootstrap: DEFAULT_BOOTSTRAP_SEED,
+        ...(equitySeed !== null ? { equityMc: equitySeed } : {}),
+      },
+      // EVERYTHING live in this configuration. The Monte Carlo entry is present only when
+      // unseeded. The depth-2 arm's wall-clock and worker-contention entries were RETIRED
+      // by WS-432's logical clock; DEPTH_ABLATION_UNSEEDED_SOURCES is kept in the spread
+      // because it is the depth-2 arm's own declaration surface — if that arm ever grows a
+      // new unseedable source, it lands there and every ablation card inherits it.
+      // An `unseededSources` array is a positive claim about reproducibility, so it has to
+      // carry everything or it is asserting something false.
+      unseededSources: [
+        ...(equitySeed === null ? HERO_EV_UNSEEDED_SOURCES : []),
+        ...DEPTH_ABLATION_UNSEEDED_SOURCES,
+      ],
       dealBookHash: dealBook.contentHash,
       fieldVersion: behaviorPolicy?.provenance?.partition
         ? `behavior-policy@${behaviorPolicy.provenance.partition}/${behaviorPolicy.provenance.observations ?? '?'}obs`
@@ -145,8 +166,10 @@ const main = async () => {
     // reconstruct. `constants` is explicitly a floor, not a schema (manifest.js).
     replicationStamp.constants = {
       ...replicationStamp.constants,
-      REFINEMENT_BUDGET_MS_DEPTH1: 0,
-      REFINEMENT_BUDGET_MS_DEPTH2: refinementMs,
+      // WS-432: ONE canonical key, an object keyed by arm id. The old suffixed keys
+      // (REFINEMENT_BUDGET_MS_DEPTH1/_DEPTH2 here, _FAST/_FULL on the layer-divergence
+      // card) were a naming collision the manifest floor could not see through.
+      REFINEMENT_BUDGET_MS: { depth1: 0, depth2: refinementMs },
       HERO_POLICY_COMBO_SAMPLES: comboSamples,
       HERO_POLICY_TRIALS: trials,
       IPS_WEIGHT_CAP: weightCap,
@@ -223,6 +246,10 @@ const main = async () => {
         { id: 'depth2', refinementBudgetMs: refinementMs },
       ],
       primaryArmId: 'depth2',
+      // WS-433 pass-through. Since WS-432's logical clock, a parallel ablation at the
+      // same seeds is replication-grade — contention no longer changes which stages run.
+      equitySeed,
+      workers,
       log: (m) => console.log(`  ${m}`),
     });
     run.runtimeMs = Date.now() - started;

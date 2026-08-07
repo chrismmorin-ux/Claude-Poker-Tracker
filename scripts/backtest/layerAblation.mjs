@@ -493,9 +493,9 @@ const main = async () => {
       // magnitude of every KL figure here — see divergence.js. A card without it names a
       // number nobody can reconstruct.
       KL_FLOOR,
-      REFINEMENT_BUDGET_MS_REFERENCE: 0,
-      REFINEMENT_BUDGET_MS_FAST: refinementFast,
-      REFINEMENT_BUDGET_MS_FULL: refinementFull,
+      // WS-432: one canonical key, keyed by arm id (was REFINEMENT_BUDGET_MS_REFERENCE/
+      // _FAST/_FULL — a suffix scheme that collided with the depth-ablation card's).
+      REFINEMENT_BUDGET_MS: { reference: 0, fast: refinementFast, full: refinementFull },
       HERO_POLICY_COMBO_SAMPLES: comboSamples,
       HERO_POLICY_TRIALS: trials,
     };

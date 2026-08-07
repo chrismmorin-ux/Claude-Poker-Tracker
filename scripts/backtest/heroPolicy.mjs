@@ -56,6 +56,7 @@ import { PRIMITIVE_ACTIONS } from '../../src/constants/primitiveActions.js';
 import { RESPONSES_BY_FACING } from './behaviorPolicy.mjs';
 import { decisionGeometry, liveOpponentCount } from './decisionGeometry.mjs';
 import { comboLabel, comboClass, compactCandidate, compactLatency } from './decisionRecord.mjs';
+import { makeSeededEquityFn } from './seededEquity.mjs';
 
 /** Default number of holdings sampled from hero's range per decision. */
 export const DEFAULT_COMBO_SAMPLES = 10;
@@ -164,6 +165,13 @@ export const heroPolicyAt = async ({
   // ledger. Nothing here feeds `actions` — the array is built beside the counters, never
   // into them — so a run with capture on and one with it off produce the same policy.
   captureComboDetail = false,
+  // WS-433 — seeded Monte Carlo, per engine call. `(comboIndex) => 32-bit seed`, derived by
+  // the caller from position in the stable enumeration (seedForCombo), never from execution
+  // order. `null` (the default) leaves every existing caller on unseeded Math.random,
+  // bit-identical to before this parameter existed. One seeded stream per evaluateGameTree
+  // call: the engine's internal equity calls are serial, so draws are reproducible
+  // regardless of which worker runs the evaluation.
+  equitySeedFor = null,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
@@ -235,7 +243,8 @@ export const heroPolicyAt = async ({
   // spots the engine could handle.
   const comboDetail = captureComboDetail ? [] : null;
 
-  for (const combo of combos) {
+  for (let comboIndex = 0; comboIndex < combos.length; comboIndex++) {
+    const combo = combos[comboIndex];
     const detail = comboDetail && {
       card1: combo.card1,
       card2: combo.card2,
@@ -253,6 +262,8 @@ export const heroPolicyAt = async ({
       candidates: null,
       depthEligible: null,
       depthReached: null,
+      // WS-432: did the logical refinement budget actually constrain this evaluation?
+      budgetBound: null,
       latency: null,
       modelQuality: null,
     };
@@ -288,6 +299,9 @@ export const heroPolicyAt = async ({
         // trigger the default today, but only because the engine happens to use a default
         // parameter; a future `?? 2000` would silently turn "unset" into "zero".
         ...(refinementBudgetMs === undefined ? {} : { refinementBudgetMs }),
+        // Same spread discipline: unseeded runs leave `equityFn` ABSENT so the engine's
+        // default (unseeded handVsRange) applies and the legacy path stays byte-identical.
+        ...(equitySeedFor ? { equityFn: makeSeededEquityFn(equitySeedFor(comboIndex)) } : {}),
       });
     } catch {
       engineErrors++;
@@ -302,6 +316,7 @@ export const heroPolicyAt = async ({
         : null;
       detail.depthEligible = result?.treeMetadata?.depth ?? null;
       detail.depthReached = result?.treeMetadata?.depthReached ?? null;
+      detail.budgetBound = result?.treeMetadata?.budgetBound ?? null;
       detail.latency = compactLatency(result?.treeMetadata?.latency);
       detail.modelQuality = result?.modelQuality ?? null;
     }
@@ -337,6 +352,10 @@ export const heroPolicyAt = async ({
         topTwoMargin: Number.isFinite(runnerUp?.ev) ? top.ev - runnerUp.ev : null,
         nActions: result.recommendations.length,
         depthReached: result?.treeMetadata?.depthReached ?? null,
+        // WS-432. Whether the logical refinement budget BOUND on this evaluation. The
+        // node-level share is the instrument that proves the budget still exists: a run at
+        // a nonzero budget where this is uniformly false is a disabled gate, not a fast one.
+        budgetBound: result?.treeMetadata?.budgetBound ?? null,
       });
     }
 
@@ -422,6 +441,14 @@ const summarizeEv = (samples) => {
 
   const depths = samples.map((x) => x.depthReached).filter(Number.isFinite);
 
+  // WS-432. Restricted to the samples that carry the field (an older engine or an errored
+  // evaluation reports null), weighted by the same range posterior as every other stat here.
+  const withBudgetBound = samples.filter((x) => typeof x.budgetBound === 'boolean');
+  const Wb = withBudgetBound.reduce((s, x) => s + x.w, 0);
+  const budgetBoundShare = Wb > 0
+    ? withBudgetBound.reduce((s, x) => s + (x.budgetBound ? x.w : 0), 0) / Wb
+    : null;
+
   return {
     combosScored: samples.length,
     statedEvMean: mean,
@@ -433,5 +460,10 @@ const summarizeEv = (samples) => {
     // eligible for (WS-334). Carried so a curse figure can be read against the depth that
     // produced it — which is the WS-361 question.
     depthReachedMax: depths.length ? Math.max(...depths) : null,
+    // WS-432. `budgetBoundShare` is the range-posterior-weighted share of sampled holdings
+    // whose evaluation the logical budget actually constrained; `budgetBoundAny` is the
+    // node-level flag the report aggregates. Both null when no sample carried the field.
+    budgetBoundShare,
+    budgetBoundAny: withBudgetBound.length ? withBudgetBound.some((x) => x.budgetBound) : null,
   };
 };

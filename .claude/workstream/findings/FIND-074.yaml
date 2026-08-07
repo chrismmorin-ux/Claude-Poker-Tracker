@@ -1,0 +1,27 @@
+id: "FIND-074"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: HIGH
+status: resolved
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Cross-Method Consistency"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Depth-1 advice is nondeterministic in the app: Step-8 MC refinement passes no rng, and the seeded seam already exists on the backtest path unwired"
+description: |
+  gameTreeEvaluator.js:1119 passes no rng; handVsRange defaults Math.random (monteCarloEquity.js:316); Step 8 (:1115-1147) mutates candidate.ev BEFORE assembleResult('fast') (:1446-1457); dominantMargin gate (:1096-1098) refines 3 candidates exactly when the top two are close (+-0.03-0.04 equity noise where ranking is most fragile). The fix already exists: heroPolicy.mjs:300-302 injects makeSeededEquityFn (WS-433 seededEquity.mjs) via the equityFn seam. Production-path defect; ciHalf/stdDev computed and discarded. Escalation note also appended to FIND-051 (WS-432 nondeterminism-source list missed this). Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/pokerCore/monteCarloEquity.js"
+  - "src/hooks/useLiveActionAdvisor.js"
+recommended_fix: |
+  Thread the existing seeded-equity seam (or an rng option) through the app equityFn injection, seeded per decision from hand/street/candidate identity; propagate refinedEq.ciHalf into treeMetadata so the noise band is visible. Amend WS-432 to add this source.
+dedup_key: "methodology-unseeded-mc-inside-depth1-fast-result"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"
+resolution: |
+  Resolved by WS-432 implementation 2026-08-07: engine default equityFn now seeds MC per decision via boardDerivedRng(board+heroCards, RNG_SALT.DEFAULT_EQUITY_MC); injected equityFn still wins; refinedEq.ciHalf propagated into treeMetadata.mcRefinement. Verified by refinementDeterminism.test.js FIND-074 case (identical recommendations, no injected equityFn). Residual flagged: preflopAdvisor.js:313 default remains unseeded (separate preflop path, outside this finding's affected files).

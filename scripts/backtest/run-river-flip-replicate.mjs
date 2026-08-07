@@ -37,12 +37,16 @@
  *
  * THE CLOCK IS FROZEN, and on the river that is close to free. `riverPerCombo` is the FIRST
  * refinement stage and is bounded by `maxCombos: 200`, not by the clock — it takes no
- * `timeBudgetMs`. Its gate is evaluated at ~0ms elapsed, so it opens under any positive budget
- * and never bails partway. Freezing `Date.now` removes machine load as a confounder without
- * changing which stages run on this street. `refinementBudgetMs: 0` is still checked
- * EXPLICITLY (`gameTreeEvaluator.js:902`), so the depth-1 arm remains depth-1 under a frozen
- * clock. Both arms in a replicate are seeded from the SAME value, so the pairing that makes the
- * ablation a paired design is preserved draw-for-draw.
+ * per-stage budget. Its gate is evaluated before any work is charged, so it opens under any
+ * positive budget and never bails partway. Freezing `Date.now` removes machine load as a
+ * confounder without changing which stages run on this street. `refinementBudgetMs: 0` is
+ * still checked EXPLICITLY (`gameTreeEvaluator.isBudgetExceeded`), so the depth-1 arm remains
+ * depth-1 under a frozen clock. Both arms in a replicate are seeded from the SAME value, so
+ * the pairing that makes the ablation a paired design is preserved draw-for-draw.
+ * WS-432: refinement gating now reads the logical work meter, never `Date.now`, so the
+ * `freeze` below is INERT for refinement gates on every street — it remains only to pin
+ * `Math.random` (and the historical FROZEN_NOW timestamp fields). The determinism this
+ * script bought by freezing the clock is now the engine's own property.
  *
  * USAGE
  *   node scripts/backtest/run-river-flip-replicate.mjs \
@@ -428,8 +432,8 @@ const main = async () => {
     });
     stamp.constants = {
       ...stamp.constants,
-      REFINEMENT_BUDGET_MS_DEPTH1: 0,
-      REFINEMENT_BUDGET_MS_DEPTH2: 2000,
+      // WS-432: one canonical key, keyed by arm id (was REFINEMENT_BUDGET_MS_DEPTH1/_DEPTH2).
+      REFINEMENT_BUDGET_MS: { depth1: 0, depth2: 2000 },
       HERO_POLICY_COMBO_SAMPLES: comboSamples,
       HERO_POLICY_TRIALS: trials,
       RIVER_PER_COMBO_MAX_COMBOS: 200,

@@ -10,7 +10,7 @@
  *   derivePercentages(stats) - Running totals -> display values
  */
 
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions.js';
 import {
   buildTimeline,
   getPlayerTimeline,
@@ -18,8 +18,8 @@ import {
   didPlayerFaceRaise,
   getCbetInfo,
   findLastRaiser,
-} from './handAnalysis';
-import { credibleInterval, STAT_PRIORS } from './exploitEngine/bayesianConfidence';
+} from './handAnalysis/index.js';
+import { credibleInterval, STAT_PRIORS } from './exploitEngine/bayesianConfidence.js';
 
 // =============================================================================
 // HELPERS

@@ -5,7 +5,7 @@
  * Reuses RANKS/SUITS from gameConstants.
  */
 
-import { RANKS, SUITS } from '../../constants/gameConstants';
+import { RANKS, SUITS } from '../../constants/gameConstants.js';
 
 // Rank values: 2=0, 3=1, ... A=12
 const RANK_VALUES = {};

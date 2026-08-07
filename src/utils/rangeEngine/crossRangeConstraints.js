@@ -13,14 +13,14 @@
  * 100% in "open" (first in) AND 100% in "threeBet" (facing raise).
  */
 
-import { RANGE_POSITIONS } from './rangeProfile';
-import { clamp } from '../mathUtils';
+import { RANGE_POSITIONS } from './rangeProfile.js';
+import { clamp } from '../mathUtils.js';
 import {
   NO_RAISE_ACTIONS,
   FACED_RAISE_ACTIONS,
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,
-} from './populationPriors';
+} from './populationPriors.js';
 
 const GRID_SIZE = 169;
 

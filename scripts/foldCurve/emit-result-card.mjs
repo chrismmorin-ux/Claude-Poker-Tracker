@@ -153,6 +153,9 @@ const card = buildResultCard({
     unseededSources: [],
     constants: {
       ...constantsFromStamp.constants,
+      // WS-432 floor: REQUIRED on every manifest; the fold-curve fit never evaluates the
+      // game tree, so the honest value is an explicit n/a rather than a fabricated zero.
+      REFINEMENT_BUDGET_MS: 'n/a — no game-tree evaluation on this path',
       POPULATION_CURVE: { ...POPULATION_CURVE },
       FIT_GRID: { maxDelta: '0.05..1.00 step 0.05', steepnessUp: '0.5..8.0 step 0.25', steepnessDown: '0.5..8.0 step 0.25', midpoint: '0.05..2.50 step 0.05' },
       BIN_WIDTH: 0.05,

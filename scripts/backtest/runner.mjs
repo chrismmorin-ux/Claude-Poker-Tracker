@@ -427,6 +427,14 @@ export const indexEvalPlayers = async ({
   maxHandsPerPlayer = Infinity,
   onProgress = null,
   group = GROUPS.EVAL,
+  // WS-433. When true, the map key is `${site}:${pseudonym}` so a pseudonym appearing on
+  // two sites is two players — which it is. The bare pseudonym stays the partition unit
+  // (partitionOf hashes it unchanged), so the POOL/EVAL split is identical either way and
+  // a policy mined at keyBySite:false remains valid. The ladder already keys SITE:pseudo
+  // (`ladderAxes.mjs`) and calls the bare-key merge "inventing a player"; measured on this
+  // corpus the collision merges 131 of 59,717 pseudonyms. Off by default: existing callers
+  // (villain-side runner) keep their historical identity scheme until they opt in.
+  keyBySite = false,
 }) => {
   const byPlayer = new Map();
   const skipStats = {};
@@ -437,11 +445,12 @@ export const indexEvalPlayers = async ({
       handsRead++;
       for (const pid of Object.values(hand.seatPlayers)) {
         if (partitionOf(pid, poolPct) !== group) continue;
-        let bucket = byPlayer.get(pid);
+        const key = keyBySite ? `${file.site}:${pid}` : pid;
+        let bucket = byPlayer.get(key);
         if (!bucket) {
           if (byPlayer.size >= maxPlayers) continue;
           bucket = [];
-          byPlayer.set(pid, bucket);
+          byPlayer.set(key, bucket);
         }
         if (bucket.length < maxHandsPerPlayer) bucket.push(hand);
       }

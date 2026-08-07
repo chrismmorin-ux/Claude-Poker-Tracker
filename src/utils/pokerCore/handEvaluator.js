@@ -8,7 +8,7 @@
  *   Bits 0-11: Kickers (packed 4 bits each, up to 3)
  */
 
-import { cardRank, cardSuit } from './cardParser';
+import { cardRank, cardSuit } from './cardParser.js';
 
 // Pre-allocated buffers for evaluate5().
 // Safe because JS is single-threaded and the Monte Carlo runBatch loop is synchronous.

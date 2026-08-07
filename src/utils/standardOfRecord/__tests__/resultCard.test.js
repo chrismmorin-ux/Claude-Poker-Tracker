@@ -27,7 +27,17 @@ const manifestInput = () => ({
   partition: 'pool-train@50',
   seeds: { clusterBootstrap: 0x9e3779b9 },
   unseededSources: [],
-  constants: { PRIOR_WEIGHT: 10, ACTION_TAU_FRACTION: 0.3, MIN_CONTINUATION_WEIGHT: 0.05 },
+  constants: {
+    PRIOR_WEIGHT: 10,
+    ACTION_TAU_FRACTION: 0.3,
+    MIN_CONTINUATION_WEIGHT: 0.05,
+    // WS-432: the refinement configuration joined the minimum set — see manifest.js.
+    REFINEMENT_BUDGET_MS: 0,
+    MAX_STAGE_SHARE: 0.4,
+    REFINEMENT_UNITS_PER_MS: 300,
+    // FIND-090: documented-as-stamped since WS-336, enforced since WS-432.
+    KL_FLOOR: 1e-6,
+  },
   // A literal rather than `await registerVersion()`, so this fixture stays synchronous and does
   // not re-pin itself every time an entry is edited. The real stamp is asserted where it
   // matters — `faultRegister.test.js` checks the version is content-derived, and
@@ -66,6 +76,15 @@ describe('buildReplicationManifest', () => {
     const input = manifestInput();
     delete input.constants[name];
     expect(() => buildReplicationManifest(input)).toThrow(new RegExp(`constants\\.${name} is missing`));
+  });
+
+  it('WS-432 raised the constant floor — the refinement configuration is in the minimum set', () => {
+    // Pinned by name so removing one from REQUIRED_CONSTANTS is a visible test change, not
+    // a silent narrowing of what a card must carry. The it.each above is what proves each
+    // one is actually ENFORCED.
+    for (const name of ['REFINEMENT_BUDGET_MS', 'MAX_STAGE_SHARE', 'REFINEMENT_UNITS_PER_MS', 'KL_FLOOR']) {
+      expect(REQUIRED_CONSTANTS).toContain(name);
+    }
   });
 
   it('refuses absent seeds but accepts an explicitly empty set', () => {

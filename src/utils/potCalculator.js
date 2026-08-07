@@ -5,7 +5,7 @@
  * sizing options for bet/raise actions.
  */
 
-import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions';
+import { PRIMITIVE_ACTIONS } from '../constants/primitiveActions.js';
 
 /**
  * Parse a gameType string like "1/2" into { sb, bb } amounts.

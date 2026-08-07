@@ -5,7 +5,7 @@
  * All error codes are searchable - grep for "E1xx" to find state errors, etc.
  *
  * Usage:
- *   import { logger, AppError, ERROR_CODES, DEBUG } from '../utils/errorHandler';
+ *   import { logger, AppError, ERROR_CODES, DEBUG } from '../utils/errorHandler.js';
  *
  *   logger.debug('MyModule', 'Processing started', { data });
  *   logger.error('MyModule', new AppError(ERROR_CODES.SAVE_FAILED, 'Failed to save', { handId }));
@@ -19,8 +19,13 @@
  * Global debug flag - automatically disabled in production builds
  * Uses Vite's import.meta.env.DEV which is true in dev, false in production
  * All modules should import this instead of defining their own
+ *
+ * Optional-chained so the module also loads under bare Node ESM (no Vite),
+ * where import.meta.env is undefined — the backtest worker path (WS-433)
+ * imports the range engine outside any bundler. Vite still statically
+ * defines import.meta.env, so browser/dev behavior is unchanged.
  */
-export const DEBUG = import.meta.env.DEV;
+export const DEBUG = import.meta.env?.DEV ?? false;
 
 // =============================================================================
 // ERROR CODES

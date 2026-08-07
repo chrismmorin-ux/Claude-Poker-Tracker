@@ -7,7 +7,7 @@
  * @module positionUtils
  */
 
-import { LIMITS } from '../constants/gameConstants';
+import { LIMITS } from '../constants/gameConstants.js';
 
 /**
  * Position names in clockwise order from button

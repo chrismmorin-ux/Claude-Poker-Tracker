@@ -1,0 +1,105 @@
+id: "WS-433"
+title: "The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at target scale has EVER completed, and `evaluateGameTree` calls are embarrassingly parallel with no cross-decision state"
+legacy_id: ""
+type: feature
+status: claimed
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 55.0
+priority_label: "P0"
+category: "infrastructure"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  MEASURED, 2026-08-06 (four real logged numbers, the only ones that exist in the repo):
+
+    - `run-depth-ablation.mjs`, 260 decisions x 2 arms = 5,200 `evaluateGameTree` calls,
+      22 contributing players: **~100 minutes**
+      (`docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md:248`).
+    - `run-hero-ev.mjs` smoke, 250 decisions / 80 eval players / 51,793 hands: **1058.3 s (17.6 min)**
+      (`out/hero-ev-smoke.log`).
+    - Full-corpus rescore (lighter, non-game-tree pass): **40,028.9 s (11.12 hours)**
+      (`out/rescore-after.log`).
+    - `run-hero-ev.mjs` at the founder's own target scale (1200 decisions / 300 eval players):
+      **NEVER COMPLETED.** Interrupted twice — `hero-ev-scaled.json.partial` (2026-07-31) and
+      `hero-ev-curse.json.partial` (2026-08-05), both dying at ~600/1200 decisions and 3/300 players
+      (`out/hero-ev-KILLED-3players-inadmissible.README.md`).
+
+  `grep -r worker_threads` across the repo: **ZERO hits.** The harness is single-threaded Node.
+
+  WHAT THAT COSTS AGAINST THE FOUNDER'S OWN TARGET. WS-410's MDE arithmetic — independently verified
+  correct this pass (CI half-width 2.0472 at P=22, 1/sqrt(P) scaling, solving to **P = 2,305**) —
+  says resolving a 0.20 bb effect needs ~2,300 contributing players. Scaling the one real dual-arm
+  data point: **~75-174 hours (3-7 days) of continuous wall-clock per properly-powered comparison**,
+  depending on arm count. Two agents in the same pass produced 75h and 174h under single-arm and
+  dual-arm assumptions respectively; the range is stated rather than resolved because the underlying
+  per-decision cost has never been profiled.
+
+  THE FRAMING ERROR THIS CORRECTS. WS-410's D7 presents "spend the run budget on N or on breadth" as
+  a founder tradeoff. It is not a budget tradeoff:
+    - `--max-decisions` and `--max-players` both default to **`Infinity`** (`run-hero-ev.mjs:260,264`
+      and `run-depth-ablation.mjs:208,212`). No code cap, no memory guard. Nothing stops you.
+    - The corpus is not binding either: 400 players available at this partition
+      (`out/depth-ablation.json: integrity.behaviorPolicy.players`), 59,848 player-site rows overall.
+    - The binding constraint is **wall clock on one core**.
+
+  Per `.claude/rules/improvement-default.md`, presenting the founder a choice between "more power" and
+  "more views" while an unaddressed serial bottleneck sits underneath is the measurability-bias
+  pattern the rule forbids recommending: shrinking the ambition to fit the instrument. THE INSTRUMENT
+  IS WHAT SHOULD BE FIXED. It is also the cheapest fix available by leverage — it changes the cost
+  basis of every stage in WS-410 and every future EV comparison, not just one decision.
+
+  WHY IT IS TRACTABLE. `heroEvRunner`'s decision loop is a sequential `for...of` with `await` per
+  decision and NO cross-decision state; the `Promise.all` sites in `scripts/backtest/` are all outside
+  the per-decision engine-call path (file loading, chunk merging). The engine calls are
+  embarrassingly parallel.
+
+  A SEPARATE MECHANISM BUG FOUND IN THE SAME PASS, which must be fixed alongside or the fix
+  under-delivers: the runner is a NESTED loop — outer over players, inner over each player's
+  checkpoints — and the global stop flag fires the instant `decisions.length >= maxDecisions`,
+  breaking BOTH loops. So **raising `--max-decisions` alone plateaus at the current `--max-players`
+  ceiling**, buying more correlated evidence from already-counted players rather than more independent
+  clusters. The cluster-bootstrap CI resamples PLAYERS (`ipsEstimator.mjs:134-157`), so it will not
+  narrow. WS-410's accept criteria do say both flags; its one-line summary says "N first", and that
+  is the phrase an implementer acts on.
+accept_criteria: |
+  - `evaluateGameTree` calls are parallelised across worker threads or processes. Report the real
+    speedup measured on the 260-decision reference run, not the theoretical core count.
+  - DETERMINISM IS PRESERVED. Parallelism must not become a new nondeterminism source — results must
+    be identical to the serial run, and the merge order must not affect any accumulated float. This
+    ticket and WS-432 interact: coordinate so the logical clock is per-decision, not global.
+  - `--max-players` is documented as the binding lever for statistical power, with `--max-decisions`
+    named as a ceiling rather than a driver. A run that reports `n` without its contributing player
+    count is not acceptable output — a reader will assume power scaled with n, and it did not.
+  - VERIFY THE CORPUS SUPPLY BEFORE COMMITTING WALL TIME: count actual qualifying EVAL-partition
+    players with >= 15 train hands. WS-410 asserts "the corpus is not the binding constraint" from
+    59,848 player-site ROWS, which is not the same quantity and has never been shown. If the corpus
+    yields fewer than ~2,300 qualifying players, that is a finding that changes the headline target.
+  - A run at the founder's target scale (300 players / 1200 decisions) COMPLETES. That has never
+    happened; it is the acceptance test.
+effort: "L"
+files_involved:
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410", "WS-435"]
+sprint_id: "SPR-177"
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the experimental-design business strategist in the 2026-08-06 nine-agent decision-enhance
+  pass on WS-410; the nested-loop plateau mechanism was found independently by the experimental-design
+  failure engineer. The 2,305-player arithmetic was independently re-derived and confirmed exact.

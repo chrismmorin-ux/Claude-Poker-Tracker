@@ -10,8 +10,8 @@
  * when available since it uses actual range computations rather than heuristics.
  */
 
-import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
-import { tryParseSituationKey } from '../pokerCore/situationKey';
+import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions.js';
+import { tryParseSituationKey } from '../pokerCore/situationKey.js';
 
 /**
  * Assess whether hero's action was +EV/-EV given their equity.
