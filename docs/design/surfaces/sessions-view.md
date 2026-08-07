@@ -64,6 +64,13 @@ Secondary:
 ├──────────────────────────────────────────────────────────┤
 │ [+ New Session]  [Import]  [Pre-Session Drill]  [Backup] │
 ├──────────────────────────────────────────────────────────┤
+│ VarianceBand (collapsible) — cash sessions only          │
+│   • measured $/hr + swing per hour                       │
+│   • true-win-rate interval bar w/ zero marker + verdict   │
+│   • bankroll needed (tolerance pills) + risk of ruin      │
+│   • downswings: worst had / expected / be-ready-for       │
+│   • Kelly: full / half / quarter                          │
+├──────────────────────────────────────────────────────────┤
 │ Past sessions list (SessionCard ×N)                      │
 │   • date • venue • game • hands • net                    │
 │   → click to edit/delete/inspect                         │
@@ -71,6 +78,20 @@ Secondary:
 │ CashOutModal / ImportConfirmModal (overlays)             │
 └──────────────────────────────────────────────────────────┘
 ```
+
+**VarianceBand placement rationale (2026-08-07).** Mounted directly below `InsightsBand`, as a
+sibling rather than an extension of it. InsightsBand is already dense (6 tiles + chart + 2
+breakdowns), and the two answer different questions: Insights reports *what happened*, Variance
+reports *what it means*. Both scope with the Live/Online/All filter. VarianceBand renders only
+when a cash sample exists, so a founder with tournaments only never sees an empty shell.
+
+**Honesty contract (binding, POKER_THEORY §14.3/§14.4).** The cluster unit is the **session**,
+never the hand, and every block states its `n`. Projected figures (required bankroll, risk of
+ruin, Kelly, modelled drawdown) carry a visible `modelled` tag. The win-rate interval refuses to
+render below 20 cash sessions, and when it straddles zero the panel says so in plain words rather
+than letting a positive observed rate imply a proven one. Tournaments and sessions with no
+recorded times are excluded from the math and their counts are declared, so the panel never reads
+as if it covered everything.
 
 Action-row placement rationale (Pre-Session Drill, 2026-05-19): inline button placed between `[Import]` and `[Backup]`. The button is for *opening tomorrow's drill*, not for managing sessions; placing it in the primary action row mirrors `+ New Session` discoverability for the daily-prep workflow. The button is visible on every SessionsView mount — no submenu, no overflow. Routes to `postflop-drills` with `activeTab='presession'` + `mode='prep'`; user picks variant (5/15/30) + mood inside the destination view.
 
@@ -83,6 +104,9 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - **Tournament context (`useTournament`):** `initTournament`, `createNewTournament` — cross-wiring when session is a tournament.
 - **Sync bridge (`useSyncBridge`):** opt-in sync observer (paused for Firebase per F-W3).
 - **Local (via SessionsView):** modal open/close, form draft state, import candidate, error state.
+- **Local (via VarianceBand):** collapse state (`sessionsView.varianceCollapsed`), ruin tolerance
+  (`sessionsView.ruinTolerance`, default 5% matching the founder's spreadsheet), and current
+  bankroll (`sessionsView.bankroll`) — all localStorage-persisted. No settings-schema change.
 - Writes: `sessionReducer` (CRUD), IDB `sessions` / `activeSession` stores via `useSessionPersistence`, export downloads via `exportUtils`.
 
 ## Props / context contract
@@ -121,13 +145,18 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - **Online Sessions tab / filter** — sidebar imports surface here with no visual differentiation (F-W gap from INVENTORY).
 - **Multi-currency display** (F-P14) — not served; Traveler persona pain point.
 - **Tax-friendly per-year export** (DE-71) — only raw JSON ships today.
-- **Session backfill flow** (SM-22) — possible via manual create, but no dedicated "backfill" affordance.
+- **Session backfill flow** (SM-22) — possible via manual create, but no dedicated "backfill" affordance. Partially served since 2026-08-07 by the one-shot bankroll-history import in Settings → Data & About, but that seeds a fixed dataset rather than offering a general backfill.
+- **Repeatable spreadsheet import** — the 2026-08-07 import is a one-time seed by founder choice. Sessions logged in the sheet after 5 Aug 2026 need the seed file regrown; the writer is idempotent so re-running is safe.
+- **bb/100 normalisation across stakes** — blocked on hand counts, which the imported history does not carry.
 
 ---
 
 ## Test coverage
 
-- `src/components/views/SessionsView/__tests__/*.test.jsx` — component + handler coverage.
+- `src/components/views/SessionsView/__tests__/*.test.jsx` — component + handler coverage, incl. `VarianceBand.test.jsx` (19 tests: interval verdicts, modelled stamps, tolerance pills, certain-ruin path, Kelly withholding).
+- `src/utils/sessionStats/__tests__/bankrollVariance.test.js` — estimators against hand-worked closed forms, plus an end-to-end block over the real imported sheet.
+- `src/utils/sessionStats/__tests__/sheetImport.test.js` — sheet normalisation (year typos, overnight wrap, recovered P&L, idempotent keys).
+- `src/utils/persistence/__tests__/sessionsStorage.test.js` — `importHistoricalSessions` idempotency + non-destructiveness.
 - Persistence covered in `useSessionPersistence` tests + reducer tests.
 
 ## Related surfaces
@@ -152,3 +181,4 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - 2026-06-06 — **Portrait-native fluid layout (responsive addendum).** `SessionsView` dropped `ScaledContainer` / the fixed 1600×720 frame and now renders fluid single-column (capped `max-w-3xl`, vertical scroll) at real sizes; header buttons wrap; the drill CTAs moved from an absolute bottom bar to an inline wrapping row. `SCREEN.SESSIONS` added to `VIEW_TO_ORIENTATION='portrait'` (best-effort lock). `SessionForm` modal sizes responsively (no scale transform). Fixes ~24%-scale illegibility on phone portrait. Owner-requested 2026-06-06. See `../audits/2026-06-06-entry-sessions-settings-portrait.md`.
 - 2026-06-06 — **Insights band (Sessions View Improvement Phase 2).** New `InsightsBand` section at the top of the view (after the Online card, before the Review Queue): net P&L, $/hr, win-rate, hands, best/worst tiles + a hand-rolled `BankrollChart` SVG trend + by-stake/by-venue breakdowns. Pure derivation via `src/utils/sessionStats/sessionAnalytics.js` (no IDB change); scopes with the Live/Online/All filter; collapsible (localStorage). The former bottom-left `BankrollDisplay` widget is folded into the band's Net P&L tile and the component + its test were removed. See `../audits/2026-06-06-entry-insights-band.md`.
 - 2026-06-06 — **Venue notes (Sessions View Improvement Phase 1).** A past-session row (`SessionCard`) now shows a small note line (📝 icon + muted italic text) under its header when the session's venue has a note. `SessionsView` looks up the note via `useSettings().getVenueNote(session.venue)` and threads it through `SessionRowWithRollup` → `SessionCard` as the `venueNote` prop (both stay pure-prop, no context). The note itself is authored in `settings-view` → Custom Venues. The new-session `SessionForm` shows the same note as a hint under the venue dropdown. See `../audits/2026-06-06-entry-venue-notes.md`. This is Phase 1 of a 4-phase view lift (Phases 2–4: insights band, list sort/search/detail, active-session flow + polish — each gets its own Gate-1 check).
+- 2026-08-07 — **Bankroll history import + Bankroll & Variance band** (Gate 1 audit `../audits/2026-08-07-entry-bankroll-variance.md`, GREEN; Gate 2 not triggered). New `VarianceBand` mounted below `InsightsBand`: measured win rate with 70%/95% confidence intervals on the *true* rate, required bankroll at a selectable ruin tolerance, risk of ruin against an entered bankroll, observed vs modelled downswings, and Kelly sizings. Session is the cluster unit and projected figures carry a `modelled` tag, per POKER_THEORY §14.3/§14.4. Companion one-shot import in Settings → Data & About seeds 78 sessions transcribed from the founder's Google Sheet (Nov 2024 → Aug 2026) via a new additive, idempotent `importHistoricalSessions` writer — deliberately NOT the destructive `importAllData` path. P&L is recomputed from buy-in/rebuys/cash-out, which recovers the 9 sessions the sheet left blank and corrects the stated lifetime total from −$6,175 to −$1,693.66. No IndexedDB version bump (additive optional fields only).

@@ -186,6 +186,75 @@ export const getAllSessions = async (userId = GUEST_USER_ID) => {
 };
 
 /**
+ * Import historical session records additively.
+ *
+ * WHY THIS EXISTS SEPARATELY FROM `importAllData` (src/utils/exportUtils.js):
+ * that path calls `clearAllData()` first — it restores a full backup and is
+ * destructive by design. Importing a bankroll history must never wipe tracked
+ * hands, players, or existing sessions, so this writer only ever adds.
+ *
+ * IDEMPOTENT: every record carries a deterministic `importKey`. Keys already
+ * present are skipped, so re-running the import is safe and reports how many
+ * rows it recognised. `sessionId` is deliberately not accepted from callers —
+ * IndexedDB assigns it — so a record can never overwrite an unrelated session.
+ *
+ * @param {Array<Object>} records - Session records (see sheetImport.toSessionRecord)
+ * @param {string} userId - User ID (defaults to 'guest')
+ * @returns {Promise<{imported:number, skipped:number, errors:Array<string>}>}
+ */
+export const importHistoricalSessions = async (records = [], userId = GUEST_USER_ID) => {
+  const result = { imported: 0, skipped: 0, errors: [] };
+  if (!Array.isArray(records) || records.length === 0) return result;
+
+  try {
+    const existing = await getAllSessions(userId);
+    const seenKeys = new Set(
+      existing.map((session) => session.importKey).filter(Boolean)
+    );
+
+    for (const record of records) {
+      const { sessionId, ...rest } = record || {};
+
+      if (rest.importKey && seenKeys.has(rest.importKey)) {
+        result.skipped += 1;
+        continue;
+      }
+
+      const sessionRecord = {
+        ...rest,
+        isActive: false,
+        userId,
+        version: '1.4.0',
+      };
+
+      const validation = validateSessionRecord(sessionRecord);
+      if (!validation.valid) {
+        logValidationErrors('importHistoricalSessions', validation.errors);
+        result.errors.push(
+          `Skipped ${rest.importKey || 'unkeyed row'}: ${validation.errors.join(', ')}`
+        );
+        continue;
+      }
+
+      try {
+        await writeTx(SESSIONS_STORE_NAME, (store) => store.add(sessionRecord));
+        if (rest.importKey) seenKeys.add(rest.importKey);
+        result.imported += 1;
+      } catch (error) {
+        result.errors.push(`Failed to import ${rest.importKey || 'row'}: ${error.message}`);
+      }
+    }
+
+    log(`Imported ${result.imported} historical sessions (${result.skipped} already present)`);
+    return result;
+  } catch (error) {
+    logError('Error in importHistoricalSessions:', error);
+    result.errors.push(`Import failed: ${error.message}`);
+    return result;
+  }
+};
+
+/**
  * Get a specific session by ID
  * @param {number} sessionId - The session ID to load
  * @returns {Promise<Object|null>} Session data or null if not found

@@ -42,6 +42,7 @@ import {
   endSessionAtomic,
   getSessionHandCount,
   getOrCreateOnlineSession,
+  importHistoricalSessions,
 } from '../sessionsStorage';
 
 // ---------------------------------------------------------------------------
@@ -708,6 +709,115 @@ describe('sessionsStorage', () => {
       const session = await getSessionById(created);
       expect(session.stakes).toEqual({ sb: 1, bb: 2 });
       expect(session.gameType).toBe('1/2');
+    });
+  });
+  // -------------------------------------------------------------------------
+  // importHistoricalSessions
+  // -------------------------------------------------------------------------
+
+  describe('importHistoricalSessions', () => {
+    const record = (importKey, overrides = {}) => ({
+      startTime: Date.UTC(2026, 6, 21, 19, 10),
+      endTime: Date.UTC(2026, 6, 21, 21, 50),
+      isActive: false,
+      venue: 'wind creek',
+      gameType: '1/3',
+      buyIn: 600,
+      rebuyTransactions: [],
+      cashOut: 1086,
+      handCount: 0,
+      origin: 'sheet-import',
+      importKey,
+      sessionKind: 'cash',
+      durationHours: 2.6666666666666665,
+      ...overrides,
+    });
+
+    it('adds every supplied record', async () => {
+      const result = await importHistoricalSessions(
+        [record('k-1'), record('k-2'), record('k-3')],
+        'guest'
+      );
+      expect(result.imported).toBe(3);
+      expect(result.skipped).toBe(0);
+      expect(result.errors).toEqual([]);
+      expect(await getAllSessions('guest')).toHaveLength(3);
+    });
+
+    it('is idempotent — a second run imports nothing', async () => {
+      const records = [record('k-1'), record('k-2')];
+      await importHistoricalSessions(records, 'guest');
+      const second = await importHistoricalSessions(records, 'guest');
+      expect(second.imported).toBe(0);
+      expect(second.skipped).toBe(2);
+      expect(await getAllSessions('guest')).toHaveLength(2);
+    });
+
+    it('imports only the new rows when the sheet has grown', async () => {
+      await importHistoricalSessions([record('k-1')], 'guest');
+      const next = await importHistoricalSessions([record('k-1'), record('k-2')], 'guest');
+      expect(next.imported).toBe(1);
+      expect(next.skipped).toBe(1);
+    });
+
+    it('preserves existing sessions instead of clearing them', async () => {
+      // The whole reason this writer exists rather than reusing importAllData,
+      // which calls clearAllData() first.
+      const tracked = await createSession({ venue: 'Tracked' }, 'guest');
+      await importHistoricalSessions([record('k-1')], 'guest');
+      const all = await getAllSessions('guest');
+      expect(all).toHaveLength(2);
+      expect(await getSessionById(tracked)).not.toBeNull();
+    });
+
+    it('round-trips the provenance fields', async () => {
+      await importHistoricalSessions([record('k-1')], 'guest');
+      const [stored] = await getAllSessions('guest');
+      expect(stored.origin).toBe('sheet-import');
+      expect(stored.importKey).toBe('k-1');
+      expect(stored.sessionKind).toBe('cash');
+      expect(stored.durationHours).toBeCloseTo(2.6667, 3);
+      expect(stored.userId).toBe('guest');
+    });
+
+    it('never lets a caller-supplied sessionId overwrite an existing session', async () => {
+      const tracked = await createSession({ venue: 'Tracked' }, 'guest');
+      await importHistoricalSessions(
+        [record('k-1', { sessionId: tracked })],
+        'guest'
+      );
+      const stored = await getSessionById(tracked);
+      expect(stored.venue).toBe('Tracked');
+      expect(await getAllSessions('guest')).toHaveLength(2);
+    });
+
+    it('forces isActive false so an import can never resurrect a live session', async () => {
+      await importHistoricalSessions([record('k-1', { isActive: true })], 'guest');
+      const [stored] = await getAllSessions('guest');
+      expect(stored.isActive).toBe(false);
+    });
+
+    it('reports invalid rows without aborting the rest of the import', async () => {
+      const result = await importHistoricalSessions(
+        [record('k-1'), record('k-bad', { rebuyTransactions: 'nope' }), record('k-2')],
+        'guest'
+      );
+      expect(result.imported).toBe(2);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('k-bad');
+    });
+
+    it('handles an empty list', async () => {
+      const result = await importHistoricalSessions([], 'guest');
+      expect(result).toEqual({ imported: 0, skipped: 0, errors: [] });
+    });
+
+    it('keeps imports isolated per user', async () => {
+      await importHistoricalSessions([record('k-1')], 'guest');
+      const other = await importHistoricalSessions([record('k-1')], 'user-2');
+      expect(other.imported).toBe(1);
+      expect(await getAllSessions('guest')).toHaveLength(1);
+      expect(await getAllSessions('user-2')).toHaveLength(1);
     });
   });
 });

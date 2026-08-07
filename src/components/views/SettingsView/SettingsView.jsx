@@ -26,7 +26,7 @@ import { AdminSection } from './AdminSection';
 export const SettingsView = ({ scale }) => {
   const { showSuccess, showError, showWarning, addToast } = useToast();
   const { setCurrentScreen, SCREEN } = useUI();
-  const { user, isAuthenticated, isInitialized: authInitialized, sendVerificationEmail } = useAuth();
+  const { user, userId, isAuthenticated, isInitialized: authInitialized, sendVerificationEmail } = useAuth();
   const {
     settings,
     isLoading,
@@ -137,6 +137,7 @@ export const SettingsView = ({ scale }) => {
             showSuccess={showSuccess}
             showError={showError}
             addToast={addToast}
+            userId={userId}
           />
 
           <RefresherSettings />

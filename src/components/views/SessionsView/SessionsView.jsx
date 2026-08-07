@@ -22,6 +22,7 @@ import { ActiveSessionCard } from './ActiveSessionCard';
 import { CashOutModal } from './CashOutModal';
 import { ImportConfirmModal } from './ImportConfirmModal';
 import { InsightsBand } from './InsightsBand';
+import { VarianceBand } from './VarianceBand';
 import { SessionDetailModal } from './SessionDetailModal';
 import { ReviewQueuePanel } from './ReviewQueuePanel';
 import { useToast } from '../../../contexts/ToastContext';
@@ -475,6 +476,11 @@ export const SessionsView = ({ scale }) => {
               with the Live/Online/All filter; renders only when ≥1 completed
               session exists. Folds in the former bottom-left bankroll widget. */}
           <InsightsBand sessions={visiblePastSessions} scopeLabel={insightsScopeLabel} />
+
+          {/* Bankroll & Variance — what the results MEAN, where Insights reports
+              what happened. Cash sessions only, clustered on the session per
+              POKER_THEORY §14.3. Renders only when a cash sample exists. */}
+          <VarianceBand sessions={visiblePastSessions} scopeLabel={insightsScopeLabel} />
 
           {/* Review Queue — tagged hands (WS-190). Renders only when ≥1 hand is tagged. */}
           <ReviewQueuePanel onOpenHand={handleOpenTaggedHand} />
