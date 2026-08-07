@@ -118,6 +118,38 @@ the hand. The two biggest layers went to hands (set, KK) that were always
 getting the money in; no alternative line kept your stack while staying
 +EV.
 
+## How long is the long run? (variance)
+
+Exact per-replay outcome distribution for hero (all 1,086,008 boards):
+
+| Outcome | Gross $ | Net (whole hand) | Net (vs folding to the jam) | Probability |
+|---|---|---|---|---|
+| Win nothing | 0 | −750 | −550 | 61.7% |
+| Win all three pots | 1,948 | +1,198 | +1,398 | 26.9% |
+| Beat KK only (side 2) | 710 | −40 | +160 | 6.6% |
+| Beat KK + 55 (sides 1+2) | 1,760 | +1,010 | +1,210 | 3.9% |
+| Chops (various) | — | — | — | ~0.9% |
+
+Mean gross $646 · **standard deviation $873 per replay** (≈ 2.9 buy-ins at
+$300). Signal-to-noise of the call decision: edge $96 / SD $873 ≈ 0.11 per
+occurrence — about the same ratio as a solid live winrate per hour.
+
+Break-even arithmetic (decision framing, +$96/replay):
+- Replays for the *expected* cumulative edge to cover this hand's −$750:
+  **8** (750 / 96.2). At exactly 8 replays the chance you've actually
+  recovered is ~50% — a coin flip.
+- Probability the repeated *decision* is cumulatively ahead of always-folding
+  (normal approx; distribution is bimodal so small-N values are rough):
+  N=8 → 62% · N=25 → 71% · N=50 → 78% · N=100 → 86% · N=200 → 94% ·
+  N=400 → 99%.
+- Face-up whole-hand framing: mean −$104/replay — replaying the dealt cards
+  **never** breaks even; each repetition digs deeper.
+
+The exact spot (straddle pot, shortstack jam + call, AKs, straddler 5-bet)
+recurs perhaps a handful of times a year live — so the long run for *this
+hand* never arrives. It arrives across the portfolio of all +EV decisions;
+each one banks its edge at decision time and shares one pooled variance.
+
 ## Record-entry notes
 
 The hand record above was built and validated through the real reducer

@@ -141,6 +141,9 @@ describe('AKs squeeze 4-way hand review', () => {
     const ev = { hero: 0, mp: 0, hj: 0, btn: 0 };
     let heroMainEq = 0, heroS1Eq = 0, heroS2Eq = 0;
     let boards = 0;
+    // Hero per-board gross-dollar outcome distribution (for variance analysis)
+    const outcomeTally = new Map(); // gross dollars (rounded to cents) → board count
+    let heroSumSq = 0;
 
     for (let i = 0; i < 40; i++)
       for (let j = i + 1; j < 41; j++)
@@ -182,6 +185,16 @@ describe('AKs squeeze 4-way hand review', () => {
               if (sH > sB) { ev.hero += SIDE2; heroS2Eq += 1; }
               else if (sB > sH) ev.btn += SIDE2;
               else { ev.hero += SIDE2 / 2; ev.btn += SIDE2 / 2; heroS2Eq += 0.5; }
+
+              // Hero gross outcome this board (for variance / distribution)
+              let heroGross = 0;
+              if (sH === maxMain) heroGross += mainShare;
+              if (sH === maxS1) heroGross += s1Share;
+              if (sH > sB) heroGross += SIDE2;
+              else if (sH === sB) heroGross += SIDE2 / 2;
+              heroSumSq += heroGross * heroGross;
+              const key = Math.round(heroGross * 100);
+              outcomeTally.set(key, (outcomeTally.get(key) || 0) + 1);
             }
 
     expect(boards).toBe(1086008); // C(44,5)
@@ -207,6 +220,22 @@ describe('AKs squeeze 4-way hand review', () => {
         aksVs55: computeHandVsHand('AKs', '55').equity,
         aksVs64s: computeHandVsHand('AKs', '64s').equity,
       },
+    };
+
+    // Variance analysis: hero gross-dollar distribution across all boards.
+    const meanGross = ev.hero / boards;
+    const variance = heroSumSq / boards - meanGross * meanGross;
+    result.variance = {
+      meanGross,
+      stdDevPerReplay: Math.sqrt(variance),
+      outcomes: [...outcomeTally.entries()]
+        .map(([cents, count]) => ({
+          gross: cents / 100,
+          netWholeHand: cents / 100 - HERO_TOTAL_IN,
+          netVsFoldAtCall: cents / 100 - HERO_CALL_COST,
+          probability: count / boards,
+        }))
+        .sort((a, b) => b.probability - a.probability),
     };
     fs.mkdirSync(OUT, { recursive: true });
     fs.writeFileSync(`${OUT}/exact-equity.json`, JSON.stringify(result, null, 2));
