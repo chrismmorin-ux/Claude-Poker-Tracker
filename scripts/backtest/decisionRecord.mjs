@@ -49,6 +49,7 @@ import { createHash } from 'node:crypto';
 import { RANKS, SUITS } from '../../src/constants/gameConstants.js';
 import { cardRank, cardSuit } from '../../src/utils/pokerCore/cardParser.js';
 import { SOR_SCHEMA_VERSIONS } from '../../src/utils/standardOfRecord/schemas.js';
+import { missingRecordReaders } from './recordSelfCheck.mjs';
 
 /**
  * Bumped when a field is ADDED. Never when one is removed — fields are not removed. A
@@ -241,6 +242,16 @@ export const compactHeroTruth = (truth) => {
  * `kind` cannot mistake one for the other.
  */
 export const openDecisionSink = (path, meta = {}) => {
+  // WS-431 reader enforcement, AT OPEN: a schema field with no registered reader fails
+  // here — at run start, costing seconds — not after a multi-hour pass has already
+  // captured a field nobody can query. Same mechanism as atomsSelfCheck, same reason.
+  const unread = missingRecordReaders();
+  if (unread.length > 0) {
+    throw new Error(
+      `openDecisionSink refused: schema field(s) with no registered reader in recordSelfCheck.mjs: ${unread.join(', ')}. `
+      + 'Every captured field ships with the query that reads it — write the reader (with its depth and forcing question) before capturing.',
+    );
+  }
   mkdirSync(dirname(path), { recursive: true });
   const fd = openSync(path, 'w');
   let written = 0;
