@@ -466,3 +466,20 @@ Key modules: `render-orchestrator.js` (extracted pure render functions), `render
 - `docs/DEBUGGING.md` — error codes
 - `docs/CHANGELOG.md` — version history
 - `docs/RANGE_ENGINE_DESIGN.md` — range engine design spec
+
+## Visual & Interactive Reference
+Where to find things you can *look at* rather than read. Start with `prototypes/README.md` — it is the index for all seven locations.
+
+| What | Location |
+|------|----------|
+| Interactive instruments & prototypes (incl. the 3D projection tools) | `prototypes/` — **indexed in `prototypes/README.md`** |
+| Sidebar visual prototype | `docs/sidebar-prototype.html` |
+| Ignition sidebar harness (16 scenarios, live) | `cd ignition-poker-tracker && npm run harness` → `localhost:3333` |
+| Design-audit evidence screenshots | `docs/design/audits/evidence/` |
+| Line-audit evidence screenshots | `docs/design/audits/line-audits/evidence/` |
+| Playwright visual baselines | `tests/playwright/*.spec.js-snapshots/` |
+| Surface specs (written counterpart) | `docs/design/surfaces/` — indexed in `CATALOG.md` |
+
+No stored 3D model files exist (`.glb`/`.gltf`/`.obj`) — the 3D work is runtime canvas rendering inside the projection prototypes.
+
+**A published artifact is not a record.** Design research published to claude.ai leaves no repo trace. The record of record for any design decision is a file under `docs/design/`; the artifact is a view of it. Author the doc, then publish.
