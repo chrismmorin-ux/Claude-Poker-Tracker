@@ -257,6 +257,30 @@ friction_log:
 
 # Pre-existing entry (kept for context):
 # Entry format:
+  - id: fr-021
+    timestamp: "2026-08-07T00:05:00Z"
+    session_id: "ses-20260806-2347-91644756"
+    category: platform_issue
+    severity: medium
+    detail: "Fresh remote container had no node_modules — every vitest/build invocation failed with 'Cannot find package vite' until `npm install` was run manually. Nothing in the session-start path installs dependencies, so the first test run of any web session in a fresh container fails confusingly (the error surfaces as a vite.config.js resolution failure, not as 'deps missing')."
+    component: session-start
+    workaround: "Ran `npm install` (~2 min) before the first test invocation. A SessionStart hook that checks for node_modules and installs would remove the false-alarm failure."
+  - id: fr-022
+    timestamp: "2026-08-07T00:40:00Z"
+    session_id: "ses-20260806-2347-91644756"
+    category: workaround
+    severity: low
+    detail: "Ad-hoc analysis over app modules cannot be run with plain `node` — src/ uses extensionless relative imports that only Vite resolves. Computing the founder-requested June-forward figures required writing a throwaway file under src/utils/**/__tests__/ so vitest's include globs would pick it up, then deleting it."
+    component: n/a-tooling
+    workaround: "Temporary ztmp-*.test.js under an existing __tests__ dir, removed after reading output. A `scripts/` runner with the Vite resolver wired up would make one-off data questions cheap."
+  - id: fr-023
+    timestamp: "2026-08-07T01:20:00Z"
+    session_id: "ses-20260806-2347-91644756"
+    category: platform_issue
+    severity: low
+    detail: "`pkill -f vite` inside a compound Bash command kills the tool's own shell (exit 144), silently discarding any heredoc later in the same command. Cost one lost script write and a confusing MODULE_NOT_FOUND on the next step."
+    component: n/a-environment
+    workaround: "Never combine pkill with subsequent writes; issue it alone or omit it and let the next `npm run dev` bind a new port."
 #   - id: fr-001
 #     timestamp: "2026-04-07T18:05:00Z"
 #     session_id: "ses-20260407-175851"
@@ -268,13 +292,13 @@ friction_log:
 
 # Section C: Aggregation summary (auto-maintained)
 summary:
-  total_friction_events: 20
+  total_friction_events: 23
   total_user_feedback: 3
   unresolved_feedback: 2
   by_severity:
     high: 3
-    medium: 5
-    low: 12
+    medium: 6
+    low: 14
   by_category:
     file_not_found: 10
     manual_fix: 7

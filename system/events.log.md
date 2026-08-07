@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1785529883587-7fbd5f772e92"
-generated_content_hash: "a851c54d230cdf2e19b0a531851bf8303f037e7ce0f4707e644e1dbcf71bd57d"
-generated_at: "2026-07-31T20:31:23.636Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl"]
-event_count: 1375
+generated_from_event: "ev-1786076337207-cfcb92951969"
+generated_content_hash: "e043f1891266f23e8c627f7410c3f42a3fdb77dd5d1b54594e902cda6580ee7d"
+generated_at: "2026-08-07T04:18:57.261Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-07.jsonl"]
+event_count: 1385
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 922
-- Events recorded: 1375
-- Source chunks: 20
+- Commands recorded: 932
+- Events recorded: 1385
+- Source chunks: 21
 
 ## Command `auto:42416:1781030643103`
 
@@ -9690,3 +9690,103 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-07-31T20:31:23.587Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |
+
+## Command `auto:8231:1786076180746`
+
+- Start: 2026-08-07T04:16:20.746Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:20.746Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=5, +1 more |
+
+## Command `auto:8231:1786076181279`
+
+- Start: 2026-08-07T04:16:21.279Z
+- Events: 1
+- Tracks: T6:reconcile-findings
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:21.279Z | T6:reconcile-findings | promotion_gap | type="promotion_gap", kind="finding_orphaned", +5 more |
+
+## Command `auto:8231:1786076181308`
+
+- Start: 2026-08-07T04:16:21.308Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:21.308Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:8231:1786076181372`
+
+- Start: 2026-08-07T04:16:21.372Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:21.372Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:8640:1786076187151`
+
+- Start: 2026-08-07T04:16:27.151Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:27.151Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8640:1786076187218`
+
+- Start: 2026-08-07T04:16:27.218Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:27.218Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8640:1786076187268`
+
+- Start: 2026-08-07T04:16:27.268Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:27.268Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8640:1786076187320`
+
+- Start: 2026-08-07T04:16:27.320Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:27.320Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `auto:8640:1786076187372`
+
+- Start: 2026-08-07T04:16:27.372Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:16:27.372Z | T6:workstream | item-archived | entity_type="sprints", path=".claude/workstream/sprints/ar"..., +1 more |
+
+## Command `cmd-commandcompleted-msifqhwv95c4304e5526`
+
+- Start: 2026-08-07T04:18:57.207Z
+- Events: 1
+- Tracks: T15:session-end
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T04:18:57.207Z | T15:session-end | /session-end | command="/session-end", type="command_completed", +1 more |

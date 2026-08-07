@@ -775,3 +775,45 @@ assumptions:
 **Reasoning:** `c3Passes` was computed from the sign of two confidence intervals and nothing else. The CI is a cluster bootstrap over players, which under-covers badly at small k. An interrupted run with THREE players reported edge +16.72 with CI [7.52, 23.42] and `c3Passes: true` — on the flag that decides whether the founder stops building and starts studying. The same run at 28 players read +1.37. Computing the verdict once and carrying it means no consumer has to ALSO know to check the player count, which is exactly the knowledge that fails to travel. The refusal is deliberately not overridable: the escape hatch that gets used in a hurry is the one that puts an uncertifiable row in front of a founder decision.
 **Trade-off:** A bar of 30 blocks rows that might be fine at 25, and the constant is duplicated in `model-readiness.mjs` (which must run when the backtest cannot). Both accepted — the bar is stamped into every artifact so it is visible retroactively, and a test asserts the two copies agree.
 **Context:** WS-287 / C3. `scripts/backtest/heroEvReport.mjs`, `scripts/readiness/model-readiness.mjs`.
+
+### DEC-030: Luck adjustment is mechanical or it is nothing
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** The adjusted win rate is computed ONLY from all-in EV — the `allIn` flag the hand already carries, equity at the street the chips went in, realized share read off the finished board by the same function. Founder-proposed manual tagging of "hands I won or lost to variance" is refused as an input to the rate. Tags may still exist for analysis; they may never touch the number.
+**Reasoning:** Founder asked to "capture the hands that I won or lost due to variance… will help get a true adjusted win rate". Tagging is asymmetric in practice — bad beats get logged, suckouts do not — so a tag-driven adjustment moves in one direction only and produces a WORSE estimate than the raw rate while presenting as more rigorous. The mechanical path penalises hero's suckouts exactly as hard as it credits hero's bad beats, and asks nobody's opinion. Pinned by a test that runs the same matchup with the runout swapped.
+**Trade-off:** Coverage is far narrower — only all-in pots, only where villain cards were entered and the board ran out. The cooler paid off on the river with chips behind is untouched. Accepted: a narrow honest correction beats a broad flattering one. The ceiling is stated in the UI so the number is never read as more than it is.
+**Context:** Founder request 2026-08-07. `src/utils/handStats/allInEquity.js`, Gate 1 audit `entry-session-logging-adjusted-winrate-2026-08-07`.
+
+### DEC-031: The session total is authoritative; adjustments layer as deltas
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Session P&L is always `cashOut − buyIn − rebuys − tip` and is never recomputed from hands. The all-in EV adjustment returns a DELTA applied on top, and hero's own contribution cancels out of that delta by construction (`(equity − realizedShare) × pot`).
+**Reasoning:** Deriving session P&L from per-hand results would create a second source of truth that disagrees with the cash-out the founder actually pocketed — and the hand record is incomplete for most sessions (every imported spreadsheet row has `handCount: 0`). Layering a delta keeps one number authoritative and makes partial hand coverage harmless rather than corrupting.
+**Trade-off:** The adjusted figure cannot be reconciled hand-by-hand against the session total. Accepted — that reconciliation was never going to hold with partial capture.
+**Context:** `src/utils/sessionStats/bankrollVariance.js#computeAdjustedWinRate`, `handStats/allInEquity.js#computeSessionAdjustment`.
+
+### DEC-032: Imported history merges as real sessions, and its P&L is recomputed not read
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** The 78 spreadsheet rows import as ordinary session records tagged `origin: 'sheet-import'`, not as a parallel historical dataset. Their P&L is ALWAYS recomputed from buy-in/rebuys/cash-out; the sheet's own `Profit / Loss` column is deliberately not transcribed.
+**Reasoning:** Founder chose one bankroll over two that never agree. Recomputation is what fixes the source data rather than importing its defects: the sheet's formula stopped at row 69, leaving the last nine sessions blank, which made its stated lifetime total **−$6,175** against a true **−$1,693.66**. Trusting the column would have imported a $4,481 error.
+**Trade-off:** Sheet-imported online tournaments classify under the "Live" pill, because `matchesSessionsFilter` keys on `source !== 'ignition'`. Accepted rather than changing a tested filter contract for five rows that are excluded from cash variance anyway.
+**Context:** `src/data/strategySheetSessions.js`, `src/utils/sessionStats/sheetImport.js`, Gate 1 audit `entry-bankroll-variance-2026-08-07`.
+
+### DEC-033: Variance clusters on the session, and refuses to draw a band it cannot support
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Every variance estimator clusters on the SESSION (never the hand), carries `clusterUnit` and `n` in its return value, and `computeWinRateInterval` returns null below 20 cash sessions rather than printing a band. Projected figures carry a visible `modelled` tag; an interval straddling zero says so in plain words.
+**Reasoning:** Direct application of POKER_THEORY §14.3/§14.4 — hands within a session share opponents, table dynamic and tilt state, so clustering on them understates variance. The refusal below 20 sessions and the straddles-zero message exist because the founder's real data reads +$16.27/hr with a 95% CI of −$29…+$62: a positive observed rate that has not established anything. A panel that printed the point estimate without that framing would be actively misleading on the decision it exists to inform.
+**Trade-off:** The founder sees "not proven" on numbers he is pleased with. Accepted — that is the product.
+**Context:** `src/utils/sessionStats/bankrollVariance.js`, `src/components/views/SessionsView/VarianceBand.jsx`.
+
+### DEC-034: Refusals are named, never silent
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** Where a computation declines, it returns a NAMED reason rather than null/zero: `INELIGIBLE.{MULTIWAY, VILLAIN_CARDS_UNKNOWN, BOARD_INCOMPLETE, HERO_FOLDED, …}` on the all-in adjustment, an explicit `covers: false` on the adjusted rate, and declared exclusion counts ("excludes 11 tournaments and 8 without a recorded time") in the UI. Multiway all-in equity is declined outright rather than approximated across side pots.
+**Reasoning:** A silent null makes "could not compute" indistinguishable from "nothing to correct", and a coverage count built on that distinction would lie. Zero-coverage in particular must not render as a number equal to the raw rate, which reads as confirmation of it.
+**Trade-off:** More surface area in the return shapes and more UI copy. Accepted.
+**Context:** `src/utils/handStats/allInEquity.js#INELIGIBLE`, `bankrollVariance.js#partitionSessions`.
+
+### DEC-035: A backfilled session gets its own writer, never a relaxed `createSession`
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit
+**Decision:** `createCompletedSession` is a separate writer taking explicit start/end times and a cash-out, sharing a private record builder with `createSession` but never producing `isActive: true`. The edit path strips `isActive` from any update. One form (`SessionLogForm`) serves both logging and editing.
+**Reasoning:** `createSession`'s `Date.now()` + `isActive: true` semantics are relied on by the live path and its tests; parameterising them would put the live-session lifecycle one wrong argument away from a second active session. A separate writer makes "backfill can never collide with a live session" structural rather than careful. One form for log-and-edit because the fields are identical and two would drift.
+**Trade-off:** Two writers to keep aligned — mitigated by the shared `buildSessionRecord`.
+**Context:** `src/utils/persistence/sessionsStorage.js`, `src/components/ui/SessionLogForm.jsx`.

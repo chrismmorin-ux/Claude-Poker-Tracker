@@ -46,16 +46,18 @@ Architecture detail: `.claude/context/SYSTEM_MODEL.md` (restored from backup 202
 
 | Status | Count |
 |--------|-------|
-| Backlog | 48 |
+| Backlog | 47 |
 | In Progress | 3 |
 | Blocked | 10 |
-| Done | 81 |
+| Done | 60 |
 | Completed | 7 |
 | Deferred | 44 |
 | Decomposed | 1 |
 | Dismissed | 1 |
 | Review | 1 |
-| **Total** | **196** |
+| **Total** | **174** |
+
+> 2026-08-07: **no queue items were touched this session** — the work was founder-directed (bankroll capture, session logging, all-in EV) and never entered the queue. Counts shifted only because `/session-end` GC archived 5 completed sprints and their artifacts; archived items leave the live index. **Five follow-ups from this session are UNFILED** and listed in `system-summary.yaml#founder_direction.unfiled_followups` — the sharpest being that **no SessionsView component test exists**, which is why a non-existent lucide icon import reached the browser and would have blanked the whole view (caught only by Playwright). Run `/next` to triage.
 
 > 2026-07-31: +6 items filed this session — **WS-316** (IP check-back vs OOP check pooled into one 'check': 10.3% vs 34.3% strong), **WS-317** (situation-key keystone — DONE), **WS-318** (weakness matching compares `isAgg` while calling it the action; user-visible "in flop agg spots"), **WS-319** (EV-by-percentile curve), **WS-320** (study-ladder separability test). Done-count differs from the previous table because archived items are no longer indexed.
 
