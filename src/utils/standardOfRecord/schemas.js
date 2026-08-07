@@ -38,7 +38,7 @@ export const SOR_SCHEMA_VERSIONS = Object.freeze({
   decisionAtom: 2,
   coverageCensus: 2,
   comparisonCensus: 1,
-  resultCard: 2,
+  resultCard: 3,
   dealBookManifest: 1,
   fieldManifest: 1,
   faultEntry: 1,
@@ -317,6 +317,10 @@ const RESULT_CARD_FIELDS = [
     note: 'How many times the conclusion on this estimand has REVERSED, and when. A fourth reversal must not read like a first-time finding. Flipping under new evidence is healthy; flipping unrecorded is not.' },
   { name: 'comparisonCensus', type: 'object|null', since: 2, required: false,
     note: 'Which contrasts were RUN vs merely POSSIBLE. The coverage census makes unreached situations visible; this makes undrawn comparisons visible. Without it "that comparison was never made" is indistinguishable from "that comparison was made and found nothing".' },
+
+  // ── v3 (WS-431): the decision record this card's headline was computed from. ───────────
+  { name: 'decisionRecord', type: 'object|null', since: 3, required: false,
+    note: '{contentHash, rowCount, schemaVersion} of the per-decision JSONL record — BY HASH, never by path (atomStore doctrine). This is what makes the headline REDERIVABLE: the inversion test recomputes edgeBB from the record alone. Null when the run captured no record; a null-with-error shape means a sink ran and its hash failed.' },
 ];
 
 /**

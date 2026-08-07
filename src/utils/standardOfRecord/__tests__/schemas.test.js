@@ -70,6 +70,8 @@ const SHIPPED_FIELDS = {
     atomSetHash: 'string|null', atomCount: 'number|null', anchorGeneration: 'number|null',
     // v2 anti-shallowness (founder directive 2026-08-03)
     fragility: 'object|null', flipRegister: 'object|null', comparisonCensus: 'object|null',
+    // v3 (WS-431)
+    decisionRecord: 'object|null',
   },
   faultEntry: {
     faultId: 'string', title: 'string', site: 'string', mechanism: 'string',

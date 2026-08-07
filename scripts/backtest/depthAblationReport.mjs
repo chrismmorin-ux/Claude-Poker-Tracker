@@ -485,6 +485,9 @@ export const buildDepthAblationReport = (run, {
         clusterUnit: 'players',
         admissibility,
         manifest,
+        // WS-431: by-hash reference to the decision record (set by run-depth-ablation.mjs
+        // before this builder runs), same contract as heroEvReport.buildCardFor.
+        decisionRecord: run.decisionRecord ?? null,
       });
       card = { resultCard, resultCardProblems: [] };
     } catch (err) {

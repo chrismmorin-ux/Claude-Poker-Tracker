@@ -187,9 +187,27 @@ const stampFixture = () => ({
 describe('buildHeroEvReport — the Standard of Record retrofit', () => {
   it('bumped its schema version', () => {
     // v2 = WS-322 (Result Card), v3 = WS-331 (pier posts), v4 = WS-295 (the optimizer's-curse
-    // block), v5 = WS-428 (overallEv — the §3.3 headline with both factors). All additive;
-    // the assertion below is the one that guards the additive property.
-    expect(HERO_EV_SCHEMA_VERSION).toBe(5);
+    // block), v5 = WS-428 (overallEv — the §3.3 headline with both factors), v6 = WS-431
+    // (decisionRecord by-hash reference on the card). All additive; the assertion below is
+    // the one that guards the additive property.
+    expect(HERO_EV_SCHEMA_VERSION).toBe(6);
+  });
+
+  it('carries the decision-record reference when the run captured one, null when it did not (WS-431)', () => {
+    const withRecord = buildHeroEvReport(runFixture({
+      replicationStamp: stampFixture(),
+      dealBook: { dealBookId: 'handhq-PS-200NLH-deadbeef' },
+      decisionRecord: { contentHash: `sha256:${'cd'.repeat(32)}`, rowCount: 12, schemaVersion: 2 },
+    }));
+    expect(withRecord.resultCard.decisionRecord).toEqual({
+      contentHash: `sha256:${'cd'.repeat(32)}`, rowCount: 12, schemaVersion: 2,
+    });
+
+    const without = buildHeroEvReport(runFixture({
+      replicationStamp: stampFixture(),
+      dealBook: { dealBookId: 'handhq-PS-200NLH-deadbeef' },
+    }));
+    expect(without.resultCard.decisionRecord).toBeNull();
   });
 
   it('STILL emits every field it emitted before — the retrofit is additive', () => {

@@ -61,6 +61,8 @@ export const CLUSTER_UNITS = Object.freeze(['sessions', 'players']);
  * @param {Object|null} [input.fragility] - margin-to-flip, from fragility.buildFragility
  * @param {Object|null} [input.flipRegister] - reversal history, from fragility.buildFlipRegister
  * @param {Object|null} [input.comparisonCensus] - contrasts drawn vs merely possible
+ * @param {Object|null} [input.decisionRecord] - {contentHash, rowCount, schemaVersion} of the
+ *   per-decision JSONL record the headline was computed from — by hash, never by path (WS-431)
  */
 export const buildResultCard = ({
   resultCardId,
@@ -79,6 +81,7 @@ export const buildResultCard = ({
   fragility = null,
   flipRegister = null,
   comparisonCensus = null,
+  decisionRecord = null,
 } = {}) => {
   const card = {
     schemaVersion: SOR_SCHEMA_VERSIONS.resultCard,
@@ -98,6 +101,7 @@ export const buildResultCard = ({
     fragility,
     flipRegister,
     comparisonCensus,
+    decisionRecord,
   };
   const problems = resultCardProblems(card);
   if (problems.length) {

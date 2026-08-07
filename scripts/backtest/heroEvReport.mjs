@@ -56,7 +56,10 @@ const CORPUS_CAVEAT =
  * Deal Book — never from n/handsRepresented on the scored subset. `null` on a run that
  * supplied no opportunity census. Every pre-existing field is unchanged and in place.
  */
-export const HERO_EV_SCHEMA_VERSION = 5;
+// v6 (WS-431): the Result Card carries `decisionRecord` {contentHash, rowCount,
+// schemaVersion} — the by-hash reference to the per-decision JSONL record the headline
+// was computed from. v5 (WS-428) added overallEv metrics.
+export const HERO_EV_SCHEMA_VERSION = 6;
 
 /**
  * The estimand, stated in words.
@@ -245,6 +248,10 @@ const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
       clusterUnit: 'players',
       admissibility: assessAdmissibility(run, arms),
       manifest,
+      // WS-431: the by-hash reference to the decision record (set by run-hero-ev.mjs
+      // BEFORE this builder runs). The card points at the record it was computed from;
+      // the inversion test rederives the headline from that record alone.
+      decisionRecord: run.decisionRecord ?? null,
     });
     return { resultCard, resultCardProblems: [] };
   } catch (err) {

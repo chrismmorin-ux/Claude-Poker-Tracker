@@ -330,7 +330,7 @@
     ]
   },
   "resultCard": {
-    "version": 2,
+    "version": 3,
     "fields": [
       {
         "name": "schemaVersion",
@@ -416,6 +416,11 @@
         "name": "comparisonCensus",
         "type": "object|null",
         "since": 2
+      },
+      {
+        "name": "decisionRecord",
+        "type": "object|null",
+        "since": 3
       }
     ]
   },
