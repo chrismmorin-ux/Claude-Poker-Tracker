@@ -1581,7 +1581,7 @@ items:
 
   - id: "WS-310"
     title: "Board convergence as an anchor — the terminal-hand-strength window, and what players do as it closes"
-    status: done
+    status: backlog
     priority_score: 29
     category: domain-correctness
     effort: M
