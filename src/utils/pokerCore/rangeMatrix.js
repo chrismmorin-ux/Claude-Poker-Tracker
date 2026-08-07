@@ -59,15 +59,114 @@ export const decodeIndex = (idx) => {
 const RANK_CHARS = '23456789TJQKA';
 const rankFromChar = (c) => RANK_CHARS.indexOf(c);
 
+/** Pocket-pair token ("AA") → rank index, or null when not a pair. */
+const parsePairToken = (t) => {
+  if (t.length !== 2 || t[0] !== t[1]) return null;
+  const r = rankFromChar(t[0]);
+  return r >= 0 ? r : null;
+};
+
+/** Non-pair token ("AKs"/"AKo") → normalized {high, low, suited}, or null. */
+const parseNonPairToken = (t) => {
+  if (t.length !== 3) return null;
+  const r1 = rankFromChar(t[0]);
+  const r2 = rankFromChar(t[1]);
+  const suit = t[2];
+  if (r1 < 0 || r2 < 0 || r1 === r2) return null;
+  if (suit !== 's' && suit !== 'o') return null;
+  return { high: Math.max(r1, r2), low: Math.min(r1, r2), suited: suit === 's' };
+};
+
+/**
+ * Expand an inclusive dash span: "22-JJ" (pairs) or "A5s-A2s" (kickers under a
+ * shared high card). Endpoints may be written in either order — both "A2s-AJs"
+ * and "A5s-A2s" occur in this codebase.
+ */
+const expandDashRange = (token) => {
+  const dashIdx = token.indexOf('-');
+  const a = token.slice(0, dashIdx).trim();
+  const b = token.slice(dashIdx + 1).trim();
+
+  const pairA = parsePairToken(a);
+  const pairB = parsePairToken(b);
+  if (pairA !== null && pairB !== null) {
+    const out = [];
+    for (let r = Math.min(pairA, pairB); r <= Math.max(pairA, pairB); r++) {
+      out.push(rangeIndex(r, r, false));
+    }
+    return out;
+  }
+
+  const handA = parseNonPairToken(a);
+  const handB = parseNonPairToken(b);
+  if (handA && handB && handA.high === handB.high && handA.suited === handB.suited) {
+    const out = [];
+    for (let k = Math.min(handA.low, handB.low); k <= Math.max(handA.low, handB.low); k++) {
+      out.push(rangeIndex(handA.high, k, handA.suited));
+    }
+    return out;
+  }
+
+  throw new Error(
+    `parseRangeString: unsupported dash range "${token}" — endpoints must be two pairs ` +
+    `(e.g. "22-JJ") or share a high card and suitedness (e.g. "A5s-A2s")`
+  );
+};
+
+/**
+ * Expand one token into the grid indices it covers.
+ * Throws on anything unrecognized — a silently-dropped token reads as an
+ * intentionally narrow range, which is how "A5s-A4s" went missing from every
+ * 3-bet range in the drill content without a single failing test.
+ */
+const expandToken = (token) => {
+  if (token.includes('-')) return expandDashRange(token);
+
+  if (token.includes('+')) {
+    const base = token.replace('+', '');
+    const pairRank = parsePairToken(base);
+    if (pairRank !== null) {
+      // "66+" means 66,77,...,AA
+      const out = [];
+      for (let r = pairRank; r <= 12; r++) out.push(rangeIndex(r, r, false));
+      return out;
+    }
+    const hand = parseNonPairToken(base);
+    if (hand) {
+      // "ATs+" means ATs,AJs,AQs,AKs (keep high card, raise kicker)
+      const out = [];
+      for (let k = hand.low; k < hand.high; k++) out.push(rangeIndex(hand.high, k, hand.suited));
+      return out;
+    }
+    throw new Error(`parseRangeString: unrecognized "+" token "${token}"`);
+  }
+
+  const pairRank = parsePairToken(token);
+  if (pairRank !== null) return [rangeIndex(pairRank, pairRank, false)];
+
+  const hand = parseNonPairToken(token);
+  if (hand) return [rangeIndex(hand.high, hand.low, hand.suited)];
+
+  throw new Error(
+    `parseRangeString: unrecognized token "${token}" — expected a pair ("AA"), a hand ` +
+    `("AKs"/"AKo"), a "+" span ("TT+"), or a dash span ("22-JJ")`
+  );
+};
+
 /**
  * Parse a range string like "AA,KK,QQ,AKs,AQs,AKo" into a range grid.
- * Supports optional per-token weight suffix: "AA:0.5,KK:0.75" (colon notation).
+ * Supports "+" spans ("TT+", "ATs+"), inclusive dash spans ("22-JJ", "A5s-A2s"),
+ * and an optional per-token weight suffix: "AA:0.5,KK:0.75" (colon notation).
  * Weight suffix applies to every cell the token expands to.
+ *
+ * Throws on any token it cannot express — see `expandToken`.
  */
 export const parseRangeString = (str) => {
+  if (typeof str !== 'string') {
+    throw new Error(`parseRangeString: expected a string, got ${typeof str}`);
+  }
   const range = createRange();
-  const parts = str.split(',');
-  for (const part of parts) {
+  for (const part of str.split(',')) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
@@ -76,35 +175,11 @@ export const parseRangeString = (str) => {
     const token = colonIdx >= 0 ? trimmed.slice(0, colonIdx).trim() : trimmed;
     const weight = colonIdx >= 0 ? Number(trimmed.slice(colonIdx + 1)) : 1.0;
     if (!token) continue;
+    // Invalid weights stay lenient (skip, don't throw) — pinned behavior.
+    // Strictness here is about the TOKEN, which is where silent drops hid bugs.
     if (!Number.isFinite(weight) || weight < 0) continue;
 
-    if (token.includes('+')) {
-      // Range notation: "TT+" or "ATs+"
-      const base = token.replace('+', '');
-      if (base.length === 2 && base[0] === base[1]) {
-        // Pair+: "66+" means 66,77,88,...,AA
-        const r = rankFromChar(base[0]);
-        if (r >= 0) for (let i = r; i <= 12; i++) range[rangeIndex(i, i, false)] = weight;
-      } else if (base.length === 3) {
-        // "ATs+" means ATs,AJs,AQs,AKs (keep high card, raise kicker)
-        const high = rankFromChar(base[0]);
-        const low = rankFromChar(base[1]);
-        const suited = base[2] === 's';
-        if (high >= 0 && low >= 0) {
-          for (let i = low; i < high; i++) range[rangeIndex(high, i, suited)] = weight;
-        }
-      }
-    } else if (token.length === 2) {
-      // Pair: "AA"
-      const r = rankFromChar(token[0]);
-      if (r >= 0) range[rangeIndex(r, r, false)] = weight;
-    } else if (token.length === 3) {
-      // Single hand: "AKs" or "AKo"
-      const r1 = rankFromChar(token[0]);
-      const r2 = rankFromChar(token[1]);
-      const suited = token[2] === 's';
-      if (r1 >= 0 && r2 >= 0) range[rangeIndex(r1, r2, suited)] = weight;
-    }
+    for (const idx of expandToken(token)) range[idx] = weight;
   }
   return range;
 };

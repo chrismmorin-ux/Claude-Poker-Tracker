@@ -25,19 +25,48 @@
  *  absorbs any future Monte Carlo fallback (±0.5% MC variance floor, WS-206). */
 export const PARITY_TOLERANCE = 0.005;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// RE-PINNED 2026-08-04 — `parseRangeString` dash-span fix (GUT Range P-1a).
+//
+// Which side changed: VILLAIN-RANGE RESOLUTION, not the equity engine. Tokens
+// containing a dash ("22-JJ", "A5s-A2s") matched no branch in
+// `pokerCore/rangeMatrix.parseRangeString` and were silently discarded, so every
+// villain range built from a string with a dash span resolved NARROWER than
+// authored. Restoring them widens villain by exactly the dropped hands.
+//
+// Every delta is positive, and that direction is the check: the dropped tokens
+// were the WEAK part of each range (small pairs, weak suited aces), so adding
+// them back dilutes villain and raises hero equity. A negative delta here would
+// have meant something other than this fix moved.
+//
+//   node                              old        new        Δ
+//   btn-vs-bb-srp-ip-dry-q72r      0.868782 → 0.880635   +0.012
+//   btn-vs-bb-3bp-ip-wet-t96       0.576512 → 0.617688   +0.041
+//   sb-vs-bb-srp-oop-paired-k77    0.827117 → 0.854821   +0.028
+//   sb-vs-btn-3bp-oop-wet-t98      0.720560 → 0.723906   +0.003  (was inside tolerance)
+//   utg-vs-btn-4bp-deep            0.488636 → 0.786932   +0.298
+//
+// Lines still teach correctly at the new numbers — the ranges now match what the
+// content authors wrote. The 4bp outlier is the proof: see its note below.
+// ─────────────────────────────────────────────────────────────────────────────
 export const LSW_RL_EQUITY_BASELINE = {
-  'btn-vs-bb-srp-ip-dry-q72r::flop_root': 0.868782,
-  'btn-vs-bb-3bp-ip-wet-t96::flop_root': 0.576512,
-  'sb-vs-bb-srp-oop-paired-k77::flop_root': 0.827117,
-  'sb-vs-btn-3bp-oop-wet-t98::flop_root': 0.72056,
+  'btn-vs-bb-srp-ip-dry-q72r::flop_root': 0.880635,
+  'btn-vs-bb-3bp-ip-wet-t96::flop_root': 0.617688,
+  'sb-vs-bb-srp-oop-paired-k77::flop_root': 0.854821,
+  'sb-vs-btn-3bp-oop-wet-t98::flop_root': 0.723906,
   // WS-209 (SPR-096, 2026-05-20): hero combo fixed A♥K♦ → A♥K♣ (was an
   // impossible board-colliding holding, previously in KNOWN_DEGENERATE_NODES).
   // Equity now computable: hero top-two-pair vs the resolved BTN 4bet-call
-  // range. Sub-0.5 because hero+board remove an ace and a king, concentrating
-  // villain into AKo (ties) + AA/KK sets (ahead) alongside the QQ/JJ hero
-  // beats. NOTE: the villain range itself has not had its LSW-A8 audit — this
-  // pin guards against engine/equity drift, not range-content correctness.
-  'utg-vs-btn-4bp-deep::flop_root': 0.488636,
+  // range.
+  //
+  // 2026-08-04: 0.488636 → 0.786932. This node is the clearest evidence the old
+  // pin was measuring a truncated range. Its range is CALL_RANGES['BTN_vs_UTG']
+  // = 'QQ-JJ,AKs,AKo'; the dropped "QQ-JJ" left villain holding ONLY AK, so hero
+  // chopped almost every runout — hence the anomalous sub-0.5. The WS-209 note
+  // above already reasoned about "the QQ/JJ hero beats," describing hands the
+  // parser had removed. Code now matches the authored intent, and top two pair
+  // vs {JJ, QQ, AK} at 0.787 is the number that note was describing.
+  'utg-vs-btn-4bp-deep::flop_root': 0.786932,
 };
 
 /**
