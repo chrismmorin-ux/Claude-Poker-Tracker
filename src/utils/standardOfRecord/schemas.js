@@ -42,6 +42,10 @@ export const SOR_SCHEMA_VERSIONS = Object.freeze({
   dealBookManifest: 1,
   fieldManifest: 1,
   faultEntry: 1,
+  // WS-431: the per-decision JSONL record (scripts/backtest/decisionRecord.mjs) is
+  // governed HERE — its writer re-derives DECISION_RECORD_SCHEMA_VERSION from this entry,
+  // so the sidecar can no longer version itself outside the additive contract.
+  decisionRecord: 2,
 });
 
 /**
@@ -400,6 +404,128 @@ const FAULT_ENTRY_FIELDS = [
     note: 'REQUIRED non-empty for confirmed and retired. Confirming without evidence lets a hunch invalidate every prior result; retiring without evidence lets an inconvenient entry be tidied away.' },
 ];
 
+/**
+ * A DECISION RECORD — one `kind: 'decision'` JSONL line per scored backtest decision
+ * (`scripts/backtest/decisionRecord.mjs`). The rich sibling of the Decision Atom: same
+ * decisions, full capture. Registered here (WS-431) because it shipped ungoverned — its
+ * docblock CLAIMED the additive contract while nothing enforced it, the exact WS-291
+ * two-shapes mechanism recurring inside the subsystem built to close it.
+ *
+ * v1 = the shape `af8b9815` shipped. `stable` was added by WS-433 without a version bump
+ * (unnoticed — there was no schema to notice); v2 declares it, plus close-time summary and
+ * estimator meta. Every field states the future question it answers (the v2 convention
+ * above): the record's whole purpose is questions nobody asked when the run was designed.
+ */
+const DECISION_RECORD_FIELDS = [
+  { name: 'schemaVersion', type: 'number', since: 1, required: true, note: 'Per-object version, from SOR_SCHEMA_VERSIONS.decisionRecord. Refuse, never duck-type.' },
+  { name: 'playerId', type: 'string', since: 1, required: true,
+    note: 'Cluster identity — the CI bootstrap resamples PLAYERS, and rederiving the headline from this file requires clustering on exactly this key.' },
+  { name: 'handId', type: 'string|number', since: 1, required: true,
+    note: 'With `order`, the WS-410 Stage 5 join key — retroactive pairing of this decision against any atom set on the same Deal Book, without a re-run.' },
+  { name: 'order', type: 'number', since: 1, required: true,
+    note: 'Action index within the hand. The other half of the cross-run join key.' },
+  { name: 'stable', type: 'object|null', since: 2, required: false,
+    note: '{p, k, d} canonical coordinates (WS-433). The canonicalization key that makes completion-order rows one measurement, and the sort key the content hash is computed under.' },
+  { name: 'observedAction', type: 'string', since: 1, required: true,
+    note: 'What the player actually did — the estimator\'s conditioning event. Without it no importance weight exists.' },
+  { name: 'observedAmount', type: 'number|null', since: 1, required: false,
+    note: 'Sizing of the observed action. Answers sizing-conditioned re-analysis the action label alone cannot.' },
+  { name: 'netBB', type: 'number', since: 1, required: true,
+    note: 'The whole hand\'s realized net in bb — R_d, stored raw, never pre-multiplied by any weight.' },
+  { name: 'netBBUnraked', type: 'number|null', since: 1, required: false,
+    note: 'Same outcome before modelled rake — rake-sensitivity re-analysis (WS-429\'s question) without a re-run.' },
+  { name: 'street', type: 'string', since: 1, required: true,
+    note: 'Per-street decomposition of any aggregate — the axis WS-291\'s river/pre-river split needed.' },
+  { name: 'heroSeat', type: 'number|null', since: 1, required: false,
+    note: 'Positional decomposition — which seats pay. A label-free coordinate, not a bucket.' },
+  { name: 'buttonSeat', type: 'number|null', since: 1, required: false,
+    note: 'With heroSeat, derives relative position from raw state instead of storing a position label.' },
+  { name: 'opponentSeat', type: 'number|null', since: 1, required: false,
+    note: 'Villain identity axis. Present since WS-393 — WS-410 §4.3\'s claim that it is discarded is corrected by this line.' },
+  { name: 'board', type: 'array|null', since: 1, required: false,
+    note: 'Raw board cards — texture re-bucketing under any FUTURE texture model, not the one current at write time.' },
+  { name: 'boardLabels', type: 'array|null', since: 1, required: false,
+    note: 'Human handles for the same cards; a browsing affordance, derivable but cheap.' },
+  { name: 'situationKey', type: 'string|null', since: 1, required: false,
+    note: 'WS-317 structured key, serialized — the join to declared surfaces and the atom store\'s keying axis.' },
+  { name: 'contextAction', type: 'string|null', since: 1, required: false,
+    note: 'The facing-action context label the policy conditioned on — checkable against slices.facingAction.' },
+  { name: 'isAgg', type: 'boolean|null', since: 1, required: false,
+    note: 'Aggressor flag at the node — initiative-conditioned decomposition.' },
+  { name: 'isIP', type: 'boolean|null', since: 1, required: false,
+    note: 'Position-in-hand flag — IP/OOP decomposition without re-deriving from seats.' },
+  { name: 'rangeEquityPct', type: 'number|null', since: 1, required: false,
+    note: 'Range-vs-range equity at the node — the cheap conditioning axis for "where does the edge live".' },
+  { name: 'segmentation', type: 'object|null', since: 1, required: false,
+    note: 'segmentRange output at the node — which strength segments the range held, for composition-conditioned queries (fear-drives-medium doctrine).' },
+  { name: 'geometry', type: 'object|null', since: 1, required: false,
+    note: 'Raw pot/bet/stack coordinates (WS-393) — SPR decomposition from state, never from a zone label.' },
+  { name: 'piOurs', type: 'object', since: 1, required: true,
+    note: 'Our policy\'s action distribution at the node — THE estimator input, kept separate from piPool and never pre-multiplied.' },
+  { name: 'evStats', type: 'object|null', since: 1, required: false,
+    note: 'Primary-arm EV statistics incl. achieved depth — how much of the run the clock decided (WS-432\'s question).' },
+  { name: 'piOursByArm', type: 'object', since: 1, required: true,
+    note: 'Per-arm distributions — the between-arms contrast is the point of a multi-arm run and cannot be reconstructed from the primary alone.' },
+  { name: 'piPool', type: 'object', since: 1, required: true,
+    note: 'The behavior policy\'s distribution — the estimator\'s denominator, raw.' },
+  { name: 'poolEvidenceN', type: 'number|null', since: 1, required: false,
+    note: 'Observations behind piPool — answers "how much of this weight is prior vs evidence".' },
+  { name: 'piPbr', type: 'object|null', since: 1, required: false,
+    note: 'Pool-best-response distribution (WS-331) — the ceiling contrast at this node. Null carries pbrSkipReason.' },
+  { name: 'piPbrBySweep', type: 'object|array|null', since: 1, required: false,
+    note: 'PBR across the shrink sweep — ceiling re-derivation at any sweep point without a re-run.' },
+  { name: 'slices', type: 'object', since: 1, required: true,
+    note: 'The declared slice axes (street/facing/texture/position/size/playersInPot/showdown) — the standard decomposition menu.' },
+  { name: 'pPoolObserved', type: 'number|null', since: 1, required: false,
+    note: 'piPool evaluated at the observed action — the weight\'s denominator, stored so the weight is checkable.' },
+  { name: 'pOursObservedByArm', type: 'object', since: 1, required: false,
+    note: 'piOurs at the observed action, per arm — the weight\'s numerator, same reason.' },
+  { name: 'wRawByArm', type: 'object', since: 1, required: false,
+    note: 'UNCAPPED importance ratio per arm. The cap is an ESTIMATOR property applied at read time (ipsEstimator.weightFor) — answers "where does the cap bind" which a capped value forecloses.' },
+  { name: 'heroTruth', type: 'object', since: 1, required: false,
+    note: 'Showdown-revealed holding with truthAvailable/reason discriminator and range-coverage reading. DIAGNOSTIC ONLY — conditioning on it is the selection heroPolicy exists to avoid.' },
+  { name: 'evStatsByArm', type: 'object', since: 1, required: false,
+    note: 'evStats per arm — depth/budget forensics for the arm contrast.' },
+  { name: 'combosByArm', type: 'object', since: 1, required: false,
+    note: 'Per-combo detail incl. the ranked candidate list with EVs — "which combos leak", the 103-minute-run question, and the near-ties a future change would flip.' },
+  { name: 'policyDiagByArm', type: 'object', since: 1, required: false,
+    note: 'samples/engineErrors/outOfSet per arm — was this row produced cleanly, queryable per decision.' },
+  { name: 'pbrSkipReason', type: 'string|null', since: 1, required: false,
+    note: 'WHY piPbr is null — the null discriminator (truth.basis pattern): "not computed" vs "refused, and for what reason".' },
+  { name: 'omitted', type: 'object|null', since: 2, required: false,
+    note: 'fieldName → reason for every DELIBERATE omission, so absent-vs-empty is decidable forever. Shipped before any producer relies on ambiguous null (WS-431 discriminator rule).' },
+];
+
+/**
+ * The record file's `kind: 'meta'` first line — run identity + everything required to
+ * rederive the headline from the rows alone (v2: the estimator block).
+ */
+const DECISION_RECORD_META_FIELDS = [
+  { name: 'kind', type: 'string', since: 1, required: true, note: '"meta" — the self-describing discriminator; readers filter on it.' },
+  { name: 'schemaVersion', type: 'number', since: 1, required: true, note: 'Same contract as the rows.' },
+  { name: 'writtenAt', type: 'string', since: 1, required: true, note: 'Wall-clock provenance. EXCLUDED from the content hash — identity lives in the fields below.' },
+  { name: 'run', type: 'string', since: 1, required: false, note: 'Which runner wrote this (hero-ev / depth-ablation) — files outlive the invocation that made them.' },
+  { name: 'dealBookId', type: 'string|null', since: 1, required: false, note: 'The Deal Book identity half of "same measurement".' },
+  { name: 'dealBookHash', type: 'string|null', since: 1, required: false, note: 'The content half — a record is comparable only within one Deal Book hash.' },
+  { name: 'engineCommit', type: 'string|null', since: 1, required: false, note: 'Engine version the rows were produced under.' },
+  { name: 'engineDirty', type: 'boolean|null', since: 1, required: false, note: 'Dirty-tree honesty flag, surfaced not hidden.' },
+  { name: 'arms', type: 'array', since: 1, required: false, note: 'The arm roster with budgets — what piOursByArm\'s keys mean.' },
+  { name: 'constants', type: 'object', since: 1, required: false, note: 'The replication-stamp constants active at write time.' },
+  { name: 'estimator', type: 'object', since: 2, required: false,
+    note: 'weightCap / bootstrapSeed / bootstrapResamples / bootstrapAlpha, IMPORTED from ipsEstimator — without these the headline and its CI are not rederivable from this file (the WS-431 inversion criterion).' },
+  { name: 'caveat', type: 'string', since: 1, required: true, note: 'States that a truncated file is a biased subsample of PLAYERS — the file warns its own reader.' },
+];
+
+/** The `kind: 'summary'` last line `close()` appends (v2). */
+const DECISION_RECORD_SUMMARY_FIELDS = [
+  { name: 'kind', type: 'string', since: 2, required: true, note: '"summary".' },
+  { name: 'schemaVersion', type: 'number', since: 2, required: true, note: 'Same contract as the rows.' },
+  { name: 'rowCount', type: 'number', since: 2, required: true, note: 'Decision-line count from a re-read of the file itself, not the writer\'s counter — ground truth over bookkeeping.' },
+  { name: 'contentHash', type: 'string|null', since: 2, required: true,
+    note: 'sha256 over rows canonicalized by stable(p,k,d) — the BY-HASH reference a Result Card carries (never the path; atomStore doctrine), run-invariant across serial/pool and fresh/resumed runs.' },
+  { name: 'canonicalOrder', type: 'string', since: 2, required: true, note: 'Names the sort the hash was computed under, so a reader canonicalizes the same way.' },
+];
+
 /** Every registered object type, by name. */
 export const SOR_SCHEMAS = Object.freeze({
   strategyCard: Object.freeze(STRATEGY_CARD_FIELDS),
@@ -410,7 +536,12 @@ export const SOR_SCHEMAS = Object.freeze({
   fieldManifest: Object.freeze(FIELD_MANIFEST_FIELDS),
   resultCard: Object.freeze(RESULT_CARD_FIELDS),
   faultEntry: Object.freeze(FAULT_ENTRY_FIELDS),
+  decisionRecord: Object.freeze(DECISION_RECORD_FIELDS),
 });
+
+/** The record file's meta/summary lines, registered like MANIFEST_SCHEMA — same guard. */
+export const DECISION_RECORD_META_SCHEMA = Object.freeze(DECISION_RECORD_META_FIELDS);
+export const DECISION_RECORD_SUMMARY_SCHEMA = Object.freeze(DECISION_RECORD_SUMMARY_FIELDS);
 
 /** The nested manifest shape, registered separately so it is guarded by the same test. */
 export const MANIFEST_SCHEMA = Object.freeze(MANIFEST_FIELDS);

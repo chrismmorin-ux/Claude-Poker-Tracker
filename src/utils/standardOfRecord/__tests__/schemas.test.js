@@ -17,7 +17,10 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { SOR_SCHEMAS, MANIFEST_SCHEMA, SOR_SCHEMA_VERSIONS, checkAgainstSchema } from '../schemas.js';
+import {
+  SOR_SCHEMAS, MANIFEST_SCHEMA, SOR_SCHEMA_VERSIONS, checkAgainstSchema,
+  DECISION_RECORD_META_SCHEMA, DECISION_RECORD_SUMMARY_SCHEMA,
+} from '../schemas.js';
 
 /**
  * BASELINE — every field shipped so far, as `objectType.fieldName: type`.
@@ -74,6 +77,39 @@ const SHIPPED_FIELDS = {
     probability: 'number', probabilityBasis: 'string', priorBreadth: 'number',
     status: 'string', evidence: 'array',
   },
+  // WS-431 — the per-decision JSONL record (scripts/backtest/decisionRecord.mjs), governed.
+  decisionRecord: {
+    schemaVersion: 'number', playerId: 'string', handId: 'string|number', order: 'number',
+    observedAction: 'string', observedAmount: 'number|null',
+    netBB: 'number', netBBUnraked: 'number|null', street: 'string',
+    heroSeat: 'number|null', buttonSeat: 'number|null', opponentSeat: 'number|null',
+    board: 'array|null', boardLabels: 'array|null',
+    situationKey: 'string|null', contextAction: 'string|null',
+    isAgg: 'boolean|null', isIP: 'boolean|null', rangeEquityPct: 'number|null',
+    segmentation: 'object|null', geometry: 'object|null',
+    piOurs: 'object', evStats: 'object|null', piOursByArm: 'object',
+    piPool: 'object', poolEvidenceN: 'number|null',
+    piPbr: 'object|null', piPbrBySweep: 'object|array|null', slices: 'object',
+    pPoolObserved: 'number|null', pOursObservedByArm: 'object', wRawByArm: 'object',
+    heroTruth: 'object', evStatsByArm: 'object', combosByArm: 'object',
+    policyDiagByArm: 'object', pbrSkipReason: 'string|null',
+    // v2 (WS-431)
+    stable: 'object|null', omitted: 'object|null',
+  },
+};
+
+const DECISION_RECORD_META_SHIPPED_FIELDS = {
+  kind: 'string', schemaVersion: 'number', writtenAt: 'string', run: 'string',
+  dealBookId: 'string|null', dealBookHash: 'string|null',
+  engineCommit: 'string|null', engineDirty: 'boolean|null',
+  arms: 'array', constants: 'object', caveat: 'string',
+  // v2 (WS-431)
+  estimator: 'object',
+};
+
+const DECISION_RECORD_SUMMARY_SHIPPED_FIELDS = {
+  kind: 'string', schemaVersion: 'number', rowCount: 'number',
+  contentHash: 'string|null', canonicalOrder: 'string',
 };
 
 const MANIFEST_SHIPPED_FIELDS = {
@@ -137,6 +173,30 @@ describe('additive-only schema guard', () => {
       for (const [name, type] of Object.entries(MANIFEST_SHIPPED_FIELDS)) {
         expect(present[name], `manifest.${name} was removed`).toBeDefined();
         expect(present[name].type, `manifest.${name} changed type`).toBe(type);
+      }
+    });
+  });
+
+  describe('decision-record meta + summary lines (WS-431)', () => {
+    it('has never dropped or retyped a shipped meta field', () => {
+      const present = byName(DECISION_RECORD_META_SCHEMA);
+      for (const [name, type] of Object.entries(DECISION_RECORD_META_SHIPPED_FIELDS)) {
+        expect(present[name], `decisionRecord meta.${name} was removed`).toBeDefined();
+        expect(present[name].type, `decisionRecord meta.${name} changed type`).toBe(type);
+      }
+    });
+
+    it('has never dropped or retyped a shipped summary field', () => {
+      const present = byName(DECISION_RECORD_SUMMARY_SCHEMA);
+      for (const [name, type] of Object.entries(DECISION_RECORD_SUMMARY_SHIPPED_FIELDS)) {
+        expect(present[name], `decisionRecord summary.${name} was removed`).toBeDefined();
+        expect(present[name].type, `decisionRecord summary.${name} changed type`).toBe(type);
+      }
+    });
+
+    it('explains every meta/summary field', () => {
+      for (const field of [...DECISION_RECORD_META_SCHEMA, ...DECISION_RECORD_SUMMARY_SCHEMA]) {
+        expect(field.note, `${field.name} has no note`).toBeTruthy();
       }
     });
   });

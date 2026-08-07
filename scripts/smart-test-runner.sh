@@ -19,6 +19,15 @@ if ! bash "$SCRIPT_DIR/check-idb-additive.sh"; then
   echo "   Tests skipped — fix the violation above and re-run."
   exit 1
 fi
+# FIND-086 / WS-431: the SoR additive gate existed since WS-329 but was wired NOWHERE —
+# registering a schema bought nothing. It gates here beside its IDB sibling, and in CI.
+if ! bash "$SCRIPT_DIR/check-sor-additive.sh"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-sor-additive.sh"
+  echo "   Tests skipped — fix the violation above and re-run."
+  echo "   (Legitimate additive change? node scripts/standardOfRecord/check-additive.mjs --update)"
+  exit 1
+fi
 
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then

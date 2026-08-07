@@ -16,6 +16,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      # FIND-086 / WS-431: CI runs `npm test` directly (not smart-test-runner), so the
+      # SoR additive gate needs its own step here — it is not redundant with the local one.
+      - name: SoR additive-schema gate
+        run: bash scripts/check-sor-additive.sh
       - run: npm test
       - name: Model Coherence scan (advisory — Phase 1)
         run: node scripts/coherence-scan.cjs

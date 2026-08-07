@@ -48,18 +48,26 @@ import { dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { RANKS, SUITS } from '../../src/constants/gameConstants.js';
 import { cardRank, cardSuit } from '../../src/utils/pokerCore/cardParser.js';
+import { SOR_SCHEMA_VERSIONS } from '../../src/utils/standardOfRecord/schemas.js';
 
 /**
  * Bumped when a field is ADDED. Never when one is removed — fields are not removed. A
- * reader of a v1 file must keep working against a v3 writer, the same additive contract
- * `scripts/standardOfRecord/check-additive.mjs` holds over the Result Card schemas.
+ * reader of a v1 file must keep working against a v3 writer.
+ *
+ * GOVERNED, not self-declared (WS-431): the version is SOR_SCHEMA_VERSIONS.decisionRecord
+ * and the field list is SOR_SCHEMAS.decisionRecord (src/utils/standardOfRecord/schemas.js),
+ * so the additive contract is genuinely enforced — by `schemas.test.js`'s shipped-fields
+ * baseline under `npm test`, and by `scripts/standardOfRecord/check-additive.mjs` against
+ * `schema-baseline.json` via `scripts/check-sor-additive.sh` (wired into
+ * smart-test-runner.sh and CI). An earlier docblock here claimed that coverage while
+ * nothing enforced it; this line replaced the claim with the mechanism.
  *
  * v2 (WS-431): the meta line carries the estimator constants without which the headline
  * is not rederivable from this file alone (`estimator.weightCap` / `bootstrapSeed` /
  * `bootstrapResamples` / `bootstrapAlpha`), and `close()` appends a `kind: 'summary'`
  * line carrying `rowCount` + `contentHash` over the canonicalized decision rows.
  */
-export const DECISION_RECORD_SCHEMA_VERSION = 2;
+export const DECISION_RECORD_SCHEMA_VERSION = SOR_SCHEMA_VERSIONS.decisionRecord;
 
 /**
  * The canonical row order — `stable(p, k, d)`, the same comparator `heroEvRunner.foldAll`

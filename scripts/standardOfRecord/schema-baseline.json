@@ -484,6 +484,206 @@
       }
     ]
   },
+  "decisionRecord": {
+    "version": 2,
+    "fields": [
+      {
+        "name": "schemaVersion",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "playerId",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "handId",
+        "type": "string|number",
+        "since": 1
+      },
+      {
+        "name": "order",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "stable",
+        "type": "object|null",
+        "since": 2
+      },
+      {
+        "name": "observedAction",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "observedAmount",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "netBB",
+        "type": "number",
+        "since": 1
+      },
+      {
+        "name": "netBBUnraked",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "street",
+        "type": "string",
+        "since": 1
+      },
+      {
+        "name": "heroSeat",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "buttonSeat",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "opponentSeat",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "board",
+        "type": "array|null",
+        "since": 1
+      },
+      {
+        "name": "boardLabels",
+        "type": "array|null",
+        "since": 1
+      },
+      {
+        "name": "situationKey",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "contextAction",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "isAgg",
+        "type": "boolean|null",
+        "since": 1
+      },
+      {
+        "name": "isIP",
+        "type": "boolean|null",
+        "since": 1
+      },
+      {
+        "name": "rangeEquityPct",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "segmentation",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "geometry",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "piOurs",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "evStats",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "piOursByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "piPool",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "poolEvidenceN",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "piPbr",
+        "type": "object|null",
+        "since": 1
+      },
+      {
+        "name": "piPbrBySweep",
+        "type": "object|array|null",
+        "since": 1
+      },
+      {
+        "name": "slices",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "pPoolObserved",
+        "type": "number|null",
+        "since": 1
+      },
+      {
+        "name": "pOursObservedByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "wRawByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "heroTruth",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "evStatsByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "combosByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "policyDiagByArm",
+        "type": "object",
+        "since": 1
+      },
+      {
+        "name": "pbrSkipReason",
+        "type": "string|null",
+        "since": 1
+      },
+      {
+        "name": "omitted",
+        "type": "object|null",
+        "since": 2
+      }
+    ]
+  },
   "__manifest": {
     "version": null,
     "fields": [
