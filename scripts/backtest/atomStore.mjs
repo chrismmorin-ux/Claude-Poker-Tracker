@@ -8,9 +8,15 @@
  *   IN the repo, human-readable   Result Cards and Censuses. Small, greppable, diffable.
  *                                 THEY ARE THE ANCHOR. A card whose atoms are gone is still a
  *                                 valid anchor — it can still be read, quoted and compared.
- *   OUTSIDE git, content-addressed  Atoms. ~1-2 KB each, ~4 decisions per hand, so 100k hands
- *                                 is roughly half a gigabyte raw. THEY ARE WHAT LETS YOU ASK
- *                                 A NEW QUESTION OF AN OLD RUN.
+ *   OUTSIDE git, content-addressed  Atoms. MEASURED (WS-430, on the WS-328 gen-1 set):
+ *                                 844.4 B/atom raw, 17.5 B/atom gzipped (48x), 4.6853
+ *                                 decisions per hand — so 100k hands is ~0.4 GB raw. (An
+ *                                 earlier "~1-2 KB each" here was a shape argument, not a
+ *                                 measurement.) THEY ARE WHAT LETS YOU ASK A NEW QUESTION
+ *                                 OF AN OLD RUN. Store location, relocation via the
+ *                                 SOR_ATOM_STORE env var, and the measured beliefState
+ *                                 budget per encoding: docs/standard-of-record/VOCABULARY.md
+ *                                 § "Atom store operations" (WS-430).
  *
  * The card references the atoms BY HASH, never by path. Founder decision on WS-328's decision
  * flag: local-first, hash recorded, so relocating or syncing the store later cannot invalidate
