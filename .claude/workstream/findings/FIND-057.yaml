@@ -1,0 +1,24 @@
+id: "FIND-057"
+engine: "preflight"
+run_id: "run-003"
+severity: LOW
+status: open
+category: "data-provenance"
+program: "data-provenance"
+problem_class: "Source Registration"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-003"
+  date: "2026-08-07"
+title: "Voice Reasoning Notes are a new founder-evidence class with no registry mention — flag before grading work consumes them unregistered"
+description: |
+  src/utils/persistence/reasoningNoteWriter.js (commits 4ff6a5ec/2af94c5a) persists founder spoken reasoning as an additive reasoningNotes array on hands records, designed to be read by graders. Rides on SRC-001/SRC-014 stores so partially covered, but trust character differs: founder introspection, revisable via corrections — T4-ish, not T3 recording. Registry rule (register on demand if they later feed a displayed model value) applies; flagging now per that rule. Related low-severity note from same run: two new hardcoded C:/Users/chris paths entered committed code (atomStore.mjs:56 env-fallback, mine-runout-response.py:70 docstring) — pattern now in ~20 files, will bite on CM-NODE1.
+affected_files:
+  - "src/utils/persistence/reasoningNoteWriter.js"
+  - "docs/provenance/data-source-registry.md"
+recommended_fix: |
+  Add a registry note (or SRC entry) for reasoningNotes stating trust tier and revisability before any grader consumes them for a displayed value.
+dedup_key: "preflight-data-provenance-vrn-unregistered"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

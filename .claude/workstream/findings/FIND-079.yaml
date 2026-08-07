@@ -1,0 +1,24 @@
+id: "FIND-079"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Sample Size and Statistical Validity"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "getBaseChart silently returns an all-zero grid for an unrecognized position - WS-302 unfalsifiable-prior family via an unvalidated argument"
+description: |
+  populationPriors.js:627-631: if (!keys) return createRange() - every cell zero (rangeMatrix.js:19). Facilitator confirmed the silent zero. The onward claim (withEquitySupport :410-414 passes zero-width through as the STRUCTURAL signal; bayesianUpdater.js:182 min(1,prior*ratio) means a zero cell can never move on any evidence) is UNCONFIRMED pending the named falsifier: seed a zero cell, apply strong evidence, assert it moves (or does not). Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+recommended_fix: |
+  Throw or return a flagged null on unrecognized position; add a test pinning unrecognized-position-never-silently-zeroes; run the zero-cell falsifier and record the verdict.
+dedup_key: "methodology-getbasechart-silent-zero-grid-unfalsifiable-prior"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

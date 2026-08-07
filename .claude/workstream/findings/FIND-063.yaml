@@ -1,0 +1,25 @@
+id: "FIND-063"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Audit findings open past SLA"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "19 audits at Status: Draft for 97-108 days past a 60-day SLA; the program record disagrees with the artifact; the critical tier trigger crosses ~2026-08-18 unwatched"
+description: |
+  prog-design.yaml:204 records baseline '11 findings closed'; docs/design/audits/2026-04-21-player-selection.md:6 still reads Draft - pending owner review; 18 further Drafts aged 97-108 days; responsive-layout audit Phases 2-3 open 49 days, crossing the program's own critical tier trigger (:121, findings open >60d) around 2026-08-18 with nothing watching; no structured open/closed field exists, so the SLA cannot be scanned even in principle.
+affected_files:
+  - "docs/design/audits/2026-04-21-player-selection.md"
+  - "docs/design/METHODOLOGY.md"
+  - ".claude/workstream/programs/prog-design.yaml"
+recommended_fix: |
+  Add YAML frontmatter (status + findings[{id,state,opened,closed}]) to the audit template and backfill the 19 Drafts in one triage pass; reconcile the baseline record against the artifact; resolve or explicitly defer the responsive-layout Phases 2-3 before 2026-08-18 so the tier flip is a decision, not an accident.
+dedup_key: "eng-engine-design-sweep-audit-findings-sla-structurally-unscannable"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

@@ -21,9 +21,7 @@ command_usage:
   # Quick fix and standard mode aren't commands but track session types
   quick_fix_sessions: 0
   standard_sessions: 0
-  strategic_sessions: 4
-
-# Engine run tracking — which engines are actually used
+  strategic_sessions: 5   # ses-20260807-0535 overnight run
 engine_runs:
   # engine_name: { runs: N, last_run: date, findings_generated: N, items_created: N }
   # Example:
@@ -32,14 +30,14 @@ engine_runs:
 # Value ledger — concrete evidence of CWOS impact
 # Each entry is a timestamped record of value delivered
 value_ledger:
-  total_findings_caught: 15          # +15 this session (FIND-040..054)
-  total_items_completed: 2
+  total_findings_caught: 72   # +57 2026-08-07 (FIND-055..111, overnight protocol runs)
+  total_items_completed: 7   # +5 2026-08-07 (WS-428/429/430/437/438)
   total_items_created: 45       # +40 this session (WS-386..425)
   regressions_prevented: 0       # Findings that matched failure library patterns
   invariant_violations_caught: 1  # Times invariant checks caught issues
   drift_corrections: 9           # State drift detected and fixed — +5: 12 orphan finding refs, 3 prior-run findings recovered, problem_class vocabulary split, 2 undeclared engine substitutions, 1 orphan session lock
-  decisions_recorded: 15          # Decisions logged (institutional memory) — +5 (DEC-041..045, WS-424 failed session)
-  sessions_with_handoff: 4       # Sessions that wrote handoff notes (continuity)
+  decisions_recorded: 41   # +26 2026-08-07 (6 overnight captures + 20 recovered DEC-048..067)
+  sessions_with_handoff: 5   # +1 ses-20260807-0535 (evidence/overnight-handoff-2026-08-07.md)
   # Calculated at read time:
   # value_density = total_findings_caught / max(engine_runs_total, 1)
   # session_continuity = sessions_with_handoff / max(total_sessions, 1)

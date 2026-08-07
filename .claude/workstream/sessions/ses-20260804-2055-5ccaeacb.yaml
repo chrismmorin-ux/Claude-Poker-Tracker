@@ -1,0 +1,189 @@
+id: "ses-20260804-2055-5ccaeacb"
+status: "abandoned"
+started_at: "2026-08-04T20:55:19.675Z"
+ended_at: "2026-08-05T03:48:02Z"
+mode: auto
+last_heartbeat: "2026-08-04T23:38:54.950Z"
+pid: 15224
+host: MorinComputer
+agent_session_id: "5ccaeacb-52a5-48f0-928d-14bcd493ce58"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-334"
+
+files_locked:
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/__tests__/__ws334bench.test.js"
+  - "src/utils/exploitEngine/__tests__/__ws334accuracy.test.js"
+  - "src/utils/exploitEngine/gameTreeSampling.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/__ws334diag.test.js"
+  - "scripts/backtest/dumpGameTreeEV.mjs"
+  - ".claude/workstream/queue/WS-361.yaml"
+  - "src/utils/exploitEngine/CLAUDE.md"
+  - "src/utils/exploitEngine/__tests__/helpers/groundTruth.js"
+  - "src/utils/exploitEngine/__tests__/groundTruth.test.js"
+  - "src/utils/exploitEngine/__tests__/groundTruthCoverage.test.js"
+  - ".claude/workstream/queue/WS-386.yaml"
+  - ".claude/workstream/sessions/ses-20260804-2055-5ccaeacb.yaml"
+  - "src/utils/exploitEngine/__tests__/groundTruthEstimators.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-05.
+  Original start: 2026-08-04T20:55:19.675Z.
+  Last heartbeat: 2026-08-04T23:38:54.950Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.
+
+  =========================================================================
+  /session-end run 2026-08-05. The `abandoned` status above is the heartbeat
+  lapsing, NOT work lost — the session continued past it and SPR-175 /
+  WS-334 were closed (by a later session) before this ran. Status left as
+  recorded rather than rewritten; the work is described below.
+  =========================================================================
+
+  SPRINT: SPR-175 (WS-334) — status `done`, closed by ses-20260805-1521-fc271296.
+  No claims or locks outstanding at close. `.current-session` belongs to that
+  later session and was deliberately NOT touched.
+
+  DELIVERED (this session's share):
+    - Two-phase `evaluateGameTree` with TWO clocks. Depth-2/3 had never executed
+      on a live evaluation: the single 150ms budget started before the ~390ms
+      `buildEvaluationContext`, so every gate failed, always. Context is mandatory
+      work and is no longer budgeted; `refinementBudgetMs` (2000) budgets
+      refinement alone and starts when refinement starts. `onFastResult` +
+      macrotask yield delivers the depth-1 answer at table speed.
+    - `lowConfidence` removed as a gate — a SECOND independent blocker, true for
+      nearly every opponent in a live 9-handed game. Reported via `modelQuality`.
+    - Stage ledger: `partial` outcome, `weightConsumed`, `phase`. Per-stage budget
+      CAPPED (`MAX_STAGE_SHARE`) after measuring first-come-first-served taking
+      82% of the budget and starving the barrel-planning stage.
+    - `computeComboEquityDistribution` on shared weighted deterministic runouts,
+      unified with the perceived-range map. Turn 500ms -> 203ms, still exact.
+      Flop ~parity with per-combo error 30-47% LOWER (R=24x4, chosen by sweep
+      against full enumeration). Flop equity is now DETERMINISTIC.
+    - `stratifiedSample` bug fixed: fewer samples than non-empty categories
+      silently REDISTRIBUTED the dropped category's probability mass. +0.19
+      equity overstatement on J-T-9ss; shipping in the perceived map since WS-307.
+    - Ground-truth instrument: `__tests__/helpers/groundTruth.js` (exact
+      enumeration + `scoreAgainstTruth` reporting per-item AND aggregate error
+      separately), `groundTruth.test.js` (verifies itself against an independent
+      enumeration before it is trusted), `groundTruthCoverage.test.js` (census
+      including the zeros, exact-match ratchet). Tolerances set by REINTRODUCING
+      the defect and confirming detection, not guessed from the healthy state.
+    - DEC-036 recorded with two falsifiable AS-N assumptions (validator exit 0).
+
+  CORRECTIONS MADE DURING THE SESSION — the pattern is the finding:
+    1. Plan predicted shared runouts would improve the AGGREGATE via error
+       cancellation. Wrong sign: sharing CORRELATES errors, which hurts a mean.
+    2. Reported "depth-2 systematically inflates checking +22%" as BLOCKING from
+       n=1. The 8-scenario dump showed check -11.7%.
+    3. Predicted a 5.8x speedup; landed at parity, because R had to rise to keep
+       the estimate honest.
+    4. The 8-scenario dump ITSELF had zero river scenarios, and the effect lives
+       on the river (WS-361 corpus: 80% of river decisions flip vs 0.7% flop).
+       So correction #2 was also incomplete. Filed as WS-386.
+    Every one was a correct MECHANISM followed by an unmeasured MAGNITUDE. All
+    were caught by instruments; only #2 reached the founder before verification.
+
+  FILED: WS-361 (depth-2 EV outputs unvalidated — since widened to `riverPerCombo`
+  by the corpus ablation), WS-386 (scenario set has no river spots).
+
+  KNOWN OPEN, deliberately not done:
+    - `onFastResult` has NO production caller. Wiring it changes the primary
+      decision surface and needs design Gates 1 + 4 first. An inertness guard test
+      asserts the two phases genuinely diverge, so it is not the WS-276 failure.
+    - WS-334 Phase C (sidebar zones 1/2/4). Open question: does the refined answer
+      replace the Z2 pill, or land in Z4 with a Z1 signal? Z2's existing
+      `stale-advice` vocabulary and R-1.2 glance stability point at the latter.
+    - S22 latency measurement (`ssh s22`, Termux) — never run on the target device.
+    - CLAUDE.md names the wrong device (A22 1600x720; actual S22 2340x1080), so the
+      responsive scale factor clamps to 1.0. Unfiled — UX-gated surface.
+    - 4 of 6 estimators remain unpinned to ground truth; the census names them
+      every run.
+
+  NEXT RECOMMENDED ACTION: WS-361 with the corpus ablation's river finding — the
+  `riverPerCombo` stage re-prices check and bet with DIFFERENT functions, and any
+  asymmetry between them lands directly on the recommendation. That is where the
+  80% flip rate is, and it is a live-advice correctness question.
+
+
+  =========================================================================
+  SECOND /session-end pass 2026-08-05 — verification completed properly.
+  =========================================================================
+
+  The first pass reported "cannot get a clean full-engine count, another session is
+  mid-edit" and verified only my own files in isolation. That was the accommodation the
+  improvement-default rule exists to stop: shrinking verification to fit a contended
+  working tree instead of building an instrument that fits the work.
+
+  BUILT THE INSTRUMENT: a detached git worktree at HEAD, with only my changes layered on.
+  Attribution is now exact rather than asserted.
+
+    | configuration                       | result                                    |
+    |-------------------------------------|-------------------------------------------|
+    | HEAD alone                          | 77/77 files pass                          |
+    | HEAD + my tests, WITHOUT my fix     | 77 pass, 1 fail — my ordering test, both  |
+    |                                     | boards. The test detects the real defect. |
+    | HEAD + my tests + my fix            | 78/78 files pass                          |
+
+  So: my work causes no regressions, and the new test satisfies the WS-309 rule by
+  demonstration rather than by claim. Every failure in the shared working tree belongs to
+  the concurrent session's in-flight work (WS-393 moving `boardDerivedRng` into
+  gameTreeSampling mid-migration, WS-402, WS-365's +81 lines in foldEquityCalculator).
+
+  A FALSE STEP WORTH RECORDING. The first attempt copied the whole working-tree
+  `gameTreeEquity.js` into the worktree and produced failures in blockerBluffSelection,
+  drawVsThinValue and advisorAccuracy — which I briefly read as "my change breaks things".
+  It was not mine: that file carries BOTH sessions' edits, so the copy imported their
+  half-finished WS-393 migration onto a HEAD that lacked its other half. Copying a FILE
+  when you mean to isolate a CHANGE does not isolate anything in a shared tree. Applying
+  the single hunk to HEAD's own copy is what produced the table above.
+
+  ALSO DONE THIS PASS (all built, not filed and deferred):
+    - WS-386 CLOSED, not left as a ticket: four river scenarios added to `dumpGameTreeEV`
+      plus a street-coverage census printed and written into the JSON. The widened harness
+      now REPRODUCES the corpus result — river 3/4 (75%) vs the corpus 80%, flop and turn
+      at 0%, all flips toward passivity — at ~60s instead of a full corpus run.
+    - Ground-truth coverage 2/6 -> 6/6. Closing the gaps exposed two real defects: a
+      DUPLICATE runout budget (production ran the perceived map at 96 runouts while the
+      standalone path ran at 16 — the same number depending on which door you came
+      through), and a FALSE docblock claim that the cheap budget preserved ordering
+      (measured rank correlation 0.79 dry / 0.84 wet). Both removed; one budget now.
+    - `rankCorrelation` added, because that estimator never promised per-combo accuracy —
+      it promised ordering. Scoring it on MAE would reject it for a property it never
+      claimed; loosening MAE until it passed would test nothing.
+    - Correlation sample raised 20 -> 40 after noticing the threshold was under-powered
+      (SE ~ 0.23 at n=20; the first reading of 0.8987 was inside its own noise). Raised the
+      sample rather than lowering the bar.
+    - Removed a stale assertion of my own in depthReachability: a clause kept "for safety"
+      asserted that setup outspending the budget implies stages were skipped. Under two
+      clocks that is not dead, it is WRONG, and on a loaded machine it fired and failed.
+
+context_notes: |
+  Verification at close: 78 test files passed (exploitEngine + liveAdvisor).
+  Earlier full-suite run this session: 596 files, 14,126 passed, 21 skipped, 0 failed.
+
+  Two `advisorAccuracy` tests are intentionally SKIPPED pending WS-361, not
+  broken. They sat in a block named "Depth-2 per-combo validation" that passed for
+  years while depth-2 never ran — one of them was marked `test.fails`, which was
+  the accurate bug report. They were NOT pinned to `refinementBudgetMs: 0`, because
+  that would restore exactly the illusion.
+
+  Four assertions in `gameTreeEvaluator.test.js` ARE pinned to
+  `refinementBudgetMs: 0` — they encode genuine DEPTH-1 relationships and keep
+  testing what they were written to test, in the regime they were written for.
+
+  Other sessions were live in this repo throughout. Their edits (drill views,
+  OnlineView, viewScrollContainers, WS-362) were left untouched.

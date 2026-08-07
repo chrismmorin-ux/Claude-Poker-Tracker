@@ -190,3 +190,55 @@ status_note: |
   `blocked_by` is deliberately NOT edited here — that is its owner's call, and editing another
   agent's in-flight ticket to satisfy this one is the kind of quiet coupling the queue exists to
   make visible.
+
+  ############################################################################################
+  ## ADDENDUM — 2026-08-06, from the nine-agent decision-enhance pass on WS-410.
+  ############################################################################################
+  ##
+  ## THIS TICKET'S CENTRAL CLAIM WAS INDEPENDENTLY VERIFIED AT HEAD `18f49f22` and holds exactly.
+  ## All three chokepoints re-read:
+  ##   1. `heroEvRunner.mjs:99-102` — `normalizeDepthArms`'s engine-arm branch returns exactly
+  ##      `{ id, refinementBudgetMs, strategy }`; any other key is SILENTLY DROPPED, not rejected.
+  ##   2. `heroPolicy.mjs:146-166` — `heroPolicyAt`'s only engine-configuring parameter is
+  ##      `refinementBudgetMs` (`:158`). `captureComboDetail` is instrumentation, not a toggle.
+  ##   3. `heroPolicy.mjs:263-291` — the `evaluateGameTree` call is a fixed object literal; the only
+  ##      conditional spread is `...(refinementBudgetMs === undefined ? {} : { refinementBudgetMs })`.
+  ## (WS-425's strategy-arm axis has landed since and is orthogonal — it does not touch the
+  ##  engine-configuring key set.)
+  ##
+  ## CONSEQUENCE FOR WS-410 D3, recorded here because it elevates this ticket's priority: "ship every
+  ## EV-bearing fix behind an arm flag" is NOT a policy the founder can choose today. It is blocked
+  ## on this ticket. The cross-run join is currently the only functioning pairing path for ANY
+  ## change, merged or not — and it is itself unsafe until WS-432 fixes wall-clock nondeterminism.
+  ##
+  ## AN ALTERNATIVE DESIGN THIS TICKET SHOULD WEIGH, surfaced by the same pass and not on its current
+  ## menu: instead of (or alongside) threading per-capability flags, add an ENGINE-VERSION ARM — run
+  ## the harness against two committed engine snapshots (git worktree or module-alias swap). Then
+  ## every fix pairs draw-for-draw with NO per-fix code change, because the diff already exists as the
+  ## commit, and any two commits pair retroactively. Measured cost of the per-fix alternative: ~23
+  ## EV-bearing engine fixes in 60 days (~11.5/month); sampled diffs are 22 files/1,743 insertions
+  ## (`c51fddf3`) and 9 files/909 insertions (`0cf1b915`) — these are not parameter toggles, so
+  ## flagging one means threading a conditional through up to 8 files and keeping the pre-fix path
+  ## alive as dead-but-callable code. Estimated 9-18 hrs/month and rising, with no retirement policy
+  ## designed. The engine-version arm is one-time M effort and dissolves that tax.
+  ##
+  ## FLAG-ROT EVIDENCE, for whichever design wins: the backtest layer already carries at least 11
+  ## independently-declared arm structs with NO shared registry — `{id:'depth1', refinementBudgetMs:0}`
+  ## retyped by hand 6+ times across `hierarchyVariants.mjs:250`, `probeCeilingInteraction.mjs:143`,
+  ## `heroEvReport.mjs:502`, `layerAblation.mjs:287-288`, `rangeCalibrationReport.mjs:370`,
+  ## `run-depth-ablation.mjs:194,222`, `run-river-flip-replicate.mjs:89-91`,
+  ## `run-optimism-probe.mjs:80-82`, `runoutBenchmark.mjs:222`, `probeCheckRaise.mjs:49`,
+  ## `probeRaiseBranch.mjs:87`. ZERO have ever been retired. Those live in throwaway probe scripts;
+  ## flags under the per-fix design would sit in the PRODUCTION ADVICE PATH. If that design is chosen,
+  ## the registry ships in the SAME change as the first flag — a flag without a registered owner and
+  ## an expiry condition is not deferred, it is dropped.
+  ##
+  ## DESIGN TENSION TO RESOLVE, not to leave open: this ticket's decision_flags[0] proposes an OPAQUE
+  ## `engineOverrides` object. The Standard of Record's manifest module is built on the opposite
+  ## philosophy — `manifest.js:33-37` `REQUIRED_CONSTANTS` is a flat, NAMED, enumerated list, and its
+  ## docblock argues for stamping each constant by name so a manifest cannot silently omit a
+  ## load-bearing value. `refinementBudgetMs` is ALREADY missing from `REQUIRED_CONSTANTS` despite
+  ## being load-bearing since WS-334 — a live instance of the gap an opaque blob would widen, since a
+  ## blob threaded past the manifest has no natural point where "did you stamp everything" is
+  ## enforced. The architect pass favours NAMED flags each carrying a manifest obligation. WS-432
+  ## owns adding `REFINEMENT_BUDGET_MS` and `MAX_STAGE_SHARE` to `REQUIRED_CONSTANTS`; coordinate.

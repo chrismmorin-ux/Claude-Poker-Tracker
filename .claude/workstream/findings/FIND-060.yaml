@@ -1,0 +1,23 @@
+id: "FIND-060"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 1 Entry skipped"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "The program's declared detection methods return zero matches - it cannot execute its own sweep as specified"
+description: |
+  prog-design.yaml:71 greps 'status: PROTO' - actual field is '**Evidence status:** PROTO' (one file lowercase Proto): zero matches. :76 expects a discovery status field - the LOG index disagrees with the files it indexes. :91 expects scannable audit findings - audits carry no structured status. The facilitator also refuted a panel claim with this same shape: an unquoted grep for program: design returned 0; the correct quoted grep returns 34 queue files. Nothing checks the checker.
+affected_files:
+  - ".claude/workstream/programs/prog-design.yaml"
+recommended_fix: |
+  Make every detection: field an executable command; add a test asserting each returns >0 matches against current artifacts (zero matches must be distinguishable from a broken grep). Exact string fixes recorded in the sweep's SELF-REPAIR section (run evidence). Where the artifact is the wrong side (audits), fix the template not the grep.
+dedup_key: "eng-engine-design-sweep-detector-strings-do-not-match-artifact-schemas"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

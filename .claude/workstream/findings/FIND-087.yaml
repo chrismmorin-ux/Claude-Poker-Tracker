@@ -1,0 +1,25 @@
+id: "FIND-087"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unenforced enforcement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "A run whose Result Card fails validation still writes output and prints its numbers; holeMap publishes ranked bb/hour claims with no card at all"
+description: |
+  run-river-flip-replicate.mjs:439-490 catches buildResultCard errors, sets null, proceeds to the :492-559 summary table with identical figures - after a multi-hour run the numbers look the same either way. holeMap.mjs + run-hole-map.mjs emit ranked comparative claims (60 percent of portfolio ceiling) with zero buildResultCard references. 16 of 18 run-*.mjs scripts bypass; the ~15-line stamp sequence is duplicated per script, never shared. Positive pattern: run-optimism-probe.mjs:155-179 documents WHY no card applies. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+  - "scripts/backtest/holeMap.mjs"
+  - "scripts/backtest/run-hole-map.mjs"
+recommended_fix: |
+  Card-construction failure becomes fatal to publication (no out.json, no summary table); extract the stamp sequence into one shared helper so bypass stops being the low-resistance path. Cross-ref WS-414..421 (holeMap other aspects).
+dedup_key: "sor-softfail-publish-without-valid-card"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

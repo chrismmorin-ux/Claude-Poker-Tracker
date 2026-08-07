@@ -1,0 +1,24 @@
+id: "FIND-093"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Incomparable numbers"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The card corpus is ungoverned as a set: two directories, two naming conventions, contradictory same-instrument cards with no supersession marker"
+description: |
+  4 cards in docs/standard-of-record/cards/RC-*.json + 2 in docs/research/*.result-card.json; RC-river-flip-replicate.json (0.7111) vs RC-river-flip-replicate-ws378fix.json (0.2222) - same instrument, before/after a fix, nothing marks which is current; buildLadder (the persistent comparison across all Result Cards) has never run over the on-disk set. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "docs/standard-of-record/cards"
+  - "src/utils/standardOfRecord/ladder.js"
+recommended_fix: |
+  One directory, one naming rule, a generated index, a supersededBy field; run buildLadder over the on-disk set in CI.
+dedup_key: "sor-card-corpus-ungoverned"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

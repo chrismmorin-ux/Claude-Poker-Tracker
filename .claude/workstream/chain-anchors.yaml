@@ -67,3 +67,31 @@ anchors:
     event_count: 1501
     timestamp: "2026-08-03T03:43:00.047Z"
     schema_version: 1
+  - chain_head: "85f39d884ee2d5d579568484c47964933115056c85e4eb3b608e6ea02cf0f4c6"
+    event_count: 1601
+    timestamp: "2026-08-04T19:24:12.190Z"
+    schema_version: 1
+  - chain_head: "7dc95c97c096da2d0bd288fdcd2b3335131df55de63aba16ca3f93d5d767fbf4"
+    event_count: 1701
+    timestamp: "2026-08-05T07:13:21.737Z"
+    schema_version: 1
+  - chain_head: "a156a7276146190be1b3d5b81c839fad10eca026e4428e56b06f33e275f485f7"
+    event_count: 1801
+    timestamp: "2026-08-05T17:12:27.043Z"
+    schema_version: 1
+  - chain_head: "f3ea3901578c8c364f720b2e2da37d42fbf2ed16762a4d0ee2c1383314e92098"
+    event_count: 1901
+    timestamp: "2026-08-06T03:19:15.145Z"
+    schema_version: 1
+  - chain_head: "adf93ffa2c2e3e9fe37d533aea2c6644bc8716b38704c69d5a916c7cf1893677"
+    event_count: 2001
+    timestamp: "2026-08-06T13:23:39.962Z"
+    schema_version: 1
+  - chain_head: "ecb8fc86ff3e843b26420bc70f5c488c7c3e02c7a136ec901000e791f496016e"
+    event_count: 2101
+    timestamp: "2026-08-07T06:50:21.184Z"
+    schema_version: 1
+  - chain_head: "1685ed6d958ba2018de3ff7219b349d7f9597c6124e0dd9734c7bc32b512fc16"
+    event_count: 2201
+    timestamp: "2026-08-07T18:06:58.015Z"
+    schema_version: 1

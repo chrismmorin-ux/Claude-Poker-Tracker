@@ -2,8 +2,8 @@ id: "FIND-CA-FS-3"
 title: "NO-DETECTOR: FS-3 — Compliance over value"
 engine: constitutional-audit
 persona: constitutional-audit
-run_id: "run-self-compliance-sweep-2026-07-25"
-date: "2026-07-25"
+run_id: "run-002"
+date: "2026-08-07"
 severity: low
 priority_score: 20
 category: self-compliance
@@ -16,7 +16,7 @@ promoted_to: ""
 program: kit-quality
 source:
   engine: constitutional-audit
-  run_id: "run-self-compliance-sweep-2026-07-25"
+  run_id: "run-002"
   audit_item: "FS-3"
   audit_status: no-detector
 proposed_route:

@@ -1,0 +1,26 @@
+id: "FIND-066"
+engine: "eng-engine"
+run_id: "run-004"
+severity: MEDIUM
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "Gate 4 verifies a surface artifact exists, not that it specifies anything - 24 of 53 artifacts have zero loading/error/stale spec and none carries a perf contract"
+description: |
+  24/53 surface artifacts have no state spec (incl. table-view, showdown-view, players-view, settings-view, tournament-view, seat-context-menu, table-build, player-editor, hand-plan-layer, player-picker); stats-view.md:99 is a bare 'Loading stats...' string; contradicts mid-hand-chris.md:39,70,77's own stated freshness requirements; mid-hand SLOs (no layout changes during a hand, <1.5s to read) have no measurement hook anywhere; RangeGrid.jsx has no memo boundary and builds fresh inline style objects across ~195 nodes with 8 call sites; HandBrowser.jsx:168 renders an unbounded unvirtualized list; table-build's destructive merge lacks the confirm/undo treatment its siblings got; ~40/53 artifacts mention viewport/scale at most once - authored without re-deriving the 1600x720 math.
+affected_files:
+  - "docs/design/surfaces/_template.md"
+  - "docs/design/LIFECYCLE.md"
+  - "src/components/ui/RangeGrid.jsx"
+  - "src/components/views/AnalysisView/HandBrowser.jsx"
+recommended_fix: |
+  Add four required template sections - States (loading/empty/error/stale), Interaction cost, Destructive actions, Viewport (1600x720 math) - and make Gate 4 check presence and non-triviality; backfill table-view, table-build, analysis-view, player-editor first; fix RangeGrid (memo boundary + hoisted styles) and HandBrowser (virtualization + memoized significance) as the two concrete breaches.
+dedup_key: "eng-engine-design-sweep-gate4-checks-existence-not-content"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

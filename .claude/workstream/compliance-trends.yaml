@@ -8,6 +8,15 @@ latest:
   run_id: "run-self-compliance-sweep-2026-07-25"
   date: "2026-07-25"
 scores_over_time:
+  - date: "2026-08-07"
+    run_id: "run-002"
+    compliance_score: 0.82
+    coverage_score: 0.82
+    pass_rate: 1
+    critical_findings: 0
+    high_findings: 0
+    medium_findings: 0
+    low_findings: 0
   - date: "2026-07-25"
     run_id: "run-self-compliance-sweep-2026-07-25"
     compliance_score: 0.73

@@ -1,0 +1,62 @@
+id: "WS-444"
+title: "Per-region layout migration: un-scale interactive bands app-wide (~9 scaled views) per DEC-048 / layout-doctrine.md"
+legacy_id: ""
+type: improvement
+status: deferred
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "ux"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  DEC-048 (system/decisions.md:925, founder-ratified app-wide 2026-08-01) promotes the layout
+  paradigm from per-view to per-REGION: spatial regions (felt) scale via transform, interactive
+  regions lay out in real CSS px. The doctrine doc (layout-doctrine.md L100) says this migration
+  was "filed as WS-322" - but that ticket was NEVER written to disk on any branch, and the WS-322
+  ID was reallocated on 2026-08-02 to the (now done) Standard of Record item. This item re-files
+  the lost migration so it cannot be lost a second time (the same loss mode that ate WS-311).
+
+  Scope: migrate the ~9 remaining ScaledContainer views to the per-region rule; TableView's own
+  split (felt scales, command column real-px) is WS-439, not this item. ShowdownView's region
+  classification was left OPEN by the doctrine (layout-doctrine.md L113) and must be decided here.
+
+  The design artifacts live ONLY on integrate/orphans-20260807 (merge 9de247d1, not an ancestor
+  of this branch): docs/design/surfaces/layout-doctrine.md, table-view-geometry.md, both
+  2026-07-31 audits, and docs/design/evidence/2026-07-31-tvr-device-baseline/. Recover them onto
+  the working branch before implementing.
+accept_criteria: |
+  Every view classified spatial/interactive/split per the doctrine; interactive regions render
+  declared px sizes at device scale (44px touch floor actually met - closes the WS-441 defect
+  class); ShowdownView classification decided and recorded; layout-doctrine.md + affected
+  Gate 4 surface artifacts updated; viewScrollContainers.test.js shells still pass.
+effort: "L"
+files_involved:
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/hooks/useScale.js"
+  - "docs/design/surfaces/layout-doctrine.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "ShowdownView region classification (left open by doctrine L113)"
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-07T22:20:00.000Z"
+status_note: |
+  Re-filed 2026-08-07 during WS-439 planning (ses-20260807-2144-fcb6029f) after discovering the
+  migration ticket the doctrine references as 'WS-322' never existed on disk. Deferred at creation
+  per founder DEC-049 reconciliation: TVR-adjacent layout work queues behind accuracy work.
+deferred_at: "2026-08-07"
+defer_reason: "Deferred at creation per founder DEC-049 reconciliation (2026-08-07): per-region layout migration is TVR-adjacent work and queues behind accuracy work"
+resume_condition: "Accuracy work (engine->EV->education per DEC-049) lands or founder re-prioritizes layout work; implement after or with WS-439"
+transitioned_by_event: "ev-1786140271367-9a105b69e6ca"

@@ -1,0 +1,111 @@
+id: "ses-20260804-1833-dcab5942"
+status: completed
+started_at: "2026-08-04T18:33:43.224Z"
+ended_at: "2026-08-04T19:25:00.000Z"
+mode: auto
+last_heartbeat: "2026-08-04T18:49:18.261Z"
+pid: 29276
+host: MorinComputer
+agent_session_id: "dcab5942-afb5-483f-9f39-db2fd4a097d3"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "src/components/views/OnlineView/OnlineView.jsx"
+  - "src/components/views/LessonDetailView.jsx"
+  - "src/components/views/PreflopDrillsView/PreflopDrillsView.jsx"
+  - "src/components/views/PostflopDrillsView/PostflopDrillsView.jsx"
+  - "src/test/viewScrollContainers.test.js"
+  - "src/components/views/OnlineView/ExtensionPanel.jsx"
+  - "system/state.md"
+  - ".claude/workstream/sessions/ses-20260804-1833-dcab5942.yaml"
+  - ".claude/workstream/system-summary.yaml"
+
+decisions_recorded:
+  - "DEC-034 — view-layout invariants enforced by a registry-derived guard scanning the entry module only"
+  - "DEC-035 — viewport bounds use dvh; 100vh / h-screen is not an accepted bound"
+
+handoff_notes: |
+  Ad-hoc founder bug report, no queue item: "some screens in the app are too full
+  but dont scroll", later narrowed by the founder to "drills found through the self
+  coach".
+
+  THE SCREEN THE FOUNDER HIT was LessonDetailView — Self Coach -> Curriculum tab ->
+  "Drill" on a concept row (CurriculumTab.jsx:63 openLessonDetail) -> SCREEN.LESSON_DETAIL.
+  It had NO scroll container at all. Measured live: the "pot odds" lesson is 1120px
+  tall in a 640px viewport, so 480px — about 43% of the lesson — was unreachable.
+
+  ROOT CAUSE is one bug class, not five bugs. index.css pins html/body/#root to
+  height:100dvh; overflow:hidden, so the page itself cannot scroll. Any view that
+  fails to bound its own height AND scroll internally has its overflow silently
+  clipped — no scrollbar, no signal. docs/design/audits/2026-06-19-responsive-layout-audit.md
+  catalogued this class and introduced <FluidView>; it kept drifting back because
+  nothing enforced it.
+
+  Items completed: none from the queue (ad-hoc work).
+
+  Fixes (5 views):
+    - LessonDetailView.jsx          -> wrapped in <FluidView>          [founder's screen]
+    - OnlineView.jsx                -> bounded to LAYOUT canvas + overflow-y-auto
+    - PreflopDrillsView.jsx         -> mode content overflow-hidden -> overflow-y-auto
+    - PostflopDrillsView.jsx        -> same
+    - OnlineView/ExtensionPanel.jsx -> h-screen -> h-dvh
+
+  THE GUARD IS THE REAL DELIVERABLE: src/test/viewScrollContainers.test.js
+  (INV-VIEW-SCROLL, 51 assertions). Derives its view list from viewRegistry.jsx, so
+  a newly registered view is covered automatically and cannot opt out by being new.
+  Two exemptions, each with a written reason; the PresessionDrillView one is
+  self-verifying (asserts all five mode children still scroll). See DEC-034/035.
+
+  Key findings:
+    - The guard found a defect I had NOT found by inspection: ExtensionPanel used
+      h-screen (100vh = the LARGE mobile viewport), overshooting the 100dvh lock.
+      That fix exists only because the test caught it.
+    - Two traps while writing the guard, both fixed and worth remembering: (a) naive
+      source scanning flagged the very files that DOCUMENT their own fix in comments
+      ("was minHeight:100dvh -> clipped") — comments must be stripped before matching;
+      (b) barrel index.js re-exports hide the real component — must be followed.
+    - CalibrationDashboardView has the same minHeight:100dvh defect but is registered
+      `deferred: true`, so it is unreachable. It will become a real bug the moment
+      someone gives it a `component`. Not ticketed.
+
+  Deliberately NOT done (out of scope, pre-existing):
+    - NavShell "Home" pill overlaps the lesson title at top-left — visible in the
+      Playwright capture. This is cross-cutting defect #6 in the 2026-06-19 audit.
+      Unticketed. Worth a small item if the founder finds it annoying.
+    - The audit's other open Phase-2/3 items (sub-44px modal touch targets,
+      keyboard-unaware modals, orientation-lock portrait fallback) remain open.
+    - Login/Signup/PasswordReset use FluidView but are still registered without
+      orientation:'portrait' — a registry inconsistency left from the audit's
+      Phase 2. Harmless today; would matter if orientation policy is tightened.
+
+  Verification: full suite 14,113/0 (594 files, 560s); build clean; visual
+  verification done via Playwright on the founder's exact click path (scrollbar
+  present, Worked Example + Success Criteria now render). 17 cwos-verify invariants
+  FAIL — ALL pre-existing (missing kit/ source files in a non-kit repo, queue/state
+  hygiene, sprint-anchor policy); none touch view code, none introduced here.
+
+  Next recommended action: commit. The six view/test files are independent of the
+  concurrent sessions' in-flight exploitEngine work in the same tree and can be
+  committed on their own.
+
+  Autopilot eligible: not assessed — no queue items were touched this session.
+
+context_notes: |
+  CONCURRENCY: three other sessions were live in this repo during this one
+  (ses-20260804-1711-4ddd5368, -1711-a83645ed, -1800-1caf108f; the last claims
+  WS-355/356/357). They were editing src/utils/exploitEngine/* — gameTreeEquity.js,
+  gameTreeSampling.js, foldEstimateComposition.test.js, runoutConstruction.test.js.
+  Those files are NOT this session's work and must not be attributed to it. This
+  session's file locks were disjoint from theirs, so no conflict occurred, but the
+  shared-state files (state.md, decisions.md, usage.yaml, queue-index.yaml) are a
+  clobber risk when sessions overlap — this session appended rather than rewrote.
+
+  The test-count jump 13,394 -> 14,113 is mostly NOT this session: only +51 is the
+  new guard. The rest is the concurrent sessions' uncommitted work already in tree.
+
+  Also outstanding at session start (unrelated, from other sessions): one session
+  marked active but not heartbeating (ses-20260804-1604-c3792b2e, holding WS-330).
+  Clear with: node kit/scripts/cwos-session-recovery.js --auto

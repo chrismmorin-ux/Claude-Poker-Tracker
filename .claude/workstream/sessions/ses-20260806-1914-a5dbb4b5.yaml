@@ -1,0 +1,55 @@
+id: "ses-20260806-1914-a5dbb4b5"
+status: abandoned
+revived_at: "2026-08-07T02:58:39.731Z"
+started_at: "2026-08-06T19:14:44.690Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-07T03:28:35.356Z"
+pid: 5668
+host: MorinComputer
+agent_session_id: "a5dbb4b5-b868-418e-a68d-914d3f21f5b2"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-428"
+
+files_locked:
+  - ".claude/workstream/queue/WS-427.yaml"
+  - ".claude/workstream/queue/WS-428.yaml"
+  - ".claude/workstream/queue/WS-429.yaml"
+  - ".claude/workstream/queue/WS-430.yaml"
+  - ".claude/workstream/queue/WS-431.yaml"
+  - ".claude/workstream/queue/WS-432.yaml"
+  - ".claude/workstream/queue/WS-433.yaml"
+  - ".claude/workstream/queue/WS-434.yaml"
+  - ".claude/workstream/queue/WS-435.yaml"
+  - ".claude/workstream/queue/WS-436.yaml"
+  - ".claude/workstream/queue/WS-437.yaml"
+  - ".claude/workstream/queue/WS-438.yaml"
+  - ".claude/workstream/queue/WS-410.yaml"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/handLedger.mjs"
+  - "scripts/__tests__/handLedger.test.js"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/__tests__/heroEv.test.js"
+  - "docs/research/ai-error-shape-2026-08-06.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-07.
+  Original start: 2026-08-06T19:14:44.690Z.
+  Last heartbeat: 2026-08-06T21:35:08.557Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.
+abandoned_note: |
+  Marked abandoned manually 2026-08-07 by ses-20260807-0535-df53cf18: 12+ hours without a heartbeat,
+  dead per the startup hook. cwos-session-recovery.js --auto HUNG when run against it (background task
+  killed after ~90 min) - see FIND-108 (session-recovery kit regressions: reason-string drift,
+  assumeLocal:true, pid_recorded_at never written). Its only claim (WS-428) was taken over and completed
+  tonight (commit 88bb2dc6), so no work was stranded.

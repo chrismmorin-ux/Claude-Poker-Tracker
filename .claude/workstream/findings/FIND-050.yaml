@@ -1,0 +1,74 @@
+id: "FIND-050"
+title: "Two detectors fire on noise, with the null rates computed"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  computePositionAwareness (bucketQueryUtils.js:91-116): spread = max - min over positions, flagged
+  above 0.15. The threshold is finer than the resolution of the estimate, so any observed difference
+  clears it. At the ACTUAL production configs — villainProfileBuilder.js:419
+  {minHandsPerPosition: 5, minPositions: 2} and villainObservations.js:879 {3, 3} — a villain with
+  true VPIP identically 25% everywhere is flagged ~71% and ~85% of the time respectively at the
+  minimum qualifying sample (the run record's 62.4% was computed at the function's defaults, which
+  neither call site uses). :114 sets confidence = bayesianSampleConfidence(vpips.length * 5) — the
+  number of POSITION CATEGORIES, so 3 hands and 300 hands per position give identical confidence.
+
+  Sizing tells: TWO gates on the same aggregate Pearson r. weaknessDetector.js:405-407 at |r| > 0.5,
+  n >= 8 fires ~21% under H0 (t = 1.414 on 6 df). foldEquityCalculator.js:661-671 at |r| > 0.3,
+  n >= 8 fires ~47% under H0 (t = 0.770) AND MULTIPLIES THE FOLD ESTIMATE, so it perturbs the
+  corpus scored figure. Samples are showdown-SELECTED (decisionAccumulator.js:584-598), so even the
+  sign is unidentified. decisionAccumulator.js:635-637 computes per-context correlations that
+  nothing reads.
+
+  Zero multiplicity control anywhere (grep bonferroni|falsediscovery|fdr → nothing) while ~15
+  candidate weaknesses are ranked per villain.
+
+  Also in this finding: villainObservations.js:72 blindDefendMax = 25 contradicts its own comment
+  ("MDF vs 2.5x open ~40%") on the same line, and unexploitableFloor.js — which derives that anchor
+  and exports rakeAsymmetry — has no production consumer.
+affected_files:
+  - "src/utils/exploitEngine/bucketQueryUtils.js"
+  - "src/utils/exploitEngine/weaknessDetector.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/decisionAccumulator.js"
+  - "src/utils/exploitEngine/villainObservations.js"
+  - "src/utils/exploitEngine/unexploitableFloor.js"
+recommended_fix: |
+  Both halves are settleable by PERMUTATION on existing data — no new hands required. The correct
+  estimator already exists and is already wired to the EV path: rangeEngine/traitDetector.js:44-53
+  (exact Beta quadrature), whose :22-25 explains why contrasts need more regularization than single
+  rates — a sentence absent from POKER_THEORY.md. Note the noisy position detector does NOT reach
+  the game tree; it reaches profile classification and thoughtCatalog weights.
+theory_citation: "POKER_THEORY §11.5; rangeEngine no-frequentist rule; exploitEngine/CLAUDE.md consequence-weighted confidence"
+dedup_key: "blindspot-domain-correctness-detectors-fire-on-noise"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-395, WS-398"
+status_note: |
+  VOCABULARY NORMALISATION 2026-08-05. `problem_class` was "Estimator admissibility" —
+  not one of the nine classes prog-domain-correctness.yaml declares. Original text
+  preserved here; nothing else in the finding changed. The old name is the more precise
+  description of the defect (an estimator whose null fire rate is ~50-85%) and is worth
+  keeping in view for that reason.
+
+  Mapped to "Bayesian confidence representation" on the detection recipe, which is the
+  tie-breaker that actually reaches these files: that class says "Audit
+  bayesianConfidence.js + downstream consumers", and bucketQueryUtils.js:114 —
+  `bayesianSampleConfidence(vpips.length * 5)`, the confidence argument that counts
+  POSITION CATEGORIES rather than hands — is exactly such a consumer. The class also
+  carries the doctrine both halves break: "Sample-size confidence must propagate as
+  credible intervals, not point estimates" (and the program's anti-invariant "No
+  frequentist statistical method ... in inference paths").
+
+  Runner-up "Range estimation correctness", whose example "z-test on small-sample VPIP —
+  should be Bayesian credible interval" matches the position-awareness half almost word
+  for word, and whose detection recipe points at rangeEngine/traitDetector.js — the
+  correct estimator this finding's fix defers to. It lost because its detection scope is
+  `src/utils/rangeEngine/*` and every defective file here is under exploitEngine/.

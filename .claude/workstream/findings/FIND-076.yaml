@@ -1,0 +1,24 @@
+id: "FIND-076"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Cross-Method Consistency"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "onFastResult has zero production callers: the WS-334 two-phase fast-then-refined design is shipped-but-inert"
+description: |
+  onFastResult appears only in gameTreeEvaluator.js:864,869,1446-1454, its CLAUDE.md, and depthReachability.test.js:248 (verified grep). Depth-1/depth-2 disagreements (WS-378: 32/45 river flips) are never visible as first-read-vs-refined; only the awaited final result reaches the UI. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/hooks/useLiveActionAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+recommended_fix: |
+  Wire one production caller (live advisor) rendering a first-read-to-refined transition, with a test asserting the two payloads differ (repo shipped-but-inert guard pattern).
+dedup_key: "methodology-onfastresult-zero-production-callers"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

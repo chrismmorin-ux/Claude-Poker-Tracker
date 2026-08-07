@@ -1,0 +1,24 @@
+id: "FIND-071"
+engine: "preflight"
+run_id: "run-delta-domain-correctness-2026-08-07"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Exploit engine correctness"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-delta-domain-correctness-2026-08-07"
+  date: "2026-08-07"
+title: "advMult multiplies a structural composition estimate by a measurement of the same composition - WS-365 shape newly ACTIVATED by in-window changes"
+description: |
+  foldEquityCalculator.js:709-718 advMult lines (rangeAdvantage > 0.2 -> x1+0.10*adv; nutAdvantage -> x1+0.08*adv) are unchanged, but the window changed what they multiply: estimate is now the standalone composition estimate priced per-combo via villainDecisionEquity against the represented hero range - which already structurally encodes range/nut advantage. computeAdvantage (rangeSegmenter.js:712-750) measures the same composition the enumeration just summed. Bounded x1.19 max; direction inflates fold equity -> recklessness per POKER_THEORY 13.3. The prohibition is stated twelve lines below in the same file. Found by domain-correctness/delta 2026-08-07 (window 292e56f..18f49f22).
+affected_files:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+recommended_fix: |
+  Remove the advMult multiplication on the per-combo-priced path (or gate it to the legacy path only), citing the file doctrine: nothing may be multiplied onto the composition-priced estimate afterwards. Add a regression test asserting the priced path result is not post-multiplied.
+dedup_key: "preflight-domain-delta-advmult-double-count-activated"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

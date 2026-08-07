@@ -1,0 +1,23 @@
+id: "FIND-064"
+engine: "eng-engine"
+run_id: "run-004"
+severity: MEDIUM
+status: open
+category: "design"
+program: "design"
+problem_class: "PROTO persona staleness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "27 of 40 personas share one review date and cross the 180-day threshold the same day (~2026-10-18); review stamps disagree with edit history in both directions"
+description: |
+  27/40 persona files stamped Last reviewed 2026-04-21 (batch-created, no stagger); 14/16 CORE personas still PROTO at day 108 of 180; zero persona-directory commits since 2026-06-19; chris-live-player.md stamped 04-21 with four later substantive amendments (04-23, 04-24, 05-02 x2) - the clock under-reports freshness here and over-reports it elsewhere.
+affected_files:
+  - "docs/design/personas/core/chris-live-player.md"
+recommended_fix: |
+  Stagger the cohort deliberately across the remaining 72 days, CORE first; derive Last-reviewed from git log -1 --format=%ad rather than hand stamps; treat a hand stamp older than the last substantive commit as a detected inconsistency.
+dedup_key: "eng-engine-design-sweep-persona-roster-cohort-cliff-and-stamp-integrity"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

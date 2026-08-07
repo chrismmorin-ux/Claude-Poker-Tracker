@@ -291,7 +291,7 @@ files_involved:
   - "scripts/backtest/replicationStamp.mjs"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "scripts/standardOfRecord/schema-baseline.json"
-blocked_by: []
+blocked_by: ["WS-428", "WS-431", "WS-432", "WS-433"]
 blocked_by_legacy: []
 enables: []
 sprint_id: null
@@ -368,6 +368,71 @@ source:
   run_id: "run-domain-correctness-blindspot-2026-08-05"
 created_at: "2026-08-05T12:00:00Z"
 status_note: |
+  ############################################################################################
+  ## CORRECTION BLOCK — added 2026-08-06 by a nine-agent decision-enhance pass at HEAD
+  ## `18f49f22`, twelve commits past the `fe716f59` this ticket was verified against.
+  ## READ THIS BEFORE THE ORIGINAL NOTE BELOW. Three claims in this ticket are FALSE at HEAD.
+  ############################################################################################
+  ##
+  ## FALSE #1 — "`heroEvRunner` never reads `ctx.situationKey`" (description §7, accept criteria
+  ##   Stage 1). It does, at `heroEvRunner.mjs:409`, added by WS-393 in commit `af8b9815`.
+  ##
+  ## FALSE #2 — villain identity is discarded (description §4.3). `opponentSeat` is written to the
+  ##   row at `heroEvRunner.mjs:406`, same commit. Less remains to build than this ticket prices.
+  ##
+  ## FALSE #3 — "THE HERO-EV PATH DOES NOT EMIT ATOMS AT ALL... it lives in memory, is aggregated,
+  ##   and is discarded" (description §4.2, called "the ticket's centre"). `heroEvRunner.mjs:454`
+  ##   now calls `onDecisionRecord`, wired to a JSONL sidecar via `--decisions-out`
+  ##   (`run-hero-ev.mjs:236-253`).
+  ##
+  ## ALSO STALE: the row-construction block cited at `:263-301` is now at `:394-447` (drift of
+  ##   120-165 lines). `gameTreeEvaluator.js` citations `:814`/`:899-907`/`:929-936` are now
+  ##   `:868`/`:954-961`/`:983-990`. `POKER_THEORY.md:1753` is now ~`:1899`. Citations into
+  ##   `ipsEstimator.mjs`, `schemas.js`, `resultCard.js`, `manifest.js`, `separability.mjs`,
+  ##   `equilibriumPost.mjs`, `strategyPosition.mjs`, `depthAblationReport.mjs` still HOLD exactly.
+  ##
+  ## THE BIGGEST FINDING, WHICH THIS TICKET CANNOT ABSORB SILENTLY: commit `af8b9815` created
+  ##   `scripts/backtest/decisionRecord.mjs` — a THIRD decision-level record shape, ungoverned,
+  ##   reproducing the exact WS-291 mechanism this ticket exists to close. Building Atom v3 without
+  ##   reconciling it ships a FOURTH. Owned by WS-431, which now blocks this ticket.
+  ##
+  ## AND THE ONE THAT REFRAMES THE HEADLINE: `opportunitiesPerHand` DOES NOT EXIST IN CODE.
+  ##   `coverageCensus.js` has no such concept. `overallEvBB100` is a two-factor product with one
+  ##   factor built. The figure this ticket exists to produce is not computable today. Owned by
+  ##   WS-428, which now blocks this ticket.
+  ##
+  ## FURTHER CORRECTIONS TO THIS TICKET'S DECISION FLAGS:
+  ##   D1 — "exploitation efficiency is INVARIANT TO ENGINE UPGRADE by construction" is an
+  ##        OVERCLAIM. Its numerator IS the engine's edge; it is differentially sensitive by layer
+  ##        and UNDAMPED on decision-layer fixes, which is nearly all recent work. Separately,
+  ##        `strategyPosition.mjs` already THROWS on a bare scalar, so the pair is enforced in code
+  ##        and "A alone" was never available. And efficiency is NOT blocked by the null equilibrium
+  ##        anchor — it computes on every run today; do not pick A by elimination.
+  ##   D2 — the core row measures 844 bytes/atom (not 1-2 KB), 17.5 gzipped, ~4.24 GB raw for the
+  ##        WHOLE corpus. Not a problem. `beliefState` has ZERO producers and has never been written,
+  ##        so its size is a guess. `fullSampleRate` is RECORDED, never ENFORCED — no sampler exists;
+  ##        "already anticipated by the existing design" is not accurate. Owned by WS-430.
+  ##   D3 — option A is BLOCKED, not chosen: the arm axis strips every key but `refinementBudgetMs`
+  ##        (WS-404, verified at all three chokepoints). Option B is ACTIVELY DANGEROUS until
+  ##        WS-432, not merely premature. And it is not one unpriced fix — ALL ~23 EV-bearing fixes
+  ##        from the last 60 days are unpriced.
+  ##   D4 — the "labelled diagnostic" mitigation is already failing in this repo: POKER_THEORY §11.9.
+  ##        Owned by WS-437. The no-bare-ranking guard must be STRUCTURAL, not documented.
+  ##   D5 — "Additive-only" is FALSE. The guard never inspects `metrics`; declaring it naively breaks
+  ##        >=6 committed cards and 2 CI tests. Non-breaking path exists (`disclaimerRegisterVersion`
+  ##        precedent). Owned by WS-434.
+  ##   D6 — the stratified EV table has ZERO power: the gate is 30 players PER GROUP and the run had
+  ##        22 TOTAL. Structural, not marginal. DO NOT CONFLATE axis separability (measured on
+  ##        1,607-25,014 players via corpus mining) with the readout's power (22 players via the
+  ##        hero-EV harness). Related live-engine defect owned by WS-436.
+  ##   D7 — the framing is wrong. Caps default to `Infinity`; `--max-players` is the binding lever,
+  ##        not `--max-decisions` (the cap breaks BOTH loops); the real blocker is a single-threaded
+  ##        harness and a 3-7 day powered run. Owned by WS-433.
+  ##
+  ## Stage 0 was carved out as WS-427, with DELETION recommended over deprecation (zero consumers,
+  ## so no meaning to preserve). Stage 3(c) is NOT a promotion — see WS-432.
+  ############################################################################################
+
   PREMISES VERIFIED AGAINST HEAD `fe716f59` BY READING THE CODE, not by trusting a commit message or
   a doc. Working tree was dirty in `src/utils/exploitEngine/` at the time of writing; every citation
   below was read from the file on disk.

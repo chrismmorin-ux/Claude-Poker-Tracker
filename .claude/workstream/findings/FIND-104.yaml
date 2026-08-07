@@ -1,0 +1,25 @@
+id: "FIND-104"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "security"
+program: "security"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Quota exhaustion is console-only mid-session; older cursor migrations untested; v18/v19 seeds swallowed inside the upgrade transaction"
+description: |
+  handsStorage.js:119-126 QuotaExceededError -> logError only (E306 documented in DEBUGGING.md, unwired to the E307 HealthIndicator which covers init-time only) - a founder mid-session may not be told a hand was not saved. v3/4/7/8/10/13/23 cursor migrations have no behavioral test (v7 userId backfill + v13 seatActions most exposed); v18/v19 seed writes try/catch inside the upgrade tx (store created empty on failure, downstream assumes seeded singleton); migrateV28 must-stay-last enforced by comment only. No iOS-private-mode detection.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "src/utils/persistence/handsStorage.js"
+  - "src/utils/persistence/migrations.js"
+recommended_fix: |
+  Route quota errors to the existing HealthIndicator surface; behavioral tests for v7 and v13 first; assert migration ordering in a test.
+dedup_key: "security-idb-durability-quota-and-untested-migrations"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

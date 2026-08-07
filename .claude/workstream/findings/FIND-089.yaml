@@ -1,0 +1,24 @@
+id: "FIND-089"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unreplicable measurement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Manifest constants are hand-copied and shadow line-pointers have drifted - the drift-detection mechanism itself drifted"
+description: |
+  replicationStamp.mjs:84 hardcodes foldEquityCalculator.js:563 for PRIOR_WEIGHT (actual :661); RC-depth-ablation stamps gameTreeEvaluator.js:783 for MAX_STAGE_SHARE (actual :983); run-river-flip-replicate.mjs:435 stamps RIVER_PER_COMBO_MAX_COMBOS:200 as a literal while the real constant is inlined unexported at gameTreeEvaluator.js:1480,:1524. Schema does not distinguish read-live from hand-copied. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+recommended_fix: |
+  Read constants through an exported loader (export inlined ones first); add provenance (read-live vs hand-copied) to the constants schema; CI check that shadowAt pointers resolve.
+dedup_key: "sor-manifest-hand-transcribed"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

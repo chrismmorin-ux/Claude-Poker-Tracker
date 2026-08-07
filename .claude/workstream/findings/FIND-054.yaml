@@ -1,0 +1,54 @@
+id: "FIND-054"
+title: "useActionAdvisor.js contradicts itself about which surface it serves, and a shipped fix rests on the false half"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Anti-pattern enforcement"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  useActionAdvisor.js:4-8 states the hook is "the on-demand PlayerAnalysisPanel what-if, DISTINCT
+  from useLiveActionAdvisor". Its only non-test importer is PlayerAnalysisPanel.jsx:14, so the
+  header is correct. But :37-40, a WS-333 comment, asserts "this advisor serves the MANUAL live
+  table — the founder's actual 1/2 game", and a shipped rake fix was justified on that premise.
+
+  The file contradicts itself thirty lines apart, and the false half has already caused harm: one
+  roundtable lens adopted it and built its top recommendation on it (replace the live decision rule
+  with a useActionAdvisor call), which the cross-critic ruled harmful — the hook passes no
+  numOpponents, no opponentModels and no effectiveStack, so it would put a heads-up fold model on a
+  9-handed table. Found by the cross-critic; produced by no lens.
+affected_files:
+  - "src/hooks/useActionAdvisor.js"
+  - "src/components/views/AnalysisView/PlayerAnalysisPanel.jsx"
+recommended_fix: |
+  Resolve in favour of the importer list, not either comment. Rewrite :37-40 to say the manual live
+  table has NO game-tree advisor at all and name the ticket that would give it one. Add a test that
+  enumerates the hook's non-test importers and fails if the set changes, so the surface claim becomes
+  an assertion rather than a comment — the exploitEngine/CLAUDE.md rule applied at its smallest scale.
+  Do NOT revert the WS-333 rake threading; the fix was correct and only its stated reason was false.
+theory_citation: "exploitEngine/CLAUDE.md 'when a comment states a fact the code could assert instead, assert it' (WS-285 / WS-291 / WS-300 family)"
+dedup_key: "blindspot-domain-correctness-useactionadvisor-self-contradiction"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-397"
+status_note: |
+  VOCABULARY NORMALISATION 2026-08-05. `problem_class` was "Provenance / premise
+  integrity" — not one of the nine classes prog-domain-correctness.yaml declares.
+  Original text preserved here; nothing else in the finding changed.
+
+  Mapped to "Anti-pattern enforcement" — "Anti-patterns enumerated in
+  src/utils/exploitEngine/CLAUDE.md and src/utils/rangeEngine/CLAUDE.md must not appear
+  in committed code". The finding's own theory_citation is one of those enumerated rules
+  (exploitEngine/CLAUDE.md:238, inside the anti-patterns section: "when a comment states
+  a fact the code could assert instead, assert it"), and a comment asserting a false fact
+  about which surface the hook serves — which then justified a shipped fix and a
+  roundtable recommendation — is that anti-pattern in committed code.
+
+  Runner-up "Theory-spec drift", the other doc-vs-code class. It lost because that class
+  is specifically about POKER_THEORY.md as canonical doctrine (cf. FIND-052, filed there
+  for exactly that reason); FIND-054 involves no doctrine document, only a file
+  contradicting itself thirty lines apart.

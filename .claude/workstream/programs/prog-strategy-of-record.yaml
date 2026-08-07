@@ -182,24 +182,52 @@ accountability:
     auto_escalate: true
     auto_deescalate: false
 
+# Renumbered 2026-08-07 from AS-SOR-1/2/3 to schema-valid AS-\d+ ids (v4 validation).
 assumptions:
-  - id: AS-SOR-1
-    statement: "Two instruments measuring the same quantity on the same Deal Book and Field will agree within stated confidence intervals."
-    basis: "Design intent of the agreement gate; not yet observed."
-    falsifier: "The simulator and the corpus substitution instrument disagree at the one-decision horizon outside CI."
-    status: untested
+  - id: AS-122
+    type: methodological
+    claim: >
+      Two instruments measuring the same quantity on the same Deal Book and Field will agree
+      within stated confidence intervals.
+    basis: "Design intent of the agreement gate; not yet observed. (was AS-SOR-1)"
+    falsifies_if:
+      watch_surfaces: ["docs/standard-of-record/VOCABULARY.md", "scripts/backtest/heroEvReport.mjs"]
+      trigger_event: "The simulator and the corpus substitution instrument disagree at the one-decision horizon outside CI."
+      control_case: >
+        The same instrument run twice on the same Deal Book partition with the same seeds
+        must agree exactly; disagreement there is instrument error, not cross-instrument
+        disagreement, and does not falsify this claim.
+      pass_criterion: "Both instruments' edgeBB confidence intervals overlap on the shared partition at the one-decision horizon."
+    revisit: "First dual-instrument run on the same Deal Book (agreement gate goes live)"
+    status: proposed
 
-  - id: AS-SOR-2
-    statement: "A declared, human-executable Strategy Card can be scored on the same axis as the shipped engine."
-    basis: "The teachable-arms probe already scores human-memorable rules against the engine on shared decisions."
-    falsifier: "No Card expressible in rules reaches enough decision coverage to produce a comparable Result Card."
-    status: partially-supported
+  - id: AS-123
+    type: empirical
+    claim: >
+      A declared, human-executable Strategy Card can be scored on the same axis as the
+      shipped engine.
+    basis: "The teachable-arms probe already scores human-memorable rules against the engine on shared decisions. (was AS-SOR-2)"
+    falsifies_if:
+      watch_surfaces: ["scripts/backtest/teachableArmsProbe.mjs", "docs/standard-of-record/data/"]
+      trigger_event: "No Card expressible in rules reaches enough decision coverage to produce a comparable Result Card."
+      threshold: "Card coverage below 50% of the engine's scored decisions on the shared Deal Book"
+      window: "The next two teachable-arms probe runs"
+    revisit: "Next teachable-arms Result Card emission"
+    status: active
 
-  - id: AS-SOR-3
-    statement: "The 2009 online corpus supports transfer to live 9-handed claims well enough to be worth stamping rather than refusing."
-    basis: "Open — this is the live-vs-online question FSA exists to answer."
-    falsifier: "The three Field surfaces diverge enough that no live claim survives an online-anchored measurement."
-    status: untested
+  - id: AS-124
+    type: empirical
+    claim: >
+      The 2009 online corpus supports transfer to live 9-handed claims well enough to be
+      worth stamping rather than refusing.
+    basis: "Open — this is the live-vs-online question FSA exists to answer; fault-register entry #1. (was AS-SOR-3)"
+    falsifies_if:
+      watch_surfaces: ["docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"]
+      trigger_event: "The three Field surfaces diverge enough that no live claim survives an online-anchored measurement."
+      threshold: "Live-anchored and online-anchored edgeBB differ by more than the wider of the two confidence intervals"
+      window: "First 5,000 live-session hands accumulated in the tracker"
+    revisit: "First live-session sample large enough to test transfer against the corpus-anchored Field"
+    status: proposed
 
 market_dynamics:
   drivers:
@@ -209,6 +237,13 @@ market_dynamics:
     - "Anchor generations multiply and the ladder fragments if rebase re-runs are skipped"
     - "Ceremony cost exceeds measurement value if every small change demands a full Result Card"
   review_cadence_days: 90
+  subsumption_risk: low
+  self_preference: ours
+  durable_ground: >
+    Result Cards bind every comparative claim to this repo's own engine commit, Deal Book
+    hash, partition and seeds; no external tracker or solver can stamp or replicate
+    measurements of this engine, so the standard cannot be subsumed by an off-the-shelf tool.
+  last_reviewed: 2026-08-07
 
 interconnections:
   feeds_into:
@@ -227,20 +262,27 @@ phase_relevance:
 
 last_run_by_protocol:
   baseline:
-    date: null
-    engine: null
-    run_id: null
-    result: null
+    date: "2026-08-04"
+    engine: eng-engine
+    run_id: ev-1785863505139-27d399bb20fd
+    result: >
+      All five problem classes DETECTED. The standard is sound and almost nothing is wired to
+      it: 1 of 27 measurement instruments fully wired (Deal Book + stamp + leakage guard),
+      0 Result Cards in the repo, 8 published reports with 0 card references, 7 of 13
+      standardOfRecord modules (1,679 lines) with zero non-test consumers under 304 passing
+      tests. 9 initial findings NOT auto-promoted — program already at 11/10 cap breach.
+      Report: docs/standard-of-record/BASELINE-2026-08-04.md
   delta:
     date: null
     engine: null
     run_id: null
     result: null
   sweep:
-    date: null
-    engine: null
-    run_id: null
-    result: null
+    date: "2026-08-07"
+    engine: "eng-engine"
+    run_id: "run-strategy-of-record-sweep-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786085332374-a719f8fa6d78"
   challenge:
     date: null
     engine: null
@@ -251,18 +293,17 @@ last_run_by_protocol:
     engine: null
     run_id: null
     result: null
-
 created_at: "2026-08-02T00:00:00Z"
 created_by: founder-directive
-work_items_open: 12
-findings_open: 0
+work_items_open: 13
+findings_open: 11
 
 
 cap_breach:
   active: true
-  work_items_open: 12
-  findings_open: 0
+  work_items_open: 13
+  findings_open: 11
   max_open_items: 10
   priority_floor: 20
-  ratio: 1.2
+  ratio: 1.3
   since: "2026-08-04"

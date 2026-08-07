@@ -1,0 +1,24 @@
+id: "FIND-107"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "engineering"
+program: "engineering"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Protocol stamping and health scoring are decoupled - six stamps tonight moved five programs health not at all"
+description: |
+  Six protocols stamped 2026-08-07; five of six programs still read health 0/0 in the same diff hunk (methodology/design/data-provenance unchanged; strategy-of-record has no health_score field post-stamp; domain-correctness score still dated 07-22). A health-based gate would go green on stamping alone with every finding untouched. PREREQUISITE for FIND-106.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "kit/scripts/cwos-pulse.js"
+recommended_fix: |
+  Recompute health_score in the same pass that writes a protocol stamp.
+dedup_key: "engineering-stamp-write-does-not-recompute-health"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

@@ -1,6 +1,6 @@
 id: "FIND-040"
 title: "preflopFoldResolver tier 1 keeps the hard confidence gate WS-285 removed everywhere else — and returns early, discarding the villain's observed fold counts"
-severity: MEDIUM
+severity: HIGH
 status: open
 category: "domain-defect"
 program: "domain-correctness"
@@ -53,7 +53,7 @@ recommended_fix: |
 theory_citation: "POKER_THEORY §11.5 (shrinkage, not thresholds — generalized from WS-285); §11.4 (minimum-N gate on preflop fold rates is 'a threshold label, the same anti-pattern in another costume')"
 dedup_key: "delta-domain-correctness-preflopfoldresolver-tier1-hard-confidence-gate"
 created_at: "2026-07-30"
-updated_at: "2026-08-05"
+updated_at: "2026-08-07"
 promoted_to: ""
 status_note: |
   FILED LATE 2026-08-05. Recorded in the 2026-07-30 delta run record
@@ -75,3 +75,8 @@ status_note: |
   the Beta blend, which is that rule broken in both directions at once. Runner-up
   "Villain decision model fidelity" (the estimator is the villain fold-rate model);
   recorded here so a future re-file does not read the choice as arbitrary.
+escalation_note: |
+  ESCALATED MEDIUM->HIGH 2026-08-07 by domain-correctness/delta (5-auditor diff audit, window 292e56f..18f49f22).
+  The gate at preflopFoldResolver.js:300 survived a rewrite that edited the ten lines below it, and the window
+  routed ALL behind-seat pricing through resolveSeatFoldToRaise - every preflop fold estimate now flows through
+  this gate. Tier name model_blended describes blending that does not occur. Escalation on reach alone.

@@ -12,42 +12,6 @@ sprints:
     created_at: "2026-05-09T02:23:59Z"
     completed_at: null
 
-  - id: "SPR-104"
-    title: "HSP — Orchestrator deriveActionContext() turn/river precision (Path A: heroState-local)"
-    status: completed
-    item_count: 1
-    items_done: 1
-    program_focus: "domain-correctness"
-    created_at: "2026-05-31T00:00:00Z"
-    completed_at: "2026-06-04T00:00:00Z"
-
-  - id: "SPR-105"
-    title: "HSP-X1 — Adjustment composition rule (resolves HERO_STATE_DESIGN.md §7.2)"
-    status: completed
-    item_count: 1
-    items_done: 1
-    program_focus: "domain-correctness"
-    created_at: "2026-06-04T00:00:00Z"
-    completed_at: "2026-06-04T00:00:00Z"
-
-  - id: "SPR-106"
-    title: "HSP-M1 — Full multiway model (HSP v2 close-out — lone hard-dep remaining)"
-    status: completed
-    item_count: 1
-    items_done: 1
-    program_focus: "domain-correctness"
-    created_at: "2026-06-04T00:00:00Z"
-    completed_at: "2026-06-04T00:00:00Z"
-
-  - id: "SPR-107"
-    title: "Mid-hand tag-for-review — one-tap flag + Review Queue (WS-190)"
-    status: completed
-    item_count: 1
-    items_done: 1
-    program_focus: "design"
-    created_at: "2026-06-05T00:00:00Z"
-    completed_at: "2026-06-05T00:00:00Z"
-
   - id: "SPR-108"
     title: "SCF leak rules — ship 2 more catalog rules incl. first multiway-specific (WS-146 5th claim)"
     status: completed
@@ -56,15 +20,6 @@ sprints:
     program_focus: "design"
     created_at: "2026-06-06T00:00:00Z"
     completed_at: null
-
-  - id: "SPR-109"
-    title: "SCF leak rules — frequency-of-aggression follow-through (turn barrel + RFI open-fold) (WS-146 6th claim)"
-    status: completed
-    item_count: 1
-    items_done: 1
-    program_focus: "design"
-    created_at: "2026-06-06T00:00:00Z"
-    completed_at: "2026-06-08T00:00:00Z"
 
   - id: "SPR-110"
     title: "PIO recognition scoring + confidence — unblocked core (WS-164)"
@@ -623,4 +578,67 @@ sprints:
     program_focus: "strategy-of-record"
     created_at: "2026-08-03T05:03:24.187Z"
     completed_at: "2026-08-03T22:11:00.501Z"
+
+  - id: "SPR-172"
+    title: "Ship WS-331: The pier posts — Pool Best Response as the computable ceiling of exploitation, held out"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "strategy-of-record"
+    created_at: "2026-08-04T04:26:31.767Z"
+    completed_at: "2026-08-04T05:39:54.269Z"
+
+  - id: "SPR-173"
+    title: "Ship WS-330: The standing disclaimer and suspected-fault register — what this system can honestly cl"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "strategy-of-record"
+    created_at: "2026-08-04T16:08:28.744Z"
+    completed_at: "2026-08-04T16:43:13.403Z"
+
+  - id: "SPR-174"
+    title: "Ship WS-355: Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where "
+    status: done
+    item_count: 3
+    items_done: 3
+    program_focus: "domain-correctness"
+    created_at: "2026-08-04T18:21:02.014Z"
+    completed_at: "2026-08-04T19:59:28.357Z"
+
+  - id: "SPR-175"
+    title: "Ship WS-334: The depth-2/3 subsystem never runs on the live path — context building spends 390ms bef"
+    status: done
+    item_count: 1
+    items_done: 1
+    program_focus: "domain-correctness"
+    created_at: "2026-08-04T21:00:08.620Z"
+    completed_at: "2026-08-05T08:44:22.321Z"
+
+  - id: "SPR-176"
+    title: "Ship WS-428: `opportunitiesPerHand` does not exist in code — the founder's headline figure is a two-"
+    status: done
+    item_count: 1
+    items_done: 0
+    program_focus: "domain-correctness"
+    created_at: "2026-08-06T19:44:16.533Z"
+    completed_at: "2026-08-07T18:10:44.972Z"
+
+  - id: "SPR-177"
+    title: "Ship WS-433: The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at"
+    status: done
+    item_count: 2
+    items_done: 2
+    program_focus: "domain-correctness"
+    created_at: "2026-08-07T03:57:32.495Z"
+    completed_at: "2026-08-07T18:05:28.975Z"
+
+  - id: "SPR-178"
+    title: "Ship WS-439: Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the"
+    status: abandoned
+    item_count: 1
+    items_done: 0
+    program_focus: "design"
+    created_at: "2026-08-07T21:51:36.835Z"
+    completed_at: null
 

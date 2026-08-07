@@ -1,9 +1,9 @@
 id: "ses-20260803-2128-4bee4c58"
-status: active
+status: "abandoned"
 started_at: "2026-08-03T21:28:04.269Z"
-ended_at: null
+ended_at: "2026-08-04T02:33:03Z"
 mode: auto
-last_heartbeat: "2026-08-03T21:28:25.242Z"
+last_heartbeat: "2026-08-03T22:20:11.586Z"
 pid: 7048
 host: MorinComputer
 agent_session_id: "4bee4c58-96c2-4a39-9222-bf31e1d3f8e0"
@@ -26,4 +26,13 @@ files_locked:
   - "src/utils/standardOfRecord/schemas.js"
   - "docs/standard-of-record/VOCABULARY.md"
   - "src/utils/standardOfRecord/__tests__/decisionAtom.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-04.
+  Original start: 2026-08-03T21:28:04.269Z.
+  Last heartbeat: 2026-08-03T22:20:11.586Z.
 
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

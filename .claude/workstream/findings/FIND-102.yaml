@@ -1,0 +1,26 @@
+id: "FIND-102"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "security"
+program: "security"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Guest data auto-merges headlessly into any account that signs in - no ownership check, on the app most sensitive data class"
+description: |
+  GuestDataMerge.jsx:20-48 (docblock: headless one-time merge; return null) fires on any userId transition; migrateGuestData.js:40-64 unconditionally re-keys every guest hands/sessions/players/sightingLogs record to the new UID. Shared device: one person guest data (incl. ethnicity/physical descriptions/photos via players cascade) silently attaches to whoever signs in next. Also papers over the cold-load guest-bucket provider race - sequence the fixes together.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "src/components/GuestDataMerge.jsx"
+  - "src/utils/persistence/migrateGuestData.js"
+  - "src/AppProviders.jsx"
+recommended_fix: |
+  Prompt before merging when guest records exist (move N hands into this account? / keep separate / discard); fix the provider-mount race in the same change.
+dedup_key: "security-guest-automerge-no-ownership-check"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

@@ -1,0 +1,44 @@
+id: "WS-440"
+title: "RotateDeviceHint hard-blocks hand entry with no dismiss and no recovery on rotate (founder device-verified, re-filed after ticket-ID collision lost the original WS-315)"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P0"
+category: "ux"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Found in the 2026-07-31 founder-device pass (5ca7b298 made the app runnable without credentials): the rotate-device gate hard-blocks entry with no dismiss affordance and no recovery when the device rotates back - a phone that auto-rotates mid-session (pocket, table bump) can lock the founder out of hand entry entirely. Worse than any advice-quality defect because it removes the ability to act at all. Original ticket WS-315 was overwritten by an unrelated ticket; re-filed 2026-08-07 by launch/sweep. Premise re-verification is step 1: confirm the gate still hard-blocks at HEAD.
+accept_criteria: |
+  Verify current behavior at HEAD; make the hint dismissable and self-recovering on orientation change; add a test simulating rotate-away/rotate-back mid-entry.
+effort: "S"
+files_involved:
+  - "src/components"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-launch-sweep-2026-08-07"
+created_at: "2026-08-07T12:00:00Z"
+status_note: |
+  Re-filed 2026-08-07 by launch/sweep (ses-20260807-0535-df53cf18) after discovering the original
+  2026-07-31 tickets (WS-311/315/316) were overwritten by an ID-allocation collision and the project
+  file deleted. Evidence trail: docs/design/audits/2026-07-31-*.md + docs/design/evidence/2026-07-31-tvr-device-baseline/.
+recovered_doctrine_note: |
+  UPDATE 2026-08-07 (orphan-branch recovery): THE FIX ALREADY EXISTS - commit 954972df (fix(orientation):
+  the rotate gate is a hint, not a dead end - WS-315 Phase 2) with RotateDeviceHint.jsx + useIsPortraitViewport.js
+  was recovered in merge 9de247d1 on integrate/orphans-20260807 and its tests pass at that HEAD. This item
+  reduces to: verify the recovered fix covers the accept criteria once the integration branch lands, then close
+  with completion_commit 954972df.

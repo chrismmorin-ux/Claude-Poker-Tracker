@@ -1,0 +1,25 @@
+id: "FIND-106"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "launch"
+program: "launch"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The launch gate is unenforceable in code and its fed_by names non-existent programs - supersedes FIND-LA-001"
+description: |
+  prog-launch.yaml:105-107: blocking_programs still [] after three sweeps re-flagged it; facilitator-verified grep of kit/scripts/ for blocking_programs/launch_gate/required_program_health: ZERO readers - populating the array changes nothing. fed_by lists ux and financial-accuracy (neither installed per registry.yaml) while domain-correctness (priority 1, critical, open CRITICAL) is absent. Gate-spec decision package (blessed with two amendments: security stays BLOCKING; add a blocking-findings clause because health does not recompute on stamp) is in the run evidence.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - ".claude/workstream/programs/prog-launch.yaml"
+  - "kit/scripts/cwos-pulse.js"
+recommended_fix: |
+  Founder ratifies the gate-spec table; then: cwos-pulse launch branch reading blocking_programs + findings-index (M); prog-launch fed_by/blocking_programs rewrite (S); SEQUENCED BEHIND the FIND-107 recompute fix or the gate reports stale numbers.
+dedup_key: "launch-gate-has-no-code-reader"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

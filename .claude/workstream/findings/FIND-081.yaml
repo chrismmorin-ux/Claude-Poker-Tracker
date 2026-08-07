@@ -1,0 +1,23 @@
+id: "FIND-081"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Methodology Drift"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Load-bearing fold-equity constants have no derivation; divergent pseudocounts three lines apart (OBS_PRIOR_WEIGHT=15 vs PRIOR_WEIGHT=10)"
+description: |
+  foldEquityCalculator.js:610 OBS_PRIOR_WEIGHT=15 underived beside :661 PRIOR_WEIGHT=10 (which has a derivation comment); :614 modelEffN=confidence*50; :605 segEstimate+=0.1; :621,624,635 clamp 0.3/0.9 x3. Fold equity is the engine most bias-prone quantity (3 prior fix tickets). Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  Derive or measure each constant; mark founder estimates as such in code so they cannot be quoted as measured. Add a repo-wide pseudocount consistency assertion.
+dedup_key: "methodology-foldequity-underived-constants-divergent-pseudocounts"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

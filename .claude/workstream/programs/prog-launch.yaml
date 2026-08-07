@@ -144,17 +144,17 @@ last_run_by_protocol:
     result: "First launch-readiness gate assessment. VERDICT: NOT READY — correctly so; the project is in active development, not pre-launch. Aggregate blocking-program health is far below the required 60: only 2 of 13 programs have run (domain-correctness=5, self-compliance=4); the other 11 sit at health 0 (never run). 1 MEDIUM finding FIND-LA-001: launch_gate.blocking_programs is empty [] — the gate is declared but no programs are wired into it, so it cannot produce a formal aggregate decision until the blocking set is named (security, domain-correctness, compliance, data-quality, etc. per the fed_by list). Operational-readiness concerns are reshaped by architecture: this is a local-first client-side React + IndexedDB app with no server/payments/auth, so traffic-scaling / payment-outage / server-restart-data-loss are N/A or transform into IndexedDB migration robustness (owned by the persistence surface). cap_breach active: 8 open work items vs max 5 (ratio 1.6). Baseline satisfies sweep coverage on day one."
   delta: { date: null, engine: null, run_id: null, result: null }
   sweep:
-    date: "2026-08-03"
-    engine: eng-engine
-    run_id: "run-launch-sweep-2026-08-03"
-    result: "Cadence sweep (12d since last — 5d over the 7d cadence; sweep was the sole /next block). VERDICT: NOT READY — unchanged and correct by design; project remains in active development. Aggregate blocking-program health is far below the required 60: the highest canonical score in the repo is data-provenance at 4/8, and 10 of 15 programs sit at 0. Movement since 2026-07-22: (+) data-provenance is NEW and immediately the healthiest program at 4/8 — first program to run under its own power since the migration; (+) domain-correctness holds Value-90d at 88% with 0% drift, i.e. the single most launch-critical program is converting findings into work at a healthy rate; (-) domain-correctness canonical score fell to 2/10 as the stamped 6 collapsed to computed 2 under the challenge/blind_spot staleness clamp — the stamp had been carrying credit the protocols no longer earn; (-) self-compliance holds at 2/10 with 2 machine-runnable AS-N overdue and unscored, so the program that audits our own compliance is itself out of contract; (-) NEW cap breach: design at 19/8 work items (2.38x) since 2026-07-26, the first cap breach since the 2026-06-09 baseline cleared; (-) strategy-of-record is a NEW active program already at 10/10 WIP with a 0 score — it has never run; (-) FIND-039 (MEDIUM, domain-correctness) has been ungoverned for 12 days, meaning the findings->work-item loop is demonstrably broken and AS-51 is at risk of auto-flipping to contradicted. FIND-LA-001 still open and now three sweeps old: launch_gate.blocking_programs is empty [], so this gate still cannot produce a formal aggregate decision — it is reporting NOT READY by inspection, not by contract. That is the single highest-value fix for this program and it should stop being deferred. As a meta-aggregation program, sweep performed inline from canonical cwos-pulse overview scores — proportionate to an unchanged NOT-READY verdict (precedent: 2026-06-21, 2026-07-22)."
+    date: "2026-08-07"
+    engine: "eng-engine"
+    run_id: "run-launch-sweep-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786086322623-baf44bd0011f"
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
-
 health_score: 2
 health_ceiling: 5
 health_ceiling_reason: "Baseline complete (2026-06-09); sweep current as of 2026-08-03. Canonical computed score is 2, not 3: the sweep cleared the -10 staleness decay, but `challenge` (cadence 14d, min_tier active) has NEVER run, which holds the program at the stale clamp max of 2. Running challenge is the only lever that lifts this above 2. The program runs and returns a correct verdict (NOT READY, by design — mid-development). Score held to 3 by a real config gap that is now three sweeps old: launch_gate.blocking_programs is empty [], so the gate reports by inspection rather than by contract. cap_breach cleared (1 open vs max 5). Ceiling 5 until the blocking set is wired and challenge/blind_spot run. This is a temporary lifecycle program — removed after successful launch."
-findings_open: 0
+findings_open: 4
 work_items_open: 1
 
 cap_breach:

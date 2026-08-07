@@ -1,0 +1,25 @@
+id: "FIND-086"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unenforced enforcement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "check-sor-additive.sh is dead code while its IDB sibling is wired at smart-test-runner.sh:16"
+description: |
+  Zero references in ci.yml / deploy.yml / package.json / smart-test-runner.sh - but smart-test-runner.sh:16 DOES run check-idb-additive.sh. The convention exists; this file was missed. WS-431/WS-434 accept criteria implicitly assume the gate runs. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/smart-test-runner.sh"
+  - ".github/workflows/ci.yml"
+  - "scripts/check-sor-additive.sh"
+recommended_fix: |
+  Add the SoR gate beside the IDB gate in smart-test-runner.sh (one line) and to CI; update WS-431/434 accept criteria to assert wiring, not just schema membership.
+dedup_key: "sor-additive-gate-unwired"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

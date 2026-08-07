@@ -1,0 +1,443 @@
+run_id: "run-domain-correctness-blindspot-2026-08-05"
+program: domain-correctness
+protocol: blind_spot
+engine: eng-engine
+date: "2026-08-05"
+cadence_days: 30
+prior_run: "2026-06-20 (run-domain-correctness-blindspot-2026-06-20) — 46 days, 16 days overdue"
+intent_event: "ev-1785943365039-0be4ab4f83c1"
+
+# ============================================================================
+# METHOD — and a fidelity failure that is part of the record
+# ============================================================================
+method:
+  structure: >
+    Phase 1: six independent lenses, fresh context each, one shared brief with the protocol's
+    prompt_additions verbatim, the 2026-06-20 do-not-reopen list, and the three open prior findings
+    to confirm or refute. Phase 2: each lens resumed WITH its Phase-1 context and given (a) external
+    evidence from a separate ticket-filing agent (WS-380..385) and (b) the other five lenses'
+    findings plus named collisions to rule on. Phase 3: cross-critic over all twelve outputs,
+    tasked adversarially — what did all six SHARE and MISS, which claims survived only because
+    nobody checked them, and what should NOT be filed.
+  lenses:
+    - game-theorist          # structure of the strategy space
+    - estimation-theorist    # identifiability and sample complexity
+    - research-scientist     # falsifiability; doctrine-with-no-code and code-with-no-doctrine
+    - cto-agent              # archaeology, orphaned math, program scope coverage
+    - failure-engineer       # under-served live structures and model boundaries
+    - information-theorist   # what crosses the channel to the table
+  fidelity_failure: >
+    THIS RUN BEGAN AS AN INLINE SINGLE-THREADED AUDIT AND WAS STOPPED BY THE FOUNDER BEFORE IT COULD
+    BE STAMPED. The session had a standing instruction not to spawn agents unprompted; the protocol
+    declares `engine: eng-engine`, a multi-agent roundtable. The AI resolved that conflict by
+    silently downgrading to a solo pass and was minutes from writing evidence and resetting the
+    staleness clock on work that had not happened.
+
+    The founder's ruling: "The agents are you anyway... are you able to change context mid session?
+    no. you hold onto it. The agents, who are you, instantly have a drastically different
+    perspective when run with a background and fresh context."
+
+    The mechanism, now encoded as a hard restriction in `.claude/rules/engine-execution-fidelity.md`
+    and `CLAUDE.md`: context is monotonic within a session. By the time the auditor decides to
+    audit, it is already anchored. An inline "roundtable" is one position wearing six names, and the
+    disagreement between lenses — the entire product of a roundtable — cannot occur. The failure is
+    self-concealing because an inline pass agrees with itself and therefore reads as plausible.
+
+    ALL INLINE OUTPUT WAS DISCARDED, not carried forward and not shown to the lenses, to avoid
+    contaminating the independence that makes the fan-out worth running.
+  cost:
+    phase_1_2_lens_tokens: "~1.55M subagent tokens across 12 lens invocations"
+    cross_critic_tokens: "~109k"
+
+# ============================================================================
+# VERDICT
+# ============================================================================
+verdict: >
+  NOT-CLEAN. The blind-spot question this protocol exists to ask was answered, and the answer is
+  structural: THIS PROGRAM HAS VERIFIED CORRECTNESS AND HAS NEVER VERIFIED REACHABILITY. The
+  2026-06-20 run certified multiway, SPR, blockers and equity realization as "verified not gaps".
+  All four are correct. All four are unreachable from the founder's live surface. Roughly fifteen
+  instances of the same shape were found across six lenses.
+
+  A second, sharper finding came from the cross-critic: the convergent headline was PARTLY
+  INHERITED, not discovered — it was already recorded at file:line resolution seven weeks earlier in
+  `memory/project_allin_side_pots.md:19`, which every session loads at start. What was genuinely
+  found rather than recalled: the per-file defects listed under `confirmed_findings` below.
+
+  THE PROGRAM'S OWN INSTRUMENT IS BROKEN. Nine of thirteen paths named in
+  `prog-domain-correctness.yaml` scope patterns and detection recipes MATCH ZERO FILES. A literal
+  execution of this program's detection recipes reads clean because it greps paths that do not
+  exist. `src/hooks/**` and `src/components/**` are outside scope entirely — so the file containing
+  the single most consequential poker-logic line in the repo is one the program is configured never
+  to look at.
+
+# ============================================================================
+# CONFIRMED — verified by the cross-critic against source, not taken from a lens
+# ============================================================================
+confirmed_findings:
+
+  - id: FIND-043
+    severity: CRITICAL
+    title: "The live table's decision rule is three literals, and both branches violate stated doctrine"
+    evidence:
+      - "src/components/views/TableView/CommandStrip.jsx:659-663 — `eq >= 0.55 → VALUE`; `eq < 0.40 && fp >= 0.40 → BLUFF`; else CHECK"
+      - "src/hooks/useLiveEquity.js:154 — `eq` is `handVsRange(...)`, ALL-IN equity vs villain's FULL range"
+      - "src/hooks/useLiveEquity.js:167 — `estimateFoldPct(seg, 'bet')`, two args; playerStats and villainModel default to {} and null, so foldEquityCalculator.js:443/:468 personalisation branches are dead on every live call"
+      - "src/utils/exploitEngine/foldEquityCalculator.js:418 — `estimateFoldPct` takes NO bet-size argument at all"
+    doctrine_violated:
+      - "POKER_THEORY §3.4.3 + exploitEngine/CLAUDE.md — 'DO NOT test for value with ALL-IN equity, however carefully you restrict the range.' Measured case: Q♠J♠ at 0.4929 beating nothing. Fixed in the engine by WS-312 (doc carries a two-fix history); still shipping here."
+      - "POKER_THEORY §6.3 — breakeven bluff frequency is s/(1+s), a function of sizing. At 1/3-pot breakeven is 25% so the app SUPPRESSES auto-profitable bluffs; at pot-sized it is 50% so the app GREEN-LIGHTS losing ones. Opposite errors at the two sizings the founder uses most."
+    note: "Both ends of the BLUFF comparison are size-free: a size-free fold estimate against a size-free constant, while neither knows what hero is betting."
+    reach: "100% of manually-entered live hands"
+
+  - id: FIND-044
+    severity: CRITICAL
+    title: "The engine is not unconnected — it is fully wired to the venue the founder does not play"
+    evidence:
+      - "src/contexts/OnlineAnalysisContext.jsx:57-60 — `useLiveActionAdvisor(safeLiveHandState, ...)` produces the full evaluateGameTree output"
+      - "src/contexts/OnlineAnalysisContext.jsx:68-70 — `pushAdvice(advice)` ships it to the Chrome extension"
+      - "ignition-poker-tracker/side-panel/render-coordinator.js:386 — the side panel renders topRec"
+      - "src/hooks/useSyncBridge.js:329 — `setLiveHandState` fires ONLY on a `BRIDGE_MSG.HAND_STATE` window message; sole writer"
+      - "src/components/views/TableView/CommandStrip.jsx:88 — the live table reads the SAME object, permanently null without the extension"
+    correction_to_lenses: >
+      Three lenses framed this as ABSENT wiring. It is complete wiring terminating at the wrong
+      venue. This changes the cost model: it is a second PRODUCER for a consumer that already exists
+      and already has a rendering contract — not a build-the-connection project. Nobody costed it
+      that way.
+
+  - id: FIND-045
+    severity: HIGH
+    title: "tightenRatesForContinuation discards the villain-model fold rate for a hardcoded 0.45, applied twice"
+    evidence:
+      - "src/utils/exploitEngine/gameTreeSizingHelpers.js:162 — signature `(rates, priorAction = 'call', foldRate = 0.45)`"
+      - "src/utils/exploitEngine/gameTreeDepth2.js:1073-1078 — both call sites pass TWO arguments, so foldRate is always 0.45 regardless of the model that just computed one; applied to callingRates then to the result"
+      - "Compounded: air multiplied by `survivalRate * 0.7` twice = 0.148x. Villain's river air is 15% of his flop air, derived from a constant, in a module whose whole purpose is per-villain modelling."
+      - "AP-RL-01 violation (bucket-label-keyed narrowing); invisible to holdingKnowledge `narrowingCount` (gameTreeDepth2.js:1087,:1158)"
+      - "WS-303 removed the analogous chained `narrowByBoard` and RELOCATED the effect into this channel without revisiting it (comment at gameTreeDepth2.js:1113-1125)"
+    why_it_outranks_wiring: >
+      This is a wrong NUMBER, not absent wiring, and it is wrong today in every path that runs —
+      Ignition play, drills, computeDepth2Plan, replayAnalysis, and THE CORPUS BACKTEST. Backtest
+      numbers are what the Standard of Record binds comparative claims to, so this contaminates the
+      evidence base used to justify every other fix, including the live-path fix.
+    direction: "biases villain's continuing range STRONGER ⇒ hero under-barrels; opposite direction from the inflated-fold-equity family, so no existing guard catches it"
+
+  - id: FIND-046
+    severity: HIGH
+    title: "The program's own scope patterns and detection recipes name paths that do not exist"
+    evidence:
+      - ".claude/workstream/programs/prog-domain-correctness.yaml:143-150 — `gameTreeEvaluator*.js`, `bayesianConfidence*.js`, `foldEquityCalc*.js`, `preflopAdvisor*.js`, `decisionAccumulator*.js`, `weaknessDetector*.js`, `actionAdvisor*.js`, `villainDecisionModel/**` — ALL EIGHT match zero files; every module lives under src/utils/exploitEngine/"
+      - ":82 names src/utils/handAnalysis/equityCalc.js — absent. :91 names src/utils/gameTreeEvaluator.js and foldEquityCalc.js — absent. :99,:108 name src/utils/villainDecisionModel/ — not a directory."
+      - "9 of 13 named paths MISSING (direct existence test)"
+      - "src/hooks/** and src/components/** are outside scope entirely — so useActionAdvisor.js, useLiveActionAdvisor.js and CommandStrip.jsx are invisible to the 3-day delta guardrail"
+      - "Five of eight evaluateGameTree callers are outside scope: liveAdvisor/computeHelpers.js:249, citedDecision/computeBaselineForAssumption.js:133, predictionAudit/reconstruct.js:211, postflopDrillContent/computeDepth2Plan.js:166"
+    consequence: >
+      The program's scope excludes the surface the product is. Two mechanisms produced the WS-283
+      escape and they need different remedies: Route A (drillModeEngine.js:813, inside
+      postflopDrillContent/) is caused by the scope gap; Route B (gameTreeEvaluator.js:603, IN scope)
+      is a review-depth failure — an audit of a defaulted constant that does not grep the LITERAL
+      will miss every explicit pass. File as one finding, two mechanisms.
+
+  - id: FIND-047
+    severity: HIGH
+    title: "One bucket, two denominators — the estimate decays and its confidence does not"
+    evidence:
+      - "src/utils/exploitEngine/decisionAccumulator.js:465-466 — `occurrences++` (raw) and `weightedOccurrences += recencyWeight` (halflife 50) written together"
+      - ":611-616 — the ESTIMATE (avgRangeEquity, avgSegmentation) normalises by `wn = weightedOccurrences`"
+      - ":622-628 — `bucket.sparse` and `bucket.confidence = bayesianSampleConfidence(bucket.occurrences)` use the RAW count"
+      - "exploitValidator's consequence-weighted gate reads the undecayed count, so it cannot catch this"
+    mechanism: >
+      Confidence uses n where it should use effective sample size (Σw, or (Σw)²/Σw²), and the gap
+      grows without bound in n. Cross-critic correction: the averages are weighted MEANS so they stay
+      well-defined — 'evidence decays to zero' overstates it; the defect is the denominator mismatch.
+    second_defect: >
+      THE MEMORIES ARE INCOMMENSURABLE. Decays: postflop buckets, evidenceN, the action distribution.
+      Never decays: the preflop range (bayesianUpdater.js:174-176), the six scalar stats and all
+      credible intervals (tendencyCalculations.js:317-362), poolBaseline lifetime counts. "What this
+      villain does" means the last ~50 hands on one street and his entire history on another, and
+      nothing states the mixture.
+    third_defect: >
+      THE DECAY UNIT IS ARRAY POSITION, NOT TIME OR HANDS. decisionAccumulator.js:252,:402-404 —
+      `handAge = totalHands - 1 - handIdx`. modelAudit.js:107 passes up to `cp` hands, :121 passes a
+      10-hand slice, so every test hand carries weight >= 0.87 while training hands decay across the
+      full checkpoint. analysisPipeline.js:115 passes hands with no in-function chronological sort.
+
+  - id: FIND-048
+    severity: HIGH
+    title: "The one per-villain estimate the live path consumes is the one data structurally cannot inform"
+    evidence:
+      - "src/hooks/useLiveEquity.js:138 — `getVillainRange(villain.tendencies.rangeProfile, position, actionKey)` and :167 `estimateFoldPct(seg, 'bet')` are the COMPLETE per-villain input to the live recommendation"
+      - "src/utils/rangeEngine/bayesianUpdater.js:180-183 — `ratio = effectiveFreq / populationFreq`; `ranges[action][i] = Math.min(1.0, prior[i] * ratio)`. One scalar per (position, action) scales all 169 cells; SHAPE is untouched by data."
+      - "src/utils/exploitEngine/bayesianConfidence.js:36-49 — the inherited shape's provenance: 'FOUNDER ESTIMATE of the live 1/2 pool — informed judgment, NOT a measured dataset'"
+      - "Cross-critic extension: estimateFoldPct is passed no playerStats and no villainModel, so the live fold number is a PURE POPULATION CONSTANT with zero personalisation"
+      - "rangeEngine/pipCalculator.js — the identifiable low-dimensional shape coordinate is consumed only by RangeProvenance.jsx (display); never written back"
+    consequence: >
+      The live path consumes ZERO per-villain information other than a scalar-scaled prior grid. More
+      table time cannot improve WHICH hands the opponent holds — volume moves, composition never
+      does. Directly relevant to the founder's transfer premise: live data may be structurally unable
+      to move what he expects it to move.
+    tractability: "169 cells will never be identified; a width percentile + 3-5 PIP category deviations is 4-6 parameters, identifiable from ~50-150 preflop decisions."
+
+  - id: FIND-049
+    severity: HIGH
+    title: "The confidence badge is ABSENT on live and DEGENERATE on Ignition"
+    evidence:
+      - "LIVE — absent: LiveAdviceBar.jsx:256 gates ConfidenceBadge behind `useGameTree` (:181), false without the extension. `grep -rln TendencyStats src/` returns no TableView file, so the ± band is absent too; ExploitBadges.jsx:15-25 leaves only a numberless opacity."
+      - "IGNITION — degenerate: DATA needs `source.includes('model')`; villainDecisionModel.js:508,524,558 emit 'prior', :537 `shrinkage-L${n}`, :550 `level-${n}` — none contains 'model'. EST needs `effectiveN < 5`; effectiveN is `totalN + PSEUDOCOUNT` (:325), `evidenceN + PSEUDOCOUNT` (:445), `totalN + PSEUDOCOUNT` (:739), `PSEUDOCOUNT` (:746), PSEUDOCOUNT = 10 (:36) — floor 10. Every villain at every sample size renders PARTIAL."
+      - "actionClassifier.js:299-303 — prints `(${effectiveN} obs)`, so ONE real observation renders as '11 obs'"
+      - "LiveAdviceBar.test.jsx:30,66,78 — fixtures invent 'model_blended'/'population'/'blended', strings the producer cannot emit. The suite is evidence AGAINST the code."
+      - "THE HONEST TWIN: ignition-poker-tracker/shared/stats-engine.js:25-49 `sampleQualityTier` takes a RAW count against the same 15/5 thresholds, returns all three tiers, and SAMPLE_QUALITY_COLORS carries the comment 'Badge colors mirror LiveAdviceBar'. Identical palette, opposite behaviour, no cross-reference."
+    minimum_fix: >
+      `evidenceN` is ALREADY computed and returned at villainDecisionModel.js:445 and simply not
+      carried forward. Propagate it to the other four return sites and the three villainPrediction
+      literals (gameTreeEvaluator.js:332,517,757); key the badge on the shared sampleQualityTier.
+      PSEUDOCOUNT is NOT the defect — it is the Dirichlet prior strength matched to PRIOR_WEIGHT=10,
+      VALIDATED on the WS-262 corpus in the same measurement that refuted the 200 cap. Changing it
+      would un-validate a validated constant to fix a display bug. CAVEAT: evidenceN is a sum of
+      DECAYED weights (a fractional ESS), while the 15/5 thresholds are calibrated on raw counts —
+      feed the raw count, put the ESS in a tooltip.
+
+  - id: FIND-050
+    severity: HIGH
+    title: "Two detectors fire on noise, with the null rates computed"
+    evidence:
+      - "computePositionAwareness (bucketQueryUtils.js:91-115): minHandsPerPosition=3, spread=max-min, threshold 0.15. A villain with true VPIP identically 25% everywhere: at n=3, P(the two observed rates differ at all) = 62.4%, and any difference clears 0.15. FLAGGED ~62% OF THE TIME under the null."
+      - "bucketQueryUtils.js:114 — `confidence = bayesianSampleConfidence(vpips.length * 5)`: the number of POSITION CATEGORIES, not hands. A villain with 3 hands in each of 5 positions and one with 300 hands in each receive IDENTICAL confidence. Zero mutual information with sample size."
+      - "Feeds villainProfileBuilder.js:28 and villainObservations.js:19 — enters the ENGINE as a trait weight, not merely a display."
+      - "The correct estimator exists 200 lines away: traitDetector.js:45-53 `probRateExceedsFactor` (exact Beta quadrature), OPEN_RATE_PRIOR {alpha:6,beta:24}, with :20-27 explaining why contrasts need more regularization than single rates — a sentence absent from POKER_THEORY.md."
+      - "Sizing-tell gate (weaknessDetector.js:405-428): |r|>0.5 at n>=8. Under H0, t = r√(n-2)/√(1-r²) = 1.414 on 6df ⇒ P(|r|>0.5) ≈ 0.21. Per-context variant at n=5 fires ~39%. Samples are showdown-GATED, and villains are called more at small sizes, so even the SIGN is unidentified."
+      - "No multiplicity control anywhere: `grep -rn 'bonferroni|falseDiscovery|fdr' src/` → zero. ~15 candidate weaknesses ranked per villain; the surfaced top weakness on a thin villain is by construction the noisiest estimate in the set."
+
+  - id: FIND-051
+    severity: HIGH
+    title: "Refinement depth is wall-clock gated and decides the top action — the run is not reproducible"
+    evidence:
+      - "gameTreeEvaluator.js:814 `refinementBudgetMs = 2000`, :815 `onFastResult = null`, :822 `Date.now()`; docstring :803-808 confirms the budget gates depth-2/3"
+      - "foldEstimateComposition.test.js:228-237 + docblock :65-77 — NUTTED_UNCAPPED, hero 33 on QJT: RAISE at a 60000ms budget, NOT-RAISE at the shipped 2000ms"
+      - "WS-383 full refinement recommends the raise the suite classifies as a DEFECT; WS-379 desktop and phone differ on identical inputs; WS-378 80% of top-action flips are depth-1→2, 38/40 toward passivity"
+      - "onFastResult has no production consumer (`grep -rn onFastResult src scripts` → definition and internal use only)"
+    why_it_is_now_top_tier: >
+      Under the founder's 2026-08-05 redirect the deliverable is an OPTIMIZABLE scored figure. A
+      stably-wrong figure still yields honest per-improvement DELTAS; a figure that changes when
+      re-run yields nothing, because an improvement cannot be told from machine load. This attacks
+      the deliverable directly. "Refinement is not asserted monotone, and nothing tells the founder
+      which depth they got."
+
+  - id: FIND-052
+    severity: HIGH
+    title: "thoughtCatalog ships 85 unscored weights to a surface the founder reads, and its own falsifier is unwired"
+    evidence:
+      - "src/utils/exploitEngine/thoughtCatalog.js:1-77 — 64 catalog entries, 85 literal `weight:` floats"
+      - "src/utils/analysisPipeline.js:24,150 — `inferVillainThoughts` runs in the production pipeline"
+      - "Rendered by src/components/ui/VillainProfileModal.jsx and VillainModelCard.jsx"
+      - "`grep -ci thought .claude/context/POKER_THEORY.md` = 0 across all 16 sections"
+      - "thoughtInference.js:293 `calibrateThoughts` with PREDICTION_TESTS is a real self-falsifier, called ONLY from __tests__/thoughtInference.test.js"
+    taxonomy_ruling: >
+      This is NOT the same failure as an unwired PRODUCT (bluffValueConstruction). Three classes,
+      three remedies: (1) unwired PRODUCT — a feature with no caller, opportunity cost, wiring
+      ticket; (2) unwired SELF-CHECK of a live claim — a doctrine violation, because the thing it
+      would falsify IS shipping; (3) unwired UNCERTAINTY on a shipping number — computed,
+      transmitted, dropped at the last hop (equityCI: computeHelpers.js:93 → wire-schemas.js:50 → no
+      renderer; credibleInterval → tendencyCalculations.js:22 → never reaches EV). Class 3 was named
+      by no lens and is the cheapest to close.
+
+  - id: FIND-053
+    severity: MEDIUM
+    title: "The repo's only uncertainty disclosure states an interval that excludes every dominant term"
+    evidence:
+      - "src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx:70-72 — `MC trials: {mcTrials} (± rough CI = 1/√trials)` — Monte Carlo sampling noise ONLY"
+      - ":82-88 — renders cascadingFoldProbability and names the method ('multiwayFoldPct, independent multiplication per villain') without naming the bet fraction that produced it"
+      - "That value comes from drillModeEngine.js:813 `multiwayFoldPct(..., 0.75)` positionally, against style midpoints in [0.21,0.42] (villainModelData.js:255,:290)"
+      - "Excluded and dominant: the bet-fraction assumption, four of six estimators never scored against truth, and the online-2009 population transfer (register rank 1, breadth 0.90)"
+    verdict: "worse-than-none — a reader with no disclosure knows he does not know; a reader with this one has a narrow interval on a panel labelled 'confidence' and will size decisions to it"
+    fix: "NOT removal (standing rule forbids deleting an instrument for being wrong) — widen it, name what it EXCLUDES in the panel's own idiom, and state the bet fraction as a value"
+
+  - id: FIND-054
+    severity: MEDIUM
+    title: "useActionAdvisor.js contradicts itself about which surface it serves, and a shipped fix rests on the false half"
+    evidence:
+      - "src/hooks/useActionAdvisor.js:4-8 — 'the on-demand PlayerAnalysisPanel what-if, DISTINCT from useLiveActionAdvisor'"
+      - "Only non-test importer: src/components/views/AnalysisView/PlayerAnalysisPanel.jsx:14"
+      - "src/hooks/useActionAdvisor.js:37-40 — a WS-333 comment asserts 'this advisor serves the MANUAL live table — the founder's actual 1/2 game', and a shipped rake fix was justified on that premise"
+    note: "The file contradicts itself 30 lines apart. One lens adopted the false half and built its top recommendation on it. Found by the cross-critic; produced by no lens."
+
+# ============================================================================
+# BACKTEST INTEGRITY — promoted by the founder's 2026-08-05 redirect
+# ============================================================================
+backtest_contaminants:
+  - "src/utils/assumptionEngine/__backtest__/handStateReconstructor.js:19 ('no per-seat stack tracking in the data model'), :254 `effectiveStackBB = 100`, :330 `effectiveStack = effectiveStackBB * bb` — UNCONDITIONAL. SPR is a CONSTANT in every scored run, while the founder's own doctrine names SPR as the causal variable behind fear-driven passivity."
+  - "FIND-045 tightenRatesForContinuation — 0.45 constant, applied twice, in every backtest path"
+  - "gameTreeEvaluator.js:602-603 — the stale 0.75 is guarded by `if (numOpponents > 1)`, so it fires ONLY multiway, i.e. specifically in the backtest and NOT on the live path. Exactly backwards from how the external ticket framed it."
+  - "FIND-051 wall-clock refinement gating — breaks reproducibility of the scored figure itself"
+  - "WS-384 ground-truth coverage 2 of 6, and the four uncovered are computeVillainEquityVsPerceived plus three approximate*RangeEquity — the approximations that feed THE AGGREGATE"
+  - "src/utils/exploitEngine/modelAudit.js:119 — `buildRangeProfile(playerId, sorted.slice(0, cp + CHECKPOINT_INTERVAL), userId)` then :121 accumulates test decisions against it. Covariate leak; labels clean, covariates not. Matters disproportionately because modelAudit is the only engine-independent check in the system."
+  - "src/utils/pokerCore/betaMath.js:178-184 — tau=12, floor=0.10, ceiling=0.83, THIRTEEN importers, feeding every weakness confidence and every bucket confidence, with no stated anchor of any kind"
+
+# ============================================================================
+# CROSS-CRITIC — corrections to lens claims. Read before filing anything.
+# ============================================================================
+digest_corrections:
+  - claim: "cto-agent: replace the actionAdvice useMemo with a useActionAdvisor call; every argument is already in scope"
+    verdict: WRONG_AND_HARMFUL
+    evidence: "gameTreeEvaluator.js:792-793 default numOpponents=1, opponentModels=[]; useActionAdvisor.js:59-70 passes neither, nor effectiveStack (unrecordable — gameReducer has no stack field), nor a live rakeConfig (:41 defaults null; OnlineAnalysisContext.jsx:51 builds one with source:'ignition' hard-stated). Shipping it puts a HEADS-UP fold model on a 9-handed table on 100% of hands, with rake omitted."
+    honest_ordering: "(0) record stacks, (1) thread multiway, (2) monotonicity or depth disclosure, (3) wire"
+  - claim: "cto-agent: preflopAdvisor.js:435 potSize/1.5 is an ~11% error at $1/$3, wrong in every path that runs"
+    verdict: WRONG_PATH_UNDERSTATED_MAGNITUDE
+    evidence: "preflopAdvisor's only non-test importers are useLiveActionAdvisor.js:31 (extension-only) and decisionTreeBuilder.js:13 (imports only estimatePreflopFoldPct). Not reachable from manual live play. AND :435 sits inside `facing_limpers` where the pot ALREADY CONTAINS the limps — two limpers at $1/$2 gives bbSize = $4.67 against a real $2, a 2.3x error not 11%. The live-blinds-correct variant is :706. `liveHandState.blinds` is in scope at the caller (liveGameContext.js:34-35) and simply not threaded."
+  - claim: "game-theorist: credibleInterval is referenced only by its own definition"
+    verdict: OVERSTATED
+    evidence: "Imported by tendencyCalculations.js:22 and skillAssessment/shapeLanguage/betaPosterior.js:17; renders at AnchorCalibrationPanel.jsx:202 and PrimitiveCalibrationPanel.jsx:100. The defensible and still-damning claim: no EV or DECISION path consumes a credible interval."
+  - claim: "cto-agent: useLiveEquity.js does not import evaluateGameTree, therefore the live surface has no EV computation"
+    verdict: RIGHT_CONCLUSION_WRONG_MECHANISM
+    evidence: "Game-tree advice does not flow through useLiveEquity at all — it arrives via CommandStrip.jsx:88 from OnlineAnalysisContext.jsx:57. It is null because useSyncBridge.js:329 is the sole writer of liveHandState. The distinction matters: the prop and the renderer already exist; only the producer is missing."
+  - claim: "estimation-theorist P1: the LIVE badge is degenerate"
+    verdict: OVERSTATED_ON_LIVE
+    evidence: "LiveAdviceBar.jsx:256 gates it behind useGameTree, false on live. ABSENT on live, DEGENERATE on Ignition. The lens self-corrected in Phase 2."
+  - claim: "estimation-theorist P1: the villain estimator has no time dimension"
+    verdict: WRONG
+    evidence: "decisionAccumulator.js:30 DECAY_HALFLIFE=50, :404 recencyWeight; carried into the action distribution at villainDecisionModel.js:276. Lens self-corrected: 'a search-and-dismiss failure — I violated my own rule that absence must be shown, not inferred from a filtered result set.'"
+  - claim: "information-theorist: the Ignition sidebar is the honest surface (VERIFIED-NOT-GAP)"
+    verdict: OVERGENERALISED
+    evidence: "sampleQualityTier is honest about SAMPLE SIZE. The same codebase carries equityCI on the wire (wire-schemas.js:50), produced at computeHelpers.js:93, consumed only by harness fixtures. The surface praised as honest silently drops a credible interval. 'Honest surface' was generalised from one function to a codebase no lens opened."
+
+# ============================================================================
+# CONVERGENCE ASSESSMENT — the cross-critic's most important output
+# ============================================================================
+convergence:
+  verdict: partly-artifact
+  argument: >
+    The convergent headline was already recorded at file:line resolution seven weeks before this run
+    in `memory/project_allin_side_pots.md:19`, surfaced in MEMORY.md:40, and loaded into every
+    session at start. Six lenses were HANDED it, not independently converging on it. Three tells:
+    (1) cto-agent reproduced the memory's structure but got the MECHANISM wrong, attributing the
+    absence to useLiveEquity's import list rather than to liveHandState being extension-fed — the
+    signature of recall-then-reconstruct rather than reading; (2) no lens noticed the engine DOES
+    reach a live surface (the Ignition side panel renders topRec) because the memory frames it as
+    'online-only', which reads as 'not the founder' rather than 'a different founder surface that
+    already works'; (3) five of six inherited the memory's SCOPE, auditing src/utils and
+    src/components while `ignition-poker-tracker/` — which the memory does not discuss — went
+    unopened by all six.
+  partial_rebuttal: >
+    The cross-critic's discriminating test was 'does any lens cite OnlineAnalysisContext.jsx:57 or
+    useSyncBridge.js:329'. information-theorist DID cite useSyncBridge.js:319-329 in Phase 1. So the
+    inheritance is real but not total, and the cross-critic overstated that specific test.
+  genuinely_found: >
+    The per-file defects: decisionAccumulator's dual denominators, the villainDecisionModel source
+    strings, tightenRatesForContinuation's double application with a defaulted foldRate, the
+    modelAudit leak, the dead program scope patterns, the two noise-firing detectors, and the
+    ConfidenceDisclosure miscalibration. Those were found, not recalled, and several are checkable
+    and correct.
+  discriminating_test_for_next_run: >
+    Re-run two lenses with MEMORY.md and memory/project_allin_side_pots.md WITHHELD and the phrase
+    'correct instrument, not connected' struck from the brief. If they still land on the live/online
+    split it is structural; if they land on the estimator interior it was inherited.
+
+# ============================================================================
+# DO NOT FILE
+# ============================================================================
+do_not_file:
+  - item: "The 'minimal cut' one-hook edit at CommandStrip.jsx:652-665"
+    reason: harmful-in-isolation
+    detail: "Ships a heads-up EV number the founder will TRUST at a 9-handed table, with rake omitted, replacing three constants he can distrust. File as a project with the stack-recording and multiway-threading prerequisites named."
+  - item: "'Fix the ConfidenceBadge' as a LIVE-path item"
+    reason: mis-scoped-duplicate
+    detail: "It is absent on live, not degenerate. This is an IGNITION-surface item and it is the same ticket as the evidenceN propagation. Filing it as a live fix creates a second orphan."
+  - item: "preflopAdvisor.js:435 as a live-consequence blind-size defect"
+    reason: not-actionable-as-framed
+    detail: "Not reachable from manual live play. The actionable version is 'thread the known blind size instead of inferring it', against the online path, and the error is 2.3x not 11%."
+  - item: "Merging bluffValueConstruction / unexploitableFloor / calibrateThoughts / equityCache / onFastResult / icmContext into one 'orphaned modules' family"
+    reason: wrong-merge
+    detail: "Three classes with three remedies — unwired product, unwired self-check of a live claim, unwired uncertainty on a shipping number. Class 3 (equityCI, credibleInterval) was named by no lens and is cheapest to close."
+  - item: "rakeAsymmetry and blindDefendMax:25 as separate tickets"
+    reason: duplicate
+    detail: "villainObservations.js:69 states the correct anchor IN THE COMMENT ('MDF vs 2.5x open ~40%') and the constant contradicts it on the same line. unexploitableFloor derives that anchor and has no production consumer; unexploitableFloor.test.js:252-255 already asserts it. One two-line ticket."
+  - item: "Adding cto-agent's staleness rule alone"
+    reason: harmful-in-isolation
+    detail: "A staleness rule computed over a scope that resolves to nothing (FIND-046) reports clean forever and will be cited as evidence of health. Fix the scope file FIRST. It also needs the zero-importer census beside it, since a module with no callers is invisible to a rule about callers."
+
+# ============================================================================
+# PRIOR FINDINGS
+# ============================================================================
+prior_findings_status:
+  FIND-031:
+    ruling: "confirmed-still-open, LARGER than recorded, and LOW consequence for this founder"
+    detail: "ICM gated at gameTreeEvaluator.js:1136-1147 to `icmContext != null && numOpponents === 1 && riskChips >= effectiveStack * 0.85` — committed heads-up stack-offs only. AND `icmContext` is supplied by NO production caller (grep → gameTreeEvaluator.js + its own test file), so even that carve-out never executes outside the suite. preflopAdvisor and gameTreeDepth2 have zero ICM references. Founder plays live cash: icmContext is null on 100% of his hands."
+    split: "poker-consequence LOW; governance-integrity MEDIUM — WS-251 is status:done against accept criteria ('Start preflop... then postflop') that are demonstrably unmet"
+  FIND-032:
+    ruling: "sizing-tell half CLOSED but re-opened on different grounds; timing half CONFIRMED-STILL-OPEN"
+    detail: "WS-261 genuinely unstubbed the calibration (decisionAccumulator.js:632-637 samples the shown hand). But it shipped with NO admissibility gate — see FIND-050, ~21% null fire rate. Timing: `grep -rn 'timeToAct|tankTime|actionTime|decisionTime|timingTell' src/` → zero hits outside session duration and compute profiling; gameReducer.js:42 action shape is `{seat, action, street, order, amount?}` with no timestamp; recordSeatAction has no Date.now(). WS-253 remains backlog."
+    note: "'resolved' in this repo's finding vocabulary means promoted-to-ticket, not shipped. That ambiguity is itself a finding — see FAULT-status-unverified-closure below."
+  FIND-033:
+    ruling: "CONFIRMED-STILL-OPEN, settled in both directions, worse than 'open'"
+    detail: "COMPUTED: yes and well (bayesianSampleConfidence, per-stat credible intervals against correct opportunity denominators at tendencyCalculations.js:346-362, effectiveN threaded through every recommendation). TRANSMITTED: absent on live, degenerate on Ignition. See FIND-049."
+    lens_disagreement_resolved: "Three lenses gave three verdicts (still-open / closed / partially-closed). All were tracing different paths; none had traced both. The online-vs-manual split is the unifying explanation and it also resolves the FIND-032 disagreement."
+
+# ============================================================================
+# PROPOSED REGISTER ENTRY
+# ============================================================================
+proposed_fault_register_entry:
+  id: FAULT-status-unverified-closure
+  category: process
+  claim: >
+    Closure and status claims in this repo (finding.status=resolved, ticket.status=done, a doc
+    changelog entry, a draft's 'still open' framing) are ASSERTED by whoever closed the item and are
+    never re-derived from the artifact they describe.
+  ad_hoc_sample: "3/3 positive on items nobody was specifically checking — WS-283 ('test-reachable only', two production routes existed), WS-251 (done, accept criteria unmet), theory-gaps.draft.md (three items listed open that had shipped)"
+  matches_on: none
+  match_style: "audit-triggered, same shape as FAULT-leakage-unclosed-channel"
+  falsifier: >
+    Sample N recently-closed items and for each independently grep EVERY file and call site named in
+    its own accept criteria or description — not just the primary one. If the fraction with at least
+    one missed call site is ~0 across a real sample, retire the entry.
+
+# ============================================================================
+# UNFALSIFIED COMPLETENESS CLAIMS IN POKER_THEORY.md
+# ============================================================================
+unfalsified_completeness_claims:
+  - section: "§3.4 line 329 — 'Every bet is motivated by one or more of the following'"
+    falsifier_in_doc: no
+    note: "ALREADY FALSIFIED ONCE — protection/equity-denial was missing until WS-278. The theory-gaps draft's own D1 recommended the section carry an explicit 'this list has been incomplete before' marker. The marker was never added; the section still reads with unqualified confidence."
+  - section: "§4.2 line 531 — 'A bluff catcher... beats all bluffs... and loses to all value hands'"
+    falsifier_in_doc: no
+    note: "A pedagogical idealization presented as a modelling category. §13.1's continuum framing is the modelling-accurate version; the doc does not point at it."
+  - section: "§8 line 937 — 'Common Mistakes This Document Prevents'"
+    falsifier_in_doc: no
+    note: "Reads as a closed inventory of 14. Needs one sentence stating it is open-ended, mirroring the honest framing already given to §9."
+  - section: "§14/§15 — binding rules declared on the Five-Surface Atlas"
+    note: "FSA is Phase 1 of 5 and unbuilt; §15.3 cites a '§FSA' section that does not exist in the doc (grep '^## ' returns §1-§16 only). scripts/backtest/decisionGeometry.mjs, treated by the charter as existing precedent, does not exist."
+
+# ============================================================================
+# FOUNDER REDIRECT — supersedes the roundtable's own ranking
+# ============================================================================
+founder_redirect_2026_08_05:
+  quote: >
+    "I'm fine with the live corpus being thin for now. Whatever mechanism we use should transfer to
+    the live data and we should see it adjust right? That's the whole point of our anchor measuring
+    process. I want the engine to start giving out accurate fully scored runs against the data sets
+    and see what the improvements are doing to expected EV and to the ranges. The goal is to optimize
+    this figure, and I have not seen this figure."
+  consequences:
+    - "Do NOT rank by live reach. Estimator STRUCTURE is fit and scored on the corpus; live data then moves it (POKER_THEORY §11.5 admissibility). Thin live volume does not deprioritize."
+    - "The ranking axis is: does this defect contaminate the scored figure? This settles the roundtable's ordering dispute in favour of backtest integrity."
+    - "REPRODUCIBILITY OUTRANKS ACCURACY for this deliverable. A stably-wrong figure still yields honest per-improvement deltas; a non-reproducible one yields nothing."
+    - "Range effects are part of the deliverable, not a bonus."
+  standardized_readout_directive:
+    quote: >
+      "standardize these readouts when they are run (the equilibrium statistical anchor, our
+      developed optimal play, the pool's actual play (I still think there are sub-archetypes, not
+      every player plays the same, and I need to see how they perform within their own pool). The
+      running theory in the poker world is that most poker players are steadily losing players. We
+      should be able to get exact figures here on which players leak the most EV. That is an
+      exploitable data set."
+    three_frames: [equilibrium_statistical_anchor, developed_optimal_play, pool_actual_play]
+    edge_definition: "the gap between frame 2 and frame 3, priced in EV"
+    primary_output: "per-sub-archetype EV leak, ranked — the exploitable dataset"
+    binding_constraint: >
+      An archetype must PROVE it separates before it gets a channel (founder ruling, memory:
+      feedback_test_archetype_before_building_channel). A tail always exists; the test is
+      overdispersion against a CONTROL axis plus cross-axis correlation. Slowplay failed (χ²/df 1.005
+      vs control 1.859); aggression frequency passed. Each sub-archetype's leak figure must carry its
+      separability evidence, or the readout partitions noise into confident-looking buckets.
+
+open_at_time_of_writing:
+  - "Scoring-infrastructure census (agent running) — does an aggregate EV figure exist today, what command produces it, is the corpus present locally, has any Result Card ever been produced"
+  - "Contamination audit of the EV figure (agent running) — per defect: upstream of the figure? bias direction? breaks accuracy or reproducibility? and: can live data move the range shape at all?"

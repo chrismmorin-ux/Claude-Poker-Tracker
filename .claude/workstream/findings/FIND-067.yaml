@@ -1,0 +1,24 @@
+id: "FIND-067"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 1 Entry skipped"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "The most consequence-bearing surface (mid-hand advice) is unaudited since 04-21 while a live non-determinism defect emerged that the design vocabulary cannot express"
+description: |
+  TableView / LiveAdviceBar last audited 2026-04-21; every audit since went to study/reflection surfaces (voice-reasoning-notes, hole-map, drills); the advice-depth-tracks-machine-load defect (identical hand state yields different displayed advice under CPU contention, refinement gated on wall-clock) is referenced by no surface, audit, or discovery; no shallow-vs-refined marker exists (MH-02 covers freshness, which is not depth). This is measurability bias operating inside the design program itself.
+affected_files:
+  - "docs/design/surfaces/table-view.md"
+  - "docs/design/personas/situational/mid-hand-chris.md"
+recommended_fix: |
+  Schedule the next audit cycle on mid-hand advice and add consequence-weighting to audit selection; the audit must produce a displayed depth/confidence marker so the founder can tell a shallow reading from a refined one. Per the improvement default: the correct target is removing the non-determinism (WS-432 cluster); the marker is what the surface owes until then, not instead of it.
+dedup_key: "eng-engine-design-sweep-mid-hand-advice-surface-unaudited-coverage-bias"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

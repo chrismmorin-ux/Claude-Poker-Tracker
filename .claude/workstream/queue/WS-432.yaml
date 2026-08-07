@@ -2,12 +2,12 @@ id: "WS-432"
 title: "Freezing the clock to make runs reproducible would silently measure an UNBOUNDED engine while stamping the card `2000 ms` — refinement is wall-clock gated at seven sites and a constant clock disables every one of them"
 legacy_id: ""
 type: bug
-status: claimed
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-07T18:05:28.975Z"
+completion_commit: 52d0cae4
 priority_score: 50.0
 priority_label: "P0"
 category: "reproducibility"
@@ -115,3 +115,4 @@ status_note: |
   testing it. The architect's refutation is backed by specific code reading; the failure engineer's
   agreement was inherited from the ticket. The architect's finding is treated as the live one. If a
   later session overturns it, that reversal belongs here.
+closed_by_event: ev-1786125929391-7f449b9371e0

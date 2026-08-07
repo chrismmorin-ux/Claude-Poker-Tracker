@@ -1,0 +1,24 @@
+id: "FIND-085"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unreplicable measurement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Every Result Card on disk (16/16) stamps engineDirty:true and nothing refuses one"
+description: |
+  16 of 16 cards (6 under docs/, 10 under .artifacts/) carry engineDirty:true - zero counterexamples repo-wide. manifest.js:68 own docblock: a dirty tree means the commit does not identify the code that ran. manifestProblems type-checks the field and never refuses. Every replicable-sounding figure published is, by its own manifest, not reproducible from the named commit. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/standardOfRecord/manifest.js"
+  - "docs/standard-of-record/cards"
+recommended_fix: |
+  Make engineDirty:true a manifestProblems failure for cards written under docs/, with an explicit opt-out for exploratory .artifacts/ runs; re-emit or annotate the 6 committed cards.
+dedup_key: "sor-engine-dirty-ungated"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

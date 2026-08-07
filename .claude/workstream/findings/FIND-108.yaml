@@ -1,0 +1,26 @@
+id: "FIND-108"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "engineering"
+program: "engineering"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The 10 sessionRecoveryLiveness test failures are deterministic kit regressions mislabeled as environmental"
+description: |
+  Deterministic 10/19 across two runs. Root causes: cwos-session-recovery.js:342 writes reason dead-pid while the test asserts dead-process (string drift from a refactor); :212 hardcodes assumeLocal:true contradicting session-liveness.js own doc (a record with no host must NOT be assumed local); cwos-session-register.js never writes pid_recorded_at (load-bearing for reboot-recycle detection - the unimplemented half of WS-351). Only the shared DEAD_PID fixture is plausibly environmental (a couple of the 10 at most). The environmental label was propagated through every overnight item brief - CORRECTED. Probable cause of the cwos-session-recovery --auto hang at tonight session start.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "kit/scripts/cwos-session-recovery.js"
+  - "kit/scripts/cwos-session-register.js"
+  - "kit/scripts/lib/session-liveness.js"
+recommended_fix: |
+  Fix the three regressions (string, assumeLocal, pid_recorded_at); correct the record everywhere the environmental label was propagated.
+dedup_key: "engineering-session-recovery-liveness-regressions-mislabeled"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

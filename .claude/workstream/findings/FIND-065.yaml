@@ -1,0 +1,27 @@
+id: "FIND-065"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "No design doctrine covers the described person reading their own ethnic/physical description off the screen at the table - the Gate 2 rubric returns a false GREEN"
+description: |
+  AP-PIO-01..05 are all data-flow scoped (what reaches the exploit engine); H-PLT04 'socially discreet' covers looking-like-tracking, not content legibility on glance; player-editor renders 'ETHNICITY: [Irish x] [Polish x]' in plain legible text at the table; player-profile is a glanceable dossier whose persona restrictions are aspirational and ungated; table-build (the richest sensitive-entry surface, Gate 4 ratified 04-26, built for typing ethnicity tags at the table at session start) has NO top-level CATALOG row - invisible to every sweep since April. This is the only finding in the run where the detector confidently returns the wrong answer rather than no answer.
+affected_files:
+  - "docs/design/surfaces/table-build.md"
+  - "docs/design/surfaces/player-editor.md"
+  - "docs/design/surfaces/player-profile.md"
+  - "docs/design/heuristics/poker-live-table.md"
+  - "docs/design/ROUNDTABLES.md"
+recommended_fix: |
+  Author an H-PLT09-style heuristic (subject-legible content minimized: a described person or bystander glancing at the screen should not be able to read their own physical or ethnic description) and add the corresponding question to the Gate 2 template; re-run the three PIO surfaces against it (expect: abbreviation/iconography for ethnicity chips at the table, a glance-distance legibility budget, reveal-on-intent rather than always-on text); add table-build to CATALOG in the same change.
+dedup_key: "eng-engine-design-sweep-display-scoped-privacy-doctrine-absent"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

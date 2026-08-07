@@ -1,0 +1,24 @@
+id: "FIND-094"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unenforced enforcement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "disclaimerRegisterVersion is checked for shape, never for currency - a committed card is two register-changes stale and nothing flags it"
+description: |
+  RC-depth-ablation.json:116 carries FR-1+e3867c10fc2a, stale by WS-368 (8c4e65578ca2) and WS-369 (746d7b4aaea4); manifest.js:155-163 validates shape only; nothing compares against live registerVersion(). The confirmed-fault-finds-dependent-results promise cannot fire on stale stamps. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/standardOfRecord/manifest.js"
+  - "src/utils/standardOfRecord/faultRegister.js"
+recommended_fix: |
+  Add a currency comparison at validation plus a CI check over committed cards reporting which register entries changed since each stamp.
+dedup_key: "sor-register-version-currency-unchecked"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

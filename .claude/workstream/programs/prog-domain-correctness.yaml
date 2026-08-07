@@ -396,26 +396,124 @@ last_run_by_protocol:
     run_id: "run-domain-correctness-baseline-2026-05-01"
     result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified. (Reformatted flow->block 2026-06-20 so the naive YAML reader parses date — was silently undefined, zeroing protocol_currency.)"
   delta:
-    date: "2026-07-30"
-    engine: preflight
-    run_id: "run-domain-correctness-delta-2026-07-30"
-    result: "Delta window 2026-07-22..HEAD (5aa1419..292e56f), 8 days on a 3-day cadence — 51 scope files, +7671/-732, reviewed against the 9 anti-patterns plus the WS-285 threshold doctrine that landed mid-window. VERDICT: SOUND-WITH-MINOR-ISSUES. VERIFIED COMPLIANT: WS-302 support floor is real and its structural-vs-epistemic discriminator is implemented mechanically (withEquitySupport passes an identically-zero grid through untouched at populationPriors.js:309, applied at the single construction point :484, ranked by the grid's own smoothed shape not raw equity); WS-274 confines position labels to resolveFoldPrior tier 4 (:183-194) behind the §6.5a pool prior with a styleApplied guard preventing stacking, behindCount*0.04 and the flat callerFoldPct are gone, and applySizingResponse takes pot odds rather than a sizing multiplier; §7.4 mutual exclusivity holds in adaptMultipliers (:585-616 gated !hasModel && !hasObservedAdjustments); lineTaxonomy reads sequence state only. FIND-038 (HIGH, sizing-tell circularity) RESOLVED in-window by WS-261 — decisionAccumulator.js:515-562 now samples the actual shown hand via comboStrengthPercentile against the real board and drops uparseable/colliding cards with no fallback, so the UI's 'confirmed by showdowns' claim is now true. 3 NEW FINDINGS: FIND-040 MEDIUM — preflopFoldResolver.js:258-275 tier 1 keeps a hard `dist.confidence >= MODEL_CONFIDENCE_THRESHOLD` gate and RETURNS EARLY, so (a) a villain just under threshold has model info discarded instead of shrunk (the exact construction §11.5 generalizes and §11.4 already recorded against preflop fold rates specifically) and (b) when it fires, facedRaisePreflop/foldTo3Bet are never read — a thin model beats 200 observed hands, and priorWeight:0 reports full confidence; the same function's comment at :288-290 asserts 'NO hard observation cutoff', true of tiers 2-4 and false of tier 1 eight lines above; root cause is WS-274 lifting the old chain verbatim on 07-26 and WS-285 fixing queryActionDistribution's internals on 07-27 without revisiting its caller. FIND-041 MEDIUM — the sizing-tell adjustment has two hard cliffs with divergent constants (foldEquityCalculator.js:552 |r|>0.3 && n>=8 vs gameTreeDepth2.js:210 |r|>0.2 && n>=5), so the two layers of one evaluation disagree about whether a tell exists, both are step functions on a continuous quantity, and the aggregate site multiplies the posterior after the observed-data blend; now more valuable to fix since the signal became real. FIND-042 LOW — comboMultiplier + adaptMultipliers have no callers outside their own test file (WS-291 replaced the narrowing path); the section header claims they are 'kept for villainDecisionModel Dirichlet priors' but villainDecisionModel imports only the ACTION_MULTIPLIERS constant, so ~100 lines of AP-RL-01-shaped bucket narrowing sit test-green and ready to be rewired. Also LOW: gameTreeEvaluator.js:456-468 river texture uses two binary flag multipliers under a comment claiming 'continuous, not binary'. BACKLOG PREMISE VERIFIED: WS-304 CONFIRMED-REAL by arithmetic — handStrengthTier is an additive rank sum (AKo=23/32=0.719, AKs=0.781) against a 3-bet threshold of 0.73 LATE / 0.81 otherwise, so AKo is excluded at every position and AKs everywhere but LATE, leaving EARLY/MIDDLE 3-bet = JJ+ with TT (0.75) ranked above AKs; root cause is the additive form (cannot express dominance), not the threshold value, so retuning the cutoff keeps the wrong ordering — WS-305 is the substrate and preflopEquityTable.js already landed in-window. Findings recorded but NOT auto-promoted: program is at 37/25 items with FIND-039 still ungoverned. Evidence: .claude/workstream/evidence/domain-correctness/run-domain-correctness-delta-2026-07-30/delta-2026-07-30.yaml. PRIOR DELTA (2026-07-22, run-sweep-2026-07-22) preserved inline: Delta window 2026-06-20..HEAD (ecd20b8..5aa1419) — shares evidence with the 2026-07-22 sweep run: the sweep's drift review IS the delta guardrail pass over this window (only one engine-scope commit, 5aa1419, reviewed file-by-file against the 9 anti-patterns by a dedicated agent). Zero anti-pattern hits; changes doctrine-improving (poolBaseline segmentation + leave-one-out; multiwayFoldPct exact independence product; showdown-calibrated sizingTells). 2 MEDIUM findings filed under the sweep stamp (FIND-034 doc-drift, FIND-035 async-fragility guard). Evidence: .claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-1/sweep-drift.yaml. PRIOR DELTA (2026-06-20, run-domain-correctness-delta-2026-06-20) preserved inline: Window 2026-06-10..HEAD, engine-scope. Major delta = new src/utils/icmEngine/ (Malmuth-Harville $EV, riskPremium, buildIcmStacks) + src/utils/pushFoldEngine/ (push/fold + call verdicts) from the ICM/tournament commits (7507af0, 69ed46d, 335f7c7). VERDICT: SOUND-WITH-MINOR-ISSUES. Malmuth-Harville recursion independently re-derived in Node — matches textbook {50,30,20} -> [38.39,32.75,28.86] to 4dp and conserves prize pool even when paid<players; ICM-tax signature present + asserted; risk premium is genuinely DERIVED ((heroNow-heroLose)/(heroWin-heroLose)), no bubble-factor/M-zone lookup table (§10.3 compliant); push/fold verdicts derive from equity + ICM pot-odds with NO position/style/bucket label as input (§7/§10.4-5); honesty flags isApproximate/tooLarge functionally wired (setup.js declines ICM build when tooLarge, falls back to chip-EV; MAX_ICM_FIELD=10 guards factorial blowup); hardcoded ranges serve as population REFERENCE feeding MC equity, never bypass the equity math; tests validate real poker correctness (textbook MH value, conservation, ICM CALL->FOLD flip at 0.47eq). 1 NEW LOW finding: covered-shove riskPremium asymmetry — riskPremium.js:49-50 passes riskChips:heroChips (full stack) while winChips=min(hero,villain), over-debiting hero in the lose branch when the contested villain is shorter than hero; masked in normal use (first-in jams target the chip leader so villain>=hero), fix = pass riskChips:min(hero,villain). Also re-triaged the 8 untriaged baseline findings (FIND-006..013): FIND-008 OBSOLETE (exact-enumerate fast path now lives in handVsRange kernel, monteCarloEquity.js:326-330, SPR-095 refactor); FIND-013 downgraded LOW (doc-only: POKER_THEORY §6.5 says ~5, code + all sibling docs standardized on 10 — fix the doc); FIND-006/007/009/010/011 confirmed STILL-REAL MEDIUM (FIND-011 detectPositionallyAware raw frequentist min-N=5 is the sharpest — directly violates rangeEngine no-frequentist-ratios rule, feeds false trait flags downstream); FIND-012 STILL-REAL doc-drift (rake/SPR-zones/fold-curves in code, absent from POKER_THEORY)."
+    date: "2026-08-07"
+    engine: "preflight"
+    run_id: "run-domain-correctness-delta-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786084200338-00211a3ab13f"
   sweep:
     date: "2026-07-22"
     engine: domain-audit
+    # Engine substitution declared 2026-08-05 by the provenance gate (INV-F2).
+    # The protocol declares engine: eng-engine; this run used domain-audit.
+    # Whether that substitution was deliberate is NOT recorded anywhere, and
+    # this session found the same failure live: an inline single-threaded audit
+    # was nearly stamped as an eng-engine roundtable run. See
+    # .claude/rules/engine-execution-fidelity.md. Declaring rather than hiding
+    # it is the point — a substituted engine that reads as compliant is exactly
+    # what the gate exists to surface.
+    spec_compliant: false
+    status: legacy-no-provenance
     run_id: "run-sweep-2026-07-22"
     result: "Sweep over window ecd20b8..5aa1419 (only engine-scope commit since the 2026-06-20 delta/challenge/blind_spot coverage). Drift verdict CLEAN across all 8 touched files — WS-235 poolBaseline.js verified sound (live/online never pooled poolBaseline.js:75-81, leave-one-out :206-212, exact conjugate Beta blend, cap-200 as honest overdispersion proxy); multiwayFoldPct correlationAdjustment fudge replaced with exact conditional-independence product (addresses FIND-030 part 1, tested); sizingTells unstubbed via showdown Pearson r gated |r|>=0.35 (addresses FIND-032 part a, display-only per WS-250); betaMath dead-param cleanup (FIND-030 part 2). 3 new findings: FIND-034 MEDIUM POKER_THEORY §6.5 still 2-tier while pipeline is 3-tier (WS-257 copy-forward); FIND-035 MEDIUM runWithStatPriors module-global swap fragile vs future async — thenable guard (WS-258); LOW SIZING_TELL_EXPLOIT map shaped like removed WEAKNESS_EXPLOIT_MAP, folded into WS-258 note. ALSO Phase 0b of domain-audit ran (no promoted spec existed): first domain-spec DRAFT generated — 16 rules (10 artifact + 6 model) across all 9 problem classes, cross-checked (0 removed / 2 downgraded / 1 noted), 0 governance candidates, depth-gap NOT tripped (mechanical_ratio 0.06, 6 model-level rules). docs/domain-spec.draft.md + DRAFTS.md section pending founder promotion (FIND-036/WS-259) — promotion unlocks true Phase-1 rule-vs-code drift on future runs. Evidence: .claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/."
   challenge:
     date: "2026-07-22"
     engine: domain-audit
+    # Engine substitution declared 2026-08-05 by the provenance gate (INV-F2).
+    # The protocol declares engine: eng-engine; this run used domain-audit.
+    # Whether that substitution was deliberate is NOT recorded anywhere, and
+    # this session found the same failure live: an inline single-threaded audit
+    # was nearly stamped as an eng-engine roundtable run. See
+    # .claude/rules/engine-execution-fidelity.md. Declaring rather than hiding
+    # it is the point — a substituted engine that reads as compliant is exactly
+    # what the gate exists to surface.
+    spec_compliant: false
+    status: legacy-no-provenance
     run_id: "run-sweep-2026-07-22"
     result: "Second challenge run — focused adversarial pass over the post-2026-06-20 surface (WS-235 pool baseline + companions) + FIND-029 recheck + regression spot-check. HELD UP: blendPrior is a textbook conjugate Beta update, NOT double-counting (STAT_PRIORS = subjective founder prior, pool = independent data, applied exactly once in derivePercentages); cap-200 rescaling preserves pool mean EXACTLY (mu from uncapped n); leave-one-out keying sound end-to-end (same pidKey both sides, analysisPipeline threads the identical playerId); multiwayFoldPct independence product theoretically correct (card removal the named residual); FIND-029 raise gate CONFIRMED FIXED by WS-247 (raiseEV unconditional, only FE-reliant raises need reliable model per §5.6); estimateFoldPct single-source hierarchy unregressed. DEFECTS LANDED: FIND-037 HIGH — createOnlineSession hardcodes gameType 'NL Holdem' (sessionsStorage.js:428) so ALL online play collapses into one pool segment, defeating within-online stake conditioning (WS-260); FIND-038 HIGH — sizingTells is CIRCULAR: strengthOrdinal uses bucket.avgSegmentation (model's own estimate), never the stored handShown — Pearson r measures self-consistency, not a showdown-verified tell, while UI claims 'confirmed by showdowns'; display-only blast radius per WS-250 gate (WS-261); FIND-039 MEDIUM — free-text live stake labels fragment segments ('1/2' vs '$1/$2' vs '1/2 NL'), bundled into WS-260; LOW corroboration of FIND-035 (runWithStatPriors zero test coverage — folded into WS-258). Evidence: evidence/domain-correctness/run-sweep-2026-07-22/challenge-2026-07-22.yaml. PRIOR CHALLENGE (2026-06-20, run-domain-correctness-challenge-2026-06-20) preserved inline: First challenge run (adversarial — assume the engine is wrong). Core math held up under attack: MC equity (monteCarloEquity.js) is unbiased (Welford variance, correct card-removal, unbiased rejection sampling, exact-enum fast path agrees), crossRangeConstraints conserves probability + respects mixing, the §7 labels-are-outputs rule is genuinely implemented in the per-combo game tree (comboActionProbabilities derives fold/call/raise from equityRatio logistic, not bucket lookups; estimateFoldPct single-source hierarchy suppresses style when a model exists — no double-counting), weakness labels describe villain only (no hero-action leak). 6 localized defects found (NONE foundational, NONE critical/high-confirmed): FIND-026 showdown-anchor non-idempotent re-boost across stateless rebuilds — needs idempotency test (medium, the one to prioritize); FIND-027 comboBetFilter vs computeVillainBetProb disagree ~2x on early-street bluff freq (medium); FIND-028 calcBluffEV semi-bluff branch omits rake while value path includes it (medium, clear one-line fix); FIND-029 bestResponseToAggression gates raiseEV on heroEquity>=0.65, structurally suppressing all +EV bluff-raises vs over-folders (medium, most poker-consequential); FIND-030 multiway fold-equity assumes opponent independence + bayesianSampleConfidence ignores its prior args (low nits). Files: bayesianUpdater.js, gameTreeEquity.js:360-365 & 531-548, foldEquityCalculator.js:57-73."
   blind_spot:
+    date: "2026-08-05"
+    engine: eng-engine
+    run_id: "run-domain-correctness-blindspot-2026-08-05"
+    result: >-
+      Six independent lenses (game-theorist, estimation-theorist, research-scientist, cto-agent,
+      failure-engineer, information-theorist) run fresh-context in parallel, then resumed with the
+      other five's findings plus external evidence and named collisions to rule on, then an
+      adversarial cross-critic over all twelve outputs. ~1.66M subagent tokens. Full record:
+      .claude/workstream/evidence/domain-correctness/run-domain-correctness-blindspot-2026-08-05/blindspot-2026-08-05.yaml
+
+      METHOD FAILURE, RECORDED BECAUSE IT IS THE MOST TRANSFERABLE FINDING. This run began as an
+      inline single-threaded audit and was stopped by the founder before it could be stamped. The
+      protocol declares engine: eng-engine, a multi-agent roundtable; a session instruction
+      discouraged spawning agents; the AI silently downgraded the method and was minutes from
+      resetting this clock on work that had not happened. Now a hard restriction:
+      .claude/rules/engine-execution-fidelity.md, enforced by hooks. All inline output was
+      discarded rather than carried forward.
+
+      HEADLINE. This program has verified CORRECTNESS and has never verified REACHABILITY. The
+      2026-06-20 run certified multiway, SPR, blockers and equity realization as "verified not
+      gaps". All four are correct. All four are unreachable from the founder's live surface.
+      ~15 instances of the same shape across six lenses.
+
+      THE PROGRAM'S OWN INSTRUMENT IS BROKEN (FIND-046). Nine of thirteen paths named in this
+      file's scope patterns and detection recipes match ZERO files; src/hooks/** and
+      src/components/** are outside scope entirely, so the file holding the single most
+      consequential poker-logic line in the repo is one this program is configured never to look
+      at. A literal execution of these detection recipes reads clean because it greps paths that
+      do not exist.
+
+      CONFIRMED FINDINGS (verified by cross-critic against source, not taken from a lens):
+      FIND-043 CRITICAL the live decision rule is three literals violating §3.4.3 (ALL-IN equity
+      for value, the WS-312 defect re-shipped) and §6.3 (a constant 0.40 where breakeven is
+      s/(1+s) — suppresses auto-profitable bluffs at 1/3-pot, green-lights losing ones at pot).
+      FIND-044 CRITICAL the engine is not unconnected, it is fully wired to the venue the founder
+      does not play — a second producer for a consumer that already exists.
+      FIND-045 HIGH tightenRatesForContinuation discards the villain-model fold rate for a
+      hardcoded 0.45 across seven call sites; contaminates every backtest.
+      FIND-047 HIGH one bucket, two denominators — rate decays, confidence does not.
+      FIND-048 HIGH the learned range channel is algebraically inert: one scalar per
+      (position, action) scaling all 169 cells, divided out at the point of use.
+      FIND-049 HIGH confidence signal ABSENT on live, DEGENERATE on Ignition (every villain at
+      every sample size renders PARTIAL; green because fixtures invent source strings the
+      producer cannot emit).
+      FIND-050 HIGH two detectors fire on noise (~62% and ~21% null rates, computed).
+      FIND-051 HIGH refinement depth is wall-clock gated and decides the top action.
+      FIND-052 HIGH thoughtCatalog ships 85 unscored weights to a surface the founder reads; its
+      own falsifier is called only from tests.
+      FIND-053/054 MEDIUM the only uncertainty disclosure excludes every dominant term;
+      useActionAdvisor contradicts itself about which surface it serves.
+
+      CONVERGENCE IS PARTLY AN ARTIFACT (cross-critic). The convergent headline was already
+      recorded at file:line resolution seven weeks earlier in memory/project_allin_side_pots.md:19,
+      loaded every session. Six lenses were handed it, not converging on it. Discriminating test
+      for the next run: withhold that memory and strike the phrase "correct instrument, not
+      connected" from the brief. What was genuinely FOUND, not recalled: the per-file defects above.
+
+      PRIOR FINDINGS RE-RULED. FIND-031 confirmed-still-open and LARGER (icmContext has no
+      production caller at all) but LOW consequence for a live-cash founder; the MEDIUM half is
+      governance (WS-251 done against unmet accept criteria). FIND-032 sizing half closed by
+      WS-261 then RE-OPENED on new grounds (no admissibility gate); timing half still absent from
+      the data model. FIND-033 settled both directions and worse than "open".
+
+      PROTOCOL QUESTION 3 HAS NEVER BEEN ABLE TO FIRE. "Static for 6+ months" — the repo's first
+      commit is 2025-12-01 and the oldest src/utils file was last touched 2026-03-06, so it has
+      returned an empty set on every run by construction, not by health. Replacement specified:
+      import-graph staleness relative to DOCTRINE commits touching a module's callers.
+
+      FOUNDER REDIRECT MID-RUN, which supersedes this run's own ranking: the deliverable is a
+      single optimizable aggregate expected-EV figure from scored corpus runs, with
+      per-improvement deltas and range effects. Thin live volume does NOT deprioritize — mechanism
+      is fit on the corpus and live data moves it. The ranking axis is whether a defect
+      contaminates the scored figure, and reproducibility outranks accuracy for that purpose.
+      See memory/project_optimizable_ev_figure.md.
+
+      OUTPUT: WS-387..413 filed; FIND-043..054 registered; findings integrity 0 violations.
+      PRIOR RUN (2026-06-20, run-domain-correctness-blindspot-2026-06-20) preserved inline below.
+  blind_spot_prior_2026_06_20:
     date: "2026-06-20"
     engine: eng-engine
     run_id: "run-domain-correctness-blindspot-2026-06-20"
     result: "First blind-spot run (what published poker theory is the codebase MISSING?). Engine layer is far more complete than a typical tracker — VERIFIED NOT gaps (do not re-open): multiway 3+ (true handVsRangeMulti joint primitive, not pairwise; multiwayFoldPct requires all fold; per-opp realization floor), iso-raise/squeeze, blockers/removal, equity realization (position/SPR/multiway aware), push/fold $EV + ICM all-in, MDF/breakeven/two-term fold-equity/rake/SPR-continuous/personalized-fold-curves, blind-vs-blind + per-position priors. Real gaps: FIND-031 ICM pressure absent on NON-all-in tournament streets (preflop opens/3-bets, postflop bets all run pure chip-EV through the shared cash tree — gameTreeEvaluator/preflopAdvisor have zero icm/payout/riskPremium refs; §10.4 anti-pattern; the BIGGEST gap, = the next deferred consumer of the ICM project, riskPremium.js math already exists) (medium); FIND-032 showdown sizing-tell calibration STUBBED (villainProfileBuilder.js:446-451 hard-codes sizingTells.detected=false; §3.5/§5.9 call it the most exploitable tell; data is captured) + timing-tells absent AND time-to-act not even recorded in the data model (low/needs data-model change); FIND-033 sample-size confidence math is solid but verify it reaches the live-advice UI as an explicit low-N signal + range-advantage-driven sizing in live path (low). Biggest gap = FIND-031 (ICM on non-all-in streets)."
-
 health_score: 2
 health_updated_at: "2026-07-22T00:00:00Z"
 health_ceiling: 9

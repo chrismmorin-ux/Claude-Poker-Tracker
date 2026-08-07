@@ -1,0 +1,121 @@
+id: "WS-436"
+title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 50.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found by THREE of nine agents independently in the 2026-08-06 decision-enhance pass on WS-410,
+  while investigating a different question. It is out of WS-410's scope and more urgent than the
+  question that surfaced it, because it contaminates LIVE ADVICE today rather than a future readout.
+
+  THE VIOLATION. `classifyStyle` (`src/utils/tendencyCalculations.js:287-302`) returns one of
+  `Fish | LAG | LP | Nit | Reg | TAG | Unknown`. That string is not a display label — it is a
+  DICTIONARY KEY consumed by the live game-tree engine. Every call site traced at HEAD `18f49f22`:
+
+    - `STYLE_PRIORS[playerStats?.style]`        — `gameTreeContext.js:263` (fold/call/raise priors)
+    - `FOLD_CURVE_PARAMS[playerStats?.style]`   — `gameTreeEvaluator.js:637`, `gameTreeContext.js:335`
+    - `STYLE_RAISE_PARAMS[playerStats?.style]`  — `gameTreeDepth2.js:304`
+    - `STYLE_BET_CENTER[playerStats.style]`     — `gameTreeDepth2.js:505`
+    - `getLogisticSteepness(playerStats?.style, ...)` — `gameTreeDepth2.js:264`
+    - further consumed in `preflopFoldResolver.js:248,366`, `heroActionBuilder.js:118,159`,
+      `preflopFlopEV.js:511`, `villainDecisionModel.js:717`, `gameTreeEquity.js:1121,1128`
+    - and threaded into `buildVillainProfile` at `villainProfileBuilder.js:827`
+
+  All keyed by the exact six strings, tables at `villainModelData.js:99-250,436-444`.
+
+  This is `if (position === 'EP')` in different clothing, on the axis CLAUDE.md names explicitly:
+  "Do not use `POP_CALLING_RATES[bucket]` when per-combo equity is available". **Labels are OUTPUTS
+  of a decision process, never INPUTS to it.** The standing rule is violated in production.
+
+  THE PARTITION IS ALSO MEASURABLY WRONG, and the repo already knows.
+  `docs/research/player-archetypes-empirical-2026-07-26.md:33-58` — k-means over 1,390 players on six
+  canonical stats finds **bestK = 2, silhouette 0.3428**, more than double every other k tested
+  (k=3: 0.1906 ... k=10: 0.1696), inertia falling smoothly with NO elbow. That is the signature of a
+  CONTINUUM with one dominant axis (looseness-and-stickiness), not a set of discrete types.
+  Independently re-verified this pass against the artifact, no drift.
+    - Authored six-label partition: cluster purity **0.63 and 0.44**.
+    - **21.1%** of players fall through all six buckets into `Unknown` — and `Unknown` then indexes
+      the same tables.
+    - TAG is 54% of the pool and SPANS BOTH POLES.
+    - `classifyStyle`'s `vpip > 40` Fish threshold **cuts through a loose-cluster centroid of 40.5%**.
+    - A mixture-model test across nine behaviours found **8 of 9 are "dials", not "switches"** (only
+      `triple_barrel` picked the switch model, by a BIC margin of 2 — "a tie, not a win").
+
+  The same research doc already recommends, in its own words, "Do not use the six authored archetypes
+  as the group level" for any future hierarchical villain model. **That recommendation has never been
+  connected to the code, and the three clustering scripts that produced it have ZERO downstream
+  consumers** — a repo-wide grep for their artifact names hits only two markdown files.
+
+  WHY THIS IS NOT WS-410's JOB AND NEEDS ITS OWN TICKET. WS-410 D6 governs how the READOUT stratifies
+  villains — a measurement path over persisted atoms. Choosing measured strata there does not touch
+  `classifyStyle` at all. The consequence, if only WS-410 ships: the readout reports villain
+  behaviour on an honest continuum while the engine advising the founder in real time keys its fold
+  curves off six buckets the readout's own evidence says shatter. **Two inconsistent taxonomies of the
+  same concept, one measured-honest and one production-load-bearing-and-known-wrong.**
+accept_criteria: |
+  - Villain decision parameters are derived from GAME STATE — equity, pot odds, SPR, players
+    remaining — or from a CONTINUOUS per-player statistic, never from a discrete style label used as
+    a dictionary key. Per POKER_THEORY §7 and `exploitEngine/CLAUDE.md`.
+  - Where a grouping level is genuinely needed (e.g. hierarchical shrinkage), it is the MEASURED axis
+    the data supports — `limpRate` (between-player SD 14.5pp, split-half reliability 0.83),
+    `cbetRate` (SD 12.6pp, reliability 0.62, r = 0.180 against the DISJOINT control), or the k=2
+    looseness pole. NOT the six authored labels.
+  - `threeBetRate` gets no channel: overdispersed (z = +81.2) but only 2.1pp of between-player spread
+    with split-half reliability 0.33. Significance is not size.
+  - Subclass grids are CARVED FROM THE PARENT and shrink toward the parent prior (DEC-025 Amd 1) —
+    never built independently, never normalised into a distribution.
+  - No double-counting: a style adjustment must not be stacked on top of the stats that define the
+    style.
+  - The three orphaned clustering scripts (`cluster-player-types.py`, `cluster-behavioral.py`,
+    `latent-class-behaviors.py`) either gain a consumer or are explicitly marked research-only with
+    their finding carried into the code that should honour it. An artifact with a real result and no
+    reader is how this drifted for months.
+  - A before/after comparison of engine advice, so the size of the change to live advice is MEASURED
+    rather than assumed — this touches the fold curve, which WS-283 and `c51fddf3` have both recently
+    corrected, and regressions there are expensive.
+effort: "L"
+files_involved:
+  - "src/utils/tendencyCalculations.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "docs/research/player-archetypes-empirical-2026-07-26.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    THE FOUNDER HOLDS A PRIOR THAT DISCRETE SUB-ARCHETYPES EXIST, AND THE MEASUREMENT DISAGREES.
+    Three independent measurements (VPIP/PFR clustering, behavioural-feature clustering, and a
+    dial-vs-switch mixture test over nine behaviours) all return a continuum with one dominant axis.
+    He is RIGHT that players differ; the six-type container is what the data refuses. He should rule
+    on this rather than have it resolved silently in a schema — and he should see the disagreement
+    stated plainly, not softened. See WS-437's related surface: the table-recognition need the
+    six labels were serving is real and gets its own, firewalled channel.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found independently by three of nine agents in the 2026-08-06 decision-enhance pass on WS-410
+  (figure-cluster architect, figure-cluster business strategist, figure-cluster failure engineer),
+  each tracing from a different call site. Verified at HEAD `18f49f22`.

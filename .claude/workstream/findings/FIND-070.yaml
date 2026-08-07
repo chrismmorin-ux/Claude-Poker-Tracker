@@ -1,0 +1,25 @@
+id: "FIND-070"
+engine: "eng-engine"
+run_id: "run-004"
+severity: MEDIUM
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "predictionAudit write path shipped 08-05 with zero consumers - a recurrence of shipped-but-inert on the same feature the memory file uses as its cautionary example"
+description: |
+  predictionAuditWriter.js (atomize/reconstruct) committed 2026-08-05; zero consumers anywhere in src/components; the plausible consumer CalibrationDashboardView is unrelated in purpose AND gated deferred:true at viewRegistry.jsx:112; no surface spec, no CATALOG row, no discovery acknowledging the readback gap. The feedback_shipped_but_inert_capability memory already names predictionAudit as its example - and it recurred on the same feature two days before this sweep. Related: WS-419 (distinct: the unreachable built view).
+affected_files:
+  - "src/utils/persistence/predictionAuditWriter.js"
+  - "src/constants/viewRegistry.jsx"
+  - "docs/design/surfaces/CATALOG.md"
+recommended_fix: |
+  Author the prediction-audit readback surface spec (Gate 4) - what the founder reads, when, and what decision it supports - and wire one production consumer in the same change, with a test asserting the write and read paths diverge on real data. A capability behind an unused param is not shipped; the fix is the consumer.
+dedup_key: "eng-engine-design-sweep-prediction-audit-shipped-inert-recurrence"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

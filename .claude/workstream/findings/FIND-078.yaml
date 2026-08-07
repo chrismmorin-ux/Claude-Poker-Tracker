@@ -1,0 +1,23 @@
+id: "FIND-078"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Cross-Method Consistency"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "A frequentist Wilson interval ships as the canonical accumulator tool against this program own written anti-invariant"
+description: |
+  src/utils/decisionSystems/accumulator/wilsonCI.js is canonical shared infrastructure (decisionSystems/CLAUDE.md); prog-methodology-integrity.yaml:92 anti-invariant: no frequentist hypothesis test where Bayesian posterior is required; both engine CLAUDE.mds ban z-tests. SPR-078 consolidated the z-constant without asking whether the construction belongs. Its validity note is prose-coupled to skillAssessment n>=30 floor with nothing enforcing the coupling. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/decisionSystems/accumulator/wilsonCI.js"
+recommended_fix: |
+  Decide explicitly: a documented carve-out stating where Wilson is the right instrument and why, or replace with the Beta credible interval already used in tendencyCalculations.js:361. An anti-invariant with a live counter-example is worse than none.
+dedup_key: "methodology-wilsonci-violates-frequentist-anti-invariant"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

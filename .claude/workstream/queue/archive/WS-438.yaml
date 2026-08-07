@@ -1,0 +1,84 @@
+id: "WS-438"
+title: "A multi-hour run that fills the disk is unrecoverable — no preflight, and a set only becomes readable at `finalize()`, so an interrupted capture resolves NOT_FOUND rather than TRUNCATED; two runs have already died this way"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "ses-20260807-0535-df53cf18"
+claimed_at: "2026-08-07T06:04:58.163Z"
+started_at: null
+completed_at: "2026-08-07T06:50:20.978Z"
+completion_commit: "c55a132c"
+priority_score: 35.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  `scripts/backtest/atomStore.mjs`'s `openAtomWriter` / `append` / `finalize` never check free disk
+  space. A run that exhausts the drive throws inside `handle.write`, uncaught.
+
+  The recovery path makes it worse rather than better: an atom set becomes READABLE only at
+  `finalize()`, which is what writes the manifest. An interrupted run therefore has NO MANIFEST, so
+  `resolveAtomSet` reports **`NOT_FOUND`** rather than `TRUNCATED` — even though `resolveAtomSet`'s
+  closed reason enum (`atomStore.mjs:23-27`) HAS a truncated state, and the NDJSON rows are sitting
+  right there on disk. The distinction between "this capture never happened" and "this capture is
+  incomplete" is lost, and every atom written before the failure is unreachable.
+
+  THIS IS NOT HYPOTHETICAL IN THIS REPO. `out/` already contains
+  `hero-ev-KILLED-3players-inadmissible.json` and `hero-ev-44players-PARTIAL-650dec.json` — two runs
+  that died mid-flight, both at lighter load than what WS-410 plans.
+
+  THE COLLISION THAT MAKES IT URGENT. Measured this pass: the founder's C: drive has **42 GB free,
+  91% used**, and `DEFAULT_ATOM_STORE_ROOT` (`atomStore.mjs:56`) points at the same drive.
+  `beliefState` at full capture is estimated at 48-95 GB (WS-430), and `decisionRecord.mjs` costs
+  10-15 KB per decision per arm — 4-6 GB for one arm at 400k decisions (WS-431). Meanwhile a
+  properly-powered run is 3-7 days of wall clock (WS-433). **The current configuration can lose
+  several days of compute to a disk-full condition and leave nothing recoverable.**
+
+  Atom-set immutability (`atomStore.mjs:104-113` throws on reopening a finalized set) means this
+  interacts with capture-shape mistakes too: the schema is additive-reversible, the DATA is not.
+  Re-running is the only repair, and re-running is what costs days.
+accept_criteria: |
+  - `openAtomWriter` performs a disk-space PREFLIGHT: estimated bytes (rows x measured bytes/atom,
+    from WS-430's real measurement) against available headroom at the resolved store root. It refuses
+    to start a run that cannot finish, rather than discovering it hours in.
+  - Periodic re-check during a long run, so a drive filling from elsewhere is caught early with the
+    capture intact.
+  - INCREMENTAL / RESUMABLE FINALIZATION: an interrupted set resolves as `TRUNCATED` with its rows
+    readable, not `NOT_FOUND`. The reason enum already has the state; the writer needs to reach it —
+    e.g. a provisional manifest written at open and updated periodically, superseded by the final one.
+  - A test that kills a writer mid-append and asserts (a) the set resolves `TRUNCATED`, (b) the rows
+    written before the kill are readable, (c) an aggregate computed over them is correctly labelled
+    partial rather than silently treated as complete.
+  - Coordinate with WS-430's `SOR_ATOM_STORE` relocation — the preflight must measure the RESOLVED
+    root, not the default.
+effort: "S"
+files_involved:
+  - "scripts/backtest/atomStore.mjs"
+  - "scripts/backtest/atomsSelfCheck.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-433"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the record-shape failure engineer in the 2026-08-06 nine-agent decision-enhance pass on
+  WS-410, while pricing the storage options in decision flag D2. The two already-dead runs in `out/`
+  were found on disk, not inferred.
+completion_notes: |
+  Completed overnight by ses-20260807-0535-df53cf18 in worktree night/overnight-20260807 (commit c55a132c).
+  Preflight (statfs vs expectedAtoms x MEASURED_ATOM_BYTES x1.5 + 1GiB floor, WS-430 constants cited);
+  checkpointEveryAtoms=1000 rolling provisional manifest; graceful abort with typed AtomStoreError naming
+  atomsPreserved; interrupted sets resolve TRUNCATED with rows readable; provisional atomCount:null makes
+  partial aggregates label agrees:false structurally. 13/13 new tests; 866 pass overall (10 pre-existing env).
+  PREMISE CORRECTION: run-hero-ev.mjs never calls openAtomWriter (call sites: run-atoms.mjs:133,
+  run-beliefstate-size.mjs:128) - no runner wiring needed. Follow-up candidate: harden finalize() gzip pass.
+  MERGE NOTE: on night branch; merge after SPR-177 lands.

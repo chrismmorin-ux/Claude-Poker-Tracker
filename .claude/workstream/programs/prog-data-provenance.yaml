@@ -182,16 +182,20 @@ phase_relevance:
 
 last_run_by_protocol:
   baseline: { date: "2026-06-19", engine: "provenance-audit", run_id: "run-2026-06-19-provenance-baseline", result: "Baseline drafted: SRC-001..SRC-009 + DP-001..DP-008; findings F1-F7. Drafts left unpromoted until 2026-07-31." }
-  delta: { date: null, engine: null, run_id: null, result: null }
+  delta:
+    date: "2026-08-07"
+    engine: "preflight"
+    run_id: "run-data-provenance-delta-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786083504046-0c2f23bb3b36"
   sweep: { date: "2026-07-31", engine: "provenance-audit", run_id: "manual-verification-2026-07-31", result: "Verification pass before promotion. 3 rotted evidence pointers fixed (SRC-003, SRC-010, DP-007); F2 found CLOSED and stale in the registry; SRC-009 found SHIPPED (WS-235 both steps) and still described as a plan; F5/F6 confirmed open. 4 sources added (SRC-012 raw corpus, SRC-013 GTO-as-absent, SRC-014 live venue pool, SRC-015 readiness artifacts). Row-grain provenance rule added. Both documents PROMOTED." }
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
-
 health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "Installed 2026-07-31 with a promoted baseline but no protocol run under the program itself. Run /pulse run data-provenance baseline to establish a score."
-findings_open: 0
-work_items_open: 1
+findings_open: 3
+work_items_open: 2
 
 cap_breach:
   active: false

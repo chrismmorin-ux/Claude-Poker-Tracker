@@ -69,5 +69,14 @@ recommended_fix: |
 theory_citation: "CLAUDE.md Command Routing / envelope discipline; program contract — a detection recipe that cannot fail is not a detector"
 dedup_key: "blindspot-methodology-integrity-program-scope-patterns-match-zero-files"
 created_at: "2026-08-05"
-updated_at: "2026-08-05"
+updated_at: "2026-08-07"
 promoted_to: ""
+correction: |
+  2026-08-07 (methodology sweep, facilitator-verified against the filesystem): the original claim
+  (scope patterns match zero files) is FALSE - 6 of 13 methodology patterns and 14 of 23
+  domain-correctness patterns match, and every dead pattern is redundant with a surviving directory
+  glob. The REAL gap: src/utils/decisionSystems/**, src/utils/standardOfRecord/**, and
+  scripts/backtest/** are in NO program's scope at all - which is how wilsonCI.js shipped against
+  this program's own anti-invariant unnoticed. Exact scope-repair blocks recorded in
+  .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md. Also: prog-methodology-integrity
+  assumptions:/market_dynamics: blocks are commented out - fails schema v4 at tier active.

@@ -1,0 +1,28 @@
+id: "SPR-179"
+title: "Ship WS-431: Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS"
+status: approved
+approved_at: "2026-08-07T22:08:50.627Z"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-431: Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS-410 was written, reproducing the exact WS-291 mechanism WS-410 exists to close, and extending the Decision Atom without reconciling it would make four
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-07T22:08:50.627Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-431 selected (50 × no damping = 50).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-431"
+    title: "Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS-410 was written, reproducing the exact WS-291 mechanism WS-410 exists to close, and extending the Decision Atom without reconciling it would make four"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-08-07T22:08:50.627Z"

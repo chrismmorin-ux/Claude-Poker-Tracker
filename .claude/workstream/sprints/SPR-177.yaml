@@ -1,7 +1,9 @@
 id: "SPR-177"
 title: "Ship WS-433: The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at"
-status: approved
+status: done
 approved_at: "2026-08-07T03:57:32.495Z"
+completed_at: "2026-08-07T18:05:28.975Z"
+completed_by_commit: "52d0cae4"
 program_focus: "domain-correctness"
 
 goal: |
@@ -23,22 +25,13 @@ items:
     title: "The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at target scale has EVER completed, and `evaluateGameTree` calls are embarrassingly parallel with no cross-decision state"
     mode: plan-first
     effort: L
-    status: pending
+    status: done
+    completed_at: "2026-08-07T18:05:28.975Z"
   - id: "WS-432"
     title: "Freezing the clock to make runs reproducible would silently measure an UNBOUNDED engine while stamping the card `2000 ms` — refinement is wall-clock gated at seven sites and a constant clock disables every one of them"
     mode: plan-first
     effort: L
-    status: pending
-
-scope_expansion:
-  added: ["WS-432"]
-  authorized_by: founder
-  at: "2026-08-07T05:20:00Z"
-  rationale: |
-    Founder approved Option B on the WS-433 design: pull WS-432's deterministic logical
-    work-unit clock into the sprint so parallel depth-2 runs are valid replication-grade
-    measurements, not just completed ones. Sequenced WS-433 first, then WS-432, then
-    re-verify determinism at refinement > 0. Accepts a further ~3 sessions over the
-    already-acknowledged cap overshoot.
+    status: done
+    completed_at: "2026-08-07T18:05:28.975Z"
 
 created_at: "2026-08-07T03:57:32.495Z"

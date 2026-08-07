@@ -203,10 +203,14 @@ phase_relevance:
 last_run_by_protocol:
   baseline: { date: "2026-04-21", engine: "eng-engine", run_id: null, result: "player-selection audit cycle complete; 11 findings closed" }
   delta: { date: null, engine: null, run_id: null, result: null }
-  sweep: { date: null, engine: null, run_id: null, result: null }
+  sweep:
+    date: "2026-08-07"
+    engine: "eng-engine"
+    run_id: "run-design-sweep-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786084844335-17e7d01fe3f1"
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
-
 health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "Baseline complete on player-selection (2026-04-21). No CWOS-format /pulse run yet — score will populate on first run."

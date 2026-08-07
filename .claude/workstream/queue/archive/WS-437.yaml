@@ -1,0 +1,93 @@
+id: "WS-437"
+title: "\"A Fifteen-Number Rule Recovers ~56% of the Engine\" is a Delta-log figure headlined as a performance claim in mandatory-read doctrine, with its caveat living in a different document — the labelled-diagnostic pattern failing in the exact repo about to rely on it"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "ses-20260807-0535-df53cf18"
+claimed_at: "2026-08-07T06:04:58.163Z"
+started_at: null
+completed_at: "2026-08-07T06:26:10.398Z"
+completion_commit: "b4c38dc12ea9dcb6718e76224b3c493873f59e8f"
+priority_score: 30.0
+priority_label: "P1"
+category: "claims-policy"
+capability: "core"
+program: "claims-policy"
+finding_id: ""
+description: |
+  `.claude/context/POKER_THEORY.md` §11.9 (header at line 1878, prose at ~1899 — note WS-410 cites
+  line 1753, stale by ~146 lines) headlines:
+
+      "A Fifteen-Number Rule Recovers ~56% of the Engine"
+
+  and states in bold: "A rule a human can hold in their head recovers just over half the engine's
+  narrowing edge."
+
+  That reads as a performance/EV claim. **It is Delta-log against revealed hole cards**
+  (`scripts/backtest/teachableArmsProbe.mjs:301`) and therefore prices NOTHING under Amendment 1.
+  WS-410's own §8.2 says exactly this — but that caveat lives in a DIFFERENT, NEWER document (the
+  Scored Readout spec), written after the table, and is not inline at the point a reader hits "56%".
+
+  There is no code computing, asserting or guarding the percentage. A repo-wide grep for
+  `share of the engine|shareOfEngine|engineEdge|edgeShare` returns exactly ONE hit: this prose. The
+  15-number table is also not version-controlled as data — it derives from `out/teachable-arms-*.json`
+  and `out/` is gitignored (`.gitignore:91`). It emits no Result Card and has no test.
+
+  WHY THIS IS FILED AS ITS OWN TICKET RATHER THAN A DOC NIT. WS-410 D4 proposes publishing an
+  engine-graded self-leak figure "labelled a diagnostic, never the headline" — and the whole safety
+  of that plan rests on the assumption that a diagnostic label travels with its number. **This repo
+  already contains one instance of that assumption failing**, in the document EVERY engine-touching
+  session is required to read first (per CLAUDE.md's Poker Analysis Guardrail). The figure-cluster
+  failure engineer searched `system/failures.md`, `.claude/failures/`, `system/decisions.md` and
+  `system/context.md` for a recorded case of the founder acting on a caveated number as uncaveated
+  and found NONE — stated plainly. But the design pattern is falsified regardless: the caveat did not
+  travel past the first document boundary.
+
+  Fix this instance BEFORE trusting the same mechanism for a newer and more dangerous figure.
+
+  PER THE STANDING RULE, §11.9's Delta-log table STAYS. It answers a different, legitimate question,
+  and deleting an instrument for reporting the wrong currency is forbidden. It is RELABELLED, not
+  removed.
+accept_criteria: |
+  - The currency caveat is INLINE at the claim, not in a companion document: the §11.9 header and the
+    bolded "recovers just over half" sentence both carry "(Delta-log against revealed hole cards —
+    not an EV claim; see SCORED-READOUT-SPEC §8.2)".
+  - The section is explicitly labelled a DIAGNOSTIC in its own heading, using the same vocabulary the
+    Scored Readout will use, so one convention covers both.
+  - The 15-number table becomes version-controlled DATA (out of gitignored `out/`), so the figure has
+    a citable source rather than a regenerable artifact.
+  - `teachableArmsProbe` emits a Result Card with `manifest.disclaimerRegisterVersion`, and gains a
+    test. Its published numbers were verified this pass to reproduce bit-for-bit from committed code
+    plus `out/teachable-arms-{ftp,ps}.json`, so this is formalising something already true.
+  - The figure states its population per HC-011 (online 2009; transferred, not measured, for live).
+  - GENERALISE THE FIX, or it recurs: any figure in `.claude/context/` or `docs/` that reads as a
+    performance claim carries its currency inline. If a mechanism can enforce this (a lint over
+    percentage-bearing headers, a checked vocabulary), prefer the mechanism — a document you are
+    supposed to have read is not a control, and that lesson is already recorded in this repo.
+effort: "S"
+files_involved:
+  - ".claude/context/POKER_THEORY.md"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - ".gitignore"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the figure-cluster failure engineer (hypothesis H2) in the 2026-08-06 nine-agent
+  decision-enhance pass on WS-410. The hypothesis under test was whether a "labelled diagnostic"
+  survives contact with a reader; no recorded founder-action case exists, but the pattern is
+  falsified by this live instance in mandatory-read doctrine.
+completion_notes: |
+  Completed overnight by ses-20260807-0535-df53cf18 in worktree branch night/overnight-20260807.
+  All 6 accept criteria met; currency lint added (advisory); 12+9 new tests pass; probe smoke run emitted valid Result Card (FR-1+746d7b4aaea4).
+  Follow-up named: mint Result Cards for the original 2026-07-31 350-player runs (mechanism now automatic for future runs).
+  MERGE NOTE: commit lives on night/overnight-20260807; merge after SPR-177 lands.

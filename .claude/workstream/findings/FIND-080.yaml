@@ -1,0 +1,24 @@
+id: "FIND-080"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Post-Hoc Fitting and Flexibility"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "PRIOR_SUPPORT_LAMBDA and tau were argmax-selected on the EVAL partition with no CALIB/HELDOUT split, in the file that mandates one for a sibling parameter"
+description: |
+  PRIOR_SUPPORT_LAMBDA=0.8 / tau=0.12 selected by discrimination sweep over EVAL (populationPriors.js:410-432 via rangeCalibrationProbe.mjs, no third split); the same file WS-321 section (rangeCalibrationProbe.mjs:942-965) explicitly mandates CALIB/HELDOUT for a structurally similar parameter. Memory doctrine: re-derive lambda once on the full set, never from inside a shape ticket. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/rangeEngine/populationPriors.js"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+recommended_fix: |
+  Re-select on a CALIB partition, report on HELDOUT; document the stable-plateau argument if the re-selection confirms 0.8.
+dedup_key: "methodology-lambda-tau-selected-on-eval-no-heldout"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

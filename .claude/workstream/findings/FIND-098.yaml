@@ -1,0 +1,24 @@
+id: "FIND-098"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: CRITICAL
+status: open
+category: "launch"
+program: "launch"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The live production build is a commit whose own CI failed on an exploit-engine EV assertion"
+description: |
+  Live check: poker-tracker-68b97.web.app/version.json = 86c0e387 (built 2026-08-03T04:34); that commit CI run failed at src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js:441 (expected 80.07 > 81.42). Deploy pushed in 57s while CI failed the same push.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+recommended_fix: |
+  Root-cause the EV inversion BEFORE landing FIND-097 gating (a red CI with this unfixed blocks all deploys). Quarantining is prohibited - it is a domain-correctness signal on the money path. Cross-ref the open domain-correctness CRITICAL.
+dedup_key: "launch-live-build-carries-failing-ev-assertion"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

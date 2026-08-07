@@ -1,0 +1,105 @@
+id: "WS-434"
+title: "Declare the Result Card `metrics` schema — the one required field in the Standard of Record that nothing validates, where five committed cards share no shape and the additive guard has never looked inside"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  `RESULT_CARD_FIELDS` declares `metrics` as `{ name:'metrics', type:'object', since:1,
+  required:true, note:'The figures themselves.' }` (`src/utils/standardOfRecord/schemas.js:286`), and
+  `resultCardProblems` (`resultCard.js:119-160`) NEVER INSPECTS IT — verified at HEAD `18f49f22`.
+  Every producer invents its own metrics shape.
+
+  That is the exact mechanism ADR-009 exists to prevent — nothing forces two numbers onto the same
+  axis — reproduced one level down, INSIDE the object built to stop it. It is not theoretical: two
+  committed cards already disagree on the name of the same constant
+  (`RC-depth-ablation.json:110-111` `REFINEMENT_BUDGET_MS_DEPTH1/DEPTH2` vs
+  `RC-layer-divergence.json:1330-1332` `..._FAST/_FULL`), caught only because a human read two cards
+  side by side — a detection method that does not scale.
+
+  All nine agents in the 2026-08-06 decision-enhance pass agreed the schema should be declared. Two
+  things they found make the WS-410 Stage 2 plan as written UNSHIPPABLE, and both must be handled:
+
+  **(1) "Additive-only" is FALSE for this stage.** `scripts/standardOfRecord/check-additive.mjs:26-30`
+  imports only `SOR_SCHEMAS` and `MANIFEST_SCHEMA` and walks one flat field array per registered
+  object. `metrics` is a single entry inside `resultCard`'s list; the checker confirms it stays type
+  `object` and never recurses. A declared sub-shape gets ZERO protection from the existing gate
+  unless registered as its own top-level `SOR_SCHEMAS` entry with its own version.
+
+  **(2) Declaring it naively BREAKS COMMITTED CARDS AND CI.** Pulled `metrics` from every card on
+  disk — no two share a required-field set:
+    - `RC-depth-ablation.json`: `{depthDeltaBB, depthDeltaCiLowBB, topActionFlipShare,
+      flipShareByStreet:{...}}`
+    - `RC-layer-divergence.json`: `{divergence:{preRegistration:{primary, weighting, rationale}}}`
+    - `RC-river-flip-replicate*.json`: `{systematicFlipShare, seedDependentShare,
+      perArmArgmaxStability:{...}}`
+    - `.artifacts/atoms/gen1.card.json`: `{scoredShare, scoredGivenModeled:{k,n,rate,conditional}}`
+    - `.artifacts/study-ladder.card.json`: `{handsSeen, primaryMinN, axes:{limpRate:{...}}}`
+  `scripts/__tests__/depthAblation.test.js:167` and `heroEvResultCard.test.js:202` call
+  `resultCardProblems` on live output, so they break too. Precedent for this exact hazard is already
+  recorded: `DISCLAIMER-AND-FAULT-REGISTER.md:388-389` — "Its stored `resultCardProblems: []` is a
+  verdict computed under the old rules; re-run `resultCardProblems` on it today and it is rejected."
+
+  THE NON-BREAKING PATH ALREADY EXISTS IN THIS CODEBASE and WS-410 does not mention it:
+  `disclaimerRegisterVersion` (`manifest.js:365-366`) ships `required: false` at the schema level and
+  enforces inside a validator function — old cards stay readable but are flagged non-quotable rather
+  than crashing.
+
+  AND `metrics` IS GENUINELY A DISCRIMINATED UNION, not a flat list — five disjoint estimand-keyed
+  shapes already exist. `checkAgainstSchema` assumes one field list per object type. Forcing every
+  producer onto one shape, or building union validation this repo does not have, is the real scope —
+  closer to WS-431 in size than to the one paragraph WS-410 Stage 2 allots it.
+accept_criteria: |
+  - A metrics convention is registered as its own `SOR_SCHEMAS` entry with its own version, so
+    `scripts/check-sor-additive.sh` genuinely covers it. (Closes the false-parity gap; the same gap
+    exists for `decisionRecord.mjs` and is owned by WS-431.)
+  - Modelled as a DISCRIMINATED UNION keyed on estimand, not a flat required-field list.
+  - Ships `required: false` at the schema level with enforcement in a new validator, following the
+    `disclaimerRegisterVersion` precedent — every card currently on disk stays readable.
+  - Every figure carries its UNITS and its CONDITIONING SET. The `{k, n, rate, conditional}` shape
+    already load-bearing at eight call sites in `atomsSelfCheck.mjs` is the pattern, INCLUDING the
+    inverse conditional wherever the two readings support opposite reads.
+  - Staged advisory -> enforcing, as `docs/standard-of-record/` already does for Strategy Card
+    loading. A big-bang break across the 10 `buildResultCard` call sites is not acceptable.
+  - The 10 existing producers are migrated: `depthAblationReport.mjs`, `deviationMap.mjs`,
+    `heroEvReport.mjs`, `layerAblation.mjs`, `rangeCalibrationProbe.mjs`, `rangeCalibrationReport.mjs`,
+    `run-atoms.mjs`, `run-river-flip-replicate.mjs`, `studyLadderReport.mjs`,
+    `scripts/foldCurve/emit-result-card.mjs`.
+  - The `REFINEMENT_BUDGET_MS_*` naming collision is resolved under one canonical key (shared with
+    WS-432's `REQUIRED_CONSTANTS` work — coordinate).
+  - `overallEvBB100` prints BOTH factors of its decomposition, never only their product, and
+    `opportunitiesPerHand` comes from the coverage census (WS-428), not from `n/handsRepresented`.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "src/utils/standardOfRecord/manifest.js"
+  - "scripts/standardOfRecord/check-additive.mjs"
+  - "scripts/standardOfRecord/schema-baseline.json"
+  - "scripts/backtest/heroEvReport.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  WS-410 decision flag D5, enhanced by the 2026-08-06 nine-agent pass. Unanimous agreement on the
+  DIRECTION (declare it); the record-shape failure engineer falsified the ticket's stated METHOD
+  ("additive-only", hypotheses H2 and H3 both confirmed) and the record-shape architect supplied the
+  minimum-shape scoping caveat.

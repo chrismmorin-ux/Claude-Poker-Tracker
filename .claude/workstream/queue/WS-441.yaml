@@ -1,0 +1,46 @@
+id: "WS-441"
+title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "ux"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Found in the 2026-07-31 founder-device pass: the ScaledContainer 0.95 scale factor means controls sized to 44 CSS px render below the 44px physical touch floor everywhere - nullifying the fix from AUDIT-2026-04-21-TV F8 that was believed shipped. Compounding (launch/sweep perf lens 2026-08-07): the target device identity is contradictory - CLAUDE.md says Galaxy A22 (1600x720) but WS-334 records the founder correction to Galaxy S22 (2340x1080), where the scale formula clamps to 1.0 - so the touch-floor math must be re-derived against the RESOLVED device, not assumed. Original ticket WS-316 overwritten; re-filed 2026-08-07.
+accept_criteria: |
+  Resolve the authoritative target device first (founder ruling recorded in WS-334: S22); re-derive the touch-target math under the real scale factor; add an enforcement test (DOM-px x scale >= 44 physical) over the primary in-hand controls; update CLAUDE.md/state.md device references in the same change.
+effort: "M"
+files_involved:
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/constants/designTokens.js"
+  - "CLAUDE.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-launch-sweep-2026-08-07"
+created_at: "2026-08-07T12:00:00Z"
+status_note: |
+  Re-filed 2026-08-07 by launch/sweep (ses-20260807-0535-df53cf18) after discovering the original
+  2026-07-31 tickets (WS-311/315/316) were overwritten by an ID-allocation collision and the project
+  file deleted. Evidence trail: docs/design/audits/2026-07-31-*.md + docs/design/evidence/2026-07-31-tvr-device-baseline/.
+recovered_doctrine_note: |
+  UPDATE 2026-08-07 (orphan-branch recovery): branch DEC-026 (recovered, merge 9de247d1) already contains
+  the founder-ratified fix approach AND the device measurements: s=0.950 canvas / 0.695 device, 44px targets
+  rendering 41.8/30.6px. Interactive regions move to real CSS px app-wide (layout-doctrine.md + WS-322
+  migration). The device-identity question (A22 vs S22) remains FIND-109 and must still be resolved for the
+  verification measurements.

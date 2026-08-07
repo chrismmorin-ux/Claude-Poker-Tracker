@@ -2,33 +2,39 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 195
+total_items: 250
 by_status:
   decomposed: 1
-  done: 67
+  done: 48
   in_progress: 3
-  deferred: 44
-  backlog: 61
-  dismissed: 1
+  deferred: 46
+  backlog: 132
+  dismissed: 2
   completed: 7
   review: 1
   blocked: 10
 
 by_category:
-  architecture: 3
-  correctness: 2
-  data-integrity: 3
+  architecture: 6
+  compliance: 1
+  correctness: 19
+  data-integrity: 4
   data-isolation: 1
-  design: 1
-  design-comprehension: 10
-  documentation: 1
-  domain-correctness: 74
-  exploit-anchor-library: 8
+  data-quality: 4
+  design: 3
+  design-comprehension: 4
+  documentation: 2
+  domain-correctness: 85
+  engine: 10
+  engineering: 2
+  exploit-anchor-library: 5
   hero-state-primitive: 2
-  input-ux: 3
+  infrastructure: 2
+  input-ux: 2
   kit-quality: 2
-  line-study-slice-widening: 11
-  methodology: 1
+  line-study-slice-widening: 10
+  measurement: 3
+  methodology: 16
   monetization-and-pmf: 8
   performance: 1
   played-hand-review-protocol: 6
@@ -37,20 +43,21 @@ by_category:
   pre-session-drill: 6
   predictive-model-calibration: 1
   printable-refresher: 5
-  provenance: 3
+  provenance: 2
   range-lab: 4
   refactor: 3
-  seam-integrity: 7
+  reproducibility: 1
+  seam-integrity: 2
   seat-selection: 1
   self-coach-foundation: 4
   self-compliance: 1
   shape-language: 3
   sidebar-program: 1
-  sidebar-recurrence: 6
+  sidebar-recurrence: 2
   table-view: 1
-  test-reliability: 2
+  test-reliability: 1
   testing: 2
-  ux: 1
+  ux: 5
 
 items:
   - id: "WS-008"
@@ -59,7 +66,9 @@ items:
     priority_score: 22
     category: player-identification-v2
     effort: M
+    type: "improvement"
     blocked_by: ["WS-007"]
+    claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-034"
     program: design
     capability: core
@@ -70,7 +79,9 @@ items:
     priority_score: 22
     category: self-coach-foundation
     effort: M
+    type: "improvement"
     blocked_by: ["WS-012"]
+    claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-030"
     program: design
     capability: core
@@ -81,6 +92,7 @@ items:
     priority_score: 15
     category: exploit-anchor-library
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -90,6 +102,7 @@ items:
     priority_score: 8
     category: exploit-anchor-library
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -99,15 +112,7 @@ items:
     priority_score: 8
     category: exploit-anchor-library
     effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-020"
-    title: "Hook-hoisting race test (cross-surface)"
-    status: done
-    priority_score: 15
-    category: exploit-anchor-library
-    effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -117,24 +122,7 @@ items:
     priority_score: 15
     category: exploit-anchor-library
     effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-023"
-    title: "Per-seed-anchor snapshot tests (RT-108 pattern)"
-    status: done
-    priority_score: 15
-    category: exploit-anchor-library
-    effort: S
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-025"
-    title: "In-app test assertions for 9 autonomy red lines"
-    status: done
-    priority_score: 15
-    category: exploit-anchor-library
-    effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -144,6 +132,7 @@ items:
     priority_score: 8
     category: exploit-anchor-library
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -153,6 +142,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -162,6 +152,7 @@ items:
     priority_score: 8
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -171,6 +162,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -180,6 +172,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -189,6 +182,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -198,6 +192,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -207,6 +202,7 @@ items:
     priority_score: 22
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     blocked_by: ["WS-031"]
     program: launch
     capability: core
@@ -217,6 +213,7 @@ items:
     priority_score: 8
     category: monetization-and-pmf
     effort: M
+    type: "improvement"
     program: launch
     capability: core
 
@@ -226,6 +223,7 @@ items:
     priority_score: 8
     category: shape-language
     effort: M
+    type: "improvement"
     blocked_by: ["WS-043"]
     program: design
     capability: core
@@ -236,6 +234,7 @@ items:
     priority_score: 8
     category: shape-language
     effort: M
+    type: "improvement"
     blocked_by: ["WS-044"]
     program: design
     capability: core
@@ -246,6 +245,7 @@ items:
     priority_score: 8
     category: shape-language
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -255,6 +255,7 @@ items:
     priority_score: 15
     category: printable-refresher
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -264,6 +265,7 @@ items:
     priority_score: 8
     category: printable-refresher
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -273,6 +275,7 @@ items:
     priority_score: 15
     category: printable-refresher
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -282,6 +285,7 @@ items:
     priority_score: 8
     category: printable-refresher
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -291,6 +295,7 @@ items:
     priority_score: 8
     category: printable-refresher
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -300,6 +305,7 @@ items:
     priority_score: 8
     category: range-lab
     effort: M
+    type: "improvement"
     blocked_by: ["WS-057"]
     program: engineering
     capability: core
@@ -310,6 +316,7 @@ items:
     priority_score: 8
     category: range-lab
     effort: M
+    type: "improvement"
     blocked_by: ["WS-058"]
     program: engineering
     capability: core
@@ -320,6 +327,7 @@ items:
     priority_score: 8
     category: range-lab
     effort: M
+    type: "improvement"
     blocked_by: ["WS-058"]
     program: engineering
     capability: core
@@ -330,6 +338,7 @@ items:
     priority_score: 8
     category: sidebar-program
     effort: M
+    type: "improvement"
     program: engineering
     capability: core
 
@@ -339,6 +348,8 @@ items:
     priority_score: 15
     category: pre-session-drill
     effort: M
+    type: "improvement"
+    claimed_by: "SPR-090"
     sprint_id: "SPR-090"
     program: design
     capability: core
@@ -349,6 +360,7 @@ items:
     priority_score: 8
     category: pre-session-drill
     effort: M
+    type: "improvement"
     blocked_by: ["WS-063"]
     program: design
     capability: core
@@ -359,6 +371,7 @@ items:
     priority_score: 8
     category: pre-session-drill
     effort: M
+    type: "improvement"
     blocked_by: ["WS-063", "WS-064"]
     program: design
     capability: core
@@ -369,6 +382,7 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-067"]
     program: engineering
     capability: core
@@ -379,6 +393,7 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-067"]
     program: engineering
     capability: core
@@ -389,6 +404,7 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-067", "WS-069"]
     program: engineering
     capability: core
@@ -399,6 +415,7 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-067", "WS-068"]
     program: engineering
     capability: core
@@ -409,6 +426,7 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-067", "WS-069"]
     program: engineering
     capability: core
@@ -419,35 +437,9 @@ items:
     priority_score: 8
     category: played-hand-review-protocol
     effort: M
+    type: "improvement"
     blocked_by: ["WS-071"]
     program: engineering
-    capability: core
-
-  - id: "WS-081"
-    title: "Online persona + JTBD patches"
-    status: done
-    priority_score: 8
-    category: design-comprehension
-    effort: M
-    program: design
-    capability: core
-
-  - id: "WS-082"
-    title: "MT-62 offline-fallback verify"
-    status: done
-    priority_score: 8
-    category: design-comprehension
-    effort: M
-    program: design
-    capability: core
-
-  - id: "WS-083"
-    title: "Wave 3"
-    status: done
-    priority_score: 8
-    category: design-comprehension
-    effort: M
-    program: design
     capability: core
 
   - id: "WS-084"
@@ -456,6 +448,7 @@ items:
     priority_score: 8
     category: design-comprehension
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -465,6 +458,7 @@ items:
     priority_score: 8
     category: design-comprehension
     effort: M
+    type: "improvement"
     program: design
     capability: core
 
@@ -474,16 +468,8 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     blocked_by: ["WS-087"]
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-090"
-    title: "Preflop-as-flop schema workaround documentation"
-    status: done
-    priority_score: 8
-    category: line-study-slice-widening
-    effort: M
     program: domain-correctness
     capability: core
 
@@ -493,6 +479,7 @@ items:
     priority_score: 12
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -502,6 +489,7 @@ items:
     priority_score: 15
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -511,6 +499,7 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -520,6 +509,7 @@ items:
     priority_score: 12
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -529,6 +519,7 @@ items:
     priority_score: 12
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -538,6 +529,7 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -547,6 +539,7 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -556,6 +549,7 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -565,34 +559,8 @@ items:
     priority_score: 8
     category: line-study-slice-widening
     effort: M
+    type: "improvement"
     program: domain-correctness
-    capability: core
-
-  - id: "WS-108"
-    title: "Content + SW throttle coordination on reconnect"
-    status: done
-    priority_score: 8
-    category: sidebar-recurrence
-    effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-109"
-    title: "CAPTURED_HANDS migration bypasses validateHandForRelay"
-    status: done
-    priority_score: 8
-    category: sidebar-recurrence
-    effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-110"
-    title: "QuotaExceededError silent swallow on session storage"
-    status: done
-    priority_score: 8
-    category: sidebar-recurrence
-    effort: M
-    program: engineering
     capability: core
 
   - id: "WS-111"
@@ -601,15 +569,7 @@ items:
     priority_score: 8
     category: sidebar-recurrence
     effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-113"
-    title: "DEALING shimmer animates prior-hand content"
-    status: done
-    priority_score: 8
-    category: sidebar-recurrence
-    effort: M
+    type: "improvement"
     program: engineering
     capability: core
 
@@ -619,6 +579,7 @@ items:
     priority_score: 8
     category: sidebar-recurrence
     effort: M
+    type: "improvement"
     program: engineering
     capability: core
 
@@ -628,7 +589,9 @@ items:
     priority_score: 18
     category: self-coach-foundation
     effort: M
+    type: "improvement"
     blocked_by: ["WS-145"]
+    decision_flags: ["Per-sprint: which catalog entries to ship next (by coverage gap + complexity tier)"]
     program: design
     capability: core
 
@@ -638,7 +601,10 @@ items:
     priority_score: 18
     category: self-coach-foundation
     effort: M
+    type: "improvement"
     blocked_by: ["WS-145"]
+    claimed_by: "session-2026-05-03-next"
+    decision_flags: ["Lesson directory location (docs/design/lessons/ vs src/lessonContent/ vs other)", "Mustache slot syntax conventions (likely reuse {{path}} from hero-state-templates per WS-138)"]
     sprint_id: "SPR-032"
     program: design
     capability: core
@@ -649,7 +615,9 @@ items:
     priority_score: 18
     category: self-coach-foundation
     effort: M
+    type: "improvement"
     blocked_by: ["WS-145", "WS-147"]
+    claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-033"
     program: design
     capability: core
@@ -660,6 +628,8 @@ items:
     priority_score: 10
     category: hero-state-primitive
     effort: M
+    type: "improvement"
+    decision_flags: ["DO NOT CLAIM until trigger condition documented (event-driven)", "Whether to cache full HeroState vs cache only template-rendered narrative"]
     program: engineering
     capability: core
 
@@ -669,6 +639,8 @@ items:
     priority_score: 10
     category: hero-state-primitive
     effort: M
+    type: "research"
+    decision_flags: ["Whether LLM augmentation ships at all — reject is a valid outcome", "Long-tail threshold — at what frequency does a combination warrant treatment", "Online-only LLM vs cached-LLM-fallback for offline play"]
     program: domain-correctness
     capability: core
 
@@ -678,6 +650,8 @@ items:
     priority_score: 22
     category: player-identification-v2
     effort: M
+    type: "improvement"
+    claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-034"
     program: design
     capability: core
@@ -688,7 +662,10 @@ items:
     priority_score: 18
     category: player-identification-v2
     effort: M
+    type: "improvement"
     blocked_by: ["WS-160"]
+    claimed_by: "session-2026-05-03-next"
+    decision_flags: ["Crop dimensions: 256×256 vs 512×512", "Camera button placement in PlayerEditor: top-right vs inline near NameSection vs new section", "Photo display in Profile View: replace Header avatar vs separate section"]
     sprint_id: "SPR-036"
     program: design
     capability: core
@@ -699,7 +676,10 @@ items:
     priority_score: 18
     category: player-identification-v2
     effort: M
+    type: "improvement"
     blocked_by: ["WS-160"]
+    claimed_by: "session-2026-05-03-next"
+    decision_flags: ["Surface authoring: piggyback on PIO-G4 audit OR author standalone surface spec", "Manual-add modal: include all attributes in one form vs per-attribute taps", "Sighting history pagination: top-N vs full scroll", "PriorTuning: include SIGHTING_FEATURE_PRIORS tuning here OR defer"]
     sprint_id: "SPR-035"
     program: design
     capability: core
@@ -710,7 +690,10 @@ items:
     priority_score: 18
     category: player-identification-v2
     effort: M
+    type: "improvement"
     blocked_by: ["WS-160"]
+    claimed_by: "session-2026-05-03-next"
+    decision_flags: ["Palette content authoring: small starter sets (~7-12 each) vs comprehensive seed", "Row-tap routing: hard switch vs opt-in via setting", "Hat-field envelope migration: handle here vs Table-Build vs defer", "PaletteChipsInput: shared component vs 3 specialized variants"]
     sprint_id: "SPR-035"
     program: design
     capability: core
@@ -721,7 +704,9 @@ items:
     priority_score: 15
     category: player-identification-v2
     effort: S
+    type: "improvement"
     blocked_by: ["WS-163"]
+    claimed_by: "session-2026-05-03-next"
     sprint_id: "SPR-036"
     program: design
     capability: core
@@ -732,6 +717,8 @@ items:
     priority_score: 8
     category: predictive-model-calibration
     effort: M
+    type: "improvement"
+    decision_flags: ["CFR continues deferred / CFR program-level revisit warranted"]
     program: domain-correctness
     capability: core
 
@@ -741,6 +728,8 @@ items:
     priority_score: 12
     category: input-ux
     effort: M
+    type: "feature"
+    decision_flags: ["Gate 1 verdict (GREEN / YELLOW / RED) — determines whether Gate 2 fires", "PTT button placement: in-picker affordance vs floating mic button vs both", "Confirmation UX: always-show chips vs auto-commit on high confidence", "Kill-criteria numeric thresholds (accuracy %, speed ratio, false-commit budget)", "Feature flag default state (OFF for spike — confirm at Gate 4)", "iOS Safari fallback: silent-disable vs grayed-button-with-explanation"]
     program: design
     capability: core
 
@@ -750,6 +739,7 @@ items:
     priority_score: 10
     category: table-view
     effort: L
+    type: "feature"
     blocked_by: ["refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks all feature work until Item 4 (decision-system extraction) completes. Bug fixes are exempt; this is not a bug."]
     program: design
     capability: core
@@ -760,7 +750,9 @@ items:
     priority_score: 10
     category: player-identification
     effort: M
+    type: "feature"
     blocked_by: ["WS-184 (camera capture silent-fail) — photo path must actually attach and render before inverting avatar priority", "refactor-sprint-2026-05-10 Items 1+2+3+4 — Refactor Sprint charter ratification 4 ('no new features during this sprint') blocks feature work until Item 4 completes"]
+    decision_flags: ["\"Visual-mirror scope confirmed at Gate 4 — does it include EVERY view"]
     program: design
     capability: core
 
@@ -770,6 +762,7 @@ items:
     priority_score: 20
     category: seat-selection
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -779,6 +772,8 @@ items:
     priority_score: 12
     category: pre-session-drill
     effort: M
+    type: "improvement"
+    decision_flags: ["Schema-write vs query-time strategy"]
     program: engineering
     capability: core
 
@@ -788,7 +783,9 @@ items:
     priority_score: 10
     category: pre-session-drill
     effort: M
+    type: "improvement"
     blocked_by: ["WS-199"]
+    decision_flags: ["In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"]
     program: design
     capability: core
 
@@ -798,6 +795,8 @@ items:
     priority_score: 10
     category: pre-session-drill
     effort: M
+    type: "improvement"
+    decision_flags: ["Auto v2 / hybrid / user-only — choice depends on backtest reliability"]
     program: domain-correctness
     capability: core
 
@@ -807,81 +806,10 @@ items:
     priority_score: 10
     category: range-lab
     effort: M
+    type: "improvement"
     blocked_by: ["WS-055"]
+    decision_flags: ["Grid-zoom modal vs row-paint modal vs other reflow strategy", "In-line in postflop-drills.md vs separate surfaces/postflop-drills-mobile.md"]
     program: design
-    capability: core
-
-  - id: "WS-214"
-    title: "Seam tests: rangeEngine → exploitEngine (real-profile fixtures) + fix bucketQueryUtils unit fixtures"
-    status: done
-    priority_score: 12
-    category: seam-integrity
-    effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-215"
-    title: "rangeRules treats Bayesian posterior range-width as observed frequency in testProportionRaw"
-    status: done
-    priority_score: 13
-    category: domain-correctness
-    effort: M
-    blocked_by: ["WS-214"]
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-216"
-    title: "Seam test: recorded hand → persistence → analytics (real gameReducer dispatch end-to-end)"
-    status: done
-    priority_score: 10
-    category: seam-integrity
-    effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-217"
-    title: "Extension seam: replay captured WS frames through parse→HSM→render + fix dataQuality fixture type"
-    status: done
-    priority_score: 10
-    category: seam-integrity
-    effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-218"
-    title: "DESIGN: anchor predicate space — PREDICATE_KEYS registration vs anchor-owned predicates, then wire two-validator inheritance"
-    status: done
-    priority_score: 11
-    category: domain-correctness
-    effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-219"
-    title: "Session storage hygiene: tipAmount field parity + endSessionAtomic round-trip test"
-    status: done
-    priority_score: 8
-    category: seam-integrity
-    effort: S
-    program: engineering
-    capability: core
-
-  - id: "WS-220"
-    title: "Fix RangeLabExplorer 'painting the second grid' timeout flake under full-suite load"
-    status: done
-    priority_score: 9
-    category: test-reliability
-    effort: S
-    program: engineering
-    capability: core
-
-  - id: "WS-223"
-    title: "Fix dead rule: range-never-3bets-position-* checks Bayesian width, can never fire on real producer output"
-    status: done
-    priority_score: 27
-    category: seam-integrity
-    effort: S
-    program: domain-correctness
     capability: core
 
   - id: "WS-224"
@@ -890,6 +818,7 @@ items:
     priority_score: 6
     category: seam-integrity
     effort: S
+    type: "improvement"
     program: engineering
     capability: core
 
@@ -899,6 +828,7 @@ items:
     priority_score: 12
     category: refactor
     effort: S
+    type: "improvement"
     program: engineering
     capability: workstream
 
@@ -908,6 +838,8 @@ items:
     priority_score: 14
     category: refactor
     effort: M
+    type: "improvement"
+    decision_flags: ["Helper API shape: readTx/writeTx callbacks vs promisifyRequest-only (recommend both, callbacks as primary)"]
     program: engineering
     capability: workstream
 
@@ -917,53 +849,9 @@ items:
     priority_score: 13
     category: refactor
     effort: M
+    type: "improvement"
     program: engineering
     capability: workstream
-
-  - id: "WS-228"
-    title: "Auto-reconnect after extension heartbeat timeout (offline-fallback UX gap)"
-    status: done
-    priority_score: 5
-    category: input-ux
-    effort: M
-    program: engineering
-    capability: core
-
-  - id: "WS-229"
-    title: "Gate 2 blind-spot roundtable — drills surface (preflop + postflop)"
-    status: done
-    priority_score: 6
-    category: design-comprehension
-    effort: M
-    program: design
-    capability: core
-
-  - id: "WS-230"
-    title: "Drills Gate 3 — tab-taxonomy/consolidation decision + coverage authoring"
-    status: done
-    priority_score: 7
-    category: design-comprehension
-    effort: L
-    program: design
-    capability: core
-
-  - id: "WS-231"
-    title: "Drills corrective — surface-artifact fixes + tab-switch state protection + label divergence"
-    status: done
-    priority_score: 8
-    category: design-comprehension
-    effort: M
-    program: design
-    capability: core
-
-  - id: "WS-232"
-    title: "Drill mode code-correctness fixes — FrameworkMode grading parity + LessonsMode compute drop"
-    status: done
-    priority_score: 8
-    category: correctness
-    effort: M
-    program: engineering
-    capability: core
 
   - id: "WS-233"
     title: "Leak→drill bridge — route from analysis-view/hand-replay to a targeted drill (DS-45)"
@@ -971,6 +859,7 @@ items:
     priority_score: 7
     category: design-comprehension
     effort: L
+    type: "improvement"
     blocked_by: ["WS-198"]
     program: design
     capability: core
@@ -981,17 +870,9 @@ items:
     priority_score: 7
     category: design-comprehension
     effort: L
+    type: "feature"
+    decision_flags: ["modality-2d-vs-3d-empirical", "pmc-predictionaudit-read-interface", "operator-persona-vs-tooling"]
     program: design
-    capability: core
-
-  - id: "WS-235"
-    title: "Attribute or replace the uncited population priors (Field-frame provenance) — FIND-023"
-    status: done
-    priority_score: 8
-    category: provenance
-    effort: M
-    finding_id: "FIND-023"
-    program: data-quality
     capability: core
 
   - id: "WS-236"
@@ -1000,6 +881,8 @@ items:
     priority_score: 7
     category: provenance
     effort: M
+    type: "improvement"
+    claimed_by: "SPR-145"
     finding_id: "FIND-024"
     program: data-quality
     capability: core
@@ -1010,6 +893,7 @@ items:
     priority_score: 6
     category: provenance
     effort: S
+    type: "improvement"
     finding_id: "FIND-025"
     program: data-quality
     capability: core
@@ -1020,6 +904,7 @@ items:
     priority_score: 6.5
     category: data-isolation
     effort: S
+    type: "bug"
     program: data-quality
     capability: core
 
@@ -1029,6 +914,8 @@ items:
     priority_score: 12
     category: ux
     effort: L
+    type: "improvement"
+    decision_flags: ["Brand: does a reference already exist, or define from scratch?"]
     program: prog-launch
     capability: governance
 
@@ -1038,52 +925,9 @@ items:
     priority_score: 12
     category: input-ux
     effort: L
+    type: "feature"
+    decision_flags: ["Action grammar token table — authored from real captures, ratify at build", "'say it again' single-value re-listen vs full re-narrate", "Whether the timeline editor graduates from sandbox to a real surface (and where)"]
     program: design
-    capability: core
-
-  - id: "WS-244"
-    title: "STYLE_FOLD_DEFAULTS raw lookup as fold-rate input — route to logistic (FIND-006, FIND-007)"
-    status: done
-    priority_score: 15
-    category: domain-correctness
-    effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-245"
-    title: "Confidence-gate categorical verdicts: assessEV + PIP active-tier count (FIND-009, FIND-010)"
-    status: done
-    priority_score: 13
-    category: domain-correctness
-    effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-247"
-    title: "bestResponseToAggression raise-gate: replace 0.65 equity gate with EV + realistic fold-to-raise prior (FIND-029)"
-    status: done
-    priority_score: 16
-    category: domain-correctness
-    effort: M
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-250"
-    title: "Engine low-severity nits + missing live tells (FIND-030, FIND-032, FIND-033)"
-    status: done
-    priority_score: 9
-    category: domain-correctness
-    effort: L
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-251"
-    title: "ICM pressure on non-all-in tournament streets (preflop/postflop) — next ICM-project phase (FIND-031)"
-    status: done
-    priority_score: 17
-    category: domain-correctness
-    effort: L
-    program: domain-correctness
     capability: core
 
   - id: "WS-252"
@@ -1092,6 +936,7 @@ items:
     priority_score: 7
     category: domain-correctness
     effort: M
+    type: "feature"
     program: domain-correctness
     capability: core
 
@@ -1101,15 +946,19 @@ items:
     priority_score: 5
     category: domain-correctness
     effort: M
+    type: "feature"
+    decision_flags: ["Turn-start timestamp source for online/Ignition capture vs main-app live entry — confirm a reliable monotonic clock exists at the capture point."]
     program: domain-correctness
     capability: core
 
   - id: "WS-254"
-    title: "foldTo3Bet stat counts ANY preflop fold facing a raise (incl. fold-to-open) — audit definition vs name, priors, and exploit consumers"
+    title: "SUPERSEDED BY WS-371 EXCEPT FOR THE RENAME — carry the corrected foldTo3Bet naming into extract3BetStats, the extension stats engine and the poolBaseline key, in one atomic change across two codebases"
     status: backlog
     priority_score: 14
     category: domain-correctness
-    effort: M
+    effort: S
+    type: "fix"
+    decision_flags: ["|"]
     program: domain-correctness
     capability: core
 
@@ -1119,6 +968,8 @@ items:
     priority_score: 12
     category: domain-correctness
     effort: S
+    type: "fix"
+    decision_flags: ["3-bet opportunity definition: first-action label vs per-decision-point"]
     program: domain-correctness
     capability: core
 
@@ -1128,6 +979,8 @@ items:
     priority_score: 15
     category: domain-correctness
     effort: L
+    type: "feature"
+    decision_flags: ["Final tag list (incl. whether overCall + 4-bet family ship in v1 or defer)", "Hierarchical shrinkage scheme for sparse subclasses", "Range-profile persistence compat approach"]
     program: domain-correctness
     capability: core
 
@@ -1137,6 +990,7 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: S
+    type: "docs"
     finding_id: "FIND-034"
     program: domain-correctness
     capability: governance
@@ -1147,6 +1001,7 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: S
+    type: "fix"
     finding_id: "FIND-035"
     program: domain-correctness
     capability: governance
@@ -1157,6 +1012,8 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: S
+    type: "governance"
+    decision_flags: ["Promote, edit, or delete each of the 2 Low-confidence rules", "Spec placement of the PRIOR_WEIGHT reconciliation rule"]
     finding_id: "FIND-036"
     program: domain-correctness
     capability: governance
@@ -1167,6 +1024,8 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "fix"
+    decision_flags: ["Backfill policy for existing online sessions (re-key from wire captures vs fresh start)", "Canonicalization at writer boundary vs segmentKey read side"]
     finding_id: "FIND-037"
     program: domain-correctness
     capability: governance
@@ -1177,6 +1036,7 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "fix"
     finding_id: "FIND-038"
     program: domain-correctness
     capability: governance
@@ -1187,6 +1047,8 @@ items:
     priority_score: 20
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["Seat-count dimension in segmentKey (6-max vs full-ring differ on every stat) — schema change, founder sign-off"]
     program: domain-correctness
     capability: core
 
@@ -1196,6 +1058,7 @@ items:
     priority_score: 12
     category: domain-correctness
     effort: M
+    type: "research"
     program: domain-correctness
     capability: core
 
@@ -1205,6 +1068,8 @@ items:
     priority_score: 10
     category: domain-correctness
     effort: L
+    type: "research"
+    decision_flags: ["Consumer surface choice (live advice vs replay vs study atlas) — design-gated"]
     program: domain-correctness
     capability: core
 
@@ -1214,6 +1079,7 @@ items:
     priority_score: 9
     category: data-integrity
     effort: S
+    type: "bug"
     program: data-quality
     capability: core
 
@@ -1223,6 +1089,7 @@ items:
     priority_score: 55
     category: self-compliance
     effort: M
+    type: "finding-promoted"
     program: kit-quality
     capability: core
 
@@ -1232,6 +1099,7 @@ items:
     priority_score: 8
     category: documentation
     effort: S
+    type: "task"
     program: domain-correctness
     capability: core
 
@@ -1241,6 +1109,7 @@ items:
     priority_score: 18
     category: kit-quality
     effort: S
+    type: "bug"
     program: kit-quality
     capability: core
 
@@ -1250,7 +1119,9 @@ items:
     priority_score: 16
     category: domain-correctness
     effort: L
+    type: "feature"
     blocked_by: ["WS-256"]
+    decision_flags: ["Polarized vs pure-value 4-bet prior shape per position (and how a reg who 4-bet bluffs is detected)", "Evidence tier required before a stack-off recommendation is surfaced", "Whether cold4Bet/backraise is its own class in v1 or shrinks into fourBet"]
     program: domain-correctness
     capability: core
 
@@ -1260,6 +1131,7 @@ items:
     priority_score: 7
     category: test-reliability
     effort: S
+    type: "bug"
     program: engineering
     capability: core
 
@@ -1269,6 +1141,8 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: L
+    type: "feature"
+    decision_flags: ["Held-out split strategy — by hand, by player, or by time window? (By player is the strictest and the most honest for a per-villain model.)", "Does the harness live in the app repo or beside the mining pipeline at C:/Users/chris/data/phh-mining?", "Which simplification is measured first as the mechanism demo?"]
     sprint_id: "SPR-154"
     program: domain-correctness
     capability: core
@@ -1279,6 +1153,8 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Minimum observation count n before a live seat's own fold rate outranks the position prior", "Fold-through correlation model across seats behind — reuse multiway fold correlation, or a simpler documented approximation with a measured cost (WS-273)?", "How prominently does composition-driven advice surface at the table without adding read-time at a live decision?"]
     program: domain-correctness
     capability: core
 
@@ -1288,6 +1164,8 @@ items:
     priority_score: 20
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Decay form and half-life — measured via WS-273, or founder estimate with follow-up?", "Does regime detection adjust the model, or only raise a flag to the founder in v1? (Flag-only is the conservative first step and is independently valuable.)", "Which regime triggers ship in v1 — stack-vs-buy-in and hands-since-big-loss are the cheapest; session duration and VPIP drift need more plumbing."]
     program: domain-correctness
     capability: core
 
@@ -1297,6 +1175,8 @@ items:
     priority_score: 32
     category: domain-correctness
     effort: L
+    type: "feature"
+    decision_flags: ["Does v1 ship Half A + Half C (hero range, bluff:value, self-audit) alone, with Half B as a follow-up? A+C are independently valuable and much cheaper; B is the bigger lever but needs an observation-history model.", "What counts as 'plausibly observed' by a villain — showdowns only, or all visible hero aggression? Determines how fast image accumulates. The motivating hand turned on NON-showdown observation (hero had been betting draws all night, visible without showdowns), which argues for the wider definition.", "Hero self-audit presentation — per feedback_owner_volunteered_grading this must be opt-in and observational; confirm the surface framing."]
     program: domain-correctness
     capability: core
 
@@ -1306,6 +1186,8 @@ items:
     priority_score: 14
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["If the base factor turns out to double-count the sampled branch EV, is the fix a straight deletion in v1?", "Cost ceiling — deriving realization from the tree at every preflop decision may be too slow for live use; is a cached/precomputed form acceptable?"]
     program: domain-correctness
     capability: core
 
@@ -1315,6 +1197,8 @@ items:
     priority_score: 11
     category: domain-correctness
     effort: L
+    type: "feature"
+    decision_flags: ["v1 ceiling — seat-change prompt only, or the full table-softness trend as well?", "Does room-wide table comparison ever enter scope? It requires observing tables hero is not seated at, i.e. a manual entry flow.", "Leave/stay recommendations touch bankroll and session policy — explicitly out of scope until the founder specifies that policy?"]
     program: domain-correctness
     capability: core
 
@@ -1324,6 +1208,7 @@ items:
     priority_score: 12
     category: domain-correctness
     effort: M
+    type: "improvement"
     program: domain-correctness
     capability: core
 
@@ -1333,6 +1218,8 @@ items:
     priority_score: 14
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Squeeze risk as a probability-weighted branch in the game tree, or as a threshold adjustment on the call decision? The former is more correct and much more expensive."]
     program: domain-correctness
     capability: core
 
@@ -1342,6 +1229,8 @@ items:
     priority_score: 25
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["Refit the fold curve globally from the corpus, or keep the founder-estimate shape and correct only the online segments? The corpus is online-only and live/online separation is RATIFIED (WS-259)."]
     program: domain-correctness
     capability: core
 
@@ -1351,6 +1240,7 @@ items:
     priority_score: 21
     category: seam-integrity
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1360,6 +1250,8 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Replace the ladder with a flatter key, or keep it and add effective-n shrinkage toward the pooled estimate? Shrinkage is more principled and matches 6.5a, but is a bigger change.", "The corpus is online 2009 and the founder plays live 1/2 — is a hierarchy refit on corpus evidence admissible given the RATIFIED live/online separation (WS-259)? Same question as WS-283's flag."]
     program: domain-correctness
     capability: core
 
@@ -1369,6 +1261,7 @@ items:
     priority_score: 90
     category: domain-correctness
     effort: XS
+    type: "milestone"
     blocked_by: ["WS-287"]
     program: domain-correctness
     capability: core
@@ -1379,6 +1272,8 @@ items:
     priority_score: 32
     category: domain-correctness
     effort: XL
+    type: "feature"
+    decision_flags: ["Off-policy treatment: decision-only scoring (honest but narrow), truncate-at-divergence, or importance weighting? Changes what the number means and how big the build is.", "Corpus is 2009 online 50NL. Hero-EV is closer to a VALUE claim than the WS-285 structural claim, so the live/online separation may genuinely bind here — does a corpus edge certify a live curriculum?"]
     program: domain-correctness
     capability: core
 
@@ -1388,6 +1283,7 @@ items:
     priority_score: 45
     category: domain-correctness
     effort: L
+    type: "documentation"
     blocked_by: ["WS-286"]
     program: domain-correctness
     capability: core
@@ -1398,7 +1294,9 @@ items:
     priority_score: 48
     category: domain-correctness
     effort: XL
+    type: "feature"
     blocked_by: ["WS-286"]
+    decision_flags: ["Standalone document, or a surface inside the app the founder can drill against? The SCF/self-coach machinery already exists and could host it — but an in-app surface is a Design Program Gate 1 change, not a doc."]
     program: domain-correctness
     capability: core
 
@@ -1408,7 +1306,9 @@ items:
     priority_score: 40
     category: domain-correctness
     effort: L
+    type: "feature"
     blocked_by: ["WS-289"]
+    decision_flags: ["Does founder-vs-model divergence feed back into the model as live evidence? It is the only live data source available to challenge an online-corpus-derived model — but a model that learns from the founder's play will drift toward agreeing with them, which is the one bias it must not have."]
     program: domain-correctness
     capability: core
 
@@ -1418,6 +1318,8 @@ items:
     priority_score: 34
     category: domain-correctness
     effort: M
+    type: "bug"
+    decision_flags: ["Floor: what minimum weight does an implausible combo keep? Too high erases the read, too low re-creates the defect. Propose deriving it from measured coverage rather than picking it.", "Preserve the aggregate continuation rate exactly (rescale after smoothing), or accept an approximate rate for a smoother curve?"]
     program: domain-correctness
     capability: core
 
@@ -1427,6 +1329,8 @@ items:
     priority_score: 28
     category: architecture
     effort: L
+    type: "improvement"
+    decision_flags: ["Should revealed cards ever FEED BACK into the inferred range (posterior correction on hands where we later learn the truth), or stay strictly a scoring/validation channel? Feeding back is powerful for retrospective analysis and is leakage if it reaches a live prediction.", "Where does the primitive live — pokerCore (no engine deps), exploitEngine, or a new module? It needs board + range + card parsing but no player modelling."]
     program: domain-correctness
     capability: core
 
@@ -1436,6 +1340,8 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: M
+    type: "task"
+    decision_flags: ["Does range calibration become a readiness-gate criterion (C7), or stay a program metric? Adding a criterion moves the bar and needs a recorded founder decision.", "The villain-side arm currently uses DEFAULT continuation rates rather than the model-derived rate gameTreeContext passes at runtime. Score against the real model path (slower, exact) or keep the population approximation (fast, directional)?"]
     program: domain-correctness
     capability: core
 
@@ -1445,7 +1351,9 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: L
+    type: "task"
     blocked_by: ["WS-291"]
+    decision_flags: ["Compute budget for the widened run — cluster count is the binding constraint and cost is ~4.2 s/decision. How many hours is this worth?"]
     program: domain-correctness
     capability: core
 
@@ -1455,6 +1363,8 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "investigation"
+    decision_flags: ["If the curse is large relative to the measured hero-EV edge, does that re-open the WS-286 sequencing (Phases 1-3 currently post-gate)? Answer BEFORE the number is known — the WS-285 lesson."]
     program: domain-correctness
     capability: core
 
@@ -1464,7 +1374,9 @@ items:
     priority_score: 18
     category: domain-correctness
     effort: M
+    type: "improvement"
     blocked_by: ["WS-295", "WS-286"]
+    decision_flags: ["Is B the poker bankroll or total liquid wealth? Kelly wants the roll the founder is genuinely willing to lose. This one number sets the entire magnitude of the Kelly term."]
     program: domain-correctness
     capability: core
 
@@ -1474,7 +1386,9 @@ items:
     priority_score: 16
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-296"]
+    decision_flags: ["Show the utility tax on every recommendation, or only when it flips the answer? Always is noise; only-when-it-flips hides the mechanism.", "Where does the bankroll live — settings, or per-session so it tracks reality without founder upkeep?"]
     program: domain-correctness
     capability: core
 
@@ -1484,6 +1398,7 @@ items:
     priority_score: 13
     category: domain-correctness
     effort: M
+    type: "improvement"
     blocked_by: ["WS-297"]
     program: domain-correctness
     capability: core
@@ -1494,7 +1409,9 @@ items:
     priority_score: 12
     category: domain-correctness
     effort: XL
+    type: "improvement"
     blocked_by: ["WS-296"]
+    decision_flags: ["How to break the self-reinforcement loop — an exploration floor in the recommendations, or keep the discount out of live advice and confine it to a study/review surface?"]
     program: domain-correctness
     capability: core
 
@@ -1504,6 +1421,8 @@ items:
     priority_score: 30
     category: testing
     effort: M
+    type: "bug"
+    decision_flags: ["Fix the fixtures and absorb the churn in one pass, or introduce correctly-named fixtures alongside and migrate tests incrementally? The first is honest and noisy; the second keeps the suite green while the inverted ones linger."]
     program: domain-correctness
     capability: core
 
@@ -1513,6 +1432,8 @@ items:
     priority_score: 28
     category: performance
     effort: M
+    type: "bug"
+    decision_flags: ["If the live path turns out to be fast, is there anything left to fix? Proposed: yes, the missing time budget, but at much lower priority."]
     program: domain-correctness
     capability: core
 
@@ -1522,6 +1443,8 @@ items:
     priority_score: 31
     category: domain-correctness
     effort: M
+    type: "bug"
+    decision_flags: ["Uniform floor across off-chart hands, or a floor that respects how far off-chart the hand is (K3o is likelier than 72o)? The second is more honest and needs a score to rank by — reuse per-combo preflop equity.", "Does the same treatment apply to the range-grid population priors, or only to the positional baseline?"]
     program: domain-correctness
     capability: core
 
@@ -1531,6 +1454,8 @@ items:
     priority_score: 29
     category: domain-correctness
     effort: L
+    type: "bug"
+    decision_flags: ["If a check really is uninformative, is a near-flat check likelihood acceptable product behaviour? It means the engine says 'villain checked, I know nothing new' — honest, and less useful than the current confidently-wrong read.", "Chaining: temper by depth, or restructure to condition once on the whole action sequence? The second is more correct and a larger change to gameTreeDepth2."]
     program: domain-correctness
     capability: core
 
@@ -1540,6 +1465,8 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: M
+    type: "bug"
+    decision_flags: ["Replace `handStrengthTier` outright with the measured equity table, or keep it for the branches where its ordering is defensible? Replacing it changes every prior shape at once and forces a full re-sweep."]
     program: domain-correctness
     capability: core
 
@@ -1549,6 +1476,8 @@ items:
     priority_score: 22
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Class-level suit-averaged weighted sum (fast, one named approximation) vs combo-level exact (1326x1326, slower) — recommend class-level WITH a measured error bound", "Does the exact path replace the frozen EQUITY_VS_OPEN lookup, or sit beside it? Recommend beside, pending a latency measurement against the sub-50ms live budget"]
     program: domain-correctness
     capability: core
 
@@ -1558,6 +1487,7 @@ items:
     priority_score: 31
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1567,6 +1497,7 @@ items:
     priority_score: 24
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1576,6 +1507,8 @@ items:
     priority_score: 26
     category: testing
     effort: M
+    type: "improvement"
+    decision_flags: ["Re-baseline thresholds to measured values (locks in current engine behaviour as correct, including any live defects) vs derive them from poker first principles (slower, but does not enshrine a bug). Recommend measured-plus-tolerance for the range-INSENSITIVITY guard, and first-principles for any assertion that WS-307/WS-308 will move."]
     program: domain-correctness
     capability: core
 
@@ -1585,6 +1518,8 @@ items:
     priority_score: 29
     category: domain-correctness
     effort: M
+    type: "design"
+    decision_flags: ["Does this SUPERSEDE WS-303 or sit beneath it? Hypothesis (unmeasured): WS-303's finding that re-narrowing sharpens the range until depth 3 is worse than not narrowing is the SAME root cause — re-narrowing a hole-card grid street by street treats streets as independent filters and compounds error, where conditioning one terminal window does not. Test this cheaply before building either.", "Does Layer A ship as a new primitive, or as a replacement for the existing bucket taxonomy (nuts/strong/marginal/draw/air)? The data argues 'draw' is not a hand class but an UNRESOLVED STATE — the draw column runs 16.0% flop -> 24.2% turn -> 0.0% river by construction. A bucket label cannot express '9 outs to the nuts, 38 outs to nothing'."]
     program: domain-correctness
     capability: core
 
@@ -1594,6 +1529,8 @@ items:
     priority_score: 18
     category: design
     effort: M
+    type: "feature"
+    decision_flags: ["Where does this live — a panel inside an existing view, or its own route? Field-entry screens are portrait-native; 1600x720 game-flow surfaces keep ScaledContainer.", "Is the self-audit reviewed post-session only, or also available live? Live raises the WS-301 timing question again; post-session does not."]
     program: design
     capability: core
 
@@ -1603,6 +1540,7 @@ items:
     priority_score: 29
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1612,6 +1550,8 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["Surface: where does the bluff budget render — LiveAdviceBar, sidebar panel, or metadata only for now?"]
     program: domain-correctness
     capability: core
 
@@ -1621,6 +1561,7 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1630,6 +1571,7 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1639,6 +1581,7 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    type: "bug"
     program: domain-correctness
     capability: core
 
@@ -1648,15 +1591,20 @@ items:
     priority_score: 31
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Migration shape: change buildSituationKey in place and migrate all readers in one commit, or introduce the structured key alongside and retire the string over several? In-place is riskier but leaves no period where two key notions coexist — which is the defect being fixed.", "Does the persisted bucket format change? Buckets carry situationKey today; a structured key may need a store migration or a derived-at-read-time approach. The second avoids a migration but pays the parse cost on every read."]
     program: domain-correctness
     capability: core
 
   - id: "WS-318"
-    title: "Weakness matching compares aggressor-status while calling it the action — 'in flop agg spots' is user-visible, and the match is far looser than intended"
+    title: "Weakness matching compares aggressor-status while calling it the action — the match is DEAD, not loose, and the string never renders (premise corrected 2026-08-05)"
     status: backlog
     priority_score: 26
     category: domain-correctness
     effort: S
+    type: "bug"
+    blocked_by: ["WS-362"]
+    decision_flags: ["What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision.", "|"]
     program: domain-correctness
     capability: core
 
@@ -1666,6 +1614,8 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["Is this analysis-only or a live surface? A live path needs it fast enough for the table; an analysis primitive can be slow. The answer changes the implementation, so measure the cost before choosing.", "What is ε for the neutral zone — an absolute bb threshold, or a fraction of the pot? Pot-relative is more transportable across stack depths; absolute is easier to explain. This is a product decision about what 'close enough to indifferent' means."]
     program: domain-correctness
     capability: core
 
@@ -1675,6 +1625,8 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: M
+    type: "task"
+    decision_flags: ["If the ladder separates, does it become a per-villain channel, a population segmentation, or both? A channel adjusts one villain's model; a segmentation changes which prior a thin villain shrinks toward. They are different builds with different risks."]
     program: domain-correctness
     capability: core
 
@@ -1684,6 +1636,8 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: M
+    type: "improvement"
+    decision_flags: ["Does per-player softness apply to ALL actions or only the ones WS-303 showed carry signal (raise/call/bet, not check)? A player-level multiplier on an action whose narrowing is already worse-than-nothing may compound the error rather than correct it."]
     program: domain-correctness
     capability: core
 
@@ -1693,6 +1647,8 @@ items:
     priority_score: 34
     category: architecture
     effort: L
+    type: "improvement"
+    decision_flags: ["Does a Strategy Card declare action DISTRIBUTIONS (mixed strategies) or single actions per state? Distributions match how the engine already emits advice and how pi_ours is built, but they are much harder for a human to execute at a table — and human-executability is the point of the curriculum work.", "Is `fear` a first-class warrant or a derived verdict? Declaring it invites honesty; deriving it (equity-warranted rule that deviates toward passive in the medium band with no arithmetic justification) catches authors who will not admit it. Recommend BOTH — declared, then audited against the derived test."]
     program: strategy-of-record
     capability: core
 
@@ -1702,7 +1658,9 @@ items:
     priority_score: 32
     category: domain-correctness
     effort: M
+    type: "improvement"
     blocked_by: ["WS-322"]
+    decision_flags: ["169 cells (rank-pair grid) or 1,326 (suit-aware)? 1,326 is the honest unit for blockers and suitedness but is 8x the compute and most cells are near-duplicates. Recommend 169 for the headline map with a suit-aware pass only on cells whose interval straddles zero — spend the compute where the answer is actually in doubt.", "Does the entry map's continuation policy default to the shipped engine, or to a declared simple Card? The engine gives the most realistic number; a declared Card makes the map self-contained and reproducible without the engine. This determines whether the map survives an engine upgrade unchanged."]
     program: strategy-of-record
     capability: core
 
@@ -1712,7 +1670,9 @@ items:
     priority_score: 31
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-322"]
+    decision_flags: ["Do layers emit their FULL intermediate (e.g. the whole 169-cell range vector per opponent per decision) or a compressed summary plus a seed to regenerate? Full is ~10-50x the atom size and makes ablation exact; compressed keeps runs cheap but makes some future questions unanswerable. Recommend full for a sampled subset of decisions plus compressed for all, with the sampling rate recorded."]
     program: strategy-of-record
     capability: core
 
@@ -1722,6 +1682,7 @@ items:
     priority_score: 29
     category: data-integrity
     effort: M
+    type: "improvement"
     blocked_by: ["WS-324"]
     program: strategy-of-record
     capability: core
@@ -1732,7 +1693,9 @@ items:
     priority_score: 27
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-322"]
+    decision_flags: ["Which game does the first tournament run in? ONLINE 6max -- where the corpus can actually measure and the agreement gate is meaningful -- or LIVE 9-handed, the founder's real game, where only the simulator can score and the population model is thin (founder estimate + sparse observed pool). Recommend online first: get one genuinely measured number before trusting anything, then treat live as the transfer question FSA is built to answer.", "Does the responsive field adapt within a session (observed frequencies over recent orbits) or across sessions (a persistent read on hero)? Live 9-handed regulars do the latter; online 2009 pools mostly did the former. This changes what exploitability means."]
     program: strategy-of-record
     capability: core
 
@@ -1742,7 +1705,9 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: M
+    type: "improvement"
     blocked_by: ["WS-323", "WS-326"]
+    decision_flags: ["Who authors the first two cards? Two AI instances with different mandates, OR one AI card versus a card built from the FOUNDER'S OWN observed play. The second is more useful personally and gives the fear detector a real human target -- but requires enough observed founder hands to fit a card, which the live pool may not yet support.", "How many rounds before stopping? Fixed count, or run until the exploitability gap stops moving? Fixed is cheaper and bounded; convergence-based is more informative but can cycle indefinitely."]
     program: strategy-of-record
     capability: core
 
@@ -1752,7 +1717,9 @@ items:
     priority_score: 28
     category: data-integrity
     effort: M
+    type: "improvement"
     blocked_by: ["WS-322"]
+    decision_flags: ["Where do atoms physically live? Local disk outside the repo is simplest and matches the existing C:/Users/chris/data/phh-mining pattern, but is not backed up and is invisible to other fleet nodes. A content-addressed store that can be synced is more durable and more work. Recommend local-first with the hash recorded, so relocation later does not invalidate any Result Card."]
     program: strategy-of-record
     capability: core
 
@@ -1762,27 +1729,33 @@ items:
     priority_score: 30
     category: architecture
     effort: M
+    type: "improvement"
     blocked_by: ["WS-328"]
+    decision_flags: ["Does the enforcing mode BLOCK a commit or only warn loudly? Blocking guarantees the standard holds but will interrupt legitimate exploratory work; warning preserves flow but decays. Recommend blocking only on docs/ and system/ (where claims become durable) and warning elsewhere."]
     program: strategy-of-record
     capability: governance
 
   - id: "WS-330"
     title: "The standing disclaimer and suspected-fault register — what this system can honestly claim, and where the fault is most likely to be, ranked with falsifiers"
-    status: backlog
+    status: done
     priority_score: 30
     category: domain-correctness
     effort: M
+    type: "improvement"
     blocked_by: ["WS-324"]
+    decision_flags: ["Is the register ranked by PROBABILITY of being wrong, or by EXPECTED DAMAGE if wrong? Population mismatch is near-certain but its damage is bounded and known; a leakage channel is unlikely but would invalidate everything. Recommend ranking by expected damage (probability x contamination breadth) and showing both components, since that is what should drive what gets measured next."]
     program: strategy-of-record
     capability: core
 
   - id: "WS-331"
     title: "The pier posts — Pool Best Response as the computable ceiling of exploitation, held out to stop it fitting noise, and the two-post coordinate system every strategy is positioned in"
-    status: backlog
+    status: done
     priority_score: 31
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-322"]
+    decision_flags: ["Is PBR computed on the FULL decision tree (expensive, exact) or on the same decision-context hierarchy the behaviour policy is mined over (cheap, and best-responds to a coarsened model)? The coarse version is buildable now and is an honest ceiling FOR THAT ABSTRACTION; the full version needs the game tree and is a much larger build. Recommend coarse first, labelled as a ceiling on the abstraction rather than on the game."]
     program: strategy-of-record
     capability: core
 
@@ -1792,7 +1765,9 @@ items:
     priority_score: 29
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-328", "WS-331"]
+    decision_flags: ["When strands disagree, does the composition step pick a winner or emit a MIXED action? Picking is legible and matches how a human plays a decision; mixing is closer to how the structure strand actually reasons (a bluff slot is a frequency, not a hand). Recommend picking at the hand level while the structure strand's frequency claim is carried as metadata, so the two are never silently averaged.", "Do strands see each other's verdicts before returning? Blind strands are genuinely independent and their agreement is real evidence; sighted strands can build on each other but their agreement becomes correlated and worth less. Recommend blind, with composition as the only place they meet."]
     program: strategy-of-record
     capability: core
 
@@ -1802,15 +1777,19 @@ items:
     priority_score: 33
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["MAY SPLIT AT DESIGN TIME. Parts A-C (the derived floor) and Part D (geometry normalization) are separable builds that were framed as one emergent idea by the founder and are genuinely coupled — the floor is DEFINED per geometry cell. Recommend designing them together and splitting execution only if the geometry key turns out to need WS-317 migration work of its own.", "Does the floor target MDF (deny the bettor an auto-profitable bluff) or full best-response indifference? MDF is cheap, closed-form, and a true FLOOR but is known to be a crude approximation solvers do not literally play. Best-response indifference is the honest quantity but needs the game tree. Recommend MDF as the declared floor with its approximation error measured against the game tree on a sample, so the gap is a known number rather than a known caveat."]
     program: strategy-of-record
     capability: core
 
   - id: "WS-334"
     title: "The depth-2/3 subsystem never runs on the live path — context building spends 390ms before the 150ms budget is first checked"
-    status: backlog
+    status: done
     priority_score: 30
     category: correctness
     effort: L
+    type: "bug"
+    decision_flags: ["|"]
     program: domain-correctness
     capability: core
 
@@ -1820,6 +1799,8 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["MAY SPLIT AT DESIGN TIME. Part A (combo-rank executor) is small, self-contained, and cannot be dominated. Part B (class index) is large and carries the real risk. They were raised together by the founder as one delivery question and compose into one artifact, so recommend designing together; split execution if the postflop hand axis turns out to need migration work of its own.", "WHAT MAY THE EV-LOSS MEASUREMENT USE? Comparing this card to the ENGINE is a paired per-decision EV difference and the existing hero-EV backtest path can express it. Comparing it to OTHER SURFACES is a surface divergence and belongs to FSA Phase 3, which does not exist yet. These are different measurements and the boundary is thin — resolve it before building, because FSA's standing constraint forbids a second comparison path and the failure mode is building one by accident under a different name.", "WHAT ORDERS THE COMBO RANK WITHIN A CLASS? Blocker value, backdoor equity, and realized-equity-when-called are three defensible scalars and they disagree. Recommend measuring rather than choosing, on the same corpus and the same metric as the class ordering."]
     program: strategy-of-record
     capability: core
 
@@ -1829,6 +1810,8 @@ items:
     priority_score: 30
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Does CP-2 extend preflopFlopEV in place, or ship as a parallel policy module selected by id? In place is less code and keeps one path; parallel keeps CP-1 computable so the two generations can be re-run against each other after later engine changes, which is what makes the migration report durable rather than a one-shot. Recommend parallel.", "Do WS-314 (check-raise ranking) and WS-316 (check-back vs check pooling) get fixed inside this ticket or landed first as separate items? Landing them first gives two smaller verifiable steps but produces intermediate generations nobody will score; folding them in makes one large ticket with one clean observable.", "Should the limped-to-hero spot be added to the declared domain before or after CP-2? Adding it first means the migration report compares maps with different cell sets and needs a rebase; adding it after means the CP-2 comparison is clean but the coverage hole persists one generation longer. Recommend after, as its own item."]
     program: domain-correctness
     capability: core
 
@@ -1838,6 +1821,8 @@ items:
     priority_score: 28
     category: domain-correctness
     effort: L
+    type: "improvement"
+    decision_flags: ["Does the low-dim basis become a stored coordinate on the range profile (schema bump, PROFILE_VERSION 5) or stay a derived view computed on read? Stored makes estimation-in-basis natural and cheap; derived avoids a migration and keeps the 169-grid unambiguously canonical. Recommend derived until the log-loss test actually beats the ladder."]
     program: domain-correctness
     capability: core
 
@@ -1847,7 +1832,9 @@ items:
     priority_score: 26
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-337"]
+    decision_flags: ["Route A (runout-depth) is fully engine-free but measures VOLATILITY, which is a component of playability rather than the whole of it — it has no fold equity and no position. Route B adds those but buys them with a declared policy whose choice of t is a free parameter. Recommend shipping Route A first (it is nearly free given WS-337) and treating Route B as a second phase, so the engine-free result is banked before any policy assumption enters."]
     program: domain-correctness
     capability: core
 
@@ -1857,6 +1844,8 @@ items:
     priority_score: 24
     category: methodology
     effort: M
+    type: "improvement"
+    decision_flags: ["Scale: default is one round of 6 personas x 3-5 proposals + cross-critique + synthesis (~15 agents). The exhaustive variant adds loop-until-dry rounds and 3-voter adversarial verify per survivor, which is several times the tokens. Recommend the default for the first run — the personas are new and unproven, and an expensive run against unproven personas mostly buys expensive noise."]
     program: methodology-integrity
     capability: core
 
@@ -1866,7 +1855,9 @@ items:
     priority_score: 30
     category: domain-correctness
     effort: L
+    type: "improvement"
     blocked_by: ["WS-324"]
+    decision_flags: ["Is `d` KL or EV-difference? THE point of the ticket — resolve by measuring both on the same volume, not by argument. Pre-register the primary before running so the choice cannot be made after seeing which one flatters the prior finding.", "Does divergence volume weight situations by frequency or treat every situation equally? Frequency-weighted matches what a player actually faces; unweighted surfaces rare-but-severe divergence that frequency weighting would bury. These answer different questions and the Result Card must say which one it measured."]
     program: strategy-of-record
     capability: core
 
@@ -1876,6 +1867,953 @@ items:
     priority_score: 24
     category: kit-quality
     effort: S
+    type: "bug"
+    decision_flags: ["Should a dead pid recover the session silently, or surface it for confirmation? Silent matches the crash-cleanup purpose, but it makes recovery destructive on a false liveness read — which is why the boot-time check carries the weight rather than the pid probe alone."]
     program: self-compliance
+    capability: core
+
+  - id: "WS-352"
+    title: "Falsify FAULT-population-mismatch — Population mismatch — live claims anchored on an online corpus"
+    status: backlog
+    priority_score: 25.6
+    category: domain-correctness
+    effort: M
+    type: "investigation"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-353"
+    title: "Falsify FAULT-temporal-staleness — July 2009 — sixteen years of population drift"
+    status: backlog
+    priority_score: 22.9
+    category: domain-correctness
+    effort: M
+    type: "investigation"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-354"
+    title: "Falsify FAULT-modelled-rake — Modelled rake — the corpus records none, so every figure assumes a schedule"
+    status: backlog
+    priority_score: 21.6
+    category: domain-correctness
+    effort: M
+    type: "investigation"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-355"
+    title: "Every draw is worth 4% instead of 40% — buildRunouts feeds {card,weight} objects where card numbers belong, and bestFiveFromSeven silently ignores them"
+    status: done
+    priority_score: 33
+    category: correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-356"
+    title: "The stage ledger reports `ran: true` for a stage that threw — WS-334's own bug, reincarnated one layer down"
+    status: done
+    priority_score: 32
+    category: correctness
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-357"
+    title: "Depth-3's inner river loop has no budget check — one uninterruptible chunk, and the time budget cannot bound it"
+    status: done
+    priority_score: 31
+    category: correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-358"
+    title: "Capture required four manual steps at the table and lost every un-synced hand on browser close — extension made the founder its operator"
+    status: done
+    priority_score: 34
+    category: correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: engineering
+    capability: ignition-extension
+
+  - id: "WS-361"
+    title: "Depth-2 has never been validated on the live path, and now that it runs its EV outputs disagree with depth-1 in two places"
+    status: backlog
+    priority_score: 29
+    category: correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-362"
+    title: "Situation keys are built with the wrong arity — a 7-parameter builder called with 4 args, and a 4-axis emitter read by a 7-axis parser; weakness matching is dead in production"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-363"
+    title: "The population prior is resolved, blended, and then discarded — classifyStyle reads raw k/n, so the shrunk rates never reach the villain model in production"
+    status: backlog
+    priority_score: 28
+    category: correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-364"
+    title: "DEC-036's '~26s full refinement' figure appears only in prose — nothing in code, no test, no artifact produces it, and it is the number a future reader would use to set refinementBudgetMs"
+    status: backlog
+    priority_score: 22
+    category: methodology
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-365"
+    title: "Blocker effects are counted three times — the segmentation already has hero's cards dead, then blockerMult multiplies, then gameTreeEvaluator adds a boost on top"
+    status: backlog
+    priority_score: 29
+    category: correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-366"
+    title: "withEquitySupport's logistic is too sharp for the subclass carve — measured, 88 and AQs outrank QQ in the LATE limp-reraise grid, so an uncapped shape reads as a mushy one"
+    status: backlog
+    priority_score: 25
+    category: correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-367"
+    title: "A second copy of the retired rank-sum strength score lives under __dev__ — same function name as the engine's replacement, different quantity, and a live test pins the ordering WS-304 measured as the defect"
+    status: backlog
+    priority_score: 18
+    category: correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-368"
+    title: "Live hands have no positive identity — 'live' is the ABSENCE of a source stamp, so the live subset cannot be selected and an un-stamped import is indistinguishable from it"
+    status: backlog
+    priority_score: 27.5
+    category: data-quality
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-quality
+    capability: core
+
+  - id: "WS-369"
+    title: "The isLiveFacing matcher is inverted with respect to its own risk — it fires on a card BECAUSE that card discloses its limitation honestly, and cannot see a card that relies on the online corpus silently"
+    status: backlog
+    priority_score: 24
+    category: methodology
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-370"
+    title: "The extension's Export button is wired to a dead handler that returns [] unconditionally — the only file it has ever produced is two bytes, and SRC-005 therefore has no artefact any harness can read"
+    status: backlog
+    priority_score: 26
+    category: data-quality
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-provenance
+    capability: core
+
+  - id: "WS-371"
+    title: "foldTo3Bet is denominated on facedRaisePreflop, so the population reads 78-87% where the true value is 49.9% — and every population cell trips both founder-facing over-folding thresholds by construction"
+    status: backlog
+    priority_score: 29.5
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-372"
+    title: "Seat-bucket boundaries do not match between the service and the miner — 3-to-5-handed villains are served the exactly-6-handed row, and the real short-handed data was mined and then dropped"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-373"
+    title: "The served priors are hand-weighted, so multitabling regulars dominate them — the source doc's own caveat recommends player-weighted (VPIP 0.37-0.41 vs 0.29) and no decision on which is correct was ever recorded"
+    status: backlog
+    priority_score: 22
+    category: data-quality
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-quality
+    capability: core
+
+  - id: "WS-374"
+    title: "The served prior carries no n — resolvePoolPriors computes reference.meta and discards it, so a prior backed by 13.5M hands is indistinguishable from one backed by 300"
+    status: backlog
+    priority_score: 26.5
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-375"
+    title: "entryEvaluator loads the all-corpus reference table outside LeakageGuard — there is no leak today because it scores no corpus hands, so the safety is circumstantial rather than structural"
+    status: backlog
+    priority_score: 21
+    category: methodology
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-376"
+    title: "Two more detectors are calibrated below their own field — V-FP-FOLDS-TO-CBET fires on 4 of 14 cells and ALL FOUR are full ring, and V-PF-3BET-ONLY-PREMIUMS fires below a bar the field's small-stakes full-ring cells already sit under"
+    status: backlog
+    priority_score: 26.5
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-377"
+    title: "STAT_PRIORS.foldTo3Bet is a 55%-mean prior on a 76%-mean quantity, and subActionRules borrows the same prior for limp-fold — a third quantity again, for which no field measurement exists at all"
+    status: backlog
+    priority_score: 25.5
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-378"
+    title: "riverPerCombo is where the advice actually changes — it flipped the top action on 80% of river decisions, almost all toward passivity, and has never been validated"
+    status: backlog
+    priority_score: 30
+    category: correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-379"
+    title: "foldEstimateComposition's raise-ordering test only fails under parallel load — three agents in one night each had to prove it was not their regression"
+    status: backlog
+    priority_score: 18
+    category: methodology
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-380"
+    title: "run-strategy-profile reads the all-corpus reference table outside LeakageGuard — the last module on the WS-375 allowlist that is still UNGUARDED, and its safety is circumstantial"
+    status: backlog
+    priority_score: 21
+    category: methodology
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-381"
+    title: "The old fold-curve midpoint of 0.75 survives as a bet fraction in three places — the one WS-283 named is test-only, but the drill panel passes 0.75 as a hardcoded literal and IS production, so the stale constant reaches a user-visible number"
+    status: backlog
+    priority_score: 24
+    category: correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-382"
+    title: "Hero-side Decision Atoms are UNREACHABLE on the corpus because phhAdapter sets mySeat = null — half of every declared context can never be examined, so every hero-side measurement is unavailable rather than thin"
+    status: backlog
+    priority_score: 24
+    category: data-quality
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: data-quality
+    capability: core
+
+  - id: "WS-383"
+    title: "At full refinement the engine recommends the raise that a test calls a DEFECT — the assertion is calibrated against a TRUNCATED computation, so the suite's guarantee and the engine's deep advice contradict each other"
+    status: backlog
+    priority_score: 24
+    category: correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-384"
+    title: "Only 2 of 6 estimators are pinned against exact enumeration — the four gaps are the worklist, and one of them is computeVillainEquityVsPerceived, the quantity at the centre of the river work"
+    status: backlog
+    priority_score: 21
+    category: correctness
+    effort: M
+    type: "task"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-385"
+    title: "Five fault-register matchers still decide contamination by reading the card's prose — escapable by deleting a sentence, hardest on the most honest card, and one of the five is FAULT-horizon-bias, whose own mechanism describes this inversion"
+    status: backlog
+    priority_score: 21
+    category: methodology
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-386"
+    title: "The dumpGameTreeEV scenario set has no river spots, and the effect it was used to measure lives on the river"
+    status: done
+    priority_score: 22
+    category: methodology
+    effort: S
+    type: "bug"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-387"
+    title: "tightenRatesForContinuation throws away the villain-model fold rate for a defaulted 0.45 at all eight production call sites, and on the depth-3 line applies it twice — villain's river air is 15% of his flop air, derived from a constant, inside the per-villain model"
+    status: backlog
+    priority_score: 25
+    category: correctness
+    effort: M
+    type: "bug"
+    blocked_by: ["WS-389"]
+    decision_flags: ["|"]
+    finding_id: "FIND-045"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-388"
+    title: "Every scored decision in the backtest is reconstructed at exactly 100bb because the data model records no per-seat stack — so stack depth, the variable the founder's own doctrine names as the cause of passive play, has zero variance across the entire corpus"
+    status: backlog
+    priority_score: 24
+    category: correctness
+    effort: L
+    type: "bug"
+    blocked_by: ["WS-389"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-389"
+    title: "Refinement depth is gated on wall-clock time, so the same hand scored twice can produce a different top action — no per-improvement EV delta is trustworthy until a scored run is reproducible, and 5 of 19 tests in one suite already time out on a quiet machine"
+    status: backlog
+    priority_score: 26
+    category: correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-051"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-390"
+    title: "The aggregate EV figure's error bar is a measurement over a third of its estimators and an extrapolation over the rest — and the only place the repo currently states an uncertainty quotes Monte-Carlo sampling noise, which is not among the dominant terms"
+    status: backlog
+    priority_score: 19
+    category: methodology
+    effort: S
+    type: "task"
+    blocked_by: ["WS-389"]
+    decision_flags: ["|"]
+    finding_id: "FIND-053"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-391"
+    title: "The only engine-independent check in the system builds its test-window range profile from a window that contains the test hands, and decays training and test by array position so every test hand is near-undecayed — the instrument that would catch a bias is itself leaking"
+    status: backlog
+    priority_score: 21
+    category: correctness
+    effort: M
+    type: "bug"
+    blocked_by: ["WS-389"]
+    decision_flags: ["|"]
+    finding_id: "FIND-047"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-392"
+    title: "The manual live table's whole decision rule is three literals, and both branches contradict stated doctrine — a size-free fold estimate compared against a size-free constant, while neither end knows what hero is betting"
+    status: backlog
+    priority_score: 20
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-043"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-393"
+    title: "The game tree is not unconnected — it is fully wired to the venue the founder does not play, so the live path needs a second PRODUCER for a consumer that already exists, not a new connection; and it must not be wired until stacks are recordable and multiway is threaded"
+    status: backlog
+    priority_score: 15
+    category: domain-correctness
+    effort: XL
+    type: "improvement"
+    blocked_by: ["WS-392", "WS-401"]
+    decision_flags: ["|"]
+    finding_id: "FIND-044"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-394"
+    title: "The confidence signal is ABSENT on live and DEGENERATE on Ignition — every villain at every sample size renders PARTIAL, one observation prints as '11 obs', and the honest twin of the same badge sits in the same repo with the same palette and no cross-reference"
+    status: backlog
+    priority_score: 14
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-049"
+    program: domain-correctness
+    capability: ignition-extension
+
+  - id: "WS-395"
+    title: "Two detectors fire on noise, and the null rates at the ACTUAL production call sites are worse than the roundtable computed — position-awareness fires ~71% and ~85% under the null, the sizing-tell multiplier fires ~47% and it is the one that reaches EV"
+    status: backlog
+    priority_score: 19
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-050"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-396"
+    title: "The product's only uncertainty disclosure states an interval that excludes every dominant term — it discloses Monte Carlo sampling noise on a panel labelled 'confidence' and omits the bet-fraction assumption, four unscored estimators, and the online-2009 transfer"
+    status: backlog
+    priority_score: 12
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-053"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-397"
+    title: "useActionAdvisor.js contradicts itself thirty lines apart about which surface it serves, a shipped WS-333 rake fix was justified on the false half, and a roundtable lens then built its top recommendation on the same false half"
+    status: backlog
+    priority_score: 11
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    finding_id: "FIND-054"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-398"
+    title: "The blind-defence bar contradicts its own comment on the same line, and the module that derives the correct value — including the rake asymmetry nobody has been measuring — has no production consumer at all"
+    status: backlog
+    priority_score: 13
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-050"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-399"
+    title: "The learned range channel is algebraically inert — buildRangeProfile learns ONE number per (position, action) and multiplies all 169 cells by it, and every downstream consumer normalizes that uniform factor away, so every non-showdown hand ever recorded contributes exactly nothing to the advice or to the scored EV"
+    status: backlog
+    priority_score: 26
+    category: engine
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    finding_id: "FIND-048"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-400"
+    title: "Three literals in bayesianSampleConfidence map a sample size to a number the UI calls 'confidence' with no relation to any posterior — and the docblock's stated anchor is the hand-tuned step function it replaced, which makes it self-referential rather than absent"
+    status: backlog
+    priority_score: 20
+    category: correctness
+    effort: M
+    type: "bug"
+    blocked_by: ["WS-389"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-401"
+    title: "The online preflop advisor infers the big blind from the pot in a branch where the pot already contains the limps — a ~2.3x error at $1/$2 with two limpers — while the true blind size sits unthreaded in the caller's own state"
+    status: backlog
+    priority_score: 16
+    category: domain-correctness
+    effort: S
+    type: "bug"
+    finding_id: "FIND-044"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-402"
+    title: "Facing aggression the engine raises 91.9% of the time against a pool that raises 12.5% and a hero who raised 10.5% — a 79-point over-raise that depth-2 closes only 8 points of, so it lives in depth-1 valuation, and it is what collapses importance weights to a 15% ESS and makes every arm comparison read a seventh of its own sample"
+    status: backlog
+    priority_score: 30
+    category: engine
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-403"
+    title: "The refinement scheduler caps each stage at 40% of the TOTAL budget rather than of what remains, stages overrun that cap by 2x anyway, and at the shipped 2000 ms a flop node drops half its stage set — so every arm ever differenced against 'depth-2 @ 2000 ms' was differenced against a truncated tree"
+    status: backlog
+    priority_score: 27
+    category: engine
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-404"
+    title: "No per-capability EV number can be produced at all: the arm axis strips every key except refinementBudgetMs at three separate chokepoints, and the engine has exactly one per-stage toggle out of six — thread an opaque engineOverrides object and wire the remaining flags into the gate conditions that already record blockedBy"
+    status: backlog
+    priority_score: 28
+    category: engine
+    effort: M
+    type: "feature"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-405"
+    title: "Check-raise is the one capability the founder named that the scoring vocabulary cannot price at all — mapping it to CHECK is correct, and the consequence is that a check-raise flip never moves the argmax, never moves the IPS weight, and contributes exactly zero to every paired delta ever computed"
+    status: backlog
+    priority_score: 26
+    category: methodology
+    effort: M
+    type: "task"
+    blocked_by: ["WS-404"]
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-406"
+    title: "RC-depth-ablation says it measured 'depth-1 vs depth-2/3-enabled advice' and measured neither on the river, where every refinement stage is street-gated out and the entire negative headline lives — and its engine commit predates the WS-378 omniscience fix by 3.4 hours; supersede it through the register and re-run"
+    status: backlog
+    priority_score: 24
+    category: methodology
+    effort: S
+    type: "bug"
+    blocked_by: ["WS-402"]
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-407"
+    title: "Equity realization is hand-independent — a nut flush draw and a gutshot in the same seat at the same SPR both take the identical 30% haircut, which over-values dominated draws and under-values nutted ones on 215 of 260 scored decisions, and its ablation arm costs zero additional compute"
+    status: backlog
+    priority_score: 24
+    category: engine
+    effort: L
+    type: "bug"
+    blocked_by: ["WS-404"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-408"
+    title: "Five depth-2 valuation capabilities exist in code and cannot currently be priced individually — double barrel, hero's own future decisions, future-street fold equity, villain's next-street continuation range, and post-raise-call continuation — all absent at refinementBudgetMs=0, all biasing hero toward passivity, all reachable through one scheduler and one flag set"
+    status: backlog
+    priority_score: 27
+    category: engine
+    effort: XL
+    type: "feature"
+    blocked_by: ["WS-403", "WS-404"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-409"
+    title: "Triple barrel is unreachable on the flop at every budget — depth3Barrel is disqualified by an 800-combo range-width gate against a measured flop range of 1081 combos, not by time, which is why depthReachedMax is 2 on 138 of 138 flop decisions and 3 on 74 of 77 turn decisions"
+    status: backlog
+    priority_score: 26
+    category: engine
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-403", "WS-404"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-410"
+    title: "The Scored Readout — persist the decision-level record, then serve six EV-denominated views over it; the founder's optimizable figure does not exist today and most of its substrate already does"
+    status: backlog
+    priority_score: 60
+    category: measurement
+    effort: XL
+    type: "feature"
+    blocked_by: ["WS-428", "WS-431", "WS-432", "WS-433"]
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-411"
+    title: "Depth-2/3 refinement is bounded by a wall clock, so identical inputs give different advice under machine load — replace the millisecond budget with a deterministic work budget"
+    status: dismissed
+    priority_score: 24
+    category: engine
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-412"
+    title: "monteCarloEquity is the last unseeded source in the hero-EV chain, and it is the one BOTH arms share — so it sets the floor a paired delta can never get below"
+    status: backlog
+    priority_score: 17
+    category: engine
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-413"
+    title: "FILING ONLY, DO NOT ACT — the problem_class validator added to this repo's cwos-reconcile.js is kit content whose canonical HomeBase copy does not contain it, so the next /kit-upgrade silently reverts it; upstreaming is a fleet-wide change and the founder's call"
+    status: backlog
+    priority_score: 11
+    category: infrastructure
+    effort: S
+    type: "task"
+    decision_flags: ["|"]
+    program: self-compliance
+    capability: core
+
+  - id: "WS-414"
+    title: "Gate 3 research for the Hole Map study surface — two CORE personas are missing entirely (the claim-recipient and the replicator) and the primary outcome has no JTBD domain, so the surface has neither a stated reader nor a stated success criterion"
+    status: backlog
+    priority_score: 24
+    category: design
+    effort: L
+    type: "research"
+    decision_flags: ["|"]
+    program: design
+    capability: core
+
+  - id: "WS-415"
+    title: "Every rendered Hole Map row states a fold rate, a gap and a bb/hour without stating what population it came from — the transfer caveat exists in the data as denom.transferNote and is dropped by the renderer, so a screenshot of the table is a claim with 100% of its safety apparatus removed"
+    status: backlog
+    priority_score: 22
+    category: methodology
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: claims-policy
+    capability: core
+
+  - id: "WS-416"
+    title: "Sixty percent of the Hole Map's portfolio ceiling is two rows the pool takes 0.7% and 0.3% of the time, and the fold rate those rows are priced on is conditioned on the range that chose that sizing — the instrument is weakest exactly where its claim is largest, which is an inversion and not a caveat"
+    status: backlog
+    priority_score: 23
+    category: methodology
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-417"
+    title: "The 20 bb/hour figure that justifies the Hole Map's whole bb/hour column is a founder assertion with no evidence behind it, it never appears on the page it justifies, and the 12.32 it is meant to be compared against is an incremental transferred ceiling while it is a total realized rate — same units, different axes, which is the thing ADR-009 exists to prevent"
+    status: backlog
+    priority_score: 21
+    category: methodology
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-418"
+    title: "The Hole Map artifact bakes its freshness verdict at generation time (checkedAt equals generatedAt), so an in-app view that renders it inherits a currency claim the CLI already knows to be false — and the artifact on disk today is dirty-source, meaning day one in-app is a full-width warning that its own columns are unattributable"
+    status: backlog
+    priority_score: 20
+    category: engineering
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: engineering
+    capability: core
+
+  - id: "WS-419"
+    title: "Two finished surfaces are unreachable in the app for different reasons and nobody owns either — CalibrationDashboardView is 1,194 LOC of built code behind a deferred flag whose adjacent comment says it is unbuilt, with a live deep link landing users on a stub; and navigation-ia.md claims Anchor Library is reachable via the sidebar when it has no nav entry in any chrome"
+    status: backlog
+    priority_score: 19
+    category: design
+    effort: M
+    type: "bug"
+    decision_flags: ["|"]
+    program: design
+    capability: core
+
+  - id: "WS-420"
+    title: "The freshness half of the Hole Map earned its single-renderer guarantee with a real test; the arithmetic half has the same rule stated once, in an audit document, with nothing enforcing it — which is the WS-291 mechanism, where nothing forced two numbers onto the same axis so a wrong number never had to meet a right one"
+    status: backlog
+    priority_score: 17
+    category: engineering
+    effort: S
+    type: "task"
+    program: engineering
+    capability: core
+
+  - id: "WS-421"
+    title: "The Hole Map is built entirely on a CC-BY 4.0 corpus and neither the artifact nor the generator mentions the licence, the dataset or its authors anywhere — harmless while it is a local file, an attribution failure the moment either candidate delivery shape ships the derived data into the app"
+    status: backlog
+    priority_score: 16
+    category: compliance
+    effort: S
+    type: "task"
+    program: data-provenance
+    capability: core
+
+  - id: "WS-422"
+    title: "Context bundles ship advisory with two bundles and eleven checks — the withholding rule is a declaration nobody can enforce at read time, and findings carry no bundle stamp, so a discovery run still cannot be told from a recalled one"
+    status: backlog
+    priority_score: 20
+    category: methodology
+    effort: M
+    type: "feature"
+    decision_flags: ["|"]
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-423"
+    title: "POKER_THEORY.md grew 62.5% in ten days with no ceiling and no eviction rule; the same measurement is stated five times with three values, and the light tier that would fix it must be selected on vocabulary transmissibility — which the repo's own §8 shows a digest does not have"
+    status: backlog
+    priority_score: 29
+    category: documentation
+    effort: L
+    type: "refactor"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-424"
+    title: "Build the synthesised context system: injection-point control with a compact tier that has no file, a withholding barrier that actually blocks (the shipped header says it cannot — verified false), and a pre-registered falsifier with a control vocabulary"
+    status: backlog
+    priority_score: 24
+    category: methodology
+    effort: L
+    type: "feature"
+    decision_flags: ["|"]
+    program: change-management
+    capability: core
+
+  - id: "WS-425"
+    title: "The Declared surface has a validator, a hasher and a residual clause but no scorer: bridge Strategy Card to the hero-EV arm axis so an externally-published strategy produces a number in bb, and rule the abstention question before a reader assumes the flattering answer"
+    status: backlog
+    priority_score: 26
+    category: engine
+    effort: M
+    type: "feature"
+    decision_flags: ["|"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-427"
+    title: "Rename `edgeBBPer100` to `edgeBBPer100Decisions` — it was diagnosed as a landmine and is in fact the only correctly-denominated per-100 figure the estimator produces; the name was the whole defect"
+    status: done
+    priority_score: 30
+    category: measurement
+    effort: S
+    type: "chore"
+    claimed_by: "ses-20260806-1914-a5dbb4b5"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-431"
+    title: "Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS-410 was written, reproducing the exact WS-291 mechanism WS-410 exists to close, and extending the Decision Atom without reconciling it would make four"
+    status: backlog
+    priority_score: 50
+    category: architecture
+    effort: M
+    type: "refactor"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-432"
+    title: "Freezing the clock to make runs reproducible would silently measure an UNBOUNDED engine while stamping the card `2000 ms` — refinement is wall-clock gated at seven sites and a constant clock disables every one of them"
+    status: done
+    priority_score: 50
+    category: reproducibility
+    effort: L
+    type: "bug"
+    sprint_id: "SPR-177"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-433"
+    title: "The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at target scale has EVER completed, and `evaluateGameTree` calls are embarrassingly parallel with no cross-decision state"
+    status: done
+    priority_score: 55
+    category: infrastructure
+    effort: L
+    type: "feature"
+    sprint_id: "SPR-177"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-434"
+    title: "Declare the Result Card `metrics` schema — the one required field in the Standard of Record that nothing validates, where five committed cards share no shape and the additive guard has never looked inside"
+    status: backlog
+    priority_score: 40
+    category: architecture
+    effort: M
+    type: "feature"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-435"
+    title: "No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power"
+    status: backlog
+    priority_score: 40
+    category: measurement
+    effort: M
+    type: "feature"
+    blocked_by: ["WS-433"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-436"
+    title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid"
+    status: backlog
+    priority_score: 50
+    category: domain-correctness
+    effort: L
+    type: "bug"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-439"
+    title: "Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the most common state (founder device-verified P0, re-filed after ticket-ID collision lost the original WS-311)"
+    status: deferred
+    priority_score: 55
+    category: ux
+    effort: M
+    type: "bug"
+    program: design
+    capability: core
+
+  - id: "WS-440"
+    title: "RotateDeviceHint hard-blocks hand entry with no dismiss and no recovery on rotate (founder device-verified, re-filed after ticket-ID collision lost the original WS-315)"
+    status: backlog
+    priority_score: 45
+    category: ux
+    effort: S
+    type: "bug"
+    program: design
+    capability: core
+
+  - id: "WS-441"
+    title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
+    status: backlog
+    priority_score: 40
+    category: ux
+    effort: M
+    type: "bug"
+    program: design
+    capability: core
+
+  - id: "WS-442"
+    title: "Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)"
+    status: backlog
+    priority_score: 42
+    category: architecture
+    effort: L
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-443"
+    title: "FOUNDER TASK: enter the 2026-08-07 AKs squeeze 4-way hand on-device - the cloud session could not reach IndexedDB (re-filed after WS-321 ID collision)"
+    status: backlog
+    priority_score: 20
+    category: data-integrity
+    effort: S
+    type: "task"
+    program: data-quality
+    capability: core
+
+  - id: "WS-444"
+    title: "Per-region layout migration: un-scale interactive bands app-wide (~9 scaled views) per DEC-048 / layout-doctrine.md"
+    status: deferred
+    priority_score: 20
+    category: ux
+    effort: L
+    type: "improvement"
+    decision_flags: ["ShowdownView region classification (left open by doctrine L113)"]
+    program: design
     capability: core
 

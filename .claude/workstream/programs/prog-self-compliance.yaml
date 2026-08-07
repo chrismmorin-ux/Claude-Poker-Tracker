@@ -151,7 +151,12 @@ last_run_by_protocol:
     engine: constitutional-audit
     run_id: "run-self-compliance-baseline-2026-06-09"
     result: "First constitutional audit via cwos-constitutional-audit.js. compliance_score 0.67, coverage 0.75, pass_rate 0.89 over 12 items. All 3 principles (P1/P2/P3) PASS. NO failed states firing (5 pass, 0 fire). 1 HIGH finding FIND-SC-001 (INV-F1 No Unnecessary Burden FAILS): CLAUDE.md has no Purpose section, so the proportional-value detector cannot enforce the rule that guards against governance bloat (failed-state #10) — fix is add a Purpose section to CLAUDE.md or relax the detector heading match. Coverage gaps (LOW): FS-3 no-detector, FS-6 infeasible, SYS-INV-all infeasible (cwos-verify lacks --json), FS-2/4/8 skipped. Baseline run satisfies sweep coverage on day one (both are full-suite audits)."
-  delta: { date: null, engine: null, run_id: null, result: null }
+  delta:
+    date: "2026-08-07"
+    engine: "constitutional-audit"
+    run_id: "run-self-compliance-delta-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786083086883-8c6f086a0ad7"
   sweep:
     date: "2026-07-25"
     engine: constitutional-audit
@@ -159,12 +164,11 @@ last_run_by_protocol:
     result: "Full four-suite sweep. compliance 0.73 (up from 0.67), coverage 0.82, pass_rate 0.89 over 11 applicable items. All 3 principles PASS, zero failed states firing (5 pass, 3 skipped homebase-only). 1 HIGH persists: INV-F1 detector unenforceable (CLAUDE.md lacks Purpose section) — FIND-CA-INV-F1 rewritten. Coverage gaps: FS-3 no-detector (goal-progress engine never run), FS-6 infeasible (queue has <10 items for ratio signal) — FIND-CA-FS-3 + FIND-CA-FS-6 written as LOW."
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
-
 health_score: 4
 health_ceiling: 6
 health_ceiling_reason: "Baseline complete (2026-06-09). compliance 0.67 / coverage 0.75 / pass 0.89. All principles pass, no failed states firing — strong substantive posture. Score held to 4 by 1 open HIGH (INV-F1 detector unenforceable) + coverage gaps (3 skipped, 2 infeasible, 1 no-detector). Ceiling 6 until challenge + blind_spot protocols run (each raises rigor) and the HIGH closes."
 findings_open: 0
-work_items_open: 1
+work_items_open: 2
 
 evidence:
   last_audit_report: null

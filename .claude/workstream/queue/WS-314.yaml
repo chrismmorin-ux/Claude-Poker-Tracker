@@ -85,3 +85,7 @@ status_note: |
 
   Related: WS-308 (prefers checking the nut flush to betting it) — likely shared root cause
   in check-line EV assembly.
+recovered_work_note: |
+  2026-08-07: a real implementation of this fix exists UNMERGED on origin/claude/run-next-t4w44x (found in
+  orphan-integration round 2; could not auto-merge - competing holdingKnowledge API). Land it via WS-442
+  rather than reimplementing from scratch.

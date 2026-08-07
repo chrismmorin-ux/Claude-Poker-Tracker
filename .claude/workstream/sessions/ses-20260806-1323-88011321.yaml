@@ -1,0 +1,24 @@
+id: "ses-20260806-1323-88011321"
+status: "abandoned"
+started_at: "2026-08-06T13:23:40.152Z"
+ended_at: "2026-08-06T17:34:01Z"
+mode: auto
+last_heartbeat: "2026-08-06T13:23:40.161Z"
+pid: 37540
+host: MorinComputer
+agent_session_id: "88011321-6123-40b5-a954-d653b8a5ccd7"
+
+# Minted by cwos-claims because no registered session matched this process.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items: []
+files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-06.
+  Original start: 2026-08-06T13:23:40.152Z.
+  Last heartbeat: 2026-08-06T13:23:40.161Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

@@ -1,0 +1,25 @@
+id: "FIND-077"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Methodology Drift"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Four confidence vocabularies with no reconciliation doc and no methodology-version stamp on stored outputs; validator thresholds changed in a bare comment"
+description: |
+  bayesianConfidence.js:108-113 (posterior tiers 0.95/0.85/0.70); exploitValidator.js:113-149 (sample-threshold tiers) and :119 (thresholds raised 10/20 to 20/40, no decisions.md entry, no re-evaluation of previously scored exploits); traitDetector.js:106-114 (Beta(s+0.5,f+2), no provenance, beside fully-justified Beta(6,24)); skillAssessment n>=30 hard gate. exploitValidator.js:61-70 infers n from star rating (prior-on-prior). No methodologyVersion field on scored exploits - pre/post-change outputs indistinguishable in storage. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/exploitEngine/exploitValidator.js"
+  - "src/utils/exploitEngine/bayesianConfidence.js"
+  - "src/utils/rangeEngine/traitDetector.js"
+recommended_fix: |
+  Produce the methodology inventory doc (this program declared first_output, never produced): each vocabulary, its conditioning set, why it differs. Then a methodologyVersion stamp on scored exploits paralleling manifest.disclaimerRegisterVersion.
+dedup_key: "methodology-four-confidence-vocabularies-no-version-stamp"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

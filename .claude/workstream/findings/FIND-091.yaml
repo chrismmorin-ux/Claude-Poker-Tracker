@@ -1,0 +1,24 @@
+id: "FIND-091"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unreplicable measurement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The Deal Book has no resolve-or-fail path - dealBookHash is decorative; the atom store has the exact mechanism"
+description: |
+  resolveDealBook does not exist anywhere (verified); manifestProblems only checks the hash LOOKS like sha256 (manifest.js:113-118); the corpus lives at C:/Users/chris/data/phh-dataset outside repo and git - move/edit makes every prior card silently unverifiable forever. Contrast atomStore.mjs:58-64,242-255 closed failure enum. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/backtest/dealBook.mjs"
+  - "src/utils/standardOfRecord/manifest.js"
+recommended_fix: |
+  Port the atom store resolve-with-typed-failure pattern to the Deal Book (NOT_FOUND/HASH_MISMATCH/etc).
+dedup_key: "sor-dealbook-no-resolver"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

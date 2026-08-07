@@ -2,7 +2,7 @@ id: "WS-411"
 title: "Depth-2/3 refinement is bounded by a wall clock, so identical inputs give different advice under machine load — replace the millisecond budget with a deterministic work budget"
 legacy_id: ""
 type: bug
-status: backlog
+status: dismissed
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -130,3 +130,7 @@ status_note: |
   machine-dependent. The per-decision record WS-393 added carries `depthReached` and the full stage
   ledger for every evaluation, so the baseline can diagnose its own variance from this cause
   afterwards rather than needing another night to discover it.
+dismissed_at: "2026-08-07"
+dismiss_reason: "Superseded: WS-432 (SPR-177, commit 52d0cae4) shipped the deterministic logical work-unit clock at all 7 refinement gate sites, calibrated to the shipped 2000ms budget (REFINEMENT-CLOCK-CALIBRATION.md), verified bit-identical under CPU load and across worker counts — the full scope this item described"
+superseded_by: "WS-432"
+transitioned_by_event: "ev-1786126016558-b1faae4686e6"

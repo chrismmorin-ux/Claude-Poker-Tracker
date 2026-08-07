@@ -1,0 +1,33 @@
+id: "FIND-111"
+engine: "domain-audit"
+run_id: "recovered-branch-pp89cw"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Exploit engine correctness"
+source:
+  engine: "domain-audit"
+  protocol: "challenge"
+  run_id: "recovered-branch-pp89cw"
+  date: "2026-08-07"
+title: "Villain bet ranges may have no bluff arm - narrowByBoard finding recovered from orphaned branch, NEEDS RE-VERIFICATION against HEAD soft-narrowing"
+description: |
+  Recovered 2026-08-07 from orphaned branch claude/poker-hand-qualification-score-pp89cw (its FIND-040
+  collided with the canonical FIND-040 and was dropped during the orphan merge 934292a4; full original
+  content at 934292a4^2:.claude/workstream/findings/FIND-040.yaml). Original claim (HIGH, filed from the
+  GUT probe session): narrowByBoard produces villain bet ranges with no bluff component - value-only
+  ranges that overstate villain strength when hero faces aggression.
+  VERIFY BEFORE ACTING: the branch predates WS-303 soft-narrowing (commit 002c0af0) which may have fixed
+  this; the integration agent could not adjudicate. If soft-narrowing fixed it, resolve this finding with
+  that evidence; if not, promote to a work item.
+affected_files:
+  - "src/utils/rangeEngine/bayesianUpdater.js"
+  - "src/utils/exploitEngine/rangeSegmenter.js"
+recommended_fix: |
+  Step 1 is verification, not code: reproduce the original probe against HEAD (the GUT probe docs landed
+  in merge 934292a4 under docs/projects/grand-unified-theory/). Then either resolve-with-evidence or
+  promote.
+dedup_key: "recovered-pp89cw-narrowbyboard-no-bluff-arm"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

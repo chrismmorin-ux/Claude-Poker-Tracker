@@ -1,0 +1,25 @@
+id: "FIND-101"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: CRITICAL
+status: open
+category: "security"
+program: "security"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Backup captures 3 stores at a v12 schema against a v28 database - restore reports complete success while silently missing most data"
+description: |
+  exportUtils.js:22 EXPORT_VERSION 1.2.0 (comment: aligns with IndexedDB v12); database.js:50 DB_VERSION=28. exportAllData pulls only hands/sessions/players; playerPhotos blobs (players export carries dangling photoBlobId), tournaments, rangeProfiles, exploitAnchors, sightingLogs etc. invisible; validateImportData validates the same three arrays. Only export UI is SessionsView Download Backup. Worst path: founder backs up before an upgrade, restores, silently loses photos/tournaments/calibration.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "src/utils/exportUtils.js"
+  - "src/utils/persistence/database.js"
+recommended_fix: |
+  Derive the export store list from the schema registry so new stores are captured by construction; embed blobs or refuse dangling photoBlobId; make validateImportData fail loudly on version skew; add a backup-schema-parity test analogous to migrationRegistry.test.js.
+dedup_key: "security-backup-covers-three-of-twentyfive-stores"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

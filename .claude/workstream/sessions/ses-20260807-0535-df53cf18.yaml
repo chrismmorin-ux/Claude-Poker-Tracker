@@ -1,0 +1,64 @@
+id: "ses-20260807-0535-df53cf18"
+status: completed
+revived_at: "2026-08-07T16:37:36.348Z"
+started_at: "2026-08-07T05:35:21.430Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-07T18:13:35.447Z"
+pid: 30684
+host: MorinComputer
+agent_session_id: "df53cf18-2b15-435a-ade4-9ad762d8fc87"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+files_locked:
+  - "docs/domain/theory-gaps.draft.md"
+  - "docs/design/surfaces/sidebar-zones-overview.md"
+  - "docs/design/surfaces/sidebar-zone-0.md"
+  - ".claude/workstream/evidence/run-methodology-sweep-2026-08-07.md"
+  - ".claude/workstream/evidence/run-sor-sweep-2026-08-07.md"
+  - ".claude/workstream/evidence/run-launch-sweep-2026-08-07.md"
+  - ".claude/workstream/evidence/overnight-handoff-2026-08-07.md"
+  - ".claude/settings.json"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-07.
+  Original start: 2026-08-07T05:35:21.430Z.
+  Last heartbeat: 2026-08-07T07:25:54.142Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.
+ended_at: "2026-08-07T18:12:17.534Z"
+handoff_notes: |
+  OVERNIGHT AUTONOMOUS RUN + DAYTIME COMMIT-QUEUE CLEANUP. Full record:
+  .claude/workstream/evidence/overnight-handoff-2026-08-07.md (incl. addendum).
+  Items completed: WS-428, WS-429, WS-430, WS-437, WS-438 (branch night/overnight-20260807,
+  commits b4c38dc1/aa4e8999/88bb2dc6/c55a132c/3bc43abd - NOT yet merged to ws-292).
+  Items remaining/created: WS-431 (founder decision flag), WS-439/440/441 (re-filed lost P0s;
+  WS-440 reduces to verification - fix exists at 954972df on integrate branch), WS-442 (3-branch
+  domain merge), WS-443 (founder on-device hand entry).
+  Key findings: FIND-055..111 filed; 5 critical (deploy ungated FIND-097/098, delete-account
+  no-purge FIND-100, backup v12-vs-v28 FIND-101, main frozen FIND-099); edgeBB rake sensitivity
+  measured -0.184 bb/doubling; theory-gaps.draft.md rewritten for founder review.
+  Next recommended action: after the resumed session (ses-20260807-1809) lands SPR-177, merge
+  night/overnight-20260807 then integrate/orphans-20260807 into ws-292; then founder decisions
+  (launch gate ratification, WS-431 ruling, target-device A22-vs-S22, FAULT-modelled-rake evidence,
+  theory-draft promotions). Landing ws-292 on main should WAIT for the FIND-097 deploy-gate fix.
+  Verification note: main-tree full suite NOT run at close (tree is mid-rewrite by the resumed
+  session; running it would measure their WIP). This session verification happened per-item in
+  the worktree: final targeted suite 6,113 passed / 10 failed - all 10 are the known kit
+  session-recovery regressions (FIND-108), pre-existing.
+  Autopilot eligible: not recomputed at close; queue holds several S-effort items but the top
+  candidates now carry decision flags or founder tasks.
+context_notes: |
+  Two other sessions were live during this one: ses-20260807-0450 (froze on usage limit, resumed
+  ~18:09 as ses-20260807-1809, owns SPR-177 = WS-432/433 + the dirty main-tree engine files) and
+  a stale ses-20260806-1914 (marked abandoned, its WS-428 claim was taken over and completed).
+  All code work was isolated in worktree C:/Users/chris/repos/cpt-night to protect their state.
+  A catch-up note for the resumed session was given to the founder (branch moved to 09b7043c,
+  night-branch overlap files, FIND-074 unseeded-MC + FIND-090 KL_FLOOR additions to its WS-432
+  scope).

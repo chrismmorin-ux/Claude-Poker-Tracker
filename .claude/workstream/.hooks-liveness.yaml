@@ -7,6 +7,6 @@
 #             Written last. WS-564: stamping this at entry meant a hook that
 #             resolved nobody still certified liveness, and INV-026 read
 #             GREEN over data that had been dead for two days.
-last_heartbeat_hook_at: "2026-08-03T21:28:46Z"
-last_heartbeat_hook_fired_at: "2026-08-03T21:28:46Z"
-last_session_recovery_hook_at: "2026-08-03T21:58:29Z"
+last_heartbeat_hook_at: "2026-08-07T22:24:15Z"
+last_heartbeat_hook_fired_at: "2026-08-07T22:24:15Z"
+last_session_recovery_hook_at: "2026-08-07T21:44:37Z"

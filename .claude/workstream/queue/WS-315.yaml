@@ -89,3 +89,7 @@ status_note: |
   WS-313 bluff:value budget, WS-314 check-raise dominance, WS-315 blockers). WS-313 and this
   item together are the "which combos should bluff" half; WS-307 already fixed the "can this
   range fold" half.
+recovered_work_note: |
+  2026-08-07: a real implementation (blocker quality as ranking score) exists UNMERGED on
+  origin/claude/run-next-t4w44x (orphan-integration round 2; competing holdingKnowledge API blocked
+  auto-merge). Land via WS-442 rather than reimplementing.

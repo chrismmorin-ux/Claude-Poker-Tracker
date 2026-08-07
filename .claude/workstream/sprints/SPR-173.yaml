@@ -1,7 +1,9 @@
 id: "SPR-173"
 title: "Ship WS-330: The standing disclaimer and suspected-fault register — what this system can honestly cl"
-status: approved
+status: done
 approved_at: "2026-08-04T16:08:28.744Z"
+completed_at: "2026-08-04T16:43:13.403Z"
+completed_by_commit: "b984dff5"
 program_focus: "strategy-of-record"
 
 goal: |
@@ -23,6 +25,7 @@ items:
     title: "The standing disclaimer and suspected-fault register — what this system can honestly claim, and where the fault is most likely to be, ranked with falsifiers"
     mode: plan-first
     effort: M
-    status: pending
+    status: done
+    completed_at: "2026-08-04T16:43:13.403Z"
 
 created_at: "2026-08-04T16:08:28.744Z"

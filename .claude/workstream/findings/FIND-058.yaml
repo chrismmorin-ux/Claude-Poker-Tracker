@@ -1,0 +1,23 @@
+id: "FIND-058"
+engine: "eng-engine"
+run_id: "run-004"
+severity: CRITICAL
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 1 Entry skipped"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "Every design protocol clock except baseline is null - 108 days, ~26 missed cycles across 5 protocols"
+description: |
+  prog-design.yaml:205-208 delta/sweep/challenge/blind_spot all {date:null}; baseline 2026-04-21 only run ever; maturity level_3 claim (:235) contradicted by current_gaps (:238); health_score 0 is an uninitialized placeholder indistinguishable from failing (:210-212); recorded cap breach 19 items / 2.38x is stale - actual open design items 13 (ratio 1.63). This sweep (run-004) is the first ever.
+affected_files:
+  - ".claude/workstream/programs/prog-design.yaml"
+recommended_fix: |
+  Stamp this sweep into last_run_by_protocol.sweep with a real health score; replace the health_score:0 placeholder with null plus an explicit uninitialized flag; demote maturity to level_2 until two consecutive on-cadence sweeps; re-derive cap_breach from the queue at every sweep; verify the on_stale escalation actually surfaces at session start.
+dedup_key: "eng-engine-design-sweep-design-protocol-cadence-never-executed"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

@@ -1,0 +1,41 @@
+id: "ses-20260804-0421-f063235e"
+status: "abandoned"
+started_at: "2026-08-04T04:21:58.313Z"
+ended_at: "2026-08-04T09:48:01Z"
+mode: auto
+last_heartbeat: "2026-08-04T05:40:13.504Z"
+pid: 28516
+host: MorinComputer
+agent_session_id: "f063235e-4c3e-4d4d-998c-10622b66c08d"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-331"
+
+files_locked:
+  - "scripts/backtest/poolBestResponse.mjs"
+  - "scripts/backtest/equilibriumPost.mjs"
+  - "scripts/backtest/strategyPosition.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/__tests__/poolBestResponse.test.js"
+  - "scripts/__tests__/equilibriumPost.test.js"
+  - "scripts/__tests__/heroEvResultCard.test.js"
+  - "scripts/__tests__/heroEvPiers.test.js"
+  - ".claude/projects/five-surface-atlas.md"
+  - "docs/standard-of-record/VOCABULARY.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-04.
+  Original start: 2026-08-04T04:21:58.313Z.
+  Last heartbeat: 2026-08-04T05:40:13.504Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

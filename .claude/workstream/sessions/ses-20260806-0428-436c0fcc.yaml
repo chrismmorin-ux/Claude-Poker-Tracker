@@ -34,6 +34,10 @@ files_locked:
   - "scripts/__tests__/falsifiedCounter.test.js"
   - "scripts/context/enforcement-classes.cjs"
   - "scripts/__tests__/enforcementClasses.test.js"
+  - ".claude/projects/context-shift-implementation.md"
+  - ".claude/workstream/evidence/adversarial-review-predictions.md"
+  - ".claude/projects/accuracy-program-handoff.md"
+  - ".claude/workstream/sessions/ses-20260806-1312-3acf26b5.yaml"
 
 
 

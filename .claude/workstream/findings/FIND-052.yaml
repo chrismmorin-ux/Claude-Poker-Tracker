@@ -1,0 +1,57 @@
+id: "FIND-052"
+title: "thoughtCatalog ships 85 unscored weights to a surface the founder reads, and its own falsifier is unwired"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Theory-spec drift"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  thoughtCatalog.js carries 64 catalog entries with 85 literal `weight:` floats (verified count at
+  HEAD). analysisPipeline.js:24 and :150 run `inferVillainThoughts` in the PRODUCTION pipeline, and
+  the output renders in VillainProfileModal.jsx and VillainModelCard.jsx — surfaces the founder
+  reads at the table. `grep -ci thought .claude/context/POKER_THEORY.md` returns 0 across all 16
+  sections: the doctrine document does not contain the concept the shipped weights encode.
+
+  ITS OWN FALSIFIER EXISTS AND IS NOT WIRED. thoughtInference.js:293 `calibrateThoughts`, driven by
+  PREDICTION_TESTS, is a real self-check — and its only caller is
+  __tests__/thoughtInference.test.js.
+
+  TAXONOMY RULING (cross-critic) — DO NOT MERGE THIS WITH THE ORPHANED-MODULE FAMILY. Three classes
+  with three different remedies:
+    1. UNWIRED PRODUCT — a feature with no caller (bluffValueConstruction, unexploitableFloor,
+       equityCache, icmContext). Cost is opportunity cost; remedy is a wiring ticket.
+    2. UNWIRED SELF-CHECK OF A LIVE CLAIM — this finding. Not an opportunity cost but a DOCTRINE
+       VIOLATION, because the thing the check would falsify IS shipping to the founder.
+    3. UNWIRED UNCERTAINTY ON A SHIPPING NUMBER — computed, transmitted, then dropped at the last
+       hop. equityCI: produced at liveAdvisor/computeHelpers.js:93, carried on the wire at
+       ignition wire-schemas.js:50, consumed by no renderer. credibleInterval: defined in
+       pokerCore, imported by tendencyCalculations.js:22 and skillAssessment/shapeLanguage/
+       betaPosterior.js:17, rendered at AnchorCalibrationPanel.jsx:202 and
+       PrimitiveCalibrationPanel.jsx:100 — so the lens claim "referenced only by its own
+       definition" is OVERSTATED and the defensible, still-damning version is that NO EV OR
+       DECISION PATH CONSUMES A CREDIBLE INTERVAL. Class 3 was named by no lens and is the
+       cheapest of the three to close.
+affected_files:
+  - "src/utils/exploitEngine/thoughtCatalog.js"
+  - "src/utils/exploitEngine/thoughtInference.js"
+  - "src/utils/analysisPipeline.js"
+  - "src/components/ui/VillainProfileModal.jsx"
+  - "src/components/ui/VillainModelCard.jsx"
+recommended_fix: |
+  Wire calibrateThoughts into a scored run against the corpus and publish the scorecard, so the 85
+  weights become measured rather than asserted; until they are, mark the surface as unscored in the
+  UI rather than removing it (the standing rule forbids deleting an instrument for being wrong).
+  If the weights cannot be scored, the honest move is to state in POKER_THEORY.md that thought
+  inference is a heuristic layer outside the doctrine, rather than leaving code-with-no-doctrine
+  rendering to the founder as if it carried the same standing as the engine's EV output. Track the
+  Class-3 items (equityCI, credibleInterval) as their own cheap ticket, not merged into this one.
+theory_citation: "POKER_THEORY.md — no §covering thought inference (code-with-no-doctrine); Standard of Record (ADR-009); memory: feedback_shipped_but_inert_capability"
+dedup_key: "blindspot-domain-correctness-thoughtcatalog-unscored-weights-unwired-falsifier"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: ""

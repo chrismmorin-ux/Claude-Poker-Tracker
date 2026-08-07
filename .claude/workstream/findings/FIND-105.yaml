@@ -1,0 +1,25 @@
+id: "FIND-105"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "security"
+program: "security"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "No CSP header on any route; extension ships a localhost host permission and a store identity that does not describe its function"
+description: |
+  firebase.json:11-48 sets cache headers only - React escaping + NEV-11 is the entire XSS defense. ignition manifest ships localhost:5173 host permission + content-script match to production users; name/description (Poker Session Notes) does not describe WS capture of a casino site + HUD - Chrome Web Store policy risk (unannounced pull would take the HUD down). Cross-ref FIND-083 (postMessage origin gap - already owned, not re-filed). No npm audit gate in CI for either package.json.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "firebase.json"
+  - "ignition-poker-tracker/manifest.json"
+recommended_fix: |
+  Add CSP headers in hosting config; strip localhost from the shipped manifest; align the store listing with actual function; add npm audit to CI.
+dedup_key: "security-no-csp-and-extension-manifest-hygiene"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

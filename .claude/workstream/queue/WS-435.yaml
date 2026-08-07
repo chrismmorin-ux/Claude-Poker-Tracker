@@ -1,0 +1,84 @@
+id: "WS-435"
+title: "No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "measurement"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WS-410 Stage 6 requires the readout to emit an MDE **before** the run, "computed properly from the
+  bootstrap rather than extrapolating the single point". Verified at HEAD `18f49f22`: that describes
+  something that does not exist and cannot be built from anything persisted today.
+
+  `classifyPlayerSignal` (`scripts/backtest/rangeCalibrationProbe.mjs:1168-1209`) — the repo's only
+  MDE — computes `mde = z * se` from a per-player standard error that is itself a downstream product
+  of a COMPLETED scoring pass (a fitted Delta-log curve's per-player variance). Its shape ports
+  cleanly to a bb-scale EV delta (`estimateEdge`/`pairedDelta` already compute per-player weighted
+  sums in `byPlayer`), but its INPUT — a per-player variance model — is not persisted anywhere
+  independent of a run.
+
+  Concretely: the ~2.05 bb half-width at P=22 that WS-410's own extrapolation rests on comes from
+  exactly one place, `RC-depth-ablation.json.metrics.depthDeltaCiLowBB/HighBB` — the output of the
+  single completed run there is. There is no stored per-player-variance table and no historical
+  scaling curve. So "MDE before the run" today reduces to either (a) reading that one stored CI and
+  scaling 1/sqrt(P), a one-point extrapolation with no error bar on its own scaling exponent, or
+  (b) running a pilot whose only purpose is to seed the formula.
+
+  WHY IT MATTERS RATHER THAN BEING A NICETY. Without a pre-flight MDE a null result is unreadable —
+  indistinguishable between "the fix did nothing" and "the instrument had no power". At roughly one
+  EV-bearing engine change per day (77 commits touching `exploitEngine/`, `rangeEngine/`,
+  `scripts/backtest/` in 60 days), confident-looking nulls will accumulate faster than they can be
+  investigated, and the failure mode is that the founder stops trusting the instrument — or worse,
+  acts on noise. `RC-depth-ablation` already reports `depthDeltaBB: -0.4711` with CI
+  [-2.7653, +1.3290] and `DEPTH-ABLATION-2026-08-05.md:162-164` says it plainly: "At 260 decisions
+  and 22 players the instrument cannot separate a half-big-blind effect from nothing."
+
+  This is real, uncosted work hiding inside a stage WS-410 describes as a reporting change.
+accept_criteria: |
+  - Per-player variance is PERSISTED from every scoring run going forward, as a first-class stamped
+    quantity — so the second run onward has a real basis for a pre-flight MDE instead of a one-point
+    extrapolation.
+  - A pre-flight MDE function computes, from the persisted variance and the planned
+    `--max-players`/`--max-decisions`, the smallest effect the planned run could resolve. Its
+    docblock follows `classifyPlayerSignal`'s stated rule: THE SEPARATOR IS POWER, NOT SAMPLE SIZE.
+  - The run script REFUSES TO PROCEED, or warns unmissably, when the planned configuration cannot
+    resolve the effect size being targeted. A gate, not a post-hoc report — the whole point is to
+    avoid spending days of wall-clock (WS-433) on a run that could not have answered the question.
+  - Every reported null result carries its MDE beside it. A number without its MDE is not a result;
+    WS-410 states this and this ticket is what makes it enforceable.
+  - The MDE is denominated in the same units as the claim it gates (bb), not in Delta-log.
+effort: "M"
+files_involved:
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+blocked_by: ["WS-433"]
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the experimental-design failure engineer (hypothesis H3, confirmed) in the 2026-08-06
+  nine-agent decision-enhance pass on WS-410.
+
+  `blocked_by: WS-433` is a dependency claim, not a descope: a pre-flight gate is only useful once
+  runs at the gated scale are affordable. If the founder wants the MDE first, it can be built against
+  the single stored CI as an interim — say so explicitly in the card rather than implying more basis
+  than exists.

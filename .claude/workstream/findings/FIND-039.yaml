@@ -1,7 +1,7 @@
 id: "FIND-039"
 title: "Live-session stake labels are free-text — naive segmentKey normalization fragments identical stakes into separate pools"
 severity: MEDIUM
-status: open
+status: resolved
 category: "domain-defect"
 program: "domain-correctness"
 problem_class: "Range estimation correctness"
@@ -30,5 +30,10 @@ recommended_fix: |
 theory_citation: "poolBaseline.js segmentation doctrine; anti_invariant (stakes/pool conditioning)"
 dedup_key: "challenge-domain-correctness-segmentkey-freetext-label-fragmentation"
 created_at: "2026-07-22"
-updated_at: "2026-07-22"
+updated_at: "2026-08-07"
 promoted_to: "WS-260"
+resolution: |
+  Verified resolved 2026-08-07 (ses-20260807-0535-df53cf18): WS-260 shipped read-side
+  canonicalization in poolBaseline.js — header cites WS-260, currency/suffix strip at ~:227,
+  '$2/$5 NLH' -> '2-5' with sorted blind numbers. Finding closure had not followed the
+  item closure; closed during overnight pulse pass.

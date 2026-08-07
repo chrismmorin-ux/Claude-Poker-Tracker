@@ -1,0 +1,106 @@
+id: "WS-430"
+title: "Measure `beliefState` and move the atom store off the 42-GB-free system drive — the decision to sample it away is being made against a field nothing has ever written, and the disk limit it accommodates costs one environment variable to remove"
+legacy_id: ""
+type: chore
+status: done
+claimed_by: "ses-20260807-0535-df53cf18"
+claimed_at: "2026-08-07T06:04:58.163Z"
+started_at: null
+completed_at: "2026-08-07T06:37:29.500Z"
+completion_commit: "aa4e89991ed9a9f58410518ea049f44c31dab605"
+priority_score: 35.0
+priority_label: "P1"
+category: "measurement"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  WHAT WAS MEASURED (nine-agent decision-enhance pass, 2026-08-06, real bytes on disk — not the
+  docblock estimate WS-410 quotes):
+
+    - `C:/Users/chris/data/sor-atoms/ws328-gen1-1785913579152/`: 97,454 real atoms,
+      82,294,703 bytes raw = **844.4 bytes/atom** (the `atomStore.mjs:11-13` docblock says "1-2 KB").
+    - Its gzip sidecar — already produced on every `finalize()` — is 1,709,596 bytes =
+      **17.5 bytes/atom, a 48x ratio**. The docblock's "materially less gzipped" undersells this by
+      nearly two orders of magnitude.
+    - Measured atoms/hand: **4.685** (97,454 atoms / 20,800 seatOccupancy entries).
+    - Full local corpus is 1,070,493 hands (`POKER_THEORY.md:2421`), so the full-corpus core row is
+      ~5.02M atoms = **~4.24 GB raw / ~88 MB gzipped**.
+
+  CONCLUSION THE MEASUREMENT FORCES: **the core row is not the disk problem and never was.**
+  4.24 GB raw for the ENTIRE corpus. WS-410's D2 decision flag frames a 600 MB figure against a
+  storage tradeoff; the real core-row number is larger and still negligible.
+
+  THE ONLY REAL QUESTION IS `beliefState`, AND IT HAS NEVER BEEN WRITTEN. Grep of all 97,454 atoms
+  on disk: **100% carry `beliefState: null`**. There are ZERO producers in the repo. Every size claim
+  in WS-410 ("orders of magnitude larger") is a shape argument about a field nothing has ever
+  emitted. Estimated from the real 169-class grid constant (`populationPriors.js:26`) at ~9.5-19
+  KB/atom -> ~48-95 GB raw for the corpus.
+
+  AND THE DISK NUMBER NOBODY PUT IN THE TICKET: `df` reports **42 GB free on C:, 91% used**, and
+  `DEFAULT_ATOM_STORE_ROOT` (`atomStore.mjs:56`) points at `C:/Users/chris/data/sor-atoms` — the SAME
+  DRIVE. Full `beliefState` capture would not merely cost disk; it would exhaust the drive mid-run.
+
+  TWO REMOVALS THE TICKET NEVER PRICED, both cheap:
+    1. `atomStore.mjs:56` already reads `process.env.SOR_ATOM_STORE`. **Relocating the store is one
+       environment variable and zero code changes.** A secondary drive removes the constraint that
+       the sampling decision exists to accommodate.
+    2. The 169-class grid as a packed `Float32Array` is 676 bytes; int8-quantised, 169-338 bytes —
+       against ~1.2-2.4 KB as verbose JSON per opponent. That is **15-25x before gzip runs at all**,
+       plausibly bringing full-corpus `beliefState` capture to low single-digit GB.
+
+  PER `.claude/rules/improvement-default.md`: sampling `beliefState` is an accommodation of a disk
+  limit. The limit is removable for roughly the price of an external drive plus an encoding change.
+  This ticket removes the guesswork so the founder's D2 ruling is made against measured numbers
+  instead of an adjective.
+accept_criteria: |
+  - One `beliefState` is actually WRITTEN by a producer and its real serialised size measured, at
+    several `playersRemaining` values (the grid scales with live opponents — cost is convex in table
+    size, not the flat per-atom constant the current arithmetic assumes). Report bytes raw and
+    gzipped.
+  - The packed encoding (`Float32Array` and/or int8-quantised) is implemented and its size measured
+    against the verbose-JSON baseline. Report the real ratio, not the estimated one.
+  - `SOR_ATOM_STORE` is set to a location off the system drive, and that setting is DOCUMENTED where
+    a future session will find it (not left as tribal knowledge in one shell).
+  - A short written summary states: full-corpus `beliefState` cost, raw and gzipped, under the packed
+    encoding, against available headroom at the new location. This is the input the founder's D2
+    ruling needs and currently does not have.
+  - NO SAMPLING IS IMPLEMENTED BY THIS TICKET. If the measurement shows full capture is affordable —
+    which the packed-encoding arithmetic suggests it will be — then the sampling mechanism WS-410
+    Stage 1 proposes is unnecessary work and should not be built. Note also that `fullSampleRate`
+    is currently RECORDED, never ENFORCED: no code reads it and samples. Both live producers use it
+    as a binary switch (`layerAblation.mjs:510` = 1, `run-atoms.mjs:134,230` = 0). Building a real
+    sampler is new code, not a flag flip — WS-410's "already anticipated by the existing design" is
+    not accurate.
+effort: "S"
+files_involved:
+  - "scripts/backtest/atomStore.mjs"
+  - "scripts/backtest/atomsSelfCheck.mjs"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/decisionAtom.js"
+  - "src/utils/rangeEngine/populationPriors.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the nine-agent decision-enhance pass on WS-410, 2026-08-06. The record-shape business
+  strategist measured the atom store directly rather than trusting the docblock; the record-shape
+  failure engineer independently confirmed zero `beliefState` producers.
+
+  See WS-438 for the related disk-exhaustion failure path (no preflight; an interrupted run has no
+  manifest and resolves NOT_FOUND rather than TRUNCATED, losing the whole capture).
+completion_notes: |
+  Completed overnight by ses-20260807-0535-df53cf18 in worktree night/overnight-20260807.
+  Measured real beliefState sizes through the real writer path (throwaway store): q8 packing = 11.9-15.2x raw
+  vs verbose; full-corpus q8 = 2.6-16.6 GB vs 48.8 GB free -> full capture AFFORDABLE, sampling unnecessary.
+  Premise corrections: verbose ~4.3KB/opponent (not 1.2-2.4KB); f32-in-NDJSON ~1015B/opponent.
+  Only ONE physical drive exists; SOR_ATOM_STORE relocation doctrine documented in VOCABULARY.md for when added.
+  56/56 tests green. MERGE NOTE: on night branch; merge after SPR-177 lands.

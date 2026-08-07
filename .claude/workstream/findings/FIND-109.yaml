@@ -1,0 +1,26 @@
+id: "FIND-109"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "engineering"
+program: "engineering"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Target device identity is unresolved across three names and zero mobile latency measurements exist"
+description: |
+  CLAUDE.md + system/state.md say Galaxy A22 (1600x720); WS-334 records a founder correction to Galaxy S22 (2340x1080 - where the scale formula clamps to 1.0); SYSTEM_MODEL.md names Helio G80. No mobile advice-latency measurement exists anywhere; refinementBudgetMs=2000 was chosen on desktop; SYSTEM_MODEL 26s worst case is unbacked prose (WS-364). NOT covered by WS-441 (44px floor) - the overnight dedup note claiming so was corrected by the facilitator. Cross-ref WS-364/WS-334/WS-441 which own their pieces.
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "CLAUDE.md"
+  - "system/state.md"
+  - ".claude/context/SYSTEM_MODEL.md"
+recommended_fix: |
+  Founder states the device once; correct CLAUDE.md/state.md/SYSTEM_MODEL in one pass; then measure advice latency on that hardware and re-derive refinementBudgetMs (Result Card per the Standard of Record).
+dedup_key: "engineering-target-device-unresolved-zero-mobile-measurement"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

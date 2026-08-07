@@ -2,12 +2,12 @@ id: "WS-433"
 title: "The backtest harness is single-threaded — a properly-powered run is 3-7 days, no run at target scale has EVER completed, and `evaluateGameTree` calls are embarrassingly parallel with no cross-decision state"
 legacy_id: ""
 type: feature
-status: claimed
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-07T18:05:28.975Z"
+completion_commit: 52d0cae4
 priority_score: 55.0
 priority_label: "P0"
 category: "infrastructure"
@@ -103,3 +103,4 @@ status_note: |
   Found by the experimental-design business strategist in the 2026-08-06 nine-agent decision-enhance
   pass on WS-410; the nested-loop plateau mechanism was found independently by the experimental-design
   failure engineer. The 2,305-player arithmetic was independently re-derived and confirmed exact.
+closed_by_event: ev-1786125929001-0bb4ec104ee6

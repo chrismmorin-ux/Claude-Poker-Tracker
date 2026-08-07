@@ -1,0 +1,25 @@
+id: "FIND-056"
+engine: "preflight"
+run_id: "run-003"
+severity: LOW
+status: open
+category: "data-provenance"
+program: "data-provenance"
+problem_class: "Source Registration"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-003"
+  date: "2026-08-07"
+title: "SRC-015 evidence list is stale — range-calibration-history.yaml and the hole-map artifact family are unlisted members of an already-registered class"
+description: |
+  docs/domain/readiness/range-calibration-history.yaml (WS-293, commit 7e0efc33, in-window) is a third append-only claim-bearing history whose own header says a row without a source is not admissible evidence; rows carry result_card_id / deal_book_hash / engine_commit. SRC-015 (data-source-registry.md:320-341) lists only scorecard-history.yaml, overturn-ledger.yaml, out/behavior-policy.json. The out/hole-map.json family (run-hole-map.mjs:492-495) is likewise unlisted (machine-local, but so is the registered behavior-policy.json).
+affected_files:
+  - "docs/provenance/data-source-registry.md"
+  - "docs/domain/readiness/range-calibration-history.yaml"
+  - "scripts/backtest/run-hole-map.mjs"
+recommended_fix: |
+  Extend SRC-015 evidence list with range-calibration-history.yaml and the hole-map family, or split them into their own SRC entries if trust character differs.
+dedup_key: "preflight-data-provenance-src015-stale-evidence-list"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

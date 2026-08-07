@@ -1,0 +1,24 @@
+id: "FIND-084"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Cross-Method Consistency"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The live-table surface strips the conditioning the doctrine requires; the manual what-if path discards treeMetadata entirely; EV precision exceeds documented noise"
+description: |
+  LiveAdviceBar.jsx:67-87: 3 unlabeled tiers (DATA>=15/PARTIAL>=5/EST), no raw n, no conditioning set - vs ExploitList.jsx:118-149 rendering rich provenance from the SAME validator. useActionAdvisor.js:59 destructures treeMetadata away while useLiveActionAdvisor.js:331 keeps it - and the discarding caller is the founder double-check path. .toFixed(2) bb on unvalidated depth-2 EV at HandPlanSection.jsx:171, WeightedTotalTable.jsx:30, FlopBreakdownPanel.jsx:78, AnchorCard.jsx:72, AnchorDetailPanel.jsx:104. Existing good pattern: BucketEVPanelV2 adjustCaveatsForDepth2. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/hooks/useActionAdvisor.js"
+recommended_fix: |
+  Port the adjustCaveatsForDepth2 pattern to the live surface; show n + conditioning on the badge; keep treeMetadata in the manual path; match displayed precision to the measured noise band (computable once FIND-074 lands).
+dedup_key: "methodology-live-surface-drops-conditioning-and-overprecise-ev"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

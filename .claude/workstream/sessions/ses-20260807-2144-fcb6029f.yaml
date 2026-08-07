@@ -1,0 +1,25 @@
+id: "ses-20260807-2144-fcb6029f"
+status: active
+started_at: "2026-08-07T21:44:22.739Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-07T22:24:15.697Z"
+pid: 30684
+host: MorinComputer
+agent_session_id: "fcb6029f-14fc-47ec-a712-ce126eaf449c"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-431"
+
+
+files_locked:
+  - ".claude/workstream/sprints/SPR-178.yaml"
+  - ".claude/workstream/queue/WS-439.yaml"
+  - ".claude/workstream/sessions/ses-20260807-2144-fcb6029f.yaml"
+  - ".claude/workstream/sprint-index.yaml"
+  - ".claude/workstream/queue/WS-444.yaml"
+  - ".claude/workstream/programs/prog-strategy-of-record.yaml"
+

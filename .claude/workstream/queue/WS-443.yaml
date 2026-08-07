@@ -1,0 +1,39 @@
+id: "WS-443"
+title: "FOUNDER TASK: enter the 2026-08-07 AKs squeeze 4-way hand on-device - the cloud session could not reach IndexedDB (re-filed after WS-321 ID collision)"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 20.0
+priority_label: "P2"
+category: "data-integrity"
+capability: "core"
+program: "data-quality"
+finding_id: ""
+description: |
+  Recovered from orphaned branch claude/aks-squeeze-preflop-qwrj5y (its WS-321 collided with the canonical
+  WS-321 and was dropped in merge bfd7f1d6; original at bfd7f1d6^2:.claude/workstream/queue/WS-321.yaml).
+  The hand review (docs/hand-reviews/2026-08-07-aks-squeeze-4way.md, merged) and its reproducible harness
+  (src/test/aksSqueezeHandEval.test.js, passing) landed - but the hand itself is not in the founder
+  device IndexedDB because the cloud session had no device access. Founder enters it in-app so the live
+  record matches the reviewed hand.
+accept_criteria: |
+  The AKs squeeze 4-way hand exists in the on-device hands store and its recorded actions match the
+  reviewed hand in docs/hand-reviews/2026-08-07-aks-squeeze-4way.md.
+effort: "S"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "orphan-integration-2026-08-07"
+created_at: "2026-08-07T18:30:00Z"

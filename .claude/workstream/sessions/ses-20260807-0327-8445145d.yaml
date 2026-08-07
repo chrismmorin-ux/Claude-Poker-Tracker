@@ -1,0 +1,89 @@
+id: "ses-20260807-0327-8445145d"
+status: active
+revived_at: "2026-08-07T17:56:44.963Z"
+started_at: "2026-08-07T03:27:48.160Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-07T18:07:16.575Z"
+pid: 34664
+host: MorinComputer
+agent_session_id: "8445145d-7175-4561-89e5-c13fbb22df6e"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-433"
+
+files_locked:
+  - ".claude/workstream/queue/WS-432.yaml"
+  - ".claude/workstream/sessions/ses-20260807-0450-b0d69e94.yaml"
+  - ".claude/workstream/sprints/SPR-177.yaml"
+  - "src/utils/pokerCore/monteCarloEquity.js"
+  - "scripts/backtest/seededEquity.mjs"
+  - "scripts/__tests__/seededEquity.test.js"
+  - "scripts/backtest/heroEvEnumeration.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/runner.mjs"
+  - "scripts/backtest/heroEvTask.mjs"
+  - "scripts/backtest/handLedger.mjs"
+  - "scripts/backtest/strategyArm.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "src/utils/errorHandler.js"
+  - "scripts/backtest/heroEvWorker.mjs"
+  - "scripts/backtest/heroEvPool.mjs"
+  - "scripts/backtest/mergeHeroEvChunks.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/diffHeroEvRuns.mjs"
+  - "scripts/backtest/check-engine-bare-import.mjs"
+  - "package.json"
+  - "scripts/__tests__/heroEvEnumeration.test.js"
+  - "scripts/__tests__/mergeHeroEvChunks.test.js"
+  - "scripts/backtest/verify-ws433-determinism.mjs"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "src/utils/exploitEngine/refinementWork.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/standardOfRecord/manifest.js"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+  - "scripts/backtest/layerAblation.mjs"
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "docs/standard-of-record/cards/RC-depth-ablation.json"
+  - "docs/standard-of-record/cards/RC-layer-divergence.json"
+  - "scripts/backtest/dumpGameTreeEV.mjs"
+  - "scripts/backtest/calibrate-refinement-units.mjs"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - "scripts/__tests__/heroEvResultCard.test.js"
+  - "scripts/__tests__/depthAblation.test.js"
+  - "src/utils/exploitEngine/__tests__/refinementWork.test.js"
+  - "src/utils/exploitEngine/__tests__/logicalBailStratumGuarantee.test.js"
+  - "src/utils/exploitEngine/__tests__/refinementDeterminism.test.js"
+  - "src/utils/exploitEngine/__tests__/budgetBound.test.js"
+  - "src/utils/exploitEngine/__tests__/depth3RiverBudget.test.js"
+  - "src/utils/exploitEngine/__tests__/item27Improvements.test.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+  - "src/utils/exploitEngine/__tests__/depthReachability.test.js"
+  - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+  - "src/utils/exploitEngine/gameTreeSampling.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeHelpers.test.js"
+  - "scripts/backtest/run-atoms.mjs"
+  - "scripts/backtest/run-range-calibration.mjs"
+  - "scripts/backtest/run-study-ladder.mjs"
+  - "scripts/foldCurve/emit-result-card.mjs"
+  - "docs/standard-of-record/REFINEMENT-CLOCK-CALIBRATION.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-07.
+  Original start: 2026-08-07T03:27:48.160Z.
+  Last heartbeat: 2026-08-07T07:08:02.728Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

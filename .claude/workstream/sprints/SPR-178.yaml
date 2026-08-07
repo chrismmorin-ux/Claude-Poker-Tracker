@@ -1,0 +1,30 @@
+id: "SPR-178"
+title: "Ship WS-439: Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the"
+status: abandoned
+approved_at: "2026-08-07T21:51:36.835Z"
+abandoned_at: "2026-08-07T22:14:00.000Z"
+abandoned_reason: "Founder reconciled DEC-049 during plan-first design: WS-439 holds behind accuracy work. P0-defect carve-out argument presented; founder chose hold."
+program_focus: "design"
+
+goal: |
+  Ship WS-439: Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the most common state (founder device-verified P0, re-filed after ticket-ID collision lost the original WS-311)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-07T21:51:36.835Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-439 selected (55 × no damping = 55).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-439"
+    title: "Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the most common state (founder device-verified P0, re-filed after ticket-ID collision lost the original WS-311)"
+    mode: plan-first
+    effort: M
+    status: pending
+
+created_at: "2026-08-07T21:51:36.835Z"

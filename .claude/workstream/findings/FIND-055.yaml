@@ -1,0 +1,24 @@
+id: "FIND-055"
+engine: "preflight"
+run_id: "run-003"
+severity: MEDIUM
+status: open
+category: "data-provenance"
+program: "data-provenance"
+problem_class: "Source Registration"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-003"
+  date: "2026-08-07"
+title: "Decision Atom store is an unregistered data source — content-addressed re-derivation input for Result Cards with no SRC- entry"
+description: |
+  atomStore.mjs:52-56 (WS-328, commit 5853ae0a) created DEFAULT_ATOM_STORE_ROOT = process.env.SOR_ATOM_STORE || C:/Users/chris/data/sor-atoms — an append-only, content-addressed store outside git, referenced by Result Cards by hash, purpose-built as re-derivation input for future comparative claims. docs/provenance/data-source-registry.md has no SRC- entry for it (grep atom/sor-atoms: zero hits). The registry Source Registration problem class names exactly this failure. Precedent: SRC-015 already registers sibling derived artifact out/behavior-policy.json. Found by data-provenance/delta preflight run, window d6d39bd5..18f49f22 (36 commits).
+affected_files:
+  - "scripts/backtest/atomStore.mjs"
+  - "docs/provenance/data-source-registry.md"
+recommended_fix: |
+  Add SRC-016 (derived, T4) registering the atom store: location (env-overridable), content-hash referencing scheme, producers (layerAblation.mjs, run-atoms.mjs), trust tier, and the local-first/hash-anchored founder decision recorded in the file header. Coordinate with WS-430 (store relocation) so the entry records the resolved location doctrine, not a hardcoded path.
+dedup_key: "preflight-data-provenance-atom-store-unregistered"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

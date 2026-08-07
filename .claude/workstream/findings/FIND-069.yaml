@@ -1,0 +1,25 @@
+id: "FIND-069"
+engine: "eng-engine"
+run_id: "run-004"
+severity: MEDIUM
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "TableView.jsx is 748 lines against a 700-line hard split obligation; its own artifact says 598; no work item, no bypass, unnoticed for 108 days"
+description: |
+  table-view.md:5,127,131 states TableView.jsx is '598 lines - ARCH-003 threshold'; the actual file is 748 lines, past the 700-line split obligation (prog-design.yaml:115); no work item exists and no bypass is logged; the other two scope constraints (44px touch targets, 1600x720 no-overflow) likewise have no detection - the latter was violated across 8 surfaces for 47 days per the responsive-layout case.
+affected_files:
+  - "src/components/views/TableView/TableView.jsx"
+  - "docs/design/surfaces/table-view.md"
+  - ".claude/workstream/programs/prog-design.yaml"
+recommended_fix: |
+  Add a lint/test failing when any file under scope.file_patterns exceeds 700 lines without a logged bypass; stop hand-writing line counts into artifacts (generate or omit - a hand-copied count is a fact with a decay rate); open the TableView split work item now.
+dedup_key: "eng-engine-design-sweep-design-constraints-unmonitored-arch003"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

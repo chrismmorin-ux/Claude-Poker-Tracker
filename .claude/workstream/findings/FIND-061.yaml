@@ -1,0 +1,25 @@
+id: "FIND-061"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "Fixed defects still documented as shipping - FM-STATUS-1/FM-DENSITY-1 closed in April; docs and project memory said live for 99 days and contaminated this sweep's own brief"
+description: |
+  FM-STATUS-1 closed 639dc49a (2026-04-29); FM-DENSITY-1 closed 4c1b772e (2026-04-29) [facilitator-corrected SHA - panel cited 84c74c6d which is the follow-on PR]; both still described as currently-shipping in sidebar-zones-overview.md:92,101 and sidebar-zone-0.md:38,40; LIFECYCLE.md:128 closure step never fired; project memory repeated the stale claim and seeded this sweep's agents. Also in-class: the 2026-06-19 responsive-layout audit's fix took 47 days with 8 surfaces reinfected before viewScrollContainers.test.js was retrofitted.
+affected_files:
+  - "docs/design/surfaces/sidebar-zones-overview.md"
+  - "docs/design/surfaces/sidebar-zone-0.md"
+  - "docs/design/LIFECYCLE.md"
+recommended_fix: |
+  Correct the artifacts and the memory file now (done by the overnight session, 2026-08-07). Add a doc-vs-fix-commit reconciliation check: any FM-*/finding ID appearing in docs/design/** where git log --grep finds a closing commit but the doc still says currently-shipping fails the check.
+dedup_key: "eng-engine-design-sweep-gate5-closure-step-never-executed"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

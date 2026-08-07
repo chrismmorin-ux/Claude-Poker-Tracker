@@ -1,0 +1,103 @@
+id: "WS-429"
+title: "`edgeBB` is not rake-invariant and nothing tests that it is — the two terms use different weightings of the same rake-bearing outcome, so a rake-model change moves the headline with no engine change at all"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: "ses-20260807-0535-df53cf18"
+claimed_at: "2026-08-07T06:04:58.163Z"
+started_at: null
+completed_at: "2026-08-07T06:59:09.148Z"
+completion_commit: "3bc43abd"
+priority_score: 45.0
+priority_label: "P0"
+category: "measurement"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE MECHANISM, traced at HEAD (`18f49f22`).
+
+  `edgeBB = wisValue(scored) - poolValue(scored)` (`scripts/backtest/ipsEstimator.mjs:224-227`).
+
+    - `poolValue` is a PLAIN UNWEIGHTED MEAN of `net_d` (`:174-180`).
+    - `wisValue` is a WEIGHT-AVERAGED mean of the SAME `net_d` set, weights `w_d = piOurs/piPool`
+      (`:160-164`).
+
+  Both draw `net_d` from `resolveHandOutcome(hand, { rakeConfig })` (`heroEvRunner.mjs:238-246`) —
+  the same rake schedule, the same hand, both arms. It is therefore tempting to assume rake cancels
+  in the subtraction. IT DOES NOT, and the reason is structural rather than incidental: the two means
+  weight the same outcomes DIFFERENTLY. Rake cancels only if the weight distribution is uniform, and
+  it structurally is not — decisions where the engine strongly favours the observed action carry
+  large weight, decisions where it does not carry small or zero weight. Rake bites large pots
+  disproportionately through the `cap`, so the rake burden is not distributed evenly across the
+  weight distribution either.
+
+  `DEFAULT_RAKE_CONFIG = { pct: 0.05, cap: 3, noFlopNoDrop: true }` (`heroEvRunner.mjs:50`).
+
+  CONFIRMED ABSENT by grep across `heroEvReport.mjs` and every `*.test.mjs` under `scripts/backtest/`:
+  ZERO tests assert rake-invariance of `edgeBB` or of anything derived from it.
+
+  WHY THIS IS URGENT RATHER THAN THEORETICAL. `FAULT-modelled-rake` sits at rank 3 in the
+  suspected-fault register (P=0.90, breadth 0.80) and is still `untested`. The register's own §1
+  states live 1/2 rake is roughly TWICE the online 2009 schedule the corpus carries. So a live-rake
+  calibration ticket is not hypothetical future work — it is on the path, and when it lands it will
+  move `overallEvBB100` by an amount NOBODY HAS BOUNDED.
+
+  THE FOUNDER-FACING FAILURE, stated concretely: the founder watches the headline climb across
+  several sprints, reads it as "the engine is getting better", and changes how he plays or what he
+  prioritises. The climb was a rake recalibration. Nothing in the current instrument distinguishes
+  the two causes, and the number carries the full authority of a stamped Result Card while doing it.
+
+  THIS IS NOT A REQUEST TO REMOVE RAKE FROM THE PIPELINE. Rake belongs in the EV arithmetic
+  (`project_rake_spr_antes`, shipped deliberately). What is missing is the BOUND: how much does the
+  headline move per unit of rake-model change, and is that movement small enough that a reader can
+  attribute a trend to the engine?
+accept_criteria: |
+  - A test sweeps `rakeConfig` across a stated range (at minimum: online 2009 baseline
+    `{pct:0.05, cap:3}`, a live-1/2-like schedule at roughly double, and zero-rake) over a FIXED
+    decision set, and records how far `edgeBB` moves.
+  - The test asserts movement under an EXPLICITLY STATED tolerance. The tolerance is a declared
+    constant with a comment justifying it, not a number chosen to make the test pass. If `edgeBB`
+    moves MORE than a defensible tolerance, that is the finding — record it, do not widen the
+    tolerance to accommodate it.
+  - The measured rake sensitivity is stamped into the Result Card manifest as a named constant, so
+    every figure carries the size of its own rake exposure.
+  - If sensitivity proves large: file the follow-up to decompose it (e.g. report `edgeBB` at a
+    canonical rake schedule alongside the corpus-native one), and say so plainly rather than
+    reporting the headline as though the exposure were bounded when it is not.
+  - `FAULT-modelled-rake`'s register entry moves from `untested` toward a recorded status, with the
+    evidence this ticket produces. Per the register's own rule, confirming or retiring an entry
+    requires recorded evidence and returns every prior Result Card it contaminates.
+effort: "M"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found by the nine-agent decision-enhance pass on WS-410, 2026-08-06 (figure-cluster failure
+  engineer, hypothesis H1). The non-cancellation mechanism — different weightings of the same
+  rake-bearing outcome — was traced in code at HEAD, not inferred.
+completion_notes: |
+  Completed overnight by ses-20260807-0535-df53cf18 in worktree night/overnight-20260807 (commit 3bc43abd).
+  THE FINDING: edgeBB is NOT rake-invariant - fails RAKE_INVARIANCE_TOLERANCE_BB=0.01 by ~18x.
+  Measured on a fixed 12-decision fixture: zero-rake 5.8704, online-2009 5.6861, live-double 5.5019 =
+  -0.1842 bb per rake doubling (~-13 to -18 bb/100 on overallEvBB100). Tolerance NOT widened; measured
+  values asserted. Stamp derived single-source (RAKE_SENSITIVITY_STAMP through the real loader), verdict
+  not-rake-invariant + fixture-basis caveat encoded as data. FAULT-modelled-rake NOT hand-edited; proposed
+  evidence block staged for founder approval (untested -> partially-supported).
+  DEFERRED with owner+cost: corpus-native per-run sweep (one resolveHandOutcome call in heroEvRunner.outcomeFor
+  + liveDouble arm in report) - blocked only by WS-433 concurrent rewrite; small single-file change after it lands.
+  Also flagged: run-hero-ev.mjs:71 unchecked hand-transcribed rake config copy (now pinned indirectly).
+  14/14 new tests; 880 pass overall. MERGE NOTE: night branch; zero lines touched in the WS-433 frozen trio.

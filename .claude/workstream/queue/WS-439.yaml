@@ -1,0 +1,51 @@
+id: "WS-439"
+title: "Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the most common state (founder device-verified P0, re-filed after ticket-ID collision lost the original WS-311)"
+legacy_id: ""
+type: bug
+status: deferred
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 55.0
+priority_label: "P0"
+category: "ux"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  Founder device screenshots 2026-07-31 (docs/design/evidence/2026-07-31-tvr-device-baseline/02-table-preflop-nexthand-clipped.jpg) show the Next Hand CTA clipped off the bottom of TableView at preflop. Went through Gate 1 (RED, docs/design/audits/2026-07-31-entry-table-view-redesign.md) and Gate 2 (YELLOW, .../2026-07-31-blindspot-table-view-redesign.md) same day; geometry decision recorded 2026-08-01 in commit 6b4d04b1: un-scale the interactive bands so Next Hand becomes structurally unclippable. THEN THE TICKET WAS LOST: the original WS-311 yaml was overwritten by an unrelated ticket (ID-allocation collision), the project file .claude/projects/table-view-redesign-2026-07-31.md no longer exists, and TableView.jsx/CommandStrip.jsx have not been touched since 2026-06-19. Found lost by launch/sweep 2026-08-07 (product-ux lens). Note: src/test/viewScrollContainers.test.js EXEMPTS TableView with a rationale written for the seat felt that now also shields the command-column overflow - the exemption must be narrowed as part of this fix.
+accept_criteria: |
+  Implement the 2026-08-01 geometry decision (un-scale interactive bands; Next Hand structurally unclippable at every street/state). Narrow the viewScrollContainers.test.js TableView exemption so the command column is covered. Verify on-device (or at exact S22 viewport) with screenshots at preflop/flop/showdown. Gate 4 surface artifact update for table-view.md in the same change.
+effort: "M"
+files_involved:
+  - "src/components/views/TableView/TableView.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/test/viewScrollContainers.test.js"
+  - "docs/design/surfaces/table-view.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-launch-sweep-2026-08-07"
+created_at: "2026-08-07T12:00:00Z"
+status_note: |
+  Re-filed 2026-08-07 by launch/sweep (ses-20260807-0535-df53cf18) after discovering the original
+  2026-07-31 tickets (WS-311/315/316) were overwritten by an ID-allocation collision and the project
+  file deleted. Evidence trail: docs/design/audits/2026-07-31-*.md + docs/design/evidence/2026-07-31-tvr-device-baseline/.
+recovered_doctrine_note: |
+  UPDATE 2026-08-07 (orphan-branch recovery): the ratified design for this fix was recovered in merge
+  9de247d1 on integrate/orphans-20260807 - branch DEC-026 (per-REGION layout, founder-ratified app-wide
+  2026-08-01), docs/design/surfaces/layout-doctrine.md, and migration ticket WS-322 (subsumes orig WS-311).
+  Implement per that doctrine, not from scratch. NOTE the recovered DEC-027 priority ruling: founder queued
+  TVR behind accuracy work - reconcile priority before claiming.
+deferred_at: "2026-08-07"
+defer_reason: "Founder reconciled DEC-049 (2026-08-07): hold this P0 behind accuracy work. The carve-out argument (Gate 2 pre-commitment 11: fix the compression defect independently) was presented and the founder still chose hold. CORRECTIONS to recovered_doctrine_note: real decision IDs are DEC-048/DEC-049 (system/decisions.md:925,930), not DEC-026/027; 'migration ticket WS-322' never existed on any branch - WS-322 is the done Standard-of-Record item. Design artifacts (layout-doctrine.md, table-view-geometry.md, both 2026-07-31 audits, tvr-device-baseline evidence dir) exist ONLY on integrate/orphans-20260807 (merge 9de247d1 is NOT an ancestor of this branch) - recover them before implementing."
+resume_condition: "Accuracy work (engine->EV->education per DEC-049) lands or founder re-prioritizes WS-439/440/441"
+transitioned_by_event: "ev-1786140231760-0d39ec86284c"

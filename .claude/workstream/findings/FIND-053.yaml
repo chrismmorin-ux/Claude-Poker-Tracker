@@ -1,0 +1,53 @@
+id: "FIND-053"
+title: "The repo's only uncertainty disclosure states an interval that excludes every dominant term"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  ConfidenceDisclosure.jsx:70-72 renders "MC trials: {mcTrials} (± rough CI = 1/√trials)" — Monte
+  Carlo sampling noise ONLY, on a panel labelled "confidence". :82-88 renders
+  cascadingFoldProbability and names the method ("multiwayFoldPct, independent multiplication per
+  villain") without naming the bet fraction that produced it; that value comes from
+  drillModeEngine.js:808-815, where 0.75 is passed positionally as the betFraction argument
+  (signature at gameTreeEquity.js:1119) — the run record cites :813, but at HEAD the literal is
+  on :814.
+
+  Excluded and dominant: the bet-fraction assumption, four of six estimators never scored against
+  truth (groundTruthCoverage census 2 of 6; the gaps are computeVillainEquityVsPerceived and the
+  three approximate*RangeEquity functions that feed the aggregate), and the online-2009 population
+  transfer (fault register rank 1, breadth 0.90).
+
+  Verdict: worse-than-none. A reader with no disclosure knows he does not know; a reader with this
+  one has a narrow interval on a panel labelled "confidence" and will size decisions to it.
+affected_files:
+  - "src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx"
+  - "src/utils/postflopDrillContent/drillModeEngine.js"
+recommended_fix: |
+  NOT removal — the standing rule forbids deleting an instrument for being wrong. Widen it: re-label
+  the interval for what it bounds, name the excluded terms in the panel's own idiom, state the bet
+  fraction as a VALUE read from the call site, and surface the ground-truth coverage count live
+  rather than transcribed.
+theory_citation: "memory: feedback_never_delete_for_null_result; Standard of Record (ADR-009); DISCLAIMER-AND-FAULT-REGISTER §1"
+dedup_key: "blindspot-domain-correctness-disclosure-excludes-dominant-terms"
+created_at: "2026-08-05"
+updated_at: "2026-08-05"
+promoted_to: "WS-396"
+status_note: |
+  VOCABULARY NORMALISATION 2026-08-05. `problem_class` was "Uncertainty disclosure" —
+  not one of the nine classes prog-domain-correctness.yaml declares. Original text
+  preserved here; nothing else in the finding changed.
+
+  Mapped to "Bayesian confidence representation" — "All decision-display surfaces must
+  reflect uncertainty". ConfidenceDisclosure.jsx is a decision-display surface that
+  reflects one term (MC sampling noise, 1/sqrt(trials)) and omits every dominant one, so
+  it does not merely fail to disclose, it MIS-states the width. Same class as FIND-049
+  (badge absent/degenerate) and FIND-047 (confidence computed on a different denominator
+  than the estimate) — the three are one cluster and are easier to see as one under a
+  shared class than under three invented ones.

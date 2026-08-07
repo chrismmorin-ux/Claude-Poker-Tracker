@@ -1,0 +1,104 @@
+id: "WS-427"
+title: "Rename `edgeBBPer100` to `edgeBBPer100Decisions` — it was diagnosed as a landmine and is in fact the only correctly-denominated per-100 figure the estimator produces; the name was the whole defect"
+legacy_id: ""
+type: chore
+status: done
+claimed_by: ses-20260806-1914-a5dbb4b5
+claimed_at: "2026-08-06T20:30:00Z"
+started_at: "2026-08-06T20:30:00Z"
+completed_at: "2026-08-06T20:35:00Z"
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "measurement"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  SUPERSEDES THE ORIGINAL FRAMING OF THIS TICKET, which called for DELETION. That framing was
+  filed on 2026-08-06 from `SCORED-READOUT-SPEC.md:159-163`, which calls the field "A LANDMINE
+  ... a bare rescale with NO denominator change". **The diagnosis was wrong**, and the
+  adversarial review that overturned it is recorded below. Founder ruled `rename` on
+  2026-08-06 after seeing both readings.
+
+  WHAT THE FIELD ACTUALLY IS. `scripts/backtest/ipsEstimator.mjs` emitted:
+
+      edgeBBPer100: Number((edge * 100).toFixed(2))
+
+  `edge` is per SCORED DECISION — the estimand is `E[change in the hand's net from
+  substituting our action at ONE node]`, averaged over a decision-uniform population. So
+  `edge x 100` IS denominator-consistent: it is **bb per 100 scored decisions**, the same
+  quantity `scripts/backtest/evCost.mjs:203` already correctly names `bbPer100Decisions`.
+  The rescale changes no denominator because none needed changing.
+
+  WHAT IT IS NOT is a winrate, and the NAME is what invited that reading. `edgeBBPer100`
+  scans as bb/100 hands to anyone who has ever read a poker stat. Deleting the field would
+  have removed the only correctly-denominated per-100 number this estimator produces, on a
+  diagnosis that did not survive being checked.
+
+  THE PER-100-HANDS FIGURE IS A DIFFERENT QUANTITY WITH A DIFFERENT DENOMINATOR, and it is
+  NOT this number times anything. See `scripts/backtest/handLedger.mjs` (WS-428 Stage 0) for
+  the hands-dealt denominator and the field-winrate anchor that makes a violation visible.
+
+  WHY THE ORIGINAL DIAGNOSIS SURVIVED AS LONG AS IT DID. It sat forty lines below a docblock
+  that stated — falsely — that reading `edgeBB` as a winrate "overstates it by roughly the
+  decisions-per-hand factor". Read together, the field looked like a loaded gun. The docblock
+  sentence has now been measured and refuted (see WS-428 and the test named below), so the
+  pairing that made deletion look obvious no longer exists.
+accept_criteria: |
+  ALL COMPLETE — landed 2026-08-06.
+
+  - [x] `edgeBBPer100` renamed to `edgeBBPer100Decisions` at `ipsEstimator.mjs`, carrying an
+        inline comment stating what its denominator is and, explicitly, that the per-100-hands
+        figure is not this number times anything.
+  - [x] Zero consumers confirmed by repo-wide grep before the change: one code site (its own
+        definition). Every other hit was documentation or a queue ticket.
+  - [x] A test asserts the NAME carries the denominator — `edgeBBPer100Decisions` present,
+        `edgeBBPer100` absent, and the value equal to `edgeBB * 100`
+        (`scripts/__tests__/heroEv.test.js`, "names its denominator").
+  - [x] The false units sentence corrected at its source (`ipsEstimator.mjs` header), with the
+        measurement that refutes it and the REAL level distortion stated in its place
+        (decision-weighted vs hand-weighted, measured 3.17x, mechanism is scale not location).
+  - [x] A test pins the falsification so the claim cannot return: duplicating every decision
+        doubles decisions-per-hand and `edge` does not move
+        (`scripts/__tests__/heroEv.test.js`, "is INVARIANT to decisions-per-hand").
+  - [x] `npm test` green on the hero-EV path (110 tests across 5 suites).
+
+  STILL OPEN, TRACKED ELSEWHERE — the same false sentence propagated verbatim to three more
+  files and they are NOT corrected by this ticket:
+    - `docs/runbooks/baseline-ev-run.md:28`
+    - `docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md:66`
+    - `docs/standard-of-record/SCORED-READOUT-SPEC.md:157`
+  plus the spec's own deprecation instructions at `:159-163`, `:338`, `:1044`, `:1054`, which
+  now describe an action that was correctly NOT taken. Owned by WS-428's spawned work.
+effort: "S"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/__tests__/heroEv.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-428"]
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  ORIGINALLY FILED AS A DELETION, OVERTURNED BY ADVERSARIAL REVIEW THE SAME DAY.
+
+  The greenfield units review (2026-08-06) derived the estimand from the estimator's own
+  algebra rather than from the spec, and found `edge` is per scored decision — making
+  `edge x 100` denominator-consistent. It stated the consequence plainly: "Deprecating a
+  correct field on a wrong diagnosis removes the one honest per-100 figure that exists."
+
+  Two agents in the same run disagreed about emphasis — one still treated the field as the
+  landmine the spec describes — and the disagreement was put to the founder rather than
+  resolved silently. Founder ruled: rename.
+
+  RECORDED BECAUSE IT IS THE POINT: this ticket was authored by an AI reading a spec, and the
+  spec's claim was wrong. Two independent agents checking the code caught it before the field
+  was deleted. The original ticket text cited "TWO INDEPENDENT AGENTS" verifying zero
+  consumers — which was true, and irrelevant to whether the field should exist.

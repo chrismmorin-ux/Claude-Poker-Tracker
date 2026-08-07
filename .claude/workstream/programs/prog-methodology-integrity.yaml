@@ -153,7 +153,24 @@ protocols:
 accountability:
   on_finding:
     action: create_work_item
-    max_open_items: 3
+    # Raised 3 -> 20 on 2026-08-05. The cap was written before this program had run and
+    # was never revisited; the count reached 13 (4.33x) and the breach was doing real harm
+    # rather than signalling one.
+    #
+    # THE HARM IS MECHANICAL, and it is the same one recorded at length on
+    # prog-domain-correctness.yaml. Over cap, `priority_floor` pulls every item UP to 18,
+    # collapsing genuine scores onto one plateau so /next cannot rank within the program.
+    # The item that exposed it is WS-405 (check-raise is unpriceable by the scoring
+    # vocabulary) — a P1 the founder had specifically asked for, which could not compose
+    # because its own program was over cap. A governance limit was suppressing the work it
+    # exists to protect.
+    #
+    # The founder's ruling on the sibling program applies verbatim here: "The open-item
+    # COUNT is a measurement of correctness debt, not a governance failure... If the count
+    # passes it again, do NOT close real work to fit — raise it again."
+    #
+    # 20 is headroom, not a target.
+    max_open_items: 20
     priority_floor: 18
     escalation:
       stale_days: 14
@@ -183,24 +200,22 @@ phase_relevance:
 last_run_by_protocol:
   baseline: { date: null, engine: null, run_id: null, result: null }
   delta: { date: null, engine: null, run_id: null, result: null }
-  sweep: { date: null, engine: null, run_id: null, result: null }
+  sweep:
+    date: "2026-08-07"
+    engine: "eng-engine"
+    run_id: "run-methodology-integrity-sweep-2026-08-07"
+    run_by: "founder"
+    event_id: "ev-1786085332213-3096eb9a0c64"
   challenge: { date: null, engine: null, run_id: null, result: null }
   blind_spot: { date: null, engine: null, run_id: null, result: null }
-
 health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
-findings_open: 0
-work_items_open: 5
+findings_open: 11
+work_items_open: 14
 
 cap_breach:
-  active: true
-  work_items_open: 5
-  findings_open: 0
-  max_open_items: 3
-  priority_floor: 18
-  ratio: 1.67
-  since: "2026-08-05"
+  active: false
 evidence:
   last_audit_report: null
   protocol_history: []

@@ -19,7 +19,7 @@ findings:
     status: open
     dedup_key: "constitutional-audit-FS-3-no-detector"
     program: kit-quality
-    created_at: "2026-07-25"
+    created_at: "2026-08-07"
 
   - id: "FIND-CA-FS-6"
     title: "INFEASIBLE: FS-6 — Founder becomes CWOS operator"
@@ -28,7 +28,7 @@ findings:
     status: open
     dedup_key: "constitutional-audit-FS-6-infeasible"
     program: kit-quality
-    created_at: "2026-07-25"
+    created_at: "2026-08-07"
 
   - id: "FIND-014"
     title: "gameTreeContext.styleFallback shifts equity ANCHORS by villain style"
@@ -120,6 +120,24 @@ findings:
     program: data-quality
     created_at: "2026-06-19"
 
+  - id: "FIND-031"
+    title: "ICM pressure absent on non-all-in tournament streets (preflop opens/3-bets, postflop bets)"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "blindspot-domain-correctness-icm-absent-non-allin-tournament-streets"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
+  - id: "FIND-032"
+    title: "Showdown sizing-tell calibration stubbed; timing tells absent (and time-to-act not captured)"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "blindspot-domain-correctness-sizing-and-timing-tells-missing"
+    program: domain-correctness
+    created_at: "2026-06-20"
+
   - id: "FIND-033"
     title: "Verify sample-size confidence reaches live-advice UI; range-advantage-driven sizing in live path"
     engine: eng-engine
@@ -178,8 +196,656 @@ findings:
     title: "Live-session stake labels are free-text — naive segmentKey normalization fragments identical stakes into separate pools"
     engine: domain-audit
     severity: medium
-    status: open
+    status: resolved
     dedup_key: "challenge-domain-correctness-segmentkey-freetext-label-fragmentation"
     program: domain-correctness
     created_at: "2026-07-22"
+
+  - id: "FIND-040"
+    title: "preflopFoldResolver tier 1 keeps the hard confidence gate WS-285 removed everywhere else — and returns early, discarding the villain's observed fold counts"
+    engine: preflight
+    severity: high
+    status: open
+    dedup_key: "delta-domain-correctness-preflopfoldresolver-tier1-hard-confidence-gate"
+    program: domain-correctness
+    created_at: "2026-07-30"
+
+  - id: "FIND-041"
+    title: "The sizing-tell adjustment has two entry cliffs with divergent constants in two modules, and both multiply a finished estimate"
+    engine: preflight
+    severity: medium
+    status: open
+    dedup_key: "delta-domain-correctness-sizing-tell-divergent-cliffs-two-modules"
+    program: domain-correctness
+    created_at: "2026-07-30"
+
+  - id: "FIND-042"
+    title: "The bucket-keyed narrowing machinery AP-RL-01 forbids survives as test-only dead exports after WS-291, under a header naming a consumer that does not consume it"
+    engine: preflight
+    severity: low
+    status: open
+    dedup_key: "delta-domain-correctness-postflopnarrower-dead-bucket-multiplier-exports"
+    program: domain-correctness
+    created_at: "2026-07-30"
+
+  - id: "FIND-043"
+    title: "The live table's decision rule is three literals, and both branches violate stated doctrine"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "blindspot-domain-correctness-live-rule-three-literals"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-044"
+    title: "The engine is not unconnected — it is fully wired to the venue the founder does not play"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "blindspot-domain-correctness-engine-wired-to-wrong-venue"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-045"
+    title: "tightenRatesForContinuation discards the villain-model fold rate for a defaulted 0.45, and on the depth-3 line applies it twice"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-tightenrates-defaulted-foldrate-applied-twice"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-046"
+    title: "The domain-correctness program's own scope patterns and detection recipes name paths that do not exist, so a literal execution reads clean forever"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-methodology-integrity-program-scope-patterns-match-zero-files"
+    program: methodology-integrity
+    created_at: "2026-08-05"
+
+  - id: "FIND-047"
+    title: "One bucket, two denominators — the estimate decays and its confidence does not, and the decay unit is array position rather than time"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-dual-denominators-and-arraypos-decay"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-048"
+    title: "The one per-villain estimate the live path consumes is the one data structurally cannot inform — the learned range channel is a single scalar per (position, action)"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-range-channel-scalar-scaled-prior-inert"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-049"
+    title: "The confidence badge is ABSENT on live and DEGENERATE on Ignition"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-confidence-badge-absent-and-degenerate"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-050"
+    title: "Two detectors fire on noise, with the null rates computed"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-detectors-fire-on-noise"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-051"
+    title: "Refinement depth is wall-clock gated and decides the top action — the scored run is not reproducible"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-wallclock-refinement-gating-nonreproducible"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-052"
+    title: "thoughtCatalog ships 85 unscored weights to a surface the founder reads, and its own falsifier is unwired"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "blindspot-domain-correctness-thoughtcatalog-unscored-weights-unwired-falsifier"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-053"
+    title: "The repo's only uncertainty disclosure states an interval that excludes every dominant term"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "blindspot-domain-correctness-disclosure-excludes-dominant-terms"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-054"
+    title: "useActionAdvisor.js contradicts itself about which surface it serves, and a shipped fix rests on the false half"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "blindspot-domain-correctness-useactionadvisor-self-contradiction"
+    program: domain-correctness
+    created_at: "2026-08-05"
+
+  - id: "FIND-055"
+    title: "Decision Atom store is an unregistered data source — content-addressed re-derivation input for Result Cards with no SRC- entry"
+    engine: preflight
+    severity: medium
+    status: open
+    dedup_key: "preflight-data-provenance-atom-store-unregistered"
+    program: data-provenance
+    created_at: "2026-08-07"
+
+  - id: "FIND-056"
+    title: "SRC-015 evidence list is stale — range-calibration-history.yaml and the hole-map artifact family are unlisted members of an already-registered class"
+    engine: preflight
+    severity: low
+    status: open
+    dedup_key: "preflight-data-provenance-src015-stale-evidence-list"
+    program: data-provenance
+    created_at: "2026-08-07"
+
+  - id: "FIND-057"
+    title: "Voice Reasoning Notes are a new founder-evidence class with no registry mention — flag before grading work consumes them unregistered"
+    engine: preflight
+    severity: low
+    status: open
+    dedup_key: "preflight-data-provenance-vrn-unregistered"
+    program: data-provenance
+    created_at: "2026-08-07"
+
+  - id: "FIND-058"
+    title: "Every design protocol clock except baseline is null - 108 days, ~26 missed cycles across 5 protocols"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "eng-engine-design-sweep-design-protocol-cadence-never-executed"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-059"
+    title: "CATALOG marks 4 shipped+routed views not-yet-implemented, points 2 rows at dead paths, omits 8+ surface files and 6 routed screens"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-surface-catalog-misrepresents-shipped-state"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-060"
+    title: "The program's declared detection methods return zero matches - it cannot execute its own sweep as specified"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-detector-strings-do-not-match-artifact-schemas"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-061"
+    title: "Fixed defects still documented as shipping - FM-STATUS-1/FM-DENSITY-1 closed in April; docs and project memory said live for 99 days and contaminated this sweep's own brief"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-gate5-closure-step-never-executed"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-062"
+    title: "97 percent of UX commits carry no surface/audit/spec reference, and the bypass log is not where LIFECYCLE.md says it is"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-gate5-commit-tagging-and-bypass-log-unobservable"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-063"
+    title: "19 audits at Status: Draft for 97-108 days past a 60-day SLA; the program record disagrees with the artifact; the critical tier trigger crosses ~2026-08-18 unwatched"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-audit-findings-sla-structurally-unscannable"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-064"
+    title: "27 of 40 personas share one review date and cross the 180-day threshold the same day (~2026-10-18); review stamps disagree with edit history in both directions"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "eng-engine-design-sweep-persona-roster-cohort-cliff-and-stamp-integrity"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-065"
+    title: "No design doctrine covers the described person reading their own ethnic/physical description off the screen at the table - the Gate 2 rubric returns a false GREEN"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-display-scoped-privacy-doctrine-absent"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-066"
+    title: "Gate 4 verifies a surface artifact exists, not that it specifies anything - 24 of 53 artifacts have zero loading/error/stale spec and none carries a perf contract"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "eng-engine-design-sweep-gate4-checks-existence-not-content"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-067"
+    title: "The most consequence-bearing surface (mid-hand advice) is unaudited since 04-21 while a live non-determinism defect emerged that the design vocabulary cannot express"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "eng-engine-design-sweep-mid-hand-advice-surface-unaudited-coverage-bias"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-068"
+    title: "Four discoveries ever, all from day one - the pipeline was silently abandoned; audits log JTBD gaps as table rows that never become discoveries; ATLAS.md is stale"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "eng-engine-design-sweep-discovery-and-jtbd-pipeline-abandoned"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-069"
+    title: "TableView.jsx is 748 lines against a 700-line hard split obligation; its own artifact says 598; no work item, no bypass, unnoticed for 108 days"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "eng-engine-design-sweep-design-constraints-unmonitored-arch003"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-070"
+    title: "predictionAudit write path shipped 08-05 with zero consumers - a recurrence of shipped-but-inert on the same feature the memory file uses as its cautionary example"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "eng-engine-design-sweep-prediction-audit-shipped-inert-recurrence"
+    program: design
+    created_at: "2026-08-07"
+
+  - id: "FIND-071"
+    title: "advMult multiplies a structural composition estimate by a measurement of the same composition - WS-365 shape newly ACTIVATED by in-window changes"
+    engine: preflight
+    severity: medium
+    status: open
+    dedup_key: "preflight-domain-delta-advmult-double-count-activated"
+    program: domain-correctness
+    created_at: "2026-08-07"
+
+  - id: "FIND-072"
+    title: "bluffValueConstruction.js shipped in-window with three defects: all-in equity for value test, shipped-but-inert, raw observed pct with hard clamp instead of shrinkage"
+    engine: preflight
+    severity: medium
+    status: open
+    dedup_key: "preflight-domain-delta-bluffvalueconstruction-cluster"
+    program: domain-correctness
+    created_at: "2026-08-07"
+
+  - id: "FIND-073"
+    title: "Doc-delta drift cluster: POKER_THEORY 11.4 still describes the deleted linearised slope construction; findOptimalBetSize JSDoc contradicts shipped POPULATION_CURVE; 7 LOW doc-vs-code inconsistencies"
+    engine: preflight
+    severity: medium
+    status: open
+    dedup_key: "preflight-domain-delta-doc-drift-cluster-2026-08-07"
+    program: domain-correctness
+    created_at: "2026-08-07"
+
+  - id: "FIND-074"
+    title: "Depth-1 advice is nondeterministic in the app: Step-8 MC refinement passes no rng, and the seeded seam already exists on the backtest path unwired"
+    engine: eng-engine
+    severity: high
+    status: resolved
+    dedup_key: "methodology-unseeded-mc-inside-depth1-fast-result"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-075"
+    title: "Refinement completeness (weightConsumed) is measured, persisted nowhere automated analysis reads, and absent from the report that produced DEC-036 evidence"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "methodology-completeness-not-conditioned-on-in-depth-studies"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-076"
+    title: "onFastResult has zero production callers: the WS-334 two-phase fast-then-refined design is shipped-but-inert"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "methodology-onfastresult-zero-production-callers"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-077"
+    title: "Four confidence vocabularies with no reconciliation doc and no methodology-version stamp on stored outputs; validator thresholds changed in a bare comment"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "methodology-four-confidence-vocabularies-no-version-stamp"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-078"
+    title: "A frequentist Wilson interval ships as the canonical accumulator tool against this program own written anti-invariant"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "methodology-wilsonci-violates-frequentist-anti-invariant"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-079"
+    title: "getBaseChart silently returns an all-zero grid for an unrecognized position - WS-302 unfalsifiable-prior family via an unvalidated argument"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "methodology-getbasechart-silent-zero-grid-unfalsifiable-prior"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-080"
+    title: "PRIOR_SUPPORT_LAMBDA and tau were argmax-selected on the EVAL partition with no CALIB/HELDOUT split, in the file that mandates one for a sibling parameter"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "methodology-lambda-tau-selected-on-eval-no-heldout"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-081"
+    title: "Load-bearing fold-equity constants have no derivation; divergent pseudocounts three lines apart (OBS_PRIOR_WEIGHT=15 vs PRIOR_WEIGHT=10)"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "methodology-foldequity-underived-constants-divergent-pseudocounts"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-082"
+    title: "Two live claims have no executable falsifier: bootstrapMeanCI (untested coverage) and HIERARCHY_ORDER (human-run script as enforcement)"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "methodology-instruments-without-executable-falsifiers"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-083"
+    title: "Capture-integrity cluster: no event.origin check on either postMessage bridge; no cross-writer captureId dedup; captureId degrades to Date.now() on reconnect/partial captures"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "capture-integrity-origin-dedup-captureid"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-084"
+    title: "The live-table surface strips the conditioning the doctrine requires; the manual what-if path discards treeMetadata entirely; EV precision exceeds documented noise"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "methodology-live-surface-drops-conditioning-and-overprecise-ev"
+    program: methodology-integrity
+    created_at: "2026-08-07"
+
+  - id: "FIND-085"
+    title: "Every Result Card on disk (16/16) stamps engineDirty:true and nothing refuses one"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sor-engine-dirty-ungated"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-086"
+    title: "check-sor-additive.sh is dead code while its IDB sibling is wired at smart-test-runner.sh:16"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sor-additive-gate-unwired"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-087"
+    title: "A run whose Result Card fails validation still writes output and prints its numbers; holeMap publishes ranked bb/hour claims with no card at all"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sor-softfail-publish-without-valid-card"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-088"
+    title: "Registered census/comparisonCensus sub-schemas are never invoked by resultCardProblems - working validators exist two modules away"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-subschema-registered-not-invoked"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-089"
+    title: "Manifest constants are hand-copied and shadow line-pointers have drifted - the drift-detection mechanism itself drifted"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-manifest-hand-transcribed"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-090"
+    title: "KL_FLOOR is documented as manifest-stamped and is absent from REQUIRED_CONSTANTS - WS-322 shadow-constant class recurring"
+    engine: eng-engine
+    severity: low
+    status: resolved
+    dedup_key: "sor-kl-floor-unstamped"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-091"
+    title: "The Deal Book has no resolve-or-fail path - dealBookHash is decorative; the atom store has the exact mechanism"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-dealbook-no-resolver"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-092"
+    title: "Default Deal Book identity path+size cannot detect content edits, and its own justification rests on a false premise"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-dealbook-pathsize-false-premise"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-093"
+    title: "The card corpus is ungoverned as a set: two directories, two naming conventions, contradictory same-instrument cards with no supersession marker"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-card-corpus-ungoverned"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-094"
+    title: "disclaimerRegisterVersion is checked for shape, never for currency - a committed card is two register-changes stale and nothing flags it"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-register-version-currency-unchecked"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-095"
+    title: "Card identity binds by name where ADR-009 requires a hash, and no stamped seed set has ever been re-run"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sor-identity-by-name-no-seed-recheck"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-096"
+    title: "The contamination mechanism is inert end-to-end: confirmFault has zero production callers, no persistence, no founder surface - and its two highest-ranked faults are structurally unfalsifiable"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sor-fault-register-inert-no-founder-path"
+    program: strategy-of-record
+    created_at: "2026-08-07"
+
+  - id: "FIND-097"
+    title: "Deploy path never runs tests - CI is a parallel workflow with no dependency edge to it"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "launch-deploy-not-gated-on-ci"
+    program: launch
+    created_at: "2026-08-07"
+
+  - id: "FIND-098"
+    title: "The live production build is a commit whose own CI failed on an exploit-engine EV assertion"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "launch-live-build-carries-failing-ev-assertion"
+    program: launch
+    created_at: "2026-08-07"
+
+  - id: "FIND-099"
+    title: "main frozen 5 days at a red commit - 82 commits including founder fixes unmerged, zero open PRs"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "launch-main-frozen-red-82-commits-unmerged"
+    program: launch
+    created_at: "2026-08-07"
+
+  - id: "FIND-100"
+    title: "Account deletion purges nothing locally - and no user-invocable purge path exists anywhere in the product"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "security-account-deletion-no-local-purge"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-101"
+    title: "Backup captures 3 stores at a v12 schema against a v28 database - restore reports complete success while silently missing most data"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "security-backup-covers-three-of-twentyfive-stores"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-102"
+    title: "Guest data auto-merges headlessly into any account that signs in - no ownership check, on the app most sensitive data class"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "security-guest-automerge-no-ownership-check"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-103"
+    title: "clearAllData is non-atomic and is the first phase of every restore"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "security-cleardata-not-atomic-precedes-restore"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-104"
+    title: "Quota exhaustion is console-only mid-session; older cursor migrations untested; v18/v19 seeds swallowed inside the upgrade transaction"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "security-idb-durability-quota-and-untested-migrations"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-105"
+    title: "No CSP header on any route; extension ships a localhost host permission and a store identity that does not describe its function"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "security-no-csp-and-extension-manifest-hygiene"
+    program: security
+    created_at: "2026-08-07"
+
+  - id: "FIND-106"
+    title: "The launch gate is unenforceable in code and its fed_by names non-existent programs - supersedes FIND-LA-001"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "launch-gate-has-no-code-reader"
+    program: launch
+    created_at: "2026-08-07"
+
+  - id: "FIND-107"
+    title: "Protocol stamping and health scoring are decoupled - six stamps tonight moved five programs health not at all"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "engineering-stamp-write-does-not-recompute-health"
+    program: engineering
+    created_at: "2026-08-07"
+
+  - id: "FIND-108"
+    title: "The 10 sessionRecoveryLiveness test failures are deterministic kit regressions mislabeled as environmental"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "engineering-session-recovery-liveness-regressions-mislabeled"
+    program: engineering
+    created_at: "2026-08-07"
+
+  - id: "FIND-109"
+    title: "Target device identity is unresolved across three names and zero mobile latency measurements exist"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "engineering-target-device-unresolved-zero-mobile-measurement"
+    program: engineering
+    created_at: "2026-08-07"
+
+  - id: "FIND-110"
+    title: "No bundle-size instrument (750KB chunk warning unrecorded) and three recorded-state-vs-reality drifts"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "engineering-no-bundle-instrument-and-state-drift"
+    program: engineering
+    created_at: "2026-08-07"
+
+  - id: "FIND-111"
+    title: "Villain bet ranges may have no bluff arm - narrowByBoard finding recovered from orphaned branch, NEEDS RE-VERIFICATION against HEAD soft-narrowing"
+    engine: domain-audit
+    severity: high
+    status: open
+    dedup_key: "recovered-pp89cw-narrowbyboard-no-bluff-arm"
+    program: domain-correctness
+    created_at: "2026-08-07"
 

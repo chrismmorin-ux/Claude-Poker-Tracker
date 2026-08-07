@@ -1,0 +1,125 @@
+id: "WS-431"
+title: "Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS-410 was written, reproducing the exact WS-291 mechanism WS-410 exists to close, and extending the Decision Atom without reconciling it would make four"
+legacy_id: ""
+type: refactor
+status: backlog
+claimed_by: ses-20260807-2144-fcb6029f
+claimed_at: "2026-08-07T22:08:50.627Z"
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 50.0
+priority_label: "P0"
+category: "architecture"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  THE FINDING, reached independently by THREE of nine agents in the 2026-08-06 decision-enhance pass,
+  from three different starting points. That convergence is why it is stated as fact rather than
+  hypothesis.
+
+  Commit `af8b9815` (2026-08-05 23:34) — landed ~18 hours AFTER WS-410's premises were verified at
+  `fe716f59` — created `scripts/backtest/decisionRecord.mjs`. It is a JSONL streaming sidecar
+  carrying almost exactly what WS-410 Stage 1 proposes to add to the Decision Atom: unclipped
+  per-arm weights (`wRawByArm`, `:457-470`), the full ranked candidate list with per-action EVs
+  (`compactCandidate`, `:113-136`), showdown-conditioned truth with its selection caveat
+  (`compactHeroTruth`, `:187-202`), and refinement-stage forensics (`compactLatency`, `:148-162`).
+  Its own docblock restates Amendment 2 nearly verbatim. It is wired opt-in via `--decisions-out`
+  (`run-hero-ev.mjs:236-253`).
+
+  IT IS NOT THE DECISION ATOM, and every property that makes the Atom trustworthy is absent:
+    - Own schema version (`DECISION_RECORD_SCHEMA_VERSION`, `:56`), NOT registered in `SOR_SCHEMAS`.
+    - Therefore NOT covered by `scripts/check-sor-additive.sh` — confirmed by reading
+      `scripts/standardOfRecord/check-additive.mjs:26-30`, which imports only `SOR_SCHEMAS` and
+      `MANIFEST_SCHEMA`. **Its docblock nonetheless CLAIMS "the same additive contract
+      `check-additive.mjs` holds".** That claim is false. This is the second instance in this
+      subsystem of a file claiming CI protection that was never wired (the first: `metrics`, see
+      WS-434).
+    - No `atomsSelfCheck` reader enforcement, so its fields can be added without a registered reader
+      — the exact discipline `schemas.js:131-134` established.
+    - Referenced by raw filesystem PATH, not content hash — violating `atomStore.mjs:15-17`'s own
+      stated rule ("referenced by hash, never by path, so relocating the store cannot invalidate a
+      card"). Note this collides directly with WS-430's store relocation.
+    - `run.decisionRecordPath` / `decisionRecordRows` (`run-hero-ev.mjs:281-282`) NEVER REACH
+      `buildResultCard` (`heroEvReport.mjs:202-233`). It is a persistence location no Result Card
+      points at.
+    - Cost: **10-15 KB per decision per arm** (`decisionRecord.mjs:26-29`) — 5-10x the Decision
+      Atom's measured 844 bytes. At 400k decisions that is 4-6 GB for ONE arm, which WS-410's D2
+      storage decision does not account for at all.
+
+  SO THE STATE AT HEAD IS THREE SHAPES FOR ONE DECISION: the ephemeral in-memory row (rich,
+  discarded), the Decision Atom (durable, thin, one producer), and this sidecar (rich, durable,
+  ungoverned, unread). WS-410's own diagnosis — "two shapes for the same object, neither forced onto
+  the other's axis" — is the WS-291 mechanism, and it recurred WHILE THE TICKET DIAGNOSING IT WAS
+  BEING WRITTEN, by the same author, under the same doctrine, without noticing the doctrine already
+  had a home for it.
+
+  Building Decision Atom v3 without resolving this ships a FOURTH shape.
+
+  ALSO CORRECTED HERE, because WS-410 asserts the opposite and an implementer would trust it:
+  `heroEvRunner` DOES now read and store `situationKey` (`:409`) and `opponentSeat` (`:406`), added
+  by WS-393. WS-410's §4.3/§7 claims that these are absent are FALSE at HEAD. Less remains to build
+  than the ticket prices; the row is at `:394-447`, not `:263-301`.
+accept_criteria: |
+  Plan-first. The decision below is architectural and should be made deliberately, not discovered
+  mid-implementation.
+
+  - RESOLVE TO ONE PRODUCER. Two paths, and the standing rule against deleting an instrument makes
+    (a) the compliant default:
+      (a) `decisionRecord.mjs` becomes the single write path and ALSO populates the Atom store — one
+          producer, two consumers, one schema registered in `SOR_SCHEMAS`.
+      (b) The sidecar is retired in favour of the Atom, and its callers (`run-hero-ev.mjs`,
+          `run-depth-ablation.mjs`) repointed. Only choose this if every field it carries survives
+          into the Atom; retiring it while dropping fields is deleting an instrument.
+  - Whichever path: the surviving schema IS registered in `SOR_SCHEMAS`, so
+    `scripts/check-sor-additive.sh` genuinely covers it. The false claim in the current docblock is
+    removed or made true — it must not survive this ticket in either form.
+  - The record is referenced BY CONTENT HASH, not by path, per `atomStore.mjs:15-17`. Its hash and
+    row count reach `buildResultCard` so a Result Card points at the record it was computed from.
+  - Every field carries the FUTURE QUESTION it answers, per the v2 convention at
+    `schemas.js:131-134`, and a REGISTERED READER, enforced by `atomsSelfCheck.mjs`'s existing
+    schema-diff mechanism.
+  - SHIP THE DISCRIMINATORS BEFORE ANY PRODUCER WRITES. Atom sets are IMMUTABLE once finalized
+    (`atomStore.mjs:104-113` throws on reopening) — the SCHEMA is additive-reversible but the DATA
+    is not. A field that is null must be distinguishable between "not captured" and "captured as
+    empty"; `truth.basis` (`schemas.js:141-142`) exists for exactly this reason and is the pattern
+    to follow. Get this wrong and it is not fixed, it is re-run — at multi-day cost (WS-433).
+  - ASSERT THE INVERSION (carried from WS-410 Stage 1, and it is the criterion that decides whether
+    this stage is done): a test shows `estimateEdge`'s headline number is REDERIVABLE from the
+    persisted record alone, to a stated tolerance. If the aggregate cannot be recomputed from the
+    record, the record is not yet the product.
+effort: "M"
+files_involved:
+  - "scripts/backtest/decisionRecord.mjs"
+  - "scripts/backtest/atomStore.mjs"
+  - "scripts/backtest/atomsSelfCheck.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "scripts/standardOfRecord/check-additive.mjs"
+  - "scripts/standardOfRecord/schema-baseline.json"
+blocked_by: []
+blocked_by_legacy: []
+enables: ["WS-410"]
+sprint_id: null
+decision_flags:
+  - |
+    ONE PRODUCER WITH TWO CONSUMERS, OR RETIRE THE SIDECAR. Path (a) keeps every field
+    `decisionRecord.mjs` already captures and adds governance to it — compliant with the standing
+    rule against deleting an instrument, but leaves the heavier 10-15 KB/decision shape in the
+    system and therefore in the storage budget. Path (b) is a smaller final system but risks
+    dropping fields on the way, which is the thing the standing rule forbids. RECOMMENDATION: (a),
+    with the packed encoding from WS-430 applied so the size difference stops mattering. The founder
+    should rule because it decides what the durable record physically is for every future run.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-decision-enhance-ws410-2026-08-06"
+created_at: "2026-08-06T19:30:00Z"
+status_note: |
+  Found independently by three of nine agents in the 2026-08-06 decision-enhance pass on WS-410
+  (record-shape architect, figure-cluster architect, figure-cluster failure engineer), each arriving
+  from a different file. Verified at HEAD `18f49f22`.

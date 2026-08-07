@@ -1,0 +1,25 @@
+id: "FIND-096"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Instrumentation rot"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "The contamination mechanism is inert end-to-end: confirmFault has zero production callers, no persistence, no founder surface - and its two highest-ranked faults are structurally unfalsifiable"
+description: |
+  confirmFault/flagContaminated (faultRegister.js:1408,1450) fully built and fixture-tested, zero non-test callers (verified); no component renders any Result Card; ConfidenceDisclosure.jsx:13-23 closed CAVEAT_LABELS enum has no population-mismatch member and mounts only in drills; LiveAdviceBar carries zero population caveats. Rank-1 FAULT-population-mismatch (0.855) and rank-2 FAULT-temporal-staleness (0.765) have falsifierBlockers naming unreachable infrastructure (faultRegister.js:745-756,1074-1109) - the two faults most relevant to the founder live game can never produce suspect-pending-review. WS-291 shape inside WS-291 fix. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/utils/standardOfRecord/faultRegister.js"
+  - "src/components/views/PostflopDrillsView/panels/ConfidenceDisclosure.jsx"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+recommended_fix: |
+  Wire one production caller against the real card set; persist its output; connect register entries to caveat chips so a new entry reaches the UI; route the founder-facing surface through the design program (Gate 1/2). Build the live-capture falsifier path or declare the two entries permanently blocked in the register itself.
+dedup_key: "sor-fault-register-inert-no-founder-path"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

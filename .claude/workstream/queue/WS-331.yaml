@@ -2,7 +2,7 @@ id: "WS-331"
 title: "The pier posts — Pool Best Response as the computable ceiling of exploitation, held out to stop it fitting noise, and the two-post coordinate system every strategy is positioned in"
 legacy_id: ""
 type: improvement
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -121,3 +121,4 @@ status_note: |
   (least-squares fitting, max-EV best response, equilibrium) and established that the best
   response is computable TODAY from the already-mined behaviour policy, provided it is held
   out — which is the difference between a trusted anchor and an inflated fantasy.
+closed_by_event: "ev-1785821994292-2d111496d500"

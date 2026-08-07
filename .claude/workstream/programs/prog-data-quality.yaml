@@ -164,18 +164,16 @@ health_score: 0
 health_ceiling: 0
 health_ceiling_reason: "No analysis performed yet. Run /pulse run <id> baseline to establish first score."
 findings_open: 1
-work_items_open: 5
+work_items_open: 7
 
 cap_breach:
-  active: false
-  work_items_open: 4
-  findings_open: 3
+  active: true
+  work_items_open: 7
+  findings_open: 1
   max_open_items: 5
   priority_floor: 18
-  ratio: 0.8
-  resolved: "2026-06-20"
-  resolution: "cap recalibrated 3→5 (all 4 items legitimate; cap was too tight)"
-
+  ratio: 1.4
+  since: "2026-08-05"
 evidence:
   last_audit_report: null
   protocol_history: []

@@ -1,0 +1,62 @@
+id: "FIND-051"
+title: "Refinement depth is wall-clock gated and decides the top action — the scored run is not reproducible"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "blind_spot"
+  run_id: "run-domain-correctness-blindspot-2026-08-05"
+  date: "2026-08-05"
+description: |
+  gameTreeEvaluator.js:814 `refinementBudgetMs = 2000`, :822 `const startTime = Date.now()`, and
+  the bailout at :907 `|| Date.now() - refinementStart > timeBudgetMs` gate whether depth-2 and
+  depth-3 run at all; the docstring at :803-808 states this explicitly. Identical inputs therefore
+  produce different top actions depending on how loaded the machine was.
+
+  MEASURED, NOT INFERRED. foldEstimateComposition.test.js:228-237 with the docblock at :65-77 —
+  NUTTED_UNCAPPED, hero 33 on QJT — returns RAISE at a 60000ms budget and NOT-RAISE at the shipped
+  2000ms. WS-379 recorded desktop and phone disagreeing on identical inputs. WS-378 found that 80%
+  of top-action flips are depth-1 to depth-2 and 38 of 40 move toward passivity, so the direction
+  of the error is systematic rather than symmetric noise: a loaded machine gives systematically
+  more passive advice.
+
+  REFINEMENT IS NOT ASSERTED MONOTONE, AND NOTHING TELLS THE FOUNDER WHICH DEPTH HE GOT. There is
+  no invariant that deeper is better, and no field on the result that reports the depth actually
+  reached. `onFastResult` (:815, default null) — the mechanism that would let a caller receive the
+  depth-1 answer and then the refined one — is invoked internally at :1392-1400 but is supplied by
+  no production caller.
+
+  WHY IT IS TOP-TIER UNDER THE 2026-08-05 REDIRECT. The deliverable is an OPTIMIZABLE scored EV
+  figure. A stably-WRONG figure still yields honest per-improvement deltas; a figure that changes
+  when re-run yields nothing at all, because an improvement cannot be distinguished from machine
+  load. REPRODUCIBILITY OUTRANKS ACCURACY for this deliverable, and this defect attacks the
+  deliverable directly rather than any single number inside it.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/__tests__/foldEstimateComposition.test.js"
+recommended_fix: |
+  Replace the wall-clock gate with a DETERMINISTIC work budget — node/rollout/combo counts — so
+  depth is a function of the input rather than of the clock, and stamp the depth actually reached
+  onto the result and into the Result Card manifest, so any figure can state which depth produced
+  it. Keep a wall-clock ceiling only as a safety valve that RECORDS when it fires. Then test
+  monotonicity explicitly: assert that depth-2 does not worsen the scored figure relative to
+  depth-1, on a fixed Deal Book. Until the run is reproducible, no per-improvement EV delta from
+  this engine can be quoted comparatively under the Standard of Record.
+theory_citation: "Standard of Record (ADR-009) — a comparative claim needs a complete replication manifest; memory: feedback_advice_depth_tracks_machine_load"
+dedup_key: "blindspot-domain-correctness-wallclock-refinement-gating-nonreproducible"
+created_at: "2026-08-05"
+updated_at: "2026-08-07"
+promoted_to: "WS-389"
+update_note: |
+  UPDATED 2026-08-07 by domain-correctness/delta: the wall-clock mechanism WIDENED in-window - four NEW
+  Date.now() mid-loop bailouts (computeCallDepth2EV ~:690, computeBetCallDepth2EV, computeRaiseResponseDepth2EV,
+  depth-3 flop-path river loop) plus claimStageBudget()/isTimeBudgetExceeded() now gate five stages on a 2000ms
+  clock where the old 150ms clock was dead. Genuine mitigations shipped alongside (stratum guard, bailedAt/
+  weightConsumed visibility, seeded RNG) - mechanism widened but instrumented. refinementBudgetMs=0 remains the
+  only deterministic configuration. Cross-ref WS-432 (claimed, SPR-177). ALSO: methodology sweep found the Step-8
+  MC refinement call (gameTreeEvaluator.js:1119) passes NO rng - unseeded Math.random noise inside the DEPTH-1
+  answer itself, concentrated on close calls via the dominantMargin gate - a nondeterminism source WS-432s
+  enumeration missed. Relay to the WS-432 implementer.

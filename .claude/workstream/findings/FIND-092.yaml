@@ -1,0 +1,23 @@
+id: "FIND-092"
+engine: "eng-engine"
+run_id: "run-sor-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "strategy-of-record"
+program: "strategy-of-record"
+problem_class: "Unreplicable measurement"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-sor-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Default Deal Book identity path+size cannot detect content edits, and its own justification rests on a false premise"
+description: |
+  dealBook.mjs:16-19 default identity path+size detects add/remove/replace/truncate but NOT byte-length-preserving edits; its justification (adequate for a read-only git checkout, which SRC-012 is) is false - SRC-012 is an untracked external directory. --hash-members exists, opt-in, unenforced. Full run evidence: .claude/workstream/evidence/run-sor-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/backtest/dealBook.mjs"
+recommended_fix: |
+  Default to member hashing; keep path+size as explicit opt-in for genuinely immutable sources; correct the docblock.
+dedup_key: "sor-dealbook-pathsize-false-premise"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

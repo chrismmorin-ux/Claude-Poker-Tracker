@@ -193,3 +193,12 @@ status_note: |
   `villainObservations.js:58` (`foldTo3BetMin: 60`) and `:328` (the gate);
   `preflopFoldResolver.js:27-34` (the correct-consumer header);
   `docs/research/mass-pool-data-2026-07-25.md:20` (49.9% / 38.8% / 11.0%, n=1.83M).
+staleness_update: |
+  2026-08-07 (methodology sweep, facilitator-verified at HEAD): THE CODE FIX HAS LANDED.
+  villainObservations.js:80 (foldTo3BetMin removed), weaknessDetector.js:478-490 (rule renamed
+  pf-overfolds-vs-preflop-raise, bar from FIELD_FOLD_VS_PREFLOP_RAISE), n back-computation removed
+  (villainObservations.js:400-403), preflopFoldQuantities.js exists. This ticket's premises cite
+  line numbers that no longer exist. RESIDUAL ONLY: tendencyCalculations.js:342-343 still computes
+  a field NAMED foldTo3Bet on the facedRaisePreflop denominator; handhqReferencePool mirrors it in
+  14 rows; no extractor computes true fold-vs-3-bet (corpus value exists at handhqReferencePool.js:99-106,
+  49.9 percent vs misnamed 82.3). Reprice from P0 to the rename+extractor residual; dedupe with WS-254.

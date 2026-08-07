@@ -1,0 +1,25 @@
+id: "FIND-062"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Gate 4 Design surface artifact missing"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "97 percent of UX commits carry no surface/audit/spec reference, and the bypass log is not where LIFECYCLE.md says it is"
+description: |
+  1 of 35 UX-touching commits in 60 days tagged (invariant prog-design.yaml:107); LIFECYCLE.md:134-145 names .claude/programs/design.md as the bypass log - zero bypass entries there, while table-view.md's changelog claims 'Gate 2 skipped (logged)'; the delta protocol's declared method (:141) has no data to read even when it runs.
+affected_files:
+  - "docs/design/LIFECYCLE.md"
+  - ".claude/programs/design.md"
+  - "docs/design/surfaces/table-view.md"
+recommended_fix: |
+  Add a commit-msg hook requiring a surface:/audit:/spec: trailer or an explicit bypass:<reason> trailer for commits touching scope.file_patterns; have the hook append bypasses to one canonical log so the log is generated, not maintained. 97 percent non-compliance is an unenforced invariant, not indiscipline.
+dedup_key: "eng-engine-design-sweep-gate5-commit-tagging-and-bypass-log-unobservable"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

@@ -1,0 +1,26 @@
+id: "FIND-110"
+engine: "eng-engine"
+run_id: "run-launch-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "engineering"
+program: "engineering"
+problem_class: "launch-readiness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-launch-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "No bundle-size instrument (750KB chunk warning unrecorded) and three recorded-state-vs-reality drifts"
+description: |
+  Deploy build emits index-*.js 747.82KB / 229.87KB gzip warning; manualChunks carves only firebase + exploitEngine; state.md Build row reads clean. Same drift class: state.md engineering row (watch|ACTIVE|2026-05-10) vs prog-engineering.yaml (NEW, never run); CLAUDE.md/state.md IndexedDB v13 vs DB_VERSION=28. Code-splitting itself is fine (21/23 views lazy).
+  Full run evidence + verified verdicts + gate spec: .claude/workstream/evidence/run-launch-sweep-2026-08-07.md
+affected_files:
+  - "vite.config.js"
+  - "system/state.md"
+  - "CLAUDE.md"
+recommended_fix: |
+  Add a size budget that fails the build (or record the number deliberately); correct the three drift entries in one pass.
+dedup_key: "engineering-no-bundle-instrument-and-state-drift"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

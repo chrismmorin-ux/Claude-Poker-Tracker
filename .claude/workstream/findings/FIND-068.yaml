@@ -1,0 +1,25 @@
+id: "FIND-068"
+engine: "eng-engine"
+run_id: "run-004"
+severity: MEDIUM
+status: open
+category: "design"
+program: "design"
+problem_class: "Discovery LOG aging"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "Four discoveries ever, all from day one - the pipeline was silently abandoned; audits log JTBD gaps as table rows that never become discoveries; ATLAS.md is stale"
+description: |
+  4 discoveries total, all 2026-04-21, one reopen 05-11, ~75 audits since; METHODOLOGY Step 4 mandates discovery capture; 2026-08-05-entry-hole-map.md:144 logs 'G1 - No JTBD for pool-level exploit pricing' as a bare row; LOG.md says CAPTURED:4 but push-fold-widget has been BUILT since 06-19; ATLAS.md changelog ends 05-20, DS-68 (added 06-15 via WS-230) missing, SR-NEW-VRN-01/02/03 unratified in an audit file. Related: WS-414 covers one downstream instance.
+affected_files:
+  - "docs/design/discoveries/LOG.md"
+  - "docs/design/jtbd/ATLAS.md"
+  - "docs/design/METHODOLOGY.md"
+recommended_fix: |
+  Run one reconciliation pass promoting orphan gap-rows to discovery files; then generate LOG.md and ATLAS.md from the files they index rather than hand-maintaining them. If bare table rows are the better capture mechanism, sanction them in METHODOLOGY and make the generator read them - the current state (mandated path dead, used path unindexed) is the worst of both.
+dedup_key: "eng-engine-design-sweep-discovery-and-jtbd-pipeline-abandoned"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

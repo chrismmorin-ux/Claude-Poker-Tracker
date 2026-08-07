@@ -1,0 +1,25 @@
+id: "FIND-075"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: HIGH
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Methodology Drift"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Refinement completeness (weightConsumed) is measured, persisted nowhere automated analysis reads, and absent from the report that produced DEC-036 evidence"
+description: |
+  Producers: gameTreeEvaluator.js:1045-1057 + six gameTreeDepth2 sites. Zero consumers in src/ (verified). decisionRecord.mjs:157 carries ranStages but drops weightConsumed; depthAblationReport.mjs (DEC-036/WS-334 evidence source) has zero references. Only dumpGameTreeEV.mjs:219 persists it (read by hand in WS-403/408/409). Depth-1-vs-depth-2 comparisons not conditioned on completeness may partly measure depth-2 that mostly did not run. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "scripts/backtest/decisionRecord.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+recommended_fix: |
+  Add per-stage weightConsumed to the decision record shape (fold into WS-431 reconciliation); make depthAblationReport stratify by it; treat depth-2 below a stated coverage floor as a distinct condition. Caveat note belongs on WS-361/WS-410.
+dedup_key: "methodology-completeness-not-conditioned-on-in-depth-studies"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

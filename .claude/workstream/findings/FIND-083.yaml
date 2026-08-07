@@ -1,0 +1,26 @@
+id: "FIND-083"
+engine: "eng-engine"
+run_id: "run-methodology-sweep-2026-08-07"
+severity: MEDIUM
+status: open
+category: "methodology-integrity"
+program: "methodology-integrity"
+problem_class: "Data Integrity"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-methodology-sweep-2026-08-07"
+  date: "2026-08-07"
+title: "Capture-integrity cluster: no event.origin check on either postMessage bridge; no cross-writer captureId dedup; captureId degrades to Date.now() on reconnect/partial captures"
+description: |
+  useSyncBridge.js:238 + app-bridge.js:149 gate on event.source only (threat: same-document script, not open internet); handsStorage.js saveHand/saveImportedHand have zero captureId dedup and saveOnlineHand dedup is sessionId-scoped; storage-writer.js:173-177 captureId falls back to Date.now() when handNumber missing - mints fresh IDs on exactly the journal-replay/reconnect deliveries most likely to be duplicates. Silent duplicates inflate k/n permanently; showdown anchors take non-decaying weight 1.0 (bayesianUpdater.js:335-386). ROUTE: origin check to security; dedup/captureId to engineering. userId isolation NOT verified this sweep - unresolved, not clean. Full run evidence: .claude/workstream/evidence/run-methodology-sweep-2026-08-07.md (facilitator-verified at HEAD 18f49f22).
+affected_files:
+  - "src/hooks/useSyncBridge.js"
+  - "ignition-poker-tracker/content/app-bridge.js"
+  - "src/utils/persistence/handsStorage.js"
+  - "ignition-poker-tracker/shared/storage-writer.js"
+recommended_fix: |
+  One-line origin check on each listener; a captureId unique index spanning all three hand writers; deterministic content-hash fallback ID (src/utils/contentHash.js exists) instead of Date.now(). Verify userId threading separately.
+dedup_key: "capture-integrity-origin-dedup-captureid"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

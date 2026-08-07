@@ -1,0 +1,24 @@
+id: "FIND-073"
+engine: "preflight"
+run_id: "run-delta-domain-correctness-2026-08-07"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Exploit engine correctness"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-delta-domain-correctness-2026-08-07"
+  date: "2026-08-07"
+title: "Doc-delta drift cluster: POKER_THEORY 11.4 still describes the deleted linearised slope construction; findOptimalBetSize JSDoc contradicts shipped POPULATION_CURVE; 7 LOW doc-vs-code inconsistencies"
+description: |
+  POKER_THEORY.md 11.4 at HEAD still describes the linearised d(potOdds)/df = 1/(1+2f)^2 slope that preflopFoldResolver.js ~:139-185 replaced with the exact change of variables - the comment-asserting-what-values-contradict family the doctrine itself names. foldEquityCalculator.js:250-261 findOptimalBetSize JSDoc claims midpoint 0.75 calibrated-for-half-pot, contradicting shipped POPULATION_CURVE (0.35/0.95) - one surviving instance of the defect 11.1a records as fixed. Plus 7 LOWs: 11.1a premise contradicted by 11.1b; 3.4.3 semi-bluff sizing wrong-seat attribution; dead symbol supportTau (actual supportTauFraction, populationPriors.js:365); 11.9 inverse-conditional juxtaposition; changelog discipline breach post-2.3; module count 47 vs 50; two measured-sounding claims with ticket-only provenance (12.6 street multipliers; WS-365 +0.087). Found by domain-correctness/delta 2026-08-07.
+affected_files:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  One doc-repair pass: rewrite 11.4 to the change-of-variables construction; fix the findOptimalBetSize JSDoc; sweep the 7 LOWs. Cheap, concentrated, all doc-side.
+dedup_key: "preflight-domain-delta-doc-drift-cluster-2026-08-07"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

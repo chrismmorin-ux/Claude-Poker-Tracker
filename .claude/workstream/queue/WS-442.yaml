@@ -1,0 +1,66 @@
+id: "WS-442"
+title: "Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 42.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Two cloud branches survived the 2026-08-07 orphan-integration pass because their engine conflicts need
+  domain judgment, not mechanical resolution (integration evidence: round-1 agent report; branch
+  integrate/orphans-20260807 holds the other 6 merges):
+  1. origin/claude/run-next-w3ojfs - WS-307 fix restructuring foldEquityCalculator into
+     rangeConditionedFoldPct + log-odds level/deviation anchoring, PLUS POKER_THEORY 7.4a (a population
+     rate sets a level, never replaces conditioning) - the doc section tonight theory audit flagged as
+     missing. HEAD rewrote the same path since (WS-403 continueProbability, WS-276 villainDecisionEquity).
+  2. origin/claude/poker-multiway-flop-strategy-1514n2 - the LATER WS-307/WS-313 line (its 0c25ec20
+     explicitly corrects branch 1 framing: the fold model is clairvoyant). Conflicts in 5 engine files.
+     git cherry confirms the two branches are non-equivalent parallel attempts. Also carries non-engine
+     content to cherry-pick: StudyHomeView v1, field-size scaling lesson, drill tab-label fix,
+     docs/research/multiway-flop-strategy-2026-07-31.md - none exist at HEAD.
+  Treat branch 2 as the more evolved WS-307 line; reconcile against HEAD WS-276/WS-403 state.
+accept_criteria: |
+  - Session reads POKER_THEORY.md + exploitEngine/CLAUDE.md first (guardrail).
+  - Each branch either merged (tests at baseline) or explicitly superseded with per-commit evidence.
+  - POKER_THEORY 7.4a lands WITH its code, not before it.
+  - Non-engine cherry-picks from branch 2 landed regardless of the engine verdict.
+  - Branches deleted from origin only after their content is reachable from the integration line.
+effort: "L"
+files_involved:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "orphan-integration-2026-08-07"
+created_at: "2026-08-07T18:00:00Z"
+status_note: |
+  Filed by the commit-queue cleanup session ses-20260807-0535-df53cf18 so the two unmergeable branches
+  are tracked work rather than future orphans.
+scope_update: |
+  2026-08-07 round-2 addition: origin/claude/run-next-t4w44x also needs the domain merge - it carries a
+  COMPETING WS-292 holdingKnowledge implementation (pokerCore/holdingKnowledge.js holdingKnowledgeAt API vs
+  HEAD src/utils/holdingKnowledge/ openHolding/holdingBelief API, routed through 8 engine files) PLUS novel
+  still-wanted WS-314 (check-raise needs a read) and WS-315 (blocker quality as ranking score) fixes - both
+  items still backlog at HEAD with no reimplementation. Salvage target: re-express the WS-314/315 EV logic
+  (gameTreeEquity.js side is conflict-free) against HEAD holdingKnowledge API. Conflicting files listed in
+  the round-2 integration report.

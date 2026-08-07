@@ -1,0 +1,24 @@
+id: "FIND-059"
+engine: "eng-engine"
+run_id: "run-004"
+severity: HIGH
+status: open
+category: "design"
+program: "design"
+problem_class: "Surface CATALOG drift"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-004"
+  date: "2026-08-07"
+title: "CATALOG marks 4 shipped+routed views not-yet-implemented, points 2 rows at dead paths, omits 8+ surface files and 6 routed screens"
+description: |
+  anchor-library (0a32bd7b, viewRegistry.jsx:98), printable-refresher (79234c51, :97), self-coach-view (48e0bc45, :100), player-profile (198e56d2, :101) all shipped Apr-May, CATALOG says not implemented (92-102d stale); player-picker/editor rows point at paths retired 2026-05-06 (uiConstants.js:26-29); SCREEN.PLAYER_FINDER has no row; 8 surface files unindexed incl. table-build and voice-reasoning-notes (shipped 08-01 - the Gate-4 index step was dropped THIS WEEK); LOGIN/SIGNUP/PASSWORD_RESET/LESSON_DETAIL/EXTENSION/VOICE_TIMELINE_SANDBOX uncataloged. The program cites CATALOG diffing as its own detection method (prog-design.yaml:66,79-81) - the detector input is corrupt. Related: WS-419 (narrower - link, do not merge).
+affected_files:
+  - "docs/design/surfaces/CATALOG.md"
+  - "src/constants/viewRegistry.jsx"
+recommended_fix: |
+  Reconcile CATALOG against viewRegistry in one pass, then add a vitest asserting the bijection: every route has a row, every row path resolves, every surfaces/*.md has a row - the same centralization discipline viewRegistry.jsx:9-17 records fixing this class in code.
+dedup_key: "eng-engine-design-sweep-surface-catalog-misrepresents-shipped-state"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"

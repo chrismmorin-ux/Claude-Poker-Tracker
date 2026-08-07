@@ -1,0 +1,23 @@
+id: "FIND-072"
+engine: "preflight"
+run_id: "run-delta-domain-correctness-2026-08-07"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Exploit engine correctness"
+source:
+  engine: "preflight"
+  protocol: "delta"
+  run_id: "run-delta-domain-correctness-2026-08-07"
+  date: "2026-08-07"
+title: "bluffValueConstruction.js shipped in-window with three defects: all-in equity for value test, shipped-but-inert, raw observed pct with hard clamp instead of shrinkage"
+description: |
+  New module scripts landed in-window: (V3) countValueAndBluffCombos (bluffValueConstruction.js:101-117) accepts only equityVsCallingRange - no realized/total quantity exists in the module, so a strong draw >= threshold counts as VALUE, inflating licensedBluffCombos - the exact defect WS-312 fixed in actionClassifier.js IN THIS SAME WINDOW; (V4) constructBluffValue/bluffDeviationMultiplier have no caller at HEAD outside tests - shipped-but-inert, the recorded failure family; (V5) :82-87 raw observedFoldPct with hard clamp [0.25,2.5] standing in for n/(n+PRIOR_WEIGHT) shrinkage; signature carries no n.
+affected_files:
+  - "src/utils/exploitEngine/bluffValueConstruction.js"
+recommended_fix: |
+  Fix the value test to use realized equity per WS-312 pattern; wire one production caller in the same change with a divergence test (repo rule for inert capability); replace the clamp with proper shrinkage carrying n. All three before any consumer trusts it.
+dedup_key: "preflight-domain-delta-bluffvalueconstruction-cluster"
+created_at: "2026-08-07"
+updated_at: "2026-08-07"
