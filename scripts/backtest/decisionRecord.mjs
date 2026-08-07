@@ -43,8 +43,9 @@
  * construction rather than by test.
  */
 
-import { openSync, writeSync, closeSync, mkdirSync } from 'node:fs';
+import { openSync, writeSync, closeSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { createHash } from 'node:crypto';
 import { RANKS, SUITS } from '../../src/constants/gameConstants.js';
 import { cardRank, cardSuit } from '../../src/utils/pokerCore/cardParser.js';
 
@@ -52,8 +53,27 @@ import { cardRank, cardSuit } from '../../src/utils/pokerCore/cardParser.js';
  * Bumped when a field is ADDED. Never when one is removed — fields are not removed. A
  * reader of a v1 file must keep working against a v3 writer, the same additive contract
  * `scripts/standardOfRecord/check-additive.mjs` holds over the Result Card schemas.
+ *
+ * v2 (WS-431): the meta line carries the estimator constants without which the headline
+ * is not rederivable from this file alone (`estimator.weightCap` / `bootstrapSeed` /
+ * `bootstrapResamples` / `bootstrapAlpha`), and `close()` appends a `kind: 'summary'`
+ * line carrying `rowCount` + `contentHash` over the canonicalized decision rows.
  */
-export const DECISION_RECORD_SCHEMA_VERSION = 1;
+export const DECISION_RECORD_SCHEMA_VERSION = 2;
+
+/**
+ * The canonical row order — `stable(p, k, d)`, the same comparator `heroEvRunner.foldAll`
+ * uses. Rows hit disk in ARRIVAL order (completion order under the worker pool), which is
+ * deliberate: sorting at write time would require either buffering (an interrupted run
+ * loses its tail) or a close-time rewrite (violates every-line-readable-before-close).
+ * Readers canonicalize by sorting on `stable`; the content hash is computed over the
+ * canonicalized bytes, so it is run-invariant across serial/pool and fresh/resumed runs.
+ */
+export const canonicalRowCompare = (a, b) => (
+  ((a?.stable?.p ?? -1) - (b?.stable?.p ?? -1))
+  || ((a?.stable?.k ?? -1) - (b?.stable?.k ?? -1))
+  || ((a?.stable?.d ?? -1) - (b?.stable?.d ?? -1))
+);
 
 /** `A♠` from the 0-51 encoding. RANKS is A..2 descending, so index by `12 - rank`. */
 export const cardLabel = (encoded) => {
@@ -234,6 +254,44 @@ export const openDecisionSink = (path, meta = {}) => {
     path,
     write(record) { line({ kind: 'decision', ...record }); written++; },
     get count() { return written; },
-    close() { try { closeSync(fd); } catch { /* the lines already on disk are what matter */ } },
+    /**
+     * v2: canonicalize + hash before closing, then append a `kind: 'summary'` line.
+     *
+     * The hash preimage is the decision LINES (original bytes, not re-serialized), sorted
+     * by `stable(p, k, d)`, prefixed by the schema version. The meta line is excluded —
+     * it carries `writtenAt`, which would break run-invariance; run identity lives in the
+     * meta fields themselves and on the replication manifest.
+     *
+     * Returns `{ rowCount, contentHash }` — the by-hash reference a Result Card carries
+     * (never the path; atomStore.mjs:15-17 doctrine). On a hashing failure the rows on
+     * disk are untouched and the return carries `contentHash: null` with `error`, so a
+     * caller can distinguish "no sink ran" from "sink ran, reference unavailable".
+     */
+    close() {
+      let summary;
+      try {
+        const rows = [];
+        for (const ln of readFileSync(path, 'utf8').split('\n')) {
+          if (!ln) continue;
+          let obj;
+          try { obj = JSON.parse(ln); } catch { continue; }
+          if (obj.kind === 'decision') rows.push({ ln, stable: obj.stable });
+        }
+        rows.sort(canonicalRowCompare);
+        const h = createHash('sha256');
+        h.update(`decision-record-v${DECISION_RECORD_SCHEMA_VERSION}\n`);
+        for (const r of rows) { h.update(r.ln); h.update('\n'); }
+        summary = {
+          rowCount: rows.length,
+          contentHash: `sha256:${h.digest('hex')}`,
+          canonicalOrder: 'stable(p,k,d)',
+        };
+        line({ kind: 'summary', schemaVersion: DECISION_RECORD_SCHEMA_VERSION, ...summary });
+      } catch (err) {
+        summary = { rowCount: written, contentHash: null, error: err?.message || String(err) };
+      }
+      try { closeSync(fd); } catch { /* the lines already on disk are what matter */ }
+      return summary;
+    },
   };
 };

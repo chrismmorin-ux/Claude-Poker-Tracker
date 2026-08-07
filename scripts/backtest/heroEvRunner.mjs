@@ -51,6 +51,7 @@ import {
 import { buildEnumeration } from './heroEvEnumeration.mjs';
 import { scoreHeroEvPlayer, newTaskCounters, mergeTaskCounters } from './heroEvTask.mjs';
 import { buildChunkStamp, writeChunk, loadChunk } from './mergeHeroEvChunks.mjs';
+import { DECISION_RECORD_SCHEMA_VERSION } from './decisionRecord.mjs';
 import { REFINEMENT_CLOCK_VERSION } from '../../src/utils/exploitEngine/refinementWork.js';
 
 export const PLAYER_KEY_SCHEME = 'site-pseudo-v1';
@@ -343,6 +344,10 @@ export const runHeroEv = async ({
     // WS-432: the engine's own clock version, imported from its definition site so the
     // stamp cannot drift from the engine. Old 'wall' chunks are auto-refused by MUST_MATCH.
     refinementClock: REFINEMENT_CLOCK_VERSION,
+    // WS-431 (defect B): chunks written with capture ON carry full records; a capture-on
+    // resume over capture-off chunks (or vice versa) is a different artifact and refuses,
+    // so refused waves re-run and the record file is complete by construction.
+    decisionRecord: captureRecord ? DECISION_RECORD_SCHEMA_VERSION : null,
     config: {
       poolPct,
       minTrainHands,
@@ -381,25 +386,44 @@ export const runHeroEv = async ({
       from, to, ofTotal: enumeration.qualifyingCount, stamp: chunkStamp,
     });
     if (!hit) return false;
-    for (const f of hit.fragments) takeFragment(f);
+    // WS-431 (defect B): a seeded wave never re-executes, so its full records must be
+    // REPLAYED into the sidecar from the chunk — otherwise a resumed run's record file
+    // silently omits every resumed wave while the report aggregates all of them. The
+    // stamp's `decisionRecord` MUST_MATCH field guarantees a capture-on run only ever
+    // seeds from capture-on chunks, so `f.records` is present whenever it is needed.
+    const sortedFrags = [...hit.fragments].sort((a, b) => a.playerIndex - b.playerIndex);
+    for (const f of sortedFrags) {
+      if (captureRecord && Array.isArray(f.records)) {
+        for (const r of f.records) {
+          try { onDecisionRecord(r); } catch { /* a sidecar write never kills the run */ }
+        }
+      }
+      delete f.records; // replayed (or capture off) — do not retain a wave of ~15KB rows
+      takeFragment(f);
+    }
     failures.push(...hit.failures);
     if (hit.engineDirty) resumedEngineDirty = true;
     resumedWaves++;
-    log(`resumed wave [${from}, ${to}) from chunk — ${hit.fragments.length} players`);
+    log(`resumed wave [${from}, ${to}) from chunk — ${sortedFrags.length} players`);
     return true;
   };
 
   const persistWave = (wave, waveFragments, waveFailures) => {
-    if (!chunkDir) return;
-    const { from, to } = waveBounds(wave);
-    writeChunk(chunkDir, {
-      from,
-      to,
-      ofTotal: enumeration.qualifyingCount,
-      stamp: chunkStamp,
-      fragments: [...waveFragments].sort((a, b) => a.playerIndex - b.playerIndex),
-      failures: waveFailures,
-    });
+    if (chunkDir) {
+      const { from, to } = waveBounds(wave);
+      writeChunk(chunkDir, {
+        from,
+        to,
+        ofTotal: enumeration.qualifyingCount,
+        stamp: chunkStamp,
+        fragments: [...waveFragments].sort((a, b) => a.playerIndex - b.playerIndex),
+        failures: waveFailures,
+      });
+    }
+    // Records are now durable in the chunk (or capture is off / unchunked and they were
+    // already streamed to the sink). Strip them from retained fragments so a long run
+    // holds at most one wave of full records in memory.
+    for (const f of waveFragments) delete f.records;
   };
 
   if (workers === 0) {

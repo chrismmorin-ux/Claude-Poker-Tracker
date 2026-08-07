@@ -22,6 +22,7 @@ const stampInput = () => ({
   seedScheme: 'ws433-v1',
   equitySeed: 42,
   refinementClock: 'wall',
+  decisionRecord: null,
   config: { poolPct: 50, waveSize: 4 },
   behaviorPolicy: { partition: 'pool-train', poolPct: 50, observations: 100, players: 10 },
 });
@@ -63,6 +64,9 @@ describe('buildChunkStamp / stampMismatches', () => {
       seedScheme: { ...stampInput(), seedScheme: 'other' },
       equitySeed: { ...stampInput(), equitySeed: 43 },
       refinementClock: { ...stampInput(), refinementClock: 'logical-v1' },
+      // WS-431 defect B: a capture-on run must never seed from capture-off chunks (their
+      // waves carry no records to replay) — and vice versa.
+      decisionRecord: { ...stampInput(), decisionRecord: 2 },
       config: { ...stampInput(), config: { poolPct: 50, waveSize: 8 } },
       behaviorPolicy: { ...stampInput(), behaviorPolicy: { partition: 'pool-train', poolPct: 50, observations: 999, players: 10 } },
     };
@@ -86,6 +90,25 @@ describe('writeChunk / loadChunk', () => {
     expect(hit.fragments).toEqual(frags);
     expect(hit.failures).toEqual([]);
     expect(hit.engineDirty).toBe(false);
+  });
+
+  test('round-trips full decision records on fragments — what a resume replays into the sidecar (WS-431 defect B)', () => {
+    // A seeded wave never re-executes, so the ONLY source of its sidecar rows is the
+    // chunk. If records did not survive the chunk round-trip byte-exact, a resumed run's
+    // record file would silently omit every resumed wave while the report aggregates them.
+    const stamp = buildChunkStamp({ ...stampInput(), decisionRecord: 2 });
+    const rec = (p, d) => ({
+      schemaVersion: 2, playerId: `p${p}`, stable: { p, k: 0, d }, netBB: 1.5, wRawByArm: { default: 0.7 },
+    });
+    const frags = [
+      { ...fragment(0), records: [rec(0, 0), rec(0, 1)] },
+      { ...fragment(1), records: [rec(1, 0)] },
+    ];
+    writeChunk(DIR, { from: 0, to: 2, ofTotal: 10, stamp, fragments: frags, failures: [] });
+
+    const hit = loadChunk(DIR, { from: 0, to: 2, ofTotal: 10, stamp });
+    expect(hit.fragments[0].records).toEqual(frags[0].records);
+    expect(hit.fragments[1].records).toEqual(frags[1].records);
   });
 
   test('missing chunk ⇒ null (not an error)', () => {

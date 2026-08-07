@@ -141,21 +141,52 @@ describe('compactHeroTruth — the selection is stored, not assumed', () => {
 describe('openDecisionSink — a killed run keeps every line it wrote', () => {
   const sinkPath = () => join(mkdtempSync(join(tmpdir(), 'decrec-')), 'decisions.jsonl');
 
-  it('writes a self-describing meta line first, then one line per decision', () => {
+  it('writes a self-describing meta line first, then one line per decision, then a summary', () => {
     const p = sinkPath();
     const sink = openDecisionSink(p, { run: 'hero-ev', dealBookId: 'db-1' });
     sink.write({ playerId: 'a', netBB: 1 });
     sink.write({ playerId: 'b', netBB: -2 });
-    sink.close();
+    const ref = sink.close();
 
     const lines = readFileSync(p, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
-    expect(lines).toHaveLength(3);
+    expect(lines).toHaveLength(4);
     expect(lines[0].kind).toBe('meta');
     expect(lines[0].schemaVersion).toBe(DECISION_RECORD_SCHEMA_VERSION);
     expect(lines[0].dealBookId).toBe('db-1');
     expect(lines[1]).toMatchObject({ kind: 'decision', playerId: 'a' });
     expect(lines[2]).toMatchObject({ kind: 'decision', playerId: 'b' });
+    // v2 (WS-431): close appends a summary carrying the by-hash reference the Result
+    // Card uses — never the path.
+    expect(lines[3]).toMatchObject({ kind: 'summary', rowCount: 2 });
+    expect(lines[3].contentHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(ref).toMatchObject({ rowCount: 2, contentHash: lines[3].contentHash });
     expect(sink.count).toBe(2);
+  });
+
+  it('closes with an identical contentHash when the same rows arrive in a different order', () => {
+    // Defect A (WS-431): under the worker pool, rows hit disk in COMPLETION order. The
+    // hash is over canonicalized rows — sorted by stable(p,k,d) — so worker timing
+    // cannot reach the reference a Result Card carries.
+    const rows = [
+      { playerId: 'a', stable: { p: 0, k: 0, d: 0 }, netBB: 1 },
+      { playerId: 'a', stable: { p: 0, k: 0, d: 1 }, netBB: -2 },
+      { playerId: 'b', stable: { p: 1, k: 0, d: 0 }, netBB: 9 },
+    ];
+    const meta = { run: 'hero-ev', dealBookId: 'db-1' };
+
+    const p1 = sinkPath();
+    const s1 = openDecisionSink(p1, meta);
+    for (const r of rows) s1.write(r);
+    const ref1 = s1.close();
+
+    const p2 = sinkPath();
+    const s2 = openDecisionSink(p2, meta);
+    for (const r of [rows[2], rows[0], rows[1]]) s2.write(r);
+    const ref2 = s2.close();
+
+    expect(ref1.contentHash).toMatch(/^sha256:/);
+    expect(ref2.contentHash).toBe(ref1.contentHash);
+    expect(ref2.rowCount).toBe(ref1.rowCount);
   });
 
   it('states that a truncated file is a biased subsample of PLAYERS', () => {

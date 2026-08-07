@@ -86,7 +86,9 @@ const main = async () => {
       await loader.load('/scripts/backtest/depthAblationReport.mjs');
     const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
     const { buildStampInput, HERO_EV_UNSEEDED_SOURCES } = await loader.load('/scripts/backtest/replicationStamp.mjs');
-    const { DEFAULT_BOOTSTRAP_SEED } = await loader.load('/scripts/backtest/ipsEstimator.mjs');
+    const {
+      DEFAULT_BOOTSTRAP_SEED, DEFAULT_WEIGHT_CAP, DEFAULT_BOOTSTRAP_RESAMPLES, DEFAULT_BOOTSTRAP_ALPHA,
+    } = await loader.load('/scripts/backtest/ipsEstimator.mjs');
 
     const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     let files = await discoverCorpusFiles({
@@ -206,7 +208,7 @@ const main = async () => {
 
     // WS-393 — the decision-level sidecar. See decisionRecord.mjs for why a run that costs
     // hours must leave behind a record whose shape admits questions nobody asked yet.
-    const { openDecisionSink } = await loader.load('/scripts/backtest/decisionRecord.mjs');
+    const { openDecisionSink, DECISION_RECORD_SCHEMA_VERSION } = await loader.load('/scripts/backtest/decisionRecord.mjs');
     const sink = typeof args['decisions-out'] === 'string'
       ? openDecisionSink(args['decisions-out'], {
         run: 'depth-ablation',
@@ -216,6 +218,13 @@ const main = async () => {
         engineDirty: replicationStamp.engineDirty ?? null,
         arms: [{ id: 'depth1', refinementBudgetMs: 0 }, { id: 'depth2', refinementBudgetMs: refinementMs }],
         constants: replicationStamp.constants,
+        // WS-431 (v2): estimator parameters, imported — see run-hero-ev.mjs.
+        estimator: {
+          weightCap: DEFAULT_WEIGHT_CAP,
+          bootstrapSeed: DEFAULT_BOOTSTRAP_SEED,
+          bootstrapResamples: DEFAULT_BOOTSTRAP_RESAMPLES,
+          bootstrapAlpha: DEFAULT_BOOTSTRAP_ALPHA,
+        },
       })
       : null;
     if (sink) console.log(`Decision-level record streaming to ${sink.path}`);
@@ -254,10 +263,22 @@ const main = async () => {
     });
     run.runtimeMs = Date.now() - started;
     if (sink) {
-      sink.close();
-      console.log(`Decision-level record: ${sink.count} row(s) in ${sink.path}`);
+      const recordRef = sink.close();
+      console.log(
+        `Decision-level record: ${recordRef?.rowCount ?? sink.count} row(s) in ${sink.path}`
+        + (recordRef?.contentHash ? ` (${recordRef.contentHash.slice(0, 19)}…)` : ''),
+      );
+      if (recordRef?.error) {
+        console.log(`  WARNING: record summary/hash failed (${recordRef.error}) — rows on disk are intact, but the card cannot reference this record by hash.`);
+      }
       run.decisionRecordPath = sink.path;
-      run.decisionRecordRows = sink.count;
+      run.decisionRecordRows = recordRef?.rowCount ?? sink.count;
+      run.decisionRecord = {
+        contentHash: recordRef?.contentHash ?? null,
+        rowCount: recordRef?.rowCount ?? sink.count,
+        schemaVersion: DECISION_RECORD_SCHEMA_VERSION,
+        ...(recordRef?.error ? { error: recordRef.error } : {}),
+      };
     }
 
     const report = buildDepthAblationReport(run, reportOpts);

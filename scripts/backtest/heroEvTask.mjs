@@ -112,6 +112,10 @@ export const scoreHeroEvPlayer = async ({
   guard.assertEvalPlayer(playerId);
 
   const decisions = [];
+  // WS-431: full decision records retained per fragment so waves persist them in chunks
+  // (resume replays them). `persistWave` strips this after the chunk write, so a long run
+  // holds at most one wave of full records in memory.
+  const records = [];
   const counters = newTaskCounters();
   const ledger = newHandLedger();
 
@@ -320,42 +324,54 @@ export const scoreHeroEvPlayer = async ({
         },
       });
 
-      // WS-393 — the full record, emitted once, never retained.
-      if (captureRecord && onDecisionRecord) {
+      // WS-393 — the full record, emitted as it completes; WS-431 — ALSO retained on the
+      // fragment (`records`), so `persistWave` can put it in the chunk and a `--resume`
+      // can replay it into the sink. Without that, chunk-seeded waves never re-execute
+      // and their records were silently absent from a resumed run's sidecar (defect B).
+      if (captureRecord) {
         const row = decisions[decisions.length - 1];
-        try {
-          onDecisionRecord({
-            schemaVersion: DECISION_RECORD_SCHEMA_VERSION,
-            ...row,
-            pPoolObserved: pool.actions?.[ctx.action] ?? null,
-            pOursObservedByArm: Object.fromEntries(
-              arms.map((a) => [a.id, byArm[a.id].actions?.[ctx.action] ?? null]),
-            ),
-            wRawByArm: Object.fromEntries(arms.map((a) => {
-              const po = byArm[a.id].actions?.[ctx.action];
-              const pp = pool.actions?.[ctx.action];
-              return [a.id, (Number.isFinite(po) && Number.isFinite(pp) && pp > 0) ? po / pp : null];
-            })),
-            heroTruth: compactHeroTruth(
-              ctx.holding ? holdingTruth(ctx.holding, { board: ctx.board }) : null,
-            ),
-            evStatsByArm: Object.fromEntries(
-              arms.map((a) => [a.id, byArm[a.id].evStats ?? null]),
-            ),
-            combosByArm: Object.fromEntries(
-              arms.map((a) => [a.id, byArm[a.id].comboDetail ?? null]),
-            ),
-            policyDiagByArm: Object.fromEntries(arms.map((a) => [a.id, {
-              samples: byArm[a.id].samples ?? null,
-              engineErrors: byArm[a.id].engineErrors ?? null,
-              outOfSet: byArm[a.id].outOfSet ?? null,
-            }])),
-            pbrSkipReason: pbr.ok ? null : (pbr.reason ?? null),
-          });
-        } catch (err) {
-          // A sidecar write must never be able to kill a multi-hour scoring pass.
-          counters.decisionRecordErrors += 1;
-          counters.decisionRecordLastError = err?.message || String(err);
+        const record = {
+          schemaVersion: DECISION_RECORD_SCHEMA_VERSION,
+          ...row,
+          pPoolObserved: pool.actions?.[ctx.action] ?? null,
+          pOursObservedByArm: Object.fromEntries(
+            arms.map((a) => [a.id, byArm[a.id].actions?.[ctx.action] ?? null]),
+          ),
+          // pi_ours, pi_pool, w and R are kept SEPARATE and never pre-multiplied — a
+          // pre-aggregated number is a question foreclosed (decisionRecord.mjs header).
+          // `wRawByArm` is deliberately UNCAPPED: the weight cap is a property of the
+          // ESTIMATOR, applied at read time (`weightFor`, ipsEstimator.mjs), never a
+          // property of the record.
+          wRawByArm: Object.fromEntries(arms.map((a) => {
+            const po = byArm[a.id].actions?.[ctx.action];
+            const pp = pool.actions?.[ctx.action];
+            return [a.id, (Number.isFinite(po) && Number.isFinite(pp) && pp > 0) ? po / pp : null];
+          })),
+          heroTruth: compactHeroTruth(
+            ctx.holding ? holdingTruth(ctx.holding, { board: ctx.board }) : null,
+          ),
+          evStatsByArm: Object.fromEntries(
+            arms.map((a) => [a.id, byArm[a.id].evStats ?? null]),
+          ),
+          combosByArm: Object.fromEntries(
+            arms.map((a) => [a.id, byArm[a.id].comboDetail ?? null]),
+          ),
+          policyDiagByArm: Object.fromEntries(arms.map((a) => [a.id, {
+            samples: byArm[a.id].samples ?? null,
+            engineErrors: byArm[a.id].engineErrors ?? null,
+            outOfSet: byArm[a.id].outOfSet ?? null,
+          }])),
+          pbrSkipReason: pbr.ok ? null : (pbr.reason ?? null),
+        };
+        records.push(record);
+        if (onDecisionRecord) {
+          try {
+            onDecisionRecord(record);
+          } catch (err) {
+            // A sidecar write must never be able to kill a multi-hour scoring pass.
+            counters.decisionRecordErrors += 1;
+            counters.decisionRecordLastError = err?.message || String(err);
+          }
         }
       }
 
@@ -369,6 +385,7 @@ export const scoreHeroEvPlayer = async ({
     playerKey,
     playerId,
     decisions,
+    ...(captureRecord ? { records } : {}),
     counters,
     ledger,
     coverageByArm,

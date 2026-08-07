@@ -136,6 +136,15 @@ export const weightFor = (d, { weightCap = DEFAULT_WEIGHT_CAP } = {}) => {
  */
 export const DEFAULT_BOOTSTRAP_SEED = 0x9e3779b9;
 
+/**
+ * Bootstrap resample count and CI alpha, named and exported for the same reason as the
+ * seed (WS-431): the decision-record sink meta must record what the estimator ACTUALLY
+ * uses, imported from here — never transcribed. Without these on the meta line, the
+ * headline's CI bounds are not rederivable from the record file alone.
+ */
+export const DEFAULT_BOOTSTRAP_RESAMPLES = 2000;
+export const DEFAULT_BOOTSTRAP_ALPHA = 0.05;
+
 const lcg = (seed) => {
   let state = seed >>> 0;
   return (mod) => {
@@ -160,7 +169,7 @@ const lcg = (seed) => {
  * @param {Function} statOf - (decisions) => number|null
  */
 export const clusterBootstrapCI = (byPlayer, statOf, {
-  resamples = 2000, alpha = 0.05, seed = DEFAULT_BOOTSTRAP_SEED,
+  resamples = DEFAULT_BOOTSTRAP_RESAMPLES, alpha = DEFAULT_BOOTSTRAP_ALPHA, seed = DEFAULT_BOOTSTRAP_SEED,
 } = {}) => {
   const players = [...byPlayer.keys()];
   const k = players.length;
@@ -216,8 +225,8 @@ export const poolValue = (scored) => {
  */
 export const estimateEdge = (decisions, {
   weightCap = DEFAULT_WEIGHT_CAP,
-  resamples = 2000,
-  alpha = 0.05,
+  resamples = DEFAULT_BOOTSTRAP_RESAMPLES,
+  alpha = DEFAULT_BOOTSTRAP_ALPHA,
   seed = DEFAULT_BOOTSTRAP_SEED,
   label = null,
 } = {}) => {

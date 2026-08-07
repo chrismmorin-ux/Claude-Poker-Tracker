@@ -22,7 +22,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const HERO_EV_CHUNK_SCHEMA = 'hero-ev-chunk-v1';
+// v2 (WS-431): fragments carry full decision `records` when capture is on, and the stamp
+// carries `decisionRecord` (schema version | null) as a MUST_MATCH field. v1 chunks are
+// refused by the schemaVersion mismatch — they cannot say whether records are present.
+export const HERO_EV_CHUNK_SCHEMA = 'hero-ev-chunk-v2';
 
 /** Stamp fields that MUST agree between a chunk and the run seeding from it. */
 export const MUST_MATCH = [
@@ -34,6 +37,7 @@ export const MUST_MATCH = [
   'seedScheme',
   'equitySeed',
   'refinementClock',
+  'decisionRecord',
   'config',
   'behaviorPolicy',
 ];
@@ -51,6 +55,7 @@ export const buildChunkStamp = ({
   seedScheme,
   equitySeed,
   refinementClock = 'wall',
+  decisionRecord = null,
   config,
   behaviorPolicy,
 }) => ({
@@ -63,6 +68,7 @@ export const buildChunkStamp = ({
   seedScheme,
   equitySeed,
   refinementClock,
+  decisionRecord,
   config,
   behaviorPolicy,
 });
