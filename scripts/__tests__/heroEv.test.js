@@ -374,6 +374,51 @@ describe('ipsEstimator — weights', () => {
   });
 });
 
+describe('ipsEstimator — the UNITS, asserted rather than described (WS-428)', () => {
+  // This docblock used to claim that reading `edgeBB` as a winrate "overstates it by
+  // roughly the decisions-per-hand factor", and the claim propagated verbatim into three
+  // other files before anyone tested it. It is false, and this is the test that says so.
+  // The repo's own rule: when a comment states a fact the code could assert instead,
+  // assert it.
+  it('is INVARIANT to decisions-per-hand — it cannot be inflated by a factor it does not carry', () => {
+    // Duplicating every decision doubles decisions-per-hand while leaving the hands, the
+    // outcomes and the strategy untouched. If the old claim were true, `edge` would scale
+    // with the duplication. It does not move at all: both terms are convex combinations,
+    // so self-normalization cancels the repetition exactly.
+    const base = [
+      mkDecision({ playerId: 'a', netBB: 4, piOurs: { fold: 0.8, call: 0.1, raise: 0.1 } }),
+      mkDecision({ playerId: 'b', netBB: -2, piOurs: { fold: 0.2, call: 0.5, raise: 0.3 } }),
+      mkDecision({ playerId: 'c', netBB: 9, piOurs: { fold: 0.7, call: 0.2, raise: 0.1 } }),
+      mkDecision({ playerId: 'd', netBB: -5, piOurs: { fold: 0.3, call: 0.4, raise: 0.3 } }),
+    ];
+    const dup = (rows, times) => Array.from({ length: times }, () => rows).flat();
+
+    const at1 = estimateEdge(base, { resamples: 1 });
+    const at2 = estimateEdge(dup(base, 2), { resamples: 1 });
+    const at4 = estimateEdge(dup(base, 4), { resamples: 1 });
+
+    expect(at2.n).toBe(at1.n * 2);
+    expect(at4.n).toBe(at1.n * 4);
+    expect(at2.edgeBB).toBe(at1.edgeBB);
+    expect(at4.edgeBB).toBe(at1.edgeBB);
+  });
+
+  it('names its denominator: bb per 100 SCORED DECISIONS, never per 100 hands', () => {
+    // The field was called `edgeBBPer100` and read as a winrate. It is denominator-
+    // consistent — `edge` is per scored decision — so the fix was the name, not deletion.
+    // A per-100-HANDS figure has a different denominator (see handLedger.mjs) and is NOT
+    // this number times anything.
+    const r = estimateEdge([
+      mkDecision({ playerId: 'a', netBB: 4, piOurs: { fold: 0.8, call: 0.1, raise: 0.1 } }),
+      mkDecision({ playerId: 'b', netBB: -2, piOurs: { fold: 0.2, call: 0.5, raise: 0.3 } }),
+    ], { resamples: 1 });
+
+    expect(r).toHaveProperty('edgeBBPer100Decisions');
+    expect(r).not.toHaveProperty('edgeBBPer100');
+    expect(r.edgeBBPer100Decisions).toBeCloseTo(r.edgeBB * 100, 2);
+  });
+});
+
 describe('ipsEstimator — THE identity that proves it is not inventing an edge', () => {
   it('reports exactly zero edge when our policy IS the behaviour policy', () => {
     // pi_ours = pi_pool => every weight is 1 => WIS collapses to the plain mean =>

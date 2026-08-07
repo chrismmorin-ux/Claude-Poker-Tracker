@@ -34,10 +34,10 @@ Z0 chrome elements (status indicators, app-bridge badge, pipeline-health strip, 
 - **INV-STATUS-4** connected-waiting escalation (30s timer)
 - **INV-STATUS-5** app-bridge staleness clearing (`lastGoodExploits` STATE_FIELD_SCOPES adds `connection:appDisconnected`)
 
-**Currently-shipping bugs documented:**
-- **FM-STATUS-1** (silent severity downgrade) — `staleContext` writer at `:1847-1848` overwrites contextDead red dot to yellow in same frame.
-- **FM-STATUS-2** (versionMismatch silent persistence) — `:215-217` sets text but NOT className.
-- **FM-DENSITY-1** (9px stale-badge font illegible on Galaxy A22 DPR) — `side-panel.html:74` font-size: 9px is sub-WCAG SC 1.4.4 minimum. **Highest priority Gate 5 remediation.**
+**Historical bugs — FIXED (closure recorded 2026-08-07, design sweep run-004 / FIND-061; this section wrongly said "currently shipping" for 99 days because the Gate 5 closure step never fired):**
+- **FM-STATUS-1** (silent severity downgrade) — `staleContext` writer at `:1847-1848` overwrote contextDead red dot to yellow in same frame. **FIXED 2026-04-29, commit `639dc49a`** ("closes FM-STATUS-1+2").
+- **FM-STATUS-2** (versionMismatch silent persistence) — `:215-217` set text but NOT className. **FIXED 2026-04-29, commit `639dc49a`.**
+- **FM-DENSITY-1** (9px stale-badge font illegible on Galaxy A22 DPR) — `side-panel.html:74` font-size: 9px was sub-WCAG SC 1.4.4 minimum. **FIXED 2026-04-29, commit `4c1b772e`.**
 
 **Gate 5 co-shipping (from §I.12 + §VI.10):**
 - New `shared/render-status.js` module (pure classifier; renderConnectionStatus stays sole IIFE writer)

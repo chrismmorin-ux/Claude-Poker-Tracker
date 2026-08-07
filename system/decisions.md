@@ -911,3 +911,132 @@ assumptions:
 **Decision:** `docs/context-shift-prereg.md` is withdrawn as a basis for any decision.
 **Reasoning:** Three independent defects, each sufficient. (1) Its stated threshold (0.85 abs / 36% rel) is not reproducible from its own formula and its own frozen inputs, which give 0.767 / 32.6%. (2) The estimand is **not identified**: it compares two consecutive time windows written by one author, and topic mix dominates — one 15-file artifact family created on a single day carries V=7.41 against 2.02 for the rest, so sixteen more such artifacts would fake the entire effect. No sample size fixes this. (3) Its 1,080 "independent" blocks are 388 artifacts on 44 creation days with the top 5 days holding 69.7% of the mass; day-level variance inflation is 9.05×, the true type-I error is 0.557 against a nominal 0.05, and the real MDE is **99%**, not 36%. It rejected WS-424's original gate for being a 108%-MDE "uninterpretable result wearing the costume of rigour" and landed at 99%.
 **Context:** The fix that makes any future study honest: randomise the emitter **within period at session level** by seeded coin on the session ID (the hook already has it), and score each artifact at the commit that created it rather than at HEAD.
+
+### DEC-046: Uncommitted work is landed automatically by cwos-session-commit, invoked from the 15-minu…
+**Date:** 2026-08-06 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Uncommitted work is landed automatically by cwos-session-commit, invoked from the 15-minute session sweeper rather than from /session-end
+
+### DEC-047: SPR-177 scope expanded: WS-432 logical work-unit clock pulled into the sprint alongside W…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** SPR-177 scope expanded: WS-432 logical work-unit clock pulled into the sprint alongside WS-433
+**Reasoning:** Founder chose removal over accommodation: parallel depth-2 runs must be valid replication-grade measurements, not just completed ones; accepted +~L cost on an over-cap sprint, sequenced WS-433 then WS-432 then re-verify at refinement>0
+
+### DEC-048: Layout paradigm is per-REGION, not per-view - spatial regions scale (felt), interactive r…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Layout paradigm is per-REGION, not per-view - spatial regions scale (felt), interactive regions lay out in real CSS px, applied APP-WIDE (recovered branch DEC-026, founder-ratified 2026-08-01)
+**Reasoning:** Measured s=0.950 canvas / 0.695 device means declared 44px targets render 41.8/30.6px - the H-ML06 floor met NOWHERE; nullified AUDIT-2026-04-21-TV F8. Per-view was the wrong grain: TableView holds spatial felt + interactive column at once. Founder chose app-wide (finishes the FluidView migration, resolves the 6-week open question). Doctrine doc docs/design/surfaces/layout-doctrine.md + migration WS-322 recovered in the orphan merge (9de247d1). Directly governs re-filed WS-439/WS-441.
+
+### DEC-049: Priority order is engine -> EV -> education; the Table View redesign queues BEHIND accura…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Priority order is engine -> EV -> education; the Table View redesign queues BEHIND accuracy work (recovered branch DEC-027, founder-ratified 2026-08-01)
+**Reasoning:** Founder: engine producing EV producing education needs to be very accurate with all corners looked into. TVR not cancelled - Gate 4 Phases B/C + three P0 defects stay filed with evidence - but queue behind trust in the math. NOTE THE LIVE TENSION: tonight's launch sweep (FIND-067) ranks mid-hand advice UX as top founder impact; this recovered ruling says accuracy first - founder should reconcile when prioritizing WS-439/440/441.
+
+### DEC-050: Confirm-before-commit is a design-language principle for dense/homogeneous/consequential…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Confirm-before-commit is a design-language principle for dense/homogeneous/consequential targets; pointercancel means ABANDON, never commit (recovered branch DEC-028, 2026-08-01)
+**Reasoning:** Aim->commit->verify: in a 52-cell card grid an accurate tap can still hit the wrong card - a feedback-timing defect, not size. The pointercancel corollary was learned from a live prototype bug that silently recorded values the user never released on. Open: long-press vocabulary collision with 3 shipped controls (WS-320).
+
+### DEC-051: getMinRaise derives the legal ladder from recorded AMOUNTS; reopensAction governs only wh…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** getMinRaise derives the legal ladder from recorded AMOUNTS; reopensAction governs only who may act (recovered branch DEC-029, 2026-08-01)
+**Reasoning:** Two different questions: who may act (a rule about players, only meaningful on recorded sequences) vs how much (a property of betting history). Amount-derivation gives imported/fixture/replayed hands the same answer. Accepted duplication of a RULE, not a number. The code fix (illegal raise sizes after short all-in) landed via the orphan merge 9de247d1; recorded as INV-POT-INCOMPLETE-RAISE-LADDER.
+
+### DEC-052: Randomized generators must produce REACHABLE game states; unreachable shapes get one char…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Randomized generators must produce REACHABLE game states; unreachable shapes get one characterization test, never a property (recovered branch DEC-030, 2026-08-01)
+**Reasoning:** A side-pot property test generated an unreachable state and manufactured what looked like a serious money bug. Reachability determines severity, severity determines how it is reported to the founder. Guard still added because calculateSidePots accepts imported/estimated sequences.
+
+### DEC-053: Validation of our own math must use ground truth that is NOT our own code: analytic value…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Validation of our own math must use ground truth that is NOT our own code: analytic values, algorithm-independent invariants, or a from-scratch independent implementation (recovered branch DEC-031, 2026-08-01)
+**Reasoning:** Agreement between two of our own implementations is CONSISTENCY, not validation - evaluate7 vs bestFiveFromSeven could never catch a bug in their shared dependency. Trust-register rows now record WHAT KIND of ground truth backs each claim. Produced INV-EQUITY-ANALYTIC + an independent evaluator agreeing over 20k matchups (confirmation, not discovery).
+
+### DEC-054: Luck adjustment is mechanical or it is nothing -- adjusted win rate computed only from al…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Luck adjustment is mechanical or it is nothing -- adjusted win rate computed only from all-in EV; founder-proposed manual variance tagging refused as an input to the number (recovered branch DEC-030 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** Tagging is asymmetric in practice -- bad beats get logged, suckouts do not -- so a tag-driven adjustment moves in one direction only and produces a WORSE estimate than the raw rate while presenting as more rigorous. The mechanical path (allIn flag, equity at the street chips went in, realized share off the finished board) penalises hero suckouts exactly as hard as it credits bad beats; pinned by a test that swaps the runout. Trade-off accepted: coverage only all-in pots with known villain cards and complete board -- a narrow honest correction beats a broad flattering one; ceiling stated in UI. Files: src/utils/handStats/allInEquity.js. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-055: Session P&L is authoritative (cashOut - buyIn - rebuys - tip), never recomputed from hand…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Session P&L is authoritative (cashOut - buyIn - rebuys - tip), never recomputed from hands; the all-in EV adjustment layers as a delta on top (recovered branch DEC-031 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** Deriving session P&L from per-hand results would create a second source of truth disagreeing with the cash-out the founder actually pocketed, and the hand record is incomplete for most sessions (every imported spreadsheet row has handCount: 0). The delta (equity - realizedShare) x pot cancels hero's own contribution by construction, so partial hand coverage is harmless rather than corrupting. Accepted trade-off: adjusted figure cannot be reconciled hand-by-hand against the session total. Files: src/utils/sessionStats/bankrollVariance.js#computeAdjustedWinRate, handStats/allInEquity.js#computeSessionAdjustment. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-056: Imported spreadsheet history (78 rows) merges as ordinary sessions tagged origin: sheet-i…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Imported spreadsheet history (78 rows) merges as ordinary sessions tagged origin: sheet-import; P&L is always recomputed from buy-in/rebuys/cash-out, never read from the sheet's Profit/Loss column (recovered branch DEC-032 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** Founder chose one bankroll over two that never agree. Recomputation fixes the source data instead of importing its defects: the sheet's formula stopped at row 69, leaving the last nine sessions blank, making its stated lifetime total -$6,175 against a true -$1,693.66 -- trusting the column would have imported a $4,481 error. Trade-off accepted: sheet-imported online tournaments classify under the Live pill (matchesSessionsFilter keys on source !== ignition) rather than changing a tested filter contract for five rows excluded from cash variance anyway. Files: src/data/strategySheetSessions.js, src/utils/sessionStats/sheetImport.js. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-057: Every variance estimator clusters on the SESSION (never the hand), carries clusterUnit an…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Every variance estimator clusters on the SESSION (never the hand), carries clusterUnit and n in its return value, and refuses to draw a band below 20 cash sessions; projections carry a visible modelled tag (recovered branch DEC-033 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** Direct application of POKER_THEORY sect 14.3/14.4: hands within a session share opponents, table dynamic and tilt state, so hand-level clustering understates variance. The refusal below 20 sessions and the straddles-zero plain-language message exist because the founder's real data reads +$16.27/hr with a 95% CI of -$29 to +$62 -- a positive observed rate that has established nothing; printing the point estimate without that framing would mislead on the exact decision the panel informs. Trade-off accepted: founder sees not-proven on numbers he is pleased with -- that is the product. Files: src/utils/sessionStats/bankrollVariance.js, src/components/views/SessionsView/VarianceBand.jsx. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-058: Refusals are named, never silent -- INELIGIBLE.{MULTIWAY, VILLAIN_CARDS_UNKNOWN, BOARD_IN…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Refusals are named, never silent -- INELIGIBLE.{MULTIWAY, VILLAIN_CARDS_UNKNOWN, BOARD_INCOMPLETE, HERO_FOLDED, ...} on the all-in adjustment, explicit covers: false on the adjusted rate, declared exclusion counts in UI; multiway all-in equity declined outright rather than approximated across side pots (recovered branch DEC-034 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** A silent null makes could-not-compute indistinguishable from nothing-to-correct, and a coverage count built on that distinction would lie. Zero coverage in particular must not render as a number equal to the raw rate, which reads as confirmation of it. Trade-off accepted: more surface area in return shapes and more UI copy. Files: src/utils/handStats/allInEquity.js#INELIGIBLE, bankrollVariance.js#partitionSessions. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-059: Backfilled sessions get their own writer createCompletedSession (explicit start/end times…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Backfilled sessions get their own writer createCompletedSession (explicit start/end times + cash-out, never isActive: true), sharing a private buildSessionRecord with createSession; edit path strips isActive; one SessionLogForm serves both logging and editing (recovered branch DEC-035 from luck-adjustment, orig date 2026-08-07)
+**Reasoning:** createSession's Date.now() + isActive: true semantics are relied on by the live path and its tests; parameterising them would put the live-session lifecycle one wrong argument away from a second active session. A separate writer makes backfill-can-never-collide-with-a-live-session structural rather than careful. One form for log-and-edit because the fields are identical and two would drift. Trade-off: two writers to keep aligned, mitigated by shared buildSessionRecord. Files: src/utils/persistence/sessionsStorage.js, src/components/ui/SessionLogForm.jsx. full text at cb4a00e8^2:system/decisions.md
+
+### DEC-060: Preflop range generation executes the existing GUT charter (.claude/projects/gut-range.md…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Preflop range generation executes the existing GUT charter (.claude/projects/gut-range.md) amended with three solved stack depths (30/100/200bb), a rec-vs-studied-reg axis, and published charts as scoring guide; v1 is RFI-only, truncating at the 4-bet with a documented fixed continuation (recovered branch DEC-030 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** The charter thesis -- an action frequency and the range that takes it are the same fact stated twice -- is correct, and its measured defect analysis (grids and scalars disagreeing by up to 12x, scenario sums of 0.777 and 1.154) is why the work is worth doing; re-deriving an architecture beside it would duplicate it. RFI-only keeps v1 shippable: the pinned-subgame ladder (4bp -> 3bp -> SRP -> limped) requires a solved 4-bet terminal that does not exist, and pinning an unverified authored value would propagate a guess with the authority of a solve. Deliberate cost: v1 does not answer the BTN-vs-CO 3-bet question that started the thread -- first candidate for v2. Prereqs P-1a/P-1b shipped (d4339a5, 1be6d9d). full text at 601e0b46^2:system/decisions.md
+
+### DEC-061: The rec-vs-studied-reg axis is tau -- the softmax selection sharpness in P(a|h) = softmax…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The rec-vs-studied-reg axis is tau -- the softmax selection sharpness in P(a|h) = softmax((EV_a + b_a)/tau), estimated per villain; polar-vs-linear range shape is a derived OUTPUT of tau, never an authored label or discrete archetype (recovered branch DEC-031 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** Low tau = sharp selection: player 3-bets only where clearly best, middle hollows out, range reads polarized; high tau smears boundaries into linear/merged. Satisfies POKER_THEORY sect 7.2 (labels are outputs, never inputs) by construction rather than discipline, replacing shape baked into unnamed threshold constants and bluff-tail literals in populationPriors.js:383-453. Empirically supported: silhouette twice as good at k=2 as any other k over 1,390 players (docs/research/player-archetypes-empirical-2026-07-26.md) -- the six authored style labels are not in the data, so a continuous scalar anchored to two measured poles is the honest representation. Caveat recorded: splitsRangePreflop is a tempting and bad naive tau signal -- the discriminating test is WHERE they mix, not whether. full text at 601e0b46^2:system/decisions.md
+
+### DEC-062: Generated preflop ranges ship as a committed artifact (preflopSolvedPriors.js, same patte…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Generated preflop ranges ship as a committed artifact (preflopSolvedPriors.js, same pattern as preflopEquityTable.js) serving as the unobserved-villain prior; live per-combo computation stays the canonical path whenever the seat is known (recovered branch DEC-032 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** Mirrors the WS-274 fold-rate architecture already in place and keeps sect 7.6's ban on bucket-keyed lookups satisfied -- a committed table consulted in the decision path would be exactly the anti-pattern, so pure-lookup was rejected; pure-live was rejected because a 169-hand sweep costs ~15s per configuration and cannot meet a live budget. Matches sect 2.1's treatment of opening charts as the unobserved-seat prior, not the answer. Founder selection 2026-08-04 from three options. full text at 601e0b46^2:system/decisions.md
+
+### DEC-063: Published charts (PokerCoaching, GTO Wizard reference) score generated ranges as a guide…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Published charts (PokerCoaching, GTO Wizard reference) score generated ranges as a guide with a mandatory divergence registry; divergence never fails a build -- every material divergence must be explained and recorded (recovered branch DEC-033 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** Founder premise, and correct: we are not playing against the solver, so its output is not authoritative; a pass/fail gate against published charts would encode the opposite and cap the tool's ceiling at the thing it is trying to beat. Divergence is the product, UNEXPLAINED divergence is the bug -- extends the POKER_THEORY sect 9 documented-divergence pattern (five existing entries). The real metric stays the WS-293 discrimination probe: mean log P of the hand actually held. Noted at decision time: BTN_vs_CO is currently an undocumented divergence -- archetypeRanges.js claims a GTO Wizard/PokerCoaching baseline while running noticeably tighter. full text at 601e0b46^2:system/decisions.md
+
+### DEC-064: Pinned-subgame propagation must carry (estimate, effective-n), and a read's reported conf…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Pinned-subgame propagation must carry (estimate, effective-n), and a read's reported confidence is the MINIMUM along its propagation path, not the confidence at the displayed node; hard 0%/100% pins forbidden, pin strength capped by the consequence of being wrong (recovered branch DEC-034 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** Three mechanisms compound: (1) best-response is a maximizer, systematically selecting actions whose EV was overestimated -- pinning removes the hedging honest uncertainty buys; (2) error propagates upward, re-amplified at every rung since each level best-responds to the one below; (3) a 0/100 node lock is the same mathematics as WS-302's zeroed grid cell -- a starting belief of zero is a permanent verdict, a lesson already paid for one layer down. Two uncertainties stay separate: estimation error shrinks as n/(n+PRIOR_WEIGHT), but execution variance never shrinks at any n. Trade-off accepted: soft pins weaken the propagation effect the ladder exists to exploit; the alternative is an unfalsifiable verdict that can turn the strategy negative-EV precisely where it was most confident. Binds the v2 ladder; to be written into gut-range.md before any of it is built. full text at 601e0b46^2:system/decisions.md
+
+### DEC-065: pokerCore/rangeMatrix.parseRangeString throws on any token it cannot express, rather than…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** pokerCore/rangeMatrix.parseRangeString throws on any token it cannot express, rather than skipping it; weight-suffix handling stays lenient as pinned by existing tests (recovered branch DEC-035 from gut-preflop-range, orig date 2026-08-04)
+**Reasoning:** A silently dropped token produces a truncated range indistinguishable from a deliberately narrow one -- 22 dash tokens in archetypeRanges.js survived for months with a green suite, with BB_vs_BTN defending the button missing 244 combos including every offsuit ace. Strictness also caught a bare AK silently setting AA, and two bucketTaxonomy tests asserting over zero combos. rangeLabPersistence, the only caller touching external data, already wraps parsing in try/catch returning null, so throwing degrades safely. Trade-off: strict tokens with lenient weights is an inconsistent contract, accepted rather than break two deliberately-pinned tests -- the silent-drop risk lives in tokens, not weights. GUT Range P-1a, commit d4339a5. full text at 601e0b46^2:system/decisions.md
+
+### DEC-066: Founder hand reviews live in docs/hand-reviews/ (dated, one file per hand) with a paired…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Founder hand reviews live in docs/hand-reviews/ (dated, one file per hand) with a paired vitest harness whose heavy compute is gated behind HAND_EVAL=1; analysis numbers must come from the app's own engines (bestFiveFromSeven, handVsRangesMW), never ad-hoc math (recovered branch DEC-030 from hand-review, orig date 2026-08-07)
+**Reasoning:** The review is durable and re-runnable instead of chat-transcript-only; the fast record-validation half doubles as a permanent regression test for straddle-first, all-in flags, and per-pot winner attribution through the real reducers; and using the app's engines means any engine bug surfaces as a wrong review number -- a free cross-check. Gating keeps ~45s of CPU out of the 13k-test suite. First instance: docs/hand-reviews/2026-08-07-aks-squeeze-4way.md + src/test/aksSqueezeHandEval.test.js. full text at bfd7f1d6^2:system/decisions.md
+
+### DEC-067: Single-hand entry never goes through importAllData -- one hand enters the founder's on-de…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Single-hand entry never goes through importAllData -- one hand enters the founder's on-device record only via manual UI entry; AI sessions must never hand the founder a single-hand JSON framed as importable (recovered branch DEC-031 from hand-review, orig date 2026-08-07)
+**Reasoning:** exportUtils.importAllData calls clearAllData() first -- it is a full restore, not a merge -- so a single-hand import would silently erase the founder's entire hand history. A merge-import is a candidate future item if the friction recurs; until then the safe path is the only path. Cloud sessions cannot reach the device's IndexedDB at all, so deferred on-device entry tasks (WS-321 filed) are the correct handoff shape. full text at bfd7f1d6^2:system/decisions.md
+
+### DEC-068: App-path depth-1 advice is now deterministic per decision: the engine's default equityFn…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** App-path depth-1 advice is now deterministic per decision: the engine's default equityFn seeds Monte Carlo from board+heroCards identity (FIND-074); an injected equityFn still wins
+**Reasoning:** Live advice was nondeterministic exactly where rankings are fragile (step-8 refinement mutates candidate EVs within MC noise); same advice distribution, now reproducible; ciHalf now visible in treeMetadata.mcRefinement
+
+### DEC-069: The logical refinement clock inverts the latency trade on slow devices: same reproducible…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The logical refinement clock inverts the latency trade on slow devices: same reproducible answer, longer wall time, instead of silently shallower answers under load
+**Reasoning:** Fixes 'advice depth tracks machine load'; the founder's phone now pays wall time rather than depth; refinementBudgetMs is the knob if live latency matters — founder may want a device-tuned budget
+
+### DEC-070: Calibrated clock constants (UNITS_PER_MS 319, COMBO_EVAL_COST {3:160,4:152,5:1}) adopted…
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Calibrated clock constants (UNITS_PER_MS 319, COMBO_EVAL_COST {3:160,4:152,5:1}) adopted without a clock-version bump because no logical-v1 artifact predated them; henceforth COMBO_EVAL_COST changes bump the version
+**Reasoning:** Version rule documented in REFINEMENT-CLOCK-CALIBRATION.md; MUST_MATCH machinery then refuses cross-version blends automatically
+
+### DEC-071: DEC-049 reconciled: WS-439 (Next Hand CTA P0) holds behind accuracy work
+**Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** DEC-049 reconciled: WS-439 (Next Hand CTA P0) holds behind accuracy work
+**Reasoning:** Founder chose hold on 2026-08-07 even given the Gate 2 pre-commitment to fix the compression defect independently of the redesign; resolves the LIVE TENSION flagged inside DEC-049 and governs WS-439/440/441 prioritization until accuracy work lands

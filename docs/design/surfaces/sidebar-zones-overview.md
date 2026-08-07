@@ -89,7 +89,7 @@ Per category, the invariants define the concrete enforceable contracts behind ea
 | **D-5** | Click-affordance bimodality (some elements click via inline `onclick`, others via delegated listener; some have visual affordance, some don't) | V-affordance + R-1.10 + `data-affordance` attribute + single delegated listener pattern (§IV.8) | Cross-cutting across all zones |
 | **FM-STATUS-1** | Silent severity downgrade — `staleContext` writer overwrites contextDead red dot to yellow in same frame | V-status + R-1.11 + INV-STATUS-2 monotonicity + `:1847-1848` REMOVED | `side-panel.js:1847-1848` |
 | **FM-STATUS-2** | versionMismatch silent persistence (text set, className not) | V-status + R-1.11 + INV-STATUS-3 no-lying-status + className fix | `side-panel.js:215-217` |
-| **FM-DENSITY-1** | 9px stale-badge font sub-WCAG SC 1.4.4 (illegible on Galaxy A22 DPR) — **currently shipping accessibility violation, highest Gate 5 priority** | V-density + R-1.12 + INV-DENSITY-1 rem mandate + migrate `font-size: 9px` → `--type-meta-stat` (11px / 0.6875rem) | `side-panel.html:74` |
+| **FM-DENSITY-1** | 9px stale-badge font sub-WCAG SC 1.4.4 (illegible on Galaxy A22 DPR) — **FIXED 2026-04-29, commit `4c1b772e`** (closure not recorded in this doc until 2026-08-07, design sweep run-004 / FIND-061 — the Gate 5 closure step never fired) | V-density + R-1.12 + INV-DENSITY-1 rem mandate + migrate `font-size: 9px` → `--type-meta-stat` (11px / 0.6875rem) | `side-panel.html:74` |
 | **5-writer race for `#status-dot`** | Five writers compete for same DOM slot, no monotonicity, no single-writer discipline | V-status + R-1.11 + INV-STATUS-1 single-writer + 5-writer consolidation to `renderConnectionStatus` IIFE | `side-panel.js:198-218, :785-794, :1847-1848, :2590-2593, harness.js:81` |
 
 ### Per-zone shell-spec cross-reference index
@@ -98,7 +98,7 @@ Each zone artifact carries a "## SHC Shell-Spec Cross-References (added 2026-04-
 
 | Zone | Shell-spec sections consumed | Primary INV-* bindings | Currently-shipping bugs |
 |------|------------------------------|------------------------|-------------------------|
-| **Z0** | §I status (canonical) + §V color (`--status-*` tokens) + §VI density (`--zone-chrome-padding`, `--type-meta-stat`) | INV-STATUS-1..5 | FM-STATUS-1, FM-STATUS-2, FM-DENSITY-1, 5-writer race |
+| **Z0** | §I status (canonical) + §V color (`--status-*` tokens) + §VI density (`--zone-chrome-padding`, `--type-meta-stat`) | INV-STATUS-1..5 | ~~FM-STATUS-1, FM-STATUS-2~~ (fixed `639dc49a` 2026-04-29), ~~FM-DENSITY-1~~ (fixed `4c1b772e` 2026-04-29); 5-writer race status unverified |
 | **Z1** | §II freshness (canonical CC-B-1) + §III confidence (when surfaced) + §V color (M-tokens, style-chips) + §VI density (PRIMARY in between-hands) | INV-FRESH-1..5, INV-TOKEN-2, INV-DENSITY-1/3 | (none currently shipping; corpus gaps low-priority) |
 | **Z2** | §III confidence (canonical D-1 site) + §IV affordance (action-pill) + §V color (`--action-class-*` cross-cutting) + §VI density (PRIMARY in active-hand-advice) | INV-TOKEN-1..5, INV-AFFORD-1, INV-DENSITY-1/3 | D-1 confidence divergence, `||` vs `??` bug at `:147`, hardcoded 24px at `:400` |
 | **Z3** | §IV affordance (chip + glyph registry) + §V color (fold-pct tokens, INV-AFFORD-5 weakness vs reject collision) + §VI density (PRIMARY in active-hand-analyzing) | INV-TOKEN-2, INV-AFFORD-1/3/5, INV-DENSITY-3 | F-A finding (EV bar vs range bar visual collision — documented for future audit) |

@@ -20,11 +20,39 @@
  *
  * UNITS. `R_d` is the whole HAND's net, so the estimand is expected hand value evaluated
  * at the decision level — NOT a per-decision increment. A hand containing three scored
- * decisions contributes its net three times, once per decision. Figures are therefore on
- * the scale of hand outcomes; reading `edgeBB` as a winrate overstates it by roughly the
- * decisions-per-hand factor. (Decisions within a hand are correlated by construction for
- * the same reason, which the player-level cluster bootstrap absorbs — a hand belongs to
- * exactly one scored player.)
+ * decisions contributes its net three times, once per decision.
+ *
+ * THAT REPETITION IS A VARIANCE FACT, NOT A LEVEL FACT — and this docblock asserted the
+ * opposite for months. It used to say that reading `edgeBB` as a winrate "overstates it by
+ * roughly the decisions-per-hand factor". **Measured and false** (WS-428): duplicate every
+ * decision, so decisions-per-hand doubles while the hands and the strategy are unchanged,
+ * and `edge` does not move — 8.171 at 1x, 2x and 4x. It cannot be inflated by a factor it
+ * carries no dependence on. Both `wisValue` and `poolValue` are convex combinations —
+ * their weights sum to one — so each sits on the scale of ONE hand's net, and
+ * self-normalization cancels the repetition exactly. The claim propagated verbatim into
+ * three other files before it was tested.
+ *
+ * What the repetition DOES cause is correlation between a hand's decisions, which is why
+ * `n` overstates precision and why the cluster bootstrap is mandatory. That is the true
+ * statement the false one was a corruption of.
+ *
+ * THERE IS A REAL LEVEL DISTORTION, AND IT IS A DIFFERENT ONE. Because `d` is uniform over
+ * decisions, this is a DECISION-WEIGHTED average of hand nets, not a hand-weighted one.
+ * Measured on `out/hero-ev-44players-PARTIAL-650dec.json`: reweighting by `1/k_h` moves the
+ * edge 3.6878 -> 1.1626, a factor of 3.17 — and NOT via `k̄ = 2.38`, because the tilt is
+ * through scale rather than location (`corr(k, R) = 0.008`, while mean |R| by decision
+ * count runs 8.55 / 10.04 / 10.07 / 22.14 / 30.30). Long hands are big-pot hands, so
+ * decision-weighting concentrates the estimator on the fat tail.
+ *
+ * AND THE SCORED POPULATION IS SELECTED. A scored decision requires hero to have
+ * voluntarily reached postflop with a fitted range, so `valuePoolBB` is not ~0 as a field's
+ * realized mean must be — it is positive. Any per-hand figure built on this must be
+ * denominated in hands DEALT (`handLedger.mjs`), not hands scored, and the field-winrate
+ * anchor there is what makes a violation visible.
+ *
+ * (`ipsEstimator.mjs` also asserts below that "a hand belongs to exactly one scored
+ * player". That is false by construction — measured at 2.91 EVAL players per hand — and is
+ * tracked separately; the cluster bootstrap's independence assumption does not hold.)
  *
  * THE BIAS, NAMED. The horizon is one decision. Everything downstream of the scored
  * node is the field's play, not ours, so this measures the value of substituting our
@@ -250,7 +278,18 @@ export const estimateEdge = (decisions, {
     valuePoolBB: vPool === null ? null : Number(vPool.toFixed(4)),
     valueOursPlainIpsBB: vIps === null ? null : Number(vIps.toFixed(4)),
     edgeBB: edge === null ? null : Number(edge.toFixed(4)),
-    edgeBBPer100: edge === null ? null : Number((edge * 100).toFixed(2)),
+    // WS-428: renamed from `edgeBBPer100`, which the spec called a landmine — "a bare
+    // rescale with no denominator change". The diagnosis was wrong and the name was the
+    // whole problem. `edge` IS per scored decision, so `edge x 100` is denominator-
+    // consistent: it is bb per 100 SCORED DECISIONS, the same quantity `evCost.mjs:203`
+    // already names `bbPer100Decisions`. What it is not, and what the old name invited a
+    // reader to take it for, is a WINRATE. Deleting a correct field because its name lied
+    // would have removed the only correctly-denominated per-100 figure this file produces.
+    //
+    // The per-100-HANDS figure is a different quantity with a different denominator, and
+    // it is NOT this number times anything: see `handLedger.mjs` for the denominator and
+    // why hands dealt is not hands scored.
+    edgeBBPer100Decisions: edge === null ? null : Number((edge * 100).toFixed(2)),
     edgeCiLowBB: ci ? Number(ci.lo.toFixed(4)) : null,
     edgeCiHighBB: ci ? Number(ci.hi.toFixed(4)) : null,
     ciResamples: ci?.resamples ?? 0,
