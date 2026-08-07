@@ -1,0 +1,63 @@
+id: "WS-321"
+title: "Enter the 2026-08-07 AKs-squeeze hand into the on-device hand record (founder device — cloud session could not reach IndexedDB)"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: ""
+claimed_at: ""
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 18.0
+priority_label: "P1"
+category: "played-hand-review-protocol"
+capability: "core"
+program: "engineering"
+finding_id: ""
+description: |
+  The 2026-08-07 remote session reviewed a founder hand (1/3 live, BTN straddle, 4-way
+  all-in — full analysis in docs/hand-reviews/2026-08-07-aks-squeeze-4way.md) and built +
+  validated the hand record through the real reducer pipeline. But the founder's actual hand
+  record lives in the PWA's IndexedDB on their device; a cloud container cannot write to it.
+  This task is the deferred on-device entry step.
+
+  ENTRY SEQUENCE (validated in src/test/aksSqueezeHandEval.test.js Part 1; seat map uses
+  dealer = straddler's seat 1, SB 2, BB 3, UTG 4, MP 6, LJ 7, HJ 8, hero CO 9):
+    1. Set dealer button = seat 1; hero seat = 9. Hero hole cards A♠ K♠.
+    2. Record the BTN straddle $7 FIRST — the reducer rejects a straddle after any
+       preflop action (straddle-first invariant).
+    3. Betting actions in order: SB fold · BB call 7 · UTG fold · UTG+1 fold ·
+       MP raise 45 (all-in) · LJ fold · HJ call 45 · Hero raise 200 ·
+       BTN raise all-in (~1000) · BB fold · HJ call 395 (all-in) · Hero call 750 (all-in).
+    4. Villain shown cards: MP 6♥4♥ · HJ 5♣5♦ · BTN K♥K♦. Board was not recorded —
+       leave community cards empty (only outcomes are known).
+    5. Pot winners (three layers): main $188 → MP · side 1 $1,050 → HJ ·
+       side 2 $710 → BTN. Hero mucked.
+
+  DO NOT use Settings → import to shortcut this: exportUtils.importAllData() calls
+  clearAllData() first — it is a full restore, not a merge, and would wipe the founder's
+  entire hand history. (Candidate follow-up if this bites again: a merge-import path.)
+accept_criteria: |
+  - Hand exists in the on-device record with the straddle entry, 12 betting actions,
+    three per-pot WON attributions, and the three villains' shown cards.
+  - Hero cards A♠K♠ attached; board left empty.
+  - Existing hand history untouched (no import/restore path used).
+effort: "XS"
+files_involved:
+  - "docs/hand-reviews/2026-08-07-aks-squeeze-4way.md"
+  - "src/test/aksSqueezeHandEval.test.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-request
+  created_by: ai
+  finding_id: ""
+  run_id: "ses-20260807-0137-59c5aa1e"
+created_at: "2026-08-07T02:05:00Z"
+status_note: |
+  Filed 2026-08-07 at founder request ("leave something for the other machine to enter it
+  as a task later") from the remote hand-review session. Founder-executed data entry on the
+  device that holds the real IndexedDB; an AI session can guide but cannot do this remotely.

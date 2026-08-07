@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 174
+total_items: 175
 by_status:
   decomposed: 1
   done: 60
   in_progress: 3
   deferred: 44
-  backlog: 47
+  backlog: 48
   dismissed: 1
   completed: 7
   review: 1
@@ -30,7 +30,7 @@ by_category:
   line-study-slice-widening: 11
   monetization-and-pmf: 8
   performance: 1
-  played-hand-review-protocol: 6
+  played-hand-review-protocol: 7
   player-identification: 1
   player-identification-v2: 6
   pre-session-drill: 6
@@ -1675,5 +1675,14 @@ items:
     category: domain-correctness
     effort: M
     program: domain-correctness
+    capability: core
+
+  - id: "WS-321"
+    title: "Enter the 2026-08-07 AKs-squeeze hand into the on-device hand record (founder device — cloud session could not reach IndexedDB)"
+    status: backlog
+    priority_score: 18
+    category: played-hand-review-protocol
+    effort: XS
+    program: engineering
     capability: core
 
