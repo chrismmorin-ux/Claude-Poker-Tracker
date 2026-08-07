@@ -101,7 +101,8 @@ describe('truth carries its basis', () => {
 describe('the atom itself', () => {
   it('stamps the current schema version', () => {
     expect(minimalAtom().schemaVersion).toBe(SOR_SCHEMA_VERSIONS.decisionAtom);
-    expect(SOR_SCHEMA_VERSIONS.decisionAtom).toBe(2);
+    // v3 = WS-431: atomId's parts (playerId/handId/order), stable coordinates, omissions.
+    expect(SOR_SCHEMA_VERSIONS.decisionAtom).toBe(3);
   });
 
   it('throws rather than returning a partial object when a required field is missing', () => {

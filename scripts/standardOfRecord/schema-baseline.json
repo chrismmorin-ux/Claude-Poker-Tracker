@@ -50,7 +50,7 @@
     ]
   },
   "decisionAtom": {
-    "version": 2,
+    "version": 3,
     "fields": [
       {
         "name": "schemaVersion",
@@ -151,6 +151,31 @@
         "name": "tokens",
         "type": "number|null",
         "since": 2
+      },
+      {
+        "name": "playerId",
+        "type": "string|null",
+        "since": 3
+      },
+      {
+        "name": "handId",
+        "type": "string|number|null",
+        "since": 3
+      },
+      {
+        "name": "order",
+        "type": "number|null",
+        "since": 3
+      },
+      {
+        "name": "stable",
+        "type": "object|null",
+        "since": 3
+      },
+      {
+        "name": "omissions",
+        "type": "object|null",
+        "since": 3
       }
     ]
   },

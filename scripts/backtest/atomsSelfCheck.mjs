@@ -247,6 +247,38 @@ export const ATOM_READERS = Object.freeze([
       const t = atoms.map((a) => a.tokens).filter(Number.isFinite);
       return { measured: t.length, totalTokens: t.reduce((s, x) => s + x, 0) };
     } },
+
+  // ── v3 (WS-431): atomId's parts, run coordinates, omission discriminator. ─────────────
+  { field: 'playerId', depth: D.INFERENTIAL,
+    question: 'Can these atoms be JOINED against a decision record or future run — are the id parts present, not just their hash?',
+    read: (atoms) => ({
+      withParts: count(atoms, (a) => a.playerId != null && a.handId != null && a.order != null),
+      total: atoms.length,
+      players: new Set(atoms.map((a) => a.playerId).filter((p) => p != null)).size,
+    }) },
+  { field: 'handId', depth: D.DESCRIPTIVE,
+    question: 'How many atoms share a hand — the within-hand correlation structure?',
+    read: (atoms) => {
+      const h = histogram(atoms.filter((a) => a.handId != null), (a) => `${a.playerId}|${a.handId}`);
+      const per = Object.values(h);
+      return { hands: per.length, maxAtomsPerHand: per.length ? Math.max(...per) : 0 };
+    } },
+  { field: 'order', depth: D.DESCRIPTIVE,
+    question: 'Where in hands do these decisions sit?',
+    read: (atoms) => ({ withOrder: count(atoms, (a) => Number.isFinite(a.order)) }) },
+  { field: 'stable', depth: D.INFERENTIAL,
+    question: 'Is each atom tied to its record row and admission wave — duplicate-free canonical coordinates?',
+    read: (atoms) => {
+      const keys = atoms.filter((a) => a.stable).map((a) => `${a.stable.p}|${a.stable.k}|${a.stable.d}|${a.surfaceId}`);
+      return { withStable: keys.length, duplicates: keys.length - new Set(keys).size };
+    } },
+  { field: 'omissions', depth: D.DESCRIPTIVE,
+    question: 'What was DELIBERATELY not captured, with what stated reason?',
+    read: (atoms) => {
+      const reasons = {};
+      for (const a of atoms) for (const [f, why] of Object.entries(a.omissions ?? {})) reasons[`${f}: ${why}`] = (reasons[`${f}: ${why}`] ?? 0) + 1;
+      return { omissions: topN(reasons, 8) };
+    } },
 ]);
 
 /** Readers for the atom SET manifest — the facts that are true of the run, not of a decision. */

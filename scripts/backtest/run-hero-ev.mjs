@@ -370,6 +370,32 @@ const main = async () => {
         schemaVersion: DECISION_RECORD_SCHEMA_VERSION,
         ...(recordRef?.error ? { error: recordRef.error } : {}),
       };
+
+      // WS-431 — THE SECOND CONSUMER. The atom store is populated FROM the record (one
+      // producer), with atomSetId derived from the record's contentHash so card, record,
+      // and atoms are provably one measurement. An identical re-run refuses at the
+      // finalization guard — same measurement, same atoms, by design.
+      if (run.decisionRecord.contentHash) {
+        try {
+          const { emitAtomsFromRecord } = await loader.load('/scripts/backtest/decisionRecordAtoms.mjs');
+          const atomSet = await emitAtomsFromRecord({
+            recordText: readFileSync(sink.path, 'utf8'),
+            contentHash: run.decisionRecord.contentHash,
+            equitySeed,
+            anchorGeneration: int(args['anchor-generation'], 1),
+          });
+          run.atomSet = { ...atomSet, anchorGeneration: int(args['anchor-generation'], 1) };
+          console.log(
+            `Atom set ${atomSet.atomSetId}: ${atomSet.atomCount} atom(s)`
+            + (atomSet.atomSetHash ? ` (${atomSet.atomSetHash.slice(0, 19)}…)` : '')
+            + (atomSet.skippedArmRows ? ` — ${atomSet.skippedArmRows} arm-row(s) unscored, not emitted` : ''),
+          );
+        } catch (err) {
+          // The record is the product; atoms are a projection of it and can be re-emitted
+          // standalone. Never let the projection kill the report.
+          console.log(`  WARNING: atom emission from the record failed — ${err?.message || err}`);
+        }
+      }
     }
 
     const report = buildHeroEvReport(run, reportOpts);

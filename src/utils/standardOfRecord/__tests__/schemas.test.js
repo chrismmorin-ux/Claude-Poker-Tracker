@@ -44,6 +44,9 @@ const SHIPPED_FIELDS = {
     alternativeScores: 'object|null', rulesMatchedAndLost: 'array', beliefState: 'object|null',
     truth: 'object|null', seeds: 'object', actorSeat: 'number|null', actorRole: 'string|null',
     wallTimeMs: 'number|null', tokens: 'number|null',
+    // v3 (WS-431) — atomId's parts kept, run coordinates, omission discriminator
+    playerId: 'string|null', handId: 'string|number|null', order: 'number|null',
+    stable: 'object|null', omissions: 'object|null',
   },
   coverageCensus: {
     schemaVersion: 'number', domain: 'object', cells: 'array',

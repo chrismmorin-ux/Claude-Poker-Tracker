@@ -162,6 +162,12 @@ export const buildDecisionAtom = ({
   actorRole = null,
   wallTimeMs = null,
   tokens = null,
+  // v3 (WS-431) — atomId's parts, kept; run coordinates; deliberate-omission discriminator.
+  playerId = null,
+  handId = null,
+  order = null,
+  stable = null,
+  omissions = null,
 } = {}) => {
   const atom = {
     schemaVersion: SOR_SCHEMA_VERSIONS.decisionAtom,
@@ -184,6 +190,11 @@ export const buildDecisionAtom = ({
     actorRole,
     wallTimeMs,
     tokens,
+    playerId,
+    handId,
+    order,
+    stable,
+    omissions,
   };
 
   const problems = checkAgainstSchema(atom, SOR_SCHEMAS.decisionAtom, { label: 'decisionAtom' });

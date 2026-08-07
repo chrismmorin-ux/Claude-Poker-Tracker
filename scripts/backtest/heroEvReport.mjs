@@ -252,6 +252,11 @@ const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
       // BEFORE this builder runs). The card points at the record it was computed from;
       // the inversion test rederives the headline from that record alone.
       decisionRecord: run.decisionRecord ?? null,
+      // WS-431: hero-EV cards stop carrying atomSetHash: null — the atom set is projected
+      // from the record (decisionRecordAtoms.mjs), id derived from its contentHash.
+      atomSetHash: run.atomSet?.atomSetHash ?? null,
+      atomCount: run.atomSet?.atomCount ?? null,
+      anchorGeneration: run.atomSet?.anchorGeneration ?? null,
     });
     return { resultCard, resultCardProblems: [] };
   } catch (err) {

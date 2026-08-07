@@ -35,7 +35,7 @@
  */
 export const SOR_SCHEMA_VERSIONS = Object.freeze({
   strategyCard: 1,
-  decisionAtom: 2,
+  decisionAtom: 3,
   coverageCensus: 2,
   comparisonCensus: 1,
   resultCard: 3,
@@ -154,6 +154,21 @@ const DECISION_ATOM_FIELDS = [
     note: 'Answers "is this card affordable to run?" — a strategy too slow to execute is a different kind of wrong from one that loses chips.' },
   { name: 'tokens', type: 'number|null', since: 2, required: false,
     note: 'Tokens spent when the decision was AI-authored. Null for a mechanical surface. Same affordability question, different currency.' },
+
+  // ── v3 (WS-431): atomId's PARTS, kept — never hash-and-discarded. ──────────────────────
+  // layerAblation.mjs hashed {playerId, handId, order} into atomId one-way and dropped the
+  // parts; WS-410 Stage 5's branch ledger JOINS on (dealBookHash, playerId, handId, order),
+  // which a one-way hash forecloses. Raw over derived, applied to identity itself.
+  { name: 'playerId', type: 'string|null', since: 3, required: false,
+    note: 'Pseudonymous player key. With handId + order, the WS-410 Stage 5 cross-run join key — pair this atom against any decision record or future run on the same Deal Book.' },
+  { name: 'handId', type: 'string|number|null', since: 3, required: false,
+    note: 'Which hand. Second part of the join key.' },
+  { name: 'order', type: 'number|null', since: 3, required: false,
+    note: 'Action index within the hand. Third part of the join key.' },
+  { name: 'stable', type: 'object|null', since: 3, required: false,
+    note: '{p, k, d} canonical run coordinates (WS-433) — ties an atom to its decision-record row and admission wave, so "same measurement" is checkable rather than asserted.' },
+  { name: 'omissions', type: 'object|null', since: 3, required: false,
+    note: 'fieldName → reason for every DELIBERATE non-capture (e.g. beliefState: no producer exists). Distinguishes "not captured, and why" from "captured empty" forever — the discriminator rule, shipped before the producer writes.' },
 ];
 
 /**
