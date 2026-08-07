@@ -61,6 +61,9 @@ export const collectConstants = async (loader) => {
   const soft = await loader.load('/src/utils/pokerCore/softWeights.js');
   const narrower = await loader.load('/src/utils/exploitEngine/postflopNarrower.js');
   const foldEq = await loader.load('/src/utils/exploitEngine/foldEquityCalculator.js');
+  // WS-429. Loaded through the same loader as the src constants, and for the same reason:
+  // the stamp is DERIVED from the measurement code at stamp time, never transcribed.
+  const rakeSens = await loader.load('/scripts/backtest/rakeSensitivity.mjs');
 
   const constants = {
     PRIOR_WEIGHT: priors.PRIOR_WEIGHT,
@@ -68,6 +71,16 @@ export const collectConstants = async (loader) => {
     ACTION_TAU_FRACTION: { ...narrower.ACTION_TAU_FRACTION },
     TAU_FRACTION: soft.TAU_FRACTION,
     MIN_CONTINUATION_WEIGHT: soft.MIN_CONTINUATION_WEIGHT,
+    // WS-429 — every bb-denominated figure carries the size of its own rake exposure
+    // (FAULT-modelled-rake, register rank 3). The scalar is how far `edgeBB` moved per
+    // rake doubling on the canonical fixture sweep (measured -0.1842 bb — NOT
+    // rake-invariant); the provenance object carries the schedules, the tolerance, the
+    // verdict, and the fixture-not-corpus caveat. Both come from
+    // `rakeSensitivity.RAKE_SENSITIVITY_STAMP`, which is computed at load from the same
+    // `measureRakeSensitivity()` the WS-429 test pins — a drifted value fails the test
+    // before it can be stamped.
+    RAKE_SENSITIVITY_BB_PER_RAKE_DOUBLING: rakeSens.RAKE_SENSITIVITY_STAMP.bbPerRakeDoubling,
+    RAKE_SENSITIVITY_PROVENANCE: rakeSens.RAKE_SENSITIVITY_STAMP,
   };
 
   // The shadow. `foldEquityCalculator.js:563` declares a LOCAL `const PRIOR_WEIGHT = 10` that
