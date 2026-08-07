@@ -8,7 +8,7 @@ repo_type: ""       # Set during /adopt (SaaS, Frontend, etc.)
 command_usage:
   status: 0
   session_start: 0
-  session_end: 0
+  session_end: 1
   next: 0
   workstream: 0
   engine: 0
@@ -21,7 +21,7 @@ command_usage:
   # Quick fix and standard mode aren't commands but track session types
   quick_fix_sessions: 0
   standard_sessions: 0
-  strategic_sessions: 1
+  strategic_sessions: 2
 
 # Engine run tracking — which engines are actually used
 engine_runs:
@@ -34,12 +34,12 @@ engine_runs:
 value_ledger:
   total_findings_caught: 0
   total_items_completed: 2
-  total_items_created: 5
+  total_items_created: 6
   regressions_prevented: 0       # Findings that matched failure library patterns
   invariant_violations_caught: 0  # Times invariant checks caught issues
-  drift_corrections: 4           # State drift detected and fixed
-  decisions_recorded: 4          # Decisions logged (institutional memory)
-  sessions_with_handoff: 1       # Sessions that wrote handoff notes (continuity)
+  drift_corrections: 5           # State drift detected and fixed
+  decisions_recorded: 6          # Decisions logged (institutional memory)
+  sessions_with_handoff: 2       # Sessions that wrote handoff notes (continuity)
   # Calculated at read time:
   # value_density = total_findings_caught / max(engine_runs_total, 1)
   # session_continuity = sessions_with_handoff / max(total_sessions, 1)

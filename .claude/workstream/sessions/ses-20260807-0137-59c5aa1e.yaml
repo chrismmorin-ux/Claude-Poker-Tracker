@@ -1,10 +1,10 @@
 id: "ses-20260807-0137-59c5aa1e"
 status: completed
 started_at: "2026-08-07T01:37:52.007Z"
-ended_at: "2026-08-07T01:55:00Z"
+ended_at: "2026-08-07T04:15:00Z"
 mode: auto
-last_heartbeat: "2026-08-07T02:00:32.572Z"
-pid: 528
+last_heartbeat: "2026-08-07T04:08:25.162Z"
+pid: "511"
 agent_session_id: "59c5aa1e-fdbc-58f8-9702-21a5984b0580"
 
 # Registered automatically by cwos-session-register (SessionStart hook, WS-533).
@@ -13,9 +13,40 @@ agent_session_id: "59c5aa1e-fdbc-58f8-9702-21a5984b0580"
 claimed_items: []
 files_locked: []
 
-# Session summary: founder hand review — AKs squeeze 4-way all-in (1/3 live,
-# BTN straddle). Exact-enumeration + range-based EV analysis via app engines;
-# record validated through real reducer pipeline. Deliverables:
-# docs/hand-reviews/2026-08-07-aks-squeeze-4way.md +
-# src/test/aksSqueezeHandEval.test.js (heavy parts gated behind HAND_EVAL=1).
-# state.md Recent Sessions row added. Commit ef6b994.
+handoff_notes: |
+  Founder hand review — AKs squeeze 4-way all-in (1/3 live, BTN straddle).
+  Remote session on branch claude/aks-squeeze-preflop-qwrj5y (all commits pushed).
+
+  Items completed: hand review delivered (doc + harness); hand record validated
+  through real reducer pipeline (straddle-first, all-in flags, per-pot
+  SET_POT_WINNER, shown cards).
+  Items created: WS-321 (P1/XS, backlog) — enter the hand into the ON-DEVICE
+  record; cloud sessions cannot reach the device's IndexedDB. Full entry
+  sequence is inside the ticket and the doc.
+  Key findings:
+  - Final call +$96 EV cards-face-up; +$84 vs standard straddler jam range;
+    fold correct only vs exactly KK+. Squeeze sizing ratified.
+  - Variance: SD $873/replay vs $96 edge; break-even in expectation at 8
+    recurrences but only ~50% probability of actual recovery there.
+  - DATA SAFETY: exportUtils.importAllData wipes all data before restoring
+    (full restore, not merge). Never present a single-hand JSON as importable
+    (DEC-031). Candidate future item: merge-import path.
+  - Kit-version drift corrected: repo is on kit 3.8.5 with full scripts suite;
+    WS-212's "stuck on 3.5.0" note in state.md was stale and has been fixed.
+  Decisions made: DEC-030 (hand-review artifact convention: docs/hand-reviews/
+  + env-gated harness using app engines), DEC-031 (no importAllData for
+  single-hand entry). Light: HAND_EVAL=1 gate keeps ~45s CPU out of the suite;
+  representative suit assignment (A♠K♠ vs K♥K♦/5♣5♦/6♥4♥) for enumeration.
+  Next recommended action: on the machine with the real hand record, pick up
+  WS-321 (founder data entry, AI-guided). Then normal /next flow — WS-286
+  readiness gate chain remains the strategic anchor.
+  Autopilot eligible: not assessed in detail; most open backlog is
+  domain-correctness M/L effort with decision flags — no obvious 5+ S-effort
+  autonomous batch.
+
+context_notes: |
+  This was a remote (cloud) session: fresh container, npm install required,
+  device IndexedDB unreachable by design. The merged main branch was NOT
+  touched; everything lives on claude/aks-squeeze-preflop-qwrj5y awaiting
+  founder merge. The new test file src/test/aksSqueezeHandEval.test.js runs
+  its fast Part 1 in the normal unit suite; Parts 2-3 need HAND_EVAL=1.
