@@ -377,6 +377,42 @@ export const computeDrawdown = (sessions = [], options = {}) => {
 };
 
 /**
+ * Win rate with the all-in EV adjustment applied.
+ *
+ * Takes the raw stats and a total dollar adjustment (from
+ * `handStats/allInEquity.computeSessionAdjustment`, summed across sessions) and
+ * re-expresses it as an hourly rate over the SAME hours, so the two rates are
+ * directly comparable.
+ *
+ * This is a MODELLED figure per POKER_THEORY §14.4 — it replaces outcomes that
+ * were observed with outcomes that were expected. It must never be displayed
+ * without that stamp, and never instead of the raw rate.
+ *
+ * @param {ReturnType<computeWinRate>} stats
+ * @param {{delta:number, adjustedHands:number, totalHands:number}} adjustment
+ * @returns {{mu:number, delta:number, adjustedHands:number, totalHands:number,
+ *   covers:boolean, clusterUnit:'session', n:number, modelled:true}|null}
+ */
+export const computeAdjustedWinRate = (stats, adjustment) => {
+  if (!stats || stats.mu === null || !(stats.hours > 0)) return null;
+  if (!adjustment) return null;
+
+  const delta = Number.isFinite(adjustment.delta) ? adjustment.delta : 0;
+  return {
+    mu: (stats.totalPnl + delta) / stats.hours,
+    delta,
+    adjustedHands: adjustment.adjustedHands || 0,
+    totalHands: adjustment.totalHands || 0,
+    // False when no hand qualified. The UI must say so rather than print a
+    // number identical to the raw rate, which would read as confirmation.
+    covers: (adjustment.adjustedHands || 0) > 0,
+    clusterUnit: 'session',
+    n: stats.n,
+    modelled: true,
+  };
+};
+
+/**
  * Everything the variance panel needs, in one pass.
  *
  * @param {Array<Object>} sessions

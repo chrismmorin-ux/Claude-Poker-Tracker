@@ -7,8 +7,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { logger } from '../../../utils/errorHandler';
-import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi } from 'lucide-react';
+import { Play, Square, Download, Upload, PlayCircle, Calendar, Wifi, CalendarPlus } from 'lucide-react';
 import { SessionForm } from '../../ui/SessionForm';
+import { SessionLogForm } from '../../ui/SessionLogForm';
 import { SessionRowWithRollup } from './SessionRowWithRollup';
 import {
   matchesSessionsFilter,
@@ -88,6 +89,8 @@ export const SessionsView = ({ scale }) => {
     endCurrentSession,
     updateSessionField,
     loadAllSessions,
+    logCompletedSession,
+    editSession,
     deleteSessionById,
   } = useSession();
 
@@ -101,11 +104,16 @@ export const SessionsView = ({ scale }) => {
   const { getVenueNote } = useSettings();
   // Local UI state
   const [showNewSessionForm, setShowNewSessionForm] = useState(false);
+  // Log-a-past-session / edit-a-session. `null` = closed; a session object = editing
+  // that one; `'new'` = logging a fresh past session. One form serves both.
+  const [logFormTarget, setLogFormTarget] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [showCashOutModal, setShowCashOutModal] = useState(false);
   const [cashOutAmount, setCashOutAmount] = useState('');
   // AUDIT-2026-04-21-SV F2: optional tip field captured at cash-out.
   const [tipAmount, setTipAmount] = useState('');
+  // Optional end-time correction at cash-out ('' = end now).
+  const [cashOutEndTime, setCashOutEndTime] = useState('');
 
   // Import/Export state
   const [showImportConfirm, setShowImportConfirm] = useState(false);
@@ -168,6 +176,7 @@ export const SessionsView = ({ scale }) => {
     setShowCashOutModal(true);
     setCashOutAmount('');
     setTipAmount('');
+    setCashOutEndTime('');
   };
 
   // Handle confirm cash out and end session.
@@ -177,13 +186,27 @@ export const SessionsView = ({ scale }) => {
     try {
       const cashOut = cashOutAmount ? parseFloat(cashOutAmount) : null;
       const tip = tipAmount ? parseFloat(tipAmount) : null;
-      await endCurrentSession(cashOut, tip);
+      // An entered finish time is resolved against the session's own start date,
+      // wrapping to the next day when it reads earlier — a session that began at
+      // 22:00 and ended 01:30 finished tomorrow, not minus-twenty-hours ago.
+      let endTime = null;
+      if (cashOutEndTime) {
+        const start = sessionState.currentSession.startTime;
+        const startDate = new Date(start);
+        const [hh, mm] = cashOutEndTime.split(':').map(Number);
+        const candidate = new Date(
+          startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), hh, mm, 0, 0
+        ).getTime();
+        endTime = candidate < start ? candidate + 24 * 3600000 : candidate;
+      }
+      await endCurrentSession(cashOut, tip, endTime);
       const allSessions = await loadAllSessions();
       const sorted = allSessions.sort((a, b) => b.startTime - a.startTime);
       setSessions(sorted);
       setShowCashOutModal(false);
       setCashOutAmount('');
       setTipAmount('');
+      setCashOutEndTime('');
       showSuccess('Session ended');
     } catch (error) {
       logger.error('SessionsView', error);
@@ -246,6 +269,30 @@ export const SessionsView = ({ scale }) => {
         },
       },
     });
+  };
+
+  // Log a session that was already played, or save an edit to an existing one.
+  // Both refresh the local list so the Insights and Variance bands recompute
+  // against the new numbers without a navigation round-trip.
+  const handleLogFormSubmit = async (sessionData) => {
+    try {
+      if (logFormTarget && logFormTarget !== 'new') {
+        await editSession(logFormTarget.sessionId, sessionData);
+        showSuccess('Session updated');
+      } else {
+        await logCompletedSession(sessionData);
+        showSuccess('Session logged');
+      }
+      const allSessions = await loadAllSessions();
+      setSessions(allSessions.sort((a, b) => b.startTime - a.startTime));
+      setLogFormTarget(null);
+      setDetailSession(null);
+    } catch (error) {
+      logger.error('SessionsView', error);
+      showError(logFormTarget && logFormTarget !== 'new'
+        ? 'Failed to update session'
+        : 'Failed to log session');
+    }
   };
 
   // Handle export
@@ -381,6 +428,14 @@ export const SessionsView = ({ scale }) => {
                   New Session
                 </button>
               )}
+              <button
+                onClick={() => setLogFormTarget('new')}
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors flex items-center gap-2 font-medium"
+                data-testid="log-past-session"
+              >
+                <CalendarPlus size={18} />
+                Log past session
+              </button>
               <button
                 onClick={handleExport}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
@@ -640,6 +695,15 @@ export const SessionsView = ({ scale }) => {
             onCancel={() => { setShowImportConfirm(false); setImportData(null); }}
           />
 
+          {/* Log / edit session form — one component, both jobs. */}
+          {logFormTarget && (
+            <SessionLogForm
+              session={logFormTarget === 'new' ? null : logFormTarget}
+              onSubmit={handleLogFormSubmit}
+              onCancel={() => setLogFormTarget(null)}
+            />
+          )}
+
           {/* Cash Out Modal */}
           <CashOutModal
             isOpen={showCashOutModal}
@@ -647,11 +711,14 @@ export const SessionsView = ({ scale }) => {
             onCashOutAmountChange={setCashOutAmount}
             tipAmount={tipAmount}
             onTipAmountChange={setTipAmount}
+            endTime={cashOutEndTime}
+            onEndTimeChange={setCashOutEndTime}
             onConfirm={handleConfirmCashOut}
             onCancel={() => {
               setShowCashOutModal(false);
               setCashOutAmount('');
               setTipAmount('');
+              setCashOutEndTime('');
             }}
           />
 
@@ -660,6 +727,13 @@ export const SessionsView = ({ scale }) => {
             <SessionDetailModal
               session={detailSession}
               venueNote={getVenueNote(detailSession.venue)}
+              // Close the detail modal as the edit form opens. Both are
+              // `fixed inset-0 z-50`, so leaving this one mounted puts a
+              // transparent backdrop over the form and swallows the Save tap.
+              onEdit={() => {
+                setLogFormTarget(detailSession);
+                setDetailSession(null);
+              }}
               onClose={() => setDetailSession(null)}
               onOpenHand={(handId, hand) => {
                 setDetailSession(null);

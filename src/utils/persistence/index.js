@@ -66,6 +66,8 @@ export {
 // Session CRUD operations
 export {
   createSession,
+  createCompletedSession,
+  importHistoricalSessions,
   endSession,
   getActiveSession,
   setActiveSession,

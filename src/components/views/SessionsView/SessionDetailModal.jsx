@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Clock, Target, StickyNote, Trophy, X } from 'lucide-react';
+import { Clock, Target, StickyNote, Trophy, X, Pencil } from 'lucide-react';
 import { formatTime12Hour, calculateTotalRebuy, ordinalSuffix } from '../../../utils/displayUtils';
 import { computeSessionPnl, computeSessionDurationMs } from '../../../utils/sessionStats/sessionAnalytics';
 import { getHandsBySessionId } from '../../../utils/persistence/index';
@@ -36,8 +36,11 @@ const Stat = ({ label, value, valueClass = 'text-gray-100' }) => (
  * @param {string} [props.venueNote]
  * @param {Function} props.onClose
  * @param {Function} props.onOpenHand — (handId, hand) => void
+ * @param {Function} [props.onEdit] — opens SessionLogForm prefilled with this
+ *   session. The only correction path for a past session: times, buy-in, rebuys
+ *   and cash-out were previously fixed at whatever the live capture recorded.
  */
-export const SessionDetailModal = ({ session, venueNote = '', onClose, onOpenHand }) => {
+export const SessionDetailModal = ({ session, venueNote = '', onClose, onOpenHand, onEdit }) => {
   const [hands, setHands] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -186,6 +189,22 @@ export const SessionDetailModal = ({ session, venueNote = '', onClose, onOpenHan
               <div className="text-sm text-gray-600 italic">No hands recorded for this session.</div>
             )}
           </div>
+
+          {/* Correct anything that was mis-captured — wrong cash-out, forgotten
+              end time, missing rebuy. */}
+          {onEdit && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onEdit}
+                className="w-full px-4 min-h-[44px] rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                data-testid="session-detail-edit"
+              >
+                <Pencil size={16} />
+                Edit session
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

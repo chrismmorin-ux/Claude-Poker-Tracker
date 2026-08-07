@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Square, Clock } from 'lucide-react';
 import { VENUES, GAME_TYPES, GAME_TYPE_KEYS, SESSION_GOALS } from '../../../constants/sessionConstants';
 import { formatTime12Hour, calculateTotalRebuy } from '../../../utils/displayUtils';
+import { toTimeInputValue, parseTimeInput } from '../../../utils/sessionStats/sessionLogFields';
 import { useToast } from '../../../contexts/ToastContext';
 
 // AUDIT-2026-04-21-SV F4: align with the rest of the destructive-action undo windows
@@ -25,6 +26,8 @@ export const ActiveSessionCard = ({
   const [editingGameType, setEditingGameType] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
   const [addingRebuy, setAddingRebuy] = useState(false);
+  const [editingStart, setEditingStart] = useState(false);
+  const [startValue, setStartValue] = useState('');
 
   const [buyInValue, setBuyInValue] = useState('');
   const [venueValue, setVenueValue] = useState('');
@@ -67,6 +70,34 @@ export const ActiveSessionCard = ({
   const handleGoalUpdate = () => {
     onUpdateField('goal', goalValue);
     setEditingGoal(false);
+  };
+
+  // Correct the start time when the app was opened after sitting down. Hours
+  // drive every rate in the Variance band, so twenty missing minutes on a
+  // two-hour session is a ~15% error in that session's $/hr.
+  //
+  // A corrected time later than *now* would mean the session started in the
+  // future, so it is read as last night — the same midnight wrap the log form
+  // and the sheet importer use.
+  const handleStartEdit = () => {
+    setStartValue(toTimeInputValue(currentSession.startTime));
+    setEditingStart(true);
+  };
+
+  const handleStartUpdate = () => {
+    const minutes = parseTimeInput(startValue);
+    if (minutes === null) {
+      setEditingStart(false);
+      return;
+    }
+    const original = new Date(currentSession.startTime);
+    let next = new Date(
+      original.getFullYear(), original.getMonth(), original.getDate(),
+      Math.floor(minutes / 60), minutes % 60, 0, 0
+    ).getTime();
+    if (next > Date.now()) next -= 24 * 3600000;
+    onUpdateField('startTime', next);
+    setEditingStart(false);
   };
 
   const handleStartAddRebuy = () => {
@@ -133,10 +164,37 @@ export const ActiveSessionCard = ({
           <h2 className="text-2xl font-bold mb-1">
             {currentSession.venue} - {currentSession.gameType} - {formatTime12Hour(currentSession.startTime)}
           </h2>
-          <p className="text-green-100 flex items-center gap-1.5 tabular-nums" data-testid="active-session-elapsed">
-            <Clock size={14} />
-            Playing for {formatElapsed(currentSession.startTime)}
-          </p>
+          {editingStart ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={startValue}
+                onChange={(e) => setStartValue(e.target.value)}
+                onBlur={handleStartUpdate}
+                autoFocus
+                className="px-2 min-h-[44px] rounded bg-white/20 text-white border border-white/30 focus:outline-none"
+                data-testid="active-session-start-input"
+              />
+              <button
+                type="button"
+                onClick={handleStartUpdate}
+                className="px-3 min-h-[44px] rounded bg-white/20 hover:bg-white/30 text-sm font-medium"
+              >
+                Save
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleStartEdit}
+              className="text-green-100 flex items-center gap-1.5 tabular-nums hover:text-white transition-colors"
+              data-testid="active-session-elapsed"
+              title="Sat down earlier? Tap to correct the start time."
+            >
+              <Clock size={14} />
+              Playing for {formatElapsed(currentSession.startTime)}
+            </button>
+          )}
         </div>
         <button
           onClick={onEndSession}

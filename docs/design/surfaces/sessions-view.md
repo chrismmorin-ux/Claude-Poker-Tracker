@@ -62,28 +62,54 @@ Secondary:
 │ ActiveSessionCard (if session is running)                │
 │   [Resume] [Cash Out] [Add-on] [Abandon]                 │
 ├──────────────────────────────────────────────────────────┤
-│ [+ New Session]  [Import]  [Pre-Session Drill]  [Backup] │
+│ [+ New Session] [Log past session] [Import] [Backup]     │
+│ [Pre-Session Drill]                                      │
 ├──────────────────────────────────────────────────────────┤
 │ VarianceBand (collapsible) — cash sessions only          │
 │   • measured $/hr + swing per hour                       │
 │   • true-win-rate interval bar w/ zero marker + verdict   │
 │   • bankroll needed (tolerance pills) + risk of ruin      │
 │   • downswings: worst had / expected / be-ready-for       │
+│   • all-in EV adjusted rate (or "nothing to adjust")      │
 │   • Kelly: full / half / quarter                          │
 ├──────────────────────────────────────────────────────────┤
 │ Past sessions list (SessionCard ×N)                      │
 │   • date • venue • game • hands • net                    │
 │   → click to edit/delete/inspect                         │
 ├──────────────────────────────────────────────────────────┤
+│ SessionLogForm (overlay) — log a past session OR edit    │
+│   date · venue · stake · time in/out · buy-in · rebuys   │
+│   · cash-out · tip · notes; live duration echo           │
 │ CashOutModal / ImportConfirmModal (overlays)             │
 └──────────────────────────────────────────────────────────┘
 ```
+
+**SessionLogForm rationale (2026-08-07).** One component serves both *log a past
+session* and *edit an existing one* — the fields are identical and two forms would
+drift. Field order mirrors the spreadsheet row the founder used for two years
+(date · time in/out · $ in · rebuys · $ out) so muscle memory transfers. Native
+`type="date"` / `type="time"` inputs give the right mobile keyboards with no custom
+picker to maintain. A live duration echo under the clocks ("3h 30m · ran past
+midnight") makes a mistyped time visible before saving rather than surfacing later
+as a wrong $/hr.
+
+**Modal-stacking constraint.** `SessionDetailModal` and `SessionLogForm` are both
+`fixed inset-0 z-50`. Opening the form from the detail modal MUST close the detail
+modal — otherwise its backdrop sits over the form and swallows the Save tap.
 
 **VarianceBand placement rationale (2026-08-07).** Mounted directly below `InsightsBand`, as a
 sibling rather than an extension of it. InsightsBand is already dense (6 tiles + chart + 2
 breakdowns), and the two answer different questions: Insights reports *what happened*, Variance
 reports *what it means*. Both scope with the Live/Online/All filter. VarianceBand renders only
 when a cash sample exists, so a founder with tournaments only never sees an empty shell.
+
+**All-in EV adjusted rate (2026-08-07).** Shown inside the win-rate block, beside
+the measured rate and never instead of it. Mechanical: equity at the street the
+chips went in, realized share read off the finished board by the same function.
+Coverage is always stated, and zero coverage says so in words rather than printing
+a number identical to the raw rate. The ceiling is stated in the UI — only all-in
+pots are corrected. Manual "I lost that to variance" tagging was considered and
+**rejected** as an input: it is asymmetric in practice and would inflate the rate.
 
 **Honesty contract (binding, POKER_THEORY §14.3/§14.4).** The cluster unit is the **session**,
 never the hand, and every block states its `n`. Projected figures (required bankroll, risk of
@@ -104,6 +130,12 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - **Tournament context (`useTournament`):** `initTournament`, `createNewTournament` — cross-wiring when session is a tournament.
 - **Sync bridge (`useSyncBridge`):** opt-in sync observer (paused for Firebase per F-W3).
 - **Local (via SessionsView):** modal open/close, form draft state, import candidate, error state.
+- **Local (via SessionsView):** `logFormTarget` — `null` closed, `'new'` logging a
+  past session, or a session object being edited. `cashOutEndTime` holds the
+  optional finish-time correction at cash-out.
+- **Session ops:** `logCompletedSession` (backfill) and `editSession` (correction)
+  on `useSession`; both reload the list so Insights and Variance recompute. The
+  edit path strips `isActive` — session lifecycle belongs to start/end.
 - **Local (via VarianceBand):** collapse state (`sessionsView.varianceCollapsed`), ruin tolerance
   (`sessionsView.ruinTolerance`, default 5% matching the founder's spreadsheet), and current
   bankroll (`sessionsView.bankroll`) — all localStorage-persisted. No settings-schema change.
@@ -145,7 +177,9 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - **Online Sessions tab / filter** — sidebar imports surface here with no visual differentiation (F-W gap from INVENTORY).
 - **Multi-currency display** (F-P14) — not served; Traveler persona pain point.
 - **Tax-friendly per-year export** (DE-71) — only raw JSON ships today.
-- **Session backfill flow** (SM-22) — possible via manual create, but no dedicated "backfill" affordance. Partially served since 2026-08-07 by the one-shot bankroll-history import in Settings → Data & About, but that seeds a fixed dataset rather than offering a general backfill.
+- ~~**Session backfill flow** (SM-22)~~ — **SERVED 2026-08-07** by `SessionLogForm` ("Log past session"), plus edit-any-session from the detail modal.
+- **Retroactive all-in adjustment** — the imported sessions carry no hands, so the adjusted rate starts at zero coverage and accrues only from future tracked sessions.
+- **Multiway all-in equity** — side-pot equity is declared ineligible rather than approximated.
 - **Repeatable spreadsheet import** — the 2026-08-07 import is a one-time seed by founder choice. Sessions logged in the sheet after 5 Aug 2026 need the seed file regrown; the writer is idempotent so re-running is safe.
 - **bb/100 normalisation across stakes** — blocked on hand counts, which the imported history does not carry.
 
@@ -157,6 +191,9 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - `src/utils/sessionStats/__tests__/bankrollVariance.test.js` — estimators against hand-worked closed forms, plus an end-to-end block over the real imported sheet.
 - `src/utils/sessionStats/__tests__/sheetImport.test.js` — sheet normalisation (year typos, overnight wrap, recovered P&L, idempotent keys).
 - `src/utils/persistence/__tests__/sessionsStorage.test.js` — `importHistoricalSessions` idempotency + non-destructiveness.
+- `src/components/ui/__tests__/SessionLogForm.test.jsx` — prefill, duration echo incl. midnight wrap, validation, miss-tap guard.
+- `src/utils/sessionStats/__tests__/sessionLogFields.test.js` — date/clock/money conversions; blank-vs-zero cash-out.
+- `src/utils/handStats/__tests__/allInEquity.test.js` — equity at the all-in street, symmetry of the correction, every ineligibility reason by name.
 - Persistence covered in `useSessionPersistence` tests + reducer tests.
 
 ## Related surfaces
@@ -182,3 +219,4 @@ Wrapped in `ScaledContainer` with `scale` prop forwarded.
 - 2026-06-06 — **Insights band (Sessions View Improvement Phase 2).** New `InsightsBand` section at the top of the view (after the Online card, before the Review Queue): net P&L, $/hr, win-rate, hands, best/worst tiles + a hand-rolled `BankrollChart` SVG trend + by-stake/by-venue breakdowns. Pure derivation via `src/utils/sessionStats/sessionAnalytics.js` (no IDB change); scopes with the Live/Online/All filter; collapsible (localStorage). The former bottom-left `BankrollDisplay` widget is folded into the band's Net P&L tile and the component + its test were removed. See `../audits/2026-06-06-entry-insights-band.md`.
 - 2026-06-06 — **Venue notes (Sessions View Improvement Phase 1).** A past-session row (`SessionCard`) now shows a small note line (📝 icon + muted italic text) under its header when the session's venue has a note. `SessionsView` looks up the note via `useSettings().getVenueNote(session.venue)` and threads it through `SessionRowWithRollup` → `SessionCard` as the `venueNote` prop (both stay pure-prop, no context). The note itself is authored in `settings-view` → Custom Venues. The new-session `SessionForm` shows the same note as a hint under the venue dropdown. See `../audits/2026-06-06-entry-venue-notes.md`. This is Phase 1 of a 4-phase view lift (Phases 2–4: insights band, list sort/search/detail, active-session flow + polish — each gets its own Gate-1 check).
 - 2026-08-07 — **Bankroll history import + Bankroll & Variance band** (Gate 1 audit `../audits/2026-08-07-entry-bankroll-variance.md`, GREEN; Gate 2 not triggered). New `VarianceBand` mounted below `InsightsBand`: measured win rate with 70%/95% confidence intervals on the *true* rate, required bankroll at a selectable ruin tolerance, risk of ruin against an entered bankroll, observed vs modelled downswings, and Kelly sizings. Session is the cluster unit and projected figures carry a `modelled` tag, per POKER_THEORY §14.3/§14.4. Companion one-shot import in Settings → Data & About seeds 78 sessions transcribed from the founder's Google Sheet (Nov 2024 → Aug 2026) via a new additive, idempotent `importHistoricalSessions` writer — deliberately NOT the destructive `importAllData` path. P&L is recomputed from buy-in/rebuys/cash-out, which recovers the 9 sessions the sheet left blank and corrects the stated lifetime total from −$6,175 to −$1,693.66. No IndexedDB version bump (additive optional fields only).
+- 2026-08-07 — **Session logging that replaces the spreadsheet + all-in EV adjusted win rate** (Gate 1 audit `../audits/2026-08-07-entry-session-logging-adjusted-winrate.md`, GREEN; Gate 2 not triggered). New `SessionLogForm` serves both *Log past session* (header button) and *Edit session* (from `SessionDetailModal`), backed by a new `createCompletedSession` writer that can never produce an active session, and the previously-unwired `updateSession`. Live capture hardened: the active session's start time is editable (and `startTime` added to the auto-save field list, without which the correction was silently lost on reload), and `CashOutModal` takes an optional finish time. New `utils/handStats/allInEquity.js` computes a mechanical all-in EV adjustment — equity at the street the chips went in via `exactComboEquity`, realized share off the finished board, delta `(equity − realized) × pot` less rake — surfaced in `VarianceBand` beside the raw rate, stamped modelled, with coverage always stated. Manual variance tagging was proposed by the founder and **rejected on bias grounds** in favour of the mechanical path. No hand-entry change: `allIn` was already modelled and captured. No IndexedDB version bump.

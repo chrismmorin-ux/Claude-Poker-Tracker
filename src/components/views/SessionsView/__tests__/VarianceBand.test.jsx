@@ -9,9 +9,34 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { VarianceBand } from '../VarianceBand';
+import { getHandsBySessionId } from '../../../../utils/persistence/index';
+
+// The all-in adjustment reads hands from IndexedDB, which jsdom has no business
+// providing. Mock the loader; the equity math itself is covered exhaustively in
+// utils/handStats/__tests__/allInEquity.test.js.
+vi.mock('../../../../utils/persistence/index', () => ({
+  getHandsBySessionId: vi.fn(async () => []),
+}));
+
+/** A heads-up all-in hand hero LOST as a big favourite (AA vs KK, king rivers). */
+const badBeatHand = () => ({
+  gameState: {
+    mySeat: 5,
+    currentStreet: 'river',
+    actionSequence: [
+      { seat: 3, action: 'bet', street: 'flop', order: 1, amount: 500, allIn: true },
+      { seat: 5, action: 'call', street: 'flop', order: 2, amount: 500 },
+    ],
+  },
+  cardState: {
+    communityCards: ['7♣', '2♦', '9♠', '4♥', 'K♠'],
+    holeCards: ['A♥', 'A♦'],
+    allPlayerCards: { 3: ['K♥', 'K♦'] },
+  },
+});
 
 const HOUR = 3600000;
 const BASE = Date.UTC(2026, 0, 1);
@@ -48,6 +73,8 @@ beforeEach(() => {
   try {
     localStorage.clear();
   } catch {}
+  getHandsBySessionId.mockReset();
+  getHandsBySessionId.mockResolvedValue([]);
 });
 
 describe('VarianceBand', () => {
@@ -187,6 +214,70 @@ describe('VarianceBand', () => {
       render(<VarianceBand sessions={losing} />);
       expect(screen.queryByText('Full Kelly')).not.toBeInTheDocument();
       expect(screen.getByText(/Kelly needs a positive win rate/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('all-in EV adjusted rate', () => {
+    it('says there is nothing to adjust when no hands are recorded', async () => {
+      // Every imported spreadsheet session is in exactly this state.
+      render(<VarianceBand sessions={winningSample()} />);
+      await waitFor(() =>
+        expect(screen.getByTestId('adjusted-rate-empty')).toBeInTheDocument()
+      );
+      expect(screen.getByTestId('adjusted-rate-empty')).toHaveTextContent(
+        /No all-in hands recorded yet/i
+      );
+    });
+
+    it('raises the rate when hero lost an all-in as the favourite', async () => {
+      // One bad beat on the first session; the rest have no hands.
+      getHandsBySessionId.mockImplementation(async (id) =>
+        id === 's0' ? [badBeatHand()] : []
+      );
+      render(<VarianceBand sessions={winningSample()} />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId('adjusted-rate')).toHaveTextContent(/Adjusted for all-in luck/i)
+      );
+      const row = screen.getByTestId('adjusted-rate');
+      expect(row).toHaveTextContent(/Replaces the result of 1 all-in hand/i);
+      // Losing as a favourite means the adjustment credits hero.
+      expect(row).toHaveTextContent(/\+\$/);
+    });
+
+    it('states the limit — only all-in pots are corrected', async () => {
+      getHandsBySessionId.mockImplementation(async (id) =>
+        id === 's0' ? [badBeatHand()] : []
+      );
+      render(<VarianceBand sessions={winningSample()} />);
+      await waitFor(() =>
+        expect(screen.getByTestId('adjusted-rate')).toHaveTextContent(
+          /coolers you paid off with chips behind still count in full/i
+        )
+      );
+    });
+
+    it('stamps the adjusted rate as modelled', async () => {
+      getHandsBySessionId.mockImplementation(async (id) =>
+        id === 's0' ? [badBeatHand()] : []
+      );
+      render(<VarianceBand sessions={winningSample()} />);
+      await waitFor(() =>
+        expect(
+          within(screen.getByTestId('adjusted-rate')).getByTestId('modelled-tag')
+        ).toBeInTheDocument()
+      );
+    });
+
+    it('degrades quietly when the hand store cannot be read', async () => {
+      getHandsBySessionId.mockRejectedValue(new Error('idb unavailable'));
+      render(<VarianceBand sessions={winningSample()} />);
+      // The rest of the band must still render — a failed adjustment is not a
+      // reason to hide the measured win rate.
+      expect(screen.getByTestId('variance-band')).toHaveTextContent('+$100/hr');
+      await waitFor(() =>
+        expect(screen.queryByTestId('adjusted-rate')).not.toBeInTheDocument()
+      );
     });
   });
 });

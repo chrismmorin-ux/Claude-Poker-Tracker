@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import {
   computeWinRate,
@@ -7,9 +7,13 @@ import {
   computeRequiredBankroll,
   computeKelly,
   computeDrawdown,
+  computeAdjustedWinRate,
   partitionSessions,
   MIN_SESSIONS_FOR_INTERVAL,
 } from '../../../utils/sessionStats/bankrollVariance';
+import { computeSessionAdjustment } from '../../../utils/handStats/allInEquity';
+import { getHandsBySessionId } from '../../../utils/persistence/index';
+import { logger } from '../../../utils/errorHandler';
 
 /** Signed currency, e.g. +$150 / -$80. */
 const money = (n, decimals = 0) =>
@@ -172,12 +176,57 @@ export const VarianceBand = ({ sessions = [], scopeLabel }) => {
     } catch {}
   };
 
+  // All-in EV adjustment. Hands are loaded lazily per session in the current
+  // scope; sessions with no recorded hands (every imported spreadsheet row)
+  // simply contribute nothing, which is why coverage is always displayed.
+  const [adjustment, setAdjustment] = useState(null);
+  const sampleIds = useMemo(
+    () => partitionSessions(sessions).sample.map((s) => s.sessionId).filter((id) => id != null),
+    [sessions]
+  );
+  const sampleKey = sampleIds.join(',');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (sampleIds.length === 0) { setAdjustment(null); return undefined; }
+
+    (async () => {
+      try {
+        const byId = new Map(
+          partitionSessions(sessions).sample.map((s) => [s.sessionId, s])
+        );
+        let delta = 0;
+        let adjustedHands = 0;
+        let totalHands = 0;
+        for (const id of sampleIds) {
+          const hands = await getHandsBySessionId(id);
+          if (!hands || hands.length === 0) continue;
+          const session = byId.get(id);
+          const result = computeSessionAdjustment(hands, { gameType: session?.gameType });
+          delta += result.delta;
+          adjustedHands += result.adjustedHands;
+          totalHands += result.totalHands;
+        }
+        if (!cancelled) setAdjustment({ delta, adjustedHands, totalHands });
+      } catch (err) {
+        logger.error('VarianceBand all-in adjustment', err);
+        if (!cancelled) setAdjustment(null);
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // sampleKey collapses the id list to a stable primitive so this re-runs when
+    // the scoped sample actually changes, not on every parent render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sampleKey]);
+
   const stats = useMemo(() => computeWinRate(sessions), [sessions]);
   const ci70 = useMemo(() => computeWinRateInterval(stats, 70), [stats]);
   const ci95 = useMemo(() => computeWinRateInterval(stats, 95), [stats]);
   const excluded = useMemo(() => partitionSessions(sessions), [sessions]);
   const drawdown = useMemo(() => computeDrawdown(sessions), [sessions]);
   const required = useMemo(() => computeRequiredBankroll(stats, tolerance), [stats, tolerance]);
+  const adjusted = useMemo(() => computeAdjustedWinRate(stats, adjustment), [stats, adjustment]);
   const kelly = useMemo(() => computeKelly(stats), [stats]);
 
   const bankrollValue = parseFloat(bankroll);
@@ -249,6 +298,40 @@ export const VarianceBand = ({ sessions = [], scopeLabel }) => {
               label="Swing per hour (std dev)"
               value={stats.sigmaPerHour === null ? '—' : `$${Math.round(stats.sigmaPerHour).toLocaleString()}`}
             />
+
+            {/* All-in EV adjusted rate — beside the measured one, never instead
+                of it. Coverage is always stated: an adjustment over 0 hands is
+                not a confirmation of the raw number. */}
+            {adjusted && (
+              <div className="mt-2 pt-2 border-t border-gray-800" data-testid="adjusted-rate">
+                {adjusted.covers ? (
+                  <>
+                    <div className="flex items-baseline justify-between gap-3 py-0.5">
+                      <span className="text-sm text-gray-400 truncate">
+                        Adjusted for all-in luck
+                        <ModelledTag />
+                      </span>
+                      <span className={`text-sm font-bold tabular-nums flex-shrink-0 ${pnlClass(adjusted.mu)}`}>
+                        {money(adjusted.mu, 2)}/hr
+                      </span>
+                    </div>
+                    <div className="text-[0.6875rem] text-gray-500 leading-snug mt-1">
+                      Replaces the result of {adjusted.adjustedHands} all-in hand
+                      {adjusted.adjustedHands === 1 ? '' : 's'} with the equity you had when the
+                      money went in ({money(adjusted.delta)} across{' '}
+                      {adjusted.totalHands.toLocaleString()} recorded hand
+                      {adjusted.totalHands === 1 ? '' : 's'}). Only all-in pots are corrected —
+                      coolers you paid off with chips behind still count in full.
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-[0.6875rem] text-gray-500 leading-snug" data-testid="adjusted-rate-empty">
+                    No all-in hands recorded yet, so there is nothing to adjust for luck. This
+                    fills in once you track hands where the money goes in and both hands are known.
+                  </div>
+                )}
+              </div>
+            )}
 
             {ci95 && ci70 ? (
               <>

@@ -19,6 +19,7 @@ import {
   computeKelly,
   computeDrawdown,
   computeVarianceReport,
+  computeAdjustedWinRate,
   createRng,
   MIN_SESSIONS_FOR_INTERVAL,
 } from '../bankrollVariance';
@@ -338,5 +339,48 @@ describe('the real sheet — end-to-end', () => {
     expect(report.requiredBankroll.bankroll).toBeGreaterThan(0);
     expect(report.kelly.full).toBeGreaterThan(0);
     expect(report.drawdown.observed).toBeGreaterThan(0);
+  });
+});
+
+describe('computeAdjustedWinRate', () => {
+  const stats = { mu: 20, totalPnl: 2000, hours: 100, n: 30, sigmaPerHour: 300 };
+
+  it('re-expresses the adjustment as an hourly rate over the same hours', () => {
+    // +$500 of all-in luck given back over 100h = -$5/hr off a $20/hr rate.
+    const r = computeAdjustedWinRate(stats, { delta: -500, adjustedHands: 3, totalHands: 400 });
+    expect(r.mu).toBeCloseTo(15, 10);
+    expect(r.covers).toBe(true);
+    expect(r.adjustedHands).toBe(3);
+    expect(r.totalHands).toBe(400);
+  });
+
+  it('moves the rate up when hero ran below expectation', () => {
+    const r = computeAdjustedWinRate(stats, { delta: 800, adjustedHands: 2, totalHands: 400 });
+    expect(r.mu).toBeGreaterThan(stats.mu);
+  });
+
+  it('reports no coverage rather than echoing the raw rate', () => {
+    // Zero eligible hands must be distinguishable from "nothing to correct".
+    const r = computeAdjustedWinRate(stats, { delta: 0, adjustedHands: 0, totalHands: 400 });
+    expect(r.covers).toBe(false);
+    expect(r.mu).toBeCloseTo(stats.mu, 10);
+  });
+
+  it('is stamped modelled and names its cluster unit', () => {
+    const r = computeAdjustedWinRate(stats, { delta: 100, adjustedHands: 1, totalHands: 10 });
+    expect(r.modelled).toBe(true);
+    expect(r.clusterUnit).toBe('session');
+    expect(r.n).toBe(30);
+  });
+
+  it('returns null without a usable win rate or adjustment', () => {
+    expect(computeAdjustedWinRate(null, { delta: 0 })).toBeNull();
+    expect(computeAdjustedWinRate({ mu: null, hours: 0 }, { delta: 0 })).toBeNull();
+    expect(computeAdjustedWinRate(stats, null)).toBeNull();
+  });
+
+  it('treats a non-finite delta as zero rather than producing NaN', () => {
+    const r = computeAdjustedWinRate(stats, { delta: NaN, adjustedHands: 1, totalHands: 5 });
+    expect(r.mu).toBeCloseTo(stats.mu, 10);
   });
 });
