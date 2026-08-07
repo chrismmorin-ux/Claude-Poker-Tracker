@@ -13,6 +13,8 @@
  */
 
 import { getPositionName } from '../../../utils/positionUtils.js';
+import { effectiveStackAt } from '../../../utils/seatStacks/stackLedger';
+import { committedSoFar } from '../../../utils/seatStacks/handSettlement';
 
 /**
  * Derive a minimal HSP gameState from a HandReplay step. HSP soft-degrades
@@ -97,15 +99,53 @@ const countActivePlayersAt = (hand, visibleActions) => {
   return active;
 };
 
+/**
+ * Effective stack at this point in the replay.
+ *
+ * STK-1 — WHAT THIS REPLACES. The previous implementation read
+ * `hand.gameState.players[seat].stack`, a field nothing in the cash path has
+ * ever written (`usePersistence` saves street, button, seat, actions and absent
+ * seats). It therefore returned 0 on every cash hand, and because
+ * `buildHeroState` gates on `gameState.effStack && …`, a falsy 0 silently
+ * suppressed the SPR zone entirely. It failed invisibly rather than degrading.
+ *
+ * It was also the wrong quantity: it computed hero's REMAINING stack and called
+ * it effective stack. Effective stack is min(hero, deepest live opponent) —
+ * `effectiveStackAt` is now the single definition of it in the codebase.
+ *
+ * Returns `null` when stacks are unknown or inadmissible, NOT 0, so a consumer
+ * can tell "no basis" from "hero is all in". Callers that still want a falsy
+ * value get one either way; callers that care can now distinguish them.
+ */
 const deriveEffStackAt = (hand, visibleActions, heroSeat) => {
-  const players = hand?.gameState?.players || {};
-  const heroPlayer = players[heroSeat] || players[String(heroSeat)];
-  const heroStartStack = Number(heroPlayer?.stack) || 0;
-  let heroSpent = 0;
-  for (const a of visibleActions || []) {
-    if (Number(a?.seat) === heroSeat) heroSpent += Number(a?.amount) || 0;
-  }
-  return Math.max(0, heroStartStack - heroSpent);
+  const ledger = hand?.gameState?.seatStacks;
+  if (!ledger || Object.keys(ledger).length === 0) return null;
+
+  const blinds = hand?.gameState?.blinds ?? hand?.blinds ?? null;
+  const committed = blinds
+    ? committedSoFar(visibleActions, blinds, {
+        smallBlindSeat: hand?.gameState?.smallBlindSeat,
+        bigBlindSeat: hand?.gameState?.bigBlindSeat,
+      })
+    : {};
+
+  const liveSeats = liveSeatsAt(hand, visibleActions);
+  const { amount } = effectiveStackAt(ledger, {
+    heroSeat,
+    liveSeats,
+    currentHand: Number(hand?.gameState?.handNumber) || 0,
+    committed,
+  });
+  return amount;
+};
+
+/** Seats dealt in and not yet folded at this point. */
+const liveSeatsAt = (hand, visibleActions) => {
+  const folded = new Set(
+    (visibleActions || []).filter((a) => a?.action === 'fold').map((a) => Number(a.seat)),
+  );
+  const dealt = Object.keys(hand?.gameState?.seatStacks || {}).map(Number);
+  return dealt.filter((s) => !folded.has(s));
 };
 
 // ─── Alignment detection ─────────────────────────────────────────────────

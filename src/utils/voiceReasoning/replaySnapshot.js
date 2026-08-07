@@ -26,6 +26,11 @@
  * @param {Map<number, {lastAction: string, hasFolded: boolean, totalBet: number}>} seatStates
  * @returns {{ seats: Object, seatsLive: number[] }}
  */
+// Read-only stack derivation. Neither module can reach card or game state — the
+// structural half of the contamination guard is unaffected.
+import { buildStackBinding, STACK_SOURCE } from '../seatStacks/stackLedger';
+import { committedSoFar } from '../seatStacks/handSettlement';
+
 const serializeSeatStates = (seatStates) => {
   const seats = {};
   const seatsLive = [];
@@ -101,6 +106,39 @@ export function buildReplaySnapshot(replayState = {}, selectedHand = null) {
     }
   }
 
+  // Stack binding. The ledger holds START-OF-HAND stacks, so what a seat has at
+  // this cursor is start minus what it has already committed — computed from the
+  // same visibleActions the rest of this snapshot is built from, so stacks can
+  // never disagree with the pot about the same moment.
+  const ledger = selectedHand?.gameState?.seatStacks ?? null;
+  const handNumber = Number(selectedHand?.gameState?.handNumber) || 0;
+  const blinds = selectedHand?.gameState?.blinds ?? selectedHand?.blinds ?? null;
+  let stackBinding = {
+    stacks: null,
+    stackSources: null,
+    effStack: null,
+    effStackSource: STACK_SOURCE.UNKNOWN,
+    effStackBB: null,
+    spr: null,
+    stacksAdmissible: false,
+  };
+  if (ledger && Object.keys(ledger).length > 0 && heroSeat !== null) {
+    const committed = blinds
+      ? committedSoFar(visibleActions, blinds, {
+          smallBlindSeat: selectedHand?.gameState?.smallBlindSeat,
+          bigBlindSeat: selectedHand?.gameState?.bigBlindSeat,
+        })
+      : {};
+    stackBinding = buildStackBinding(ledger, {
+      heroSeat,
+      liveSeats: seatsLive,
+      currentHand: handNumber,
+      pot: Number(potAtPoint) || 0,
+      bb: blinds?.bb ?? null,
+      committed,
+    });
+  }
+
   return {
     // Where in the hand
     street: currentStreet,
@@ -112,10 +150,12 @@ export function buildReplaySnapshot(replayState = {}, selectedHand = null) {
     heroSeat,
     heroCards,
 
-    // Pot geometry — pot IS tracked; stacks are NOT (see binding rule above)
+    // Pot geometry. Stacks became trackable with the `seat-stack-ledger`
+    // surface; they stay `null` for hands recorded before it, and for any seat
+    // whose provenance is not admissible. The binding rule is unchanged — what
+    // the app does not know is null, never inferred — the app simply knows more.
     pot: Number(potAtPoint) || 0,
-    stacks: null,
-    spr: null,
+    ...stackBinding,
 
     // Who is still in it
     seats,

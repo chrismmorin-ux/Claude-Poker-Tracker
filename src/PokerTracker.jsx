@@ -22,6 +22,9 @@ import { NavShell } from './components/ui/NavShell';
 // settings.voiceCardEntry.enabled (default OFF). Renders only on TableView
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
+// Renders nothing — seeds new seats from the buy-in and self-heals the stack
+// ledger from observed action (surface `seat-stack-ledger`, C-3).
+import { SeatStackLedger } from './hooks/useSeatStackLedger';
 import { RotateDeviceHint } from './components/ui/RotateDeviceHint';
 import { ViewLoadingFallback } from './components/ui/ViewLoadingFallback';
 
@@ -136,6 +139,7 @@ const AppRoot = () => {
       <ViewRouter />
       <RotateDeviceHint />
       <VoiceCardEntryOverlay />
+      <SeatStackLedger />
       <NavShell />
       <HealthIndicator />
     </AppProviders>
