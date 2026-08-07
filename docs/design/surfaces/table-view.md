@@ -128,6 +128,11 @@ Root: absolute-positioned felt region with `tableRef`; right-click a seat → `S
 
 ## Known issues
 
+> **⚠️ This artifact is scheduled for ground-up rework.** The Table View Redesign (TVR) project opened 2026-07-31 at founder request. Gate 1 returned **RED**, Gate 2 returned **YELLOW** with two critical amendments. **This artifact remains canonical until `WS-313` (Gate 4) replaces it — do not design against the redesign audits, and do not write production code against them.** Project: [`.claude/projects/table-view-redesign-2026-07-31.md`](../../../.claude/projects/table-view-redesign-2026-07-31.md).
+
+- **[WS-311] CommandStrip compresses instead of scrolling** — in common states (seat selected, sizing panel open, all-in row, batch row, 2-row orbit wrap) the children sum to ~818–858px in a 720px column. Children use `height` (not `min-height`) with default `flex-shrink: 1` and there is no `overflow-y`, so the column shrinks every child — the 100px action buttons lose the most absolute height, in exactly the states where the user is most rushed. Not yet visually confirmed (boot requires `.env.local`). Evidence: [entry audit §E2](../audits/2026-07-31-entry-table-view-redesign.md).
+- **Player entry is ordered inversely to frequency** — `SeatContextMenu` renders four seat-config rows before any player op; the Recent list starts ~250px into a 384px scroll container, so ~3 of up to 20 names are visible. Entry is `onContextMenu`-only (~500ms long-press, no press feedback); tapping an empty seat does nothing. Addressed by TVR D-3.
+- **~35–40% of the felt region carries no information** — ~117px side gutters, ~175px below the felt, plus stadium corners, while the CommandStrip holds a constant 28% of the canvas at every street and every player count. Addressed by TVR D-2.
 - [ARCH-003](../../../.claude/BACKLOG.md) — TableView at 598 lines; decomposition candidate.
 - Legacy backlog items predating the framework: **RT-36** (memoization / render cost), **RT-37** (Next Hand guard), **RT-43** (state clear).
 - [AUDIT-2026-04-21-blindspot-table-view](../audits/2026-04-21-blindspot-table-view.md) — Gate-2 blind-spot roundtable, 17 findings across 5 stages. Verdict: YELLOW. Gate 3 resolution appended same-session.

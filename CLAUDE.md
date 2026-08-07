@@ -281,7 +281,30 @@ npm run dev                          # Dev server (localhost:5173)
 npm run build                        # Production build
 bash scripts/smart-test-runner.sh    # Tests (token-optimized, use before commits)
 npm test                             # Tests (verbose, for debugging)
+
+npm run env:local                    # Write .env.local placeholders — app boots WITHOUT a Firebase project
+npm run devshot                      # Drive a real browser: screenshots + RENDERED control sizes
+npm run devshot:portrait             # Same, portrait viewport (orientation-gate repro)
 ```
+
+## Visual Verification (no credentials needed)
+
+**You can always run and see this app.** It is IndexedDB-first with an existing guest
+mode, so real Firebase credentials are NOT required — they are only needed for
+sign-in/sync. Without them `initializeApp()` throws at module scope and the app dies at
+boot, which is the only reason it ever looked unrunnable.
+
+```bash
+npm run env:local     # once — writes gitignored placeholder config
+npm run dev           # terminal 1
+npm run devshot       # terminal 2 — writes ./.devshots/*.png
+```
+
+`scripts/devshot.mjs` also reports the **rendered** size of controls and the
+`ScaledContainer` scale factor. Use it, not declared px values: the whole canvas sits
+under a single CSS `transform: scale(s)`, so a `min-h-[44px]` class does **not** produce
+a 44px target (see `WS-316`). Never claim a UI change works from code alone — and never
+assert a touch-target size from a class string.
 
 ## Session Start Protocol (MANDATORY)
 

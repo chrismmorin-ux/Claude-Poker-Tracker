@@ -1,0 +1,157 @@
+id: "ses-20260801-1900-ed04bf9c"
+status: completed
+started_at: "2026-08-01T19:00:00Z"
+ended_at: "2026-08-01T19:58:00Z"
+mode: continuation
+agent_session_id: "ed04bf9c-663e-5950-a626-a623acf2a826"
+
+# Continuation of ses-20260801-0140-790d7777. No /session-start ran; no sprint
+# composed. Work was taken directly from that session's handoff under DEC-027.
+claimed_items: []
+files_locked: []
+
+items_touched:
+  - "WS-324"   # Phase 2 first + second pass. NOT closed — phases 0/1/3 remain.
+
+handoff_notes: |
+  WS-324 PHASE 2 — MATH VALIDATION. Two passes, both in this session.
+
+  WHY THIS AND NOT THE TABLE VIEW REDESIGN: DEC-027 re-ordered priority to
+  engine -> EV -> education. Phases 0 and 1 of WS-324 need the corpus on the
+  founder's Windows box. Phase 2 needs NO behavioural data, so it was the only
+  P0 thread runnable here.
+
+  =====================================================================
+  READ THIS FIRST: I CORRECTED MY OWN PREMISE
+  =====================================================================
+  WS-324 as filed (by me, last session) claimed the math was "currently
+  unmeasured". THAT WAS WRONG. Preflop equity was ALREADY validated against
+  published values (AA vs KK .81946, AKs vs QQ .46049, JJ vs AKs .54039), and
+  side-pot conservation was ALREADY asserted on every example test via an
+  assertConserved helper. The real gaps were narrower and in different places.
+
+  The correction is written into WS-324's status_note and into
+  docs/research/math-validation-2026-08-01.md rather than quietly dropped.
+  If you read the item description, note it still contains the wrong claim in
+  its body — the status_note supersedes it.
+
+  =====================================================================
+  PASS 1 — TWO DEFECTS, NOT OF EQUAL WEIGHT
+  =====================================================================
+  1. REAL, ON A LIVE PATH. getMinRaise had ZERO tests despite feeding the
+     sizing UI (CommandStrip.jsx:504) and the recorder (recordSeatAction.js:178).
+     It advanced the ladder off an INCOMPLETE all-in and offered an ILLEGAL size:
+         flop bet 10, shove to 14  -> returned 18, legal 24
+         preflop open 6, shove to 9 -> returned 12, legal 13
+     Root cause was clean: recordSeatAction ALREADY implements the
+     incomplete-raise rule and stamps reopensAction:false correctly. getMinRaise
+     simply had no concept of it, so the ladder computed AFTER one was wrong.
+     Fixed by tracking the last FULL increment. INV-POT-INCOMPLETE-RAISE-LADDER,
+     21 tests, DEC-029.
+
+     NOTE ON MY OWN ERROR: my first probe wrote the preflop legal answer as 14.
+     It is 13 (last full increment is 4, the open over the bb). Caught before it
+     became a test. If you re-derive these, derive them; do not copy mine.
+
+  2. UNREACHABLE, ROBUSTNESS ONLY. 300 randomized side-pot structures x 6
+     properties found silent non-conservation — 166 of 338 chips stranded when
+     EVERY large contributor folded. DO NOT REPORT THIS AS A MONEY BUG. Forcing
+     the last big contributor out needs a live player with chips behind, who
+     would then be eligible, so legal play cannot reach it. Guarded anyway
+     because the failure was SILENT. Generator then constrained to reachable
+     states — asserting a property over a fiction is worse than not testing it.
+     DEC-030.
+
+  =====================================================================
+  PASS 2 — POSTFLOP EQUITY GROUND TRUTH (the interesting one)
+  =====================================================================
+  The prior check compared evaluate7 against bestFiveFromSeven over 10,000
+  hands. Both are OURS. It could never have caught a bug IN bestFiveFromSeven —
+  the shared dependency both sides rest on. That is a general failure mode of
+  self-referential suites: coverage rises, actual risk untouched. DEC-031.
+
+  Replaced with three kinds of evidence that are not our own code agreeing
+  with itself:
+    - 6 ANALYTIC FIXTURES where the expected equity is arithmetic derived by
+      hand-counting outs over a known denominator (12/44, 42/44, 0, 0.5, 1, and
+      a flop drawing-dead case over C(45,2)=990 runouts). EACH DERIVATION IS
+      WRITTEN INTO THE TEST so it can be re-checked rather than trusted.
+    - 2 ANALYTIC INVARIANTS true of any correct equity function regardless of
+      how hands are ranked: complementarity (hero + villain === 1) over 120
+      random spots, and suit isomorphism (relabel all 4 suits -> IDENTICAL
+      equity) over 90 spots x 4 permutations. The suit one tests suit handling
+      with no reference to any ranker at all. INV-EQUITY-ANALYTIC.
+    - An INDEPENDENT FROM-SCRATCH NAIVE EVALUATOR (enumerate all C(7,5) subsets,
+      plain rank/suit counting, no bit tricks, no lookup tables, no shared
+      imports) agreeing with production on the WINNER across 20,000 random
+      board-sharing matchups + 8 constructed category boundaries.
+
+  EVERYTHING IN PASS 2 PASSED ON THE FIRST RUN. NO DEFECTS FOUND. That is
+  confirmation, not discovery. Do not let it get retold as "fixed the equity
+  engine" — nothing was wrong with it.
+
+  VERIFIED: 13,153 passed / 20 skipped / 547 files / 0 failures (from
+  13,124/546). Build clean. Commits 2e6a4eb + 69b064d, pushed.
+
+  Also corrected a long-stale metric: state.md said ~12,349 tests / 507 files,
+  unchanged since 2026-06-12.
+
+context_notes: |
+  WHAT THE NEXT SESSION SHOULD DO FIRST — two independent threads.
+
+  THREAD A, NEEDS THE FOUNDER (2 minutes, potentially large payoff). Still not
+  done, carried over from the previous session unchanged:
+      git sparse-checkout list   in C:\Users\chris\data\phh-dataset
+      plus a listing of data/
+  handhq is ONE SUBSET of the uoftcprg repo; the clone is blobless-sparse with
+  the git pack RETAINED, so any directory re-materializes with NO re-download.
+  A sibling subset would make the cross-era robustness test (Phase 3) free.
+  READ docs/research/mass-pool-data-2026-07-25.md FIRST — it already evaluated
+  and REJECTED IRC (play-money era) and commercial vendors (ToS-gray). Those
+  rejections were correct; do not re-propose them.
+
+  THREAD B, RUNNABLE WITHOUT ANY DATA — and this is now the highest-value
+  remaining math work:
+      THE EV ARITHMETIC ITSELF. computeCallDepth2EV and the game tree are
+      UNTOUCHED. Both passes this session validated the INPUTS to EV (pot,
+      side pots, the raise ladder, hand-vs-hand equity) and never EV. This is
+      exactly what sits under SYNTHESIS gap 1 — "we have no measurement of
+      recommendation quality at all". A perfectly calibrated villain model
+      behind a broken game tree still loses money.
+      Second, cheaper: hand-vs-RANGE and MULTIWAY aggregation. Pass 2 validated
+      hand-vs-HAND only; the layer above it (combo weighting, multiway path) has
+      no ground truth. mwEquityValidation lives in src/__dev__/ and is EXCLUDED
+      from the suite.
+      Third: rake is modelled, never checked against a real cardroom schedule.
+
+  METHOD TO CARRY FORWARD (DEC-031, and it generalizes past equity): when
+  validating our own math, ground truth must not be our own code. Analytic
+  values, algorithm-independent invariants, or a from-scratch second
+  implementation. Two optimized implementations agreeing is CONSISTENCY and must
+  be labelled as such in the register. The invariants are the cheapest of the
+  three and generalize well — complementarity and isomorphism cost almost
+  nothing to write and hold regardless of implementation.
+
+  TVR IS STILL SLOWED, NOT CANCELLED. DEC-027 stands. All Gate 1-4 evidence is
+  intact (docs/design/audits/, surfaces/layout-doctrine.md, the device baseline).
+  WS-320 Gate 4 Phase B, WS-313 Phase C and WS-322 migration all remain queued
+  behind trust work. Do NOT resume Phase B assuming it is the active thread.
+
+  WS-324 IS NOT CLOSED. Phase 2 is partially done (two passes); phases 0, 1 and
+  3 are untouched. Its status stays backlog.
+
+  STILL OPEN FROM LAST SESSION, unchanged and still blocked on the founder:
+    - test the sizing prototype (docs/design/explorations/sizing-track-prototype.html):
+      is the drag uninterrupted now, and does 180ms or instant feel right?
+    - reproduce WS-315 on his device. DO NOT "fix" the media query — it works;
+      the cause is device-specific and the mechanism is NOT established.
+
+decisions_recorded:
+  - "DEC-029 — getMinRaise derives the ladder from amounts; reopensAction governs only who may act"
+  - "DEC-030 — randomized generators produce reachable states; unreachable shapes are characterized, not asserted"
+  - "DEC-031 — validating our own math requires ground truth that is not our own code"
+
+verification:
+  tests: "PASS — 13,153 passed / 20 skipped / 547 files / 0 failures"
+  build: "PASS — clean, PWA 63 precache entries"
+  git: "clean and pushed — claude/poker-table-redesign-z0h4rc HEAD 69b064d"
