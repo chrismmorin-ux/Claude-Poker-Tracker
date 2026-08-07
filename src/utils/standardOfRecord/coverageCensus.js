@@ -498,3 +498,197 @@ export const observedZeros = (census) => Object.freeze(
     .filter((c) => c.status === CELL_STATUSES.OBSERVED_ZERO)
     .map((c) => Object.freeze({ contextKey: c.contextKey, coords: c.coords })),
 );
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// WS-428 — `opportunitiesPerHand`: the second factor of the headline figure.
+//
+// SCORED-READOUT-SPEC §3.3 defines the optimizable figure as
+//
+//     overallEvBB100 = edgeBB × opportunitiesPerHand × 100
+//
+// and sources the second factor from "the COVERAGE CENSUS over the Deal Book — NOT from
+// n/handsRepresented on the scored subset". This block is what makes that refusal STRUCTURAL
+// rather than prose.
+//
+// THE FAILURE THIS PREVENTS. `n / handsRepresented` computed on the scored subset looks like
+// the same number and is not: it conditions on the hands the HARNESS managed to score, so it
+// inherits every sampling limit of the instrument — `--max-decisions`, walk-forward training
+// minimums, engine skips, geometry-resolution failures. The two quantities diverge exactly
+// when the harness is under-powered, which is precisely when someone is most tempted to quote
+// the headline anyway. `opportunitiesPerHand` is a property of the GAME — how many decisions
+// a hand presents to a seat — and its only legitimate source is a walk of the Deal Book's own
+// hand structure.
+//
+// HOW THE REFUSAL IS ENFORCED, in three layers:
+//   1. `attachOpportunityCount` accepts exactly one basis (`deal-book-structure`) from a
+//      closed enum, and names the forbidden derivations in its error message.
+//   2. It requires the census's examination mode to be `exhaustive` — a positive claim that
+//      every hand record in the Deal Book was walked. An `enumerated` census is a census of a
+//      SCOPED walk, and a count over a scoped walk is a harness property again.
+//   3. The opportunity total is derived from the census's own cells, never accepted as a
+//      caller-supplied number — the count cannot disagree with the record it rides on.
+//
+// SCHEMA NOTE (deferred, deliberately): `opportunities` is not yet declared in
+// `schemas.js` COVERAGE_CENSUS_FIELDS. It is legal today because `checkAgainstSchema`
+// ignores unknown fields, and it validates here via `attachOpportunityCount`'s own checks.
+// The descriptor `{ name: 'opportunities', type: 'object', since: 3 }` plus the
+// `SOR_SCHEMA_VERSIONS.coverageCensus` bump to 3 belongs in schemas.js — it was NOT added in
+// WS-428 because schemas.js was under concurrent edit by another work item the same night.
+// Append it (additive-only, `check-sor-additive.sh` guards) at the next touch of schemas.js.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * The one legitimate basis for an opportunity count. Closed enum of size one, deliberately:
+ * the point is not to offer choices, it is to make the illegitimate derivations nameable and
+ * refusable.
+ */
+export const OPPORTUNITY_BASIS = Object.freeze({
+  /** Counted by walking every hand record in the Deal Book. The only admissible basis. */
+  DEAL_BOOK_STRUCTURE: 'deal-book-structure',
+});
+
+/**
+ * The derivations §3.3 refuses by name. Kept as data so the error message and any future
+ * scanner agree on what the forbidden thing is called.
+ */
+export const FORBIDDEN_OPPORTUNITY_BASES = Object.freeze([
+  'scored-subset',
+  'n-over-hands-represented',
+  'harness-throughput',
+]);
+
+/**
+ * Attach a decision-opportunity count to a census built over a Deal Book.
+ *
+ * The census's cells carry the opportunity counts (hits per context — e.g. per street); this
+ * attaches the per-hand DENOMINATOR and the provenance that makes the ratio quotable.
+ *
+ * `seatHands`, not hands: POKER_THEORY §14.1 and the Hole Map's RULE 7a-adjacent seat-hands
+ * rule. A hand at a 9-handed table is nine players' hands; dividing one seat's opportunities
+ * by table-hands would deflate the rate ~9×. One seat-hand = one player dealt into one hand.
+ *
+ * @param {Object} census - from `buildCoverageCensus`, examination mode `exhaustive`
+ * @param {Object} params
+ * @param {string} params.basis - must be OPPORTUNITY_BASIS.DEAL_BOOK_STRUCTURE
+ * @param {number} params.seatHands - count of (player, hand) participations in the Deal Book
+ * @param {string} [params.dealBookHash] - the book the walk covered, so the count travels
+ *   with the identity of the hand set it is a property of
+ * @param {string} [params.note] - prose provenance (what counted as an opportunity)
+ * @returns {Object} a new frozen census carrying `opportunities`
+ */
+export const attachOpportunityCount = (census, {
+  basis,
+  seatHands,
+  dealBookHash = null,
+  note = null,
+} = {}) => {
+  const problems = coverageCensusProblems(census);
+  if (problems.length > 0) {
+    throw new StandardOfRecordError(
+      `attachOpportunityCount: refusing to attach to an invalid census: ${problems.join('; ')}`,
+      { problems },
+    );
+  }
+  if (FORBIDDEN_OPPORTUNITY_BASES.includes(basis)) {
+    throw new StandardOfRecordError(
+      `attachOpportunityCount: basis "${basis}" is REFUSED. opportunitiesPerHand is a property `
+      + 'of the GAME (how many decisions a hand presents to a seat), never of how many '
+      + 'decisions the harness scored. n/handsRepresented on the scored subset inherits every '
+      + 'sampling limit of the instrument — --max-decisions, walk-forward minimums, engine '
+      + 'skips — and diverges from the game quantity exactly when the harness is under-powered '
+      + '(SCORED-READOUT-SPEC §3.3). Count from Deal Book hand structure instead.',
+      { basis },
+    );
+  }
+  if (basis !== OPPORTUNITY_BASIS.DEAL_BOOK_STRUCTURE) {
+    throw new StandardOfRecordError(
+      `attachOpportunityCount: unknown basis "${basis}". The only admissible basis is `
+      + `"${OPPORTUNITY_BASIS.DEAL_BOOK_STRUCTURE}".`,
+      { basis },
+    );
+  }
+  if (census.examination?.mode !== 'exhaustive') {
+    throw new StandardOfRecordError(
+      'attachOpportunityCount: the census must claim examination mode "exhaustive" — a '
+      + 'positive claim that every hand record in the Deal Book was walked. An "enumerated" '
+      + 'census describes a SCOPED walk, and an opportunity count over a scoped walk is a '
+      + 'property of the run\'s scope, which is the harness dependence this factor exists to '
+      + 'not have.',
+      { mode: census.examination?.mode ?? null },
+    );
+  }
+  if (!Number.isInteger(seatHands) || seatHands <= 0) {
+    throw new StandardOfRecordError(
+      `attachOpportunityCount: seatHands must be a positive integer, got ${seatHands}. A `
+      + 'count over zero seat-hands has no denominator, and a fractional one was derived '
+      + 'rather than counted.',
+      { seatHands },
+    );
+  }
+
+  // Derived from the census's own cells, never accepted from the caller: the total cannot
+  // disagree with the record it rides on. Raw parts are stored; the ratio is computed by the
+  // reader (raw over derived — derived can be recomputed, raw cannot be recovered).
+  const decisionOpportunities = census.cells.reduce((n, c) => n + (c.hits ?? 0), 0);
+
+  return Object.freeze({
+    ...census,
+    opportunities: Object.freeze({
+      basis,
+      seatHands,
+      decisionOpportunities,
+      dealBookHash,
+      note,
+    }),
+  });
+};
+
+/**
+ * THE SECOND FACTOR of `overallEvBB100`, read off a census that carries an opportunity count.
+ *
+ * Throws — rather than returning null — on a census with no attached count, because the
+ * caller reaching for this is about to multiply it into the headline figure, and the tempting
+ * fallback in that position is exactly the scored-subset substitution §3.3 forbids. An error
+ * that names the correct path is safer than a null that invites the wrong one.
+ *
+ * @param {Object} census - a census that went through `attachOpportunityCount`
+ * @returns {{perHand: number, decisionOpportunities: number, seatHands: number,
+ *   basis: string, dealBookHash: string|null, conditional: string}}
+ */
+export const opportunitiesPerHand = (census) => {
+  const opp = census?.opportunities;
+  if (!opp) {
+    throw new StandardOfRecordError(
+      'opportunitiesPerHand: this census carries no opportunity count. Attach one with '
+      + '`attachOpportunityCount` from a walk of the Deal Book\'s hand structure. Do NOT '
+      + 'substitute n/handsRepresented from the scored subset — that number inherits every '
+      + 'sampling limit of the harness and is refused by name (SCORED-READOUT-SPEC §3.3).',
+    );
+  }
+  if (opp.basis !== OPPORTUNITY_BASIS.DEAL_BOOK_STRUCTURE) {
+    // Re-checked at read time: an artifact can be edited between write and read, and the
+    // reader is the last line before the number enters a headline.
+    throw new StandardOfRecordError(
+      `opportunitiesPerHand: basis "${opp.basis}" is not "${OPPORTUNITY_BASIS.DEAL_BOOK_STRUCTURE}" `
+      + '— refusing to lift a harness-dependent count into the headline factor.',
+      { basis: opp.basis },
+    );
+  }
+  if (!Number.isInteger(opp.seatHands) || opp.seatHands <= 0) {
+    throw new StandardOfRecordError(
+      `opportunitiesPerHand: seatHands is ${opp.seatHands}; the ratio has no denominator.`,
+      { seatHands: opp.seatHands },
+    );
+  }
+  return Object.freeze({
+    perHand: opp.decisionOpportunities / opp.seatHands,
+    decisionOpportunities: opp.decisionOpportunities,
+    seatHands: opp.seatHands,
+    basis: opp.basis,
+    dealBookHash: opp.dealBookHash ?? null,
+    // Numbers carry their conditional (repo rule): this is per SEAT-HAND in the Deal Book,
+    // unconditional on reaching the flop or on the harness scoring anything.
+    conditional: 'decision opportunities per seat-hand in the Deal Book, from hand structure '
+      + '— invariant to --max-decisions and every other harness limit by construction',
+  });
+};

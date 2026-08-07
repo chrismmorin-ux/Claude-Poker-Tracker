@@ -153,6 +153,21 @@ const main = async () => {
     });
     console.log(`Deal Book ${dealBook.dealBookId} — ${dealBook.memberCount} file(s), ${dealBook.identity}, ${dealBook.contentHash.slice(0, 20)}…`);
 
+    // WS-428 — the second factor of the §3.3 headline (`overallEvBB100 = edgeBB ×
+    // opportunitiesPerHand × 100`), counted from the SAME post-slice file list the Deal Book
+    // describes. A second streaming parse (no engine work), taken BEFORE the run so the count
+    // is a property of the book — it cannot depend on --max-decisions or anything else the
+    // scoring pass below does. n/handsRepresented on the scored subset is structurally
+    // refused as a source (coverageCensus.attachOpportunityCount).
+    const { opportunityCensusForDealBook } = await loader.load('/scripts/backtest/opportunityCensus.mjs');
+    const opportunityCensus = await opportunityCensusForDealBook({
+      files, dealBookHash: dealBook.contentHash, log: (m) => console.log(`  ${m}`),
+    });
+    reportOpts.opportunityCensus = opportunityCensus;
+    console.log(`Opportunity census: ${opportunityCensus.opportunities.decisionOpportunities} `
+      + `postflop decision opportunities over ${opportunityCensus.opportunities.seatHands} seat-hands `
+      + `(${(opportunityCensus.opportunities.decisionOpportunities / opportunityCensus.opportunities.seatHands).toFixed(4)}/hand, from Deal Book structure)`);
+
     const replicationStamp = await buildStampInput({
       loader,
       seeds: { clusterBootstrap: DEFAULT_BOOTSTRAP_SEED },

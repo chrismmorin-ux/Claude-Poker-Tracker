@@ -178,8 +178,9 @@ const stampFixture = () => ({
 describe('buildHeroEvReport — the Standard of Record retrofit', () => {
   it('bumped its schema version', () => {
     // v2 = WS-322 (Result Card), v3 = WS-331 (pier posts), v4 = WS-295 (the optimizer's-curse
-    // block). All additive; the assertion below is the one that guards the additive property.
-    expect(HERO_EV_SCHEMA_VERSION).toBe(4);
+    // block), v5 = WS-428 (overallEv — the §3.3 headline with both factors). All additive;
+    // the assertion below is the one that guards the additive property.
+    expect(HERO_EV_SCHEMA_VERSION).toBe(5);
   });
 
   it('STILL emits every field it emitted before — the retrofit is additive', () => {
