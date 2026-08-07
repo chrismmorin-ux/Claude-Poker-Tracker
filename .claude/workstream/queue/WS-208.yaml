@@ -44,6 +44,7 @@ accept_criteria:
   - "Orientation-change behavior specified (state preservation across landscape ↔ portrait)"
   - "Equity histogram + range comparison overlay reflow documented"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/design/surfaces/postflop-drills.md (potentially modified — mobile-portrait Range Lab section)"
   - "docs/design/surfaces/postflop-drills-mobile.md (NEW, conditional)"

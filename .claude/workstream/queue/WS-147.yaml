@@ -33,6 +33,7 @@ accept_criteria:
   - "Test surface for registry + binding"
   - "Cross-reference test: every leakRule has at least one lesson available (or test gates that)"
 effort: "M"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "docs/design/lessons/CONVENTIONS.md (NEW)"
   - "src/utils/skillAssessment/lessonRegistry.js (NEW)"

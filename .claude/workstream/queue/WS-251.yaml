@@ -29,6 +29,7 @@ accept_criteria: |
   - Degrade gracefully when no payout ladder / not a tournament (no behavior change for cash).
   - Tests: a bubble spot tightens a marginal 3-bet/barrel vs the cash-game baseline.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/preflopAdvisor.js"

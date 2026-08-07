@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "3 GREEN preflop cards authored with fidelity bar + lineage footer"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Structurally blocked on the Q5 differentiation-demo at Gate 4 design review (per `docs/design/surfaces/printable-refresher-card-templates.md:423` — owner must run `PreflopCardTemplate` + `PRF-PREFLOP-OPEN-CO-100BB-2-5` manifest mock vs Upswing's published preflop chart and ratify go/no-go on Phase A). Per Q5 owner-interview (2026-04-24, gate3-owner-interview.md): if preflop cards are visibly indistinguishable from Upswing free at the demo, cut Phase A entirely and link to Upswing; if differentiation (rake-aware + stakes-selected + lineage-stamped) is visibly apparent, ship as free or bundled with Plus at owner discretion. Promoted from prose to structured field 2026-05-17 SPR-087 (WS-047 hygiene) so /next Step 2-prereq dampens P=15 × 0.25 = 3.75 rather than surfacing as a clean ship-ready candidate. Clear this note once owner runs the Gate 4 demo and ratifies go/no-go."

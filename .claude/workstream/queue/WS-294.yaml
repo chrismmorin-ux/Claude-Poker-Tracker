@@ -56,6 +56,7 @@ accept_criteria: |
   - If the CI still straddles zero, that is reported as the result. C3 failing on a
     calibrated model is a finding, not a reason to keep running arms until one clears.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/heroPolicy.mjs"
   - "scripts/backtest/heroEvRunner.mjs"

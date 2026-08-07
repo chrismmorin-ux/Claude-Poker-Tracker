@@ -32,6 +32,7 @@ accept_criteria: |
   3. npm run build clean; full test suite green (no test references the view).
   4. Admin section in Settings renders without the entry.
 effort: S
+runs_on: "g16"        # touches UI files
 files_involved:
   - src/components/views/PrototypeFinderView/PrototypeFinderView.jsx
   - src/components/views/PrototypeFinderView/mockPlayers.js

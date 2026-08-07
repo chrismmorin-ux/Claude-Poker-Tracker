@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "`hand.flags[]` + `hand.reviewState` additive fields. Backwards-compatible load path for legacy hands. IDB version bump. Effort: S."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-067"

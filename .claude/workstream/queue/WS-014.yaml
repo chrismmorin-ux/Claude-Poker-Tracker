@@ -17,6 +17,7 @@ accept_criteria:
   - "**Math layer DONE:** anchorLibrary scaffold + validator + scenario runner + 4 synthetic villains + 4 Tier-1 scenarios + retirement evaluator + primitive validity (202 tests green). **Remaining:** Commit 2.5 only — end-to-end producer wiring (replace scenario test stubs with real assumptionEngine integration"
   - "requires exploit-deviation coordination on PREDICATE_KEYS)."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

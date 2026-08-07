@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "10 anchors in library, Tier 1-validated"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy:

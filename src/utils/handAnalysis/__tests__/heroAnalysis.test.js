@@ -166,10 +166,13 @@ describe('suggestOptimalPlay', () => {
 // aggressor-status instead. The unrepresentative fixture is precisely why the defect
 // survived — the suite agreed with the author rather than with the data.
 //
-// The fixtures below are real 7-axis keys and assert what the code ACTUALLY does today.
-// Whether that behaviour is right is WS-318's question, deliberately not settled here:
-// WS-317's acceptance is bit-identical behaviour, so a semantic fix belongs in its own
-// change with its own measurement.
+// The fixtures below are real 7-axis keys.
+//
+// WS-318 SETTLED IT (2026-08-05): the match is street + contextAction. The measurement that
+// settled it was not "which reading is nicer" but that the OLD one never fired — hero-side
+// producers put a primitive action ('bet') in the isAgg slot while weakness keys carry a
+// role ('agg'), so the comparison ran over disjoint value sets and returned false for every
+// hand in the app's history. See the near-miss pair below.
 const KEY = ({ street = 'flop', texture = 'dry', pos = 'LATE', isAgg = 'def',
   isIP = 'ip', facing = 'bet', ctx = 'vsBet' } = {}) =>
   `${street}:${texture}:${pos}:${isAgg}:${isIP}:${facing}:${ctx}`;
@@ -188,7 +191,7 @@ describe('matchHeroWeakness', () => {
     ])).toBeNull();
   });
 
-  it('matches weakness on street + aggressor-status, across differing texture/position', () => {
+  it('matches weakness on street + contextAction, across differing texture/position', () => {
     const weaknesses = [{
       label: 'Calling station on flop',
       situationKeys: [KEY({ texture: 'wet', pos: 'MIDDLE' }), KEY({ pos: 'EARLY' })],
@@ -210,27 +213,49 @@ describe('matchHeroWeakness', () => {
     expect(matchHeroWeakness(KEY(), weaknesses)).toBeNull();
   });
 
-  it('returns null when aggressor-status differs on the same street', () => {
-    const weaknesses = [{
-      label: 'Aggressor leak',
-      situationKeys: [KEY({ isAgg: 'agg' })],
-      sampleSize: 3,
-    }];
-    expect(matchHeroWeakness(KEY({ isAgg: 'def' }), weaknesses)).toBeNull();
-  });
+  // ─── WS-318: the near-miss pair ───────────────────────────────────────────
+  // These two cases ARE the semantic. WS-317 pinned them the other way round and said
+  // explicitly that they must flip if the match moved to contextAction. It has.
 
-  it('MATCHES even when the action differs — the WS-318 case, pinned as current behaviour', () => {
-    // Same street, same isAgg, DIFFERENT contextAction. This matches today because the
-    // comparison is on isAgg. If WS-318 moves the semantic to contextAction, THIS is the
-    // assertion that must flip — it is the entire difference between the two readings.
+  it('does NOT match when the action differs but the role is the same — WS-318', () => {
+    // Same street, same isAgg, DIFFERENT contextAction. The single case that distinguishes
+    // matching on the action taken from matching on aggressor-status.
     const weaknesses = [{
       label: 'Different action, same role',
       situationKeys: [KEY({ ctx: 'vsRaise', facing: 'raise' })],
       sampleSize: 7,
     }];
-    const result = matchHeroWeakness(KEY({ ctx: 'vsBet', facing: 'bet' }), weaknesses);
+    expect(matchHeroWeakness(KEY({ ctx: 'vsBet', facing: 'bet' }), weaknesses)).toBeNull();
+  });
+
+  it('DOES match when the action is the same but the role differs — WS-318', () => {
+    // The converse. Role is not a matched axis: for the first-to-act family contextAction
+    // already implies it ('cbet' is aggressor-only, 'donk' is defender-only), and for the
+    // facing family requiring it too would thin matches on live sample sizes for no
+    // measured gain. Widen only with a number attached.
+    const weaknesses = [{
+      label: 'Same action, different role',
+      situationKeys: [KEY({ isAgg: 'agg' })],
+      sampleSize: 3,
+    }];
+    const result = matchHeroWeakness(KEY({ isAgg: 'def' }), weaknesses);
     expect(result).not.toBeNull();
-    expect(result.weakness.label).toBe('Different action, same role');
+    expect(result.weakness.label).toBe('Same action, different role');
+  });
+
+  it('names the action in the message, not the raw isAgg axis — WS-318', () => {
+    // The old copy rendered axis 3 and read "in flop agg spots", which is not a phrase a
+    // poker player uses. It must name what actually happened at the table.
+    const weaknesses = [{
+      label: 'Over-c-bets flop',
+      situationKeys: [KEY({ isAgg: 'agg', facing: 'none', ctx: 'cbet' })],
+      sampleSize: 9,
+    }];
+    const result = matchHeroWeakness(
+      KEY({ isAgg: 'agg', facing: 'none', ctx: 'cbet' }), weaknesses
+    );
+    expect(result.message).toContain('flop c-bet spots');
+    expect(result.message).not.toContain('agg spots');
   });
 
   it('skips weaknesses with no situationKeys', () => {

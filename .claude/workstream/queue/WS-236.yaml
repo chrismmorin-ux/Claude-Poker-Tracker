@@ -27,6 +27,7 @@ accept_criteria:
   - "Parallel stats-engine either reuses the main tendency pipeline OR a test asserts parity between the two computation paths."
   - "Gate 1 (and Gate 2 if a new HUD interaction) cleared; sidebar visual verification per ignition harness before merge."
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "ignition-poker-tracker/shared/stats-engine.js"
 blocked_by: []

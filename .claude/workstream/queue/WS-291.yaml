@@ -78,6 +78,7 @@ accept_criteria: |
     model is downstream of this change and MUST be re-scored).
   - POKER_THEORY updated with the rule that a range never assigns zero, and why.
 effort: "M"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "src/utils/exploitEngine/postflopNarrower.js"
   - "src/utils/exploitEngine/__tests__/postflopNarrower.test.js"

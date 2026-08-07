@@ -17,6 +17,7 @@ accept_criteria:
   - "Test passes"
   - "hand-in-progress defers any paywall to hand-end"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-031"

@@ -82,6 +82,7 @@ accept_criteria: |
     bumped.
   - preflopAdvisor / preflopFlopEV / exploitEngine suites green.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/preflopFlopEV.js"
   - "src/utils/exploitEngine/preflopAdvisor.js"

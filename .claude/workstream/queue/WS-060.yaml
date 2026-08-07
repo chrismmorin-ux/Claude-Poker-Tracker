@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Stretch."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-058"

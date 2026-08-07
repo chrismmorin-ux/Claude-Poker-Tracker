@@ -81,6 +81,7 @@ accept_criteria: |
   - POKER_THEORY.md gains a game/seat-selection section — it is currently silent
     on the highest-$/hour decision in live play. Version + changelog bumped.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - ".claude/context/POKER_THEORY.md"
   - "docs/design/surfaces/"

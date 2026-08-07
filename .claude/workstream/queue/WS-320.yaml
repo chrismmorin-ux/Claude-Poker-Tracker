@@ -71,6 +71,7 @@ accept_criteria: |
   - Result recorded in POKER_THEORY §15.3 whichever way it falls. A refuted founder hypothesis
     is as valuable as a confirmed one and gets the same treatment §11.8 gave the slowplayer.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/"
   - ".claude/context/POKER_THEORY.md"

@@ -17,6 +17,7 @@ accept_criteria:
   - "Wraps gated features"
   - "consistent copy + CTA pattern"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Pending entitlement-rules child (MPMF-G5-ER, not yet ticketed in queue). PaywallGate consumes the ER policy contract; until ER ships the rules registry, this would have nothing to gate against."

@@ -51,6 +51,7 @@ accept_criteria:
   - "PMC interface declared (does PJX read predictionAudit aggregates?); no Ignition sidebar counterpart locked; opportunity-cost check answered (does projection beat a raw 2-axis VPIP×AF scatter at N≈dozens?)."
   - "Outputs: updated framework artifacts + Gate 2 re-run to GREEN before Gate 4 (per LIFECYCLE Gate 3 contract)."
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

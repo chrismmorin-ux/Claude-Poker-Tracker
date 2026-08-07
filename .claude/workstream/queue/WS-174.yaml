@@ -46,6 +46,7 @@ trigger_condition: |
        that showdown-driven Bayesian updates correlate with sizing-bin
        drift more than action-frequency drift
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "TBD when triggered"
 blocked_by: []

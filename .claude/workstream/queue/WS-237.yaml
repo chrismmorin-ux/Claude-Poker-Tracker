@@ -26,6 +26,7 @@ accept_criteria:
   - "A provenance stamp records the source publication + retrieval/estimate date."
   - "Any code path comparing a Read against these charts flags 'no equilibrium anchor' rather than implying a true GTO comparison."
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/pokerCore/rangeMatrix.js"
 blocked_by: []

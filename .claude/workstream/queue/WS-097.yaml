@@ -18,6 +18,7 @@ accept_criteria:
   - "✓ overrides authored where audit dim-8 flagged combo-level divergence"
   - "✓ tests green"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

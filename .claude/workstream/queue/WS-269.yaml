@@ -50,6 +50,7 @@ accept_criteria: |
   - fb-002 / fr-012 / fr-019 marked resolved in .cwos-feedback.yaml with the
     fixing commit.
 effort: "S"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "kit/scripts/cwos-next.js"
   - ".cwos-feedback.yaml"

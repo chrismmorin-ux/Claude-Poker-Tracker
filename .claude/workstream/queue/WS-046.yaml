@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Each descriptor has ≥2 recognition drills"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy:

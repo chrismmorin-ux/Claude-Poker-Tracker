@@ -67,6 +67,7 @@ accept_criteria: |
   - The 19 leakage-guard tests either continue to guard a live channel or are
     re-pointed; note in scripts/__tests__/leakageGuard.test.js which it is.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "scripts/backtest/runner.mjs"
   - "scripts/backtest/leakageGuard.mjs"

@@ -1,0 +1,14 @@
+id: "ses-20260804-0239-00449f7e"
+status: active
+started_at: "2026-08-04T02:39:23.618Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-04T02:39:23.618Z"
+pid: 652
+agent_session_id: "00449f7e-f62a-426a-abd3-693bc31cb204"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked: []

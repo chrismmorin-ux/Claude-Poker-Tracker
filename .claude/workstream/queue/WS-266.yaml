@@ -32,6 +32,7 @@ accept_criteria: |
     can't silently fall out of backups.
   - Round-trip test: export → clear → import → anchorObservations intact.
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/persistence/"
 blocked_by: []

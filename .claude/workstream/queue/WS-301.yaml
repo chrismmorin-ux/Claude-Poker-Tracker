@@ -57,6 +57,7 @@ accept_criteria: |
   - No accuracy regression: whatever is trimmed is re-scored through the WS-273 harness and
     the WS-293 range-calibration probe.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/gameTreeDepth2.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

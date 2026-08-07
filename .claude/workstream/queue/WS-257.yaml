@@ -35,6 +35,7 @@ accept_criteria: |
   - POKER_THEORY.md changelog entry added; last_verified frontmatter updated.
   - No engine code changes (doc-only).
 effort: "S"
+runs_on: "phone"        # small, prose/config only
 files_involved:
   - ".claude/context/POKER_THEORY.md"
 blocked_by: []

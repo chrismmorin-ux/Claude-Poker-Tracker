@@ -82,6 +82,7 @@ accept_criteria: |
     generalization caveats stated at the point of every number.
   - Runtime documented; harness runnable on a subset for iteration.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/villainDecisionModel.js"
   - "src/utils/exploitEngine/poolBaseline.js"

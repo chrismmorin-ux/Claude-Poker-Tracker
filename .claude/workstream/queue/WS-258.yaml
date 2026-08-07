@@ -33,6 +33,7 @@ accept_criteria: |
     finally-restore for a synchronous fn (including when fn throws).
   - exploitEngine suite green; no behavior change for existing callers.
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/statRules.js"
   - "src/utils/exploitEngine/__tests__/statRules.test.js"

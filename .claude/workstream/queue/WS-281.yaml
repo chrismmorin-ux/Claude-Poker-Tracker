@@ -55,6 +55,7 @@ accept_criteria: |
   - If either cost is negligible, that is recorded as a positive result and the
     approximation is retained with the number attached.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/foldEquityCalculator.js"
   - "src/utils/exploitEngine/gameTreeEquity.js"

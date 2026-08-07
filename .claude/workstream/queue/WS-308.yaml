@@ -51,6 +51,7 @@ accept_criteria: |
   - Behavioural test asserting the above that FAILS against the pre-fix engine.
   - Scenario 1's `console.warn` becomes a real assertion or is removed.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/gameTreeDepth2.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

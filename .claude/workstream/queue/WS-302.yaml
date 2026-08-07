@@ -68,6 +68,7 @@ accept_criteria: |
   - No regression through the WS-273 villain-prediction harness.
   - POKER_THEORY 2.1 records that the chart is a prior with support everywhere.
 effort: "M"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "src/utils/exploitEngine/preflopAdvisor.js"
   - "src/utils/rangeEngine/populationPriors.js"

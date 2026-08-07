@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "**Idempotency shipped:** `migrateV19` re-open test verifies 8 primitives stay 8 (no duplicates) + put-loop overwrites with same content. **Remaining:** content-drift snapshot test comparing PERCEPTION_PRIMITIVE_SEEDS constant against perception-primitives.md content (Phase 6+ build-time generator script)."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

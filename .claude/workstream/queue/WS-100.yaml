@@ -19,6 +19,7 @@ accept_criteria:
   - "✓ surface integration in ≥1 non-line-study venue (HandReplay or TableView)"
   - "✓ tests green"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

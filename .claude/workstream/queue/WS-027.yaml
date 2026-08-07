@@ -18,6 +18,7 @@ accept_criteria:
   - "scheduling separate external-counsel session pending"
   - "Phase 1 main-app unblocked meanwhile"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "External-counsel scheduling action item — non-coding meta-task. Cannot ship autonomously; remains a placeholder until counsel session is booked and the Q7 verdict is captured. Do not surface as autonomous-execution candidate."

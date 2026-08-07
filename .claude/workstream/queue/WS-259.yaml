@@ -41,6 +41,7 @@ accept_criteria: |
   - Next /pulse run domain-correctness sweep executes Phase 1 drift detection
     against the promoted spec.
 effort: "S"
+runs_on: "phone"        # small, prose/config only
 files_involved:
   - "docs/domain-spec.draft.md"
   - "DRAFTS.md"

@@ -58,6 +58,7 @@ accept_criteria: |
     underlying shapes are correct — re-measure it, do not assume it holds.
   - No regression in the WS-302 shape tests (open rises, fold falls, limp/coldCall humped).
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/rangeEngine/populationPriors.js"
   - "src/utils/rangeEngine/__tests__/populationPriors.test.js"

@@ -29,6 +29,7 @@ accept_criteria:
   - "A test replays at least one captured WS frame sequence end-to-end into render output with no undefined/raw text"
   - "message-sequences dataQuality default matches the producer's object shape"
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - ignition-poker-tracker/shared/protocol.js
   - ignition-poker-tracker/shared/hand-state-machine.js

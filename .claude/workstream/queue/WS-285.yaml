@@ -80,6 +80,7 @@ accept_criteria: |
   - Re-check the live path: hero-facing advice consumes this model, so a change
     here moves recommendations. Guard with the existing exploitEngine suites.
 effort: "L"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/villainDecisionModel.js"
   - "src/utils/exploitEngine/villainModelData.js"

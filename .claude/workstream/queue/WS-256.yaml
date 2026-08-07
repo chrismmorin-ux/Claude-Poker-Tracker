@@ -86,6 +86,7 @@ accept_criteria: |
     (RangeDetailPanel) render the refined classes or explicitly aggregate.
   - Full rangeEngine + exploitEngine suites green.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/rangeEngine/rangeProfile.js"
   - "src/utils/rangeEngine/actionExtractor.js"

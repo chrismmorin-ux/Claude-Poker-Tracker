@@ -52,6 +52,7 @@ accept_criteria: |
   - Measured through the WS-273 harness on the BY FACINGACTION = bet slice,
     which currently shows the model adding ~0 lift over the population prior.
 effort: "L"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "src/utils/exploitEngine/gameTreeEvaluator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

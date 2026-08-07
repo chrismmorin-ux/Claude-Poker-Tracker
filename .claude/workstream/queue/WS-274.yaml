@@ -87,6 +87,7 @@ accept_criteria: |
   - preflopAdvisor + exploitEngine suites green; no regression when zero villain
     data exists (must reproduce today's chart behavior exactly).
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/preflopAdvisor.js"
   - "src/utils/exploitEngine/preflopFlopEV.js"

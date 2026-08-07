@@ -53,6 +53,7 @@ accept_criteria: |
      harness tournament scenarios verified via Playwright screenshots
      (mandatory for sidebar changes per CLAUDE.md).
 effort: M
+runs_on: "g16"        # touches UI files
 files_involved:
   - ignition-poker-tracker/side-panel/side-panel.js
   - ignition-poker-tracker/side-panel/render-orchestrator.js

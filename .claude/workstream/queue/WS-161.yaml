@@ -32,6 +32,7 @@ accept_criteria:
   - "AP-PIO-03 binding: never auto-launches camera"
   - "Tests + Playwright visual smoke (mobile)"
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/components/views/PlayerEditorView/CameraCaptureModal.jsx (NEW)"
   - "src/components/views/PlayerEditorView/__tests__/CameraCaptureModal.test.jsx (NEW)"

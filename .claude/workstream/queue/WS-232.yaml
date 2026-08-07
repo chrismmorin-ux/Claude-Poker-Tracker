@@ -41,6 +41,7 @@ accept_criteria:
   - "Postflop LessonsMode renders `compute` sections (or a CI/authoring assertion prevents authoring an unrenderable compute section). Test added."
   - "EstimateMode feedback-parity (F-DRILL-06) either implemented behind the aggregate-shape fix, or explicitly carved into its own ticket with the schema dependency documented."
 effort: "M"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/components/views/PostflopDrillsView/FrameworkMode.jsx"
   - "src/components/views/PreflopDrillsView/FrameworkMode.jsx"

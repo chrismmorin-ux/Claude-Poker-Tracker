@@ -122,3 +122,6 @@ equity-matrix*.csv.meta.json
 
 # devshot output (scripts/devshot.mjs)
 .devshots/
+
+# Runtime session pointer (ephemeral, per-machine)
+.claude/workstream/.current-session

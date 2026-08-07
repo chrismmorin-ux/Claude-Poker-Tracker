@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Flop + river artifacts re-rated to v2.2 with full §13 D13 reflexive checks applied (current refits are minimal — §3 + §11 row-tag for flop, §5 + §11 row-tag for river). All v2/v2.1-era F-findings tracked in audits closed."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []
