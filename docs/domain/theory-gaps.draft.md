@@ -403,7 +403,9 @@ either run.
 ### F4. §11.9 says coverage is "100% everywhere"; §3.6.1 and §11.6 say ~94%, and §11.9 says 88–94%
 **Claim:** The document states its own headline post-fix range-coverage figure
 three different ways, and the strongest version — "100% everywhere — the floor
-guarantees it" — is used to dismiss a ticket's numbers.
+guarantees it" — is used to dismiss a ticket's numbers. (The percentages are
+range-coverage counts quoted from the document under audit — a consistency
+finding, not an EV claim; the contradiction itself is the finding.)
 
 **Source:** senior-engineer, independently reproduced from the file (WS-423 C1).
 Facilitator re-verified all four anchors.

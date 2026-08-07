@@ -21,6 +21,10 @@
  *   --pool-pct         percent of players routed to POOL (default 50)
  *   --max-hands-per-player
  *   --out              write full JSON (arms summary + mined likelihood tables) here
+ *   --card-out         write the Result Card here (default: <out> with .json replaced by
+ *                       .result-card.json, whenever --out is given). WS-437: the headline
+ *                       "share of the engine" figure is a citable number, so a run that
+ *                       persists output also emits the ADR-009 Result Card that binds it.
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -75,10 +79,14 @@ const main = async () => {
   const loader = await openLoader(process.cwd());
   try {
     const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
-    const { runTeachableArmsProbe } = await loader.load('/scripts/backtest/teachableArmsProbe.mjs');
+    const { runTeachableArmsProbe, teachableArmsResultCard, shareOfEngineEdge } =
+      await loader.load('/scripts/backtest/teachableArmsProbe.mjs');
+    const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
+    const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
 
+    const root = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     let files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root,
       sites: list(args.sites),
       stakes: list(args.stakes),
     });
@@ -112,6 +120,15 @@ const main = async () => {
     console.log(likelihoodTable('A3 LIKELIHOOD TABLE (POOL-mined) — P(action | class), 4 actions x 3 classes', r.a3Table, ['raise', 'call', 'check', 'bet']));
     console.log(likelihoodTable('A4 LIKELIHOOD TABLE (POOL-mined) — P(action | class), 5 actions x 3 classes', r.a4Table, ['raise', 'call', 'check-back', 'check-OOP', 'bet']));
 
+    const shares = shareOfEngineEdge(r.arms);
+    if (shares) {
+      console.log('\n  SHARE OF ENGINE EDGE — (arm − A0) / (A1 − A0), in Δlog vs uniform.');
+      console.log('  DIAGNOSTIC, NOT A RESULT: Delta-log against revealed hole cards — not an EV');
+      console.log('  claim (SCORED-READOUT-SPEC §8.2). Population online 2009: TRANSFERRED, not');
+      console.log('  measured, for live 1/2-1/3 (HC-011).');
+      console.log(`  A2 ${pct(shares.A2)}   A3 ${pct(shares.A3)}   A4 ${pct(shares.A4)}   (engine edge ${f3(shares.engineEdgeDeltaLog)} Δlog)`);
+    }
+
     console.log(`\n  runtime ${((Date.now() - started) / 1000).toFixed(1)}s`);
     console.log('═'.repeat(80));
 
@@ -119,6 +136,43 @@ const main = async () => {
       mkdirSync(dirname(args.out), { recursive: true });
       writeFileSync(args.out, JSON.stringify(r, null, 2));
       console.log(`\nWrote ${args.out}`);
+    }
+
+    // WS-437: a persisted run also emits its Result Card — the citable figure and the
+    // artifact that binds it travel together, or the figure travels alone and unguarded.
+    const cardOut = typeof args['card-out'] === 'string'
+      ? args['card-out']
+      : (typeof args.out === 'string' ? args.out.replace(/\.json$/, '') + '.result-card.json' : null);
+    if (cardOut) {
+      const dealBook = await buildDealBook({
+        files,
+        root,
+        sliceSpec: { sites: list(args.sites), stakes: list(args.stakes), maxFiles: Number.isFinite(maxFiles) ? maxFiles : null },
+        identity: 'path+size',
+      });
+      const stamp = await buildStampInput({
+        loader,
+        seeds: {},
+        // POSITIVE CLAIM, verified for this path: the probe's closure (buildRangeProfile,
+        // accumulateDecisions, narrowByBoard, classifyComboFull, buildBaselineRange,
+        // enumerateCombos) contains no Math.random() and no refinement clock. The Monte
+        // Carlo equity module preflopAdvisor imports is never reached from buildBaselineRange.
+        unseededSources: [],
+        dealBookHash: dealBook.contentHash,
+        fieldVersion: 'handhq-2009-online',
+        partition: `pool/eval @ poolPct=${int(args['pool-pct'], 50)}, FNV-1a over player id (scripts/backtest/partition.mjs), independent per site`,
+      });
+      const site = (list(args.sites) ?? ['all']).join('+').toLowerCase();
+      const card = teachableArmsResultCard({
+        result: r,
+        stamp,
+        dealBookId: dealBook.dealBookId,
+        fieldId: 'FIELD-handhq-2009-online',
+        site,
+      });
+      mkdirSync(dirname(cardOut), { recursive: true });
+      writeFileSync(cardOut, JSON.stringify(card, null, 2));
+      console.log(`Wrote ${cardOut}  (${card.resultCardId}, register ${stamp.disclaimerRegisterVersion})`);
     }
   } finally {
     await loader.close();

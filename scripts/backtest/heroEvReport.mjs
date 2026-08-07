@@ -24,6 +24,7 @@ import { buildReplicationManifest } from '../../src/utils/standardOfRecord/manif
 import { PBR_SHRINK_SWEEP, PBR_WARNING, PBR_SCOPE } from './poolBestResponse.mjs';
 import { exploitationPremium } from './equilibriumPost.mjs';
 import { buildPositions, exploitationEfficiency } from './strategyPosition.mjs';
+import { composeOverallEv, renderOverallEvLines } from './overallEv.mjs';
 
 const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
@@ -48,8 +49,14 @@ const CORPUS_CAVEAT =
  * absent — an absent block reads as "not applicable", a false one reads as "measured, found
  * nothing", and the truth is "this artifact cannot answer it". Every pre-existing field is
  * unchanged and in place.
+ *
+ * v5 (WS-428) — ADDITIVE. The report gained `overallEv`: the §3.3 headline
+ * `edgeBB × opportunitiesPerHand × 100`, with BOTH factors carried inseparably beside the
+ * product (WS-410 Stage 2) and the second factor sourced from the coverage census over the
+ * Deal Book — never from n/handsRepresented on the scored subset. `null` on a run that
+ * supplied no opportunity census. Every pre-existing field is unchanged and in place.
  */
-export const HERO_EV_SCHEMA_VERSION = 4;
+export const HERO_EV_SCHEMA_VERSION = 5;
 
 /**
  * The estimand, stated in words.
@@ -183,7 +190,7 @@ const withNet = (decisions, field) => decisions.map((d) => ({ ...d, netBB: d[fie
  * card is not quotable. That mirrors how `admissibility` already works: compute the verdict,
  * state the blockers, never silently suppress the arithmetic.
  */
-const buildCardFor = (run, arms, headline, pbr = null) => {
+const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
   const stamp = run.replicationStamp ?? null;
   if (!stamp) {
     return {
@@ -224,6 +231,14 @@ const buildCardFor = (run, arms, headline, pbr = null) => {
         pbrEdgeBB: pbr?.edgeBB ?? null,
         exploitationEfficiency: efficiency.value,
         exploitationEfficiencyUnavailableReason: efficiency.reason,
+        // WS-428 — the §3.3 headline, WITH both factors on the card (WS-410 Stage 2: a
+        // reader must see edge and opportunity count separately, never only the product).
+        // `edgeBB` above is factor 1; `opportunitiesPerHand` is factor 2, from the coverage
+        // census over the Deal Book — structurally refused if derived from the scored
+        // subset (see coverageCensus.attachOpportunityCount). Null when the run supplied no
+        // opportunity census. Population per HC-011 travels on the composed object.
+        overallEvBB100: overallEv?.overallEvBB100 ?? null,
+        opportunitiesPerHand: overallEv?.factors?.opportunitiesPerHand ?? null,
       },
       // PLAYERS, not hands. The CI is a cluster bootstrap over players because decisions
       // inside one player are not independent (POKER_THEORY 14.3).
@@ -495,7 +510,7 @@ export const buildCurseReport = (decisions, { weightCap = 20, seed = DEFAULT_BOO
   };
 };
 
-export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}) => {
+export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20, opportunityCensus = null } = {}) => {
   const d = run.decisions;
   const opts = { weightCap };
 
@@ -594,7 +609,14 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
   // suppressing the number entirely would hide a trend that is worth watching across runs.
   gate.armsWouldPass = gate.corpusArmPasses && gate.liveShiftedArmPasses;
 
-  const card = buildCardFor(run, arms, headline, pbr);
+  // WS-428 — the §3.3 headline. Composed only from a census carrying a Deal-Book-structure
+  // opportunity count; `composeOverallEv` throws on any other basis, so a scored-subset
+  // substitution cannot reach this field. Null (not zero) when no census was supplied.
+  const overallEv = opportunityCensus
+    ? composeOverallEv({ edgeBB: headline.edgeBB, census: opportunityCensus })
+    : null;
+
+  const card = buildCardFor(run, arms, headline, pbr, overallEv);
 
   // EVERY STRATEGY AS A POSITION, NEVER A SCALAR. The builder refuses a bare number, so this
   // is the shape enforced rather than a shape recommended. One coordinate — own
@@ -614,6 +636,9 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20 } = {}
     schemaVersion: HERO_EV_SCHEMA_VERSION,
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
+    // WS-428 — additive. Null on a run with no opportunity census; carries both factors,
+    // the opportunity provenance, and the HC-011 population statement when present.
+    overallEv,
     admissibility,
     // WS-295 — the optimizer's curse, as a shape. Reports its own unavailability with a reason
     // on a run that predates the stated-EV capture.
@@ -831,6 +856,9 @@ export const renderHeroEvReport = (r) => {
   }
   if (r.arms.pbr) L.push(renderArm(r.arms.pbr));
   L.push('');
+
+  // WS-428 — both factors first, product second, population inline (HC-011).
+  if (r.overallEv) L.push(...renderOverallEvLines(r.overallEv));
 
   L.push(...renderPiers(r));
 

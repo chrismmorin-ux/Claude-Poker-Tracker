@@ -282,3 +282,90 @@ axis outside the situation key, a warrant outside the enum, a distribution that 
 grandfather, so a malformed card is a bug at the author, today.
 
 See `src/utils/standardOfRecord/__fixtures__/` for a valid card and a deliberately unenclosed one.
+
+---
+
+## Atom store operations — location, measured sizes, and the beliefState budget (WS-430)
+
+Measured 2026-08-07 on the WS-328 gen-1 set and by `scripts/backtest/run-beliefstate-size.mjs`
+(re-runnable; deterministic seeds). This section is the D2 input: what capturing `beliefState`
+would cost, against the disk that exists.
+
+### Where the store lives, and how to move it
+
+`DEFAULT_ATOM_STORE_ROOT` (`scripts/backtest/atomStore.mjs:55`) is
+`C:/Users/chris/data/sor-atoms`, overridable with the **`SOR_ATOM_STORE`** environment
+variable. Atom sets are referenced from Result Cards **by hash, never by path**, so relocating
+the store cannot invalidate any card — set the variable, move the directory (including
+`index.ndjson`), done.
+
+**Drive inventory (2026-08-07):** the machine has ONE physical disk (512 GB NVMe, WD SN740).
+`C:` is 453.7 GB with **48.8 GB free (89% used)**. The only other lettered volume, `G:`, is the
+Google Drive virtual mount (cloud-backed, 100 GB quota, 46.4 GB free) — it reports as a fixed
+drive but is streaming cloud storage and is **not a suitable home** for an append-only
+bulk store that gets rewritten as `.gz` sidecars and hash-verified on read. **There is no
+relocation target today.** When a second physical drive is added, set `SOR_ATOM_STORE` to it
+(e.g. `setx SOR_ATOM_STORE D:/data/sor-atoms`), move `C:/Users/chris/data/sor-atoms/*` there,
+and nothing else changes.
+
+### Measured atom sizes (real store, not estimates)
+
+The WS-328 gen-1 set: 97,454 atoms over 20,800 hands (**4.6853 atoms/hand**), 82,294,703 B
+raw = **844.4 B/atom**; gzip sidecar 1,709,596 B = **17.5 B/atom (48x)**. The atomStore
+docblock previously claimed "~1-2 KB each" — that figure was a shape argument and is wrong;
+the docblock now carries the measured number. Note the store keeps the `.ndjson` AND its `.gz`
+sidecar side by side, so on-disk cost is the **sum** of the raw and gz columns below.
+
+### beliefState: measured cost per encoding (WS-430)
+
+**No producer writes `beliefState` today** — 97,454/97,454 atoms carry `beliefState: null`.
+The numbers below are from real 169-class `getPopulationPrior` grids with per-atom
+deterministic drift, written through the real `openAtomWriter` path into a throwaway store
+(`run-beliefstate-size.mjs`, n=256 atoms per cell). Packed encodings:
+`scripts/backtest/beliefStatePacking.mjs` (f32 = lossless float32, 676 B/grid binary;
+q8 = uint8 quantized against a per-grid scale, 169 B/grid binary, max error scale/510).
+
+Per-atom cost, store-level delta vs a `beliefState: null` control (B/atom):
+
+| players remaining | verbose raw | verbose gz | f32 raw | f32 gz | q8 raw | q8 gz |
+|---|---|---|---|---|---|---|
+| 1 | 4,337 | 1,733 | 1,015 | 671 | 365 | 182 |
+| 3 | 13,063 | 5,282 | 2,865 | 2,007 | 916 | 482 |
+| 5 | 21,715 | 8,866 | 4,715 | 3,342 | 1,469 | 842 |
+| 8 | 34,835 | 15,159 | 7,490 | 5,340 | 2,296 | 1,264 |
+
+Measured ratios vs verbose: **f32 4.3–4.7x raw / 2.6–2.8x gz; q8 11.9–15.2x raw /
+9.5–12.0x gz**. Two shape-argument corrections: verbose JSON measured **~4.3 KB/opponent**,
+not the 1.2–2.4 KB previously argued (full-precision doubles under 169 named keys), and the
+"676 B/grid" f32 figure is binary payload — embedded in NDJSON it costs ~1,015 B/opponent
+(base64 4/3 expansion plus JSON wrapper).
+
+### Full-corpus projection vs headroom (the D2 input)
+
+Projected corpus: 4.6853 atoms/hand x 1,070,493 hands = **~5.02M atoms**. If every atom
+carried `beliefState`, added store cost (raw + gz sidecar both on disk):
+
+| avg live opponents | verbose (raw+gz) | f32 (raw+gz) | q8 (raw+gz) |
+|---|---|---|---|
+| 1 | 28.4 GB | 7.9 GB | 2.6 GB |
+| 3 | 85.7 GB | 22.8 GB | 6.5 GB |
+| 5 | 142.8 GB | 37.6 GB | 10.8 GB |
+| 8 | 233.5 GB | 59.9 GB | 16.6 GB |
+
+Against **48.8 GB free on C:** (the only disk): verbose does not fit beyond ~1 avg opponent
+and would fill the drive; **f32 fits up to ~3 avg opponents but consumes half the remaining
+headroom; q8 fits at every table size** (worst case 16.6 GB, and a realistic average is 2–4
+live opponents per decision, i.e. **4–9 GB**). q8's max quantization error (scale/510 —
+under 0.2% of the grid's peak propensity) is far below any claim this system's propensities
+can support, per the fault register.
+
+### fullSampleRate is recorded, not enforced
+
+`fullSampleRate` is stamped on every atom-set manifest (`layerAblation.mjs:510` records `1`;
+`run-atoms.mjs:134,230` record `0`) but **no producer reads it to decide what to write** —
+it is provenance, not a sampler. The deterministic sampling primitive exists
+(`samplesFull(atomId, rate)`, `src/utils/standardOfRecord/decisionAtom.js:109`, exported and
+tested) but has **zero production callers**. Building a real sampler means wiring
+`samplesFull` into a beliefState-writing producer — that is new code, not a flag flip.
+Per WS-430's ruling, sampling was NOT implemented here; the measurement above is what makes
+the sampling-vs-full decision an economics question rather than a shape argument.

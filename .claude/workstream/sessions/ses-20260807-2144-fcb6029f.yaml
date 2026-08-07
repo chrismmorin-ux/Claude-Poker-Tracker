@@ -3,7 +3,7 @@ status: active
 started_at: "2026-08-07T21:44:22.739Z"
 ended_at: null
 mode: auto
-last_heartbeat: "2026-08-07T22:24:15.697Z"
+last_heartbeat: "2026-08-07T23:04:28.091Z"
 pid: 30684
 host: MorinComputer
 agent_session_id: "fcb6029f-14fc-47ec-a712-ce126eaf449c"
@@ -22,4 +22,8 @@ files_locked:
   - ".claude/workstream/sprint-index.yaml"
   - ".claude/workstream/queue/WS-444.yaml"
   - ".claude/workstream/programs/prog-strategy-of-record.yaml"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/__tests__/teachableArms.test.js"
+  - "scripts/__tests__/rakeSensitivity.test.js"
+  - "docs/domain/theory-gaps.draft.md"
 

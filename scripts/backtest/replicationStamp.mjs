@@ -70,6 +70,9 @@ export const collectConstants = async (loader) => {
   // manifest-stamped by rule; before this only layerAblation.mjs spread it manually, so
   // every other card omitted a constant the doc said it carried.
   const divergence = await loader.load('/src/utils/standardOfRecord/divergence.js');
+  // WS-429. Loaded through the same loader as the src constants, and for the same reason:
+  // the stamp is DERIVED from the measurement code at stamp time, never transcribed.
+  const rakeSens = await loader.load('/scripts/backtest/rakeSensitivity.mjs');
 
   const constants = {
     PRIOR_WEIGHT: priors.PRIOR_WEIGHT,
@@ -81,6 +84,16 @@ export const collectConstants = async (loader) => {
     REFINEMENT_UNITS_PER_MS: refinement.REFINEMENT_UNITS_PER_MS,
     REFINEMENT_CLOCK_VERSION: refinement.REFINEMENT_CLOCK_VERSION,
     KL_FLOOR: divergence.KL_FLOOR,
+    // WS-429 — every bb-denominated figure carries the size of its own rake exposure
+    // (FAULT-modelled-rake, register rank 3). The scalar is how far `edgeBB` moved per
+    // rake doubling on the canonical fixture sweep (measured -0.1842 bb — NOT
+    // rake-invariant); the provenance object carries the schedules, the tolerance, the
+    // verdict, and the fixture-not-corpus caveat. Both come from
+    // `rakeSensitivity.RAKE_SENSITIVITY_STAMP`, which is computed at load from the same
+    // `measureRakeSensitivity()` the WS-429 test pins — a drifted value fails the test
+    // before it can be stamped.
+    RAKE_SENSITIVITY_BB_PER_RAKE_DOUBLING: rakeSens.RAKE_SENSITIVITY_STAMP.bbPerRakeDoubling,
+    RAKE_SENSITIVITY_PROVENANCE: rakeSens.RAKE_SENSITIVITY_STAMP,
   };
 
   // The shadow. `foldEquityCalculator.js:661` declares a LOCAL `const PRIOR_WEIGHT = 10` that
