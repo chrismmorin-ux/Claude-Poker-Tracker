@@ -7,6 +7,7 @@ import {
   createEmptyStats,
   derivePercentages,
 } from '../tendencyCalculations';
+import { STAT_PRIORS } from '../exploitEngine/bayesianConfidence';
 
 // =============================================================================
 // TEST HELPERS
@@ -877,5 +878,77 @@ describe('derivePercentages — intervals', () => {
   it('returns null intervals for null input without throwing', () => {
     const result = derivePercentages(null);
     expect(result.intervals).toBeUndefined();
+  });
+});
+
+describe('derivePercentages — shrunk point estimates (WS-436, subsumes WS-363)', () => {
+  const makeStats = (overrides = {}) => Object.assign(createEmptyStats(), {
+    handsSeenPreflop: 30,
+    vpipCount: 8,
+    pfrCount: 5,
+    totalBets: 6,
+    totalRaises: 3,
+    totalCalls: 4,
+    facedRaisePreflop: 12,
+    threeBetCount: 2,
+    pfAggressorFlops: 10,
+    cbetCount: 7,
+    facedCbet: 8,
+    foldedToCbet: 4,
+    foldTo3BetCount: 3,
+  }, overrides);
+
+  it('shrunk.vpip is the Beta posterior mean (k+α)/(n+α+β) under STAT_PRIORS', () => {
+    const result = derivePercentages(makeStats());
+    // STAT_PRIORS.vpip = Beta(2.5, 7.5): (8 + 2.5) / (30 + 10)
+    expect(result.shrunk.vpip).toBeCloseTo((8 + 2.5) / (30 + 10), 12);
+  });
+
+  it('shrunk.foldToCbet is the posterior mean on the facedCbet denominator', () => {
+    const result = derivePercentages(makeStats());
+    // STAT_PRIORS.foldToCbet = Beta(4.5, 5.5): (4 + 4.5) / (8 + 10)
+    expect(result.shrunk.foldToCbet).toBeCloseTo((4 + 4.5) / (8 + 10), 12);
+  });
+
+  it('shrunk.aggFreq shrinks aggressive/(aggressive+calls) with the AF prior', () => {
+    const result = derivePercentages(makeStats());
+    // aggressive = 6 + 3 = 9, n = 9 + 4 = 13; STAT_PRIORS.af = Beta(4.5, 5.5)
+    expect(result.shrunk.aggFreq).toBeCloseTo((9 + 4.5) / (13 + 10), 12);
+  });
+
+  it('at n=0 every shrunk stat IS the prior mean — the self-degrading property', () => {
+    const result = derivePercentages(createEmptyStats());
+    expect(result.shrunk.vpip).toBeCloseTo(0.25, 12);
+    expect(result.shrunk.pfr).toBeCloseTo(0.15, 12);
+    expect(result.shrunk.threeBet).toBeCloseTo(0.07, 12);
+    expect(result.shrunk.cbet).toBeCloseTo(0.55, 12);
+    expect(result.shrunk.foldTo3Bet).toBeCloseTo(0.55, 12);
+    expect(result.shrunk.aggFreq).toBeCloseTo(0.45, 12);
+    // Load-bearing agreement the WS-436 engine design exploits: the zero-observation
+    // shrunk foldToCbet equals the population fold level exactly, so "shrunk stat with
+    // population fallback" is one continuous formula rather than a tiered switch.
+    expect(result.shrunk.foldToCbet).toBeCloseTo(0.45, 12);
+  });
+
+  it('shrunk uses the SAME resolved statPriors the intervals use', () => {
+    const priors = {
+      ...STAT_PRIORS,
+      vpip: { alpha: 5, beta: 5 }, // mean 0.5 instead of 0.25
+    };
+    const result = derivePercentages(makeStats(), priors);
+    expect(result.shrunk.vpip).toBeCloseTo((8 + 5) / (30 + 10), 12);
+    expect(result.shrunk.vpip).toBeCloseTo(result.intervals.vpip.mean, 12);
+  });
+
+  it('shrunk is monotone in the observed count at fixed n', () => {
+    const low = derivePercentages(makeStats({ foldedToCbet: 2 }));
+    const high = derivePercentages(makeStats({ foldedToCbet: 6 }));
+    expect(high.shrunk.foldToCbet).toBeGreaterThan(low.shrunk.foldToCbet);
+  });
+
+  it('raw integer point estimates are untouched by the shrunk emission', () => {
+    const result = derivePercentages(makeStats());
+    expect(result.vpip).toBe(Math.round((8 / 30) * 100));
+    expect(result.foldToCbet).toBe(Math.round((4 / 8) * 100));
   });
 });

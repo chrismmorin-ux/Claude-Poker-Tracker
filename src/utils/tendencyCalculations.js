@@ -19,7 +19,7 @@ import {
   getCbetInfo,
   findLastRaiser,
 } from './handAnalysis/index.js';
-import { credibleInterval, STAT_PRIORS } from './exploitEngine/bayesianConfidence.js';
+import { credibleInterval, betaPosterior, STAT_PRIORS } from './exploitEngine/bayesianConfidence.js';
 
 // =============================================================================
 // HELPERS
@@ -361,5 +361,24 @@ export const derivePercentages = (stats, statPriors = STAT_PRIORS) => {
       intervals.foldTo3Bet = credibleInterval(stats.foldTo3BetCount, stats.facedRaisePreflop, P.foldTo3Bet.alpha, P.foldTo3Bet.beta);
   }
 
-  return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize, intervals };
+  // Shrunk point estimates (WS-436, subsumes WS-363): the Beta posterior MEAN per stat,
+  // as a fraction in [0,1], under the SAME resolved priors the intervals use. This is the
+  // estimate engine consumers read — it self-degrades to the prior mean at n=0, so a
+  // "shrunk stat with population fallback" is one continuous formula, never a gate.
+  // The rounded integer point estimates above stay raw k/n: they are the display values
+  // and the inputs to k/n-interface consumers, and changing them would move every
+  // threshold silently. aggFreq re-expresses AF as the bounded frequency
+  // aggressive / (aggressive + calls) so the Beta machinery applies (AF = f/(1-f)).
+  const mean = (k, n, prior) => betaPosterior(k, n, prior.alpha, prior.beta).mean;
+  const shrunk = {
+    vpip: mean(stats.vpipCount, sampleSize, P.vpip),
+    pfr: mean(stats.pfrCount, sampleSize, P.pfr),
+    threeBet: mean(stats.threeBetCount, stats.facedRaisePreflop, P.threeBet),
+    cbet: mean(stats.cbetCount, stats.pfAggressorFlops, P.cbet),
+    foldToCbet: mean(stats.foldedToCbet, stats.facedCbet, P.foldToCbet),
+    foldTo3Bet: mean(stats.foldTo3BetCount, stats.facedRaisePreflop, P.foldTo3Bet),
+    aggFreq: mean(totalAggressive, totalAggressive + stats.totalCalls, P.af),
+  };
+
+  return { vpip, pfr, af, threeBet, cbet, foldToCbet, foldTo3Bet, sampleSize, intervals, shrunk };
 };

@@ -240,7 +240,9 @@ export const buildPostflopAdvice = async ({
       : 'Generic advice — no villain model';
 
   const effStack = computeEffectiveStack(liveHandState, heroSeat, targetSeat);
-  const { models: opponentModels, activeOpponents } = buildOpponentModels(liveHandState, heroSeat, targetSeat, tendencyMap);
+  // WS-436: dealerSeat threaded so multiway seats carry per-seat position, and so a
+  // label-less seat's continuous stats reach the engine (gate fix in buildOpponentModels).
+  const { models: opponentModels, activeOpponents } = buildOpponentModels(liveHandState, heroSeat, targetSeat, tendencyMap, dealerSeat);
   const { contextHints } = buildPostflopContextHints({
     liveHandState, heroSeat, targetSeat, dealerSeat,
     villainData, encodedBoard,
