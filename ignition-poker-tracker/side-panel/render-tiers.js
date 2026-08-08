@@ -518,7 +518,7 @@ export const renderFoldCurveSection = (foldMeta, currentBetFraction, { autoOpen 
     markerHtml = `<div class="fold-curve-marker" style="left:${Math.round(mx / W * 100)}%;top:2px">${Math.round(closestPt.foldPct * 100)}%</div>`;
   }
 
-  const src = foldMeta.curveSource === 'personalized' ? 'Personalized' : 'Style default';
+  const src = foldMeta.curveSource === 'personalized' ? 'Personalized' : 'Population';
 
   return `<div class="deep-section${autoOpen ? ' open' : ''}" data-section="foldcurve">
     <div class="deep-header"><span class="deep-header-icon">\u223F</span>

@@ -211,12 +211,12 @@ describe('renderFoldCurveSection', () => {
     expect(renderFoldCurveSection({ curve: null }, null)).toBe('');
   });
 
-  it('labels style default source', () => {
+  it('labels the population source (WS-436: style curves removed)', () => {
     const html = renderFoldCurveSection({
       curve: [{ sizing: 0.33, foldPct: 0.3 }, { sizing: 2.0, foldPct: 0.6 }],
-      curveSource: 'style',
+      curveSource: 'population',
     });
-    expect(html).toContain('Style default');
+    expect(html).toContain('Population');
   });
 });
 

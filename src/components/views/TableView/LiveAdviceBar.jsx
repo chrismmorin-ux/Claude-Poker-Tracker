@@ -119,7 +119,7 @@ const FoldCurveTooltip = ({ foldMeta, onClose }) => {
       }}
     >
       <div style={{ fontSize: 9, color: '#9ca3af', marginBottom: 3, fontWeight: 600 }}>
-        FOLD CURVE {foldMeta.curveSource === 'personalized' ? '(personalized)' : '(style-based)'}
+        FOLD CURVE {foldMeta.curveSource === 'personalized' ? '(personalized)' : '(population)'}
       </div>
       {foldMeta.curve.map((pt, i) => (
         <div key={i} style={{ fontSize: 10, color: '#d1d5db', display: 'flex', justifyContent: 'space-between', gap: 12, lineHeight: 1.6 }}>

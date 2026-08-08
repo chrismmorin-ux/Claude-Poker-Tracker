@@ -74,8 +74,7 @@ export const FoldCurvePanel = ({ foldMeta, foldCurve, currentBetFraction }) => {
         <span
           className="font-normal normal-case text-[8px]"
           style={{
-            color: curveSource === 'personalized' ? GREEN
-              : curveSource === 'style' ? YELLOW : TEXT.faint,
+            color: curveSource === 'personalized' ? GREEN : TEXT.faint,
           }}
         >
           {curveSource}{observedN ? ` (n=${observedN})` : ''}
