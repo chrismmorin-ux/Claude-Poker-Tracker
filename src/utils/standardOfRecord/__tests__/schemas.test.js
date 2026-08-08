@@ -87,7 +87,7 @@ const SHIPPED_FIELDS = {
     schemaVersion: 'number', playerId: 'string', handId: 'string|number', order: 'number',
     observedAction: 'string', observedAmount: 'number|null',
     netBB: 'number', netBBUnraked: 'number|null', street: 'string',
-    heroSeat: 'number|null', buttonSeat: 'number|null', opponentSeat: 'number|null',
+    heroSeat: 'string|number|null', buttonSeat: 'string|number|null', opponentSeat: 'string|number|null',
     board: 'array|null', boardLabels: 'array|null',
     situationKey: 'string|null', contextAction: 'string|null',
     isAgg: 'boolean|null', isIP: 'boolean|null', rangeEquityPct: 'number|null',

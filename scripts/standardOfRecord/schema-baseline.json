@@ -569,17 +569,17 @@
       },
       {
         "name": "heroSeat",
-        "type": "number|null",
+        "type": "string|number|null",
         "since": 1
       },
       {
         "name": "buttonSeat",
-        "type": "number|null",
+        "type": "string|number|null",
         "since": 1
       },
       {
         "name": "opponentSeat",
-        "type": "number|null",
+        "type": "string|number|null",
         "since": 1
       },
       {

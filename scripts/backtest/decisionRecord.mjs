@@ -75,8 +75,17 @@ export const DECISION_RECORD_SCHEMA_VERSION = SOR_SCHEMA_VERSIONS.decisionRecord
  * uses. Rows hit disk in ARRIVAL order (completion order under the worker pool), which is
  * deliberate: sorting at write time would require either buffering (an interrupted run
  * loses its tail) or a close-time rewrite (violates every-line-readable-before-close).
- * Readers canonicalize by sorting on `stable`; the content hash is computed over the
- * canonicalized bytes, so it is run-invariant across serial/pool and fresh/resumed runs.
+ * Readers canonicalize by sorting on `stable`.
+ *
+ * WHAT THE CONTENT HASH IS, PRECISELY. It is computed over the canonicalized bytes, so it
+ * is invariant to arrival order (serial vs pool) and to kill+resume of the SAME execution
+ * (chunk replay is byte-identical). It is NOT invariant across separate executions of the
+ * same config: the record deliberately carries wall-clock forensics
+ * (`latency.totalMs` / `preRefinementMs` — measured as the ONLY differing fields between
+ * two identical smoke runs, 2026-08-07), and forensics differ per execution by nature.
+ * The contentHash is therefore EXECUTION identity — card ↔ record binding and tamper
+ * detection. MEASUREMENT identity is the atomSetHash: the atom projection excludes
+ * forensics and came out bit-identical across those same two runs.
  */
 export const canonicalRowCompare = (a, b) => (
   ((a?.stable?.p ?? -1) - (b?.stable?.p ?? -1))

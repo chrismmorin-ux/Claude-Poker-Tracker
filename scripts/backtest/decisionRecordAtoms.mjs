@@ -8,6 +8,13 @@
  * `decisionRecord.contentHash` and its `atomSetHash` cannot silently disagree about which
  * run they describe.
  *
+ * IDENTITY SEMANTICS (measured 2026-08-07): the record hash is EXECUTION identity — it
+ * includes wall-clock forensics, so re-running the same config yields a new record hash
+ * and therefore a new atomSetId. The ATOMS exclude forensics and are bit-identical across
+ * executions, so the new set carries the SAME atomSetHash; resolve-by-hash treats the two
+ * sets as one measurement. The finalization-guard refusal fires on re-emission from the
+ * same record file (same atomSetId), not across separate executions.
+ *
  * The projection is a PROJECTION — it selects and relabels, it does not derive. Anything
  * the atom cannot carry verbatim from the row is either referenced (the record keeps the
  * full shape) or named in `omissions` with its reason. Deriving at write time is the
@@ -22,6 +29,17 @@ import { buildDecisionAtom, buildAtomTruth } from '../../src/utils/standardOfRec
 import { openAtomWriter } from './atomStore.mjs';
 import { hashObjectSync } from './contentHashNode.mjs';
 import { canonicalRowCompare } from './decisionRecord.mjs';
+
+/**
+ * Corpus rows carry seats as numeric STRINGS ("6") — measured, not assumed — while the
+ * SHIPPED atom field `actorSeat` is `number|null` and cannot be retyped (additive
+ * contract). Coerce at the projection boundary; a non-numeric label refuses to null
+ * rather than shipping NaN.
+ */
+const toSeatNumber = (seat) => {
+  const n = Number(seat);
+  return Number.isFinite(n) ? n : null;
+};
 
 /** Surface id for one arm of the hero-EV pass. */
 export const heroEvSurfaceId = (armId) => `sfc-hero-ev:${armId}`;
@@ -74,7 +92,7 @@ export const projectRecordRowToAtoms = (row, { arms, estimator = null, equitySee
         ...(Number.isFinite(equitySeed) ? { equity: equitySeed } : {}),
         ...(Number.isFinite(estimator?.bootstrapSeed) ? { clusterBootstrap: estimator.bootstrapSeed } : {}),
       },
-      actorSeat: row.heroSeat ?? null,
+      actorSeat: toSeatNumber(row.heroSeat),
       actorRole: 'hero',
       // v3 — the parts, kept.
       playerId: row.playerId ?? null,

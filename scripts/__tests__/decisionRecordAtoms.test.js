@@ -27,7 +27,9 @@ const row = (over = {}) => ({
   stable: { p: 0, k: 0, d: 0 },
   observedAction: 'call', observedAmount: 6,
   netBB: 3.5, netBBUnraked: 3.8, street: 'turn',
-  heroSeat: 2, buttonSeat: 5, opponentSeat: 7,
+  // Seats as numeric STRINGS — the real corpus row shape (measured on smoke-a.jsonl);
+  // buttonSeat arrives numeric. The projection must coerce for the atom's number|null.
+  heroSeat: '2', buttonSeat: 5, opponentSeat: '7',
   board: [4, 18, 33, 47], boardLabels: ['x', 'y', 'z', 'w'],
   situationKey: 'turn:na:LATE:false:true:none:na', contextAction: 'facing-bet',
   isAgg: false, isIP: true, rangeEquityPct: 48, segmentation: {}, geometry: { bb: 2 },
@@ -60,6 +62,13 @@ describe('projectRecordRowToAtoms', () => {
     expect(atom.order).toBe(4);
     expect(atom.stable).toEqual({ p: 0, k: 0, d: 0 });
     expect(atom.atomId).toBe(hashObjectSync({ playerId: 'PS:alice', handId: 'h-77', order: 4, armId: 'default' }));
+  });
+
+  it('coerces a string seat to the atom\'s shipped number|null actorSeat', () => {
+    const [atom] = projectRecordRowToAtoms(row(), { arms: ARMS });
+    expect(atom.actorSeat).toBe(2);
+    const [weird] = projectRecordRowToAtoms(row({ heroSeat: 'BTN' }), { arms: ARMS });
+    expect(weird.actorSeat).toBeNull();
   });
 
   it('carries truth WITH its basis when revealed, null when not — never a bare holding', () => {
