@@ -296,13 +296,13 @@ last_run_by_protocol:
 created_at: "2026-08-02T00:00:00Z"
 created_by: founder-directive
 work_items_open: 13
-findings_open: 11
+findings_open: 10
 
 
 cap_breach:
   active: true
   work_items_open: 13
-  findings_open: 11
+  findings_open: 10
   max_open_items: 10
   priority_floor: 20
   ratio: 1.3

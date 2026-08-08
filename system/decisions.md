@@ -1040,3 +1040,8 @@ assumptions:
 **Date:** 2026-08-07 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
 **Decision:** DEC-049 reconciled: WS-439 (Next Hand CTA P0) holds behind accuracy work
 **Reasoning:** Founder chose hold on 2026-08-07 even given the Gate 2 pre-commitment to fix the compression defect independently of the redesign; resolves the LIVE TENSION flagged inside DEC-049 and governs WS-439/440/441 prioritization until accuracy work lands
+
+### DEC-072: Record contentHash is EXECUTION identity; atomSetHash is MEASUREMENT identity
+**Date:** 2026-08-08 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Record contentHash is EXECUTION identity; atomSetHash is MEASUREMENT identity
+**Reasoning:** Measured on identical smoke runs: only latency.totalMs/preRefinementMs differ between records (deliberate wall-clock forensics) while atom sets are bit-identical (940661f0 across fresh A, fresh B, and killed+resumed C). Cards carry both hashes; resolve-by-hash treats re-executions as one measurement; finalization refusal fires per record file, not across executions

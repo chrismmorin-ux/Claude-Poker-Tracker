@@ -1,9 +1,9 @@
 ---
-generated_from_event: "ev-1786140284390-8637160f54c8"
-generated_content_hash: "770b97adf0e508b6b2da61459ca2f135d3f407af496389744f8b6343dd41f883"
-generated_at: "2026-08-07T22:04:44.529Z"
-source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl", "2026-08-02.jsonl", "2026-08-03.jsonl", "2026-08-04.jsonl", "2026-08-05.jsonl", "2026-08-06.jsonl", "2026-08-07.jsonl"]
-event_count: 2230
+generated_from_event: "ev-1786148370280-3b202bf1af3f"
+generated_content_hash: "129c7724af674ac7324f635ca96239ae547727fd2e7809ddd3f6a2850b0cdae5"
+generated_at: "2026-08-08T00:19:30.324Z"
+source_chunks: ["2026-06-09.jsonl", "2026-06-10.jsonl", "2026-06-11.jsonl", "2026-06-12.jsonl", "2026-06-13.jsonl", "2026-06-14.jsonl", "2026-06-16.jsonl", "2026-06-19.jsonl", "2026-06-20.jsonl", "2026-06-21.jsonl", "2026-06-22.jsonl", "2026-07-22.jsonl", "2026-07-23.jsonl", "2026-07-25.jsonl", "2026-07-26.jsonl", "2026-07-27.jsonl", "2026-07-28.jsonl", "2026-07-29.jsonl", "2026-07-30.jsonl", "2026-07-31.jsonl", "2026-08-01.jsonl", "2026-08-02.jsonl", "2026-08-03.jsonl", "2026-08-04.jsonl", "2026-08-05.jsonl", "2026-08-06.jsonl", "2026-08-07.jsonl", "2026-08-08.jsonl"]
+event_count: 2246
 ---
 # Events Log
 
@@ -14,9 +14,9 @@ path, not direct markdown edits.
 
 ## Summary
 
-- Commands recorded: 1696
-- Events recorded: 2230
-- Source chunks: 27
+- Commands recorded: 1707
+- Events recorded: 2246
+- Source chunks: 28
 
 ## Command `auto:42416:1781030643103`
 
@@ -17511,3 +17511,118 @@ path, not direct markdown edits.
 | # | Time | Track | Tag | Summary |
 |---|------|-------|-----|---------|
 | 1 | 2026-08-07T22:04:44.390Z | T6:workstream | /workstream | command="/workstream", type="command_completed", +1 more |
+
+## Command `cmd-sprintapprove-msjhydwk973e2daaf0dd`
+
+- Start: 2026-08-07T22:08:50.663Z
+- Events: 1
+- Tracks: T6:workstream-rebalance
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T22:08:50.663Z | T6:workstream-rebalance | /next | type="sprint_approved", sprint_id="SPR-179", +8 more |
+
+## Command `auto:7624:1786144597811`
+
+- Start: 2026-08-07T23:16:37.811Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:16:37.811Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="Pre-existing test failures on"..., +4 more |
+
+## Command `auto:32808:1786145027432`
+
+- Start: 2026-08-07T23:23:47.432Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:23:47.432Z | T20:capture-buffer | friction_detected | type="friction_detected", friction_text="git worktree remove --force r"..., +4 more |
+
+## Command `auto:36420:1786145455555`
+
+- Start: 2026-08-07T23:30:55.555Z
+- Events: 1
+- Tracks: T6:reconcile-index
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:30:55.555Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=6, +1 more |
+
+## Command `auto:33896:1786145455987`
+
+- Start: 2026-08-07T23:30:55.987Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:30:55.987Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="2c1a71061335dafae62569baf6f99"..., +1 more |
+
+## Command `auto:33896:1786145456013`
+
+- Start: 2026-08-07T23:30:56.013Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:30:56.013Z | T20:capture-buffer | friction_formalized | type="friction_formalized", source_hash="73096328362d991f4a1848953e98d"..., +1 more |
+
+## Command `auto:36420:1786145456040`
+
+- Start: 2026-08-07T23:30:56.040Z
+- Events: 1
+- Tracks: T6:workstream
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:30:56.040Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+
+## Command `auto:36420:1786145456117`
+
+- Start: 2026-08-07T23:30:56.117Z
+- Events: 1
+- Tracks: T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-07T23:30:56.117Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `auto:35340:1786148333894`
+
+- Start: 2026-08-08T00:18:53.894Z
+- Events: 1
+- Tracks: T20:capture-buffer
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-08T00:18:53.894Z | T20:capture-buffer | decision_detected | type="decision_detected", decision_text="Record contentHash is EXECUTI"..., +4 more |
+
+## Command `cmd-itemclosed-msjmmeaf4e4e8b24dd32`
+
+- Start: 2026-08-08T00:19:29.369Z
+- Events: 6
+- Tracks: T6:workstream, T6:workstream-rebalance, T6:reconcile-index, T20:capture-buffer, T11:vital-signs
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-08T00:19:29.369Z | T6:workstream | item_closed | type="item_closed", ws_id="WS-431", +3 more |
+| 2 | 2026-08-08T00:19:29.474Z | T6:workstream-rebalance | /next | type="sprint_completed", sprint_id="SPR-179", +4 more |
+| 3 | 2026-08-08T00:19:29.625Z | T6:reconcile-index | index-fixed:queue | index="queue", warning_count=6, +1 more |
+| 4 | 2026-08-08T00:19:30.028Z | T20:capture-buffer | decision_formalized | type="decision_formalized", source_hash="3f8b4cd1da4c1cb57b672236bd6ca"..., +2 more |
+| 5 | 2026-08-08T00:19:30.067Z | T6:workstream | reconcile-refresh | type="reconcile-refresh", domains_intended={3 keys} |
+| 6 | 2026-08-08T00:19:30.139Z | T11:vital-signs | reconcile-refresh | type="reconcile-refresh", domains_intended={1 keys} |
+
+## Command `cmd-commandcompleted-msjmmezoccc21497fd53`
+
+- Start: 2026-08-08T00:19:30.280Z
+- Events: 1
+- Tracks: T10:compose-sprint
+
+| # | Time | Track | Tag | Summary |
+|---|------|-------|-----|---------|
+| 1 | 2026-08-08T00:19:30.280Z | T10:compose-sprint | /next | command="/next", outcome="SPR-179 completed - WS-431 sh"..., +2 more |

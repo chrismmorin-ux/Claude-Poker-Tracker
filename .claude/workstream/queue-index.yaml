@@ -5,10 +5,10 @@
 total_items: 250
 by_status:
   decomposed: 1
-  done: 48
+  done: 49
   in_progress: 3
   deferred: 46
-  backlog: 132
+  backlog: 131
   dismissed: 2
   completed: 7
   review: 1
@@ -2693,7 +2693,7 @@ items:
 
   - id: "WS-431"
     title: "Three shapes now exist for one hero-EV decision — `decisionRecord.mjs` shipped after WS-410 was written, reproducing the exact WS-291 mechanism WS-410 exists to close, and extending the Decision Atom without reconciling it would make four"
-    status: backlog
+    status: done
     priority_score: 50
     category: architecture
     effort: M
