@@ -375,6 +375,48 @@ export const buildCandidateArms = () => ([
   })),
 ]);
 
+// =============================================================================
+// PRIOR SOURCE (WS-436) — what conditions the Dirichlet seed
+// =============================================================================
+
+/**
+ * The style-label channel, priced per decision. Unlike every arm above, this is
+ * a model-BUILD axis (`priorSource`), not a query axis: `runner.mjs` builds one
+ * model per distinct source per checkpoint and the arms diverge only in what
+ * seeds `buildActionPriors` — the six-label `STYLE_PRIORS` table (shipping
+ * config) versus no per-player conditioning at all.
+ *
+ * Three arms, and the third is a tripwire:
+ *
+ *   shipped               control — whatever the engine currently builds.
+ *   priors:population     the seed is POPULATION_PRIORS, always.
+ *   priors:style-labels   the label channel, explicitly.
+ *
+ * At the pre-A4 engine, `priors:style-labels` must be RECORD-IDENTICAL to
+ * `shipped` (both build with the label) — a zero paired delta that verifies the
+ * pairing itself. After WS-436 A4 lands, `shipped` means the continuous shrunk
+ * seed, `priors:style-labels` degrades to it (the label has no channel left),
+ * and the pair must be identical AGAIN — which is falsifier #1 of the removal,
+ * scored on the same instrument that measured the channel it removes.
+ */
+export const buildPriorSourceArms = () => ([
+  { name: HIERARCHY_VARIANTS.SHIPPED, kind: 'control', dim: null, hierarchyOptions: {} },
+  {
+    name: 'priors:population',
+    kind: 'candidate',
+    dim: null,
+    priorSource: 'population',
+    hierarchyOptions: {},
+  },
+  {
+    name: 'priors:style-labels',
+    kind: 'candidate',
+    dim: null,
+    priorSource: 'style-labels',
+    hierarchyOptions: {},
+  },
+]);
+
 /**
  * Price `shrinkWeight` on the ladder that actually WON (2026-07-27 bake-off).
  *

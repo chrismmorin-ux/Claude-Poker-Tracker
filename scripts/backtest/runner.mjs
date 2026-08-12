@@ -92,6 +92,38 @@ export const DEFAULT_CHECKPOINT_INTERVAL = 10;
 
 const USER_ID = 'backtest';
 
+/**
+ * The prior source the app ships: `analysisPipeline.js` derives percentages,
+ * classifies a style, and passes both into the model builder. Arms that carry
+ * no `priorSource` get exactly this — so every arm set written before the
+ * axis existed builds the identical model it always did.
+ */
+const DEFAULT_PRIOR_SOURCE = 'style-labels';
+
+/**
+ * The stats object `buildVillainDecisionModel` receives under each prior source
+ * (WS-436). This is the whole arm: same decision summary, same profile, same
+ * queries — only what conditions the Dirichlet seed differs.
+ *
+ *   style-labels  the shipping configuration ({ ...pct, style }).
+ *   population    no per-player conditioning of the seed at all: the label
+ *                 channel severed, and `shrunk` with it — so the same arm stays
+ *                 the un-conditioned baseline after WS-436 A4 moves the seed
+ *                 from the label to the shrunk posteriors.
+ */
+const statsForPriorSource = (pct, style, source) => {
+  switch (source) {
+    case 'style-labels':
+      return { ...pct, style };
+    case 'population':
+      return { ...pct, style: null, shrunk: null };
+    default:
+      throw new Error(
+        `Unknown priorSource "${source}". Expected style-labels | population.`,
+      );
+  }
+};
+
 // =============================================================================
 // BASELINE
 // =============================================================================
@@ -223,16 +255,24 @@ export const scorePlayer = ({
   minTrainHands = DEFAULT_MIN_TRAIN_HANDS,
   checkpointInterval = DEFAULT_CHECKPOINT_INTERVAL,
   referenceTable = null,
-  // One entry per scoring arm. All arms share the SAME model, the same decision
-  // contexts and the same slices — only `hierarchyOptions` differs — so scoring
-  // N arms costs one pass plus N cheap distribution queries per decision, not N
-  // passes. Rebuilding the profile per arm would make a 13-arm ablation a
+  // One entry per scoring arm. Arms sharing a `priorSource` share the SAME model,
+  // and every arm shares the same decision contexts and slices — `hierarchyOptions`
+  // is a query-time axis (N cheap distribution queries per decision), `priorSource`
+  // is a model-BUILD axis (WS-436: one extra `buildVillainDecisionModel` per
+  // distinct source per checkpoint — cheap next to `buildRangeProfile`, which is
+  // never rebuilt). Rebuilding the profile per arm would make a 13-arm ablation a
   // multi-hour job instead of a single run.
   arms = [{ name: 'shipped', hierarchyOptions: {} }],
 }) => {
   guard.assertEvalPlayer(playerId);
 
   const { segmentKey, seatBucket } = segmentFor(hands);
+  const priorSources = [...new Set(arms.map(a => a.priorSource ?? DEFAULT_PRIOR_SOURCE))];
+  // Shared slices (obsBucket) read one model; use the shipping configuration's
+  // when present so slice identity is unchanged for every pre-existing arm set.
+  const sliceSource = priorSources.includes(DEFAULT_PRIOR_SOURCE)
+    ? DEFAULT_PRIOR_SOURCE
+    : priorSources[0];
 
   const recordsByArm = new Map(arms.map(a => [a.name, []]));
   const statRecords = [];
@@ -283,6 +323,7 @@ export const scorePlayer = ({
 
     // ---- build the model from the PAST ONLY ----
     let model;
+    let modelBySource;
     let trainProfile;
     try {
       trainProfile = buildRangeProfile(playerId, trainHands, USER_ID);
@@ -303,16 +344,25 @@ export const scorePlayer = ({
       // (analysisPipeline.js steps 1-2). Passing `{}` here — as this runner
       // originally did — silently scored a model with NO stats and NO style,
       // which disables the style-conditioned priors entirely and is not the
-      // configuration that ships.
+      // configuration that ships. One model per distinct priorSource (WS-436);
+      // the summary and profile are shared, so this is the cheap half.
       const pct = derivePercentages(trainStats, statPriors);
       const style = classifyStyle(pct);
-      model = buildVillainDecisionModel(trainSummary, { ...pct, style });
+      modelBySource = new Map(priorSources.map(source => [
+        source,
+        buildVillainDecisionModel(trainSummary, statsForPriorSource(pct, style, source)),
+      ]));
+      model = modelBySource.get(sliceSource);
     } catch (e) {
       if (e instanceof LeakageError) throw e;
       skippedCheckpoints++;
       continue;
     }
-    if (!model) { skippedCheckpoints++; continue; }
+    // If ANY source's model failed to build, skip the checkpoint for ALL arms —
+    // records must stay index-paired across arms, so no arm may see a decision
+    // another arm skipped. (Build failure depends only on the shared summary, so
+    // in practice the sources agree; the guard makes that a property, not a hope.)
+    if (!model || [...modelBySource.values()].some(m => !m)) { skippedCheckpoints++; continue; }
 
     checkpoints++;
 
@@ -370,7 +420,8 @@ export const scorePlayer = ({
 
           for (const arm of arms) {
             const dist = queryActionDistribution(
-              model, ctx.street, ctx.texture, ctx.posCategory,
+              modelBySource.get(arm.priorSource ?? DEFAULT_PRIOR_SOURCE),
+              ctx.street, ctx.texture, ctx.posCategory,
               ctx.isAgg, ctx.isIP, ctx.facingAction,
               arm.hierarchyOptions,
             );
@@ -560,7 +611,12 @@ export const runBacktest = async ({
       // Backward-compatible single-arm view (the first arm).
       records: primary,
       recordsByArm: Object.fromEntries(recordsByArm),
-      arms: scoringArms.map(a => ({ name: a.name, kind: a.kind ?? null, dim: a.dim ?? null })),
+      arms: scoringArms.map(a => ({
+        name: a.name,
+        kind: a.kind ?? null,
+        dim: a.dim ?? null,
+        priorSource: a.priorSource ?? DEFAULT_PRIOR_SOURCE,
+      })),
       statPriorScorecard,
       integrity: guard.summary(),
       counters: {

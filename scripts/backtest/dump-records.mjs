@@ -30,6 +30,8 @@
  *   --arms texture     shipped vs texture-last (the paired-on-divergent case)
  *   --arms candidates  WS-285 bake-off: reordered / shrinkage:W* / min-n-* against
  *                      shipped, ctrl:none and only:isAgg
+ *   --arms priors      WS-436: shipped vs priors:population vs priors:style-labels —
+ *                      the model-build axis (what seeds the Dirichlet priors)
  *   --arms all         every set
  */
 
@@ -40,7 +42,7 @@ import { REFERENCE_DISABLED } from './leakageGuard.mjs';
 import { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } from './corpusFiles.mjs';
 import {
   HIERARCHY_VARIANTS, hierarchyOptionsFor, buildAblationArms, buildCandidateArms,
-  buildShrinkWeightSweepArms,
+  buildShrinkWeightSweepArms, buildPriorSourceArms,
 } from './hierarchyVariants.mjs';
 
 const parseArgs = (argv) => {
@@ -91,8 +93,12 @@ const main = async () => {
   if (which === 'texture') arms = textureArms();
   else if (which === 'candidates') arms = buildCandidateArms();
   else if (which === 'wsweep') arms = buildShrinkWeightSweepArms();
+  else if (which === 'priors') arms = buildPriorSourceArms();
   else if (which === 'all') {
-    arms = dedupe([...buildAblationArms(), ...buildCandidateArms(), ...textureArms()]);
+    arms = dedupe([
+      ...buildAblationArms(), ...buildCandidateArms(), ...textureArms(),
+      ...buildPriorSourceArms(),
+    ]);
   } else arms = buildAblationArms();
 
   const files = await discoverCorpusFiles({
