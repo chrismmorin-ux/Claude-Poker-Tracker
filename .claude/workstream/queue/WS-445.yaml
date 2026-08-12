@@ -1,0 +1,92 @@
+id: "WS-445"
+title: "The Label & Foundation Ledger — every label-shaped input and its data foundation listed exhaustively in one artifact, each entry ranked by estimated absolute-EV impact; adopted as a standing repo standard"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "strategy-of-record"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE (2026-08-08, mid-WS-436): "we are going to need to look at each place where
+  we use a label and the foundation of data and make sure its all in order and properly listed
+  somewhere such that we can rank the estimated impact."
+
+  WS-436 removes the six style labels as engine inputs, but the label anti-pattern has more
+  instances than one taxonomy: position labels (tier-4 priors), bucket labels (fallback paths),
+  anchor scope predicates, texture categories, SPR zones, seat-bucket rows, line tags — every
+  discrete key standing between raw data and an engine parameter. Each has a DATA FOUNDATION
+  (founder estimate / mined corpus / fitted curve / structural computation) of varying quality,
+  and today there is no single place that lists them, so nothing forces the next WS-436 to be
+  noticed rather than stumbled on.
+
+  THE STANDARD BEING ADOPTED (a new consistent thing the repo does, alongside the product):
+  - Engine-improvement work is spoken of in terms of ABSOLUTE EV: each change carries its
+    measured per-EV impact (bb/100, NET with GROSS beside it, per the change-ledger discipline),
+    not a vibe of "better".
+  - Absolute-EV framing must NOT flatten the nuance: the nooks and crannies where decisions are
+    actually made (per-street, per-facing-action, per-cohort cells) stay visible — the ledger
+    ranks by aggregate impact but preserves the decomposition.
+  - EXHAUSTIVENESS IS THE BLIND-SPOT DETECTOR: the improvement list must be exhaustive by
+    construction. If the ledger cannot name anything that could make the engine better, that is
+    not evidence the engine is done — it is evidence we are in a blind spot, and it triggers a
+    deep analysis (reframe-engine / eng-engine class), not a celebration.
+accept_criteria: |
+  - One artifact (docs/standard-of-record/ or docs/research/) that exhaustively lists every
+    label-shaped input in the engine paths: the label set, every consumer site (file:line),
+    the data foundation underneath it (founder estimate | mined | fitted | structural), the
+    foundation's measurement status, and the estimated absolute-EV impact of fixing/removing it
+    — measured where a harness exists, bounded-estimate where it does not, with the method named.
+  - Entries are RANKED by estimated impact, and each entry names what would raise its estimate
+    from bounded to measured (the instrument gap, if any).
+  - Exhaustiveness is argued, not assumed: the sweep method (grep patterns, table inventory,
+    consumer trace) is recorded in the artifact so a reader can re-run it and find drift.
+  - The standard itself is written into doctrine (POKER_THEORY or standard-of-record docs):
+    absolute-EV framing, per-change measured impact, exhaustive-list-or-blind-spot rule.
+  - The ledger has a maintenance hook: new label-shaped inputs land in the ledger in the same
+    change that introduces them (analogous to the schema-baseline additive discipline).
+  - WS-436's Result Card (RC-style-collapse) enters as the first measured row — the worked
+    example the rest of the ledger is held to.
+effort: "L"
+files_involved:
+  - "docs/standard-of-record/"
+  - "src/utils/exploitEngine/"
+  - "src/utils/rangeEngine/"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-436"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    The ranking currency is absolute EV, but most rows will start as BOUNDED ESTIMATES, not
+    measurements — the founder should ratify the estimation method (or the priority order of
+    building instruments) so the ledger doesn't silently become a list of unmeasured guesses
+    wearing EV units.
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-08T03:40:00Z"
+status_note: |
+  Filed mid-WS-436 execution at founder direction. WS-436's consumer trace (20 engine sites for
+  one label family) is the seed inventory; this ticket generalizes it to every label family and
+  adopts the absolute-EV ledger as a standing repo standard. Blocked by WS-436 only for the
+  first measured row; the sweep and artifact design can start any time.
+
+  2026-08-12: the first measured row EXISTS — RC-STYLE-COLLAPSE-2026-08-12
+  (docs/research/ws436-style-collapse-2026-08-12.result-card.json). Headline for the ledger:
+  the six-label channel carried no measurable villain-action information (ΔLL −0.00076 vs
+  population over 10,147 paired decisions, n.s.), its removal is advice-parity (0 of 130 paired
+  decisions changed at population villains — exact n=0 identities end-to-end), and the one
+  same-source replacement tried (continuous shrunk seed in the model priors) was REFUTED at
+  ΔLL −0.00691 (t=−5.64) — the ledger's foundation column matters more than its label column.

@@ -120,6 +120,41 @@ Per-villain personalisation is therefore carried ENTIRELY by: (1) bucket evidenc
 the ladder (villain-prediction path), and (2) `villainFoldLevel` + the A3 aggFreq/cbet
 transfers at game-tree leaf sites (advice path) — one pipeline per path, never both.
 
+## 4c. B4 — the paired before/after advice measurement (2026-08-12)
+
+Protocol: worktree at `d3cf5993` (A0; engine src sha256 `8c0913bb9507bb37`) with the
+B-instrument scripts overlaid vs final HEAD; six + four paired `probeFrequency` runs
+(depth-1, 300 files / 300 players / 130 decisions, seeded per decision), shared
+villain feeds (v1: 2,500 POOL villains @100-hand prefix, 20.0% decision coverage;
+v2: 6,000 @60, 35.4% coverage — the coverage counter is printed per run, which is
+what caught v1's thinness). Compared with `diffProbeRuns.mjs`, paired-on-divergent.
+
+| contrast (paired n=130) | divergent | meanTV(div) |
+|---|---|---|
+| FALSIFIER #1: after styled vs stats (v2 feed) | **0** | — |
+| label channel, old engine: before styled vs stats (v2) | 9 (≈1 in 5 fed) | 0.100 |
+| engine change at population: before vs after, null | **0** | — |
+| engine change under feed: before vs after, stats (v2) | **0** | — |
+
+Continuity: before-null and after-null both reproduce the recorded §3 baseline
+facing-aggression mix EXACTLY (fold 10.2 / call 6.6 / raise 83.2, same 47-decision
+slice). Determinism: `verify-ws433-determinism.mjs` ALL GATES PASS at corrected HEAD;
+cross-process run-hero-ev pair under the stats feed — first attempt REFUSED by
+`diffHeroEvRuns` because a docs commit landed between the two runs (engineCommit
+mismatch; the tool was right, the protocol error was mine; the run/measurement
+sections were byte-identical), re-paired at one commit: IDENTICAL, sha256 a7ec0682151cdc0a…, and the second run reproduced the first B run byte-for-byte — determinism held across four executions.
+
+Reading: the label channel WAS live on the old advice path (a fifth of fed decisions
+moved, one combo's argmax each) and carried no measurable prediction information
+(§4a); the removal is ADVICE-PARITY — the n=0 population identities designed into
+every replacement hold end-to-end (0 of 130 decisions changed), and no fed decision's
+argmax moved either. Absolute-EV delta on the measured set: exactly 0 (no advice
+changed ⇒ no EV changed). Result Card: RC-STYLE-COLLAPSE-2026-08-12
+(docs/research/ws436-style-collapse-2026-08-12.result-card.json), the WS-445 ledger's
+first measured row. Argmax-instrument caveat: EV shifts that flip no combo's best
+action are invisible here; the EV channel is pinned live by villainFeed.test.js.
+Corpus caveat §4 stands: online 2009, transferred not measured for live.
+
 ## 5. Deferred from Stage 0 (land with B-instrument, where their prerequisites exist)
 
 - Villain-prediction baseline (`priors:style-labels` vs `priors:population`): requires
