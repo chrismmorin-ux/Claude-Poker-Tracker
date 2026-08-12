@@ -9,7 +9,7 @@
 # the invariant suite. They are carried forward from the last writer that did,
 # with vitals_observed_at naming when that was. Check that date before
 # trusting them, and run /verify if it is old.
-last_updated: "2026-08-12T21:13:39Z"
+last_updated: "2026-08-12T21:16:51Z"
 generated_by: cwos-reconcile
 vital_signs_ok: true
 red_vitals: []

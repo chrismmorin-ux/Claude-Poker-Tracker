@@ -1,7 +1,39 @@
 id: "ses-20260812-1343-dabcbfdf"
-status: active
+status: completed
 started_at: "2026-08-12T13:43:41.579Z"
-ended_at: null
+ended_at: "2026-08-12T21:35:00.000Z"
+handoff_notes: |
+  SPR-180 executed to completion: WS-436 closed with measured evidence
+  (RC-STYLE-COLLAPSE-2026-08-12, docs/research/ws436-style-collapse-2026-08-12.result-card.json).
+  A4's planned continuous prior seed was REFUTED by the pre-registered instrument
+  mid-execution (dLL -0.00691, t=-5.64: same-source double-counting under the
+  shrinkage ladder) and corrected to population-seeded — the measured-best
+  configuration. Advice parity verified cross-worktree: 0 of 130 paired decisions
+  changed at population villains, 0 under the 35.4%-coverage villain feed; the
+  label channel on the OLD engine measurably moved ~1 in 5 fed decisions.
+  All four pre-registered falsifiers held; the grep-gate caught two style tables
+  surviving A3 as dead exports (deleted).
+  Items completed: WS-436 (SPR-180, done at 80d4eb71).
+  Items created: WS-447 (Track C display greenfield; Gate 2 roundtable is its
+  FIRST action per founder ruling 2026-08-12), WS-448 (assumptionEngine style
+  priors, blocked_by WS-436 — now unblocked).
+  Key findings: (1) sessionRecoveryLiveness.test.js is red at HEAD AND at
+  d3cf5993 — a real pre-existing kit defect (recovery leaves dead sessions'
+  queue claims), matching live behavior observed this session; friction x3.
+  (2) computeDepth2Plan + logicalBailStratumGuarantee are CPU-bound suites that
+  timed out under load — worktree-verified pre-existing, explicit budgets added.
+  (3) diffHeroEvRuns correctly refuses cross-commit pairs; do not commit between
+  the two runs of a determinism pair.
+  Next recommended action: /next — the queue has WS-448 newly unblocked and
+  WS-447 owns the triggered Gate 2 roundtable. WS-445's first ledger row exists.
+  Autopilot eligible: not counted this session (queue composition is /next's job).
+context_notes: |
+  The B4 measurement apparatus is reusable: build-villain-feed.mjs + probeFrequency
+  --villain-source + diffProbeRuns.mjs; the before-worktree was removed after use
+  (recreate from any commit + overlay scripts/backtest). Probe artifacts and feeds
+  live in out/ (gitignored): ws436-b4-*.json, villain-feed*.json,
+  ws436-priors-records*.json. POKER_THEORY is at v2.4; §7.4's hierarchy is the
+  binding statement of the separate-pipelines rule.
 mode: auto
 last_heartbeat: "2026-08-12T20:44:33.466Z"
 pid: 25408
@@ -57,4 +89,6 @@ files_locked:
   - ".claude/context/SYSTEM_MODEL.md"
   - "scripts/backtest/emit-ws436-result-card.mjs"
   - ".claude/workstream/queue/WS-445.yaml"
+  - "system/state.md"
+  - ".claude/workstream/sessions/ses-20260812-1343-dabcbfdf.yaml"
 
