@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 3,
+  "resultCardId": "RC-STYLE-COLLAPSE-2026-08-12",
+  "match": {
+    "surfaceId": "SURF-engine-advice-probe+villain-prediction",
+    "dealBookId": "handhq-FTP+PS-0.5-43497117",
+    "fieldId": "FIELD-handhq-50nl-2009-07-behavior-policy"
+  },
+  "estimand": "The paired, per-decision change to (a) the engine's advised action distribution and (b) villain-action prediction quality, from removing the six classifyStyle labels as engine decision inputs (WS-436 stages A1-A4 with the in-flight A4 seed correction, plus the B2 feed that made the label channel measurable at all). Both halves are scored on the SAME decisions before and after; nothing is compared across different decision sets.",
+  "treatment": "paired-by-decision on seeded keys, depth-1 (refinementBudgetMs=0 — the shipping configuration; a wall-clock depth-2 arm is not comparable across runs) · villain-prediction half scored as log-loss with per-decision differencing, clustered on players · advice half scored as total-variation distance of the advised action distribution, divergent-only per the paired-on-divergent doctrine · leakage: POOL/EVAL partition + walk-forward, asserted by LeakageGuard; villain feed is POOL-only by construction with leave-one-out priors · corpus is online cash July 2009 50NL, so ANY CLAIM ABOUT THE FOUNDER'S LIVE 9-HANDED 1/2-1/3 GAME IS TRANSFERRED, NOT MEASURED (top-ranked Suspected-Fault Register entry) · the feed's oracle-prefix semantics cancel in arm contrasts and are stated in villainFeed.mjs.",
+  "metrics": {
+    "villainPrediction": {
+      "instrument": "dump-records --arms priors (priorSource model-build axis), 300 players / 300 hands cap",
+      "decisions": 10147,
+      "styleSeedVsPopulation_preA4": {
+        "n": 10147,
+        "meanDLL": -0.0007582555089019877,
+        "t": -0.9499094070617355,
+        "ci95": [
+          -0.0023228055453575246,
+          0.0008062945275535493
+        ]
+      },
+      "continuousSeedVsPopulation_postA4_REFUTED": {
+        "n": 10147,
+        "meanDLL": -0.006908408146383754,
+        "t": -5.642564291871781,
+        "ci95": [
+          -0.009308111413640713,
+          -0.004508704879126795
+        ]
+      },
+      "correctedHead": {
+        "allThreeArmsRecordIdentical": true,
+        "shippedLogLoss": 0.7574337738587403
+      },
+      "tripwires": {
+        "preA4_labelsArmIdenticalToShipped": true,
+        "postA4_labelsArmIdenticalToShipped": true
+      }
+    },
+    "advicePath": {
+      "instrument": "probeFrequency paired-by-seeded-key, depth-1, 300 files / 300 players / 130 decisions; before = worktree at d3cf5993 (A0, engine src sha256 8c0913bb9507bb37) with B-instrument scripts overlaid",
+      "falsifier1_afterStyledVsStats_mustBeZero": {
+        "paired": 130,
+        "divergent": 0,
+        "meanTvOnDivergent": 0,
+        "fedDecisionsA": 46
+      },
+      "labelChannelOnOldEngine_beforeStyledVsStats": {
+        "paired": 130,
+        "divergent": 9,
+        "meanTvOnDivergent": 0.09999999999999998,
+        "fedDecisionsA": 46
+      },
+      "engineChangeAtPopulation_beforeVsAfterNull": {
+        "paired": 130,
+        "divergent": 0,
+        "meanTvOnDivergent": 0,
+        "fedDecisionsA": 0
+      },
+      "engineChangeUnderFeed_beforeVsAfterStats": {
+        "paired": 130,
+        "divergent": 0,
+        "meanTvOnDivergent": 0,
+        "fedDecisionsA": 46
+      },
+      "baselineContinuity": "before-null and after-null both reproduce the recorded Stage-0 baseline facing-aggression mix exactly: fold 10.2% / call 6.6% / raise 83.2% on the same 47-decision slice (ws436-baseline.md §3).",
+      "feed": {
+        "villainSource": "stats",
+        "builtFrom": {
+          "group": "POOL",
+          "poolPct": 50,
+          "maxHandsPerVillain": 60,
+          "files": 1756,
+          "referenceTier": "stamped-table"
+        }
+      }
+    },
+    "absoluteEV": {
+      "statement": "The label-system removal changed the engine's advice DISTRIBUTION on exactly 0 of 130 paired decisions at population villains (the designed n=0 identity, holding end-to-end), and on 0 of 130 under the villain feed at the measured coverage — so its absolute-EV delta on this decision set is exactly 0: no decision's advice moved, therefore no decision's EV moved. The label channel it deleted was live on the OLD engine (divergent fed decisions, meanTV as recorded) and carried no measurable villain-action information (the prediction instrument's CI above). This is a REMOVAL AT PARITY, not an advice improvement claim.",
+      "evDeltaOnMeasuredSet": 0
+    },
+    "determinism": {
+      "inProcess": "verify-ws433-determinism.mjs: serial self-identity, parallel bit-identity, resume identity + tamper refusal — ALL GATES PASS at corrected HEAD",
+      "crossProcess": "run-hero-ev twice under --villain-source stats → diffHeroEvRuns — see close-out log"
+    }
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "quotable": true,
+    "reasons": [],
+    "caveats": [
+      "TRANSFERRED, NOT MEASURED for live 9-handed 1/2-1/3. Corpus is online cash July 2009, 50NL.",
+      "The advice half is an ARGMAX-distribution instrument at depth-1: EV shifts that flip no combo's best action are invisible to it (the engine-stated-EV channel is exercised by scripts/__tests__/villainFeed.test.js, which pins that opposite-pole villains DO move EV).",
+      "Feed coverage is partial and printed per run; contrasts subtract the feed's snapshot semantics, level claims would not.",
+      "The 0-EV-delta claim is exact ON THE MEASURED DECISION SET; it is not a claim about decisions outside it."
+    ]
+  },
+  "manifest": {
+    "engineCommit": "d43d58c2b1c2877c7a964489e5c8379cbd17aec3",
+    "engineDirty": true,
+    "dealBookHash": "sha256:43497117ea775c88b9e0f81a664d91eabb4e2d2e1e588e7dabc26339a02fb895",
+    "fieldVersion": "handhq-50nl-2009-07-ftp+ps · behavior-policy out/behavior-policy.json · pool-reference regenerated with WS-373 weighting stamp",
+    "partition": "player-level POOL/EVAL at poolPct=50 (fnv1a-32); villain feed POOL-side only; before-worktree engine at d3cf5993 (src sha256 8c0913bb9507bb37)",
+    "seeds": {
+      "probePairing": "mulberry32(fnv1a-32(`${playerId}|${handId}|${order}`)) per decision",
+      "liveness": "0xC0FFEE (villainFeed.test.js fixed equity seed)"
+    },
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "MAX_STAGE_SHARE": 0.4,
+      "REFINEMENT_UNITS_PER_MS": 319,
+      "REFINEMENT_CLOCK_VERSION": "logical-v1",
+      "KL_FLOOR": 0.000001,
+      "RAKE_SENSITIVITY_BB_PER_RAKE_DOUBLING": -0.1842,
+      "RAKE_SENSITIVITY_PROVENANCE": {
+        "faultId": "FAULT-modelled-rake",
+        "basis": "fixture-sweep",
+        "basisNote": "Measured on the canonical 12-decision / 6-player fixture in rakeSensitivity.mjs, NOT on the corpus of the run this manifest describes. It proves the non-cancellation mechanism and calibrates its order of magnitude under a mixed weight/pot-size covariance; the run-level exposure depends on the run's own covariance and needs the per-run sweep (named follow-up in rakeSensitivity.mjs).",
+        "schedules": {
+          "zeroRake": {
+            "pct": 0,
+            "cap": 0,
+            "noFlopNoDrop": true
+          },
+          "online2009": {
+            "pct": 0.05,
+            "cap": 3,
+            "noFlopNoDrop": true
+          },
+          "liveDouble": {
+            "pct": 0.1,
+            "cap": 6,
+            "noFlopNoDrop": true
+          }
+        },
+        "toleranceBB": 0.01,
+        "verdict": "not-rake-invariant",
+        "n": 12,
+        "players": 6,
+        "edgeBBBySchedule": {
+          "zeroRake": 5.8704,
+          "online2009": 5.6861,
+          "liveDouble": 5.5019
+        },
+        "deltaZeroToOnlineBB": -0.1843,
+        "bbPerRakeDoubling": -0.1842
+      },
+      "REFINEMENT_BUDGET_MS": 0,
+      "PSEUDOCOUNT": 10,
+      "AGG_FREQ_PRIOR_MEAN": 0.45,
+      "POP_BET_CENTER": 0.55,
+      "FEED": {
+        "group": "POOL",
+        "poolPct": 50,
+        "maxHandsPerVillain": 60,
+        "files": 1756,
+        "referenceTier": "stamped-table"
+      }
+    },
+    "disclaimerRegisterVersion": "FR-1+cc63d16f2ff8",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:661",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null,
+  "decisionRecord": null
+}
