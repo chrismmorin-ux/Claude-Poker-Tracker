@@ -57,6 +57,7 @@ import { RESPONSES_BY_FACING } from './behaviorPolicy.mjs';
 import { decisionGeometry, liveOpponentCount } from './decisionGeometry.mjs';
 import { comboLabel, comboClass, compactCandidate, compactLatency } from './decisionRecord.mjs';
 import { makeSeededEquityFn } from './seededEquity.mjs';
+import { resolveVillain, VILLAIN_SOURCES } from './villainFeed.mjs';
 
 /** Default number of holdings sampled from hero's range per decision. */
 export const DEFAULT_COMBO_SAMPLES = 10;
@@ -172,6 +173,17 @@ export const heroPolicyAt = async ({
   // call: the engine's internal equity calls are serial, so draws are reproducible
   // regardless of which worker runs the evaluation.
   equitySeedFor = null,
+  // WS-436 B2 — the styled-villain feed. `villainFeed` is the parsed artifact from
+  // `buildVillainFeed` (POOL players only, by construction); `villainSource` selects
+  // 'null' | 'stats' | 'styled'. The default keeps every existing caller byte-identical:
+  // resolveVillain returns null on the 'null' source, a missing feed, or a villain with
+  // no entry, and the legacy null-stats construction below is untouched on that path.
+  // NOTE the 'styled' vs 'stats' contrast is only live on an engine where the label has
+  // a channel: post-WS-436 `buildPlayerStats` cannot even REPRESENT a style field, so
+  // the two arms are structurally identical at HEAD — which is falsifier #1 of the
+  // removal, exercised for real against the pre-WS-436 worktree in the B4 protocol.
+  villainFeed = null,
+  villainSource = VILLAIN_SOURCES.NULL,
 }) => {
   const responses = RESPONSES_BY_FACING[ctx.facingAction] || RESPONSES_BY_FACING.none;
   const board = ctx.board;
@@ -200,9 +212,18 @@ export const heroPolicyAt = async ({
     ? getRangePositionCategory(Number(villainSeat), buttonSeat)
     : 'LATE';
 
-  // Population-typical villain: null stats resolve to POPULATION_PRIORS inside the
-  // engine, which is precisely the baseline this arm intends. See the header.
-  const villainData = { vpip: null, pfr: null, af: null, style: null, rawStats: {} };
+  // Villain construction. Legacy default: population-typical (null stats resolve to
+  // POPULATION_PRIORS inside the engine — see the header). With a feed and a non-null
+  // source, the villain seat's own POOL-mined aggregate stats are served instead; the
+  // engine then personalises through the continuous channels (villainFoldLevel, the
+  // depth-2 shrunk transfers). No villainModel is built for fed villains: the feed
+  // carries aggregate stats, not decision summaries, and post-WS-436 a summary-less
+  // model's priors are population anyway — stats-only IS the production shape.
+  const villainPid = villainSeat != null
+    ? (hand.seatPlayers?.[String(villainSeat)] ?? null)
+    : null;
+  const fed = resolveVillain(villainFeed, villainPid, villainSource);
+  const villainData = fed ?? { vpip: null, pfr: null, af: null, style: null, rawStats: {} };
   const playerStats = buildPlayerStats(villainData, villainPos);
   const villainRange = buildBaselineRange(null, null, villainPos);
 
@@ -400,6 +421,11 @@ export const heroPolicyAt = async ({
     ok: true, actions, samples: combos.length, engineErrors, outOfSet, perCombo,
     evStats: summarizeEv(evSamples),
     comboDetail,
+    // WS-436 B2 — whether THIS decision's villain was actually served from the feed.
+    // Coverage must be visible: a feed whose entries never match would silently
+    // reproduce the null arm (the shipped-but-inert failure mode, WS-276 family),
+    // and the aggregate comparison would read as "no effect" instead of "no feed".
+    villainFed: fed != null,
   };
 };
 

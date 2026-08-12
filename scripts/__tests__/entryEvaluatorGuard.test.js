@@ -92,6 +92,12 @@ const ALLOWED = {
     'Reads HANDHQ_REFERENCE_STAKES for pool VPIP/PFR to compare a declared strategy '
     + 'against. Scores NO corpus hands — it reads an entry-map artifact. UNGUARDED: same '
     + 'shape as the WS-375 defect, filed rather than fixed here to stay in scope.',
+  'villainFeed.mjs':
+    'Imports resolveStatPriors — logic, not data (the same import statPriorScore.mjs '
+    + 'carries). The reference table it resolves against is passed in by '
+    + 'build-villain-feed.mjs, which validates a stamped table through LeakageGuard '
+    + 'before handing it over; the feed itself is POOL players only by construction '
+    + '(indexEvalPlayers group: GROUPS.POOL) and scores nothing. GUARDED at build.',
 };
 
 describe('WS-375 sweep — direct reaches for corpus-derived artifacts are enumerated', () => {

@@ -169,6 +169,14 @@ export const runHeroEv = async ({
   // Stop admitting waves once this many players have contributed >= 1 scored decision.
   // null = no target (process every planned player).
   targetContributingPlayers = null,
+  // ── WS-436 B2 — the styled-villain feed ───────────────────────────────────────────
+  // `villainFeed` is the parsed build-villain-feed artifact (POOL players only);
+  // `villainSource` is 'null' | 'stats' | 'styled'. Defaults keep every existing
+  // caller byte-identical (heroPolicyAt's null path). Both are stamped in the chunk
+  // config and the run config: two runs differing on the villain arm must never
+  // resume each other's chunks or diff as equals.
+  villainFeed = null,
+  villainSource = 'null',
   // Worker-thread count. 0 = in-process serial through the identical task function —
   // the bit-identity baseline. N > 0 = worker pool (heroEvPool.mjs).
   workers = 0,
@@ -263,6 +271,9 @@ export const runHeroEv = async ({
     captureRecord,
     equitySeed,
     maxDecisionsForPlayer: perPlayerCap,
+    // WS-436 B2. Plain JSON, so it crosses the worker boundary by value.
+    villainFeed,
+    villainSource,
   };
 
   // ── Fragment collection + fold-on-demand ─────────────────────────────────────────
@@ -362,6 +373,10 @@ export const runHeroEv = async ({
       maxDecisions: Number.isFinite(maxDecisions) ? maxDecisions : null,
       targetContributingPlayers,
       maxHandsPerPlayer: Number.isFinite(maxHandsPerPlayer) ? maxHandsPerPlayer : null,
+      // WS-436 B2: a chunk scored under one villain arm may never seed a resume
+      // under another. The feed's provenance (not its bulk) is the identity.
+      villainSource,
+      villainFeedBuiltFrom: villainFeed?.builtFrom ?? null,
     },
     behaviorPolicy: {
       partition: policy.provenance.partition,
@@ -566,6 +581,10 @@ export const runHeroEv = async ({
       config: {
         poolPct, minTrainHands, checkpointInterval, comboSamples, trials,
         rakeConfig, rakeIsModelled: true, maxDecisions,
+        // WS-436 B2. Deliberately NOT in diffHeroEvRuns' strip lists: two runs
+        // differing on the villain arm are different measurements.
+        villainSource,
+        villainFeedBuiltFrom: villainFeed?.builtFrom ?? null,
         depthArms: arms.map((a) => ({ id: a.id, refinementBudgetMs: a.refinementBudgetMs ?? null })),
         primaryArmId: primaryId,
         strategyArms: strategyArms.map((a) => ({

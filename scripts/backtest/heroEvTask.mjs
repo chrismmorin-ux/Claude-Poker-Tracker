@@ -100,6 +100,8 @@ export const scoreHeroEvPlayer = async ({
     minTrainHands, checkpointInterval, comboSamples, trials, rakeConfig,
     arms, primaryId, captureRecord, equitySeed = null,
     maxDecisionsForPlayer = Infinity,
+    // WS-436 B2 — styled-villain feed, threaded verbatim to heroPolicyAt.
+    villainFeed = null, villainSource = 'null',
   } = config;
   const onDecisionRecord = emit.onDecisionRecord ?? null;
   const onProgress = emit.onProgress ?? null;
@@ -248,6 +250,7 @@ export const scoreHeroEvPlayer = async ({
           equitySeedFor: decisionSeed === null
             ? null
             : (comboIndex) => seedForCombo(decisionSeed, armOrdinal, comboIndex),
+          villainFeed, villainSource,
         });
         counters.engineErrors += res.engineErrors ?? 0;
         if (!res.ok) { armFailure = { arm: arm.id, reason: res.reason }; break; }

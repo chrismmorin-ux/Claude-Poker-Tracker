@@ -76,6 +76,14 @@ const main = async () => {
   const policyPath = typeof args['behavior-policy'] === 'string'
     ? args['behavior-policy'] : 'out/behavior-policy.json';
   const behaviorPolicy = JSON.parse(readFileSync(policyPath, 'utf8'));
+  // WS-436 B2 — the styled-villain feed. Absent flags leave the run byte-identical
+  // to the pre-feed harness (null-stats villains).
+  const villainSource = typeof args['villain-source'] === 'string' ? args['villain-source'] : 'null';
+  const villainFeedPath = typeof args['villain-feed'] === 'string' ? args['villain-feed'] : null;
+  const villainFeed = villainFeedPath ? JSON.parse(readFileSync(villainFeedPath, 'utf8')) : null;
+  if (villainSource !== 'null' && !villainFeed) {
+    throw new Error(`--villain-source ${villainSource} requires --villain-feed <path> (build with build-villain-feed.mjs).`);
+  }
 
   const loader = await openLoader(REPO);
   try {
@@ -128,6 +136,7 @@ const main = async () => {
           // eslint-disable-next-line no-await-in-loop -- the engine call is the cost
           const res = await heroPolicyAt({
             ctx, hand: ctx.hand, rakeConfig: null, refinementBudgetMs,
+            villainFeed, villainSource,
           });
           Math.random = realRandom;
           if (!res.ok) continue;
@@ -141,6 +150,7 @@ const main = async () => {
           rows.push({
             key, street: ctx.street, facingAction: ctx.facingAction,
             observed: ctx.action, piOurs: res.actions, piPool: pool.actions,
+            villainFed: res.villainFed ?? false,
           });
           if (rows.length % 25 === 0) console.log(`  scored ${rows.length} decisions`);
           if (rows.length >= maxDecisions) { stop = true; }
@@ -195,8 +205,22 @@ const main = async () => {
       console.log(`  ${nm.padEnd(10)} ${String(e.n).padStart(4)}   ${e.ess.toFixed(1).padStart(6)}   ${pct(e.n ? e.ess / e.n : 0).padStart(6)}`);
     }
 
+    // WS-436 B2: feed coverage, printed unconditionally when a feed is in play. A run
+    // whose fed fraction is ~0 is measuring the null arm and must say so.
+    if (villainSource !== 'null') {
+      const fed = rows.filter(r => r.villainFed).length;
+      console.log(`\nVILLAIN FEED COVERAGE: ${fed}/${rows.length} decisions served from the feed (${pct(rows.length ? fed / rows.length : 0)})`);
+    }
+
     if (typeof args.out === 'string') {
-      writeFileSync(args.out, JSON.stringify({ label, maxFiles, maxPlayers, maxDecisions, rows }, null, 1));
+      writeFileSync(args.out, JSON.stringify({
+        label, maxFiles, maxPlayers, maxDecisions,
+        // WS-436 B2: the artifact is self-identifying about its villain arm, so two
+        // runs being compared cannot silently differ on it.
+        villainSource,
+        villainFeed: villainFeed ? { path: villainFeedPath, builtFrom: villainFeed.builtFrom } : null,
+        rows,
+      }, null, 1));
       console.log(`\nWrote ${args.out}`);
     }
   } finally {

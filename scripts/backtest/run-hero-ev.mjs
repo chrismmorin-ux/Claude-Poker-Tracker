@@ -126,6 +126,15 @@ const main = async () => {
     const comboSamples = int(args['combo-samples'], 10);
     const trials = int(args.trials, 200);
 
+    // ── WS-436 B2: styled-villain feed ─────────────────────────────────────────────
+    const villainSource = typeof args['villain-source'] === 'string' ? args['villain-source'] : 'null';
+    const villainFeedPath = typeof args['villain-feed'] === 'string' ? args['villain-feed'] : null;
+    const villainFeed = villainFeedPath ? JSON.parse(readFileSync(villainFeedPath, 'utf8')) : null;
+    if (villainSource !== 'null' && !villainFeed) {
+      console.error(`Refused: --villain-source ${villainSource} requires --villain-feed <path> (build with build-villain-feed.mjs).`);
+      process.exit(2);
+    }
+
     // ── WS-433: seeding, workers, waves, chunks ────────────────────────────────────
     const { DEFAULT_EQUITY_SEED } = await loader.load('/scripts/backtest/seededEquity.mjs');
     const equitySeed = args['equity-seed'] === 'none'
@@ -320,6 +329,9 @@ const main = async () => {
       rakeConfig,
       dealBook,
       replicationStamp,
+      // WS-436 B2 — styled-villain feed (stamped in run.config + chunk config).
+      villainFeed,
+      villainSource,
       // WS-433 — seeding, worker pool, wave admission, chunk persistence + resume.
       equitySeed,
       workers,

@@ -201,7 +201,7 @@ export { sizeBucketFor } from './decisionGeometry.mjs';
  * Seat bucket matters because 6-max and full-ring differ on EVERY stat
  * (25NL VPIP 28.6% vs 22.0%, WS-262).
  */
-const segmentFor = (hands) => {
+export const segmentFor = (hands) => {
   const stakeCount = new Map();
   const bucketCount = new Map();
 
@@ -340,12 +340,12 @@ export const scorePlayer = ({
       // there are provably the priors the model ran on.
       const statPriors = statWindow.priors;
 
-      // Percentages and style are what the app feeds the model
-      // (analysisPipeline.js steps 1-2). Passing `{}` here — as this runner
-      // originally did — silently scored a model with NO stats and NO style,
-      // which disables the style-conditioned priors entirely and is not the
-      // configuration that ships. One model per distinct priorSource (WS-436);
-      // the summary and profile are shared, so this is the cheap half.
+      // Percentages (and style, for the labeled arm) are what the app feeds the
+      // model (analysisPipeline.js steps 1-2). Passing `{}` here — as this
+      // runner originally did — silently scored a model with NO stats, which
+      // disables the villain-conditioned priors (the `shrunk` field since
+      // WS-436 A4) and is not the configuration that ships. One model per
+      // distinct priorSource; summary and profile shared — the cheap half.
       const pct = derivePercentages(trainStats, statPriors);
       const style = classifyStyle(pct);
       modelBySource = new Map(priorSources.map(source => [
