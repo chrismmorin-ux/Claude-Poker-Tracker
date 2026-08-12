@@ -1,6 +1,20 @@
 """
 cluster-player-types.py — WS-273 follow-on. Are the app's player archetypes real?
 
+RESEARCH-ONLY (WS-436 close, 2026-08-12). This script has ZERO downstream code
+consumers, by design — its artifact (out/player-clusters.json) is gitignored and
+does not persist member ids, so it cannot be joined back to players. Its FINDING
+is what shipped: bestK = 2, silhouette 0.3428 (more than double every other k),
+inertia falling smoothly with no elbow — a continuum with one dominant
+looseness/stickiness axis, not six discrete types. That finding is carried into
+code by WS-436: the game-tree engine derives villain parameters from continuous
+shrunk posteriors (villainModelData.villainFoldLevel, and the continuous
+Dirichlet prior seed in villainDecisionModel.buildActionPriors), never from the
+six classifyStyle labels. Durable record:
+docs/research/player-archetypes-empirical-2026-07-26.md — which also names the
+instrument for any future archetype rung (dump-records/runner arm) and the
+number to beat: 1.69% lift / 52.2% accuracy over 10,147 held-out decisions.
+
 THE QUESTION (founder, 2026-07-26): "did we just use our existing player
 archetypes or did we do any sort of k clustering to see if there are predominant
 types in the data?"

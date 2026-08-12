@@ -1,0 +1,82 @@
+id: "WS-447"
+title: "Villain-categorization display greenfield (WS-436 Track C) — Gate 2 blind-spot roundtable, then a categorization grammar the engine's continuum can honestly front"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "design"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  WS-436 removed the six style labels (Fish/LAG/LP/Nit/Reg/TAG) as game-tree engine
+  inputs — the engine now runs on continuous shrunk-posterior statistics and game state.
+  The founder ruled during WS-436 that the human-facing categorization is greenfielded
+  from a UX standpoint: "what helps hero properly categorize this behavior." The display
+  today still renders the six labels across >= 8 main-app components, the extension HUD,
+  and the design-token layer (SeatGrid, SeatDetailPanel, VillainBrief, CompactSeatStrip,
+  TendencyStats, StatsView, VillainModelCard STYLE_DESCRIPTIONS, STYLE_COLORS tokens,
+  ignition render-street-card/orchestrator) — a display that implies the engine thinks
+  in six types misrepresents the system it fronts.
+
+  Gate 1 entry EXISTS and is YELLOW:
+  docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md.
+  Gate 2 (Blind-Spot Roundtable) is TRIGGERED there — by the YELLOW, by new-surface
+  creation, and by the founder flagging the work — and was unowned by any ticket until
+  this one (found during SPR-180 close: the WS-436 decision_flag pointed at WS-437,
+  which is an unrelated archived claims-policy ticket; the ticket-ID collision episode
+  recorded in WS-440/441/443 is the likely cause).
+
+  This ticket also owns the "table-recognition" need the six labels were implicitly
+  serving — recognizing how a specific villain plays fast enough to act on it mid-hand,
+  at a live 9-handed table, on the 1600x720 device — as its own firewalled channel,
+  distinct from the engine's decision inputs.
+accept_criteria: |
+  - Gate 2 Blind-Spot Roundtable run per docs/design/ROUNDTABLES.md as the FIRST action
+    (founder-ruled 2026-08-12 at SPR-180 plan approval: roundtable runs in this ticket,
+    not in the WS-436 close sprint). Multi-agent execution per
+    .claude/rules/engine-execution-fidelity.md — no inline substitute.
+  - The at-a-glance behavioral-categorization JTBD (identified as unmodeled in the
+    Gate 1 gap check) is either authored into the JTBD atlas or explicitly ruled a
+    decomposition of the MH domain.
+  - Gate 4 surface artifact in docs/design/surfaces/ (likely a categorization-grammar
+    doc + per-surface deltas, per the SHC precedent) before any production code.
+  - The two non-display consumers of the label vocabulary have an explicit disposition:
+    SR-24 (filter by opponent-style) and the anchor-library scope predicates
+    (librarySelectors.js). Neither is silently broken by removing the six labels
+    from display.
+  - The engine constraint is stated in the surface spec: post-WS-436 there are no six
+    discrete engine types; the honest primitives are continuous (villainFoldLevel,
+    shrunk posteriors, the k=2 looseness axis — silhouette 0.343,
+    docs/research/player-archetypes-empirical-2026-07-26.md).
+effort: "L"
+files_involved:
+  - "docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md"
+  - "docs/design/ROUNDTABLES.md"
+  - "src/components/views/OnlineView/SeatGrid.jsx"
+  - "src/components/views/OnlineView/SeatDetailPanel.jsx"
+  - "src/components/ui/TendencyStats.jsx"
+  - "src/components/ui/VillainModelCard.jsx"
+  - "src/constants/designTokens.js"
+  - "src/utils/anchorLibrary/librarySelectors.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: program-gate
+  created_by: ai
+  finding_id: ""
+  run_id: "spr-180-ws436-close"
+created_at: "2026-08-12T18:10:00Z"
+status_note: |
+  Filed during SPR-180 (WS-436 close) per founder ruling at plan approval 2026-08-12:
+  Track C's Gate 2 roundtable runs as this ticket's first action, not inside the
+  engine-close sprint. Gate 1 entry authored 2026-08-08 by ses-20260808-0250-3e298c5d.

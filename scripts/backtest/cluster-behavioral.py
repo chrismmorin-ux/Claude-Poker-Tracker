@@ -1,6 +1,14 @@
 """
 cluster-behavioral.py — does POSTFLOP behaviour reveal sub-types the preflop stats miss?
 
+RESEARCH-ONLY (WS-436 close, 2026-08-12). Zero downstream code consumers, by
+design — out/behavioral-clusters.json is gitignored. The finding shipped instead
+of the artifact: behavioural features confirm the k=2 continuum (authored
+six-label partition purity 0.63 / 0.44, 21.1% Unknown fallthrough), and WS-436
+removed the six labels as engine inputs in favour of continuous shrunk
+posteriors. See docs/research/player-archetypes-empirical-2026-07-26.md for the
+durable record and the number any future archetype rung must beat.
+
 The founder's objection, 2026-07-26, and it was correct:
 
     "it is a little concerning that the labels don't encompass potential

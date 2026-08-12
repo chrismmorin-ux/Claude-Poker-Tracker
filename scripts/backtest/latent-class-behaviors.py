@@ -1,6 +1,14 @@
 """
 latent-class-behaviors.py — is a behaviour something you either DO or DON'T, or a dial?
 
+RESEARCH-ONLY (WS-436 close, 2026-08-12). Zero downstream code consumers, by
+design — out/latent-classes.json is gitignored. The finding shipped instead of
+the artifact: 8 of 9 behaviours are DIALS, not switches (only triple_barrel
+picked the switch model, by a BIC margin of 2 — a tie, not a win), which is an
+argument against any per-villain discrete-archetype channel and for the
+continuous shrunk-posterior channel WS-436 shipped. Durable record:
+docs/research/player-archetypes-empirical-2026-07-26.md.
+
 THE HYPOTHESIS (founder, 2026-07-26, restated precisely):
 
     "I was referring to villains being in different stages of their poker

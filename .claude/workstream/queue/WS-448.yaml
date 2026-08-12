@@ -1,0 +1,79 @@
+id: "WS-448"
+title: "assumptionEngine carries the style-label anti-pattern WS-436 removed from the game tree — style-keyed Beta prior selectors in assumptionProducer.js"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found during WS-436 execution (SPR-180): the assumption/dividend engine uses the six
+  style labels as decision inputs, the exact violation class WS-436 removed from the
+  game tree. Sites at HEAD (src/utils/assumptionEngine/assumptionProducer.js):
+    - stylePriorForFoldRate(style, street)   :730-742
+    - styleCbetFrequencyPrior(style)         :753-761
+    - styleCallFrequencyPrior(style)         :768-776
+    - styleResistance[villain.style]         :806-814
+    - analogAnchor narrative branches        :427, :513, :599, :690
+  Plus the PRIOR_TYPES = ['population', 'style'] public contract (assumptionTypes,
+  asserted at __tests__/assumptionTypes.test.js:148), byStyle result partitions in
+  __backtest__/dividendCalibrationBacktest.js:328 and historyBacktest.js:247, and
+  style-synthesized villain ranges in handStateReconstructor.js:336.
+
+  NOT folded into WS-436 because this engine has its own calibration harness and a
+  public PRIOR_TYPES contract — changing it un-measured, or in the same change set as
+  the game-tree removal, would make neither attributable. Same reasoning as
+  WS-403's one-term-per-ticket rule.
+
+  The replacement pattern is established by WS-436 stages A1/A4: a continuous level
+  from the villain's own shrunk Beta posterior (villainFoldLevel, shrunk.cbet,
+  shrunk.aggFreq), population-identical at n=0, never scaling a fitted curve, no label
+  key anywhere. The clustering evidence that refutes the six-way partition
+  (docs/research/player-archetypes-empirical-2026-07-26.md: k=2, silhouette 0.343,
+  21% Unknown fallthrough) applies to this engine identically.
+accept_criteria: |
+  - No style label is read as a decision input anywhere in src/utils/assumptionEngine/
+    — grep for style-keyed lookups returns display/narrative-only sites, or nothing.
+  - Replacements derive from shrunk posteriors / game state per POKER_THEORY §7 and
+    the WS-436 A1/A4 precedent; n=0 reproduces the population prior exactly (pinned).
+  - PRIOR_TYPES contract migration is explicit, not silent: 'style' either removed
+    with its consumers updated, or re-pointed at the continuous channel with the
+    rename recorded.
+  - The engine's own calibration harness (dividendCalibrationBacktest, historyBacktest)
+    is run before/after on the same decisions; the delta is reported, not assumed.
+    byStyle partitions in backtest reporting may remain as descriptive slices
+    (labels as OUTPUTS for reporting are not the violation).
+  - handStateReconstructor's style-synthesized villain ranges get a continuous
+    replacement or an explicit research-only marking with the finding carried into
+    the code.
+effort: "M"
+files_involved:
+  - "src/utils/assumptionEngine/assumptionProducer.js"
+  - "src/utils/assumptionEngine/assumptionTypes.js"
+  - "src/utils/assumptionEngine/handStateReconstructor.js"
+  - "src/utils/assumptionEngine/__backtest__/dividendCalibrationBacktest.js"
+  - "src/utils/assumptionEngine/__backtest__/historyBacktest.js"
+  - "src/utils/assumptionEngine/__tests__/assumptionTypes.test.js"
+blocked_by: ["WS-436"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "spr-180-ws436-close"
+created_at: "2026-08-12T18:12:00Z"
+status_note: |
+  Filed during SPR-180 (WS-436 close), from the villain-model style-channel trace.
+  Blocked by WS-436 so the game-tree removal's measured result exists first as the
+  worked precedent (and its Result Card as the WS-445 ledger's first row).

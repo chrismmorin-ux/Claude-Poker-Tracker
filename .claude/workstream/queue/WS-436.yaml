@@ -3,8 +3,8 @@ title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree �
 legacy_id: ""
 type: bug
 status: backlog
-claimed_by: null
-claimed_at: null
+claimed_by: ses-20260808-0250-3e298c5d
+claimed_at: "2026-08-08T02:55:56.401Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -107,8 +107,12 @@ decision_flags:
     dial-vs-switch mixture test over nine behaviours) all return a continuum with one dominant axis.
     He is RIGHT that players differ; the six-type container is what the data refuses. He should rule
     on this rather than have it resolved silently in a schema — and he should see the disagreement
-    stated plainly, not softened. See WS-437's related surface: the table-recognition need the
-    six labels were serving is real and gets its own, firewalled channel.
+    stated plainly, not softened. The table-recognition need the six labels were serving is real
+    and gets its own, firewalled channel: WS-447 (Track C display greenfield; Gate 1 entry at
+    docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md). [Repaired
+    2026-08-12: this flag originally said "See WS-437's related surface" — WS-437 is an unrelated
+    archived claims-policy ticket, and no table-recognition ticket existed. Consistent with the
+    ticket-ID collision episode recorded in WS-440/441/443.]
 source:
   type: engine-finding
   created_by: ai
