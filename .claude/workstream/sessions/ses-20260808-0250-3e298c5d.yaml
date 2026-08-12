@@ -1,0 +1,48 @@
+id: "ses-20260808-0250-3e298c5d"
+status: active
+started_at: "2026-08-08T02:50:29.879Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-08T03:05:58.336Z"
+pid: 30684
+host: MorinComputer
+agent_session_id: "3e298c5d-6dc2-40df-b92c-9f7a352be726"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-436"
+
+files_locked:
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/exploitEngine/__tests__/modelAudit.test.js"
+  - ".claude/workstream/queue/WS-445.yaml"
+  - ".claude/workstream/queue/WS-446.yaml"
+  - "src/utils/tendencyCalculations.js"
+  - "src/utils/__tests__/tendencyCalculations.test.js"
+  - "src/utils/exploitEngine/liveGameContext.js"
+  - "src/utils/liveAdvisor/computeHelpers.js"
+  - "src/utils/exploitEngine/__tests__/liveGameContext.test.js"
+  - ".claude/workstream/evidence/ws436-baseline.md"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+  - "src/utils/exploitEngine/preflopFlopEV.js"
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeSizingHelpers.test.js"
+  - "src/utils/exploitEngine/__tests__/foldEquityCalculator.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEquity.test.js"
+  - "src/utils/exploitEngine/__tests__/item24Improvements.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/postflopNarrower.test.js"
+  - "src/utils/exploitEngine/__tests__/preflopAdvisor.test.js"
+  - "src/utils/exploitEngine/__tests__/preflopFoldResolver.test.js"
+  - "docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md"
+

@@ -1,0 +1,32 @@
+id: "SPR-180"
+title: "Ship WS-436: `classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter"
+status: done
+approved_at: "2026-08-08T02:55:56.401Z"
+completed_at: "2026-08-12T21:13:38.039Z"
+completed_by_commit: "80d4eb71"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-436: `classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-08T02:55:56.401Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-436 selected (50 × no damping = 50).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 3 session(s) / 2 (5 items max).
+  ⚠ OVER CEREMONY CAP — 3 session(s) against a 2-session ceiling. Approving accepts the overshoot.
+
+items:
+  - id: "WS-436"
+    title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-08-12T21:13:38.039Z"
+
+created_at: "2026-08-08T02:55:56.401Z"

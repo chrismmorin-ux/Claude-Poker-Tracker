@@ -1,0 +1,65 @@
+id: "WS-446"
+title: "Fire a full hand recreation like it's nothing — instant, frictionless replay of any hand that actually happened, from anywhere a hand is referenced"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 35.0
+priority_label: "P1"
+category: "design"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  FOUNDER GAP REPORT (2026-08-08, mid-WS-436): "I would want you to be able to fire a full
+  recreation of a hand like it's nothing, because faster flatter movement usually indicated
+  tighter lacing."
+
+  THE PERSPECTIVE THIS SERVES (founder-stated, binding on UX work): the app is a SOURCE OF
+  INCOME, earned by playing individual hands through to completion. The unit of reality is the
+  specific hand that actually happened — not an aggregate, not a stat row. Every analysis
+  surface gains trust when the underlying hand can be summoned instantly and inspected in full.
+
+  THE GAP: a HandReplay view exists, but "fire a full recreation like it's nothing" is a
+  different bar — one gesture from ANY reference to a hand (a stat cell, an exploit's evidence,
+  a Decision Atom, a session row, a villain-model observation, a Result Card's decision record)
+  straight into a complete, fast, faithful recreation: seats, stacks, actions in order, board,
+  pot growth, showdown. Speed and flatness of the motion is itself the quality signal ("tighter
+  lacing") — a slow or partial recreation reads as a loose build.
+accept_criteria: |
+  - Gate 1 (Entry) run per docs/design/LIFECYCLE.md: personas, JTBD ("verify what actually
+    happened in this hand, mid-session, in seconds"), gap analysis vs the existing HandReplay
+    surface. Gate 2 roundtable if Gate 1 is YELLOW/RED. Gate 4 surface artifact before code.
+  - Inventory of every surface that references a hand (stats, exploits, atoms, sessions,
+    villain observations, showdown records) and whether it can currently reach the replay in
+    one gesture; the gaps are enumerated.
+  - Recreation is FULL (seats, stacks, action sequence with amounts, board by street, pot,
+    showdown) and FAST (perceived-instant open; no loading ceremony) — the artifact defines the
+    measurable bar (e.g. time-to-first-frame) and the implementation meets it.
+  - Works for both live-recorded and imported/online hands, and states plainly when a hand
+    record is too sparse to recreate faithfully (a partial recreation is labeled partial,
+    never silently smoothed).
+effort: "M"
+files_involved:
+  - "docs/design/surfaces/"
+  - "src/components/views/"
+  - "src/utils/handAnalysis/"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-08T03:40:00Z"
+status_note: |
+  Filed mid-WS-436 at founder direction. Related but not blocking: WS-436 Track C greenfields
+  the villain-categorization display; both serve the same stated perspective (income from
+  individual hands played to completion — specificity of the hand that actually happened).

@@ -2,13 +2,13 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 250
+total_items: 254
 by_status:
   decomposed: 1
-  done: 49
+  done: 50
   in_progress: 3
   deferred: 46
-  backlog: 131
+  backlog: 134
   dismissed: 2
   completed: 7
   review: 1
@@ -21,10 +21,10 @@ by_category:
   data-integrity: 4
   data-isolation: 1
   data-quality: 4
-  design: 3
+  design: 5
   design-comprehension: 4
   documentation: 2
-  domain-correctness: 85
+  domain-correctness: 86
   engine: 10
   engineering: 2
   exploit-anchor-library: 5
@@ -54,6 +54,7 @@ by_category:
   shape-language: 3
   sidebar-program: 1
   sidebar-recurrence: 2
+  strategy-of-record: 1
   table-view: 1
   test-reliability: 1
   testing: 2
@@ -2747,7 +2748,7 @@ items:
 
   - id: "WS-436"
     title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid"
-    status: backlog
+    status: done
     priority_score: 50
     category: domain-correctness
     effort: L
@@ -2815,5 +2816,48 @@ items:
     type: "improvement"
     decision_flags: ["ShowdownView region classification (left open by doctrine L113)"]
     program: design
+    capability: core
+
+  - id: "WS-445"
+    title: "The Label & Foundation Ledger — every label-shaped input and its data foundation listed exhaustively in one artifact, each entry ranked by estimated absolute-EV impact; adopted as a standing repo standard"
+    status: backlog
+    priority_score: 40
+    category: strategy-of-record
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-436"]
+    decision_flags: ["|"]
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-446"
+    title: "Fire a full hand recreation like it's nothing — instant, frictionless replay of any hand that actually happened, from anywhere a hand is referenced"
+    status: backlog
+    priority_score: 35
+    category: design
+    effort: M
+    type: "feature"
+    program: design
+    capability: core
+
+  - id: "WS-447"
+    title: "Villain-categorization display greenfield (WS-436 Track C) — Gate 2 blind-spot roundtable, then a categorization grammar the engine's continuum can honestly front"
+    status: backlog
+    priority_score: 30
+    category: design
+    effort: L
+    type: "feature"
+    program: design
+    capability: core
+
+  - id: "WS-448"
+    title: "assumptionEngine carries the style-label anti-pattern WS-436 removed from the game tree — style-keyed Beta prior selectors in assumptionProducer.js"
+    status: backlog
+    priority_score: 24
+    category: domain-correctness
+    effort: M
+    type: "bug"
+    blocked_by: ["WS-436"]
+    program: domain-correctness
     capability: core
 

@@ -2,12 +2,12 @@ id: "WS-436"
 title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keyed off a partition the repo's own clustering says is a continuum, with 21% falling through to `Unknown` and the Fish threshold bisecting a cluster centroid"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260808-0250-3e298c5d
-claimed_at: "2026-08-08T02:55:56.401Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-12T21:13:38.039Z"
+completion_commit: 80d4eb71
 priority_score: 50.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -123,3 +123,4 @@ status_note: |
   Found independently by three of nine agents in the 2026-08-06 decision-enhance pass on WS-410
   (figure-cluster architect, figure-cluster business strategist, figure-cluster failure engineer),
   each tracing from a different call site. Verified at HEAD `18f49f22`.
+closed_by_event: ev-1786569218077-5747e52521bd

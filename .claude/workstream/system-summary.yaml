@@ -9,7 +9,7 @@
 # the invariant suite. They are carried forward from the last writer that did,
 # with vitals_observed_at naming when that was. Check that date before
 # trusting them, and run /verify if it is old.
-last_updated: "2026-08-08T00:19:29Z"
+last_updated: "2026-08-12T21:13:39Z"
 generated_by: cwos-reconcile
 vital_signs_ok: true
 red_vitals: []
@@ -18,10 +18,10 @@ verify_last_completed_at: null
 reconcile_integrity_ok: true
 queue_counts:
   decomposed: 1
-  done: 49
+  done: 50
   in_progress: 3
   deferred: 46
-  backlog: 131
+  backlog: 134
   dismissed: 2
   completed: 7
   review: 1
@@ -32,15 +32,15 @@ top_3_unclaimed:
     score: 60
     category: measurement
 
-  - id: WS-436
-    title: "`classifyStyle`'s six labels are decision INPUTS to the live game tree — five parameter tables keye…"
-    score: 50
-    category: domain-correctness
-
   - id: WS-440
     title: RotateDeviceHint hard-blocks hand entry with no dismiss and no recovery on rotate (founder device-v…
     score: 45
     category: ux
+
+  - id: WS-442
+    title: Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations th…
+    score: 42
+    category: architecture
 
 stale_programs:
   - id: anti-hallucination
@@ -61,7 +61,7 @@ stale_programs:
 
   - id: domain-correctness
     tier: critical
-    overdue_protocols: [theory_completeness (never run), sweep (3d overdue), challenge (3d overdue)]
+    overdue_protocols: [theory_completeness (never run), sweep (7d overdue), delta (2d overdue), challenge (7d overdue)]
 
   - id: engineering
     tier: watch

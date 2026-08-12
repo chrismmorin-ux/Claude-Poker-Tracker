@@ -1,0 +1,60 @@
+id: "ses-20260812-1343-dabcbfdf"
+status: active
+started_at: "2026-08-12T13:43:41.579Z"
+ended_at: null
+mode: auto
+last_heartbeat: "2026-08-12T20:44:33.466Z"
+pid: 25408
+host: MorinComputer
+agent_session_id: "dabcbfdf-fafe-42d9-9c85-b774a5997b70"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/backtest/runner.mjs"
+  - "scripts/backtest/hierarchyVariants.mjs"
+  - "scripts/backtest/dump-records.mjs"
+  - ".claude/workstream/queue/WS-447.yaml"
+  - ".claude/workstream/queue/WS-448.yaml"
+  - ".claude/workstream/queue/WS-436.yaml"
+  - "scripts/backtest/cluster-player-types.py"
+  - "scripts/backtest/cluster-behavioral.py"
+  - "scripts/backtest/latent-class-behaviors.py"
+  - ".claude/workstream/evidence/ws436-baseline.md"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/__tests__/decisionTreeBuilder.test.js"
+  - "src/utils/exploitEngine/__tests__/foldCurveShape.test.js"
+  - "src/utils/exploitEngine/__tests__/foldEquityCalculator.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeEquity.test.js"
+  - "src/utils/exploitEngine/__tests__/item24Improvements.test.js"
+  - "src/utils/exploitEngine/__tests__/villainDecisionModel.test.js"
+  - "src/utils/exploitEngine/__tests__/modelAudit.test.js"
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/liveGameContext.js"
+  - "src/utils/exploitEngine/__tests__/gameTreeDepth2.test.js"
+  - "src/utils/exploitEngine/__tests__/logicalBailStratumGuarantee.test.js"
+  - "src/utils/exploitEngine/__tests__/liveGameContext.test.js"
+  - "scripts/backtest/villainFeed.mjs"
+  - "scripts/backtest/heroPolicy.mjs"
+  - "scripts/backtest/probeFrequency.mjs"
+  - "scripts/backtest/build-villain-feed.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/heroEvTask.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/__tests__/entryEvaluatorGuard.test.js"
+  - "scripts/__tests__/villainFeed.test.js"
+  - "scripts/backtest/diffProbeRuns.mjs"
+  - "src/utils/postflopDrillContent/__tests__/computeDepth2Plan.test.js"
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/exploitEngine/CLAUDE.md"
+  - ".claude/context/SYSTEM_MODEL.md"
+  - "scripts/backtest/emit-ws436-result-card.mjs"
+  - ".claude/workstream/queue/WS-445.yaml"
+
