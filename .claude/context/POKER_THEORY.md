@@ -1,5 +1,5 @@
 ---
-version: '2.3'
+version: '2.4'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-08-12
+    version: '2.4'
+    change: "WS-436: the six classifyStyle labels are no longer engine decision inputs anywhere — §7.4's hierarchy loses its style tier (now: decision model → continuous shrunk posteriors → population, two SEPARATE pipelines consumed mutually exclusively), and §11.1's fold-curve resolution loses FOLD_CURVE_PARAMS[style] (personalized || population; the fit regularises toward the measured population shape). Measured basis, 10,147 paired corpus decisions (online 2009 — transferred, not measured, for live): the style-conditioned Dirichlet seed carried ZERO villain-action information (ΔLL −0.00076 vs population, n.s.), and the continuous shrunk-posterior seed built to replace it was REFUTED as significantly worse (ΔLL −0.00691, t=−5.64) — the label was a lossy quantisation of stats computed from the SAME hands the model's buckets count, so any same-source seed double-counts; §7.4 now states that generalised rule. Deleted from code: STYLE_PRIORS, STYLE_STEEPNESS_MULT, STYLE_RAISE_PARAMS, STYLE_BET_CENTER, STYLE_FOLD_DEFAULTS, computeFoldCurveForStyle + per-style FOLD_CURVE_PARAMS (all founder estimates; the three depth-2 tables had been dormant their whole life behind a never-threaded sampleSize ramp). Replacements are continuous with exact n=0 population identities, asserted by test: villainFoldLevel (A1), aggFreq multiplicative raise-mass transfer, shrunk.cbet inverse-ratio bet-center transfer, and a mutually-exclusive villainFoldLevel tier-2 in the depth-2 model blend. The engine's playerStats struct no longer carries a style field at all. The clustering evidence (k=2, silhouette 0.343; 21.1% Unknown fallthrough; docs/research/player-archetypes-empirical-2026-07-26.md) stands as the partition refutation; display categorization is greenfielded separately (WS-447). Evidence: .claude/workstream/evidence/ws436-baseline.md §4a-4b."
   - date: 2026-08-05
     version: '2.3'
     change: "WS-283: added §11.1a — THE FOLD CURVE'S SHAPE IS MEASURED, ITS LEVEL IS NOT. `POPULATION_CURVE` was a founder estimate and was wrong in two ways that a base-rate correction cannot reach. (1) `logisticFoldResponse` returns `baseFold` at `fraction === midpoint` and nowhere else, while every caller passes an UNCONDITIONAL fold rate — so the midpoint must be the sizing at which the field's conditional fold rate equals its unconditional one. That is 0.35x pot, measured; it shipped at 0.75x, above 71% of all real bets, so the model subtracted from the base at nearly every sizing that occurs and the error changed SIGN with bet size. The docblock had meanwhile claimed `baseFold` was the rate at half pot — a stated contract the code contradicted for the life of the parameter. (2) `maxDelta` bounds the TOTAL swing, and at 0.25 the curve could span 25 points of fold rate while the field spans ~78 (6.4% fold at 0.03x pot, 84.2% at 2.0x) — no other parameter could compensate for a ceiling below the signal. Refitted by Brier minimisation on POOL players days 1-11 (k=98,273/n=178,174) and scored on EVAL players days 12-23 (k=178,794/n=318,347), a two-level structural leakage guard: maxDelta 0.25->0.95, midpoint 0.75->0.35, steepnessUp/Down 4.0/2.0->6.5/0.75. Residual-vs-sizing slope on the hold-out, intercept calibrated out so only shape is scored, +0.1409 -> +0.0078; Brier 0.24054 -> 0.23530; the ticket's 33-66% bucket +6.1pp -> -2.0pp on 202,261 decisions. ONLY THE SHAPE MOVED: the corpus is online cash July 2009 and the founder plays live 9-handed 1/2-1/3, so under the ratified WS-259 separation an online-mined gradient may inform a live model while an online base rate may not — POPULATION_PRIORS.bet.fold and STAT_PRIORS.foldToCbet are untouched, and with the base pinned at the live 0.45 estimate the shape correction closes about half the 17.3pp bucket error, the rest being the live/online level gap this corpus may not close. Also records that the WS-273 harness's flat prediction was NOT the fold curve: `queryActionDistribution` takes no bet-size argument, so its prediction is sizing-independent by construction and no curve change can move its lift. Two copies of the old midpoint were found downstream: `preflopFoldResolver` had linearised the pot-fraction->pot-odds change of variables at 0.75, which tripled the preflop response and clamped squeeze fold-through (now applies the map exactly, `f = r/(1-2r)`, deleting the constant); `gameTreeEquity.multiwayFoldPct`'s `betFraction = 0.75` default is reachable only from tests and is recorded, not fixed. NULL RESULT recorded rather than acted on: FOLD_CURVE_STREET_MODS refit per street returns the same shape on all three, and the shipped multipliers make the hold-out worse (~5e-4) — values unchanged, poker-theory justification withdrawn. Result Card RC-WS283-FOLD-CURVE-SHAPE-2026-08-05; hold-out pinned as a fixture in `foldCurveShape.test.js`, four assertions of which fail against the previous constants."
@@ -852,25 +855,38 @@ Bucket labels are NOT acceptable for:
 
 A player's style (Fish/Nit/LAG/TAG) is a **categorization derived from their stats** (VPIP, PFR, AF). Using the style label to apply adjustments AND the underlying stats to apply separate adjustments double-counts the same behavioral information.
 
-**The hierarchy (pick ONE per adjustment):**
-1. **Villain decision model** — personalized from this player's observed actions (highest fidelity)
-2. **Observed aggregate stats** — foldToCbet, AF, VPIP from this player's data
-3. **Style-conditioned parameters** — Fish/Nit/LAG structural model (logistic steepness, raise thresholds)
-4. **Population priors** — what a typical unknown 1/2 player would do
+**The hierarchy (pick ONE per adjustment; the style tier is GONE as of WS-436):**
+1. **Villain decision model** — personalized from this player's observed decision buckets (highest fidelity)
+2. **Observed aggregate stats, continuously** — the shrunk Beta posteriors (`villainFoldLevel`,
+   `shrunk.aggFreq`, `shrunk.cbet`), which self-degrade to the population prior at n=0
+3. **Population priors** — what a typical unknown 1/2 player would do
 
-When a higher-fidelity source is present, lower-fidelity redundant adjustments MUST NOT stack on top. The villain model already encodes the Fish's tendency to call too much — applying a Fish steepness modifier on top double-counts it.
+There is no label tier. WS-436 removed the six `classifyStyle` labels as engine inputs,
+on measurement: the style-conditioned Dirichlet seed carried zero villain-action
+information over 10,147 paired corpus decisions (ΔLL −0.00076, n.s.), and a
+full-resolution continuous seed in its place was significantly WORSE (ΔLL −0.00691,
+t = −5.64) — because the label was a lossy quantisation of stats computed from the SAME
+hands the model's buckets count. That measurement generalises the double-counting rule
+below: a prior seed and an evidence stream drawn from the same observations may not both
+enter one estimate, whatever the seed's resolution. Tiers 1 and 2 are therefore SEPARATE
+PIPELINES (decision buckets vs aggregate stats), consumed mutually exclusively per
+estimate, never blended.
 
-**Example of wrong (quadruple-counting):**
-- Style fold ratio: Fish folds less (from STYLE_PRIORS)
+When a higher-fidelity source is present, lower-fidelity redundant adjustments MUST NOT stack on top. The villain model already encodes the sticky player's tendency to call too much — applying a stats-derived modifier on top double-counts it.
+
+**Example of wrong (quadruple-counting, as the pre-WS-436 engine risked it):**
+- Style fold ratio: Fish folds less (from the deleted STYLE_PRIORS)
 - AF adjustment: low AF → folds less (AF is why they're classified Fish)
 - VPIP adjustment: high VPIP → folds less (VPIP is why they're classified Fish)
 - Villain model: observed fold rate is low (from same hands used for classification)
 - All four encode: "This player folds less." Applied multiplicatively, a legitimate 30% fold rate becomes 23%.
 
 **Example of correct (single-counting):**
-- Villain model present with confidence ≥ 0.3? Use model. Skip style/AF/VPIP adjustments.
-- No model but observed foldToCbet with N ≥ 5? Use observed stat. Skip style.
-- No observed data? Use style-conditioned logistic. Skip AF/VPIP (they're the inputs to the style).
+- Villain model with situation-level evidence? Use model. Skip stats adjustments.
+- No bucket evidence but shrunk posteriors exist? Use `villainFoldLevel` / the continuous
+  transfers. (They self-degrade — no threshold gate is needed or permitted, §11.4/§11.5.)
+- No data at all? The shrunk posteriors ARE the population priors at n=0; the same code
+  path serves both.
 
 ### 7.5 Computed vs Lookup — Decision Framework
 
@@ -1154,11 +1170,17 @@ top (this is the §7.4 no-double-counting rule applied to fold curves):
 1. **Personalized** — `fitFoldCurveParams(foldCurveData)` fits the curve from THIS villain's
    observed bet-facing data when enough exists (`villainModelData.js`).
 2. **Explicit params** — caller-supplied `steepness` / `midpoint` / `maxDelta` overrides.
-3. **Style-conditioned** — `FOLD_CURVE_PARAMS[style]` (Fish/Nit/LAG/… defaults).
-4. **Population default** — `FOLD_CURVE_PARAMS.default`.
+3. **Population default** — `FOLD_CURVE_PARAMS.default`.
+
+(The former style tier — `FOLD_CURVE_PARAMS[style]`, six `computeFoldCurveForStyle`
+scalings whose multipliers were self-declared unmeasured founder estimates — was removed
+by WS-436: the label channel measured as zero villain-action information on 10,147 paired
+corpus decisions, and personalisation never rescales a measured curve's shape (§11.1b).
+The personalized fit now regularises toward the population shape; its LEVEL is the
+villain's own observed fold rate.)
 
 Resolved in `foldEquityCalculator.js` `findOptimalBetSize`: `personalizedFoldCurve ||
-FOLD_CURVE_PARAMS[style] || FOLD_CURVE_PARAMS.default`. The fold response itself is a
+FOLD_CURVE_PARAMS.default`. The fold response itself is a
 logistic in bet fraction (`logisticFoldResponse`), consistent with §3.5 (small bets barely
 move fold%, medium bets steepest, overbets bimodal) — not a linear scaling.
 
@@ -1219,8 +1241,9 @@ returns essentially the same shape on flop, turn and river, and applying the shi
 multipliers on top of the fitted curve is *worse* on the hold-out (flop 0.23668 → 0.23723,
 river 0.22844 → 0.22885). The effect is ~5e-4, an order of magnitude under the
 population-curve correction, so the values are left alone and the poker-theory
-justification they carried is withdrawn rather than inverted. Per-style curves
-(`computeFoldCurveForStyle`) remain an unmeasured founder estimate.
+justification they carried is withdrawn rather than inverted. The per-style curves
+(`computeFoldCurveForStyle`) that were still unmeasured at WS-283 were DELETED by
+WS-436 — see §7.4.
 
 **Residual the fit does not remove.** Below ~0.15× pot the curve still over-predicts
 folding by 3–13 points. A bounded logistic in raw pot fraction cannot reach a 6% floor.

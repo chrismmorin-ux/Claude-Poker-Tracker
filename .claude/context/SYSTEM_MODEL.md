@@ -135,7 +135,9 @@ opt-out. See `docs/research/engine-backtest-baseline-2026-07-26.md`.
 useLiveActionAdvisor → gameTreeEvaluator.evaluateGameTree()
   PHASE 1 — mandatory, unbudgeted (~400ms flop / ~200ms turn, desktop)
   → buildEvaluationContext (narrow → segment → shared-runout equity → fold estimates)
-  → villainDecisionModel.buildVillainModel() (style-conditioned priors)
+  → villainDecisionModel.buildVillainDecisionModel() (population-seeded priors + bucket
+    evidence; WS-436 removed the style tier — per-villain levels are continuous, via
+    villainFoldLevel + shrunk posteriors at leaf sites)
   → foldEquityCalculator (blocker-aware, fold curve fit)
   → preflopFlopEV (stratified flop sampling, archetype-weighted)
   → onFastResult(depth-1 answer)   ← founder acts on this
