@@ -85,6 +85,41 @@ carries no measurable villain-action information on this corpus; its removal (A4
 measured-safe for the villain-model half. Standing caveat §4 applies: online 2009 corpus,
 transferred not measured for the live game.
 
+## 4b. A4's first design REFUTED by the instrument, and the correction (2026-08-12)
+
+The A4 stage as planned seeded the model's Dirichlet priors from the villain's own shrunk
+posteriors (`villainPriorDistributions`: foldToCbet → bet.fold, cbet → none.bet, aggFreq →
+raise mass, exact n=0 population identities). Built, tested green (2,976 tests), then run
+on the SAME instrument and decisions as §4a:
+
+| post-A4 paired vs shipped(=continuous) | logLoss | paired ΔLL | t | verdict |
+|---|---|---|---|---|
+| priors:population | 0.75743 | **−0.00691** | **−5.64** | population BETTER |
+| priors:style-labels | 0.76434 | +0.00000 | — | tripwire holds (labels ignored) |
+
+The continuous seed is significantly WORSE than population — where the style seed was
+merely uninformative (§4a). Mechanism, confirmed by the direction and magnitude: the
+shrinkage ladder's broadest level already contains the villain's pooled decisions, and
+`shrunk.foldToCbet`/`cbet`/`aggFreq` are computed from the SAME hands — the seed injects
+evidence the buckets then re-apply. The label seed was a lossy 6-way quantisation of the
+same channel (bounded double-count ⇒ neutral); full-resolution injection made the defect
+measurable. The explorer's pre-registered caveat ("seeding the ladder with a posterior
+derived from an overlapping observation set double-counts the same hands") was correct.
+
+**Correction shipped**: `buildActionPriors(boardTexture)` is population-seeded, period —
+the measured-best configuration (0.75743). `villainPriorDistributions` deleted with a
+tombstone note requiring any future villain-conditioned seed to beat the population arm
+on this instrument first. `foldEstimates` = population prior + bucket counts (single
+pipeline). Depth-2's model blend gained an evidence gate (confidence > 0) plus a
+mutually-exclusive tier-2 fallback through `villainFoldLevel` for bucket-less villains —
+the stats pipeline and bucket pipeline never both fire, so the same hands are never
+counted twice. Verification: third paired run at corrected HEAD must show all three arms
+record-identical (artifact `out/ws436-priors-records-corrected.json`).
+
+Per-villain personalisation is therefore carried ENTIRELY by: (1) bucket evidence through
+the ladder (villain-prediction path), and (2) `villainFoldLevel` + the A3 aggFreq/cbet
+transfers at game-tree leaf sites (advice path) — one pipeline per path, never both.
+
 ## 5. Deferred from Stage 0 (land with B-instrument, where their prerequisites exist)
 
 - Villain-prediction baseline (`priors:style-labels` vs `priors:population`): requires

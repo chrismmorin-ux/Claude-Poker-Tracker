@@ -18,6 +18,13 @@ import { computeDepth2Plan } from '../computeDepth2Plan';
 import { archetypeRangeFor } from '../archetypeRanges';
 import { parseBoard } from '../../pokerCore/cardParser';
 
+// A real depth-2 plan on the K72r fixture is CPU-bound work that legitimately
+// exceeds the 5s default on a loaded machine. Verified NOT a WS-436 regression
+// on 2026-08-12: the identical 9 timeouts reproduce byte-for-byte in a worktree
+// at d3cf5993 (pre-WS-436 engine, untouched src) on the same hardware. Same
+// class as logicalBailStratumGuarantee.test.js's explicit budget.
+vi.setConfig({ testTimeout: 30000 });
+
 const flop = (...cards) => parseBoard(cards);
 
 // ---------- Bad-input branches ----------
