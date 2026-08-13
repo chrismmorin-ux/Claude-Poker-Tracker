@@ -28,6 +28,15 @@ if ! bash "$SCRIPT_DIR/check-sor-additive.sh"; then
   echo "   (Legitimate additive change? node scripts/standardOfRecord/check-additive.mjs --update)"
   exit 1
 fi
+# WS-450 / FIND-112: inline pot-odds re-derivation shipped the bluffer's s/(1+s) as a
+# caller's price five times before this gate existed. One seam: villainRequiredEquity.
+if ! node "$SCRIPT_DIR/check-required-equity-seam.mjs"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-required-equity-seam.mjs"
+  echo "   Tests skipped — route the threshold through villainRequiredEquity, or annotate"
+  echo "   a genuine bluffer-breakeven / pot-includes-bet use."
+  exit 1
+fi
 
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then
