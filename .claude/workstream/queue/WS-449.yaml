@@ -1,0 +1,89 @@
+id: "WS-449"
+title: "Ship the k=2 pole prior into production — the first villain-conditioned seed to clear the WS-436 measurement bar (ΔLL −0.0033, t=−2.80), with the live re-fit trigger designed in"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Measured 2026-08-12 (pre-registered ws436-baseline.md §4d, results §4e): a k=2 pole
+  prior — the villain's Dirichlet seed taken from THEIR POLE's pooled decisions, mined
+  from OTHER players — beats the population seed on 10,147 paired corpus decisions:
+  ΔLL −0.0033 (t=−2.80, CI [−0.0056, −0.0010]), accuracy 58.4% → 59.8%. This is the
+  first villain-conditioned seed to clear the §4b tombstone bar in buildActionPriors,
+  and it clears it for the structural reason the bar exists: the pole VALUES are other
+  players' data (group-mean partial pooling), so the same-source double-count that
+  refuted the label seed and the continuous own-stats seed does not apply. Hard and
+  soft assignment scored identically (no cliff penalty at this pole separation).
+
+  The measurement apparatus exists and is committed: mine-pole-priors.mjs (deterministic,
+  re-fittable — any dataset in, poles out), the actionPriorsSeed seam in
+  buildVillainDecisionModel (production-inert, pinned), the pole-soft/pole-hard arms.
+
+  What SHIPPING requires (none of it done in the measurement pass):
+  1. Artifact delivery to production: pole-priors as generated static data (the
+     handhqReferencePool.js pattern — a generate script + checked-in module), not a
+     runtime file read.
+  2. Assignment at analysisPipeline: villain's shrunk (vpip, foldToCbet) → soft pole
+     weight → actionPriorsSeed. Soft, per §11.4 (no threshold cliff), even though the
+     corpus measured hard ≈ soft — live pole separation may be narrower.
+  3. THE LIVE RE-FIT TRIGGER (founder's transfer point, 2026-08-12: "its a calibration
+     problem with new data"): the artifact stamps its source; a standing check compares
+     the live segment's player count against the re-fit threshold and surfaces "re-mine
+     the poles from live data" when crossed. The 2009 poles ship as the transferred
+     starting point, labeled as such.
+  4. modelAudit + runner lockstep (the audit must score the shipping configuration).
+  5. Re-run the pole arms AFTER wiring to verify production ≡ the measured arm.
+accept_criteria: |
+  - Production seeds from the pole artifact via the existing actionPriorsSeed seam; an
+    unread villain (no shrunk) still gets the population seed exactly (pinned).
+  - Soft assignment only; the logistic width comes from the artifact's measured
+    within-pole spread, never a hand-set constant.
+  - The artifact is generated static data with provenance stamped (source corpus,
+    player counts, centroids); a re-fit is a script run + regenerate, no code change.
+  - Live re-fit trigger exists and is visible (surfaced through /status or program
+    protocol, not a comment).
+  - modelAudit and scripts/backtest/runner.mjs build models identically to production
+    in the same commit; the §4e measurement reproduces against the wired path.
+  - POKER_THEORY §7.4 amended: the hierarchy gains the group tier BETWEEN population
+    and the villain's own evidence, with the same-source rule restated (group values
+    must come from OTHER players).
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/villainDecisionModel.js"
+  - "src/utils/analysisPipeline.js"
+  - "src/utils/exploitEngine/modelAudit.js"
+  - "scripts/backtest/mine-pole-priors.mjs"
+  - "scripts/backtest/runner.mjs"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    SHIPPING A CORPUS-MINED PRIOR INTO LIVE ADVICE. The pole prior improved
+    villain-action prediction on the 2009 online corpus; its live value is transferred,
+    not measured, until the live re-fit runs. The founder has already endorsed the
+    transfer framing ("same kind of polarization even if the axes are a little
+    different") — this flag exists so the ship decision is his explicit call with the
+    caveat in view, not a default.
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "ws436-4d-channels-2026-08-12"
+created_at: "2026-08-12T22:55:00Z"
+status_note: |
+  Filed from the founder-directed §4d measurement pass ("lets run them"). Evidence:
+  ws436-baseline.md §4e; artifact out/pole-priors.json; records
+  out/ws436-pole-records.json.

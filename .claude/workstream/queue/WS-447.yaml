@@ -80,3 +80,10 @@ status_note: |
   Filed during SPR-180 (WS-436 close) per founder ruling at plan approval 2026-08-12:
   Track C's Gate 2 roundtable runs as this ticket's first action, not inside the
   engine-close sprint. Gate 1 entry authored 2026-08-08 by ses-20260808-0250-3e298c5d.
+
+  2026-08-12 measured inputs for the design (ws436-baseline.md §4e): a 3-bin per-stat
+  readout preserved the engine's advice on 129/130 paired decisions — the head-sized
+  display can be near-lossless; the honest axes are looseness (dominant, drifts ~5pp
+  over weeks — reads age) and stickiness (stable trait — reads keep); day-level swings
+  were not detectable. The k=2 pole assignment (WS-449) is a natural display primitive:
+  "which pole, how far along, 3-bin sub-reads."
