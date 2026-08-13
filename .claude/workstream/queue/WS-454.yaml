@@ -1,0 +1,33 @@
+id: "WS-454"
+title: "Completeness-aware ranking — discount partial depth-2 like depth-3, continuously, and add a completeness term at the argmax"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-116"
+description: |
+  Depth-2 emits completed/weightConsumed; every consumer ignores both, while depth-3 gets a
+  (coarse 3-level) discount — so a bailed depth-2 candidate competes at face value at the raw-EV
+  argmax (gameTreeEvaluator.js:1206) against fully-refined and unrefined competitors. Expands
+  FIND-075. Sequencing dependency (not deferral): WS-403's MAX_STAGE_SHARE cap-against-total fix
+  shapes what weightConsumed means — land it first or together. Full mechanism:
+  findings/FIND-116.yaml. Structural half (S4a): the engine side of the completeness signal;
+  the display side (LiveAdviceBar depth/completeness pill) rides FIND-075/084's items.
+accept_criteria: |
+  - depth-2 results carry a continuous weightConsumed-derived discount at parity with depth-3,
+    and depth-3's discount becomes continuous too (a 15% bail and an 85% bail no longer score
+    identically).
+  - The final ranking includes a completeness term; a half-finished answer cannot beat a
+    fully-finished one purely on face-value EV.
+  - Test: a forced budget-exhaustion fixture demonstrates the discount changing the argmax.
+effort: "M"
+created_at: "2026-08-13"

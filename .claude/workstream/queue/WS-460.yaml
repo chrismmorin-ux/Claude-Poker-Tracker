@@ -1,0 +1,30 @@
+id: "WS-460"
+title: "Retention bound + user purge for the extension's on-disk hand journal, and an ADR recording the session→local tradeoff"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "extension"
+program: "domain-correctness"
+finding_id: "FIND-122"
+description: |
+  WS-358's move of captured real-money hands to a chrome.storage.local journal was the right
+  durability fix, but shipped without its compensating control: entries are unencrypted and
+  persist indefinitely if never ACK'd — no TTL, no purge path, no user control, no ADR
+  recording the widening as accepted. Cross-ref FIND-100 (no product-wide purge path).
+  Full mechanism: findings/FIND-122.yaml.
+accept_criteria: |
+  - Journal entries expire on a TTL (or bounded policy the founder approves) and a
+    user-invocable purge exists.
+  - The session→local trust-boundary tradeoff is recorded via /decide.
+  - Plain English: hand data that never made it into the app doesn't sit on disk forever with
+    no way to clear it.
+effort: "S"
+created_at: "2026-08-13"

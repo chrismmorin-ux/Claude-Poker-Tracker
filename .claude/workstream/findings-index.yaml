@@ -304,7 +304,7 @@ findings:
     title: "Refinement depth is wall-clock gated and decides the top action — the scored run is not reproducible"
     engine: eng-engine
     severity: high
-    status: open
+    status: resolved
     dedup_key: "blindspot-domain-correctness-wallclock-refinement-gating-nonreproducible"
     program: domain-correctness
     created_at: "2026-08-05"
@@ -848,4 +848,139 @@ findings:
     dedup_key: "recovered-pp89cw-narrowbyboard-no-bluff-arm"
     program: domain-correctness
     created_at: "2026-08-07"
+
+  - id: "FIND-112"
+    title: "Caller's required equity computed with the bluffer's breakeven formula (s/(1+s), not s/(1+2s)) at four sites in gameTreeDepth2.js"
+    engine: eng-engine
+    severity: critical
+    status: open
+    dedup_key: "sweep-2026-08-13-potodds-bluffer-formula-gameTreeDepth2"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-113"
+    title: "Depth-2/3 stage rake is one flat subtraction from the blended EV, taxing the fold branch (POKER_THEORY §11.3 violation)"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-flat-stage-rake-taxes-fold-branch"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-114"
+    title: "rakeResolver returns tier/reason that nothing reads; estimateRake treats 'unresolved' identically to 'no rake'"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-rakeresolver-tier-unread-unknown-equals-none"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-115"
+    title: "River decisions where hero raises are priced against the BET population, not the RAISE population"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-river-raise-priced-as-bet"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-116"
+    title: "Partial depth-2 results enter the final ranking undiscounted while partial depth-3 results are discounted"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-depth2-undiscounted-at-argmax"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-117"
+    title: "Data import creates players and sessions under 'guest' while correctly scoping the hands that reference them"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-import-players-sessions-guest-scoped"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-118"
+    title: "decisionRecord.mjs computes its integrity hash over whatever survived parsing and reports the result as complete"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "sweep-2026-08-13-decisionrecord-hash-over-survivors"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-119"
+    title: "A per-combo equity baseline is computed and explicitly discarded (void); the flat population marginal is used instead"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sweep-2026-08-13-void-popcallrate-flat-marginal"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-120"
+    title: "An empty villain range silently produces a plausible coin-flip recommendation instead of a labeled no-data state"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sweep-2026-08-13-empty-range-coinflip-fallback"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-121"
+    title: "OnlineStakesBackfill runs an ungated sequential IDB migration on every launch, and its derived stakes are never revisited (self-sealing)"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sweep-2026-08-13-stakes-backfill-ungated-selfsealing"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-122"
+    title: "The extension's on-disk hand journal has no retention bound — deliberate boundary widening shipped without its compensating control"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sweep-2026-08-13-journal-no-retention-bound"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-123"
+    title: "SYSTEM_MODEL.md is 95 days past its own 30-day staleness threshold, omits the 49-file standardOfRecord/ module, and carries pre-rewrite risk ratings"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "sweep-2026-08-13-system-model-stale-95d"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-124"
+    title: "drillModeEngine constructs a dead style:'reg' field under a comment citing a table WS-436 deleted"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "sweep-2026-08-13-drillmode-dead-style-field"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-125"
+    title: "seatPricing.js (179 lines, new this window) has no direct test file"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "sweep-2026-08-13-seatpricing-no-direct-tests"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-126"
+    title: "The phase-1 MC refinement failure path writes console.warn and never the stage ledger"
+    engine: eng-engine
+    severity: low
+    status: open
+    dedup_key: "sweep-2026-08-13-phase1-mc-catch-no-ledger"
+    program: domain-correctness
+    created_at: "2026-08-13"
 

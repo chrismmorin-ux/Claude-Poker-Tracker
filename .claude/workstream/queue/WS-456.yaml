@@ -1,0 +1,30 @@
+id: "WS-456"
+title: "decisionRecord.mjs must refuse a truncated capture — port atomStore's TRUNCATED/HASH_MISMATCH discipline"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-118"
+description: |
+  decisionRecord.mjs close() swallows JSONL parse failures (catch { continue; }) and hashes
+  whatever survived — a crash mid-write yields a contentHash that presents as a complete,
+  verified record to Result Card consumers. The sibling atomStore.mjs (WS-438) already
+  implements the correct refusal discipline. Highest risk-reduction-per-effort item in the
+  2026-08-13 sweep. Full mechanism: findings/FIND-118.yaml.
+accept_criteria: |
+  - A parse failure at close() surfaces as an error state (TRUNCATED-equivalent), never a
+    silent drop; rowCount/contentHash are only emitted for a fully-parsed file.
+  - Test: an artificially torn last line makes validation refuse, not pass with a clean hash.
+  - Plain English: if a scoring run is interrupted, the record it leaves behind refuses to
+    validate instead of looking complete.
+effort: "S"
+created_at: "2026-08-13"

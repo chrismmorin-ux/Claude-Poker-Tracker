@@ -1,0 +1,31 @@
+id: "FIND-125"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: LOW
+status: open
+category: "test-gap"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation (verification coverage)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "seatPricing.js (179 lines, new this window) has no direct test file"
+description: |
+  No seatPricing test file exists in src/utils/exploitEngine/__tests__/ (facilitator-verified).
+  priceSeats, orStandIns, reraiseRiskFrom, overcallRiskFrom, splitRaiseOutcomes carry real
+  arithmetic (OUTCOME_HEADROOM, risk composition) exercised only incidentally through
+  preflopAdvisor.test.js and unexploitableFloor.test.js fixtures — integration coverage only
+  exercises the paths those consumers' fixtures happen to hit. Edge cases internal to priceSeats
+  (empty seat list, single stand-in seat, all-fold-through) have no assertion path.
+  CONTAMINATES SCORED FIGURE: Unknown — it feeds preflop pricing.
+affected_files:
+  - "src/utils/exploitEngine/seatPricing.js"
+recommended_fix: |
+  Direct unit test file with edge-case seat configurations (empty, single-seat,
+  all-fold-through), independent of consumer integration coverage.
+promoted_to: "WS-462"
+dedup_key: "sweep-2026-08-13-seatpricing-no-direct-tests"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

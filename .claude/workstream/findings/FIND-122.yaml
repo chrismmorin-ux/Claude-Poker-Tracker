@@ -1,0 +1,36 @@
+id: "FIND-122"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: MEDIUM
+status: open
+category: "data-integrity"
+program: "domain-correctness"
+problem_class: "Anti-pattern enforcement (extension trust boundary)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "The extension's on-disk hand journal has no retention bound — deliberate boundary widening shipped without its compensating control"
+description: |
+  ignition-poker-tracker/shared/storage-writer.js (WS-358, b05c6217) moved the durable copy of
+  captured real-money hands from chrome.storage.session (TRUSTED_CONTEXTS-only per RT-11) to a
+  chrome.storage.local journal (JOURNAL_KEY, MAX_JOURNAL=5000), in-code acknowledged as widening
+  read access to isolated-world content scripts on the casino origin. Entries are unencrypted and
+  persist until app ACK; no TTL, no purge path, no user control — a hand that never ACKs (app
+  crash between dequeue-read and delete, or app never reopened) retains money-hand data on disk
+  indefinitely. The widening itself was the correct fix for unbounded hand loss; the missing
+  compensating control is the finding, and no ADR records the tradeoff as accepted.
+  Cross-ref FIND-100 (no user-invocable purge path exists product-wide) — this may be one
+  instance of it.
+  CONTAMINATES SCORED FIGURE: No.
+affected_files:
+  - "ignition-poker-tracker/shared/storage-writer.js"
+  - "ignition-poker-tracker/background/service-worker.js"
+recommended_fix: |
+  TTL/expiry policy + user-invocable purge for the journal; record the session→local tradeoff
+  as an ADR via /decide.
+promoted_to: "WS-460"
+dedup_key: "sweep-2026-08-13-journal-no-retention-bound"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

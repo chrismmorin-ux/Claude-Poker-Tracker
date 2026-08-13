@@ -402,6 +402,12 @@ last_run_by_protocol:
     run_by: "founder"
     event_id: "ev-1786084200338-00211a3ab13f"
   sweep:
+    date: "2026-08-13"
+    engine: "eng-engine"
+    run_id: "run-domain-correctness-sweep-2026-08-13"
+    run_by: "founder"
+    event_id: "ev-1786634000374-9a778282d161"
+  sweep_prior_2026_07_22:
     date: "2026-07-22"
     engine: domain-audit
     # Engine substitution declared 2026-08-05 by the provenance gate (INV-F2).
@@ -525,13 +531,13 @@ health_breakdown:
   maturity_progress: 0.50   # level 2 of 4
   earned: 5
   applied: 2                # cap: block_sprint + stale -> max 2 — driven by baseline default-cadence staleness (kit formula quirk, see ceiling_reason)
-findings_open: 11
-work_items_open: 45
+findings_open: 44
+work_items_open: 60
 
 cap_breach:
   active: false
 evidence:
-  last_audit_report: ".claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/phase-3/synthesis.md"
+  last_audit_report: ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-3/synthesis.md"
   protocol_history:
     - date: "2026-05-01"
       protocol: baseline
@@ -595,6 +601,14 @@ evidence:
       work_items: 3
       result: "Sweep (22d overdue — migration gap) over window ecd20b8..5aa1419. Drift CLEAN across all 8 touched files; WS-235 poolBaseline math verified sound. Phase 0b generated first domain-spec DRAFT (16 rules, 10 artifact + 6 model, all 9 classes) — docs/domain-spec.draft.md pending founder promotion (WS-259). New: FIND-034 MEDIUM POKER_THEORY §6.5 doc-drift (WS-257), FIND-035 MEDIUM runWithStatPriors fragility (WS-258), FIND-036 INFO draft-promotion action. Delta protocol stamped from same evidence (window identical, one commit)."
       health_score: 2
+    - date: "2026-08-13"
+      protocol: sweep
+      engine: eng-engine
+      run_id: "run-domain-correctness-sweep-2026-08-13"
+      findings: 15
+      work_items: 16
+      result: "First spec-compliant eng-engine sweep (6 lenses + targeted 7th + cross-critique + facilitator). DRIFT-FOUND: 1 CRITICAL / 6 HIGH / 5 MEDIUM / 3 LOW (FIND-112..126, WS-450..465). Headline: bluffer's-breakeven formula at 4 gameTreeDepth2 sites contaminates the depth-ablation deltas — WS-378's passivity result reopens after the fix. Re-ruled FIND-051 resolved (WS-432 logical clock, verified at HEAD); WS-389 dismissed superseded. Also verified clean: INV-08 boundaries, WEAKNESS_EXPLOIT_MAP, WS-436 style removal on live paths, backtest isolation."
+      health_score: 2
     - date: "2026-07-22"
       protocol: challenge
       engine: domain-audit
@@ -616,7 +630,7 @@ maturity:
   current_gaps: "All 5 HIGH findings from 2026-05-01 baseline now resolved. SPR-001 closed FIND-003/004/005 (2026-05-01). SPR-016 closed FIND-002 (2026-05-02). SPR-017 closed FIND-001 (2026-05-02). 8 MEDIUM and 8 LOW findings remain open for sweep/challenge cycles (next sweep cadence: 14 days, due 2026-05-15). v2 follow-up WS-135 (P2) tracks expansive credible-interval surface scope (PlayerAnalysisPanel + HandReplay tendency sections) deferred per owner staged-scope decision."
 
 created_at: "2026-05-01"
-updated_at: "2026-07-22"
+updated_at: "2026-08-13"
 
 # --- Load-Bearing Assumptions (AS-N) — REQUIRED at tier active|critical (schema v4) ---
 # Migrated from v3: this program is active/critical but shipped no assumptions.

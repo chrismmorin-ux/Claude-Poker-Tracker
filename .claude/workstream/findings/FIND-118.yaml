@@ -1,0 +1,35 @@
+id: "FIND-118"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "sor-integrity"
+program: "domain-correctness"
+problem_class: "Theory-spec drift (Standard of Record integrity)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "decisionRecord.mjs computes its integrity hash over whatever survived parsing and reports the result as complete"
+description: |
+  scripts/backtest/decisionRecord.mjs:302-306 — at close(), each JSONL line is JSON.parse'd and
+  any failure is swallowed (catch { continue; }), dropping the line from both rowCount and the
+  sha256 contentHash with no error surfaced. A crash/disk-full mid-write still yields a
+  contentHash that presents as a complete, verified record to any downstream Result Card
+  consumer (the hash's presence, not its derivation, is what callers check). The sibling
+  atomStore.mjs (WS-438, c55a132c) does this correctly — distinguishes TRUNCATED from
+  HASH_MISMATCH and refuses rather than silently re-deriving a clean hash over what survived.
+  CONTAMINATES SCORED FIGURE: YES on the reproducibility axis — this is the sink the scored
+  figure is derived from, and it cannot report its own truncation. Highest
+  risk-reduction-per-effort item in the sweep (S fix).
+affected_files:
+  - "scripts/backtest/decisionRecord.mjs"
+  - "scripts/backtest/atomStore.mjs"
+recommended_fix: |
+  Port atomStore.mjs's TRUNCATED/HASH_MISMATCH discipline into decisionRecord.mjs close();
+  an interrupted run must refuse to validate rather than report a clean hash over a partial file.
+promoted_to: "WS-456"
+dedup_key: "sweep-2026-08-13-decisionrecord-hash-over-survivors"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

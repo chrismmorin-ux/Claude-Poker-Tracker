@@ -1,0 +1,36 @@
+id: "FIND-115"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Villain decision model fidelity"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "River decisions where hero raises are priced against the BET population, not the RAISE population"
+description: |
+  comboActionProbabilities (gameTreeDepth2.js:234) has no facing-action parameter and hardcodes
+  'bet' throughout: :259 hasReliableModel(modelSituation,'bet'); :364,375,377,385,386,398 read
+  POPULATION_PRIORS.bet.fold (0.45), never POPULATION_PRIORS.raise.fold (0.55,
+  villainModelData.js:92-96); :397 villainFoldLevel(playerStats,'bet') not 'raise' (the raise
+  transfer exists: villainModelData.js:117-122). hasReliableModel has no 'raise' branch at all
+  (villainModelData.js:43-47). Reachable from computeRiverBetEV with heroAction:'raise'
+  (:1638-1696 — heroAction threaded only into resolveRiverPerceivedRange, never into
+  comboActionProbabilities), driven from gameTreeEvaluator.js:1582-1600 where betCandidates
+  includes r.action==='raise'. POKER_THEORY §11.1a: facing a raise is a measurably different
+  population (marginal fold 0.4242 vs 0.5616); a bet-fitted curve must not price a raise.
+  CONTAMINATES SCORED FIGURE: YES for river raise candidates.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+recommended_fix: |
+  Add facingAction to comboActionProbabilities and a 'raise' branch to hasReliableModel; route
+  the measured raise population/transfer through the river raise path.
+promoted_to: "WS-453"
+dedup_key: "sweep-2026-08-13-river-raise-priced-as-bet"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

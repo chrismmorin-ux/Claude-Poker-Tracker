@@ -1,0 +1,26 @@
+id: "WS-462"
+title: "Direct unit tests for seatPricing.js edge cases (empty seat list, single stand-in, all-fold-through)"
+legacy_id: ""
+type: test
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-125"
+description: |
+  seatPricing.js (179 lines, new in the 5aa1419..HEAD window) does real risk-composition
+  arithmetic and is covered only incidentally through preflopAdvisor/unexploitableFloor test
+  fixtures. Full mechanism: findings/FIND-125.yaml.
+accept_criteria: |
+  - A dedicated test file exercises priceSeats/orStandIns/reraiseRiskFrom/overcallRiskFrom/
+    splitRaiseOutcomes directly, including empty, single-seat, and all-fold-through
+    configurations, with closed-form expected values where derivable.
+effort: "S"
+created_at: "2026-08-13"

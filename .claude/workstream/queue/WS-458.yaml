@@ -1,0 +1,31 @@
+id: "WS-458"
+title: "A no-read state for empty ranges — refuse to rank on heroEquity=0.5/foldPct=0 defaults, and measure the state's reachability"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-120"
+description: |
+  gameTreeContext.js:311-333 defaults heroEquity=0.5/foldPct=0 when a range is empty and emits
+  full ranked recommendations indistinguishable from a measured 50/50; four bare-number sites in
+  gameTreeDepth2 (`totalWeight > 0 ? totalEV/totalWeight : 0`) share the shape. No assertion
+  enforces the never-zero doctrine at these boundaries, so a future narrowing regression would
+  reactivate the fallback silently. Full mechanism: findings/FIND-120.yaml.
+accept_criteria: |
+  - The four innermost functions emit a distinct no-data signal; gameTreeContext flags
+    zero-combo in treeMetadata; the engine refuses to rank rather than defaulting.
+  - A reachability probe answers whether a real hand can hit totalCombos===0 (the finding's
+    Unknown becomes a measurement).
+  - Plain English: if the app has no idea what the opponent could hold, it says "no read"
+    instead of showing a confident 50/50.
+effort: "M"
+created_at: "2026-08-13"

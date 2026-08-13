@@ -1,0 +1,34 @@
+id: "FIND-126"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: LOW
+status: open
+category: "observability"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation (failure signaling)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "The phase-1 MC refinement failure path writes console.warn and never the stage ledger"
+description: |
+  gameTreeEvaluator.js:1150-1179 — the depth-1 close-candidate MC refinement loop catches
+  per-candidate and does console.warn?.(...), keeping the algebraic estimate; unlike every
+  phase-2 stage (endStage('...', 'error', e)), the failure is not recorded in the stage ledger.
+  candidate.refined stays false with nothing in treeMetadata explaining why — a silently-degraded
+  candidate is unmarked in the record. Same shape at gameTreeContext.js:360-362
+  (enrichWithEquity catch). "console.warn is sufficient failure signaling" is assumed at both
+  sites; neither reaches the structured result any caller reads.
+  CONTAMINATES SCORED FIGURE: Marginally — a degraded-estimate candidate is unmarked in the
+  decision record.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeContext.js"
+recommended_fix: |
+  Route both catch blocks through the stage ledger so every fallback-to-rougher-estimate is
+  recorded in treeMetadata.
+promoted_to: "WS-463"
+dedup_key: "sweep-2026-08-13-phase1-mc-catch-no-ledger"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

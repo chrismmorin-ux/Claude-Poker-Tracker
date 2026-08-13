@@ -1,0 +1,45 @@
+id: "FIND-112"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: CRITICAL
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "Caller's required equity computed with the bluffer's breakeven formula (s/(1+s), not s/(1+2s)) at four sites in gameTreeDepth2.js"
+description: |
+  gameTreeDepth2.js:445 (computePerComboEV, villain's call threshold), :639 (computePerComboCheckEV,
+  hero's own call threshold), :1549 (computeRiverCheckEV, hero's river call), :1656 (computeRiverBetEV,
+  villain's river fold/call/raise threshold) all compute bet/(pot+bet) — the bluffer's breakeven —
+  where the caller's pot odds are bet/(pot+2*bet). Facilitator-verified; the file contradicts itself:
+  :644's EV formula (comboEquity*(pot+vBetSize*2)-vBetSize) has breakeven b/(pot+2b) while the
+  threshold three lines earlier uses b/(pot+b). gameTreeDepth2.js imports nothing from
+  foldEquityCalculator.js even though villainRequiredEquity (foldEquityCalculator.js:378-400)
+  implements this correctly. exploitEngine/CLAUDE.md:484-496 names this exact anti-pattern and
+  documents one live violation (gameTreeEvaluator); this file is a second undocumented instance at
+  four sites. Magnitude: half-pot 0.333 computed vs 0.250 correct; pot-size 0.500 vs 0.333.
+  Direction is mixed: villain-facing sites overstate villain folding (hero over-aggressive);
+  hero-facing sites make hero under-call in simulated branches.
+
+  CONTAMINATES SCORED FIGURE: YES, and specifically the depth-ablation DELTAS — this code runs in
+  the depth-2/3 arm and not the depth-1 arm, so WS-378's headline "80% of river top-action flips,
+  38 of 40 toward passivity" (RC-depth-ablation) was measured THROUGH this defect. That result is
+  load-bearing for WS-361's depth-validation gate and cannot be trusted or distrusted until the
+  formula is fixed and the ablation re-run.
+affected_files:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  Import villainRequiredEquity and thread pot geometry into all four sites (plus the documented
+  gameTreeEvaluator site — five total). Add a closed-form known-answer test pinning the thresholds
+  at three sizings. Add a CI grep rule rejecting new inline pot-odds arithmetic in exploitEngine/.
+  Then RE-RUN the depth ablation and re-issue the Result Card — the passivity question reopens.
+promoted_to: "WS-450"
+dedup_key: "sweep-2026-08-13-potodds-bluffer-formula-gameTreeDepth2"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

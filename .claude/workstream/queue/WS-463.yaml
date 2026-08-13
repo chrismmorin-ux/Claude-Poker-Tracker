@@ -1,0 +1,27 @@
+id: "WS-463"
+title: "Route the phase-1 MC refinement and enrichWithEquity catch blocks through the stage ledger"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-126"
+description: |
+  gameTreeEvaluator.js:1150-1179 and gameTreeContext.js:360-362 catch failures with
+  console.warn only; every phase-2 stage records endStage('...', 'error', e). A silently
+  degraded candidate is unmarked in treeMetadata and in any decision record derived from it.
+  Full mechanism: findings/FIND-126.yaml.
+accept_criteria: |
+  - Both catch sites record a stage-ledger entry; treeMetadata explains any candidate whose
+    refined stayed false due to error.
+  - Plain English: every time the engine falls back to a rougher estimate, the record says so.
+effort: "S"
+created_at: "2026-08-13"

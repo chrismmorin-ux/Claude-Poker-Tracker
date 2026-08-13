@@ -1,0 +1,34 @@
+id: "WS-464"
+title: "Reachability gate in CI — every exported engine symbol has a production importer or a dated @inert-until annotation"
+legacy_id: ""
+type: infrastructure
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  The shipped-but-inert class (MO-9, re-ruled LIVE by the 2026-08-13 sweep) now has six recorded
+  instances, three landed in this window alone: rakeResolver.tier/reason (zero readers),
+  unexploitableFloor.deriveFloor (zero src/ callers while the known-wrong blindDefendMax:25
+  stays live), equityOperator/equitySkew (zero importers, ~660 hand-written lines). Prior:
+  perceivedHeroRange (WS-276), WS-284 reference tier, predictionAudit (FIND-070). Facilitator
+  ranked this the single highest-leverage structural item (S1): it converts the repo's most
+  repeated failure into a build error. Design sketch: a CI check that every exported symbol
+  under src/utils/ has at least one non-test importer, or carries an explicit
+  `@inert-until WS-NNN` annotation with an expiry date that fails the build when passed.
+accept_criteria: |
+  - The check runs in smart-test-runner.sh/CI and fails on a new exported symbol with no
+    production importer and no annotation.
+  - All six current instances are either wired, annotated with their tracking WS, or removed —
+    zero unannotated inert exports at merge.
+  - MO-9's register entry updated to reflect the mechanism.
+effort: "M"
+created_at: "2026-08-13"

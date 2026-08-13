@@ -1,7 +1,21 @@
 id: "FIND-051"
 title: "Refinement depth is wall-clock gated and decides the top action — the scored run is not reproducible"
 severity: HIGH
-status: open
+status: resolved
+resolution: |
+  RE-RULED 2026-08-13 by run-domain-correctness-sweep-2026-08-13 (facilitator-verified at HEAD,
+  independently of the reporting lenses — two of which repeated this finding's pre-fix state from
+  the 2026-08-05 evidence file). The non-determinism mechanism named here NO LONGER EXISTS:
+  WS-432 (52d0cae4, 2026-08-07) replaced the Date.now() gate with a device-independent logical
+  work-unit meter (refinementWork.js — budgetUnits = refinementBudgetMs * REFINEMENT_UNITS_PER_MS,
+  gate reads meter.used via claimStageWorkBudget). The only Date.now() calls remaining in
+  gameTreeEvaluator.js (:903, :1044, :1347, :1422) are diagnostic timers. Identical inputs now
+  reach identical logical stopping points on every device under any load.
+  RESIDUALS RE-HOMED, NOT DROPPED: depth/completeness invisible to consumers → FIND-075/FIND-116
+  (WS-454); monotonicity unasserted → FAULT-refinement-depth-non-monotonicity (untested) + WS-364;
+  MAX_STAGE_SHARE cap-against-total → WS-403 (verified still live at refinementWork.js:117-124);
+  wall-clock cost on the target device now the sole exposure, unmeasured → FIND-109 (re-weighted
+  upward). WS-389 superseded by WS-432.
 category: "domain-defect"
 program: "domain-correctness"
 problem_class: "Game tree EV correctness"

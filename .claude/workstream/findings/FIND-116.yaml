@@ -1,0 +1,38 @@
+id: "FIND-116"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "Partial depth-2 results enter the final ranking undiscounted while partial depth-3 results are discounted"
+description: |
+  Depth-2 emits completed/weightConsumed (gameTreeDepth2.js:789-806, :929-941, :1041-1045);
+  consumers ignore both (gameTreeEvaluator.js:1659, :1694-1700, :1785, :1839). Depth-3 IS
+  discounted by d3Weight 0.70/0.80/0.90 keyed on completed/bailedAt (:1896-1899) — an
+  inconsistency between refinement tiers, not a uniform design choice. Final argmax is raw EV
+  (:1206, snapshot.sort((a,b)=>b.ev-a.ev)) with no confidence/completeness term. Compounded by
+  MAX_STAGE_SHARE cap-against-total (refinementWork.js:117-124, WS-403 open): budget exhaustion
+  can leave one candidate refined and a competitor unrefined, then compare them at face value.
+  Also: depth-3's continuous weightConsumed (:1451) is collapsed to 3 discrete values — a bail
+  at 15% vs 85% explored receives identical discount.
+  CONTAMINATES SCORED FIGURE: YES — budget-dependent ranking, the delta axis the founder
+  ranked first. Expands FIND-075 (weightConsumed read by nothing).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/refinementWork.js"
+recommended_fix: |
+  Apply a continuous weightConsumed-derived discount at depth-2 parity with depth-3 (and make
+  depth-3's continuous too); add a completeness term at the argmax. Sequence after WS-403
+  (dependency ordering, not deferral).
+promoted_to: "WS-454"
+dedup_key: "sweep-2026-08-13-depth2-undiscounted-at-argmax"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

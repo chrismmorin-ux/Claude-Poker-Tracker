@@ -1,0 +1,27 @@
+id: "WS-465"
+title: "Generated-artifact drift checks for equitySkewDecomposition.js and handhqReferencePool.js"
+legacy_id: ""
+type: infrastructure
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "governance"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Both artifacts carry "GENERATED. Do not hand-edit." headers; regeneration commands live
+  outside package.json (one requires Python scripts/research/spectrum.py). Nothing detects a
+  hand-edit or a stale regeneration — unlike the migrations file, which check-idb-additive.sh
+  CI-gates. Facilitator structural item S7 from the 2026-08-13 sweep.
+accept_criteria: |
+  - A CI check verifies each artifact matches a fresh regeneration (hash or generator-diff),
+    mirroring check-idb-additive.sh's pattern; a hand-edit fails the build.
+  - Regeneration commands are invocable from package.json scripts.
+effort: "S"
+created_at: "2026-08-13"

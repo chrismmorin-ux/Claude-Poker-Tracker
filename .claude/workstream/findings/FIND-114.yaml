@@ -1,0 +1,37 @@
+id: "FIND-114"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness / observability"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "rakeResolver returns tier/reason that nothing reads; estimateRake treats 'unresolved' identically to 'no rake'"
+description: |
+  rakeResolver.js:164,202 return { rakeConfig: null, tier: 'unknown', reason } — deliberately
+  distinguished in its own docblock (:42-44) from tier:'none' (genuine zero, e.g. tournament).
+  potCalculator.js:447 (if (!rakeConfig || potSize <= 0) return 0) collapses both to zero rake.
+  Facilitator-verified: both production call sites (OnlineAnalysisContext.jsx:59,
+  PlayerAnalysisPanel.jsx:126) destructure rake.rakeConfig only; repo-wide zero reads of
+  tier/reason. New code in this window reproducing WS-333's own headline finding one layer up:
+  a null that reads as "no rake" when it means "nobody said." Every game type not in GAME_TYPES
+  and every online table whose stake label doesn't parse silently prices as rake-free.
+  CONTAMINATES SCORED FIGURE: YES on the reproducibility axis — an EV computed with rake
+  unresolved is byte-indistinguishable from one where rake is correctly zero; no Result Card
+  manifest can state which.
+affected_files:
+  - "src/utils/rakeResolver.js"
+  - "src/utils/potCalculator.js"
+  - "src/contexts/OnlineAnalysisContext.jsx"
+recommended_fix: |
+  Thread tier/reason to the advice payload; visibly caveat (or refuse) a comparative figure
+  resolved at tier:'unknown'; stamp the tier into the Result Card manifest.
+promoted_to: "WS-452"
+dedup_key: "sweep-2026-08-13-rakeresolver-tier-unread-unknown-equals-none"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

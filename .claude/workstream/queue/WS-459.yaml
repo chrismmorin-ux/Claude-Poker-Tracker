@@ -1,0 +1,28 @@
+id: "WS-459"
+title: "OnlineStakesBackfill: persist completion, batch the writes, and known-answer-test the stakes derivation before it self-seals"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-121"
+description: |
+  The backfill fires every launch (in-memory dedup only), issues 2 sequential IDB transactions
+  per un-healed session, and persists derived stakes it never revisits — a wrong derivation
+  seals into the corpus that pool baselines segment on. Nobody has verified the derivation.
+  Full mechanism: findings/FIND-121.yaml.
+accept_criteria: |
+  - A persisted completion flag makes the pass run once ever (per user), not per launch.
+  - Writes batched into one transaction.
+  - A known-answer test pins the stakes derivation against representative legacy sessions.
+  - Plain English: opening the app twice in a row doesn't do the same repair work twice.
+effort: "S"
+created_at: "2026-08-13"

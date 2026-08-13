@@ -1,0 +1,35 @@
+id: "FIND-124"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: LOW
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Anti-pattern enforcement (style residue)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "drillModeEngine constructs a dead style:'reg' field under a comment citing a table WS-436 deleted"
+description: |
+  drillModeEngine.js:803-809 — comment reads "opponents-behind = STYLE_FOLD_DEFAULTS['reg']"
+  (table deleted by WS-436); code builds { playerStats: { style: 'reg' } } and passes it to
+  multiwayFoldPct, which branches on _buckets then playerStats.shrunk — the object has neither,
+  so every drill villain silently lands on the documented 0.45 unknown baseline regardless of
+  the label. Predates the window (d92f28e5, 2026-05-08) but was missed by the WS-436 close-out
+  (faf1b275) whose changelog claims "stale docblocks cleaned." Harmless today; a future reader
+  could reintroduce a style branch from it. 4-lens convergent (architect/senior/failure/security).
+  Companion cosmetic site: modelAudit.js:114 reattaches style for display parity — documented
+  and regression-tested (villainDecisionModel.test.js:124), no action beyond awareness.
+  CONTAMINATES SCORED FIGURE: No (drill content only).
+affected_files:
+  - "src/utils/postflopDrillContent/drillModeEngine.js"
+recommended_fix: |
+  Delete the field, correct the comment. FOLDED INTO WS-448 (same style-residue class,
+  assumptionEngine site already tracked there) — no separate work item; WS-448's executor
+  should treat this file as a second site.
+promoted_to: "WS-448"
+dedup_key: "sweep-2026-08-13-drillmode-dead-style-field"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

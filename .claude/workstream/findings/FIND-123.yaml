@@ -1,0 +1,45 @@
+id: "FIND-123"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: MEDIUM
+status: open
+category: "governance-drift"
+program: "domain-correctness"
+problem_class: "Theory-spec drift (architecture record vs code)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "SYSTEM_MODEL.md is 95 days past its own 30-day staleness threshold, omits the 49-file standardOfRecord/ module, and carries pre-rewrite risk ratings"
+description: |
+  Frontmatter: last-verified-against-code: 2026-05-10, staleness-threshold-days: 30 — 95 days
+  stale at sweep date, despite 6 in-window commits touching the file (prose added to §2.3/§2.4;
+  stamp never advanced). Facilitator-verified: zero mentions of standardOfRecord/ (49 files,
+  ~10.7% of the window's diff) anywhere in the doc, including its real coupling edge
+  (standardOfRecord/layerProbes.js:55 → exploitEngine/calibrationMetrics). §5.2 hotspot ratings
+  ("Low priority — working, well-tested") predate WS-334's structural rewrite; LOC figures are
+  38-82% stale (gameTreeEvaluator 1182→1922, gameTreeDepth2 1247→1721, foldEquityCalculator
+  439→799, villainDecisionModel 521→801). Fan-in with no ceiling: populationPriors (22
+  importers), gameTreeConstants (16), villainModelData (13). Also stale: §2.3 still describes
+  the wall-clock budget WS-432 replaced; DEC-036's "refined answer reaches no screen yet" is
+  false as shipped (every await caller receives it).
+  MEASURED COST THIS RUN: two of six fresh-context audit lenses returned a wrong current-state
+  claim inherited from stale doc/evidence — doc staleness is a contamination channel into every
+  agent dispatch, not a tidiness issue.
+  CONTAMINATES SCORED FIGURE: No — contaminates every agent that reads it.
+affected_files:
+  - ".claude/context/SYSTEM_MODEL.md"
+  - "system/decisions.md"
+recommended_fix: |
+  Apply the 10-edit update list in phase-3/synthesis.md (§System model updates): add
+  standardOfRecord/, fix LOC + remove stale ratings, add fan-in entries, replace wall-clock
+  description with the WS-432 unit meter, correct DEC-036's shipped-state note, record the
+  standardOfRecord-vs-decisionSystems boundary decision. THEN build the mechanism: a doc-currency
+  gate in smart-test-runner.sh reading the frontmatter the doc already declares (fail when
+  threshold exceeded, or when the file is edited without the stamp advancing). Friction already
+  captured 2026-08-13 (component: system-model).
+promoted_to: "WS-461"
+dedup_key: "sweep-2026-08-13-system-model-stale-95d"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

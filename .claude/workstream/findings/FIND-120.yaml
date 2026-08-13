@@ -1,0 +1,38 @@
+id: "FIND-120"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: MEDIUM
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Range estimation correctness (boundary/degenerate state)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "An empty villain range silently produces a plausible coin-flip recommendation instead of a labeled no-data state"
+description: |
+  gameTreeContext.js:311 — let heroEquity = 0.5; unconditional default, overwritten only if
+  comboDistribution exists or segmentation.totalCombos > 0 (:312-317); :332-333 defaults foldPct
+  to { value: 0, meta: null } on the same condition. The engine then emits full ranked
+  recommendations built on heroEquity=0.5/foldPct=0, indistinguishable at the output from a
+  genuinely measured 50/50 spot; no treeMetadata field marks it. Same shape at
+  gameTreeDepth2.js:489, :650, :1616, :1714 (totalWeight > 0 ? totalEV/totalWeight : 0) where a
+  degenerate 0 can win/lose Math.max(checkEV, bestBetEV) at :761,:913,:1033,:1147,:1319 — e.g. a
+  branch range fully blocked by dead cards for a sampled runout. WS-291/WS-302's never-zero floor
+  protects the PRIOR range, not post-card-removal enumeration; no assertion enforces the
+  assumption, so a future narrowing regression would silently reactivate the fallback rather
+  than erroring.
+  CONTAMINATES SCORED FIGURE: Unknown — reachability unestablished (that is part of the work).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeContext.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  Emit a distinct no-data state from the four innermost bare-number functions and a zero-combo
+  flag in treeMetadata; refuse to rank rather than defaulting; add a reachability probe
+  (can a real hand hit totalCombos === 0?) so the Unknown becomes a measurement.
+promoted_to: "WS-458"
+dedup_key: "sweep-2026-08-13-empty-range-coinflip-fallback"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

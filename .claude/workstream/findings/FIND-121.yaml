@@ -1,0 +1,35 @@
+id: "FIND-121"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: MEDIUM
+status: open
+category: "data-integrity"
+program: "domain-correctness"
+problem_class: "Range estimation correctness (corpus integrity) / startup performance"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "OnlineStakesBackfill runs an ungated sequential IDB migration on every launch, and its derived stakes are never revisited (self-sealing)"
+description: |
+  OnlineStakesBackfill.jsx:22-39 fires in a useEffect on every mount per resolved userId, deduped
+  only in-memory (attemptedRef) — not across restarts. backfillOnlineStakes.js:57-87: one readTx
+  over the full SESSIONS index, then a sequential for...of issuing two more IDB transactions per
+  un-healed session (no batching, no backoff, no storage.estimate()), serializing against
+  startup-critical reads until every legacy session is healed. The failure-lens addition: the
+  pass PERSISTS derived stakes fields and never revisits them — if the derivation is wrong once,
+  it is sealed into the corpus (self-healing = self-sealing). No lens verified the derivation
+  itself; that check is part of this finding's work.
+  CONTAMINATES SCORED FIGURE: Indirectly — wrong persisted stakes mis-segment the pool baselines
+  the figure conditions on (WS-260 lineage).
+affected_files:
+  - "src/components/OnlineStakesBackfill.jsx"
+  - "src/utils/persistence/backfillOnlineStakes.js"
+recommended_fix: |
+  Persist a completion flag; batch the writes into one transaction; add a known-answer test on
+  the stakes derivation before more sessions are sealed.
+promoted_to: "WS-459"
+dedup_key: "sweep-2026-08-13-stakes-backfill-ungated-selfsealing"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

@@ -1,0 +1,33 @@
+id: "WS-455"
+title: "Scope imported players and sessions to the signed-in user, and gate userId threading mechanically"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-117"
+description: |
+  exportUtils.js importAllData threads userId into saveImportedHand but calls createPlayer/
+  createSession without it — both default to GUEST_USER_ID. WS-368 wired one of three entity
+  types; the defect class (feedback_userid_data_isolation, WS-238 residual) recurred inside the
+  commit written to close it, which is the argument for a mechanism over the convention.
+  Also establish clearAllData()'s user scope while in the file (cross-ref FIND-103).
+  Full mechanism: findings/FIND-117.yaml. Structural half (S5): CI grep gate on bare
+  createPlayer/createSession/saveHand calls.
+accept_criteria: |
+  - createPlayer and createSession receive the real userId on the import path; test covers a
+    signed-in import.
+  - CI gate rejects a bare user-scoped constructor call without a userId argument.
+  - clearAllData()'s scope is established and documented (or fixed if global).
+  - Plain English: import a backup while signed in, then sign out — none of the imported
+    players or sessions are still visible.
+effort: "S"
+created_at: "2026-08-13"

@@ -1,0 +1,30 @@
+id: "WS-457"
+title: "Use the computed per-combo equity baseline in gameTreeDepth2 (or founder rules the flat marginal) — the void popCallRate line"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-119"
+description: |
+  gameTreeDepth2.js:373-374 computes computePopBaselineFromEquity(...) then discards it with
+  `void popCallRate`, using the flat POPULATION_PRIORS.bet.fold instead — under a comment
+  claiming the opposite. §13.3 anti-pattern in the evidence tier where per-combo matters most
+  (bucket evidence, no situation rates). Default course per improvement-default: wire the
+  per-combo baseline. Full mechanism: findings/FIND-119.yaml.
+accept_criteria: |
+  - popCallRate feeds the stickiness ratio (or, if the founder rules flat is deliberate, the
+    dead computation is removed and the comment corrected — founder decision recorded).
+  - Test asserts the baseline moves with combo equity when wired.
+  - Plain English: for a villain we've seen play but not in this exact spot, the app uses what
+    this specific hand is worth, not one average number for all hands.
+effort: "S"
+created_at: "2026-08-13"

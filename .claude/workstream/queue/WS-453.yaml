@@ -1,0 +1,31 @@
+id: "WS-453"
+title: "Price river raises against the raise population — add facingAction to comboActionProbabilities and a 'raise' branch to hasReliableModel"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: "FIND-115"
+description: |
+  comboActionProbabilities hardcodes 'bet' everywhere; river hero-raise candidates are therefore
+  priced against POPULATION_PRIORS.bet.fold (0.45) instead of .raise.fold (0.55), and
+  villainFoldLevel's raise transfer (villainModelData.js:117-122) goes unused. §11.1a measured
+  the two populations apart (0.4242 vs 0.5616). Full mechanism: findings/FIND-115.yaml.
+accept_criteria: |
+  - comboActionProbabilities takes facingAction; hasReliableModel gains a 'raise' branch.
+  - River raise candidates read the raise population/transfer; bet candidates unchanged
+    (regression-pinned).
+  - Test: same spot priced as bet vs raise produces different fold rates matching the measured
+    populations.
+  - Plain English: the app no longer assumes opponents fold to a raise at the same rate they
+    fold to a bet — those are different measured numbers.
+effort: "M"
+created_at: "2026-08-13"

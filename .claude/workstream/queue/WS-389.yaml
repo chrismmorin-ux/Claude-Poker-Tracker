@@ -2,7 +2,7 @@ id: "WS-389"
 title: "Refinement depth is gated on wall-clock time, so the same hand scored twice can produce a different top action — no per-improvement EV delta is trustworthy until a scored run is reproducible, and 5 of 19 tests in one suite already time out on a quiet machine"
 legacy_id: ""
 type: bug
-status: backlog
+status: dismissed
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -224,3 +224,7 @@ status_note: |
   treeMetadata for diagnostic surfacing'). So the count is 5, not 8, and the load condition is not
   required. That is worse than reported, not better: the suite does not need contention to fail. The
   ticket cites the measured 5-on-idle rather than the reported 8-under-load.
+dismissed_at: "2026-08-13"
+dismiss_reason: "Superseded by WS-432 (52d0cae4): the wall-clock refinement gate this item was written to fix was replaced by the logical work-unit meter. Residuals re-homed to WS-454/WS-403/WS-364 per run-domain-correctness-sweep-2026-08-13 re-ruling of FIND-051."
+superseded_by: "WS-432"
+transitioned_by_event: "ev-1786633902470-6a8fc3dc89cb"

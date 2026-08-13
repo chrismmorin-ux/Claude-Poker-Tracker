@@ -1,0 +1,40 @@
+id: "FIND-117"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "data-integrity"
+program: "domain-correctness"
+problem_class: "Range estimation correctness (corpus integrity)"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "Data import creates players and sessions under 'guest' while correctly scoping the hands that reference them"
+description: |
+  exportUtils.js importAllData(importData, userId = GUEST_USER_ID) calls createPlayer(playerData)
+  (:212) and createSession({...sessionData, isActive:false}) (:224) with NO userId argument; both
+  default to GUEST_USER_ID (playersStorage.js:38, sessionsStorage.js:44). The same function
+  threads the real userId correctly into saveImportedHand (:240-244). Facilitator-verified line
+  by line. Introduced by 3befa26d (WS-368) whose own docblock says "hands are user-scoped and
+  must not silently land on 'guest'" — one of three entity types was wired. Exact defect class
+  named in feedback_userid_data_isolation.md (WS-238 residual), recurring in the very commit
+  written to close it. Consequence: cross-account-visible player/session records on a shared
+  machine, or orphaned/misattributed FK references between an imported hand's sessionId and the
+  session that owns it.
+  Open question (cross-ref FIND-103): the preceding clearAllData() call's user scope is
+  unestablished.
+  CONTAMINATES SCORED FIGURE: No — but corrupts the hand corpus the figure is computed FROM.
+affected_files:
+  - "src/utils/exportUtils.js"
+  - "src/utils/persistence/playersStorage.js"
+  - "src/utils/persistence/sessionsStorage.js"
+recommended_fix: |
+  Pass userId to both calls. Add a CI grep gate rejecting bare createPlayer(x)/createSession(x)/
+  saveHand(x) without a userId argument — the convention has now failed twice on the same class;
+  the mechanism costs an afternoon. Establish clearAllData()'s user scope while in the file.
+promoted_to: "WS-455"
+dedup_key: "sweep-2026-08-13-import-players-sessions-guest-scoped"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

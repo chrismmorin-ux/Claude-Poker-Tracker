@@ -1,0 +1,38 @@
+id: "FIND-113"
+engine: "eng-engine"
+run_id: "run-domain-correctness-sweep-2026-08-13"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "eng-engine"
+  protocol: "sweep"
+  run_id: "run-domain-correctness-sweep-2026-08-13"
+  date: "2026-08-13"
+title: "Depth-2/3 stage rake is one flat subtraction from the blended EV, taxing the fold branch (POKER_THEORY §11.3 violation)"
+description: |
+  gameTreeDepth2.js:785/790 (computeCallDepth2EV), :926/930 (computeBetCallDepth2EV), :1039/1042
+  (computeRaiseResponseDepth2EV), :1439/1449 (computeDepth3BarrelEV) each subtract a single
+  estimateRake(...) from totalEV/totalWeight — an average mixing fold-branch mass (no rake taken)
+  with call/raise-branch mass. POKER_THEORY §11.3: "Rake ... never affects fold-equity from villain
+  folding (no showdown, no drop)." The river functions in the SAME FILE do it correctly per-branch
+  (:1600 showdown-only, :1605 call-only, :1699-1703 foldEV untaxed + callEV nets rakeOnCall) — so
+  this is inconsistency, not a design position. Additionally :1439 computes depth-3's rake from
+  potAfterFlopCall — the pot BEFORE the turn/river barrels it is discounting.
+  Facilitator open question folded in: :1707 raiseEV nets no rake at all, three lines below a
+  correctly raked callEV.
+  CONTAMINATES SCORED FIGURE: YES — level error on every depth-2/3 EV, sign-consistent
+  (over-taxes; continuation lines systematically undervalued).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  Extract the river functions' per-branch pattern into a shared helper (rakeAdjustedBranchEV) and
+  route all four stage-level sites through it; compute depth-3 rake on the pot actually reached;
+  resolve the :1707 raiseEV rake question. Add an invariance test: fold-branch EV bit-identical
+  with rake on and off.
+promoted_to: "WS-451"
+dedup_key: "sweep-2026-08-13-flat-stage-rake-taxes-fold-branch"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"
