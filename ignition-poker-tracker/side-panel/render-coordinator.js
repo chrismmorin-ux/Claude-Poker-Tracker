@@ -164,6 +164,14 @@ export class RenderCoordinator {
       lastViolationAt: 0,
       violationCountLifetime: 0,
       _violationTimestamps: [],
+      // WS-470 (FIND-131): monotonic count of cross-hand advice rejections since
+      // construction — advice whose payload-carried handNumber (compute-time, stamped
+      // by the app per WS-470) disagreed with the locked hand. Expected ZERO in a
+      // healthy session; any non-zero value means a compute resolved after the table
+      // advanced and the guard caught it. Panel-lifetime diagnostic, never cleared
+      // (visible in the diagnostics dump alongside violationCountLifetime; the
+      // REJECTED freshness tier surfaces each occurrence on-panel as it happens).
+      adviceCrossHandRejectCount: 0,
       // Layer 2: Position lock — heroSeat/dealerSeat frozen per hand
       _lockedHeroSeat: null,
       _lockedDealerSeat: null,
@@ -627,6 +635,8 @@ export class RenderCoordinator {
       // Stamp lastRejectionAt so classifyFreshness surfaces the REJECTED
       // freshness tier on the next render.
       this._state.lastRejectionAt = this._getTimestamp();
+      // WS-470: count it — expected zero per session; see field docblock.
+      this._state.adviceCrossHandRejectCount++;
       return false;
     }
 

@@ -199,3 +199,97 @@ describe('28.10: reasoning text display', () => {
     expect(container.textContent).not.toContain('Value bet');
   });
 });
+
+// ---------------------------------------------------------------------------
+// WS-470 (FIND-131) — hand-identity gate: advice computed for a different hand
+// must never render as current. This is the resolve-after-advance scenario: a
+// slow compute for hand 100 lands while the table is already on hand 101.
+// ---------------------------------------------------------------------------
+
+describe('WS-470: hand-identity gate', () => {
+  test('advice for a previous hand is rejected — bar disappears when nothing else is live', () => {
+    const advice = { ...baseGameTreeAdvice, handNumber: 100 };
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={advice} liveHandNumber={101} />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  test('advice for a previous hand never shows its recommendation, even when other signals keep the bar visible', () => {
+    const advice = { ...baseGameTreeAdvice, handNumber: 100 };
+    const { container } = render(
+      <LiveAdviceBar
+        gameTreeAdvice={advice}
+        liveHandNumber={101}
+        actionAdvice={{ label: 'VALUE', color: '#22c55e', icon: 'up' }}
+        liveEquity={{ equity: 0.55, foldPct: 0.40 }}
+      />
+    );
+    expect(container.textContent).not.toContain('BET');
+    expect(container.textContent).not.toContain('58% equity');
+  });
+
+  test('advice for the current hand renders normally', () => {
+    const advice = { ...baseGameTreeAdvice, handNumber: 101 };
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={advice} liveHandNumber={101} />
+    );
+    expect(container.textContent).toContain('BET');
+  });
+
+  test('identity gating only strengthens with information: null on either side renders (legacy payloads)', () => {
+    const noPayloadId = render(
+      <LiveAdviceBar gameTreeAdvice={baseGameTreeAdvice} liveHandNumber={101} />
+    );
+    expect(noPayloadId.container.textContent).toContain('BET');
+
+    const noCurrentId = render(
+      <LiveAdviceBar gameTreeAdvice={{ ...baseGameTreeAdvice, handNumber: 100 }} />
+    );
+    expect(noCurrentId.container.textContent).toContain('BET');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WS-471 (FIND-132) — in-flight game-tree recompute affordance. The live table
+// must show that it is thinking; street/age staleness cannot fire on a
+// within-street recompute, so this is the only signal for that case.
+// ---------------------------------------------------------------------------
+
+describe('WS-471: recomputing affordance', () => {
+  test('in-flight recompute shows RECOMPUTING badge and dims the previous recommendation', () => {
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={baseGameTreeAdvice} adviceComputing={true} />
+    );
+    expect(container.textContent).toContain('RECOMPUTING');
+    expect(container.firstChild.style.opacity).toBe('0.75');
+    // Previous recommendation stays visible (dimmed), not blanked.
+    expect(container.textContent).toContain('BET');
+  });
+
+  test('no badge when nothing is computing', () => {
+    const { container } = render(
+      <LiveAdviceBar gameTreeAdvice={baseGameTreeAdvice} adviceComputing={false} />
+    );
+    expect(container.textContent).not.toContain('RECOMPUTING');
+    expect(container.firstChild.style.opacity).toBe('1');
+  });
+
+  test('driven by the game-tree compute flag, NOT the equity hook flag', () => {
+    // The equity hook computing alone must not claim a game-tree recompute.
+    const { container } = render(
+      <LiveAdviceBar
+        gameTreeAdvice={baseGameTreeAdvice}
+        liveEquity={{ equity: 0.5, isComputing: true }}
+        adviceComputing={false}
+      />
+    );
+    expect(container.textContent).not.toContain('RECOMPUTING');
+  });
+
+  test('computing with no advice yet keeps the bar visible with the analyzing pulse', () => {
+    const { container } = render(<LiveAdviceBar adviceComputing={true} />);
+    expect(container.firstChild).not.toBeNull();
+    expect(container.querySelector('.animate-pulse')).not.toBeNull();
+  });
+});

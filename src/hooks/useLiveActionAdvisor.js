@@ -294,6 +294,12 @@ export const useLiveActionAdvisor = (liveHandState, tendencyMap, options = {}) =
       }
 
       const assembledAdvice = {
+        // WS-470 (FIND-131): the hand this advice was computed FOR, snapshotted from the
+        // compute-time closure — never re-read at delivery. A compute that resolves after
+        // the table advanced carries the OLD hand's number, so consumers (LiveAdviceBar
+        // hand-mismatch gate, the extension's RT-45 stamp which prefers a payload-carried
+        // handNumber over its receipt-time fallback) can refuse to render it as current.
+        handNumber: liveHandState?.handNumber ?? null,
         villainSeat: targetSeat,
         villainStyle: villainData.style || null,
         villainSampleSize: sampleSize,

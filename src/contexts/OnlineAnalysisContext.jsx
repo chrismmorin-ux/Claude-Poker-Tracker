@@ -69,17 +69,22 @@ export const OnlineAnalysisProvider = ({ children }) => {
     pushAdvice(advice);
   }, [advice, pushAdvice, isExtensionConnected]);
 
+  // WS-470 (FIND-131): the CURRENT live hand, for consumers to compare against
+  // advice.handNumber — advice computed for a previous hand must not render as current.
+  const liveHandNumber = safeLiveHandState?.handNumber ?? null;
+
   const value = useMemo(() => ({
     tendencyMap,
     handCount,
     isLoading,
     advice,
     isComputing,
+    liveHandNumber,
     // Exposed so a surface can say WHICH rake the numbers were computed under, and say so
     // when the answer is "none, because we could not identify the game". An unknown rake is
     // not a zero rake, and the difference has to be visible somewhere.
     rake,
-  }), [tendencyMap, handCount, isLoading, advice, isComputing, rake]);
+  }), [tendencyMap, handCount, isLoading, advice, isComputing, liveHandNumber, rake]);
 
   return (
     <OnlineAnalysisContext.Provider value={value}>

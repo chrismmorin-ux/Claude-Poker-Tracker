@@ -30,6 +30,7 @@ this file and asserts the declared scope matches the code.
 - `pipelineEvents` — audit ring buffer, capped at 50 via `logPipelineEvent`. Session-level.
 - `lastViolationAt` — most-recent violation timestamp, drives the 30s badge visibility gate.
 - `violationCountLifetime` — monotonic lifetime counter; mirrors the intent of other monotonic counters.
+- `adviceCrossHandRejectCount` — WS-470 (FIND-131): monotonic count of cross-hand advice rejections (payload's compute-time `handNumber` vs `_lockedHandNumber`). Expected zero in a healthy session; each occurrence also fires the REJECTED freshness tier via `lastRejectionAt`. Never cleared — the count IS the diagnostic.
 - `_violationTimestamps` — rolling-30s window backing array. Pruned eagerly on push.
 - `appSeatData` — per-seat exploit data. *Intentionally* preserved across table switches so cross-table exploit learning survives — a seat-identity overlap across tables (same username at a different table) carries its stats forward. Documented at `render-coordinator.js:768`.
 - `currentTableState`, `currentActiveTableId` — lifecycle owned by `handlePipelineStatus` in side-panel.js, not by `clearForTableSwitch`. On table switch the new values are written by the setter path *before* `clearForTableSwitch` runs, so wiping them inside the reset would erase the just-set identity. Classified as session here to reflect "not cleared by lifecycle resets".

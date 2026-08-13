@@ -154,7 +154,13 @@ export const LiveAdviceBar = ({
   actionAdvice,
   liveEquity,
   boardTexture,
-  gameTreeAdvice,
+  gameTreeAdvice: rawGameTreeAdvice,
+  // WS-471 (FIND-132): game-tree compute in flight — the equity hook's isComputing is a
+  // DIFFERENT signal and cannot stand in for it (within-street recomputes never touch it).
+  adviceComputing = false,
+  // WS-470 (FIND-131): the CURRENT live hand number, compared against the advice payload's
+  // compute-time handNumber below.
+  liveHandNumber = null,
   currentStreet,
   // Stream C — exploit anchor surface (Row 6 anchor-badge).
   // Per `docs/design/surfaces/live-anchor-badge.md`. AP-07 hard floor.
@@ -171,10 +177,20 @@ export const LiveAdviceBar = ({
     return () => clearInterval(id);
   }, []);
 
+  // WS-470 (FIND-131): advice computed for a different hand must never render as current.
+  // When both identities are known and disagree, the payload is treated as ABSENT — it
+  // disappears rather than greying, because a greyed WRONG recommendation still reads as a
+  // recommendation at a glance. Null-tolerant on either side: identity gating only ever
+  // strengthens with information, never blanks for lack of it.
+  const handMismatch = liveHandNumber != null
+    && rawGameTreeAdvice?.handNumber != null
+    && rawGameTreeAdvice.handNumber !== liveHandNumber;
+  const gameTreeAdvice = handMismatch ? null : rawGameTreeAdvice;
+
   // Render-suppression gate: bar shows when ANY signal is live (advice,
   // computing, game-tree, OR a matched anchor — anchor-only fires keep the
   // bar visible per surface spec Row-6 placement convention).
-  if (!actionAdvice && !liveEquity?.isComputing && !gameTreeAdvice && !liveAnchor) return null;
+  if (!actionAdvice && !liveEquity?.isComputing && !adviceComputing && !gameTreeAdvice && !liveAnchor) return null;
 
   // When full game tree advice is available, use the top recommendation
   const topRec = gameTreeAdvice?.recommendations?.[0];
@@ -210,11 +226,13 @@ export const LiveAdviceBar = ({
         borderLeft: `3px solid ${isStale ? '#6b7280' : displayColor}`,
         background: `linear-gradient(90deg, ${isStale ? '#6b7280' : displayColor}1A 0%, transparent 60%)`,
         padding: '6px 10px',
-        opacity: isStale ? 0.5 : isFading ? 0.75 : 1,
+        // WS-471 (FIND-132): an in-flight game-tree recompute dims the previous
+        // recommendation until the replacement lands — same tier as AGING.
+        opacity: isStale ? 0.5 : (isFading || adviceComputing) ? 0.75 : 1,
         transition: 'opacity 0.5s ease',
       }}
     >
-      {liveEquity?.isComputing && !useGameTree ? (
+      {(liveEquity?.isComputing || adviceComputing) && !useGameTree ? (
         <div style={{
           height: 4, borderRadius: 2, overflow: 'hidden',
           background: ADVICE_COLORS.equityBarBg,
@@ -278,6 +296,18 @@ export const LiveAdviceBar = ({
                   background: '#78350f', color: '#fbbf24', letterSpacing: 0.5,
                 }}>
                   AGING · {Math.round(adviceAge / 1000)}s
+                </span>
+              )}
+              {/* WS-471 (FIND-132): in-flight game-tree recompute — the one signal the
+                  street/age staleness logic structurally cannot produce (a within-street
+                  check-raise crosses neither threshold). Same badge grammar as STALE/AGING;
+                  Online's ExtensionPanel has had the equivalent affordance since Gate 5. */}
+              {useGameTree && adviceComputing && (
+                <span className="animate-pulse" style={{
+                  fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 3,
+                  background: '#1e3a8a', color: '#60a5fa', letterSpacing: 0.5,
+                }}>
+                  RECOMPUTING…
                 </span>
               )}
             </div>

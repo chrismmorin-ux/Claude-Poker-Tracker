@@ -37,6 +37,15 @@ if ! node "$SCRIPT_DIR/check-required-equity-seam.mjs"; then
   echo "   a genuine bluffer-breakeven / pot-includes-bet use."
   exit 1
 fi
+# WS-466 / FIND-127: ENGINE_VERSION sat unbumped through three algorithm changes, making
+# every predictionAudit record's engine era unattributable. Engine sources may not change
+# without a bump — the constant is what lets a record say WHICH engine produced it.
+if ! node "$SCRIPT_DIR/check-engine-version-bump.mjs"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-engine-version-bump.mjs"
+  echo "   Tests skipped — bump ENGINE_VERSION in src/constants/runtimeVersions.js."
+  exit 1
+fi
 
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then

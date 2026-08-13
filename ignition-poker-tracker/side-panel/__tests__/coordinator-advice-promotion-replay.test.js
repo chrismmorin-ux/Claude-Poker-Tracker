@@ -149,3 +149,35 @@ describe('advice promotion replay (render-coordinator handleLiveContext)', () =>
     expect(coord.get('advicePendingForStreet')).toBe('PREFLOP');
   });
 });
+
+describe('WS-470 (FIND-131): cross-hand rejection counter', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('counts each cross-hand rejection and never resets on later accepts', () => {
+    const { coord } = createCoordinator();
+    expect(coord.get('adviceCrossHandRejectCount')).toBe(0);
+
+    // Lock hand 42 via live context.
+    coord.handleLiveContext({
+      state: 'PREFLOP', currentStreet: 'preflop', handNumber: 42,
+      heroSeat: 5, dealerSeat: 3, activeSeatNumbers: [1, 3, 5], foldedSeats: [],
+    });
+
+    // The resolve-after-advance scenario: advice computed for the PREVIOUS hand
+    // (payload-carried compute-time handNumber) lands after the table advanced.
+    const accepted = coord.handleAdvice({ currentStreet: 'preflop', handNumber: 41 });
+    expect(accepted).toBe(false);
+    expect(coord.get('adviceCrossHandRejectCount')).toBe(1);
+    expect(coord.get('lastRejectionAt')).not.toBeNull();
+
+    // Matching advice is accepted and does NOT reset the lifetime counter.
+    const ok = coord.handleAdvice({ currentStreet: 'preflop', handNumber: 42 });
+    expect(ok).toBe(true);
+    expect(coord.get('adviceCrossHandRejectCount')).toBe(1);
+
+    // A second stale payload increments again.
+    coord.handleAdvice({ currentStreet: 'preflop', handNumber: 40 });
+    expect(coord.get('adviceCrossHandRejectCount')).toBe(2);
+  });
+});

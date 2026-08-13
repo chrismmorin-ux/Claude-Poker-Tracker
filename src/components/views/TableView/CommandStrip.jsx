@@ -85,7 +85,9 @@ export const CommandStrip = ({
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
   const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
   const { getSeatPlayerName } = usePlayer();
-  const { advice: gameTreeAdvice } = useAnalysisContext();
+  // WS-470/WS-471: liveHandNumber gates wrong-hand advice; isComputing drives the
+  // in-flight affordance the Online panel already has (surface parity, FIND-132).
+  const { advice: gameTreeAdvice, isComputing: adviceComputing, liveHandNumber } = useAnalysisContext();
   const { addToast, showInfo, showWarning } = useToast();
   const { currentSession, setHandCount } = useSession();
   const { isTournament, currentBlinds, tournamentState } = useTournament();
@@ -754,6 +756,8 @@ export const CommandStrip = ({
         liveEquity={liveEquity}
         boardTexture={boardTexture}
         gameTreeAdvice={pushFoldActive ? null : gameTreeAdvice}
+        adviceComputing={adviceComputing}
+        liveHandNumber={liveHandNumber}
         currentStreet={currentStreet}
         liveAnchor={liveAnchor}
         currentHandId={currentHandId}

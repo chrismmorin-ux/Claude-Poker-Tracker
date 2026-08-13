@@ -125,6 +125,20 @@ Root: absolute-positioned felt region with `tableRef`; right-click a seat → `S
 - **Live equity** is worker-offloaded (`useEquityWorker` + `useLiveEquity`) with fallback to in-thread computation.
 - **Exploit data is precomputed per seat in a `useMemo`** — guardrail for re-render cost. See RT-36 (memoization backlog item).
 - **Component size** is at the 598 / 700-line architecture threshold (ARCH-003). Structural decomposition candidate.
+- **Advice bar in-flight affordance (WS-471 / FIND-132, 2026-08-13).** `LiveAdviceBar` consumes the
+  analysis context's game-tree `isComputing` (threaded as `adviceComputing` — distinct from
+  `useLiveEquity`'s flag, which only covers the equity strip). While a recompute is in flight the
+  previous recommendation dims to the AGING opacity tier and a blue `RECOMPUTING…` badge pulses in
+  the badge row (same grammar as STALE/AGING); with no prior advice the analyzing pulse bar renders.
+  Rationale: street-mismatch/age staleness structurally cannot fire on a WITHIN-street recompute
+  (villain check-raises the turn), which is exactly when on-screen advice is most likely to be
+  obsolete and most likely to be trusted. Gate 1: GREEN — interaction feedback on an existing
+  surface, direct parity port of the affordance `ExtensionPanel` has carried since Gate 5.
+- **Advice hand-identity gate (WS-470 / FIND-131, 2026-08-13).** Advice payloads carry the
+  compute-time `handNumber`; the bar treats a payload whose hand disagrees with the current live
+  hand as ABSENT (it disappears rather than greying — a greyed WRONG recommendation still reads as
+  a recommendation at a glance). Null-tolerant on either side: gating only strengthens with
+  information, never blanks for lack of it.
 
 ## Known issues
 
