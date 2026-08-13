@@ -454,6 +454,23 @@ export const estimateRake = (potSize, rakeConfig, street = 'flop') => {
 };
 
 /**
+ * The pot a showdown/called branch actually pays after the drop — the one seam for
+ * per-branch rake in EV formulas (WS-451 / FIND-113, POKER_THEORY §11.3).
+ *
+ * Rake is a property of a pot that goes to showdown (or is called), NEVER of a fold
+ * branch: when villain folds there is no drop, so `foldEV = pot` stays untaxed. Apply
+ * this to the called/showdown pot inside each branch payoff — never subtract one flat
+ * `estimateRake` from a blended fold+call+raise average, which taxes fold-branch mass.
+ *
+ * @param {number} potSize - the pot the branch pays out at showdown
+ * @param {object|null} rakeConfig - see estimateRake
+ * @param {string} [street='flop']
+ * @returns {number} potSize net of the estimated drop
+ */
+export const rakedShowdownPot = (potSize, rakeConfig, street = 'flop') =>
+  potSize - estimateRake(potSize, rakeConfig, street);
+
+/**
  * Calculate the starting pot from blinds and antes.
  *
  * Supports two ante formats:
