@@ -1,0 +1,36 @@
+id: "FIND-135"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: MEDIUM
+status: open
+category: "architecture"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness (cross-cutting threading)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "Cross-cutting evaluation options have no contract — FIND-113's omission shape recurs by construction on every future concern"
+description: |
+  computePerComboEV, computePerComboCheckEV, computeCallDepth2EV, computeBetCallDepth2EV,
+  computeRaiseResponseDepth2EV, computeDepth3BarrelEV each carry 15-20 named options threaded by
+  hand across ~10 call sites (gameTreeDepth2.js:446,563,674,830,967,1078,1521,1645). WS-432 added
+  workMeter to all of them by hand; WS-451 added rakeConfig to all of them by hand. A dropped
+  rakeConfig reads as a rake-free game (potCalculator.js:447 !rakeConfig -> 0); a dropped workMeter
+  silently un-budgets a subtree (refinementWork.js:96-103 — the determinism claim depends on every
+  nested call forwarding the SAME reference, statically unverified). FIND-113 is the in-repo proof
+  this shape already failed once; third instance of the debt class the tech-debt register names
+  (TD-15, TD-24).
+affected_files:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/refinementWork.js"
+recommended_fix: |
+  One required evaluation-context argument (rake config, work meter, holding basis, playerStats,
+  board texture) — required rather than optional so a missing forward is a crash, not a silent
+  zero; a test that fails when a nested call drops the context reference.
+promoted_to: "WS-474"
+dedup_key: "challenge-2026-08-13-no-evaluation-context-contract"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

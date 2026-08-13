@@ -1,0 +1,40 @@
+id: "FIND-128"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: open
+category: "domain-correctness"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness (second implementation)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "The hindsight coach is an unraked, unseamed second implementation of the live engine's arithmetic, invisible to the seam gate"
+description: |
+  handAnalysis/heroAnalysis.js:35,109 and hindsightAnalysis.js:68,79 compute
+  equityNeeded = betSize/(potSize+betSize) with no seam routing and no convention comment. The
+  caller trace (replayAnalysis.js:485-489, potAtPoint sums prior timeline amounts including
+  villain's bet) shows potSize is "pot-includes-bet", so the formula is currently the correct
+  caller's price BY ACCIDENT of an undocumented convention, not by construction. No file under
+  src/utils/handAnalysis/ mentions rake at all (verified by grep); computeCallEV = eq*(pot+bet)-bet
+  (heroAnalysis.js:30) has no rakeConfig parameter. check-required-equity-seam.mjs:21 ROOTS
+  excludes handAnalysis/ entirely.
+  Consequence: the replay coach grades the founder's real decisions unraked while the live engine
+  rakes every showdown branch — a marginal call reads +EV in review and -EV live at 1/2-1/3 stakes.
+  Attacks the hand-recreation capability bar (WS-446). Does not contaminate the corpus figure
+  (harness uses the engine path); it contaminates the founder's learning loop.
+affected_files:
+  - "src/utils/handAnalysis/heroAnalysis.js"
+  - "src/utils/handAnalysis/hindsightAnalysis.js"
+  - "src/utils/handAnalysis/replayAnalysis.js"
+  - "scripts/check-required-equity-seam.mjs"
+recommended_fix: |
+  Route both formula sites through villainRequiredEquity; thread resolved rakeConfig into the
+  hindsight path; add handAnalysis/ to seam-gate ROOTS; build a live-vs-replay agreement harness
+  (scripted grid + stored-hand replay, verdict flips + mean EV gap as standing metrics).
+promoted_to: "WS-467"
+dedup_key: "challenge-2026-08-13-hindsight-unraked-unseamed"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

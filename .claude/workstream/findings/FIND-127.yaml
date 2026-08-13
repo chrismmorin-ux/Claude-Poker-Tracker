@@ -1,0 +1,38 @@
+id: "FIND-127"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: resolved
+category: "provenance"
+program: "domain-correctness"
+problem_class: "Theory-spec drift (version lineage)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "ENGINE_VERSION never bumped across three algorithm-shape changes — prediction-ledger provenance is retroactively unrecoverable"
+description: |
+  src/constants/runtimeVersions.js:16-18 states the bump criteria ("Engine algorithm changes:
+  gameTree, exploitEngine, rangeEngine, weaknessDetector"); ENGINE_VERSION = 'v123' (line 25) has
+  exactly one commit in its git history (b795df48, its introduction — verified via git log --follow).
+  WS-436 (removed the style prior tier), WS-450 (pot-odds formula on every bet/raise EV), and WS-451
+  (rake entering every depth-2/3 branch) each qualify; none bumped it.
+  predictionAuditWriter.js:22-49 composes modelVersion = range-${PROFILE_VERSION}+engine-${ENGINE_VERSION}
+  explicitly so later analysis can separate engine eras. Every prediction record before and after the
+  wave carries an identical version string. Result Cards are protected (manifest stamps the engine
+  commit); the prediction ledger is not.
+  CONTAMINATES SCORED FIGURE: reproducibility-class. The only defect in this run whose damage is
+  retroactive and grows daily — records already written can never be re-partitioned.
+affected_files:
+  - "src/constants/runtimeVersions.js"
+  - "src/utils/persistence/predictionAuditWriter.js"
+recommended_fix: |
+  Bump ENGINE_VERSION now for the WS-436/450/451 wave; add a CI gate failing any commit that touches
+  engine paths without changing the constant; document the broken co-versioning premise; optional
+  backfill marker "version unknown, recorded before 2026-08-13" on historical records.
+promoted_to: "WS-466"
+dedup_key: "challenge-2026-08-13-engine-version-never-bumped"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"
+resolved_at: "2026-08-13T23:36:47.963Z"

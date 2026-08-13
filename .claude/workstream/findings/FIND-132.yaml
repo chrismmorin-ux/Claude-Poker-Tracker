@@ -1,0 +1,36 @@
+id: "FIND-132"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: MEDIUM
+status: resolved
+category: "live-delivery"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation (staleness signaling)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "The live TableView cannot show that a recompute is in flight — within-street advice goes silently stale (Online panel already has the affordance)"
+description: |
+  Scope corrected by the facilitator's verification pass (D4): the phase-1 claim "isComputing is
+  dropped by its only consumer" is REFUTED in general — ExtensionPanel.jsx:67 destructures it and
+  :308 renders it. What survives: CommandStrip.jsx:88 destructures advice only;
+  LiveAdviceBar.jsx:177 reads liveEquity?.isComputing — the equity hook's DIFFERENT flag, not the
+  game-tree compute; staleness logic (:184-187) is street-mismatch or age>60s (fade >20s), which
+  cannot fire on a within-street recompute. A turn check-raise triggers a fresh compute bounded
+  only by the refinement budget, during which the bar shows pre-raise advice with no badge and no
+  spinner. Surface-parity defect: Online has the signal, the live table (the founder's primary
+  surface) does not.
+affected_files:
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+recommended_fix: |
+  Consume the analysis context's isComputing in CommandStrip/LiveAdviceBar and render the same
+  affordance ExtensionPanel.jsx:308 already has; dim the previous recommendation until the new one
+  lands.
+promoted_to: "WS-471"
+dedup_key: "challenge-2026-08-13-tableview-no-inflight-signal"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"
+resolved_at: "2026-08-13T23:36:47.963Z"

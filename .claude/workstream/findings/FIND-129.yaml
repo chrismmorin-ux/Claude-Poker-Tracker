@@ -1,0 +1,47 @@
+id: "FIND-129"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: open
+category: "live-delivery"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness (delivery)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "No wall-clock bound on the live path, the fast-answer mechanism has no production caller, and latency has never been measured on the target device"
+description: |
+  gameTreeEvaluator.js:1004-1005 — isBudgetExceeded (logical work units) is the ONLY refinement
+  gate; every remaining Date.now() in the file (911,1052,1355,1430) is reporting-only. The unit
+  budget converts via REFINEMENT_UNITS_PER_MS = 319, calibrated on exactly one Windows desktop
+  (REFINEMENT-CLOCK-CALIBRATION.md:22-26); refinement is synchronous main-thread work. WS-432
+  removed a bug that was accidentally protective on slow hardware (refinement never ran); now it
+  runs, uncapped in real time. onFastResult has ZERO production callers (verified:
+  computeHelpers.js:251, useActionAdvisor.js:59-70; appears only in definition, doc, and
+  depthReachability.test.js). treeMetadata.latency.totalMs/computeMs is computed every evaluation
+  and discarded. In-flight computes are never cancelled before starting the next
+  (useLiveActionAdvisor.js:253,267 — isCurrent checked only after each phase resolves) and the hook
+  recomputes on every recorded opponent action (:104-108), so catch-up tapping bursts uncancellable
+  evaluations. Device identity itself is unresolved: FIND-109's record carries three conflicting
+  names (Galaxy A22 / S22 / Helio G80).
+  An answer arriving after hero acts is not degraded — it is wrong. Pure live-income defect; the
+  offline figure is untouched (deterministic gating was the correct WS-432 trade).
+  OWNS: FIND-109 and FIND-076 (both open, previously unowned by any queue item).
+affected_files:
+  - "src/utils/liveAdvisor/computeHelpers.js"
+  - "src/hooks/useLiveActionAdvisor.js"
+  - "src/hooks/useActionAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "docs/standard-of-record/REFINEMENT-CLOCK-CALIBRATION.md"
+recommended_fix: |
+  (1) Founder names the device once; reconcile the three records. (2) Persist treeMetadata.latency
+  to IDB per evaluation; session summary p50/p90/max by street x wetness (n=50 across >=2 sessions).
+  (3) Wire onFastResult in buildPostflopAdvice. (4) Production-only Promise.race wall-clock deadline
+  returning the depth-1 answer — live path only, backtest keeps pure logical gating. (5) Cancel
+  superseded in-flight computes. (6) Calibrate REFINEMENT_UNITS_PER_MS on the named device.
+promoted_to: "WS-468"
+dedup_key: "challenge-2026-08-13-live-wallclock-unbounded-fastpath-dead"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

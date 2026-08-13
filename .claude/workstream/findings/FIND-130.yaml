@@ -1,0 +1,43 @@
+id: "FIND-130"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: open
+category: "enforcement"
+program: "domain-correctness"
+problem_class: "Anti-pattern enforcement"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "The required-equity seam gate's guarantee is a commit-message claim, not a code property — and the same file holds two rake idioms the gate cannot see"
+description: |
+  check-required-equity-seam.mjs:22 — the regex requires a bare-identifier backreference in fixed
+  addend order; defeated by member access (ctx.bet/(ctx.pot+ctx.bet)), swapped addends, or an
+  intermediate variable. :23 — ALLOW disables the check on any line containing an annotation string
+  (bluffer-breakeven | pot-includes-bet | balanced-bluff-ratio) with nothing verifying the
+  annotation; a WRONG annotation reads more trustworthy at review than an unannotated line. :21 —
+  ROOTS covers 3 directories; handAnalysis/ (holding a live second copy of the formula, FIND-128)
+  is invisible. No self-test fixture asserts the gate catches a known-bad pattern — unlike the
+  ground-truth-harness self-verification discipline this repo praises (exploitEngine/CLAUDE.md).
+  Commit ed3dc3b6's message claims "the sixth inline re-derivation fails the build" — a stronger
+  property than the code delivers, for a bug that shipped identically five times.
+  RELATED (folded in, F-10): gameTreeDepth2.js uses the rakedShowdownPot seam at 487/491/639/652
+  and the inline idiom pot - estimateRake(pot,...) at 1555/1607/1706/1712 — same quantity, two
+  idioms, same commit that declared "the one seam". Numerically equivalent today; consistency/
+  regression defect. Cloning the current gate for rake (as one lens recommended) would double the
+  false assurance — harden the class first, then generate the sibling.
+affected_files:
+  - "scripts/check-required-equity-seam.mjs"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "scripts/smart-test-runner.sh"
+recommended_fix: |
+  AST-based check with mandatory known-bad self-test fixtures; every ALLOW annotation must name a
+  test pinning that line's value; ROOTS extended to every decision-arithmetic module including
+  handAnalysis/; generate check-rake-seam from the same machinery; unify gameTreeDepth2's two rake
+  idioms onto rakedShowdownPot.
+promoted_to: "WS-469"
+dedup_key: "challenge-2026-08-13-seam-gate-weaker-than-claimed"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

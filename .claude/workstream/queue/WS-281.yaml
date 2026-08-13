@@ -50,6 +50,12 @@ accept_criteria: |
   - Divergence vs the shipped expected-callers path reported per PLAYERSINPOT
     bucket, in both log-loss and bb/100 via the WS-273 evCost bridge.
   - Card-removal effect estimated at least as an upper bound.
+  - CHALLENGE 2026-08-13 addition (F-14/U-7): a counter on the multiway fold clamp
+    (gameTreeEvaluator.js:665-668, [0.01, 0.95]) run over the scored corpus, split by
+    active-opponent count, reporting what SHARE of multiway fold estimates the clamp
+    (not the model) produced. The founder's game is 9-handed; if the clamp fires on a
+    large share of 6+-way decisions, the fold estimate is a floor wearing a model's
+    clothes, and that is the measured fact this ticket exists to surface.
   - POKER_THEORY §6 note updated from UNMEASURED to the measured figure, or the
     approximation replaced if the cost is material.
   - If either cost is negligible, that is recorded as a positive result and the

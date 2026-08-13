@@ -1,0 +1,51 @@
+id: "WS-476"
+title: "Upstream the session-recovery catastrophic-backtracking fix to HomeBase and pin it with a regression test"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 25.0
+priority_label: "P2"
+category: "infrastructure"
+capability: "kit"
+program: "infrastructure"
+finding_id: ""
+description: |
+  cwos-session-recovery.js updateSessionYaml used a multiline regex with an empty alternation
+  inside a lazy quantifier — /^handoff_notes:\s*[|>][^\n]*\n(?:(?:[ \t]+.*|)\n?)+?(?=^\S|\Z)/m —
+  catastrophic backtracking by construction, plus \Z which JS does not support (matches literal
+  'Z'). Any session file already carrying a handoff_notes block hung .test() forever: three
+  independent --auto instances (2026-08-13, this repo) pinned a CPU core on the FIRST such file
+  (ses-20260807-0327), so recovery never recovered anything while report mode and --dry-run
+  looked healthy. Also observed: the 30s stale-lock override on .session-recovery.mutex let a
+  second instance barge into the same hung critical section — the mutex cannot serialize any
+  critical section that legitimately exceeds 30s.
+  FIXED LOCALLY 2026-08-13 in this repo's kit copy (linear line-scan replacement, commented
+  WS-476 at the site; verified 0ms on the poison file, then recovered all 7 dead sessions and
+  released WS-431/433/436 claims). Remaining work: upstream to HomeBase kit (G16 is design
+  authority — load the fleet skill for the channel) so the next /kit-upgrade does not clobber
+  the fix; export updateSessionYaml for testability; add a regression fixture (a session file
+  WITH an existing multi-line handoff_notes block) that fails under the old regex by timeout;
+  consider raising the recovery-mutex staleAfterMs or heartbeating the lock while recovery runs.
+accept_criteria: |
+  - HomeBase's kit/scripts/cwos-session-recovery.js carries the line-scan implementation; a
+    /kit-upgrade dry-run against this repo shows no diff at that site.
+  - A regression test exists with a handoff_notes-bearing session fixture; it completes in
+    milliseconds under the fix (and is documented to hang under the old regex).
+  - The friction entry (high, component session-recovery, 2026-08-13) is referenced as resolved.
+  - SKEW DISCOVERED 2026-08-13 (SPR-181 verification pass): scripts/__tests__/
+    sessionRecoveryLiveness.test.js fails 10/19 AT HEAD — verified identical with and without
+    the line-scan fix by file-swap, so it predates this session. The tests describe a different
+    recovery design than the kit script implements (verdict 'dead-process' vs code's 'dead-pid';
+    released claims claimed_by:"" vs code's null-with-tombstone-comment; a pid_recorded_at field
+    nothing writes; hostless-records-as-foreign vs code's documented assumeLocal). This is the
+    feedback_kit_upgrade_sidecar_skew shape: test file and kit script are from different kit
+    versions. Resolving WHICH side is current (against HomeBase) and making the suite green is
+    part of this ticket — a permanently-red 19-test suite trains everyone to ignore real
+    failures in it.
+effort: "S"
+created_at: "2026-08-13"

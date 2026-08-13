@@ -1,0 +1,34 @@
+id: "WS-474"
+title: "One required evaluation context instead of twenty hand-threaded options through the depth-2/3 call graph"
+legacy_id: ""
+type: refactor
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "engine"
+program: "domain-correctness"
+finding_id: "FIND-135"
+description: |
+  rakeConfig (WS-451) and workMeter (WS-432) were each added by hand to ~10 call sites across 6 EV
+  functions in gameTreeDepth2.js; FIND-113 proves the omission shape already shipped once. A
+  dropped rakeConfig reads as a rake-free game; a dropped workMeter silently un-budgets a subtree
+  and voids the determinism claim. Introduce one REQUIRED evaluation-context argument (rake config,
+  work meter, holding basis, playerStats, board texture) so a missing forward is a crash, not a
+  silent zero, plus a test that fails when a nested call drops the context reference. Facilitator
+  S6; the "extract the repeated shape" move already executed for decisionSystems/ (TD-15, SPR-078)
+  applied to the parameter surface SYSTEM_MODEL §5.2 flags as a hotspot.
+accept_criteria: |
+  - Deliberately removing the context from one internal call makes the test suite FAIL immediately
+    rather than quietly returning a rake-free number.
+  - All 6 depth-2/3 EV functions take the context as a required argument; no optional rakeConfig/
+    workMeter parameters remain on the internal call graph.
+  - Engine outputs are bit-identical before/after the refactor (determinism gate green) — this is
+    a threading change, not a math change.
+effort: "L"
+created_at: "2026-08-13"

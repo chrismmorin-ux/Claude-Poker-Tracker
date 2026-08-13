@@ -1,0 +1,33 @@
+id: "WS-473"
+title: "Refuse candidate actions the founder could not actually make (legality + degenerate sizes + stack-capped canonical raise)"
+legacy_id: ""
+type: fix
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "engine"
+program: "domain-correctness"
+finding_id: "FIND-134"
+description: |
+  Three legality/degeneracy gaps in candidate generation: the min-raise candidate ignores the prior
+  raise increment (illegal on re-raised streets); the MICRO/LOW SPR path can emit a zero-size
+  "bet"; villainRequiredEquity's canonical raise size has no effectiveStack parameter and can
+  price a raise hero cannot make. WS-402 fixed valuation, not legality — an illegal size that wins
+  the argmax on a scored decision contaminates the figure. First run the U-5 instrument: scan all
+  stored hands for streets with a prior raise increment, recompute heroActionBuilder's min-raise,
+  and count offered-illegal sizes.
+accept_criteria: |
+  - In a 3-bet pot, the suggested raise is a size the dealer would accept (legal-minimum test).
+  - With zero chips behind, no "bet" candidate appears (degenerate filter test).
+  - villainRequiredEquity accepts effectiveStack and its canonical raise agrees with the offered
+    candidate sizes (test).
+  - The U-5 stored-hand scan result is reported: how many times, if ever, an illegal size was
+    offered.
+effort: "M"
+created_at: "2026-08-13"

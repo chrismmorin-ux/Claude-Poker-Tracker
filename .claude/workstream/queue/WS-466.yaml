@@ -1,0 +1,35 @@
+id: "WS-466"
+title: "Bump ENGINE_VERSION for the WS-436/450/451 wave and gate future engine changes on a bump"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-13T23:36:47.963Z"
+completion_commit: 4880ca94
+priority_score: 38.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "provenance"
+program: "domain-correctness"
+finding_id: "FIND-127"
+description: |
+  ENGINE_VERSION = 'v123' has never changed (one commit in its git history) while the engine's
+  math changed three times in eleven days (WS-436/450/451). predictionAuditWriter composes
+  modelVersion from it specifically to separate engine eras; every prediction record before and
+  after the wave carries an identical version string. The damage is retroactive and grows daily —
+  the only defect in the 2026-08-13 challenge run whose harm cannot be repaired after the fact.
+  Bump now; add a CI gate failing any commit touching src/utils/exploitEngine/, src/utils/rangeEngine/
+  or src/utils/handAnalysis/ without changing the constant; document that the app/engine
+  co-versioning premise stopped holding.
+accept_criteria: |
+  - Two prediction records — one pre-2026-08-13, one after the next engine change — carry different
+    version strings.
+  - Deliberately editing an engine file without bumping the version makes the test run FAIL with a
+    message naming the constant.
+  - runtimeVersions.js documents the broken co-versioning premise and (optional, founder call) a
+    "version unknown, recorded before 2026-08-13" backfill marker is defined for historical records.
+effort: "S"
+created_at: "2026-08-13"
+closed_by_event: ev-1786664208005-09a632c4a823

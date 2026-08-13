@@ -423,20 +423,34 @@ last_run_by_protocol:
     run_id: "run-sweep-2026-07-22"
     result: "Sweep over window ecd20b8..5aa1419 (only engine-scope commit since the 2026-06-20 delta/challenge/blind_spot coverage). Drift verdict CLEAN across all 8 touched files — WS-235 poolBaseline.js verified sound (live/online never pooled poolBaseline.js:75-81, leave-one-out :206-212, exact conjugate Beta blend, cap-200 as honest overdispersion proxy); multiwayFoldPct correlationAdjustment fudge replaced with exact conditional-independence product (addresses FIND-030 part 1, tested); sizingTells unstubbed via showdown Pearson r gated |r|>=0.35 (addresses FIND-032 part a, display-only per WS-250); betaMath dead-param cleanup (FIND-030 part 2). 3 new findings: FIND-034 MEDIUM POKER_THEORY §6.5 still 2-tier while pipeline is 3-tier (WS-257 copy-forward); FIND-035 MEDIUM runWithStatPriors module-global swap fragile vs future async — thenable guard (WS-258); LOW SIZING_TELL_EXPLOIT map shaped like removed WEAKNESS_EXPLOIT_MAP, folded into WS-258 note. ALSO Phase 0b of domain-audit ran (no promoted spec existed): first domain-spec DRAFT generated — 16 rules (10 artifact + 6 model) across all 9 problem classes, cross-checked (0 removed / 2 downgraded / 1 noted), 0 governance candidates, depth-gap NOT tripped (mechanical_ratio 0.06, 6 model-level rules). docs/domain-spec.draft.md + DRAFTS.md section pending founder promotion (FIND-036/WS-259) — promotion unlocks true Phase-1 rule-vs-code drift on future runs. Evidence: .claude/workstream/evidence/domain-correctness/run-sweep-2026-07-22/."
   challenge:
-    date: "2026-07-22"
-    engine: domain-audit
-    # Engine substitution declared 2026-08-05 by the provenance gate (INV-F2).
-    # The protocol declares engine: eng-engine; this run used domain-audit.
-    # Whether that substitution was deliberate is NOT recorded anywhere, and
-    # this session found the same failure live: an inline single-threaded audit
-    # was nearly stamped as an eng-engine roundtable run. See
-    # .claude/rules/engine-execution-fidelity.md. Declaring rather than hiding
-    # it is the point — a substituted engine that reads as compliant is exactly
-    # what the gate exists to surface.
-    spec_compliant: false
-    status: legacy-no-provenance
-    run_id: "run-sweep-2026-07-22"
-    result: "Second challenge run — focused adversarial pass over the post-2026-06-20 surface (WS-235 pool baseline + companions) + FIND-029 recheck + regression spot-check. HELD UP: blendPrior is a textbook conjugate Beta update, NOT double-counting (STAT_PRIORS = subjective founder prior, pool = independent data, applied exactly once in derivePercentages); cap-200 rescaling preserves pool mean EXACTLY (mu from uncapped n); leave-one-out keying sound end-to-end (same pidKey both sides, analysisPipeline threads the identical playerId); multiwayFoldPct independence product theoretically correct (card removal the named residual); FIND-029 raise gate CONFIRMED FIXED by WS-247 (raiseEV unconditional, only FE-reliant raises need reliable model per §5.6); estimateFoldPct single-source hierarchy unregressed. DEFECTS LANDED: FIND-037 HIGH — createOnlineSession hardcodes gameType 'NL Holdem' (sessionsStorage.js:428) so ALL online play collapses into one pool segment, defeating within-online stake conditioning (WS-260); FIND-038 HIGH — sizingTells is CIRCULAR: strengthOrdinal uses bucket.avgSegmentation (model's own estimate), never the stored handShown — Pearson r measures self-consistency, not a showdown-verified tell, while UI claims 'confirmed by showdowns'; display-only blast radius per WS-250 gate (WS-261); FIND-039 MEDIUM — free-text live stake labels fragment segments ('1/2' vs '$1/$2' vs '1/2 NL'), bundled into WS-260; LOW corroboration of FIND-035 (runWithStatPriors zero test coverage — folded into WS-258). Evidence: evidence/domain-correctness/run-sweep-2026-07-22/challenge-2026-07-22.yaml. PRIOR CHALLENGE (2026-06-20, run-domain-correctness-challenge-2026-06-20) preserved inline: First challenge run (adversarial — assume the engine is wrong). Core math held up under attack: MC equity (monteCarloEquity.js) is unbiased (Welford variance, correct card-removal, unbiased rejection sampling, exact-enum fast path agrees), crossRangeConstraints conserves probability + respects mixing, the §7 labels-are-outputs rule is genuinely implemented in the per-combo game tree (comboActionProbabilities derives fold/call/raise from equityRatio logistic, not bucket lookups; estimateFoldPct single-source hierarchy suppresses style when a model exists — no double-counting), weakness labels describe villain only (no hero-action leak). 6 localized defects found (NONE foundational, NONE critical/high-confirmed): FIND-026 showdown-anchor non-idempotent re-boost across stateless rebuilds — needs idempotency test (medium, the one to prioritize); FIND-027 comboBetFilter vs computeVillainBetProb disagree ~2x on early-street bluff freq (medium); FIND-028 calcBluffEV semi-bluff branch omits rake while value path includes it (medium, clear one-line fix); FIND-029 bestResponseToAggression gates raiseEV on heroEquity>=0.65, structurally suppressing all +EV bluff-raises vs over-folders (medium, most poker-consequential); FIND-030 multiway fold-equity assumes opponent independence + bayesianSampleConfidence ignores its prior args (low nits). Files: bayesianUpdater.js, gameTreeEquity.js:360-365 & 531-548, foldEquityCalculator.js:57-73."
+    date: "2026-08-13"
+    engine: "eng-engine"
+    run_id: "run-domain-correctness-challenge-2026-08-13"
+    run_by: "founder"
+    event_id: "ev-1786660366121-c27d0ad821e0"
+    result: >-
+      Spec-compliant eng-engine challenge (6 fresh-context lenses + orchestrator cross-critique +
+      facilitator with its own source-verification pass). HELD UP: depth-3 double-rake accusation
+      REFUTED (rake once per terminal branch); rake arithmetic right twice over (two idioms agree);
+      hindsight formula algebraically correct for its convention; WS-432 reproducibility fix real
+      (FIND-051 re-ruling verified again — isBudgetExceeded sole gate, Date.now reporting-only);
+      villainRequiredEquity happy path pinned and landing in mandatory depth-1. DID NOT HOLD:
+      (1) absence indistinguishable from measurement in 5 verified places — one mechanism, the
+      headline (FIND-136/WS-475 shared primitive); (2) seam gate weaker than its commit message
+      (FIND-130/WS-469); (3) correct number delivered late or to the wrong hand, nothing measures
+      either (FIND-129/WS-468, FIND-131/WS-470, FIND-132/WS-471, FIND-133/WS-472); (4) hindsight
+      coach grades the same decision unraked/unseamed (FIND-128/WS-467); ENGINE_VERSION never
+      bumped — retroactively unrecoverable ledger provenance (FIND-127/WS-466); candidate legality
+      (FIND-134/WS-473); no evaluation-context contract (FIND-135/WS-474). One phase-1 claim
+      refuted by the facilitator's own pass (isComputing IS rendered by ExtensionPanel:308 — scope
+      narrowed to TableView parity). Filed FIND-127..136 / WS-466..475. Amendments applied:
+      WS-281 (clamp-share counter), WS-447 (villainStyle drill re-entry + caveat badge + measured
+      inputs). Amendments PENDING on files locked by live ses-20260813-1429: WS-451 (capped-rake
+      chained-depth-3 test before closure), WS-454 (own both halves of depthReached display),
+      WS-458 (villainRequiredEquity fallbacks), WS-461 (SYSTEM_MODEL §5.2 hotspot staleness).
+      Scope limit: lenses pointed at the WS-436/450/451/432/431 wave — rangeEngine narrowing,
+      preflop path, weaknessDetector unexamined. Evidence:
+      .claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/
   blind_spot:
     date: "2026-08-05"
     engine: eng-engine

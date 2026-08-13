@@ -1,0 +1,32 @@
+id: "WS-471"
+title: "The live table shows when it is thinking — surface parity with the Online panel's isComputing affordance"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-13T23:36:47.963Z"
+completion_commit: 4880ca94
+priority_score: 29.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "live-delivery"
+program: "domain-correctness"
+finding_id: "FIND-132"
+description: |
+  ExtensionPanel already consumes and renders isComputing (:67, :308); the live TableView does not
+  — CommandStrip destructures advice only, and LiveAdviceBar reads the equity hook's different
+  flag, with staleness logic that cannot fire on a within-street recompute. A turn check-raise
+  leaves pre-raise advice on screen, unbadged, for the whole refinement window. Consume the
+  analysis context's isComputing on the live surface and render the affordance the Online panel
+  already has. Pairs with WS-470; note this is a UX-touching change — Gate 1/Gate 4 of the design
+  lifecycle apply (small-scope, existing-pattern port).
+accept_criteria: |
+  - Recording a villain raise on the turn makes the advice bar visibly indicate recomputation, with
+    the previous recommendation dimmed until the new one lands.
+  - The indicator is driven by the game-tree compute's isComputing, not the equity hook's flag
+    (asserted by test).
+effort: "S"
+created_at: "2026-08-13"
+closed_by_event: ev-1786664208481-d2bbfe072f23

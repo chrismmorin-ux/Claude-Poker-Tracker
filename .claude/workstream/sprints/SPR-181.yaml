@@ -1,0 +1,40 @@
+id: "SPR-181"
+title: "Live-delivery integrity from the 2026-08-13 challenge run — advice carries its hand, the table shows"
+status: done
+approved_at: "2026-08-13T23:04:59.961Z"
+completed_at: "2026-08-13T23:36:47.963Z"
+completed_by_commit: "4880ca94"
+program_focus: "domain-correctness"
+
+goal: |
+  Live-delivery integrity from the 2026-08-13 challenge run — advice carries its hand, the table shows it is thinking, and every future engine change is version-stamped (founder-adjusted composition: engine-file work deferred while the depth-ablation run is live)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-13T23:04:59.961Z"
+  matches: []
+
+composition_notes: |
+  Founder-adjusted composition (option 3 at approval): CLI anchor WS-442 (42) deferred because its execution merges branches into engine source files while the live depth-ablation backtest (PID 28640) spawns workers that load those files from disk — editing them mid-run risks poisoning the measured run. Swapped in the three S-effort challenge-run items whose file surfaces (src/constants, src/hooks, src/components, ignition side-panel, scripts/) are verified untouched by the backtest worker closure: runtimeVersions.js has zero importers in exploitEngine/ and scripts/backtest/ (grepped). WS-442 remains top-ranked for the next composition after the run completes.
+
+items:
+  - id: "WS-466"
+    title: "Bump ENGINE_VERSION for the WS-436/450/451 wave and gate future engine changes on a bump"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-13T23:36:47.963Z"
+  - id: "WS-470"
+    title: "Advice carries the hand it was computed for, and both surfaces check it"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-13T23:36:47.963Z"
+  - id: "WS-471"
+    title: "The live table shows when it is thinking — surface parity with the Online panel's isComputing affordance"
+    mode: execute
+    effort: S
+    status: done
+    completed_at: "2026-08-13T23:36:47.963Z"
+
+created_at: "2026-08-13T23:04:59.961Z"

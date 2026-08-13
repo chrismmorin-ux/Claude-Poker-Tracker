@@ -1,0 +1,36 @@
+id: "WS-475"
+title: "A first-class unmeasured value, and a gate that forbids returning a plausible constant in its place"
+legacy_id: ""
+type: infrastructure
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "engine"
+program: "domain-correctness"
+finding_id: "FIND-136"
+description: |
+  The 2026-08-13 challenge run's headline: in five verified places the engine produces a confident
+  number where the honest output is "no read" (silent fallback constants, unknown-rake-as-zero,
+  empty-range 0.5/0, attempted-as-completed depth, unbumped version). The honest pattern already
+  exists twice in-repo (rakeResolver tier:'unknown', holdingKnowledge basis-required throw) and was
+  never extracted. Build the shared primitive: a no-read/unmeasured sentinel that propagates and
+  forces the caller to handle it, plus a checker flagging bare numeric literals returned from
+  "could not compute" paths. Facilitator S1 — converts five defects and their class into one
+  solved problem; sequences naturally BEFORE the per-site fixes in WS-458-amend and alongside
+  WS-452. Reproducibility-first per the founder's ranking axis.
+accept_criteria: |
+  - A single exported primitive (or equivalent typed shape) represents "unmeasured"; the five
+    C-1 sites either consume it or throw, and a caller cannot read a number out of it without
+    explicitly handling the no-read case (test-asserted).
+  - The checker fails the build on a bare numeric literal returned from a designated no-read path,
+    with a known-bad fixture proving the checker fires.
+  - Downstream surfaces render a visible no-read state where they previously rendered the constant
+    (spot-checked on the rake tier and empty-range sites).
+effort: "L"
+created_at: "2026-08-13"

@@ -1,0 +1,39 @@
+id: "FIND-134"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: MEDIUM
+status: open
+category: "domain-correctness"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness (candidate legality)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "Candidate generation can emit sizes hero cannot legally or meaningfully make"
+description: |
+  heroActionBuilder.js:129 — min-raise candidate Math.min(effectiveVillainBet*2, maxBet) has no
+  notion of the prior raise increment; on a re-raised street 2x villainBet can be below the legal
+  minimum. :78-86 — MICRO/LOW SPR path emits {action:'bet', betSize:effectiveStack} unconditionally,
+  including effectiveStack === 0 (a zero-size "bet" labeled as aggression); no degenerate-candidate
+  filter (zero/NaN size) before the EV pass. foldEquityCalculator.js:382-396 —
+  villainRequiredEquity's canonical raise Math.min(B*3, P+B*2) has no effectiveStack parameter, so
+  it can price a raise size hero cannot make, diverging from the separately-clamped candidate sizes.
+  WS-402 fixed VALUATION, not LEGALITY — "every candidate is re-priced correctly by the EV pass" is
+  true and irrelevant to a size the table would reject.
+  CONTAMINATES SCORED FIGURE: yes, if an illegal candidate wins the argmax on a scored decision.
+  Instrument first (U-5): scan all stored hands for streets with a prior raise increment and count
+  offered-illegal sizes; a single hit makes this live, not theoretical.
+affected_files:
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+recommended_fix: |
+  Thread the prior raise increment into heroActionBuilder so the min-raise is legal; drop
+  degenerate candidates before the EV pass; give villainRequiredEquity an effectiveStack cap; run
+  the U-5 stored-hand scan and report the count. Cross-ref WS-402 (valuation, separate accept
+  criteria).
+promoted_to: "WS-473"
+dedup_key: "challenge-2026-08-13-illegal-degenerate-candidates"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

@@ -1,0 +1,38 @@
+id: "FIND-133"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: MEDIUM
+status: open
+category: "provenance"
+program: "domain-correctness"
+problem_class: "Theory-spec drift (calibration currency)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "The refinement clock is timing code it was never measured against — its own re-calibration rule was violated four times inside this review window"
+description: |
+  REFINEMENT-CLOCK-CALIBRATION.md:6-8 mandates re-running calibrate-refinement-units.mjs after any
+  engine hot-path change. Calibration commit 52d0cae4 (2026-08-07 13:05) is the last touch. Since
+  then: WS-436 A1/A2 (058a6987, 0457b9a3 — same day, AFTER calibration), A3/A4 (b2c326fa), WS-450
+  (ed3dc3b6 — villainRequiredEquity call inside computePerComboEV replacing a cheaper inline
+  division), WS-451 (4880ca94 — two rake calls INSIDE the per-combo loop) all changed the cost of
+  the thing being counted. COMBO_EVAL_COST is a static per-board-length table; REFINEMENT_CLOCK_VERSION
+  was never bumped. Under-billing means more real work fits the same unit budget — COMPOUNDS the
+  FIND-129 wall-clock exposure (facilitator D3) — and it touches the figure: a stale cost table
+  changes WHICH STAGES COMPLETE in a scored run, so two arms measured across the calibration
+  boundary are not on the same axis.
+  CONTAMINATES SCORED FIGURE: yes, reproducibility-class (cross-calibration-boundary comparisons).
+affected_files:
+  - "scripts/backtest/calibrate-refinement-units.mjs"
+  - "docs/standard-of-record/REFINEMENT-CLOCK-CALIBRATION.md"
+  - "src/utils/exploitEngine/refinementWork.js"
+recommended_fix: |
+  Re-run calibration at HEAD; publish new constants as a Result Card with full manifest; bump
+  REFINEMENT_CLOCK_VERSION; add a gate failing the build when a hot-path file is newer than the
+  calibration artifact without a version bump.
+promoted_to: "WS-472"
+dedup_key: "challenge-2026-08-13-refinement-clock-stale-calibration"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"

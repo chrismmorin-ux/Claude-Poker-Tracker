@@ -1,0 +1,39 @@
+id: "WS-468"
+title: "Wall-clock truth on the founder's phone: measure it, bound it, and turn the fast answer on"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 38.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "live-delivery"
+program: "domain-correctness"
+finding_id: "FIND-129"
+description: |
+  The logical work-unit clock (WS-432) removed the live path's only real-time bound; refinement is
+  synchronous main-thread work calibrated on one desktop; onFastResult has zero production callers;
+  per-evaluation latency is computed and discarded; in-flight computes are never cancelled. Advice
+  arriving after hero acts is wrong advice. Six steps: (1) founder names the device once (three
+  conflicting names on record: Galaxy A22 / S22 / Helio G80) and the docs reconcile; (2) persist
+  treeMetadata.latency to IndexedDB per evaluation; (3) wire onFastResult in buildPostflopAdvice
+  (depth-1 paints immediately, refined replaces it — the yield discipline in exploitEngine/CLAUDE.md
+  applies); (4) production-only Promise.race wall-clock deadline returning the depth-1 answer if
+  refinement overruns — live path only, the backtest keeps pure logical gating so reproducibility
+  is untouched; (5) cancel superseded in-flight computes before starting new ones (isCurrent
+  checked BEFORE each phase, not only after); (6) calibrate REFINEMENT_UNITS_PER_MS on the named
+  device. Owns FIND-109 and FIND-076 (previously unowned).
+accept_criteria: |
+  - At the table, an answer appears immediately on recording an action and visibly sharpens when
+    refinement lands.
+  - A session summary (or export) shows p50/p90/max advice latency on the founder's phone, per
+    street, over n>=50 postflop decisions across >=2 real sessions.
+  - No evaluation exceeds the stated real-time deadline; superseded computes are cancelled (verified
+    by test).
+  - The backtest's logical gating is bit-identical before/after (determinism gate re-run green).
+effort: "L"
+created_at: "2026-08-13"

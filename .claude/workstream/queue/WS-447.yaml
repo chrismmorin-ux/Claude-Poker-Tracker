@@ -55,6 +55,17 @@ accept_criteria: |
     discrete engine types; the honest primitives are continuous (villainFoldLevel,
     shrunk posteriors, the k=2 looseness axis — silhouette 0.343,
     docs/research/player-archetypes-empirical-2026-07-26.md).
+  - CHALLENGE 2026-08-13 additions (run-domain-correctness-challenge-2026-08-13):
+    (1) A THIRD non-display consumer exists and needs a disposition alongside SR-24 and
+    librarySelectors: useCitedDecisions.js:120 passes options.villainStyle into
+    produceCitedDecision for surface:'drill' — a string with no enum guard, silently
+    sensitive to any change in label vocabulary.
+    (2) Until the greenfield lands, rendered style values carry a caveats[]-style badge
+    (the discipline SYSTEM_MODEL §5.1c C-14 already applies to drill-mode EV) — the
+    founder is currently shown a categorization the system's own measurement calls
+    near-uninformative, with nothing on screen saying so.
+    (3) The surface spec states the label's own measurement: k=2, silhouette 0.343,
+    21.1% Unknown fallthrough.
 effort: "L"
 files_involved:
   - "docs/design/audits/2026-08-08-entry-villain-categorization-greenfield.md"

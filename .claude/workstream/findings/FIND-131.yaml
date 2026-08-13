@@ -1,0 +1,40 @@
+id: "FIND-131"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: resolved
+category: "live-delivery"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness (delivery identity)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "Live advice carries no hand identity — the extension stamps whichever hand is cached at receipt time, and the main app never checks"
+description: |
+  useLiveActionAdvisor.js:296-337 — assembledAdvice carries timestamp/currentStreet/villainSeat but
+  no handNumber; the value is in scope 8 lines later (:345) where the prediction-audit callback uses
+  it. ignition side-panel.js:566-577 stamps coordinator.get('currentLiveContext')?.handNumber onto
+  arriving advice AT RECEIPT — whatever hand context happens to be cached, not the hand the advice
+  was computed against. pushAdvice/pushExploits/live-context push fire from independent React
+  effects (OnlineAnalysisContext.jsx:63-70) with no ordering guarantee. LiveAdviceBar.jsx:184-187
+  has no identity check at all (street + age only).
+  A slow evaluation resolving after the table advanced gets stamped with the NEW hand's number and
+  passes every staleness guard clean — advice for the previous hand displayed as current at a live
+  table. Retroactive occurrence is unknowable precisely because the payload carries no identity;
+  that unknowability is part of the finding.
+affected_files:
+  - "src/hooks/useLiveActionAdvisor.js"
+  - "ignition-poker-tracker/side-panel/side-panel.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+recommended_fix: |
+  Add handNumber to assembledAdvice; extension compares instead of stamping; LiveAdviceBar blanks
+  or greys advice whose hand identity mismatches; a test forces the resolve-after-advance ordering
+  and asserts the stale payload is rejected; receipt-time mismatch counter (expected zero, any hit
+  is P0).
+promoted_to: "WS-470"
+dedup_key: "challenge-2026-08-13-advice-no-hand-identity"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"
+resolved_at: "2026-08-13T23:36:47.963Z"

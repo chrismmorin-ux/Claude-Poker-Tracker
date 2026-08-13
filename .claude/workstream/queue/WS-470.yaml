@@ -1,0 +1,32 @@
+id: "WS-470"
+title: "Advice carries the hand it was computed for, and both surfaces check it"
+legacy_id: ""
+type: fix
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-13T23:36:47.963Z"
+completion_commit: 4880ca94
+priority_score: 36.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "live-delivery"
+program: "domain-correctness"
+finding_id: "FIND-131"
+description: |
+  assembledAdvice has no handNumber (the value is in scope 8 lines below, where the
+  prediction-audit callback already uses it); the Ignition side panel stamps whichever hand context
+  is cached at receipt; LiveAdviceBar has no identity check. A slow evaluation resolving after the
+  table advanced is stamped with the NEW hand's number and passes every guard — previous-hand
+  advice displayed as current at a live table. One-line payload fix, total exposure.
+accept_criteria: |
+  - Start a hand, record an action, advance to a new hand while advice is computing: old advice
+    never appears as current — it disappears or is visibly marked stale.
+  - A test forces exactly that resolve-after-advance ordering and asserts the stale payload is
+    rejected on both surfaces (LiveAdviceBar and the extension panel).
+  - The extension counts receipt-time hand mismatches per session; expected zero, and the count is
+    visible somewhere the founder can read.
+effort: "S"
+created_at: "2026-08-13"
+closed_by_event: ev-1786664208343-b212fb503673

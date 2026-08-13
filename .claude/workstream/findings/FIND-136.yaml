@@ -1,0 +1,46 @@
+id: "FIND-136"
+engine: "eng-engine"
+run_id: "run-domain-correctness-challenge-2026-08-13"
+severity: HIGH
+status: open
+category: "architecture"
+program: "domain-correctness"
+problem_class: "Bayesian confidence representation (absence vs measurement)"
+source:
+  engine: "eng-engine"
+  protocol: "challenge"
+  run_id: "run-domain-correctness-challenge-2026-08-13"
+  date: "2026-08-13"
+title: "Absence is systematically indistinguishable from measurement — five verified instances of one mechanism, needing one primitive"
+description: |
+  The challenge run's headline (consensus C-1, four lenses independently): the engine produces a
+  confident, specific number where the honest output is "no read". Verified instances:
+  (1) foldEquityCalculator.js:395,399 — missing pot geometry returns flat 1/3 or prices 0.75;
+  (2) potCalculator.js:447 — !rakeConfig -> 0, collapsing rakeResolver's tier:'unknown' with
+  tier:'none'; (3) gameTreeEquity.js:882,912 -> 0.5 and gameTreeDepth2.js:496,658 -> EV 0 on zero
+  weight; (4) gameTreeEvaluator.js:1428 — depthReached reports attempted-as-completed;
+  (5) runtimeVersions.js — an unbumped ENGINE_VERSION reads as an unchanged engine.
+  POKER_THEORY §3.6.1 already states the doctrine for the range layer ("a model that assigns
+  probability zero to an event that then occurs has been refuted"); the same failure is reproduced
+  one and two layers up. The repo holds the honest version in exactly two places
+  (rakeResolver's tier:'unknown', holdingKnowledge's basis-required throw) — it exists and was
+  never extracted.
+  CONTAMINATES SCORED FIGURE: reproducibility-class — an unmeasured value that looks measured is a
+  reproducibility defect before it is an accuracy one (founder's ranking axis).
+affected_files:
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/potCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+recommended_fix: |
+  A first-class unmeasured/no-read sentinel that propagates and forces callers to handle it,
+  extracted from the two honest implementations already in-repo; plus a checker flagging a bare
+  numeric literal returned from a "could not compute" path. Facilitator S1 — highest leverage in
+  the run: converts five defects (and the class) into one solved problem. Individual sites also
+  covered by FIND-127 (version), WS-452 (rake tier), WS-458-amend (fallback constants), WS-454-amend
+  (depth pill); this item is the shared primitive they converge on.
+promoted_to: "WS-475"
+dedup_key: "challenge-2026-08-13-unmeasured-value-primitive"
+created_at: "2026-08-13"
+updated_at: "2026-08-13"
