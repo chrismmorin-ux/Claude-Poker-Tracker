@@ -1,7 +1,7 @@
 id: "ses-20260808-0250-1dbae38e"
-status: active
+status: "abandoned"
 started_at: "2026-08-08T02:50:47.408Z"
-ended_at: null
+ended_at: "2026-08-13T23:00:24Z"
 mode: auto
 last_heartbeat: "2026-08-08T02:50:47.408Z"
 pid: 34664
@@ -13,3 +13,30 @@ agent_session_id: "1dbae38e-dc9a-4d54-9a1c-1f656247b445"
 # that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
 claimed_items: []
 files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-13.
+  Original start: 2026-08-08T02:50:47.408Z.
+  Last heartbeat: 2026-08-08T02:50:47.408Z.
+
+  Git commits during this session (15):
+    - 4880ca94 fix(engine): rake is a property of pots that see a showdown — per-branch at depth-2/3, and the fold branch is never taxed (WS-451)
+    - c750c9d6 chore(workstream): domain-correctness sweep 2026-08-13 — first spec-compliant eng-engine run; DRIFT-FOUND 1C/6H/5M/3L (FIND-112..126, WS-450..465); FIND-051 re-ruled resolved by WS-432, WS-389 dismissed superseded
+    - ed3dc3b6 fix(engine): the caller's price is s/(1+2s) — five inline bluffer's-breakeven thresholds routed through villainRequiredEquity (WS-450)
+    - ed568f24 chore(workstream): WS-449 filed — ship the pole prior (measured winner, transferred-not-measured flag for the founder); WS-447 gains the measured display inputs (3-bin near-lossless, axis aging)
+    - 04ff9b37 feat(backtest): the three untried channels, measured — the k=2 pole prior WINS, a 3-bin readout is near-lossless, and the looseness dial drifts on a weeks timescale (WS-436 §4d follow-up)
+    - 9e02473c chore(session): ses-20260812-1343 end — state.md SPR-180 row + vitals, session handoff, reconcile+gc
+    - 1c0e5df7 chore(workstream): SPR-180 completed — WS-436 done at 80d4eb71 (style labels removed as engine inputs, measured at advice parity; RC-STYLE-COLLAPSE-2026-08-12)
+    - 80d4eb71 docs(sor): RC-STYLE-COLLAPSE-2026-08-12 — the WS-436 Result Card, every figure recomputed from the paired artifacts at emit time (WS-445 ledger's first measured row)
+    - d43d58c2 fix(engine): STYLE_RAISE_PARAMS and STYLE_BET_CENTER definitions deleted — the WS-436 close-out grep-gate caught them surviving A3 as exported dead tables
+    - 5140f000 chore(ws436): B4 evidence recorded (advice-parity table, coverage v1/v2, determinism gates incl. the cross-commit refusal that was mine not the tool's); RC emitter; WS-445 first-row pointer
+    - faf1b275 docs(engine): POKER_THEORY v2.4 — the style tier is gone from §7.4 and §11.1, with the generalized same-source double-counting rule; stale docblocks cleaned (WS-436 close-out)
+    - 98fc9412 feat(backtest): the styled-villain feed makes the label channel measurable on the advice path (WS-436 stage B2)
+    - b2c326fa feat(engine): every style table is deleted; the prior seed is population BY MEASUREMENT; leaf personalisation is continuous (WS-436 stages A3+A4, with the A4 seed design refuted and corrected in-flight)
+    - cc629145 chore(workstream): WS-447 (Track C display greenfield) + WS-448 (assumptionEngine style priors) filed; WS-436's broken WS-437 pointer repaired; clustering scripts marked research-only (WS-436 close-out)
+    - a771d86e feat(backtest): priorSource is a model-build arm axis — the style-label Dirichlet channel measures as zero (WS-436 stage B1)
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

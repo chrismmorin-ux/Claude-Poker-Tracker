@@ -409,6 +409,16 @@ function updateSessionYaml(content, patches) {
   }
 
   // Replace or append handoff_notes block scalar.
+  //
+  // WS-476: this used to be a multiline regex whose quantifier contained an
+  // EMPTY alternation — /(?:(?:[ \t]+.*|)\n?)+?/ — which is catastrophic
+  // backtracking by construction, and whose terminator used \Z, which JS does
+  // not support (it matches a literal 'Z'). On any session file that already
+  // carried a handoff_notes block, .test() never returned: three independent
+  // --auto instances hung at 100% CPU on the FIRST such file, so recovery
+  // never recovered anything, while report mode and --dry-run (which skip this
+  // function) looked healthy. Replaced with a linear line scan: a block scalar
+  // ends at the first line that is neither blank nor indented.
   if ('handoff_notes' in patches) {
     const indented = patches.handoff_notes
       .split('\n')
@@ -416,18 +426,21 @@ function updateSessionYaml(content, patches) {
       .join('\n');
     const blockLiteral = `handoff_notes: |\n${indented}`;
 
-    // Try to replace existing handoff_notes block (line up to next same-or-less-indented key)
-    const blockRegex = /^handoff_notes:\s*[|>][^\n]*\n(?:(?:[ \t]+.*|)\n?)+?(?=^\S|\Z)/m;
-    if (blockRegex.test(content)) {
-      content = content.replace(blockRegex, blockLiteral + '\n');
+    const lines = content.split('\n');
+    const startIdx = lines.findIndex(l => /^handoff_notes:/.test(l));
+    if (startIdx === -1) {
+      content = content.trimEnd() + `\n${blockLiteral}\n`;
     } else {
-      // Single-line handoff_notes → replace with block
-      const singleRegex = /^handoff_notes:\s*.*$/m;
-      if (singleRegex.test(content)) {
-        content = content.replace(singleRegex, blockLiteral);
-      } else {
-        content = content.trimEnd() + `\n${blockLiteral}\n`;
+      let end = startIdx + 1;
+      if (/^handoff_notes:\s*[|>]/.test(lines[startIdx])) {
+        // Block scalar: consume following indented-or-blank lines...
+        while (end < lines.length && (lines[end] === '' || /^[ \t]/.test(lines[end]))) end++;
+        // ...but trailing blank lines belong to the document, not the block.
+        while (end > startIdx + 1 && lines[end - 1] === '') end--;
       }
+      // (Single-line handoff_notes: end stays at startIdx + 1 — replace one line.)
+      lines.splice(startIdx, end - startIdx, ...blockLiteral.split('\n'));
+      content = lines.join('\n');
     }
   }
 
