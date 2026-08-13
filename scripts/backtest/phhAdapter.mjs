@@ -134,6 +134,9 @@ const parseNumberList = (value) => {
 const WANTED_KEYS = new Set([
   'variant', 'antes', 'blinds_or_straddles', 'actions',
   'seats', 'seat_count', 'players', 'hand', 'starting_stacks',
+  // Corpus day index (WS-436 §4d #3 — the within-player drift probe needs a
+  // temporal axis; the foldCurve miner had been re-parsing files to get this).
+  'day',
 ]);
 
 /**
@@ -171,6 +174,9 @@ const applyLine = (raw, line) => {
       break;
     case 'seat_count':
       raw.seatCount = Number(value);
+      break;
+    case 'day':
+      raw.day = Number(value);
       break;
     case 'players':
       raw.players = parseBracketList(value);
@@ -425,6 +431,8 @@ export const toAppHand = (raw, meta = {}) => {
       _backtest: {
         site: meta.site ?? null,
         stakeLabel: meta.stakeLabel ?? null,
+        // Corpus day index (temporal axis for drift probes); null when absent.
+        day: Number.isFinite(raw.day) ? raw.day : null,
         bb,
         dealtIn: n,
         seatCount: Number.isFinite(raw.seatCount) ? raw.seatCount : n,

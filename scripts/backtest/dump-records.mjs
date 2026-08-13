@@ -32,6 +32,8 @@
  *                      shipped, ctrl:none and only:isAgg
  *   --arms priors      WS-436: shipped vs priors:population vs priors:style-labels —
  *                      the model-build axis (what seeds the Dirichlet priors)
+ *   --arms poles       WS-436 §4d: shipped vs priors:population vs pole-soft/pole-hard
+ *                      (requires --pole-priors <path> from mine-pole-priors.mjs)
  *   --arms all         every set
  */
 
@@ -42,7 +44,7 @@ import { REFERENCE_DISABLED } from './leakageGuard.mjs';
 import { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } from './corpusFiles.mjs';
 import {
   HIERARCHY_VARIANTS, hierarchyOptionsFor, buildAblationArms, buildCandidateArms,
-  buildShrinkWeightSweepArms, buildPriorSourceArms,
+  buildShrinkWeightSweepArms, buildPriorSourceArms, buildPoleArms,
 } from './hierarchyVariants.mjs';
 
 const parseArgs = (argv) => {
@@ -94,12 +96,21 @@ const main = async () => {
   else if (which === 'candidates') arms = buildCandidateArms();
   else if (which === 'wsweep') arms = buildShrinkWeightSweepArms();
   else if (which === 'priors') arms = buildPriorSourceArms();
+  else if (which === 'poles') arms = buildPoleArms();
   else if (which === 'all') {
     arms = dedupe([
       ...buildAblationArms(), ...buildCandidateArms(), ...textureArms(),
       ...buildPriorSourceArms(),
     ]);
   } else arms = buildAblationArms();
+
+  // WS-436 §4d: the pole arms need the mined artifact.
+  const polePriors = typeof args['pole-priors'] === 'string'
+    ? JSON.parse(readFileSync(args['pole-priors'], 'utf8'))
+    : null;
+  if (arms.some(a => String(a.priorSource || '').startsWith('pole-')) && !polePriors) {
+    throw new Error('--arms poles requires --pole-priors <path> (build with mine-pole-priors.mjs).');
+  }
 
   const files = await discoverCorpusFiles({
     root: args['corpus-root'] || DEFAULT_CORPUS_ROOT,
@@ -120,6 +131,7 @@ const main = async () => {
       minTrainHands: int(args['min-train-hands'], 15),
       checkpointInterval: int(args['checkpoint-interval'], 10),
       arms,
+      polePriors,
       log,
     });
 

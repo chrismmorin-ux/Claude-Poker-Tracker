@@ -117,11 +117,53 @@ const statsForPriorSource = (pct, style, source) => {
       return { ...pct, style };
     case 'population':
       return { ...pct, style: null, shrunk: null };
+    // The pole arms pass production-shaped stats; their difference is the
+    // actionPriorsSeed opts (see poleSeedFor), not the stats object.
+    case 'pole-soft':
+    case 'pole-hard':
+      return { ...pct, style: null };
     default:
       throw new Error(
-        `Unknown priorSource "${source}". Expected style-labels | population.`,
+        `Unknown priorSource "${source}". Expected style-labels | population | pole-soft | pole-hard.`,
       );
   }
+};
+
+/**
+ * The k=2 pole-prior seed for one villain (WS-436 follow-up, pre-registered in
+ * ws436-baseline.md §4d). The pole DISTRIBUTIONS are other players' decisions
+ * (mined by mine-pole-priors.mjs), so the §4b same-source double-count does not
+ * apply to the values; the villain's own hands contribute only the assignment.
+ *
+ *   pole-soft  logistic mix of the two poles along the mined projection axis,
+ *              width = measured within-pole spread (no threshold cliff, §11.4)
+ *   pole-hard  nearest centroid's rows verbatim (the cliff, kept as a control
+ *              so a soft-vs-hard gap is attributable to the cliff itself)
+ *
+ * Returns null when the villain has no shrunk coords — the caller then builds
+ * the production population-seeded model, exactly like an unread villain.
+ */
+const poleSeedFor = (pct, polePriors, mode) => {
+  const shrunk = pct?.shrunk;
+  if (!shrunk || !polePriors) return null;
+  const p = { x: shrunk.vpip, y: shrunk.foldToCbet };
+  const { centroids, projection, poles } = polePriors;
+  if (mode === 'hard') {
+    const dA = (p.x - centroids.A.x) ** 2 + (p.y - centroids.A.y) ** 2;
+    const dB = (p.x - centroids.B.x) ** 2 + (p.y - centroids.B.y) ** 2;
+    return (dA <= dB ? poles.A : poles.B).distributions;
+  }
+  const proj = (p.x - projection.origin.x) * projection.unit.dx
+    + (p.y - projection.origin.y) * projection.unit.dy;
+  const z = (proj - projection.midpoint) / Math.max(projection.width, 1e-6);
+  const wB = 1 / (1 + Math.exp(-z)); // proj past midpoint → pole B side
+  const mix = {};
+  for (const [facing, rowA] of Object.entries(poles.A.distributions)) {
+    const rowB = poles.B.distributions[facing];
+    mix[facing] = {};
+    for (const a of Object.keys(rowA)) mix[facing][a] = rowA[a] * (1 - wB) + rowB[a] * wB;
+  }
+  return mix;
 };
 
 // =============================================================================
@@ -255,6 +297,9 @@ export const scorePlayer = ({
   minTrainHands = DEFAULT_MIN_TRAIN_HANDS,
   checkpointInterval = DEFAULT_CHECKPOINT_INTERVAL,
   referenceTable = null,
+  // Pole-priors artifact (mine-pole-priors.mjs) — required only when an arm's
+  // priorSource is pole-soft/pole-hard.
+  polePriors = null,
   // One entry per scoring arm. Arms sharing a `priorSource` share the SAME model,
   // and every arm shares the same decision contexts and slices — `hierarchyOptions`
   // is a query-time axis (N cheap distribution queries per decision), `priorSource`
@@ -348,10 +393,19 @@ export const scorePlayer = ({
       // distinct priorSource; summary and profile shared — the cheap half.
       const pct = derivePercentages(trainStats, statPriors);
       const style = classifyStyle(pct);
-      modelBySource = new Map(priorSources.map(source => [
-        source,
-        buildVillainDecisionModel(trainSummary, statsForPriorSource(pct, style, source)),
-      ]));
+      modelBySource = new Map(priorSources.map(source => {
+        const seed = source === 'pole-soft' ? poleSeedFor(pct, polePriors, 'soft')
+          : source === 'pole-hard' ? poleSeedFor(pct, polePriors, 'hard')
+          : null;
+        return [
+          source,
+          buildVillainDecisionModel(
+            trainSummary,
+            statsForPriorSource(pct, style, source),
+            seed ? { actionPriorsSeed: seed } : {},
+          ),
+        ];
+      }));
       model = modelBySource.get(sliceSource);
     } catch (e) {
       if (e instanceof LeakageError) throw e;
@@ -536,6 +590,8 @@ export const runBacktest = async ({
   hierarchyVariant = HIERARCHY_VARIANTS.SHIPPED,
   // When supplied, overrides `hierarchyVariant` and scores every arm in ONE pass.
   arms = null,
+  // Pole-priors artifact for pole-soft/pole-hard arms (mine-pole-priors.mjs).
+  polePriors = null,
   log = () => {},
 }) => {
   const startedAt = Date.now();
@@ -576,6 +632,7 @@ export const runBacktest = async ({
       const out = scorePlayer({
         playerId, hands, guard, minTrainHands, checkpointInterval,
         arms: scoringArms,
+        polePriors,
         // Read from the guard, never from the raw input — this is the table that
         // passed the provenance check.
         referenceTable: guard.referenceTable,

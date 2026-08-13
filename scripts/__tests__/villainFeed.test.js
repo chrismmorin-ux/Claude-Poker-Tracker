@@ -50,6 +50,47 @@ describe('resolveVillain', () => {
   });
 });
 
+describe('quantization sources (ws436 §4d #2)', () => {
+  // 9 players spanning [0.1, 0.9] on every stat, so tertile structure is known.
+  const spread = {};
+  for (let i = 0; i < 9; i++) {
+    const v = 0.1 + i * 0.1;
+    spread[`p${i}`] = {
+      vpip: v * 100, pfr: v * 100, af: 1,
+      style: 'TAG',
+      shrunk: { vpip: v, pfr: v, threeBet: v, cbet: v, foldToCbet: v, foldTo3Bet: v, aggFreq: v },
+      rawStats: { facedCbet: 40, foldedToCbet: Math.round(40 * v) },
+    };
+  }
+  const feed = { players: spread };
+
+  it('bin3 snaps every shrunk field to one of exactly 3 representative values', () => {
+    const seen = new Set();
+    for (const pid of Object.keys(spread)) {
+      const e = resolveVillain(feed, pid, VILLAIN_SOURCES.STATS_BIN3);
+      seen.add(e.shrunk.foldToCbet);
+      expect(e.style).toBeNull();
+    }
+    expect(seen.size).toBe(3);
+  });
+
+  it('the derived observed hint follows the bin — no continuous value leaks around it', () => {
+    const e = resolveVillain(feed, 'p0', VILLAIN_SOURCES.STATS_BIN3);
+    // liveGameContext derives foldToCbet% from these counts; they must encode the
+    // BINNED rate at the same n, so evidence weight is untouched but the value
+    // is bin-resolution.
+    expect(e.rawStats.foldedToCbet).toBe(Math.round(40 * e.shrunk.foldToCbet));
+    expect(e.rawStats.facedCbet).toBe(40);
+  });
+
+  it('bin5 has strictly more resolution than bin3', () => {
+    const uniq = (src) => new Set(
+      Object.keys(spread).map(p => resolveVillain(feed, p, src).shrunk.vpip),
+    ).size;
+    expect(uniq(VILLAIN_SOURCES.STATS_BIN5)).toBeGreaterThan(uniq(VILLAIN_SOURCES.STATS_BIN3));
+  });
+});
+
 // ─── The full heroPolicyAt path ─────────────────────────────────────────────────
 
 // Hero (seat 1, EVAL side) is CHECKED TO on the river; seat 2 ('villain-x') is

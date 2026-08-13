@@ -155,6 +155,80 @@ first measured row. Argmax-instrument caveat: EV shifts that flip no combo's bes
 action are invisible here; the EV channel is pinned live by villainFeed.test.js.
 Corpus caveat §4 stands: online 2009, transferred not measured for live.
 
+## 4d. PRE-REGISTRATION — the three untried channels (2026-08-12, written BEFORE the runs)
+
+Founder direction: "lets run them." Falsifiers stated before any result exists.
+
+**(1) Pole-prior rung** (`priors:pole-soft`, `priors:pole-hard` arms). Hypothesis under
+test AS THE CORRECTION: a k=2 group-level prior mined from OTHER POOL players' decisions
+beats the population seed for thin-history villains — partial pooling toward the pole,
+which the refuted own-stats seed was not (different data source; the only own-hands
+contribution is the ASSIGNMENT, bounded). Decision rule, pre-registered: the arm must
+beat `shipped` (population seed) with paired ΔLL CI excluding 0 on the ~10,147-decision
+instrument. CI including 0 ⇒ the ladder already carries everything the pole knows and
+the model-side rung is CLOSED by measurement. A significantly NEGATIVE result ⇒ recorded
+unhedged as a second same-family refutation. Expected failure mode to watch: the
+assignment (from own shrunk stats) re-imports a bounded double-count — if pole-hard
+underperforms pole-soft materially, that is the threshold cliff, not the pole idea.
+
+**(2) Quantization cost** (`stats-bin3` / `stats-bin5` probe arms). Question: how much of
+the continuous advice channel survives a head-sized readout? Instrument: paired advice
+probe at HEAD, binned shrunk stats vs continuous, TV on the advised distribution over the
+same 130 seeded decisions (fed subset ~46). Pre-registered reading: bin3 divergence ≈ 0
+⇒ a 3-level readout is near-lossless (good news for the table channel / WS-447); large
+divergence concentrated at bin boundaries ⇒ quantization is costly and the readout needs
+more resolution exactly where the report says. No pass/fail — this run MEASURES a cost,
+it does not gate a ship.
+
+**(3) Within-player drift.** Founder lifecycle hypothesis, longitudinal form: does a
+player move along the dial across their own history? Test: paired first-half vs
+second-half (vpip, foldToCbet) per POOL player, overdispersion of the paired deltas
+against binomial expectation, magnitude compared to the between-player SDs (14.5pp /
+12.6pp scale anchors). Pre-registered honesty clause: if the adapter carries no usable
+temporal field, the split is within-HISTORY not within-SESSION, and the result will be
+labeled as answering that weaker question.
+
+## 4e. RESULTS of the three §4d channels (2026-08-12, same session)
+
+**(1) Pole prior — WON, per the pre-registered rule.** `mine-pole-priors.mjs` on 300
+POOL players (deterministic 2-means on shrunk (vpip, foldToCbet)): pole A "loose"
+90 players (vpip 0.433), pole B "tight" 210 (vpip 0.216) — the split is carried
+almost entirely by LOOSENESS (ftc 0.482 vs 0.472), consistent with the one-axis
+finding. Scored via the `actionPriorsSeed` measurement seam on the paired instrument
+(4 arms × 10,147 decisions, `out/ws436-pole-records.json`):
+
+| paired vs shipped(=population) | logLoss | acc | ΔLL | t | 95% CI | verdict |
+|---|---|---|---|---|---|---|
+| priors:pole-hard | 0.75411 | 59.8% | −0.00332 | −2.80 | [−0.0056, −0.0010] | **BETTER** |
+| priors:pole-soft | 0.75421 | 59.8% | −0.00323 | −2.75 | [−0.0055, −0.0009] | **BETTER** |
+
+CI excludes 0 ⇒ the rung EARNS a production path (the §4b tombstone bar is met: this
+is the first villain-conditioned seed to beat the population arm, and it did it with
+OTHER players' data — group-mean partial pooling, no same-source double-count; the
+assignment is walk-forward clean, train-prefix stats only). Hard ≈ soft ⇒ no cliff
+penalty at this pole separation. Scale: ~4× the style-label CI top, ~22% of the
+ladder-reorder effect. Shipping it is a separate decision (artifact loading in
+production, assignment at analysisPipeline, live re-fit trigger) — not done here.
+
+**(2) Quantization — a 3-bin readout is NEAR-LOSSLESS at the advice level.** bin3
+diverged from continuous on 1 of 130 paired decisions (one river, one combo's argmax);
+bin5 on 5 of 130 — both ≤4%, within noise of each other. Pre-registered reading
+applies: a head-sized 3-level read per stat preserves the advice channel on this
+instrument (argmax caveat stands: sub-flip EV shifts invisible). Direct input to
+WS-447's display design.
+
+**(3) Drift — the looseness dial MOVES SLOWLY; the stickiness dial does not.**
+160 POOL players, halves paired by (day, arrival) (`out/player-drift.json`):
+vpip meanZ² = 1.37 (real drift), driftSd ≈ 5.0pp ≈ 43% of the between-player SD
+(11.4pp), direction-neutral; foldVsBet meanZ² = 0.98 (NO drift beyond noise, n=78);
+day-level vpip χ²/df = 0.97 (no session-scale swings at ≥15 hands/day resolution —
+short tilt bursts below that bin size would be invisible). Practical: looseness reads
+age on a weeks timescale (recency-weighting has measurable value); stickiness reads
+effectively do not age. `phhAdapter` now carries `_backtest.day` (the foldCurve miner
+had been re-parsing files to get it).
+
+Standing caveat §4 applies to all three: online 2009, transferred not measured for live.
+
 ## 5. Deferred from Stage 0 (land with B-instrument, where their prerequisites exist)
 
 - Villain-prediction baseline (`priors:style-labels` vs `priors:population`): requires

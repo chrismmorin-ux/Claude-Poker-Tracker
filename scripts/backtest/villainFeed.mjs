@@ -58,9 +58,91 @@ export const VILLAIN_SOURCES = Object.freeze({
    *  label has a live channel the two arms diverge; on the post-WS-436 engine
    *  they must be byte-identical (falsifier #1 of the removal). */
   STYLED: 'styled',
+  /** The quantization-cost arms (ws436-baseline.md §4d #2): the WHOLE fed
+   *  representation snapped to 3 / 5 per-stat quantile bins — what the engine
+   *  would know if a human head carried the read. Bin edges are quantiles of
+   *  the feed's own players (data-derived), representatives are bin-median
+   *  quantiles; the derived observed-foldToCbet hint is snapped too, so no
+   *  continuous value leaks around the bins. */
+  STATS_BIN3: 'stats-bin3',
+  STATS_BIN5: 'stats-bin5',
 });
 
 export const ALL_VILLAIN_SOURCES = Object.values(VILLAIN_SOURCES);
+
+// ── quantization machinery ────────────────────────────────────────────────────
+
+const BINNED_SHRUNK_FIELDS = ['vpip', 'pfr', 'threeBet', 'cbet', 'foldToCbet', 'foldTo3Bet', 'aggFreq'];
+
+const quantile = (sorted, q) => {
+  if (sorted.length === 0) return null;
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.round(q * (sorted.length - 1))));
+  return sorted[idx];
+};
+
+/**
+ * Per-stat bin edges + representatives from the feed's own player distribution.
+ * For k bins: edges at i/k quantiles, representative = the (2i+1)/(2k) quantile
+ * (the bin's median member), so a snapped value is a real, typical value of the
+ * bin rather than an arithmetic midpoint of possibly-skewed edges.
+ */
+export const computeFeedBins = (feed, k) => {
+  const bins = {};
+  for (const f of BINNED_SHRUNK_FIELDS) {
+    const vals = Object.values(feed.players)
+      .map(p => p.shrunk?.[f])
+      .filter(v => Number.isFinite(v))
+      .sort((a, b) => a - b);
+    const edges = [];
+    const reps = [];
+    for (let i = 1; i < k; i++) edges.push(quantile(vals, i / k));
+    for (let i = 0; i < k; i++) reps.push(quantile(vals, (2 * i + 1) / (2 * k)));
+    bins[f] = { edges, reps };
+  }
+  return bins;
+};
+
+// One bins table per (feed instance, k) — a pure function of the artifact,
+// computed lazily so existing feed files need no rebuild.
+const binsCache = new WeakMap();
+const feedBins = (feed, k) => {
+  let byK = binsCache.get(feed);
+  if (!byK) { byK = new Map(); binsCache.set(feed, byK); }
+  if (!byK.has(k)) byK.set(k, computeFeedBins(feed, k));
+  return byK.get(k);
+};
+
+const snap = (v, { edges, reps }) => {
+  if (!Number.isFinite(v)) return v;
+  let i = 0;
+  while (i < edges.length && v > edges[i]) i++;
+  return reps[i];
+};
+
+/** The entry with its ENTIRE representation at bin resolution (see VILLAIN_SOURCES). */
+const quantizeEntry = (entry, bins) => {
+  const shrunk = {};
+  for (const f of BINNED_SHRUNK_FIELDS) {
+    shrunk[f] = bins[f] ? snap(entry.shrunk?.[f], bins[f]) : entry.shrunk?.[f];
+  }
+  // Top-level percents follow their shrunk fields; the observed foldToCbet hint
+  // is re-derived from adjusted raw counts at the SAME n so the engine's
+  // evidence-weighting is untouched — only the VALUE is bin-resolution.
+  const facedCbet = entry.rawStats?.facedCbet || 0;
+  return {
+    ...entry,
+    style: null,
+    vpip: Math.round(shrunk.vpip * 100),
+    pfr: Math.round(shrunk.pfr * 100),
+    threeBet: Math.round(shrunk.threeBet * 100),
+    foldTo3Bet: Math.round(shrunk.foldTo3Bet * 100),
+    shrunk,
+    rawStats: {
+      ...entry.rawStats,
+      foldedToCbet: Math.round(facedCbet * shrunk.foldToCbet),
+    },
+  };
+};
 
 /**
  * Build the feed from POOL players' hands.
@@ -158,5 +240,7 @@ export const resolveVillain = (feed, pid, source = VILLAIN_SOURCES.NULL) => {
   const entry = pid != null ? feed?.players?.[pid] : null;
   if (!entry) return null;
   if (source === VILLAIN_SOURCES.STYLED) return entry;
+  if (source === VILLAIN_SOURCES.STATS_BIN3) return quantizeEntry(entry, feedBins(feed, 3));
+  if (source === VILLAIN_SOURCES.STATS_BIN5) return quantizeEntry(entry, feedBins(feed, 5));
   return { ...entry, style: null };
 };

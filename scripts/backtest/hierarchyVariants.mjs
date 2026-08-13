@@ -418,6 +418,21 @@ export const buildPriorSourceArms = () => ([
 ]);
 
 /**
+ * The k=2 pole-prior arms (WS-436 follow-up, pre-registered ws436-baseline.md §4d).
+ * Model-build axis like the priors set: the seed comes from the OTHER players in
+ * the villain's pole (mine-pole-priors.mjs artifact), so the §4b same-source
+ * refutation does not apply to the values. `shipped` is the control;
+ * `priors:population` rides along so the three-way ordering (pole vs population
+ * vs whatever ships) is read off ONE paired run.
+ */
+export const buildPoleArms = () => ([
+  { name: HIERARCHY_VARIANTS.SHIPPED, kind: 'control', dim: null, hierarchyOptions: {} },
+  { name: 'priors:population', kind: 'control', dim: null, priorSource: 'population', hierarchyOptions: {} },
+  { name: 'priors:pole-soft', kind: 'candidate', dim: null, priorSource: 'pole-soft', hierarchyOptions: {} },
+  { name: 'priors:pole-hard', kind: 'candidate', dim: null, priorSource: 'pole-hard', hierarchyOptions: {} },
+]);
+
+/**
  * Price `shrinkWeight` on the ladder that actually WON (2026-07-27 bake-off).
  *
  * The bake-off swept W over the SHIPPED ordering, where W=10 beat W=5 and W=20.

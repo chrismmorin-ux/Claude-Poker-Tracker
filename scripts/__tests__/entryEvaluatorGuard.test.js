@@ -98,6 +98,11 @@ const ALLOWED = {
     + 'build-villain-feed.mjs, which validates a stamped table through LeakageGuard '
     + 'before handing it over; the feed itself is POOL players only by construction '
     + '(indexEvalPlayers group: GROUPS.POOL) and scores nothing. GUARDED at build.',
+  'mine-pole-priors.mjs':
+    'Imports resolveStatPriors — logic, not data. Mines the k=2 pole priors from POOL '
+    + 'players only (indexEvalPlayers group: GROUPS.POOL) with per-player leave-one-out '
+    + '(excludePlayerId); scores nothing. The consumer (runner.mjs pole arms) scores '
+    + 'EVAL players against the POOL-mined artifact — the partition IS the guard.',
 };
 
 describe('WS-375 sweep — direct reaches for corpus-derived artifacts are enumerated', () => {
