@@ -2,12 +2,12 @@ id: "WS-315"
 title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: ""
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-14T19:13:12Z"
+completion_commit: "9b636fb0"
 priority_score: 27.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -93,3 +93,7 @@ recovered_work_note: |
   2026-08-07: a real implementation (blocker quality as ranking score) exists UNMERGED on
   origin/claude/run-next-t4w44x (orphan-integration round 2; competing holdingKnowledge API blocked
   auto-merge). Land via WS-442 rather than reimplementing.
+closed_by_event: "ev-1786734792555-14b7e76d34a7"
+drift_correction: true
+completion_notes: |
+  Closed as drift correction (WS-442 session): score shipped at HEAD as 62a6601f (computeBlockerScore excess); the missing ranking consumer (blocker tie-break comparator) landed 9b636fb0 with behavioural tests. Evidence: .claude/workstream/evidence/ws442-domain-merge-2026-08-14.md

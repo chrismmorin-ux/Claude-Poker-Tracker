@@ -2,12 +2,12 @@ id: "WS-442"
 title: "Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)"
 legacy_id: ""
 type: task
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-14T19:14:23.224Z"
+completion_commit: 29e6a741
 priority_score: 42.0
 priority_label: "P1"
 category: "architecture"
@@ -64,3 +64,4 @@ scope_update: |
   items still backlog at HEAD with no reimplementation. Salvage target: re-express the WS-314/315 EV logic
   (gameTreeEquity.js side is conflict-free) against HEAD holdingKnowledge API. Conflicting files listed in
   the round-2 integration report.
+closed_by_event: ev-1786734863249-05160bd70be7

@@ -2,12 +2,12 @@ id: "WS-314"
 title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: ""
 claimed_at: ""
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-14T19:13:12Z"
+completion_commit: "9b636fb0"
 priority_score: 28.0
 priority_label: "P0"
 category: "domain-correctness"
@@ -89,3 +89,7 @@ recovered_work_note: |
   2026-08-07: a real implementation of this fix exists UNMERGED on origin/claude/run-next-t4w44x (found in
   orphan-integration round 2; could not auto-merge - competing holdingKnowledge API). Land it via WS-442
   rather than reimplementing from scratch.
+closed_by_event: "ev-1786734792261-629ede5b18ed"
+drift_correction: true
+completion_notes: |
+  Closed as drift correction (WS-442 session): pricing half shipped at HEAD as 03f6c42a (per-size crVillainResponse); fold-equity guard half (DEC-022 mirror) landed 9b636fb0 with behavioural tests. Evidence: .claude/workstream/evidence/ws442-domain-merge-2026-08-14.md

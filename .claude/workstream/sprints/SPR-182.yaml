@@ -1,0 +1,32 @@
+id: "SPR-182"
+title: "Ship WS-442: Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implem"
+status: done
+approved_at: "2026-08-14T17:23:00.879Z"
+completed_at: "2026-08-14T19:14:23.224Z"
+completed_by_commit: "29e6a741"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-442: Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-14T17:23:00.879Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-442 selected (42 × no damping = 42).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 3 session(s) / 2 (5 items max).
+  ⚠ OVER CEREMONY CAP — 3 session(s) against a 2-session ceiling. Approving accepts the overshoot.
+
+items:
+  - id: "WS-442"
+    title: "Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)"
+    mode: plan-first
+    effort: L
+    status: done
+    completed_at: "2026-08-14T19:14:23.224Z"
+
+created_at: "2026-08-14T17:23:00.879Z"
