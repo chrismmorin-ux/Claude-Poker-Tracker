@@ -205,11 +205,15 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
     return 0;
   }
 
-  // Recovery only ever runs against a workstream dir it found on THIS machine's
-  // filesystem, so a record with no `host` was almost certainly written here —
-  // that is the independent evidence session-liveness wants before it will use
-  // a hostless record's pid. An explicit foreign `host` still wins over this.
-  const classifyOpts = { timeoutHours, assumeLocal: true };
+  // No assumeLocal. "Recovery runs on the machine that holds the repo" is NOT
+  // independent evidence a hostless record is local: sessions/ is a TRACKED
+  // directory, so records arrive from other machines by git pull, and reading a
+  // foreign pid against the local process table is how WS-564 stole claims from
+  // a machine that was still working. A hostless record predates the `host`
+  // field and is judged by wall-clock heartbeat alone, like any foreign record.
+  // (FIND-108: the hardcoded assumeLocal here contradicted session-liveness's
+  // own header and was reverted 2026-08-13.)
+  const classifyOpts = { timeoutHours };
 
   const abandoned = [];
   for (const session of active) {
@@ -239,7 +243,13 @@ function runRecovery(wsDir, { auto, quiet, dryRun, force }) {
   if (!auto) {
     process.stdout.write(`session-recovery: ${abandoned.length} abandoned session(s) detected:\n`);
     for (const s of abandoned) {
-      process.stdout.write(`  - ${s.id} [${s.verdict.verdict}] ${s.verdict.reason}\n`);
+      // Say WHICH evidence condemned it. The report is what the founder reads
+      // before deciding to run --auto, and "0.2h stale" for a session whose
+      // process is gone is the reading that made WS-351 survive.
+      const evidence = s.verdict.proof
+        ? `process ${s.pid != null ? s.pid : '?'} is gone`
+        : (s.age_hours == null ? 'no heartbeat' : `${s.age_hours.toFixed(1)}h stale`);
+      process.stdout.write(`  - ${s.id} (${evidence})\n`);
     }
     process.stdout.write('\nRun with --auto to recover, or manually close via /session-end.\n');
     return 1;
@@ -276,7 +286,10 @@ function scanActiveSessions(sessionsDir) {
         last_heartbeat: data.last_heartbeat,
         // pid + host feed session-liveness. Both were previously dropped on the
         // floor here, which is why heartbeat age was the only available test.
+        // pid_recorded_at is what lets it rule out post-reboot pid recycling
+        // (WS-351) — without it a recycled number resurrects a dead session.
         pid: data.pid,
+        pid_recorded_at: data.pid_recorded_at,
         host: data.host,
         claimed_items: Array.isArray(data.claimed_items) ? data.claimed_items : [],
         goals: Array.isArray(data.goals) ? data.goals : [],
@@ -339,8 +352,10 @@ function recoverSession(wsDir, session, opts) {
     // Was 'timeout' unconditionally, back when a timeout was the only test.
     // The verdict distinguishes proof of death from mere suspicion, which is
     // exactly what someone auditing an unexpected recovery needs to see.
-    reason: session.verdict ? session.verdict.verdict : 'timeout',
-    detail: session.verdict ? session.verdict.reason : null,
+    // 'dead-process' vs 'timeout' is the WS-351 contract consumers grep for;
+    // the module-level verdict constant (dead-pid / dead-boot) goes in detail.
+    reason: session.verdict && session.verdict.proof ? 'dead-process' : 'timeout',
+    detail: session.verdict ? `${session.verdict.verdict}: ${session.verdict.reason}` : null,
   });
 
   // 4. Remove lock file.

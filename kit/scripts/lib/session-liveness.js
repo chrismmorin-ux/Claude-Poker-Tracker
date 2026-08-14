@@ -161,13 +161,31 @@ function classifySession(record, opts = {}) {
     age_hours: ageHours,
   });
 
-  // ── Host-local rules: the two that can produce proof ─────────────────────
+  // ── Host-local rules: the ones that can produce proof ────────────────────
+  let alive = null;
   if (local) {
-    const alive = isPidAlive(data.pid);
+    alive = isPidAlive(data.pid);
 
     // Strongest signal first. A dead PID ends the question.
     if (alive === false) {
       return verdict(DEAD_PID, `pid ${data.pid} is not running on ${os.hostname()}`);
+    }
+
+    // WS-351, restored 2026-08-13 (the 3.10.3 kit sync dropped it — FIND-108):
+    // a pid RECORDED before the current boot cannot name a surviving process,
+    // no matter what the process table says now. If that number is alive today
+    // the OS recycled it after the reboot. `pid_recorded_at` is the registrar's
+    // stamp; `started_at` is the fallback because that is when both writers
+    // stamped the pid before the field existed. Records self-heal on the next
+    // SessionStart re-fire, which re-asserts pid AND date — so a resumed
+    // session with a pre-boot started_at is NOT condemned.
+    if (data.pid != null) {
+      const stampRaw = data.pid_recorded_at || data.started_at || null;
+      const stampMs = stampRaw ? Date.parse(String(stampRaw).replace(/^"|"$/g, '')) : NaN;
+      if (Number.isFinite(stampMs) && Number.isFinite(bootMs) && stampMs < bootMs) {
+        const reused = alive === true ? ` (pid ${data.pid} now belongs to another process)` : '';
+        return verdict(DEAD_BOOT, `pid recorded before last system boot${reused}`);
+      }
     }
 
     // Independent of whether the PID is alive: if the heartbeat predates boot,
@@ -198,7 +216,16 @@ function classifySession(record, opts = {}) {
   if (!local) {
     return verdict(UNKNOWN, `record host ${data.host || '(unset)'} is not this machine; heartbeat is fresh`);
   }
-  return verdict(ALIVE, 'pid check and heartbeat both clean');
+  // ALIVE is a VETO on destructive action (--force included), so it must mean
+  // "pid verified running", never "nothing looked wrong". A record whose pid is
+  // missing or unreadable cannot be vouched for: it stays on the suspicion
+  // path, where the timeout (or an explicit --force) governs. Returning ALIVE
+  // here is what made --force unable to close pid-less corpses (WS-351).
+  if (alive === true) {
+    return verdict(ALIVE, 'pid check and heartbeat both clean');
+  }
+  return verdict(STALE_HEARTBEAT,
+    `pid ${data.pid == null ? 'not recorded' : 'unverifiable'}; heartbeat fresh but process cannot be vouched for`);
 }
 
 module.exports = {

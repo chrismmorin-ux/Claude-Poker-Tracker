@@ -130,7 +130,10 @@ describe('cwos-session-recovery — a dead process is proof, and does not wait f
 
     run(RECOVERY, r, ['--auto']);
     const q = fs.readFileSync(path.join(r.ws, 'queue', 'WS-999.yaml'), 'utf8');
-    expect(q).toMatch(/^claimed_by:\s*""\s*$/m);
+    // `null`, not `""` — kit 3.10.3 fixed release to write the shape
+    // cwos-claims.releaseItems always wrote; `""` read back as a REAL value and
+    // left released items permanently unclaimable. isUnsetYAMLScalar accepts both.
+    expect(q).toMatch(/^claimed_by:\s*null\s*$/m);
   });
 
   test('the report names the evidence, not a misleading staleness figure', () => {

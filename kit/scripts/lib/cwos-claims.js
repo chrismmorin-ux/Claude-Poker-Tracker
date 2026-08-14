@@ -113,6 +113,58 @@ function isPidAlive(pid, recordHost, opts = {}) {
   }
 }
 
+/**
+ * The one question that decides recovery: is the process that OWNS this session
+ * record still with us? (WS-351; restored 2026-08-13 after the 3.10.3 kit sync
+ * dropped it — FIND-108.)
+ *
+ * → 'dead'    provably gone: pid absent from the local table, or the pid was
+ *             recorded before the current boot (whatever holds that number now
+ *             is a post-reboot recycle).
+ * → 'live'    a process with that pid is running here, right now.
+ * → 'unknown' the question is not answerable from this record on this machine.
+ *
+ * WHY THIS OVERRIDES THE "PID IS NEVER A DEATH TEST" RULE. That rule was written
+ * against `resolveSessionId`'s pid, which is `process.pid` — the minting script,
+ * gone milliseconds later. It is NOT true of the pid `cwos-session-register`
+ * records, which is the Claude Code harness. The registrar dates its pid with
+ * `pid_recorded_at`; only then is the field safe to read.
+ *
+ * THE ASYMMETRY IS STILL REAL, and 'live' is deliberately weaker than 'dead'.
+ * One harness process serves several session records, so a live pid does NOT
+ * prove THIS session is live — only that something is still there. Callers use
+ * 'dead' as proof and 'live' as a veto on destructive action, never as a licence
+ * to keep a session open past its heartbeat timeout.
+ *
+ * PID REUSE is handled for the case that actually happens — a reboot. A pid
+ * recorded before the current boot cannot name a surviving process, so it reads
+ * 'dead' no matter what the local table says. `started_at` is the stamp's
+ * fallback because that is when both writers stamped the pid before the field
+ * existed; records self-heal on the next SessionStart.
+ *
+ * HOST GATE, as everywhere else here: a pid from another machine is asked of the
+ * wrong process table, so a foreign or unknown host degrades to 'unknown'.
+ */
+function sessionOwnerVerdict(doc, opts = {}) {
+  if (!doc) return 'unknown';
+  const pid = doc.pid == null ? NaN : Number(doc.pid);
+  if (!Number.isInteger(pid) || pid <= 0) return 'unknown';
+  if (!isLocalHost(doc.host, opts)) return 'unknown';
+
+  const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
+  if (boot != null) {
+    const stamp = doc.pid_recorded_at || doc.started_at;
+    const at = stamp ? Date.parse(String(stamp).replace(/^"|"$/g, '')) : NaN;
+    if (!Number.isFinite(at)) return 'unknown';   // undateable pid — reuse unrulable-out
+    if (at < boot) return 'dead';                 // predates the boot: gone, whoever holds it now
+  }
+
+  const alive = isPidAlive(pid, doc.host, opts);
+  if (alive === false) return 'dead';
+  if (alive === true) return 'live';
+  return 'unknown';
+}
+
 const POINTER = '.current-session';
 
 const nowISO = () => new Date().toISOString();
@@ -178,14 +230,19 @@ function minutesSinceHeartbeat(sessionFile, now = Date.now()) {
  *      claims mid-work.
  *   2. Otherwise, the staleness window.
  *
- * WHY PID LIVENESS IS *NOT* A DEATH TEST, despite being tempting. The pid on a
- * session record is written by a short-lived hook process, so it is gone moments
- * later — testing it declared every session dead the instant it registered. Even
- * recording the parent pid is unreliable: the parent may be a transient shell.
- * And the error is not symmetric. Reading a LIVE session as dead releases its
- * claims and re-enables the concurrent clobbering this module exists to prevent,
- * whereas reading a dead session as live merely costs a stale warning. So we fail
- * conservative: pid is recorded for humans and diagnostics, never for the verdict.
+ * PID DEATH IS NOW TEST (0), AND IT OUTRANKS BOTH (WS-351). This used to say pid
+ * liveness could never be a death test, because the recorded pid was a short-lived
+ * hook. That was true of one of the two writers and false of the other, and the
+ * field meant different things depending on which had written it — see
+ * `sessionOwnerVerdict`, where the reasoning and the fix at the source now live.
+ * With the writers made honest, a dead pid is the strongest death proof available:
+ * it does not wait for a timer, so a crashed session stops fencing its claims the
+ * moment the next hook fires rather than up to `staleMinutes` later.
+ *
+ * The asymmetry that produced the old rule is unchanged and still respected: a LIVE
+ * pid buys nothing here. It cannot extend a session past its heartbeat window,
+ * because one harness pid serves several session records and a stale record sharing
+ * a live pid would otherwise read as a peer forever.
  */
 function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now(), opts = {}) {
   if (!id) return false;
@@ -197,6 +254,8 @@ function isSessionLive(wsDir, id, staleMinutes = STALE_MINUTES, now = Date.now()
     if (!doc) return false;
     const status = String(doc.status || '').toLowerCase();
     if (status && status !== 'active') return false;
+
+    if (sessionOwnerVerdict(doc, opts) === 'dead') return false;                 // (0)
 
     if (isLocalHost(doc.host, opts)) {
       const boot = opts.bootTimeMs !== undefined ? opts.bootTimeMs : bootTimeMs();
@@ -846,4 +905,6 @@ module.exports = {
   lockFiles,
   listFileLocks,
   findFileLockConflicts,
+  sessionOwnerVerdict,
+  patchOrInsert,
 };
