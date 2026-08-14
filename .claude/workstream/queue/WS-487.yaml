@@ -1,0 +1,72 @@
+id: "WS-487"
+title: "Precision and rederivability at the card boundary — a 4dp-rounded CI bound decides the C3 gate, record metas stamp bootstrap constants the runs don't use, and two emitters hand-transcribe what collectConstants exists to read"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 31.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Survey B6-B8, B10-B12, B20 (docs/research/engine-vocabulary-survey-2026-08-14.md). One theme:
+  the number the gate/manifest sees is not the number that was computed.
+  - B6: ipsEstimator.mjs:302-303 stores toFixed(4) CI bounds; heroEvReport.mjs:609's
+    corpusArmPasses (feeding gate.c3Passes) is decided by a rounding half-step. The unrounded
+    ci.lo exists at :274 and is discarded.
+  - B20: edgeBB is 4dp-rounded before becoming a factor of overallEvBB100 (the optimizable
+    figure), which renders to 3dp — unearned precision.
+  - B7: the curse-shape point estimate (rounded stratum edges, heroEvReport.mjs:413) and its CI
+    (unrounded bootstrap, :403-410) are built by two code paths.
+  - B8: run-depth-ablation.mjs:224-226 stamps DEFAULT_BOOTSTRAP_RESAMPLES/ALPHA into the record
+    meta while depthAblationReport.mjs:206-207 hardcodes 2000/0.05 — the CI stops being
+    rederivable the day a constant moves (WS-431's defect, one file over). Same at
+    run-river-flip-replicate.mjs:384.
+  - B10: three copies of the LCG resampler + inlined 0x9e3779b9 seeds (evCost.mjs:56,
+    optimismBias.mjs:239); DEFAULT_EQUITY_SEED shares the same value so two different seed roles
+    are indistinguishable in a manifest.
+  - B11: emit-ws436-result-card.mjs:185-192 hand-transcribes REFINEMENT_BUDGET_MS/PSEUDOCOUNT/
+    AGG_FREQ_PRIOR_MEAN/POP_BET_CENTER into manifest.constants against replicationStamp.mjs:12-17's
+    explicit rule — the PRIOR_WEIGHT shadow reintroduced at the card boundary.
+  - B12: both one-shot emitters bypass buildStampInput; fold-curve hand-maintains dialect +
+    canonical copies of the same quantity that the validator cannot cross-check.
+accept_criteria: |
+  - Full-precision values live on the arms/summaries; rounding happens only at render. The C3
+    gate, the curse verdict, and overallEvBB100's factors are computed from unrounded quantities
+    (each pinned by a test at the half-step boundary).
+  - pairedDelta and the river-flip bootstrap default their resamples/alpha from the ipsEstimator
+    exports; the record meta stamps what actually ran, asserted by test.
+  - The LCG + DEFAULT_BOOTSTRAP_SEED are exported once and imported everywhere; the equity seed
+    gets a distinct value or namespace so seeds.clusterBootstrap and seeds.equityMc are
+    distinguishable in a manifest.
+  - collectConstants grows the four WS-436 constants (read from definition sites); both emitters
+    route through buildStampInput; a publish-side check asserts any *Rate sibling of a
+    `conditioned` block equals its rate to display precision.
+effort: "M"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+  - "scripts/backtest/emit-ws436-result-card.mjs"
+  - "scripts/foldCurve/emit-result-card.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. B13 (river-flip alias precision) was fixed
+  in-session, commit 89c0a5b8 — this ticket owns the remaining precision/rederivability items.

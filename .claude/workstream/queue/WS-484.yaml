@@ -1,0 +1,71 @@
+id: "WS-484"
+title: "Engine vocabulary hygiene — ten seam findings from the Phase E survey: name collisions, scale splits, shadow constants, an unreachable fourth fold channel, and a stale CLAUDE.md violation"
+legacy_id: ""
+type: chore
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P2"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Survey F4-F7, F9-F14 (docs/research/engine-vocabulary-survey-2026-08-14.md), bundled: each is
+  small, none is urgent alone, and together they are the "narrowed complexity" the founder asked
+  to see mapped. Checklist:
+  - F4 computeComboEquity exported twice meaning two quantities (gameTreeEquity.js:259 vs
+    postflopNarrower.js:428) — rename the narrower's to comboStrengthScore.
+  - F5 two fold-curve-displacement implementations with opposite arg order and stale saturation
+    (villainModelData.js:359-365 vs preflopFoldResolver.js:180-182) — one exported curveDelta.
+  - F6 foldPct is 0-1 on the engine path, 0-100 in observation/profile modules —
+    villainProfileBuilder.js:160 vs :184 defines it on two scales in one function; reserve foldPct
+    for the fraction, rename display copies, convert once at render.
+  - F7 prior-strength 10 declared independently in seven modules with a comment asserting equality
+    nothing enforces (foldEquityCalculator.js:661) — shared DEFAULT_PSEUDOCOUNT as default value +
+    equality test; the priors stay separate.
+  - F9 three SPR→scalar transforms, four inline copies (gameTreeEquity.js:982 vs :993 twelve lines
+    apart, /4 vs /5 unexplained) — export sprLeverage(spr, {divisor, ceiling}).
+  - F10 totalCombos names count/weight-sum/percent-input; range width on two scales 100x apart —
+    comboCount vs comboWeight; one rangeWidthFraction.
+  - F11 GRID_SIZE=169 and 1326 re-declared in eleven modules — one pokerCore export.
+  - F12 estimateModelFoldPct is a published, tested fold channel with zero production callers that
+    bypasses composition-first estimation — rename/fold into the model-tier accessor, keep the
+    capability.
+  - F13 rakeAsymmetry (unexploitableFloor.js:292-298) feeds bb to estimateRake whose cap/drop are
+    dollars — latent until deriveFloor is wired; make the unit part of the boundary.
+  - F14 exploitEngine/CLAUDE.md still describes the heroPotOdds violation WS-450 fixed
+    (gameTreeEvaluator.js:790-796) — move to past tense with the reference.
+accept_criteria: |
+  - Every item above closed in code (not re-documented), with the F7 equality and F6 scale rule
+    asserted by test.
+  - No capability removed anywhere (F12's channel is renamed/absorbed, not deleted).
+  - A paired advice-distribution diff (probeFrequency) shows zero divergence for the pure renames;
+    any item that moves a number (none expected) is split out and priced per Amendment 1.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/postflopNarrower.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "src/utils/exploitEngine/villainProfileBuilder.js"
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/pokerCore/rangeMatrix.js"
+  - "src/utils/exploitEngine/CLAUDE.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. The survey's absence findings (what is already
+  consolidated and must NOT be "simplified" further) are in the research doc and are part of this
+  ticket's reading.

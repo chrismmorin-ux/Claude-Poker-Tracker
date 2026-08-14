@@ -1,0 +1,53 @@
+id: "WS-483"
+title: "villainResponse ships in two shapes on one object and the flat one omits raisePct — riskAnalysis reads raise-branch variance as zero on every bet/raise candidate"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Survey F2 (docs/research/engine-vocabulary-survey-2026-08-14.md). gameTreeEvaluator.js:882-885
+  emits nested {fold:{pct,ev}, call:{pct,ev}, raise:{pct,ev,heroResponse}} AND flat foldPct/callPct
+  (no raisePct) on the same villainResponse; :897 adds a third copy at sizing.foldPct; the call
+  branch (:609) emits only the flat shape. gameTreeEvaluator.js:1365 already reads defensively
+  (?.foldPct ?? ?.fold?.pct ?? 0) — the tell that neither shape is authoritative. Consumers split:
+  actionClassifier.js:111,386,403 (flat); riskAnalysis.js:112 reads raisePct that the bet/raise
+  branch never emits, so it defaults to 0 and under-counts raise-branch variance;
+  computeBaselineForAssumption.js:51 and the advice UI read the nested shape.
+accept_criteria: |
+  - One authoritative shape ({fold, call, raise}: {pct, ev}) emitted on EVERY candidate branch,
+    including the call branch; flat foldPct/callPct kept as deprecated aliases derived from it
+    (never independently computed).
+  - riskAnalysis receives a real raisePct; a test pins that a bet candidate's risk includes the
+    raise branch (current behaviour would fail it).
+  - The defensive ?? chain at gameTreeEvaluator.js:1365 reduces to one read.
+  - Classification stays callBranchEV-anchored per repo doctrine — this change is shape, not
+    semantics, and a paired advice-distribution diff (probeFrequency) shows zero divergence.
+effort: "S"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/riskAnalysis.js"
+  - "src/utils/exploitEngine/actionClassifier.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. POKER_THEORY.md + exploitEngine/CLAUDE.md
+  mandatory before starting.

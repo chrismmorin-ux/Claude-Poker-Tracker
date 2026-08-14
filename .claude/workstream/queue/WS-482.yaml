@@ -1,0 +1,58 @@
+id: "WS-482"
+title: "Depth-2/3 tightens villain continuation with a hard-coded population 0.45 at nodes where per-combo pFold was just computed — the foldRate parameter that would fix it exists and is dead at all 12 call sites"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 34.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Survey F8 (docs/research/engine-vocabulary-survey-2026-08-14.md).
+  gameTreeSizingHelpers.js:162 declares tightenRatesForContinuation(rates, priorAction, foldRate=0.45)
+  and all 12 call sites pass two arguments (gameTreeDepth2.js:847,848,986,987,1102,1103,1193,1194,
+  1197,1198; gameTreeEvaluator.js:1907,1908) — so depth-2/3 substitutes the population MARGINAL for
+  the node's computed CONDITIONAL, totally, at every tighten. This is the recorded defect class in
+  exploitEngine/CLAUDE.md, as a substitution rather than a blend. Beside it, the population fold rate
+  0.45 is a shadow constant at ~10 sites (canonical villainModelData.js:93; shadows at
+  foldEquityCalculator.js:544,596,663, gameTreeEquity.js:1115,1119, gameTreeDepth2.js:628,
+  villainProfileBuilder.js:190,317,322, preflopFlopEV.js:485, decisionTreeBuilder.js:60;
+  raise-side 0.55 twin at villainProfileBuilder.js:318,323).
+accept_criteria: |
+  - tightenRatesForContinuation defaults foldRate from POPULATION_PRIORS[action].fold (literal
+    removed), and the 12 call sites thread the node's computed pFold where one exists.
+  - Every shadow 0.45/0.55 site imports from villainModelData's POPULATION_PRIORS (or receives it
+    via the existing dependency-injection convention) — zero numeric fold/continue literals remain
+    outside the definition site.
+  - The change is priced per Amendment 1: paired EV delta through the depth-ablation harness with a
+    Result Card (it moves every depth-2 EV — that is the point, and it must be measured, not assumed
+    an improvement).
+  - First-principles check per POKER_THEORY §7: the threaded pFold derives from equity/pot-odds/SPR
+    composition, never from a label.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. POKER_THEORY.md + exploitEngine/CLAUDE.md
+  mandatory before starting.

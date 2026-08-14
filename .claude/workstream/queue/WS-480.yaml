@@ -1,0 +1,55 @@
+id: "WS-480"
+title: "betFraction carries three incompatible units under one field name — a 5x preflop open renders as \"500% pot\" and the drill engine silently reads a bb-multiple as a pot fraction"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P1"
+category: "engine"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Survey F1 (docs/research/engine-vocabulary-survey-2026-08-14.md). `recommendation.sizing.betFraction`
+  is a pot fraction on the postflop bet path (heroActionBuilder.js:165+), increment/(pot+bet) on the
+  raise path (:125,134,145), and a BIG-BLIND MULTIPLE on the preflop path (preflopAdvisor.js:424,496,
+  596,631,691 — pinned by preflopAdvisor.test.js:315,347). Six UI components render it as `% pot`
+  (LiveAdviceBar.jsx:262 et al.), replayAnalysis.js:434-435 builds an EV-vs-fraction curve mixing the
+  units, and drillModeEngine.js:443,588 defaults a bb-multiple into a pot-fraction slot. The preflop
+  recommendations reach the same array via computeHelpers.js:212 → useLiveActionAdvisor.js:283,330.
+accept_criteria: |
+  - The field is split by unit: `potFraction` (postflop bet/raise, with the raise-denominator
+    convention stated) and `bbMultiple` (preflop), with `betFraction` kept as a deprecated alias
+    carrying its CURRENT per-path meaning so no consumer breaks on day one.
+  - One resolver converts between units given the game state; no consumer does its own division.
+  - Every `% pot` render site reads potFraction only; preflop sizing renders as `Nx` (bb multiple).
+  - drillModeEngine's fallback and replayAnalysis's EV-vs-sizing curve are unit-correct, with a test
+    each pinning a preflop and a postflop case.
+  - UX-visible copy change on primary advice controls → Design Gate 1 applies to the render half.
+effort: "M"
+files_involved:
+  - "src/utils/exploitEngine/heroActionBuilder.js"
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/utils/postflopDrillContent/drillModeEngine.js"
+  - "src/utils/handAnalysis/replayAnalysis.js"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey (two fresh-context agents). POKER_THEORY.md +
+  exploitEngine/CLAUDE.md are mandatory reading before starting (engine guardrail).

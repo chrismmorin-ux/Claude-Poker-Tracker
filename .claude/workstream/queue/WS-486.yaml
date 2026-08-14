@@ -1,0 +1,60 @@
+id: "WS-486"
+title: "clusterUnit: 'players' is asserted on four cards whose intervals are not player-clustered, and layerAblation's quotable bar counts decisions where it means players"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 32.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Survey B2, B4 (docs/research/engine-vocabulary-survey-2026-08-14.md). CLUSTER_UNITS exists as a
+  promise about the variance term (resultCard.js:32-43) and resultCardProblems validates only list
+  membership:
+  - layerAblation.mjs:629 declares players; its intervals come from pairedMeanCI — a per-decision
+    normal approximation with no player term (layerAttribution.js:104-113, via divergence.js:316,461).
+  - deviationMap.mjs:177 declares players; the file contains no player dimension at all.
+  - foldCurve/emit-result-card.mjs:77 declares players and carries no interval of any kind.
+  - emit-ws436-result-card.mjs:146 declares players; its only interval is an iid t-interval (:30-40).
+  - The 30-cluster bar exists in three copies, and layerAblation.mjs:633 applies it to PAIRED
+    DECISIONS (n from :438) — a run is quotable on 30 decisions from 2 players while byPlayer.size
+    sits unused two lines away.
+accept_criteria: |
+  - Publish-time rule: a card declaring a clusterUnit must carry a machine-readable clusterCount
+    denominated in that unit and name its interval-producing function — or declare
+    clusterUnit: null with a stated reason. Enforced in resultCardProblems per the WS-434 asymmetry.
+  - The four cards above either gain a genuinely player-clustered interval (ADD the interval —
+    run-river-flip-replicate.mjs:365-385 is the worked pattern, carrying both intervals and naming
+    which generalises) or declare what they actually have. Removing an existing interval is not an
+    acceptable resolution.
+  - One exported CLUSTER_BAR = {value: 30, unit: 'players', rationale} replaces the three copies;
+    layerAblation gates on byPlayer.size with the decision count kept as a warning.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "scripts/backtest/layerAblation.mjs"
+  - "scripts/backtest/deviationMap.mjs"
+  - "scripts/backtest/emit-ws436-result-card.mjs"
+  - "scripts/foldCurve/emit-result-card.mjs"
+  - "scripts/backtest/heroEvReport.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. Decision-level intervals are exactly the
+  too-narrow ones the clusterUnit field was invented to prevent (POKER_THEORY §14.3).

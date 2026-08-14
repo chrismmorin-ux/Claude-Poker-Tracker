@@ -1,0 +1,72 @@
+id: "WS-488"
+title: "One measurement toolbox — collapse the four paired-CI implementations, four TV copies, five verdict vocabularies, and the free-text partition strings into a shared module with an estimand registry"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P2"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Survey B9, B14-B18 (docs/research/engine-vocabulary-survey-2026-08-14.md). The machinery (not
+  the instruments) of the harness exists two-to-four times:
+  - B9: two functions NAMED pairedDelta with incompatible signatures (depthAblationReport.mjs:203
+    cluster-bootstrap vs geometryAblation.mjs:80 iid z=1.96), plus pairedMeanCI and pairedLL;
+    three inline z values; the canonical Z_95 (decisionSystems/accumulator/betaPosterior.js) used
+    by none, against decisionSystems/CLAUDE.md:88. divergence.js:433-436 rests the layer-divergence
+    separation verdict on the unclustered approximation (see WS-486).
+  - B14: per-player bucketing hand-rolled at four sites; run-river-flip-replicate.mjs:377 parses
+    the cluster identity from a string key (split('|')[0]).
+  - B15: four totalVariation implementations disagreeing on missing input (null→0 vs null→NaN);
+    identity epsilon 1e-9 vs 1e-12 makes divergent-share denominators differ between figures that
+    are compared to each other; argmax duplicated.
+  - B16: five verdict vocabularies; CONFIRMED-UNDERPOWERED (optimismBias) and
+    UNDERPOWERED-DIRECTION-CONSISTENT (heroEvReport) are the same state, one leading with
+    CONFIRMED; power bars 5 vs 30 for the same question, one undocumented.
+  - B17: estimand/treatment constants half named (HERO_EV_ESTIMAND unexported) and half inline
+    literals — AS-710 corroboration checkable only by string equality, made impossible by
+    construction; manifest partition strings rendered five incompatible ways.
+  - B18: run-atoms.mjs:205 re-implements the EVAL filter with a bare 'eval' literal and an
+    unthreaded poolPct beside a guard using this.poolPct; three more bare partitionOf sites.
+accept_criteria: |
+  - A scripts/backtest/measurement/ module: lcg + bootstrap constants re-export, clusterBootstrapCI
+    re-export, pairedInterval(values, {clusterBy, z}) with one return shape ({lo,hi,excludesZero}),
+    groupByCluster, totalVariation/argmax/ADVICE_IDENTITY_EPSILON, CLUSTER_BAR, shapeVerdict enum,
+    Z_95 re-export. Every current call site becomes a thin adapter; all four verdict vocabularies
+    keep rendering (nothing removed), the arithmetic converges.
+  - Every estimand/treatment constant exported and registered in an estimands.mjs keyed by
+    metrics.kind; a test asserts each producer's card carries its registered estimand verbatim.
+  - Structured partition object ({unit, method, poolPct, walkForward, exceptions[]}) built by a
+    shared helper from partition.mjs, prose kept as a rendered field.
+  - GROUPS.EVAL + threaded poolPct at run-atoms/studyLadder/teachableArms/mine-fold-vs-sizing;
+    a non-throwing guard.isEvalPlayer so filter and assertion share one source.
+  - playerId carried on the river-flip replicate row (no string parsing of cluster identity).
+effort: "L"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/geometryAblation.mjs"
+  - "src/utils/standardOfRecord/layerAttribution.js"
+  - "scripts/backtest/partition.mjs"
+  - "scripts/backtest/run-atoms.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. Coordinates with WS-485 (admissibility builder
+  lives in the same module) and WS-486 (CLUSTER_BAR); sequence those two first or together.

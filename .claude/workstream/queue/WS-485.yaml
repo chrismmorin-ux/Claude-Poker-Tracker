@@ -1,0 +1,65 @@
+id: "WS-485"
+title: "Declare the admissibility sub-schema — two incompatible dialects mean a {quotable:false} card enters the readiness scorecard silently, and 'contributing players' sometimes prints a cell count"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 33.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "strategy-of-record"
+finding_id: ""
+description: |
+  Survey B1, B3, B5, B19 (docs/research/engine-vocabulary-survey-2026-08-14.md). The card field
+  WS-434 did for `metrics` is still ungoverned for `admissibility`:
+  - Two dialects: {admissible, blockers:[{code,detail}], warnings} (5 producers) vs
+    {quotable, reasons:[string], caveats:[string]} (4 producers) plus a hybrid (run-atoms.mjs:328).
+    model-readiness.mjs:331-344 refuses only on admissible === false, so a quotable:false card
+    passes BOTH the refusal branch and the missing-admissibility fallback — inadmissible results
+    enter the scorecard silently, the exact failure heroEvReport.mjs:79-97 documents closing.
+    Four cards hardcode `quotable: true` literals that are not verdicts at all.
+  - admissibility.clusters is players in four scripts, the CONTROL axis' players in one, and
+    GEOMETRY CELLS in deviationMap.mjs:190 — printed as "contributing players (bar: undefined)"
+    by model-readiness.mjs:335.
+  - blockers are {code,detail} in five scripts and bare strings in two; the readiness gate prints
+    `undefined: undefined` on the string dialect — the refusal reason lost when it matters most.
+  - heroEvReport computes assessAdmissibility twice (:250, :602) into two stored copies with two
+    independent readers.
+accept_criteria: |
+  - An `admissibility` sub-schema registered in SOR_SCHEMAS (same additive gate as metrics), with
+    a shared builder taking {blockers, warnings, clusters, clusterUnit, bar}; quotable/caveats
+    kept as DECLARED aliases so no committed card loses a field.
+  - Publish-side enforcement follows the WS-434 asymmetry exactly: legacy cards stay legible to
+    audit, invalid to publish.
+  - clusters is required to be denominated in the card's declared clusterUnit, with bar + barName
+    beside it; blockers carry a code from a declared enum, prose in detail.
+  - model-readiness and ladder read ONE dialect and REFUSE (loudly) a card with neither
+    admissible nor quotable, instead of passing it.
+  - All 12 producers migrated; heroEvReport computes the verdict once.
+effort: "M"
+files_involved:
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/readiness/model-readiness.mjs"
+  - "scripts/backtest/ladder.mjs"
+  - "scripts/backtest/deviationMap.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: engine-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "run-phaseE-vocab-survey-2026-08-14"
+created_at: "2026-08-14T20:00:00Z"
+status_note: |
+  Filed from the WS-434 Phase E dispatched survey. Highest-ranked measurement finding: the gate
+  that decides what the founder is told is quotable has a dialect hole.
