@@ -36,5 +36,10 @@
  * footer string changes.
  */
 
-export const ENGINE_VERSION = 'v124';
+// v125 (2026-08-14, WS-442): WS-314 check-raise fold-equity guard (fold-equity-only
+// check-raise requires a reliable villain read, mirroring bestResponseToAggression's
+// DEC-022 guard; CR fallback fold aligned to MODEL_CONFIDENCE_THRESHOLD +
+// POPULATION_PRIORS.raise.fold) and WS-315 blocker tie-break in the final ranking
+// (blockerScore.excess breaks EV ties within 1% of pot).
+export const ENGINE_VERSION = 'v125';
 export const APP_VERSION = 'v123';
