@@ -165,6 +165,7 @@ blocked_by_legacy: []
 enables: []
 sprint_id: null
 decision_flags:
+  - "RESOLVED 2026-08-14 (recovered from branch commit b8797690, decided by founder 2026-08-04): rule (c) — same street, same role, AND same action. See status_note. The OPEN block below is preserved as the record of why work stopped; the semantics half of it is now settled, the WS-362 sequencing half still binds."
   - "What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision."
   - |
     OPEN — NEEDS THE FOUNDER, AND IT IS WHY THIS WORK STOPPED. The aggressor-status-versus-
@@ -207,3 +208,29 @@ status_note: |
   refutes. Priority left at P1 and status left at backlog — the defect is now known to be
   smaller in user impact (nothing renders) but blocked on a founder decision, and the
   producer half is separately filed as WS-362.
+
+  ============================================================================
+  2026-08-14 — THE FOUNDER DECISION WAS ALREADY MADE, ON A BRANCH THIS TICKET
+  NEVER SAW. RECOVERED VIA WS-442 BEFORE BRANCH DELETION.
+  ============================================================================
+  The decision_flags block above says the (a)/(b)/(c) semantic is OPEN. It was resolved
+  on 2026-08-04 in the session that produced origin/claude/run-next-t4w44x (commit
+  b8797690, SPR-168): **the founder chose rule (c) — a weakness matches on same street,
+  same role, AND same action.**
+
+  Quantification recorded with the choice (structural enumeration of the 720-key space;
+  NOT corpus-weighted — the branch session could not reach the corpus, so the shape is
+  exact and the frequency weighting is not): matching pairs fall to 20% of the old
+  (isAgg-only) rule and 40% of rule (a). Chosen knowingly.
+
+  The branch's implementation — one shared predicate `weaknessMatchesSituation` +
+  `describeSituation` with ACTION_PHRASE copy ("as the aggressor on the flop, betting"
+  instead of raw axis values) in pokerCore/situationKey.js, threaded through
+  heroAnalysis.js and handSignificance.js — applies cleanly at HEAD except for trivial
+  .js-extension import re-anchors. Founder decision 2026-08-14 (SPR-182): NOT landed now
+  — the feature is dead until WS-362 repairs the producers, and landing dead-but-correct
+  code is the shipped-but-inert pattern. Land the predicate WITH WS-362, per this
+  ticket's own sequencing note. Full diff recorded in
+  .claude/workstream/evidence/ws442-domain-merge-2026-08-14.md (branch deleted after).
+
+  Net state: decision flag RESOLVED as (c); ticket remains blocked_by WS-362 only.

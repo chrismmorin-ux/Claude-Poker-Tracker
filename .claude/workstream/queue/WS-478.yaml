@@ -1,0 +1,56 @@
+id: "WS-478"
+title: "Nut-blocking bluff component for the represented range — the one branch idea with no HEAD counterpart, to be tested against the measurement that rejected generic polarisation"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P2"
+category: "engine-accuracy"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  buildRepresentedHeroRange (heroRangeBuilder.js:204-227) is pure equity-monotone
+  narrowing — hero's represented aggressive range is approximately the top-12% of
+  holdings by board equity, with no bluff component. WS-403 tested a POLARISED variant
+  (balanced bluff share per §12.4, built from balancedBluffShare(s)) and declined it on
+  measurement: ±0.11 fold-estimate movement with NO consistent sign (AK6 0.489→0.515,
+  JT9 0.535→0.426, turn 0.713→0.719) — "no demonstrated defect in the represented range
+  to fix" (exploitEngine/CLAUDE.md, WS-403 section; probeCeilingInteraction.mjs).
+
+  The discarded WS-313 branch (origin/claude/poker-multiway-flop-strategy-1514n2, commit
+  0c0f4886 — recorded in the WS-442 evidence report before branch deletion) proposed a
+  DIFFERENT bluff-candidate selection the WS-403 probe never tested: bluff share
+  alpha = f/(1+f) (0.43 at 3/4 pot, measured 0.40 on the branch), with candidates chosen
+  from weak-at-showdown hands weighted by NUT-BLOCKING — holding the card that removes
+  villain's nut region (e.g. the A of the flush suit) makes the represented bluff
+  credible in exactly the spots where blocker reasoning matters. Branch measurement on
+  its nut-flush spot: foldPct.bet 0.950 → 0.714 → 0.384 across variants. HEAD only
+  rejected equity-blind balanced polarisation; nut-blocking-weighted selection is a
+  distinct hypothesis.
+
+  Ingredients now at HEAD that make this cheap to test: rangeSegmenter.computeBlockerScore
+  (excess-over-base-rate, WS-315) for the weighting, bluffValueConstruction.js for the
+  balanced share, probeCeilingInteraction.mjs for the crossing design.
+accept_criteria: |
+  - The nut-blocking-weighted represented range is added as a candidate arm to the
+    probeCeilingInteraction crossing (represented-range x ceiling) and measured on the
+    same three spots plus a flush-possible spot where nut-blocking binds.
+  - A paired corpus measurement against the shipped equity-monotone range (same
+    decisions, same seeds, ΔLL with t) — the WS-436/WS-449 bar. Adoption only on a
+    significant gain; a null result is recorded in the CLAUDE.md WS-403 section beside
+    the polarisation null so the hypothesis space stays mapped.
+  - No change ships to buildRepresentedHeroRange without the ground-truth pin
+    (groundTruthCoverage census stays exact).
+effort: "M"
+created_at: "2026-08-14"
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "ws442-domain-merge-2026-08-14"

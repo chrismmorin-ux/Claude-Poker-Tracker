@@ -1,0 +1,52 @@
+id: "WS-479"
+title: "Land or retire integrate/orphans-20260807 — all 78 commits of the deploy-freshness RED belong to this one branch, it is reachable from nothing, and the 2026-08-07 landing sequence stalled before its step"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "architecture"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  Topology facts (measured 2026-08-14, WS-442 session; agent-verified):
+  - integrate/orphans-20260807 (= origin/..., in sync, tip 77984744) forked from
+    3bc43abd (night/overnight-20260807 tip) and carries 10 no-ff orphan-landing merges.
+  - `git rev-list --branches --not origin/main --count` = 78, and decomposition shows
+    100% of those commits belong to integrate/orphans-20260807 — ws-292/main/night
+    contribute ZERO. The daily deploy-freshness RED is entirely this branch.
+  - It is merged nowhere: not an ancestor of HEAD nor origin/main; `--contains` lists
+    only itself and its origin twin. No work has ever flowed OUT of it.
+  - HEAD moved 37 commits past the fork point (WS-431 -> WS-436 -> WS-450/451 ->
+    SPR-181/182), so its merge cost grows with every session.
+  - The 2026-08-07 landing sequence (evidence/overnight-handoff-2026-08-07.md) was:
+    finish SPR-177 -> merge night/overnight -> merge integrate/orphans-20260807 ->
+    WS-442 domain merges -> founder decision on landing main. Steps 1-2 happened;
+    step 3 never did; WS-442 executed 2026-08-14 without it (independent content).
+  - Its merge messages carry known debts: DEC/FIND/WS IDs dropped on collision with
+    "recover from merge^2" notes (e.g. WS-321.yaml, DEC-030..035, FIND-040 refile),
+    so landing it needs the same domain-judgment treatment WS-442 got — per-merge
+    verify-or-supersede against HEAD, not a mechanical merge.
+  Founder decision 2026-08-14 (SPR-182): file this as its own ticket rather than fold
+  into the WS-442 sprint.
+accept_criteria: |
+  - Each of the 10 orphan-landing merges dispositioned against HEAD: landed (tests at
+    baseline) or explicitly superseded with per-merge evidence, WS-442-style.
+  - The ID-collision recovery notes in its merge messages are executed or explicitly
+    retired (recover-from-merge^2 items re-filed under fresh IDs where still wanted).
+  - After disposition, `git rev-list --branches --not origin/main --count` = 0 (or the
+    branch is deleted after its surviving content is reachable from the integration
+    line), and the deploy-freshness check reports GREEN.
+effort: "L"
+created_at: "2026-08-14"
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "ws442-domain-merge-2026-08-14"

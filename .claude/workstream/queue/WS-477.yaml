@@ -1,0 +1,55 @@
+id: "WS-477"
+title: "Per-action fold conditioning at depth-1 — foldPct.bet and foldPct.raise are priced against ONE represented range, and the discarded branch measured a 3x separation when each action got its own"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P2"
+category: "engine-accuracy"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  gameTreeContext.js:288-300 deliberately builds ONE represented hero range per node
+  ("Only ONE aggressive action is reachable per node ... so this costs one represented
+  range, not two") and computes BOTH foldPct.bet and foldPct.raise from the single
+  comboDistribution built against it (gameTreeContext.js:332-333). Per-action separation
+  exists only at the river-refinement layer (WS-378: gameTreeEvaluator threads
+  nodePerceivedHeroRange per candidate action).
+
+  Evidence against the one-range choice, from the discarded WS-313 branch
+  (origin/claude/poker-multiway-flop-strategy-1514n2, commit e1d1fc11 — recorded in the
+  WS-442 evidence report before branch deletion): building THREE perceived ranges per
+  node (bet / raise / check, sharing one runout set for cost) measured foldBet ~0.10 vs
+  foldRaise ~0.32 — a ~3x separation, both near-invariant to hero's cards. HEAD's comment
+  argues the gap is harmless because only one aggressive action is reachable per node;
+  the branch's data does not directly refute that (it never establishes the unreachable
+  action's foldPct is consumed). The open question is empirical: find whether any
+  consumer reads the unreachable action's fold estimate at depth-1 (heroActionBuilder
+  receives both foldPct.bet and foldPct.raise), and if so, measure what per-action
+  conditioning changes on the corpus (paired decisions, same seeds, ΔLL + action-mix
+  shift, WS-436-style bar).
+
+  The branch's implementation is NOT mergeable — it is built on the discarded
+  heroPerceivedRange.js architecture — but its shared-runout-set costing trick is worth
+  keeping if the separation is adopted.
+accept_criteria: |
+  - A code-path answer: which consumers read foldPct for the UNREACHABLE aggressive
+    action at depth-1, with file:line.
+  - If any consumer is live: a paired corpus measurement (same decisions, same seeds) of
+    one-range vs per-action-range conditioning, reported as ΔLL with t, plus the action
+    frequency shift vs the pool — the WS-436/WS-449 measurement bar.
+  - If no consumer is live: the finding recorded and the gameTreeContext comment updated
+    to cite it, so the one-range choice carries its evidence instead of an argument.
+effort: "M"
+created_at: "2026-08-14"
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "ws442-domain-merge-2026-08-14"
