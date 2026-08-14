@@ -311,6 +311,15 @@ export const ladderResultCard = ({
         evalK: a.evalK,
         evalN: a.evalN,
         evalRate: a.evalRate,
+        // WS-434 Stage 2: the same evidence in the canonical conditioned-rate vocabulary
+        // (exact k/n, not the display-rounded evalRate). The renamed dialect above stays
+        // emitted forever.
+        conditioned: {
+          k: a.evalK,
+          n: a.evalN,
+          rate: a.evalN ? a.evalK / a.evalN : null,
+          conditional: `P(${a.numerator} | ${a.conditioning})`,
+        },
         poolRate: a.poolRate,
         players: s.players,
         obsPerPlayerMedian: s.obsPerPlayerMedian,

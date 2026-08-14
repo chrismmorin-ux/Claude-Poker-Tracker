@@ -119,6 +119,38 @@ describe('conditionedRateProblems — the canonical {k, n, rate, conditional} se
   });
 });
 
+describe('the conditioned-rate walk — canonical aliases are validated wherever they nest', () => {
+  it('catches a broken {k, n, rate, conditional} buried inside an undeclared container', () => {
+    const m = fixtureFor('study-ladder');
+    m.axes = {
+      limpRate: {
+        evalK: 3, evalN: 12, evalRate: 0.25,
+        conditioned: { k: 3, n: 12, rate: 0.5, conditional: 'P(limp | first action, not BB)' },
+      },
+    };
+    expect(metricsProblems(m)).toEqual([
+      expect.stringContaining('axes.limpRate.conditioned'),
+    ]);
+    expect(metricsProblems(m)[0]).toContain('does not equal k/n');
+  });
+
+  it('does not fire on look-alikes — {flips, n} is not a conditioned rate', () => {
+    const m = fixtureFor('depth-ablation');
+    m.flipCountByStreet = { river: { flips: 8, n: 10 } };
+    expect(metricsProblems(m)).toEqual([]);
+  });
+
+  it('walks arrays — a bad row in holdOutBySizeBucketConditioned is named by index', () => {
+    const m = fixtureFor('fold-curve-shape');
+    m.holdOutBySizeBucketConditioned = [
+      { bucket: '0-33', conditioned: { k: 0, n: 0, rate: 0.2, conditional: 'P(fold | bucket)' } },
+    ];
+    const problems = metricsProblems(m);
+    expect(problems).toEqual([expect.stringContaining('holdOutBySizeBucketConditioned[0].conditioned')]);
+    expect(problems[0]).toContain('must be NULL when n is 0');
+  });
+});
+
 describe('overallEvFactorProblems — the product never travels without both factors', () => {
   it('is silent when the product is absent or null', () => {
     expect(overallEvFactorProblems({ kind: 'hero-ev' })).toEqual([]);

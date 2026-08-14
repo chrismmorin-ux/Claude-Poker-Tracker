@@ -82,6 +82,11 @@ const card = buildResultCard({
       n: 178174,
       k: 98273,
       marginalFoldRate: 0.5516,
+      // WS-434 Stage 2: canonical conditioned-rate alias (exact k/n) beside the dialect.
+      conditioned: {
+        k: 98273, n: 178174, rate: 98273 / 178174,
+        conditional: 'P(fold | facing a bet, bet/pot < 3x, POOL players days 1-11)',
+      },
     },
     holdOut: {
       partition: 'EVAL players, days 12-23',
@@ -90,6 +95,10 @@ const card = buildResultCard({
       marginalFoldRate: 0.5616,
       residualSlopeVsBetFraction: { before: 0.1409, after: 0.0078 },
       brier: { before: 0.24054, after: 0.23530 },
+      conditioned: {
+        k: 178794, n: 318347, rate: 178794 / 318347,
+        conditional: 'P(fold | facing a bet, bet/pot < 3x, EVAL players days 12-23)',
+      },
     },
     // The observed gradient, on the WS-273 report's own sizing buckets (its axis divides the
     // bet by the pot INCLUDING that bet, hence the boundaries here on bet/pot).
@@ -101,16 +110,29 @@ const card = buildResultCard({
     // Reported because P(fold|size) and P(size|fold) support opposite readings.
     inverseConditional: {
       note: 'P(bet/pot in bucket | villain folded), fit set. Big bets dominate the fold RATE and are a tiny share of the folds.',
+      // WS-434 Stage 2: the conditioning statement as an explicit machine-findable field,
+      // not only prose in `note`.
+      conditional: 'P(bet/pot bucket | villain folded), fit set — the inverse of holdOutBySizeBucket\'s P(fold | bucket)',
       'lt0.5': 0.3333, '0.5-1.0': 0.5102, '1.0-2.0': 0.1440, 'gte2.0': 0.0124,
     },
     facingRaiseHeldOutSeparately: {
       n: 45293, k: 19212, marginalFoldRate: 0.4242,
       residualSlopeVsBetFraction: { before: 0.1842, after: 0.0522 },
       brier: { before: 0.23210, after: 0.22007 },
+      conditioned: {
+        k: 19212, n: 45293, rate: 19212 / 45293,
+        conditional: 'P(fold | facing a RAISE, EVAL hold-out — never merged into the facing-a-bet fit)',
+      },
       note: 'Not merged into the fit — a raise is a different decision. Reported because the '
         + 'corrected shape has to be checked against the adjacent population it will also be '
         + 'applied to, and it improves there too rather than degrading.',
     },
+    // WS-434 Stage 2: the sizing gradient in canonical vocabulary, beside the dialect rows.
+    holdOutBySizeBucketConditioned: [
+      { bucket: '0-33', conditioned: { k: 52475, n: 113599, rate: 52475 / 113599, conditional: 'P(fold | facing a bet, bet/pot < 0.4925, EVAL hold-out)' } },
+      { bucket: '33-66', conditioned: { k: 124399, n: 202261, rate: 124399 / 202261, conditional: 'P(fold | facing a bet, bet/pot 0.4925-1.9412, EVAL hold-out)' } },
+      { bucket: '66-100', conditioned: { k: 1920, n: 2487, rate: 1920 / 2487, conditional: 'P(fold | facing a bet, bet/pot >= 1.9412, EVAL hold-out)' } },
+    ],
     holdOutByStreet: [
       { street: 'flop', n: 181424, marginalFoldRate: 0.5930, slope: { before: 0.0763, after: -0.0358 }, brier: { before: 0.23803, after: 0.23668 } },
       { street: 'turn', n: 87257, marginalFoldRate: 0.5004, slope: { before: 0.2123, after: 0.0549 }, brier: { before: 0.24267, after: 0.23405 } },

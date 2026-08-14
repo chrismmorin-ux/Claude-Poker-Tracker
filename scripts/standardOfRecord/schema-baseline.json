@@ -880,7 +880,7 @@
     ]
   },
   "metrics.depth-ablation": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "kind",
@@ -941,6 +941,12 @@
         "type": "object",
         "since": 1,
         "unit": "map (street → {flips, n})"
+      },
+      {
+        "name": "flipByStreetConditioned",
+        "type": "object",
+        "since": 2,
+        "unit": "map (street → conditioned rate)"
       },
       {
         "name": "flipDirections",
@@ -1088,7 +1094,7 @@
     ]
   },
   "metrics.per-player-width": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "kind",
@@ -1106,6 +1112,12 @@
         "name": "headlineSe",
         "type": "number|null",
         "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineSeNatsPerDecision",
+        "type": "number|null",
+        "since": 2,
         "unit": "nats/decision"
       },
       {
@@ -1142,6 +1154,18 @@
         "name": "headlineCiHigh",
         "type": "number|null",
         "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineCiLowNatsPerDecision",
+        "type": "number|null",
+        "since": 2,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineCiHighNatsPerDecision",
+        "type": "number|null",
+        "since": 2,
         "unit": "nats/decision"
       },
       {
@@ -1557,7 +1581,7 @@
     ]
   },
   "metrics.river-flip-replicate": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "kind",
@@ -1567,7 +1591,7 @@
       },
       {
         "name": "systematicFlipShare",
-        "type": "number",
+        "type": "number|null",
         "since": 1,
         "unit": "share [0,1]"
       },
@@ -1585,27 +1609,46 @@
       },
       {
         "name": "systematicFlipCiLowBinomialOverDecisions",
-        "type": "number",
+        "type": "number|null",
         "since": 1,
         "unit": "share [0,1] (binomial over decisions)"
       },
       {
         "name": "systematicFlipCiHighBinomialOverDecisions",
-        "type": "number",
+        "type": "number|null",
         "since": 1,
         "unit": "share [0,1] (binomial over decisions)"
       },
       {
         "name": "seedDependentShare",
-        "type": "number",
+        "type": "number|null",
         "since": 1,
         "unit": "share [0,1]"
       },
       {
         "name": "singleEvaluationFlipShare",
-        "type": "number",
+        "type": "number|null",
         "since": 1,
         "unit": "share [0,1]"
+      },
+      {
+        "name": "systematicFlip",
+        "type": "object|null",
+        "since": 2,
+        "unit": "conditioned rate",
+        "shape": "metrics.shared.conditioned-rate"
+      },
+      {
+        "name": "systematicFlipCiLowShare",
+        "type": "number|null",
+        "since": 2,
+        "unit": "share [0,1] (player-clustered)"
+      },
+      {
+        "name": "systematicFlipCiHighShare",
+        "type": "number|null",
+        "since": 2,
+        "unit": "share [0,1] (player-clustered)"
       },
       {
         "name": "n",
@@ -1805,7 +1848,7 @@
     ]
   },
   "metrics.fold-curve-shape": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "kind",
@@ -1817,7 +1860,7 @@
         "name": "fit",
         "type": "object",
         "since": 1,
-        "unit": "record ({partition, n, k, marginalFoldRate})"
+        "unit": "record ({partition, n, k, marginalFoldRate, conditioned})"
       },
       {
         "name": "holdOut",
@@ -1866,6 +1909,12 @@
         "type": "object",
         "since": 1,
         "unit": "record (prose)"
+      },
+      {
+        "name": "holdOutBySizeBucketConditioned",
+        "type": "array",
+        "since": 2,
+        "unit": "rows ({bucket, conditioned})"
       },
       {
         "name": "residualNotRemoved",

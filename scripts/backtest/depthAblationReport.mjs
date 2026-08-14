@@ -469,6 +469,16 @@ export const buildDepthAblationReport = (run, {
           flipCountByStreet: Object.fromEntries(
             Object.entries(divergence.byStreet ?? {}).map(([s, v]) => [s, { flips: v.flips, n: v.n }]),
           ),
+          // WS-434 Stage 2: the same counts in the canonical conditioned-rate vocabulary.
+          // Emitted BESIDE flipCountByStreet forever — legacy readers key on the old name.
+          flipByStreetConditioned: Object.fromEntries(
+            Object.entries(divergence.byStreet ?? {}).map(([s, v]) => [s, {
+              k: v.flips,
+              n: v.n,
+              rate: v.n ? v.flips / v.n : null,
+              conditional: `P(top action flips between arms | street = ${s}, paired decision)`,
+            }]),
+          ),
           flipDirections: { ...(divergence.flipPairs ?? {}) },
           meanTotalVariation: divergence.meanTotalVariation,
           maxTotalVariation: divergence.maxTotalVariation,

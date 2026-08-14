@@ -1941,6 +1941,10 @@ export const buildPerPlayerWidthCard = ({ result, verdict, replicationStamp, dea
       unshrunkPlayersMovedOffPopulation: result.heldout.unshrunk.movedOffPopulation,
       headlineCiLow: verdict.ci ? verdict.ci[0] : null,
       headlineCiHigh: verdict.ci ? verdict.ci[1] : null,
+      // WS-434 Stage 2: unit-suffixed canonical aliases, emitted beside the bare names forever.
+      headlineSeNatsPerDecision: result.heldout.se,
+      headlineCiLowNatsPerDecision: verdict.ci ? verdict.ci[0] : null,
+      headlineCiHighNatsPerDecision: verdict.ci ? verdict.ci[1] : null,
       verdict: verdict.verdict,
       // ── the population width itself ───────────────────────────────────────────────
       populationWidthMultiplier: result.population.argmaxWidth,

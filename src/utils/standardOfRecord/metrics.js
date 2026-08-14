@@ -142,13 +142,39 @@ export const metricsProblems = (metrics, { label = 'resultCard.metrics' } = {}) 
       problems.push(`${label}.${f.name} declares shape "${f.shape}" which is not a registered SOR_SCHEMAS entry`);
       continue;
     }
-    if (f.shape === 'metrics.shared.conditioned-rate') {
-      problems.push(...conditionedRateProblems(value, { label: `${label}.${f.name}` }));
-    } else {
-      problems.push(...checkAgainstSchema(value, sub, { label: `${label}.${f.name}` }));
-    }
+    problems.push(...checkAgainstSchema(value, sub, { label: `${label}.${f.name}` }));
   }
 
+  // THE CONDITIONED-RATE WALK (Stage 2). Semantic validation applies to every
+  // {k, n, rate, conditional} quadruple ANYWHERE in the block — including canonical aliases
+  // nested inside containers whose internals are deliberately undeclared (study-ladder's
+  // per-axis blocks, fold-curve's fit/holdOut). Duck-typed on the full quadruple so it
+  // cannot fire on look-alikes ({flips, n} does not match), and it reaches what a declared
+  // field list structurally cannot without freezing every container shape forever.
+  problems.push(...walkConditionedRates(metrics, label));
+
   problems.push(...overallEvFactorProblems(metrics, { label }));
+  return problems;
+};
+
+const CONDITIONED_RATE_KEYS = ['k', 'n', 'rate', 'conditional'];
+const looksLikeConditionedRate = (v) => isPlainObject(v)
+  && CONDITIONED_RATE_KEYS.every((key) => Object.prototype.hasOwnProperty.call(v, key));
+
+const walkConditionedRates = (value, path, depth = 0) => {
+  if (depth > 8) return [];
+  const problems = [];
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => problems.push(...walkConditionedRates(item, `${path}[${i}]`, depth + 1)));
+    return problems;
+  }
+  if (!isPlainObject(value)) return problems;
+  if (looksLikeConditionedRate(value)) {
+    problems.push(...conditionedRateProblems(value, { label: path }));
+    return problems; // a conditioned rate holds scalars; nothing beneath it to walk
+  }
+  for (const [key, child] of Object.entries(value)) {
+    problems.push(...walkConditionedRates(child, `${path}.${key}`, depth + 1));
+  }
   return problems;
 };

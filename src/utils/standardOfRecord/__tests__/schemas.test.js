@@ -126,6 +126,8 @@ const SHIPPED_FIELDS = {
     meanTotalVariation: 'number|null', maxTotalVariation: 'number|null', identicalShare: 'number|null',
     n: 'number', discordantN: 'number|null', players: 'number', divergenceN: 'number',
     controlEdgeBB: 'number|null', notAVerdict: 'boolean',
+    // v2 (WS-434 Stage 2)
+    flipByStreetConditioned: 'object',
   },
   'metrics.deviation-map': {
     kind: 'string', deviationVolume: 'number', totalDecisions: 'number',
@@ -152,6 +154,9 @@ const SHIPPED_FIELDS = {
     rawWidthPlayersWithEstimate: 'number', rawWidthPlayersNoEstimate: 'number',
     rawWidthEdgePinned: 'number', rawWidthEdgePinnedShare: 'number|null',
     medianRevealedPerPlayer: 'number|null', showdownConditional: 'boolean', foldRevealRate: 'number',
+    // v2 (WS-434 Stage 2)
+    headlineSeNatsPerDecision: 'number|null',
+    headlineCiLowNatsPerDecision: 'number|null', headlineCiHighNatsPerDecision: 'number|null',
   },
   'metrics.range-calibration': {
     kind: 'string', villainDeltaLogVsUniform: 'number|null', actingDeltaLogVsUniform: 'number|null',
@@ -174,11 +179,16 @@ const SHIPPED_FIELDS = {
     leakage: 'object',
   },
   'metrics.river-flip-replicate': {
-    kind: 'string', systematicFlipShare: 'number', systematicFlipCiLow: 'number|null',
-    systematicFlipCiHigh: 'number|null', systematicFlipCiLowBinomialOverDecisions: 'number',
-    systematicFlipCiHighBinomialOverDecisions: 'number', seedDependentShare: 'number',
-    singleEvaluationFlipShare: 'number', n: 'number', players: 'number', replicates: 'number',
+    // Share stats are number|null: the producer's `n ? … : null` path (pinned in commit D,
+    // pre-merge — the baseline and the schema were corrected together before either shipped).
+    kind: 'string', systematicFlipShare: 'number|null', systematicFlipCiLow: 'number|null',
+    systematicFlipCiHigh: 'number|null', systematicFlipCiLowBinomialOverDecisions: 'number|null',
+    systematicFlipCiHighBinomialOverDecisions: 'number|null', seedDependentShare: 'number|null',
+    singleEvaluationFlipShare: 'number|null', n: 'number', players: 'number', replicates: 'number',
     flipDirections: 'object', perArmArgmaxStability: 'object', notAVerdict: 'boolean',
+    // v2 (WS-434 Stage 2)
+    systematicFlip: 'object|null',
+    systematicFlipCiLowShare: 'number|null', systematicFlipCiHighShare: 'number|null',
   },
   'metrics.study-ladder': {
     kind: 'string', handsSeen: 'number', primaryMinN: 'number', priorWeight: 'number',
@@ -200,6 +210,8 @@ const SHIPPED_FIELDS = {
     inverseConditional: 'object', facingRaiseHeldOutSeparately: 'object', holdOutByStreet: 'array',
     fittedCurve: 'object', previousCurve: 'object', nullResults: 'object',
     residualNotRemoved: 'string',
+    // v2 (WS-434 Stage 2)
+    holdOutBySizeBucketConditioned: 'array',
   },
 };
 

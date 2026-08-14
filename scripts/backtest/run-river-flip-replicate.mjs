@@ -467,6 +467,17 @@ const main = async () => {
           systematicFlipCiHighBinomialOverDecisions: summary.systematicFlipShareCI95.hi,
           seedDependentShare: summary.seedDependentShare,
           singleEvaluationFlipShare: summary.sourceRunFlipShare,
+          // WS-434 Stage 2: the headline share as a canonical conditioned rate (exact k/n,
+          // not the 4dp-rounded display value), plus unit-suffixed CI aliases. Emitted
+          // beside the v1 names forever.
+          systematicFlip: {
+            k: systematic,
+            n,
+            rate: n ? systematic / n : null,
+            conditional: `P(top action differs between arms in all ${R} seeded replicates | ${street} decision in the paired target set)`,
+          },
+          systematicFlipCiLowShare: summary.systematicFlipShareCI95Players?.lo ?? null,
+          systematicFlipCiHighShare: summary.systematicFlipShareCI95Players?.hi ?? null,
           n,
           players: byPlayerRows.size,
           replicates: R,
