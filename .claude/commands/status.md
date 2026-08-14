@@ -112,6 +112,24 @@ If the script is missing (older kit) or the JSON unparseable, render a single li
 
 WS-379 / `feedback_determinism_first` — script before AI; surface the gap, don't ask the founder to remember to look.
 
+### 0e. Deploy Freshness (NOT skipped by pre-phase; repo-local, survives kit updates)
+
+Run the deterministic check:
+
+```
+node scripts/check-deploy-freshness.mjs --json
+```
+
+The deployed PWA rebuilds only on push to `main` (`deploy.yml`), so commits stranded off `origin/main` are fixes the founder is not running. Origin: the 2026-08-13 third re-report of the unscrollable-views bug — its fix had been sitting verified on a work branch since 2026-08-05 (see INV-DEPLOY-FRESHNESS-1 in `system/invariants.md`).
+
+Render one line in the dashboard, directly under Vital Signs:
+
+- `level: green` → `Deploy freshness: ✓ all finished work is on origin/main`
+- `level: warn` / `red` → render the script's `message` verbatim, prefixed as a vital-sign failure, and add:
+  > ⚠ The app the founder runs is {deployedTip}-old. Fixes made since then are invisible to him. Recommend releasing (merge/push to main) this session.
+
+If the script is missing, render `Deploy freshness: check unavailable.` and continue.
+
 ### 1. Read System State [SKIPPED if pre-phase succeeded]
 - Read `system/state.md` for the last-known state
 - Note when it was last updated — if > 24h, flag as STALE

@@ -82,6 +82,10 @@
           {
             "type": "command",
             "command": "node kit/scripts/cwos-session-vitals.js"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/check-deploy-freshness.mjs --quiet"
           }
         ]
       }
