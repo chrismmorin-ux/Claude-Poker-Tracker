@@ -145,6 +145,7 @@ const card = buildResultCard({
     + 'oracle-prefix semantics cancel in arm contrasts and are stated in villainFeed.mjs.',
   clusterUnit: 'players',
   metrics: {
+    kind: 'style-collapse', // WS-434: dispatches to SOR_SCHEMAS['metrics.style-collapse']
     villainPrediction: predictionMetrics,
     advicePath: adviceMetrics,
     absoluteEV,

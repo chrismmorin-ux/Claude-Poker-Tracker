@@ -161,6 +161,7 @@ export const deviationMapResultCard = ({
       'per-geometry-cell continuation frequency vs derived floor · one-decision horizon · '
       + 'EVAL-half observations · thin cells flagged, never dropped',
     metrics: {
+      kind: 'deviation-map', // WS-434: dispatches to SOR_SCHEMAS['metrics.deviation-map']
       deviationVolume: map.deviationVolume,
       totalDecisions: map.totalDecisions,
       wellSampledCells: map.wellSampledCells,

@@ -456,6 +456,7 @@ const main = async () => {
           + 'replicated R times per decision with Math.random seeded per replicate (mulberry32) '
           + 'and Date.now frozen. Both arms of a replicate draw from the same seed.',
         metrics: {
+          kind: 'river-flip-replicate', // WS-434: dispatches to SOR_SCHEMAS['metrics.river-flip-replicate']
           systematicFlipShare: summary.systematicFlipShare,
           // The quotable interval, clustered on PLAYERS as `clusterUnit` promises.
           systematicFlipCiLow: summary.systematicFlipShareCI95Players?.lo ?? null,

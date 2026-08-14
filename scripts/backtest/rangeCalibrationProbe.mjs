@@ -1929,6 +1929,7 @@ export const buildPerPlayerWidthCard = ({ result, verdict, replicationStamp, dea
     estimand: PER_PLAYER_WIDTH_ESTIMAND,
     treatment: PER_PLAYER_WIDTH_TREATMENT,
     metrics: {
+      kind: 'per-player-width', // WS-434: dispatches to SOR_SCHEMAS['metrics.per-player-width']
       // ── the headline, on ONE scale ────────────────────────────────────────────────
       perPlayerMinusPopulationNatsPerDecision: result.heldout.meanDiffPerDecision,
       headlineSe: result.heldout.se,

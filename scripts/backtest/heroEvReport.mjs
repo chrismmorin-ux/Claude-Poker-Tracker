@@ -219,6 +219,7 @@ const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
       estimand: HERO_EV_ESTIMAND,
       treatment: TREATMENT,
       metrics: {
+        kind: 'hero-ev', // WS-434: dispatches metricsProblems to SOR_SCHEMAS['metrics.hero-ev']
         edgeBB: headline.edgeBB,
         edgeCiLowBB: headline.edgeCiLowBB,
         edgeCiHighBB: headline.edgeCiHighBB,

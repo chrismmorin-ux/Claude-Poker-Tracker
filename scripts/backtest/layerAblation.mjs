@@ -566,6 +566,7 @@ const main = async () => {
         + 'RANGE-MARGINALIZED: the value of the advice averaged over hands hero COULD hold, not '
         + 'the hand hero held. Rake is MODELLED; the corpus records none.',
       metrics: {
+        kind: 'layer-divergence', // WS-434: dispatches to SOR_SCHEMAS['metrics.layer-divergence']
         // THE PAIR. Both measures, both weightings, one volume. Neither is omitted and neither
         // is presented alone — that is what makes the pre-registration checkable after the fact.
         divergence: {

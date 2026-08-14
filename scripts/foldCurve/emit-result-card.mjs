@@ -76,6 +76,7 @@ const card = buildResultCard({
   treatment: TREATMENT,
   clusterUnit: 'players',
   metrics: {
+    kind: 'fold-curve-shape', // WS-434: dispatches to SOR_SCHEMAS['metrics.fold-curve-shape']
     fit: {
       partition: 'POOL players, days 1-11',
       n: 178174,

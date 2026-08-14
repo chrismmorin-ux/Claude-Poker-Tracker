@@ -295,6 +295,7 @@ export const ladderResultCard = ({
   });
 
   const metrics = {
+    kind: 'study-ladder', // WS-434: dispatches to SOR_SCHEMAS['metrics.study-ladder']
     handsSeen: analysis.handsSeen,
     primaryMinN: analysis.primaryMinN,
     priorWeight: analysis.priorWeight,

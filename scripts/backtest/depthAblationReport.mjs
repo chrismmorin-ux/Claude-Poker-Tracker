@@ -447,6 +447,7 @@ export const buildDepthAblationReport = (run, {
         estimand: DEPTH_ABLATION_ESTIMAND,
         treatment: DEPTH_ABLATION_TREATMENT,
         metrics: {
+          kind: 'depth-ablation', // WS-434: dispatches to SOR_SCHEMAS['metrics.depth-ablation']
           // ── the headline, on ONE scale: bb of hero hand value ────────────────────────
           depthDeltaBB: delta.deltaBB,
           depthDeltaCiLowBB: delta.deltaCiLowBB,

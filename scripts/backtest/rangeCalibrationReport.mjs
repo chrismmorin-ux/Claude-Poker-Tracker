@@ -402,6 +402,7 @@ export const buildRangeCalibrationReport = (probe, {
         estimand: RANGE_CALIBRATION_ESTIMAND,
         treatment: RANGE_CALIBRATION_TREATMENT,
         metrics: {
+          kind: 'range-calibration', // WS-434: dispatches to SOR_SCHEMAS['metrics.range-calibration']
           // ── the headline, on ONE scale: nats of log-likelihood of the true holding,
           //    relative to uniform over the combos live on the board ─────────────────────
           villainDeltaLogVsUniform: villainArm?.deltaLogVsUniform ?? null,

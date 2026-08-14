@@ -310,6 +310,7 @@ try {
         'Substituting a static corpus-mined population prior for each villain\'s range, over '
         + 'recorded 2009 online 50NLH hands. Transferred, not measured, for any live claim.',
       metrics: {
+        kind: 'atoms-instrument', // WS-434: dispatches to SOR_SCHEMAS['metrics.atoms-instrument']
         scoredShare: pass.auditCoverage.scoredGivenModeled.rate,
         scoredGivenModeled: pass.auditCoverage.scoredGivenModeled,
         modeledNodes: pass.auditCoverage.modeledNodes,

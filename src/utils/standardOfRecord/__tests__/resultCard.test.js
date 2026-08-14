@@ -50,7 +50,16 @@ const cardInput = () => ({
   match: { surfaceId: 'engine-read-v123', dealBookId: 'handhq-200NLH-2026-08', fieldId: 'pool-mined-v1' },
   estimand: 'Expected hand value in bb, attributed at the decision level, vs population-typical play',
   treatment: 'per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy',
-  metrics: { edgeBB: 0.42, edgeCiLowBB: 0.11, edgeCiHighBB: 0.78, n: 4210 },
+  // WS-434: a complete hero-ev metrics block — the kind dispatches metricsProblems, and the
+  // fixture carries every declared field so it stays valid under the strict-key publish check.
+  metrics: {
+    kind: 'hero-ev',
+    edgeBB: 0.42, edgeCiLowBB: 0.11, edgeCiHighBB: 0.78,
+    n: 4210, ess: 812, players: 44,
+    controlEdgeBB: 0.0000004, liveShiftedCiLowBB: 0.02, pbrEdgeBB: 1.9,
+    exploitationEfficiency: 0.22, exploitationEfficiencyUnavailableReason: null,
+    overallEvBB100: 0.42 * 2.1 * 100, opportunitiesPerHand: 2.1,
+  },
   clusterUnit: 'players',
   admissibility: { admissible: true, blockers: [], warnings: [], clusters: 44 },
   manifest: buildReplicationManifest(manifestInput()),

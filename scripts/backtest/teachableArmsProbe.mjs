@@ -539,6 +539,7 @@ export const teachableArmsResultCard = ({ result, stamp, dealBookId, fieldId, si
       + '(FAULT-population-mismatch).',
     clusterUnit: 'players',
     metrics: {
+      kind: 'teachable-arms', // WS-434: dispatches to SOR_SCHEMAS['metrics.teachable-arms']
       arms: result.arms,
       shareOfEngineEdge: shares,
       handsRead: result.handsRead ?? null,
