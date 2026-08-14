@@ -476,8 +476,10 @@ const main = async () => {
             rate: n ? systematic / n : null,
             conditional: `P(top action differs between arms in all ${R} seeded replicates | ${street} decision in the paired target set)`,
           },
-          systematicFlipCiLowShare: summary.systematicFlipShareCI95Players?.lo ?? null,
-          systematicFlipCiHighShare: summary.systematicFlipShareCI95Players?.hi ?? null,
+          // Canonical means EXACT for the bounds too: fed from the unrounded bootstrap
+          // output, not from summary's 4dp display copy (survey finding, 2026-08-14).
+          systematicFlipCiLowShare: playerCI?.lo ?? null,
+          systematicFlipCiHighShare: playerCI?.hi ?? null,
           n,
           players: byPlayerRows.size,
           replicates: R,
