@@ -107,7 +107,8 @@ else
   echo "❌ TESTS FAILED - Compact Summary"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-  # Use the Vitest output parser
+  # Use the Vitest output parser. Note vitest exits non-zero for flake-retries
+  # too; the parser reports whatever the Tests summary line says.
   node scripts/format-test-failures.cjs .test-output.tmp
 
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -124,7 +125,8 @@ else
 }
 EOF
 
-  # Cleanup
-  rm -f .test-output.tmp
+  # NO cleanup on failure — the compact summary's whole bargain is that the
+  # full transcript stays available in .test-output.tmp for debugging. The
+  # next run's tee overwrites it; the success path deletes it.
   exit 1
 fi

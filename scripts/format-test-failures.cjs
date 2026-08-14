@@ -1,114 +1,91 @@
 #!/usr/bin/env node
 /**
  * Format Test Failures - Compact, token-efficient test failure output
- * Parses Vitest text output and shows only essential debugging info
+ * Parses Vitest text output and shows only essential debugging info.
+ *
+ * Rewritten 2026-08-13: the original matched the first "N failed" in the
+ * output — the Test FILES line — and reported "Failed: 1 tests" for a
+ * 13-test failure, and it scanned for ❌/✖ markers Vitest v4 does not emit,
+ * so it printed no per-test detail at all. A failure summary that
+ * undercounts is worse than none: it reads as "almost green".
  */
 
 const fs = require('fs');
-const path = require('path');
+
+const ANSI = /\[[0-9;]*m/g;
 
 function formatTestFailures(outputFile) {
+  let output;
   try {
-    const output = fs.readFileSync(outputFile, 'utf8');
+    output = fs.readFileSync(outputFile, 'utf8').replace(ANSI, '');
+  } catch (error) {
+    console.error('⚠️  Error reading test output:', error.message);
+    return;
+  }
+
+  try {
     const lines = output.split('\n');
 
-    // Extract summary info
-    const failMatch = output.match(/(\d+) failed/);
-    const passMatch = output.match(/(\d+) passed/);
-    const totalMatch = output.match(/Test Files.*?(\d+) failed.*?(\d+) passed/);
-
-    if (failMatch) {
-      const failed = failMatch[1];
-      const passed = passMatch ? passMatch[1] : '?';
-      console.log(`Failed: ${failed} tests (${passed} passed)\n`);
+    // The TESTS line, not the Test Files line — the two both say "N failed".
+    const testsLine = output.match(/^\s*Tests\s+(\d+) failed \|\s*(\d+) passed/m);
+    const filesLine = output.match(/^\s*Test Files\s+(\d+) failed \|\s*(\d+) passed/m);
+    if (testsLine) {
+      const files = filesLine ? ` across ${filesLine[1]} file(s)` : '';
+      console.log(`Failed: ${testsLine[1]} test(s)${files} (${testsLine[2]} passed)\n`);
     }
 
-    // Find all FAIL markers and extract details
-    let inFailure = false;
-    let currentTest = null;
-    let currentFile = null;
-    let errorLines = [];
-
+    // Vitest v4 failure recap lines: "FAIL  <project>? <file> > <suite> > <test>".
+    // Each is followed within a few lines by the error message and a
+    // "❯ file:line:col" frame.
+    let printed = 0;
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      const m = lines[i].match(/^\s*FAIL\s+(?:\S+\s+)?(\S+\.test\.[jt]sx?)\s*>\s*(.+)$/);
+      if (!m) continue;
 
-      // Detect test file with failures
-      if (line.includes('FAIL') && line.includes('.test.')) {
-        const fileMatch = line.match(/FAIL\s+(.+\.test\.[jt]sx?)/);
-        if (fileMatch) {
-          currentFile = fileMatch[1];
+      console.log(`📍 ${m[1]}`);
+      console.log(`   ✗ ${m[2].trim()}`);
+
+      // Scan ahead for the first error line and the first source frame.
+      let error = null;
+      let frame = null;
+      for (let j = i + 1; j < Math.min(i + 25, lines.length); j++) {
+        if (/^\s*FAIL\s/.test(lines[j])) break; // next failure's recap
+        if (!error) {
+          const e = lines[j].match(/^\s*((?:AssertionError|\w*Error|expected)\b.*)$/);
+          if (e && e[1].length < 300) error = e[1].trim();
         }
-      }
-
-      // Detect individual failing test
-      if (line.includes('❌') || line.match(/^\s*✖\s+/)) {
-        if (currentTest && errorLines.length > 0) {
-          printFailure(currentFile, currentTest, errorLines);
+        if (!frame) {
+          const f = lines[j].match(/^\s*❯\s+(\S+:\d+(?::\d+)?)/);
+          if (f) frame = f[1];
         }
-        currentTest = line.replace(/[❌✖]/g, '').trim();
-        errorLines = [];
-        inFailure = true;
+        if (error && frame) break;
       }
-
-      // Collect error details
-      if (inFailure && (
-        line.includes('Expected:') ||
-        line.includes('Received:') ||
-        line.includes('AssertionError') ||
-        line.match(/Error:/)
-      )) {
-        errorLines.push(line.trim());
-      }
-
-      // Extract file location
-      if (inFailure && line.match(/at\s+.*\((.+):(\d+):(\d+)\)/)) {
-        const locationMatch = line.match(/at\s+.*\((.+):(\d+):(\d+)\)/);
-        if (locationMatch && !errorLines.some(l => l.includes(locationMatch[1]))) {
-          errorLines.push(`📄 ${locationMatch[1]}:${locationMatch[2]}`);
-        }
-      }
+      if (error) console.log(`   ${error}`);
+      if (frame) console.log(`   📄 ${frame}`);
+      console.log('');
+      printed++;
     }
 
-    // Print last failure
-    if (currentTest && errorLines.length > 0) {
-      printFailure(currentFile, currentTest, errorLines);
+    if (testsLine && printed === 0) {
+      // Format drift guard: if Vitest's recap shape changes again, degrade to
+      // raw output rather than to silence — silence is what hid 13 failures.
+      console.log('⚠️  Could not locate per-test FAIL recap lines; last 60 lines of raw output:\n');
+      console.log(lines.slice(-60).join('\n'));
     }
 
-    console.log(`\n💡 Tip: Use Read tool with file paths above to debug`);
-    console.log(`💡 Full output saved temporarily in .test-output.tmp`);
-
+    console.log(`\n💡 Full output preserved in .test-output.tmp for this failed run`);
   } catch (error) {
     console.error('⚠️  Error parsing test output:', error.message);
     console.error('Showing last 50 lines of output:\n');
-    const output = fs.readFileSync(outputFile, 'utf8');
-    const lines = output.split('\n');
-    console.log(lines.slice(-50).join('\n'));
+    console.log(output.split('\n').slice(-50).join('\n'));
   }
-}
-
-function printFailure(file, testName, errorLines) {
-  if (file) {
-    console.log(`📍 ${file}`);
-  }
-  console.log(`   ✗ ${testName}`);
-
-  // Show only the most relevant error lines (max 5)
-  const relevantLines = errorLines
-    .filter(l => l && l.length < 200)
-    .slice(0, 5);
-
-  relevantLines.forEach(line => {
-    console.log(`   ${line}`);
-  });
-
-  console.log(''); // Blank line
 }
 
 // Main execution
 const outputFile = process.argv[2];
 
 if (!outputFile) {
-  console.error('Usage: node format-test-failures.js <test-output-file>');
+  console.error('Usage: node format-test-failures.cjs <test-output-file>');
   process.exit(1);
 }
 
