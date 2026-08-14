@@ -26,6 +26,7 @@ import {
   checkAgainstSchema,
 } from './schemas.js';
 import { manifestProblems } from './manifest.js';
+import { metricsProblems } from './metrics.js';
 import { fragilityCaveat } from './fragility.js';
 
 /**
@@ -160,6 +161,14 @@ export const resultCardProblems = (card) => {
   }
 
   problems.push(...manifestProblems(card.manifest ?? {}));
+
+  // WS-434. VALIDATION TIGHTENS HERE; PARSING DOES NOT — the same asymmetry
+  // disclaimerRegisterVersion established (manifest.js). `checkAgainstSchema` above still
+  // sees `metrics` as a bare required object, so every pre-WS-434 card stays LEGIBLE to the
+  // auditor and the fault-register flagger; it is invalid to PUBLISH, and its stored
+  // `resultCardProblems: []` is a verdict computed under the old rules — the documented
+  // stale-verdict situation (DISCLAIMER-AND-FAULT-REGISTER.md).
+  problems.push(...metricsProblems(card.metrics ?? {}));
   return problems;
 };
 

@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { SOR_SCHEMAS, checkAgainstSchema } from '../schemas.js';
+import { resultCardProblems } from '../resultCard.js';
 import { METRICS_KINDS } from '../metricsSchemas.js';
 import {
   metricsProblems,
@@ -165,6 +166,20 @@ describe('legacy asymmetry — committed cards stay legible, become unpublishabl
     expect(checkAgainstSchema(card, SOR_SCHEMAS.resultCard, { label: 'resultCard' })).toEqual([]);
     // UNPUBLISHABLE: the metrics validator asks for the kind the card predates.
     expect(metricsProblems(card.metrics)).toEqual([expect.stringContaining('kind is required')]);
+  });
+
+  it('resultCardProblems (the publish path) names metrics.kind on a legacy card — commit C wiring', () => {
+    const card = readCard('docs/standard-of-record/cards/RC-depth-ablation.json');
+    const problems = resultCardProblems(card);
+    expect(problems.some((p) => p.includes('kind is required to PUBLISH'))).toBe(true);
+  });
+
+  it('a fully-declared card passes the wired publish path end to end', () => {
+    const card = readCard('docs/standard-of-record/cards/RC-depth-ablation.json');
+    const withKind = { ...card, metrics: { kind: 'depth-ablation', ...card.metrics } };
+    // The manifest half may or may not hold problems of its own era; assert only that the
+    // metrics half is clean — no problem mentions metrics.
+    expect(resultCardProblems(withKind).filter((p) => p.includes('resultCard.metrics'))).toEqual([]);
   });
 });
 

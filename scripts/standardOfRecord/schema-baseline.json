@@ -714,6 +714,1167 @@
       }
     ]
   },
+  "metrics.shared.conditioned-rate": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "k",
+        "type": "number",
+        "since": 1,
+        "unit": "count"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "since": 1,
+        "unit": "count"
+      },
+      {
+        "name": "rate",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "conditional",
+        "type": "string",
+        "since": 1,
+        "unit": "prose — P(event | conditioning set)"
+      }
+    ]
+  },
+  "metrics.shared.divergence-pair": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "preRegistration",
+        "type": "object",
+        "since": 1,
+        "unit": "record"
+      },
+      {
+        "name": "comparableByMagnitude",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      },
+      {
+        "name": "klDirection",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "weightingReported",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "bySurface",
+        "type": "object",
+        "since": 1,
+        "unit": "map (surfaceId → {volume, kl, ev-difference})"
+      },
+      {
+        "name": "ranking",
+        "type": "object",
+        "since": 1,
+        "unit": "record"
+      },
+      {
+        "name": "klFloorSweep",
+        "type": "object",
+        "since": 1,
+        "unit": "map (floor → ranking)"
+      }
+    ]
+  },
+  "metrics.hero-ev": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "edgeBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "edgeCiLowBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "edgeCiHighBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "ess",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (effective decisions)"
+      },
+      {
+        "name": "players",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "controlEdgeBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "liveShiftedCiLowBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "pbrEdgeBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "exploitationEfficiency",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "exploitationEfficiencyUnavailableReason",
+        "type": "string|null",
+        "since": 1,
+        "unit": "prose"
+      },
+      {
+        "name": "overallEvBB100",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb/100 hands"
+      },
+      {
+        "name": "opportunitiesPerHand",
+        "type": "number|null",
+        "since": 1,
+        "unit": "opportunities/hand"
+      }
+    ]
+  },
+  "metrics.depth-ablation": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "depthDeltaBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb per substituted decision"
+      },
+      {
+        "name": "depthDeltaCiLowBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "depthDeltaCiHighBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "depthDeltaExcludesZero",
+        "type": "boolean|null",
+        "since": 1,
+        "unit": "flag"
+      },
+      {
+        "name": "edgeBaseArmBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "edgeTestArmBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "topActionFlipShare",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "flipShareByStreet",
+        "type": "object",
+        "since": 1,
+        "unit": "map (street → share [0,1])"
+      },
+      {
+        "name": "flipCountByStreet",
+        "type": "object",
+        "since": 1,
+        "unit": "map (street → {flips, n})"
+      },
+      {
+        "name": "flipDirections",
+        "type": "object",
+        "since": 1,
+        "unit": "map (\"from→to\" → count)"
+      },
+      {
+        "name": "meanTotalVariation",
+        "type": "number|null",
+        "since": 1,
+        "unit": "total variation [0,1]"
+      },
+      {
+        "name": "maxTotalVariation",
+        "type": "number|null",
+        "since": 1,
+        "unit": "total variation [0,1]"
+      },
+      {
+        "name": "identicalShare",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "discordantN",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "players",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "divergenceN",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "controlEdgeBB",
+        "type": "number|null",
+        "since": 1,
+        "unit": "bb"
+      },
+      {
+        "name": "notAVerdict",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      }
+    ]
+  },
+  "metrics.deviation-map": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "deviationVolume",
+        "type": "number",
+        "since": 1,
+        "unit": "frequency-weighted deviation (points × share)"
+      },
+      {
+        "name": "totalDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "wellSampledCells",
+        "type": "number",
+        "since": 1,
+        "unit": "count (cells)"
+      },
+      {
+        "name": "thinCells",
+        "type": "number",
+        "since": 1,
+        "unit": "count (cells)"
+      },
+      {
+        "name": "minCellN",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "topCells",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({cell, n, thin, observed, floor, deviation, weighted, reads})"
+      }
+    ]
+  },
+  "metrics.layer-divergence": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "divergence",
+        "type": "object",
+        "since": 1,
+        "unit": "record",
+        "shape": "metrics.shared.divergence-pair"
+      },
+      {
+        "name": "attribution",
+        "type": "object",
+        "since": 1,
+        "unit": "record"
+      },
+      {
+        "name": "counters",
+        "type": "object",
+        "since": 1,
+        "unit": "record (counts)"
+      },
+      {
+        "name": "notAnEdge",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      }
+    ]
+  },
+  "metrics.per-player-width": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "perPlayerMinusPopulationNatsPerDecision",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineSe",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineArm",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "unshrunkPerPlayerMinusPopulationNatsPerDecision",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "unshrunkSe",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "unshrunkPlayersMovedOffPopulation",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "headlineCiLow",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "headlineCiHigh",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "verdict",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "populationWidthMultiplier",
+        "type": "number|null",
+        "since": 1,
+        "unit": "width multiplier"
+      },
+      {
+        "name": "populationWidthN",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "populationNarrowingWorthNats",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "populationNarrowingWorthSe",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "chosenShrinkageK",
+        "type": "number|string",
+        "since": 1,
+        "unit": "pseudocount (or \"Infinity\")"
+      },
+      {
+        "name": "playersSignal",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "playersNegativeSignal",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "playersNoSignalObservedZero",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "playersUnderpoweredCannotTell",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "playersTotal",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "heldoutPlayers",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "heldoutPlayersScored",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "heldoutTestDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "heldoutPlayersMovedOffPopulation",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "poolRevealedDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "evalRevealedDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "rawWidthMedian",
+        "type": "number|null",
+        "since": 1,
+        "unit": "width multiplier"
+      },
+      {
+        "name": "rawWidthP25",
+        "type": "number|null",
+        "since": 1,
+        "unit": "width multiplier"
+      },
+      {
+        "name": "rawWidthP75",
+        "type": "number|null",
+        "since": 1,
+        "unit": "width multiplier"
+      },
+      {
+        "name": "rawWidthPlayersWithEstimate",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "rawWidthPlayersNoEstimate",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "rawWidthEdgePinned",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "rawWidthEdgePinnedShare",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "medianRevealedPerPlayer",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "showdownConditional",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      },
+      {
+        "name": "foldRevealRate",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1]"
+      }
+    ]
+  },
+  "metrics.range-calibration": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "villainDeltaLogVsUniform",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "actingDeltaLogVsUniform",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "chainDepth3DeltaLogVsUniform",
+        "type": "number|null",
+        "since": 1,
+        "unit": "nats/decision"
+      },
+      {
+        "name": "villainCoverage",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainRetainedFraction",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainCoverageLift",
+        "type": "number|null",
+        "since": 1,
+        "unit": "ratio"
+      },
+      {
+        "name": "actingCoverage",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingRetainedFraction",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingCoverageLift",
+        "type": "number|null",
+        "since": 1,
+        "unit": "ratio"
+      },
+      {
+        "name": "villainRevealRate",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainCoverageBoundLow",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainCoverageBoundHigh",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainCoverageBoundWidth",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingRevealRate",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingCoverageBoundLow",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingCoverageBoundHigh",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "actingCoverageBoundWidth",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "villainN",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "actingN",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "players",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "handsRead",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (hands)"
+      },
+      {
+        "name": "decisionsSeen",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "coverageSaturated",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      },
+      {
+        "name": "discriminatingMetric",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "showdownConditional",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      }
+    ]
+  },
+  "metrics.atoms-instrument": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "scoredShare",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "scoredGivenModeled",
+        "type": "object",
+        "since": 1,
+        "unit": "conditioned rate",
+        "shape": "metrics.shared.conditioned-rate"
+      },
+      {
+        "name": "modeledNodes",
+        "type": "number",
+        "since": 1,
+        "unit": "count (nodes)"
+      },
+      {
+        "name": "neverLookedGivenReachable",
+        "type": "object",
+        "since": 1,
+        "unit": "conditioned rate",
+        "shape": "metrics.shared.conditioned-rate"
+      },
+      {
+        "name": "observedZeroGivenExamined",
+        "type": "object",
+        "since": 1,
+        "unit": "conditioned rate",
+        "shape": "metrics.shared.conditioned-rate"
+      },
+      {
+        "name": "droppedGivenReachable",
+        "type": "object",
+        "since": 1,
+        "unit": "conditioned rate",
+        "shape": "metrics.shared.conditioned-rate"
+      },
+      {
+        "name": "predictionAuditDivergence",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({wiredScored, unwiredScored, lift, divergedNodes, conditional})"
+      },
+      {
+        "name": "skipReasons",
+        "type": "object",
+        "since": 1,
+        "unit": "map (reason → count)"
+      },
+      {
+        "name": "droppedDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "partiallyDroppedCells",
+        "type": "number",
+        "since": 1,
+        "unit": "count (cells)"
+      },
+      {
+        "name": "partitionExcludedDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "leakage",
+        "type": "object",
+        "since": 1,
+        "unit": "record (guard summary)"
+      }
+    ]
+  },
+  "metrics.river-flip-replicate": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "systematicFlipShare",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "systematicFlipCiLow",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1] (player-clustered)"
+      },
+      {
+        "name": "systematicFlipCiHigh",
+        "type": "number|null",
+        "since": 1,
+        "unit": "share [0,1] (player-clustered)"
+      },
+      {
+        "name": "systematicFlipCiLowBinomialOverDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1] (binomial over decisions)"
+      },
+      {
+        "name": "systematicFlipCiHighBinomialOverDecisions",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1] (binomial over decisions)"
+      },
+      {
+        "name": "seedDependentShare",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "singleEvaluationFlipShare",
+        "type": "number",
+        "since": 1,
+        "unit": "share [0,1]"
+      },
+      {
+        "name": "n",
+        "type": "number",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "players",
+        "type": "number",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "replicates",
+        "type": "number",
+        "since": 1,
+        "unit": "count (replicates)"
+      },
+      {
+        "name": "flipDirections",
+        "type": "object",
+        "since": 1,
+        "unit": "map (\"from→to\" → count)"
+      },
+      {
+        "name": "perArmArgmaxStability",
+        "type": "object",
+        "since": 1,
+        "unit": "map (arm → stability record)"
+      },
+      {
+        "name": "notAVerdict",
+        "type": "boolean",
+        "since": 1,
+        "unit": "flag"
+      }
+    ]
+  },
+  "metrics.study-ladder": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "handsSeen",
+        "type": "number",
+        "since": 1,
+        "unit": "count (hands)"
+      },
+      {
+        "name": "primaryMinN",
+        "type": "number",
+        "since": 1,
+        "unit": "count (observations)"
+      },
+      {
+        "name": "priorWeight",
+        "type": "number",
+        "since": 1,
+        "unit": "pseudocount"
+      },
+      {
+        "name": "controlAxis",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "axes",
+        "type": "object",
+        "since": 1,
+        "unit": "map (axisId → axis block)"
+      },
+      {
+        "name": "correlations",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({a, b, pearson, spearman, reliabilities, …})"
+      },
+      {
+        "name": "ordering",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({thresholds[], pairwise[], nesting})"
+      },
+      {
+        "name": "leakage",
+        "type": "object",
+        "since": 1,
+        "unit": "record (guard summary)"
+      }
+    ]
+  },
+  "metrics.style-collapse": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "villainPrediction",
+        "type": "object",
+        "since": 1,
+        "unit": "record (prose+figures)"
+      },
+      {
+        "name": "advicePath",
+        "type": "object",
+        "since": 1,
+        "unit": "record (prose+figures)"
+      },
+      {
+        "name": "absoluteEV",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({statement, evDeltaOnMeasuredSet})"
+      },
+      {
+        "name": "determinism",
+        "type": "object",
+        "since": 1,
+        "unit": "record (prose)"
+      }
+    ]
+  },
+  "metrics.teachable-arms": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "arms",
+        "type": "object",
+        "since": 1,
+        "unit": "map (armId → {deltaLogVsUniform, …})"
+      },
+      {
+        "name": "shareOfEngineEdge",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({A2, A3, A4, engineEdgeDeltaLog} — shares of Δlog)"
+      },
+      {
+        "name": "handsRead",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (hands)"
+      },
+      {
+        "name": "nPlayersPool",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "nPlayersEval",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (players)"
+      },
+      {
+        "name": "nMinedDecisions",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "nScoredDecisions",
+        "type": "number|null",
+        "since": 1,
+        "unit": "count (decisions)"
+      },
+      {
+        "name": "a3Table",
+        "type": "object|null",
+        "since": 1,
+        "unit": "map (action → class → {p, n, …})"
+      },
+      {
+        "name": "a4Table",
+        "type": "object|null",
+        "since": 1,
+        "unit": "map (action → class → {p, n, …})"
+      }
+    ]
+  },
+  "metrics.fold-curve-shape": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "fit",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({partition, n, k, marginalFoldRate})"
+      },
+      {
+        "name": "holdOut",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({partition, n, k, marginalFoldRate, residualSlopeVsBetFraction, brier})"
+      },
+      {
+        "name": "holdOutBySizeBucket",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({bucket, betOverPot, n, k, observed, errBefore, errAfter})"
+      },
+      {
+        "name": "inverseConditional",
+        "type": "object",
+        "since": 1,
+        "unit": "map (sizing bucket → share) + note"
+      },
+      {
+        "name": "facingRaiseHeldOutSeparately",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({n, k, marginalFoldRate, residualSlopeVsBetFraction, brier, note})"
+      },
+      {
+        "name": "holdOutByStreet",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({street, n, marginalFoldRate, slope, brier})"
+      },
+      {
+        "name": "fittedCurve",
+        "type": "object",
+        "since": 1,
+        "unit": "record (logistic parameters)"
+      },
+      {
+        "name": "previousCurve",
+        "type": "object",
+        "since": 1,
+        "unit": "record (logistic parameters)"
+      },
+      {
+        "name": "nullResults",
+        "type": "object",
+        "since": 1,
+        "unit": "record (prose)"
+      },
+      {
+        "name": "residualNotRemoved",
+        "type": "string",
+        "since": 1,
+        "unit": "prose"
+      }
+    ]
+  },
   "__manifest": {
     "version": null,
     "fields": [

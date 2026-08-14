@@ -77,7 +77,7 @@ job over instruments that already run**, plus two genuinely missing schemas.
 | Spot-level covariates on every scored decision | **CAPTURED, NEVER READ** | `heroEvRunner.mjs:292-300` |
 | Teachable-rule transcription harness | **EXISTS, unwired to the standard** | `teachableArmsProbe.mjs` |
 | Determinism under a frozen clock | **EXISTS in one runner** | `run-river-flip-replicate.mjs:83-87` |
-| **A declared shape for what a run reports** | **DOES NOT EXIST** | `schemas.js:286` |
+| **A declared shape for what a run reports** | ~~DOES NOT EXIST~~ **SHIPPED — WS-434 (2026-08-14)** | `metricsSchemas.js` — 12 kinds + 2 shared shapes, enforced in `resultCardProblems`, additive-guarded |
 | **The hero-EV path emitting atoms at all** | **DOES NOT EXIST** | §4.2 |
 | **The Equilibrium frame** | **DOES NOT EXIST, deliberately** | `equilibriumPost.mjs:54` |
 | **Stable player identity on a decision row** | **DROPPED** | §4.3 |
@@ -1055,7 +1055,7 @@ from a single point and is labelled as such.
 2. **Decision Atom v3 + `heroEvRunner` emits atoms** (§4). Everything else is a query over it, and
    every hour of run time spent before this is an hour whose record is discarded. **Do this first of
    the real work.**
-3. **Declare the `metrics` schema.** The view half of the same problem. Additive-only, guarded by
+3. **Declare the `metrics` schema.** ✅ **DONE — WS-434 (2026-08-14).** The view half of the same problem. Additive-only, guarded by
    `scripts/check-sor-additive.sh`.
 4. **Reproducibility** (§9.5): stamp achieved depth; canonical budget key; promote freeze/seed;
    `MAX_STAGE_SHARE` out of module scope. **Blocks §9 entirely.**

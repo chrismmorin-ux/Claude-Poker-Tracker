@@ -32,18 +32,31 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const BASELINE = join(HERE, 'schema-baseline.json');
 
-/** The live shape, reduced to what the invariant is about: names, types, and versions. */
+/**
+ * The live shape, reduced to what the invariant is about: names, types, versions — and,
+ * since WS-434, `unit` and `shape` where declared. A unit change is a retype in disguise
+ * (edgeBB re-declared bb/100 silently rescales every reader), and unlinking a `shape`
+ * silently stops validating every leaf under the sub-schema, so both join the snapshot.
+ */
+const fieldRow = (f) => ({
+  name: f.name,
+  type: f.type,
+  since: f.since,
+  ...(f.unit !== undefined && { unit: f.unit }),
+  ...(f.shape !== undefined && { shape: f.shape }),
+});
+
 const snapshot = () => {
   const objects = {};
   for (const [name, fields] of Object.entries(SOR_SCHEMAS)) {
     objects[name] = {
       version: SOR_SCHEMA_VERSIONS[name] ?? null,
-      fields: fields.map((f) => ({ name: f.name, type: f.type, since: f.since })),
+      fields: fields.map(fieldRow),
     };
   }
   objects.__manifest = {
     version: null,
-    fields: MANIFEST_SCHEMA.map((f) => ({ name: f.name, type: f.type, since: f.since })),
+    fields: MANIFEST_SCHEMA.map(fieldRow),
   };
   return objects;
 };
@@ -75,6 +88,18 @@ const compare = (baseline, live) => {
       if (cur.since !== f.since) {
         violations.push(`SINCE CHANGED: ${objName}.${f.name} claimed since ${f.since}, now `
           + `${cur.since}. The version a field shipped in is history, not a setting.`);
+      }
+      // WS-434: both checks tolerate an attribute ABSENT in the baseline (attaching one to a
+      // legacy field is an allowed additive move); once snapshotted, it is pinned.
+      if (f.unit !== undefined && cur.unit !== f.unit) {
+        violations.push(`UNIT CHANGED: ${objName}.${f.name} was "${f.unit}", is now `
+          + `"${cur.unit ?? '(removed)'}". A unit change is a retype in disguise — an old `
+          + 'artifact still parses and its numbers now mean something else.');
+      }
+      if (f.shape !== undefined && cur.shape !== f.shape) {
+        violations.push(`SHAPE CHANGED: ${objName}.${f.name} was linked to "${f.shape}", is now `
+          + `"${cur.shape ?? '(unlinked)'}". Unlinking a sub-schema silently stops validating `
+          + 'every leaf under it.');
       }
     }
     // A NEW field must arrive with `since` equal to the (bumped) current version. Otherwise a
