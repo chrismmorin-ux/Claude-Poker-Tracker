@@ -2235,6 +2235,23 @@ frequency, which accumulates evidence and eventually outvotes its prior; it is w
 structural computation, which never can. This is §11.5's "let the posterior self-weight"
 applied to a quantity that has no `n`.
 
+**Corollary — a clamp can be a hidden prior** (WS-307 parallel line, recovered via WS-442).
+The per-combo estimator inherited `scaledLogistic`'s default bounds on call probability,
+`[0.10, 0.80]`, which imposed a **floor of 0.20 on every fold estimate derived from it** —
+no range, however strong, could report below 20% folds. A bound that decides the answer is
+not a sanity guard; it is the model, and it must be justified and swept like one. That is
+how the ceiling was eventually closed: WS-403 replaced it with the pool-measured
+`CONTINUE_PROB_CEILING = 0.986` (`villainModelData.js`, read by all four ask-sites). The
+floor's asymptote remains unmeasured — no sizing drives villain's required equity near 1 in
+the corpus — so it stands as a declared bound, not a measured one.
+
+**Corollary — check what saturation destroys** (same recovered line). Freeing a probability
+to approach its bounds can erase a signal computed underneath it. When fold% nears 1, bet
+EV collapses to `pot × foldPct` for *every* sizing, so all sizings converge and sizing
+advice becomes noise. A fix that makes one number right can flatten another; when moving a
+bound, check what the newly-reachable region does to every quantity computed downstream of
+the bounded one.
+
 ### 13.4 Two formulas that look alike and are not
 
 ```
