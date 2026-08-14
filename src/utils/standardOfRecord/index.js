@@ -170,6 +170,19 @@ export {
   needsCaveat,
 } from './resultCard.js';
 
+// WS-434: the declared metrics union — the "Scored Readout" shape VOCABULARY.md names.
+export {
+  METRICS_SCHEMA_ENTRIES,
+  METRICS_SCHEMA_VERSIONS,
+} from './metricsSchemas.js';
+
+export {
+  METRICS_KINDS,
+  metricsProblems,
+  conditionedRateProblems,
+  overallEvFactorProblems,
+} from './metrics.js';
+
 export {
   FAULT_STATUSES,
   NON_LAYER_SITES,

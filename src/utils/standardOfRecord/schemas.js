@@ -28,6 +28,16 @@
  * not a slightly-worse Result Card; it is a number nobody can ever check again.
  */
 
+// WS-434: the Result Card `metrics` union — 12 per-producer variants + 2 shared leaf
+// shapes, declared in metricsSchemas.js (pure data) and spread into the registries below
+// so scripts/standardOfRecord/check-additive.mjs guards them like every other object.
+// Validation lives in metrics.js; RESULT_CARD_FIELDS.metrics stays a bare required object
+// so PARSING of pre-WS-434 cards never tightens (the disclaimerRegisterVersion asymmetry).
+import {
+  METRICS_SCHEMA_ENTRIES,
+  METRICS_SCHEMA_VERSIONS,
+} from './metricsSchemas.js';
+
 /**
  * Schema version per object type. Bump the specific object when its field list grows.
  * Consumers refuse a MAJOR they do not understand rather than duck-type it — the same rule
@@ -46,6 +56,9 @@ export const SOR_SCHEMA_VERSIONS = Object.freeze({
   // governed HERE — its writer re-derives DECISION_RECORD_SCHEMA_VERSION from this entry,
   // so the sidecar can no longer version itself outside the additive contract.
   decisionRecord: 2,
+  // WS-434: one version per metrics variant, so a variant can grow (Stage 2 canonical
+  // aliases are `since: 2` on the variants they touch) without moving the others.
+  ...METRICS_SCHEMA_VERSIONS,
 });
 
 /**
@@ -75,6 +88,13 @@ export const READER_DEPTHS = Object.freeze({
  * @property {boolean} required - whether a loader rejects an object lacking it
  * @property {string} note - why the field exists; read by humans, not code
  * @property {string} [deprecated] - set instead of deleting; the field stays readable forever
+ * @property {string} [unit] - WS-434: what the value is denominated in ('bb', 'nats/decision',
+ *   'share [0,1]', 'count (players)', 'prose', …). MANDATORY on metrics-variant fields
+ *   (schemas.test.js enforces); part of the additive snapshot — a unit change is a retype
+ *   in disguise.
+ * @property {string} [shape] - WS-434: names another registered SOR_SCHEMAS entry the value
+ *   must satisfy; metricsProblems recurses one level through it. Snapshotted — unlinking a
+ *   sub-schema would silently stop validating every leaf under it.
  */
 
 /**
@@ -556,6 +576,8 @@ export const SOR_SCHEMAS = Object.freeze({
   resultCard: Object.freeze(RESULT_CARD_FIELDS),
   faultEntry: Object.freeze(FAULT_ENTRY_FIELDS),
   decisionRecord: Object.freeze(DECISION_RECORD_FIELDS),
+  // WS-434: the metrics union variants + shared leaf shapes, guarded by the same gate.
+  ...METRICS_SCHEMA_ENTRIES,
 });
 
 /** The record file's meta/summary lines, registered like MANIFEST_SCHEMA — same guard. */

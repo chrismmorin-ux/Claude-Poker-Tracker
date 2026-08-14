@@ -101,6 +101,106 @@ const SHIPPED_FIELDS = {
     // v2 (WS-431)
     stable: 'object|null', omitted: 'object|null',
   },
+  // ── WS-434 — the Result Card metrics union. Two shared leaf shapes + one variant per
+  // producer, each transcribed from the producer's literal at HEAD. Same append-only rule
+  // as every block above.
+  'metrics.shared.conditioned-rate': {
+    k: 'number', n: 'number', rate: 'number|null', conditional: 'string',
+  },
+  'metrics.shared.divergence-pair': {
+    preRegistration: 'object', comparableByMagnitude: 'boolean', klDirection: 'string',
+    weightingReported: 'string', bySurface: 'object', ranking: 'object', klFloorSweep: 'object',
+  },
+  'metrics.hero-ev': {
+    kind: 'string', edgeBB: 'number|null', edgeCiLowBB: 'number|null', edgeCiHighBB: 'number|null',
+    n: 'number', ess: 'number|null', players: 'number', controlEdgeBB: 'number|null',
+    liveShiftedCiLowBB: 'number|null', pbrEdgeBB: 'number|null',
+    exploitationEfficiency: 'number|null', exploitationEfficiencyUnavailableReason: 'string|null',
+    overallEvBB100: 'number|null', opportunitiesPerHand: 'number|null',
+  },
+  'metrics.depth-ablation': {
+    kind: 'string', depthDeltaBB: 'number|null', depthDeltaCiLowBB: 'number|null',
+    depthDeltaCiHighBB: 'number|null', depthDeltaExcludesZero: 'boolean|null',
+    edgeBaseArmBB: 'number|null', edgeTestArmBB: 'number|null', topActionFlipShare: 'number|null',
+    flipShareByStreet: 'object', flipCountByStreet: 'object', flipDirections: 'object',
+    meanTotalVariation: 'number|null', maxTotalVariation: 'number|null', identicalShare: 'number|null',
+    n: 'number', discordantN: 'number|null', players: 'number', divergenceN: 'number',
+    controlEdgeBB: 'number|null', notAVerdict: 'boolean',
+  },
+  'metrics.deviation-map': {
+    kind: 'string', deviationVolume: 'number', totalDecisions: 'number',
+    wellSampledCells: 'number', thinCells: 'number', minCellN: 'number', topCells: 'array',
+  },
+  'metrics.layer-divergence': {
+    kind: 'string', divergence: 'object', attribution: 'object', counters: 'object',
+    notAnEdge: 'boolean',
+  },
+  'metrics.per-player-width': {
+    kind: 'string', perPlayerMinusPopulationNatsPerDecision: 'number|null', headlineSe: 'number|null',
+    headlineArm: 'string', unshrunkPerPlayerMinusPopulationNatsPerDecision: 'number|null',
+    unshrunkSe: 'number|null', unshrunkPlayersMovedOffPopulation: 'number',
+    headlineCiLow: 'number|null', headlineCiHigh: 'number|null', verdict: 'string',
+    populationWidthMultiplier: 'number|null', populationWidthN: 'number',
+    populationNarrowingWorthNats: 'number|null', populationNarrowingWorthSe: 'number|null',
+    chosenShrinkageK: 'number|string',
+    playersSignal: 'number', playersNegativeSignal: 'number', playersNoSignalObservedZero: 'number',
+    playersUnderpoweredCannotTell: 'number', playersTotal: 'number',
+    heldoutPlayers: 'number', heldoutPlayersScored: 'number', heldoutTestDecisions: 'number',
+    heldoutPlayersMovedOffPopulation: 'number',
+    poolRevealedDecisions: 'number', evalRevealedDecisions: 'number',
+    rawWidthMedian: 'number|null', rawWidthP25: 'number|null', rawWidthP75: 'number|null',
+    rawWidthPlayersWithEstimate: 'number', rawWidthPlayersNoEstimate: 'number',
+    rawWidthEdgePinned: 'number', rawWidthEdgePinnedShare: 'number|null',
+    medianRevealedPerPlayer: 'number|null', showdownConditional: 'boolean', foldRevealRate: 'number',
+  },
+  'metrics.range-calibration': {
+    kind: 'string', villainDeltaLogVsUniform: 'number|null', actingDeltaLogVsUniform: 'number|null',
+    chainDepth3DeltaLogVsUniform: 'number|null',
+    villainCoverage: 'number|null', villainRetainedFraction: 'number|null', villainCoverageLift: 'number|null',
+    actingCoverage: 'number|null', actingRetainedFraction: 'number|null', actingCoverageLift: 'number|null',
+    villainRevealRate: 'number|null', villainCoverageBoundLow: 'number|null',
+    villainCoverageBoundHigh: 'number|null', villainCoverageBoundWidth: 'number|null',
+    actingRevealRate: 'number|null', actingCoverageBoundLow: 'number|null',
+    actingCoverageBoundHigh: 'number|null', actingCoverageBoundWidth: 'number|null',
+    villainN: 'number|null', actingN: 'number|null', players: 'number|null',
+    handsRead: 'number|null', decisionsSeen: 'number|null',
+    coverageSaturated: 'boolean', discriminatingMetric: 'string', showdownConditional: 'boolean',
+  },
+  'metrics.atoms-instrument': {
+    kind: 'string', scoredShare: 'number|null', scoredGivenModeled: 'object', modeledNodes: 'number',
+    neverLookedGivenReachable: 'object', observedZeroGivenExamined: 'object',
+    droppedGivenReachable: 'object', predictionAuditDivergence: 'object', skipReasons: 'object',
+    droppedDecisions: 'number', partiallyDroppedCells: 'number', partitionExcludedDecisions: 'number',
+    leakage: 'object',
+  },
+  'metrics.river-flip-replicate': {
+    kind: 'string', systematicFlipShare: 'number', systematicFlipCiLow: 'number|null',
+    systematicFlipCiHigh: 'number|null', systematicFlipCiLowBinomialOverDecisions: 'number',
+    systematicFlipCiHighBinomialOverDecisions: 'number', seedDependentShare: 'number',
+    singleEvaluationFlipShare: 'number', n: 'number', players: 'number', replicates: 'number',
+    flipDirections: 'object', perArmArgmaxStability: 'object', notAVerdict: 'boolean',
+  },
+  'metrics.study-ladder': {
+    kind: 'string', handsSeen: 'number', primaryMinN: 'number', priorWeight: 'number',
+    controlAxis: 'string', axes: 'object', correlations: 'array', ordering: 'object',
+    leakage: 'object',
+  },
+  'metrics.style-collapse': {
+    kind: 'string', villainPrediction: 'object', advicePath: 'object', absoluteEV: 'object',
+    determinism: 'object',
+  },
+  'metrics.teachable-arms': {
+    kind: 'string', arms: 'object', shareOfEngineEdge: 'object',
+    handsRead: 'number|null', nPlayersPool: 'number|null', nPlayersEval: 'number|null',
+    nMinedDecisions: 'number|null', nScoredDecisions: 'number|null',
+    a3Table: 'object|null', a4Table: 'object|null',
+  },
+  'metrics.fold-curve-shape': {
+    kind: 'string', fit: 'object', holdOut: 'object', holdOutBySizeBucket: 'array',
+    inverseConditional: 'object', facingRaiseHeldOutSeparately: 'object', holdOutByStreet: 'array',
+    fittedCurve: 'object', previousCurve: 'object', nullResults: 'object',
+    residualNotRemoved: 'string',
+  },
 };
 
 const DECISION_RECORD_META_SHIPPED_FIELDS = {
@@ -171,6 +271,40 @@ describe('additive-only schema guard', () => {
       });
     });
   }
+
+  // WS-434: the metrics variants carry two attributes the base descriptor does not require.
+  describe('metrics-variant declaration discipline (WS-434)', () => {
+    const metricsEntries = Object.entries(SOR_SCHEMAS).filter(([name]) => name.startsWith('metrics.'));
+
+    it('registers at least the twelve variants and two shared shapes', () => {
+      expect(metricsEntries.length).toBeGreaterThanOrEqual(14);
+    });
+
+    it('every metrics field states its unit — a figure without a unit is not checkable', () => {
+      for (const [name, fields] of metricsEntries) {
+        for (const field of fields) {
+          expect(
+            typeof field.unit === 'string' && field.unit.length > 0,
+            `${name}.${field.name} has no unit. Every figure carries its units (WS-434 AC4); ` +
+            'a unit change later is a retype in disguise, so it must be declared at birth.',
+          ).toBe(true);
+        }
+      }
+    });
+
+    it('every declared shape names a registered SOR_SCHEMAS entry', () => {
+      for (const [name, fields] of metricsEntries) {
+        for (const field of fields) {
+          if (!field.shape) continue;
+          expect(
+            SOR_SCHEMAS[field.shape],
+            `${name}.${field.name} declares shape "${field.shape}" which is not registered — ` +
+            'an unlinked sub-schema silently stops validating every leaf under it.',
+          ).toBeDefined();
+        }
+      }
+    });
+  });
 
   describe('replication manifest', () => {
     it('has never dropped or retyped a shipped field', () => {
