@@ -64,6 +64,7 @@
 import {
   estimateEdge, weightFor, wisValue, clusterBootstrapCI,
   TREATMENT, DEFAULT_BOOTSTRAP_SEED, DEFAULT_WEIGHT_CAP,
+  DEFAULT_BOOTSTRAP_RESAMPLES, DEFAULT_BOOTSTRAP_ALPHA, Z_DETECT, Z80_POWER,
 } from './ipsEstimator.mjs';
 import { MIN_CLUSTERS_FOR_CI } from './heroEvReport.mjs';
 import { buildResultCard, resultCardProblems } from '../../src/utils/standardOfRecord/resultCard.js';
@@ -203,8 +204,11 @@ export const adviceDivergence = (decisions, { baseArm, testArm, epsilon = 1e-9 }
 export const pairedDelta = (decisions, {
   baseArm, testArm,
   weightCap = DEFAULT_WEIGHT_CAP,
-  resamples = 2000,
-  alpha = 0.05,
+  // WS-435: imported from their definition sites, never transcribed — these were the
+  // literal values 2000 / 0.05 restated inline, which is the drift the constants exist
+  // to prevent.
+  resamples = DEFAULT_BOOTSTRAP_RESAMPLES,
+  alpha = DEFAULT_BOOTSTRAP_ALPHA,
   seed = DEFAULT_BOOTSTRAP_SEED,
 } = {}) => {
   const rows = [];
@@ -263,6 +267,12 @@ export const pairedDelta = (decisions, {
     deltaCiHighBB: ci ? Number(ci.hi.toFixed(4)) : null,
     ciResamples: ci?.resamples ?? 0,
     excludesZero: ci ? (ci.lo > 0 || ci.hi < 0) : null,
+    // WS-435: the smallest delta THIS paired sample could have resolved, in the same bb
+    // as the delta beside it. THE SEPARATOR IS POWER, NOT SAMPLE SIZE — a straddling
+    // interval at an MDE above the effect being hunted is a statement about the
+    // instrument, not the effect.
+    deltaMdeDetectBB: ci ? Number((Z_DETECT * ci.sd).toFixed(4)) : null,
+    deltaMdePower80BB: ci ? Number(((Z_DETECT + Z80_POWER) * ci.sd).toFixed(4)) : null,
     skipped,
   };
 };
@@ -453,6 +463,10 @@ export const buildDepthAblationReport = (run, {
           depthDeltaCiLowBB: delta.deltaCiLowBB,
           depthDeltaCiHighBB: delta.deltaCiHighBB,
           depthDeltaExcludesZero: delta.excludesZero,
+          // WS-435: a null without its MDE is not a result — the card carries the
+          // smallest delta this run could have resolved, on the same bb scale.
+          depthDeltaMdeDetectBB: delta.deltaMdeDetectBB ?? null,
+          depthDeltaMdePower80BB: delta.deltaMdePower80BB ?? null,
           // ── the absolute arms. NOT quotable below the cluster bar; see admissibility ──
           edgeBaseArmBB: armEdges[baseArm]?.edgeBB ?? null,
           edgeTestArmBB: armEdges[testArm]?.edgeBB ?? null,
@@ -579,6 +593,13 @@ export const renderDepthAblationReport = (r) => {
     L.push(`    delta (${r.testArm} − ${r.baseArm})   ${bb(dl.deltaBB).padStart(9)} bb   ${ci.padStart(22)}`);
     L.push(`    n=${dl.n}  players=${dl.players}  decisions where the arms differ: ${dl.discordantN} (${pctOf(dl.discordantShare)})`);
     L.push(`    interval excludes zero: ${dl.excludesZero === null ? '—' : dl.excludesZero}`);
+    // WS-435: the MDE prints ALWAYS, not only on a null — near-null readers need it too.
+    L.push(`    min detectable effect (this run): detect ${bb(dl.deltaMdeDetectBB)} bb · 80% power ${bb(dl.deltaMdePower80BB)} bb`);
+    if (dl.excludesZero === false) {
+      L.push(`    NULL RESULT — this instrument could not resolve effects smaller than ${bb(dl.deltaMdePower80BB)} bb`);
+      L.push('    (80% power). A smaller real effect and no effect print identically here;');
+      L.push('    the separator is POWER, not sample size.');
+    }
     if (Object.keys(dl.skipped ?? {}).length) L.push(`    unscorable: ${JSON.stringify(dl.skipped)}`);
   }
   L.push('');

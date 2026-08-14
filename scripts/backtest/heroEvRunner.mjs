@@ -122,6 +122,19 @@ const normalizeDepthArms = (depthArms, { allowSetChange = false } = {}) => {
   ];
 };
 
+/**
+ * The per-player decision cap a run will actually apply, given its flags (WS-435).
+ *
+ * Extracted from the wave-admission logic below so the pre-flight MDE gate can plan with
+ * the SAME formula the run executes — transcribing it into the gate is exactly the drift
+ * the constants-from-definition-sites doctrine forbids.
+ */
+export const resolvePerPlayerCap = ({ maxDecisionsPerPlayer, maxDecisions, plannedPlayers }) =>
+  maxDecisionsPerPlayer
+    ?? ((Number.isFinite(maxDecisions) && plannedPlayers > 0)
+      ? Math.ceil(maxDecisions / plannedPlayers)
+      : Infinity);
+
 /** Split a `${site}:${pseudonym}` key at the FIRST colon; sites carry no colons. */
 const barePseudonym = (playerKey) => playerKey.slice(playerKey.indexOf(':') + 1);
 
@@ -255,10 +268,9 @@ export const runHeroEv = async ({
     : enumeration.players;
   log(`enumerated ${enumeration.qualifyingCount} qualifying players (of ${enumeration.totalPlayers} indexed) — planning ${planned.length}`);
 
-  const perPlayerCap = maxDecisionsPerPlayer
-    ?? ((Number.isFinite(maxDecisions) && planned.length > 0)
-      ? Math.ceil(maxDecisions / planned.length)
-      : Infinity);
+  const perPlayerCap = resolvePerPlayerCap({
+    maxDecisionsPerPlayer, maxDecisions, plannedPlayers: planned.length,
+  });
 
   const taskConfig = {
     minTrainHands,

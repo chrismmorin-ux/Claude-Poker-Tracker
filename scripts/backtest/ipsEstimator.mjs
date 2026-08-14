@@ -145,6 +145,35 @@ export const DEFAULT_BOOTSTRAP_SEED = 0x9e3779b9;
 export const DEFAULT_BOOTSTRAP_RESAMPLES = 2000;
 export const DEFAULT_BOOTSTRAP_ALPHA = 0.05;
 
+/**
+ * z for the detection boundary of a two-sided 95% claim (WS-435).
+ *
+ * SHADOW NOTE: `rangeCalibrationProbe.mjs` carries a module-local `Z95 = 1.96` (not
+ * exported) that `classifyPlayerSignal` rounds to two decimals. Importing from that
+ * high-level probe module here would invert the layering, so the value is re-declared
+ * at full precision at this lower level — the same pattern `replicationStamp.mjs` uses
+ * for its PRIOR_WEIGHT shadow: the divergence is RECORDED so a future drift has
+ * somewhere to surface. If `classifyPlayerSignal` ever changes its z, this constant
+ * and its docblock must be revisited in the same change.
+ */
+export const Z_DETECT = 1.959963985;
+
+/**
+ * z addend for 80% power (Phi^-1(0.80)), WS-435.
+ *
+ * mdeDetect  = Z_DETECT * se            — the smallest effect that could reach the edge
+ *                                         of significance: seeing it is a coin flip.
+ * mdePower80 = (Z_DETECT + Z80_POWER) * se — the smallest effect the instrument has a
+ *                                         4-in-5 chance of actually resolving.
+ *
+ * Founder ruling 2026-08-14 (WS-435): the 80%-power figure is the one that GATES a
+ * planned run, and it is deliberately a named constant rather than doctrine — the bar
+ * is an OPEN question (synthetic-data bridging may later change what "resolvable"
+ * means, and extreme-tail spots such as betting into a nutted range need their own
+ * attention). Both figures are always computed and reported.
+ */
+export const Z80_POWER = 0.8416212335729143;
+
 const lcg = (seed) => {
   let state = seed >>> 0;
   return (mod) => {
@@ -165,21 +194,32 @@ const lcg = (seed) => {
  * Resamples PLAYERS with replacement, then recomputes the statistic over all decisions
  * belonging to the drawn players. See the header for why the cluster is the player.
  *
+ * WS-435: `drawClusters` lets a PRE-FLIGHT simulation run this exact instrument — same
+ * LCG, same statistic, same WIS nonlinearity — at a PLANNED player count instead of the
+ * observed one. At its default (the observed count) the draw sequence is byte-identical
+ * to every run before the parameter existed. `sd` and `mean` of the bootstrap stats are
+ * returned alongside the quantile interval: the quantile CI stays the quotable interval;
+ * `sd` is the bootstrap SE the MDE is defined on. On a skewed bootstrap the two disagree
+ * — that is information, not an error, and both are reported rather than reconciled.
+ *
  * @param {Map<string, Array>} byPlayer - playerId -> scored decisions
  * @param {Function} statOf - (decisions) => number|null
  */
 export const clusterBootstrapCI = (byPlayer, statOf, {
   resamples = DEFAULT_BOOTSTRAP_RESAMPLES, alpha = DEFAULT_BOOTSTRAP_ALPHA, seed = DEFAULT_BOOTSTRAP_SEED,
+  drawClusters = null,
 } = {}) => {
   const players = [...byPlayer.keys()];
   const k = players.length;
   if (k < 2) return null;
+  const draws = drawClusters ?? k;
+  if (!(draws >= 2)) return null;
 
   const nextIdx = lcg(seed);
   const stats = [];
   for (let b = 0; b < resamples; b++) {
     const drawn = [];
-    for (let i = 0; i < k; i++) {
+    for (let i = 0; i < draws; i++) {
       const chunk = byPlayer.get(players[nextIdx(k)]);
       for (let j = 0; j < chunk.length; j++) drawn.push(chunk[j]);
     }
@@ -187,10 +227,21 @@ export const clusterBootstrapCI = (byPlayer, statOf, {
     if (Number.isFinite(s)) stats.push(s);
   }
   if (stats.length < 2) return null;
+
+  let sum = 0;
+  for (const s of stats) sum += s;
+  const mean = sum / stats.length;
+  let sse = 0;
+  for (const s of stats) sse += (s - mean) * (s - mean);
+  const sd = Math.sqrt(sse / (stats.length - 1));
+
   stats.sort((a, b) => a - b);
 
   const at = (q) => stats[Math.min(stats.length - 1, Math.max(0, Math.floor(q * stats.length)))];
-  return { lo: at(alpha / 2), hi: at(1 - alpha / 2), resamples: stats.length, clusters: k };
+  return {
+    lo: at(alpha / 2), hi: at(1 - alpha / 2), resamples: stats.length, clusters: k,
+    drawClusters: draws, sd, mean,
+  };
 };
 
 /** Self-normalized (weighted) IPS value over a set of scored decisions. */
@@ -302,6 +353,12 @@ export const estimateEdge = (decisions, {
     edgeCiLowBB: ci ? Number(ci.lo.toFixed(4)) : null,
     edgeCiHighBB: ci ? Number(ci.hi.toFixed(4)) : null,
     ciResamples: ci?.resamples ?? 0,
+    // WS-435: the smallest effect THIS run's own evidence could have resolved, in the
+    // same bb units as the edge it sits beside. THE SEPARATOR IS POWER, NOT SAMPLE SIZE
+    // (classifyPlayerSignal's rule): a CI straddling zero at an MDE above the effect
+    // being hunted is a statement about the instrument, not about the effect.
+    mdeDetectBB: ci ? Number((Z_DETECT * ci.sd).toFixed(4)) : null,
+    mdePower80BB: ci ? Number(((Z_DETECT + Z80_POWER) * ci.sd).toFixed(4)) : null,
     skipped,
   };
 };

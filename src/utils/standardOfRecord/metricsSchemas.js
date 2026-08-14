@@ -47,11 +47,13 @@
 export const METRICS_SCHEMA_VERSIONS = Object.freeze({
   'metrics.shared.conditioned-rate': 1,
   'metrics.shared.divergence-pair': 1,
-  'metrics.hero-ev': 1,
+  // v2 = WS-435 pre-flight MDE fields (mdeDetectBB / mdePower80BB), additive.
+  'metrics.hero-ev': 2,
   // v2 = the Stage 2 canonical-vocabulary aliases (founder-approved 2026-08-14): conditioned
   // rates and unit-suffixed CI names added BESIDE the v1 dialect keys, which stay emitted
   // forever (fault matchers and legacy readers key on them).
-  'metrics.depth-ablation': 2,
+  // v3 = WS-435 pre-flight MDE fields (depthDeltaMdeDetectBB / depthDeltaMdePower80BB), additive.
+  'metrics.depth-ablation': 3,
   'metrics.deviation-map': 1,
   'metrics.layer-divergence': 1,
   'metrics.per-player-width': 2,
@@ -164,6 +166,10 @@ const HERO_EV_FIELDS = [
     note: 'THE optimizable figure (§3.3): edgeBB × opportunitiesPerHand × 100. Compose ONLY via overallEv.composeOverallEv — metricsProblems rejects the product without both factors present (WS-410 Stage 2).' },
   { name: 'opportunitiesPerHand', type: 'number|null', since: 1, required: true, unit: 'opportunities/hand',
     note: 'Factor 2, from the coverage census over the Deal Book — structurally refused if derived from the scored subset (n/handsRepresented inherits every harness sampling limit).' },
+  { name: 'mdeDetectBB', type: 'number|null', since: 2, required: false, unit: 'bb',
+    note: 'WS-435: smallest edge this run could have seen at the detection boundary (Z_DETECT × bootstrap SD of the headline arm). THE SEPARATOR IS POWER, NOT SAMPLE SIZE — a null without this beside it is not a result.' },
+  { name: 'mdePower80BB', type: 'number|null', since: 2, required: false, unit: 'bb',
+    note: 'WS-435: smallest edge resolvable with 80% power ((Z_DETECT + Z80_POWER) × bootstrap SD). The figure the pre-flight gate blocks on; founder 2026-08-14 keeps the 80% bar an OPEN question.' },
 ];
 
 /** scripts/backtest/depthAblationReport.mjs — paired depth-1 vs depth-2/3 delta. */
@@ -175,6 +181,10 @@ const DEPTH_ABLATION_FIELDS = [
   { name: 'depthDeltaCiHighBB', type: 'number|null', since: 1, required: true, unit: 'bb', note: 'Paired CI high. NAME FROZEN (WS-435).' },
   { name: 'depthDeltaExcludesZero', type: 'boolean|null', since: 1, required: true, unit: 'flag',
     note: 'Whether the paired interval excludes zero. Stated so a reader does not eyeball it off rounded bounds.' },
+  { name: 'depthDeltaMdeDetectBB', type: 'number|null', since: 3, required: false, unit: 'bb',
+    note: 'WS-435: smallest paired delta this run could have seen at the detection boundary (Z_DETECT × bootstrap SD). THE SEPARATOR IS POWER, NOT SAMPLE SIZE (classifyPlayerSignal\'s rule) — a null without this beside it is not a result.' },
+  { name: 'depthDeltaMdePower80BB', type: 'number|null', since: 3, required: false, unit: 'bb',
+    note: 'WS-435: smallest paired delta resolvable with 80% power ((Z_DETECT + Z80_POWER) × bootstrap SD). The figure the pre-flight gate blocks on; founder 2026-08-14 keeps the 80% bar an OPEN question.' },
   { name: 'edgeBaseArmBB', type: 'number|null', since: 1, required: true, unit: 'bb', note: 'Absolute base-arm edge. Not quotable below the cluster bar — see admissibility.' },
   { name: 'edgeTestArmBB', type: 'number|null', since: 1, required: true, unit: 'bb', note: 'Absolute test-arm edge, same caveat.' },
   { name: 'topActionFlipShare', type: 'number|null', since: 1, required: true, unit: 'share [0,1]',

@@ -21,6 +21,12 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
+// WS-435 — imported statically, NOT through the loader: the gate must fire before the
+// loader, the Deal Book, and the census spend anything.
+import {
+  preflightForPlan, gateVerdict, extractPowerRows, buildLedgerEntry, appendLedgerEntry,
+  TARGET_EFFECT_BB, POWER_LEDGER_DIR, DEFAULT_POWER_GATE_MODE,
+} from './powerLedger.mjs';
 
 const parseArgs = (argv) => {
   const args = {};
@@ -65,6 +71,31 @@ const main = async () => {
     process.exit(2);
   }
   const behaviorPolicy = JSON.parse(readFileSync(args['behavior-policy'], 'utf8'));
+
+  // ── WS-435: the pre-flight MDE gate ────────────────────────────────────────────────
+  // BEFORE the loader, the Deal Book, and the engine pass spend anything: can the planned
+  // configuration resolve the effect being targeted? Pure fs + math over the power ledger.
+  const targetEffectBB = num(args['target-effect-bb'], TARGET_EFFECT_BB);
+  const powerGateMode = typeof args['power-gate'] === 'string' ? args['power-gate'] : DEFAULT_POWER_GATE_MODE;
+  if (powerGateMode !== 'refuse' && powerGateMode !== 'warn') {
+    console.error(`Refused: --power-gate must be "refuse" or "warn", got "${powerGateMode}".`);
+    process.exit(2);
+  }
+  const powerOverride = typeof args['power-override'] === 'string' ? args['power-override'] : null;
+  const powerLedgerDir = typeof args['power-ledger-dir'] === 'string' ? args['power-ledger-dir'] : POWER_LEDGER_DIR;
+  const preflight = preflightForPlan({
+    kind: 'hero-ev',
+    dir: powerLedgerDir,
+    maxPlayers: int(args['max-players'], Infinity),
+    targetContributingPlayers: int(args['target-contributing-players'], null),
+    maxDecisionsPerPlayer: int(args['max-decisions-per-player'], null),
+    maxDecisions: int(args['max-decisions'], Infinity),
+    weightCap: num(args['weight-cap'], 20),
+    targetEffectBB,
+  });
+  const powerVerdict = gateVerdict(preflight, { mode: powerGateMode, overrideReason: powerOverride });
+  console.log(powerVerdict.banner);
+  if (!powerVerdict.proceed) process.exit(powerVerdict.exitCode);
 
   // Rake is MODELLED — the corpus records none. `--rake none` reports the unraked view
   // as the headline instead, but both are always computed.
@@ -237,6 +268,21 @@ const main = async () => {
       HERO_POLICY_TRIALS: trials,
       IPS_WEIGHT_CAP: reportOpts.weightCap,
       HERO_EV_WORKERS: workers,
+      // WS-435: what the pre-flight gate predicted and decided, in the provenance — so a
+      // card confirmed underpowered later can be traced to the gate that let it run.
+      POWER_PREFLIGHT: preflight
+        ? {
+          targetEffectBB,
+          mdeDetectBB: preflight.mdeDetectBB,
+          mdePower80BB: preflight.mdePower80BB,
+          gateFormula: preflight.gateFormula,
+          gateMode: powerGateMode,
+          overrideReason: powerOverride,
+          basisPlayers: preflight.basis.players,
+          basisFile: preflight.basis.file,
+          extrapolated: preflight.flags.extrapolated,
+        }
+        : { targetEffectBB, gateMode: powerGateMode, note: 'no power basis — first run seeds the ledger' },
     };
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
@@ -356,7 +402,9 @@ const main = async () => {
       `\nPlayer supply: ${run.counters.evalPlayers} EVAL indexed · `
       + `${run.counters.qualifyingPlayers} qualifying (>= ${int(args['min-train-hands'], 15) + 1} hands) · `
       + `planned ${run.counters.plannedPlayers} · contributing ${run.counters.contributingPlayers} `
-      + '(power target for 0.20bb MDE: ~2,300 contributing — WS-410)',
+      // WS-435: the target is imported from its definition site (powerLedger.TARGET_EFFECT_BB),
+      // and the count that resolves it comes from the pre-flight block above, not prose.
+      + `(WS-410 target ${TARGET_EFFECT_BB} bb — see PRE-FLIGHT MDE for the count that resolves it)`,
     );
     if (run.counters.playerTaskErrors > 0) {
       console.log(`  WARNING: ${run.counters.playerTaskErrors} player task(s) failed and were skipped — see log lines above.`);
@@ -410,8 +458,24 @@ const main = async () => {
       }
     }
 
+    // WS-435: the gate result travels on the run (report v7 `preflight`, INTEGRITY render).
+    run.preflight = preflight
+      ? { ...preflight, gateMode: powerGateMode, overrideReason: powerOverride }
+      : null;
+
     const report = buildHeroEvReport(run, reportOpts);
     console.log(renderHeroEvReport(report));
+
+    // WS-435 — persist this run's per-player variance so the NEXT gate has a basis.
+    // Bookkeeping only: a refusal to write is reported, never thrown.
+    {
+      const extracted = extractPowerRows(run.decisions);
+      const entry = buildLedgerEntry({ run, kind: 'hero-ev', extracted, weightCap: reportOpts.weightCap });
+      const wrote = appendLedgerEntry({ dir: powerLedgerDir, entry, complete: run.complete !== false });
+      console.log(wrote.written
+        ? `Power ledger: wrote ${wrote.path} (${entry.players} players, ${entry.decisions} decisions)`
+        : `Power ledger: NOT written — ${wrote.reason}`);
+    }
 
     if (typeof args.out === 'string') {
       mkdirSync(dirname(args.out), { recursive: true });
