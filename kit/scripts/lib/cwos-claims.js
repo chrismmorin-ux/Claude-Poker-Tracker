@@ -585,12 +585,14 @@ function resolveSessionId(wsDir, {
  */
 function touchSession(wsDir, id, clock = null) {
   if (!id) return false;
+  const beatAt = (clock ? new Date(clock) : new Date()).toISOString();
+  const beatPid = Number(process.env.CLAUDE_PID || process.pid) || undefined;
   for (const name of [`${id}.yaml`, `session-${id}.yaml`]) {
     const file = path.join(wsDir, 'sessions', name);
     if (!fs.existsSync(file)) continue;
     try {
       patchOrInsert(file, {
-        last_heartbeat: (clock ? new Date(clock) : new Date()).toISOString(),
+        last_heartbeat: beatAt,
         host: localHost() || '',
         // PID travels with the beat, for the same reason `host` does (WS-564):
         // a record judged against a stale identity is judged wrong forever.
@@ -611,7 +613,15 @@ function touchSession(wsDir, id, clock = null) {
         // record that beats. Liveness copes, but registration writes a bare
         // number and a field that is sometimes 10808 and sometimes "10808" is
         // a trap for the next reader.
-        pid: Number(process.env.CLAUDE_PID || process.pid) || undefined,
+        pid: beatPid,
+        // DATE the pid in the same write (WS-351). The beat is the THIRD pid
+        // writer — register and its resume path are the other two — and an
+        // undated pid cannot be told apart from one recycled across a reboot.
+        // Concretely: a revived record whose started_at predates the current
+        // boot would be re-condemned by the recycle rule on the very next
+        // classify, despite actively beating. Only written when a pid is —
+        // a date without its pid would vouch for nothing.
+        ...(beatPid === undefined ? {} : { pid_recorded_at: beatAt }),
       }, 'pid');
       return true;
     } catch { /* best-effort: liveness is an optimisation, never a hard dependency */ }
