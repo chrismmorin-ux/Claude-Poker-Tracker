@@ -69,6 +69,11 @@ export const METRICS_SCHEMA_VERSIONS = Object.freeze({
   // curve are measured on. Sharing a kind would force the two estimand families to
   // co-evolve, which the header forbids.
   'metrics.fold-curve-axis': 1,
+  // WS-482. The estimand is a THREADING change — a computed value replacing a constant at a
+  // parameter — and its headline is that the parameter is not consumed. Distinct from
+  // depth-ablation (which compares depth ARMS) because the question is reachability of one
+  // input, not the value of a depth tier.
+  'metrics.continuation-rate-threading': 1,
 });
 
 /**
@@ -90,6 +95,7 @@ export const METRICS_KINDS = Object.freeze({
   'teachable-arms': 'metrics.teachable-arms',
   'fold-curve-shape': 'metrics.fold-curve-shape',
   'fold-curve-axis': 'metrics.fold-curve-axis',
+  'continuation-rate-threading': 'metrics.continuation-rate-threading',
 });
 
 /** The discriminator, identical on every variant. */
@@ -490,6 +496,29 @@ const FOLD_CURVE_AXIS_FIELDS = [
     note: 'The instrument built to make this measurable, and what it still does NOT cover — stated as data so the next reader does not rediscover the gap.' },
 ];
 
+/**
+ * scripts/backtest/emit-ws482-result-card.mjs — WS-482 continuation-rate threading.
+ *
+ * A card whose headline is a ZERO, which is why `reachability` is required rather than
+ * optional: a zero EV delta means nothing until the reader knows whether the input reached
+ * the computation. This kind exists so that pairing can never be dropped from the record.
+ */
+const CONTINUATION_RATE_THREADING_FIELDS = [
+  kindField('continuation-rate-threading'),
+  { name: 'threading', type: 'object', since: 1, required: true, unit: 'record ({parameter, from, to, sitesThreaded, sitesLeftOnPrior, why})',
+    note: 'What value replaced what, at how many of the call sites, and which sites deliberately kept the prior (a hypothesized future street has no computed value to thread).' },
+  { name: 'reachability', type: 'object', since: 1, required: true, unit: 'record ({deadParameters, liveConsumers, evidence})',
+    note: 'REQUIRED. Whether the threaded parameter is consumed at all, with file:line spans. A null EV delta from an unread parameter is a different fact from a null EV delta from a small effect, and only this field separates them.' },
+  { name: 'evDelta', type: 'object', since: 1, required: true, unit: 'record ({instrument, scenarios, recommendations, moved, topActionFlips, meanAbsDelta})',
+    note: 'The paired EV comparison. `moved` is the count of recommendations whose EV changed at all.' },
+  { name: 'stagesRan', type: 'object', since: 1, required: true, unit: 'record (stage → outcome/weightConsumed)',
+    note: 'Proof the measured null is not a gating artifact — the stages containing the threaded call sites must be shown to have executed.' },
+  { name: 'adviceDelta', type: 'object', since: 1, required: true, unit: 'record ({instrument, paired, divergent, control})',
+    note: 'The argmax-distribution arm, with its same-code determinism control. A control that does not return zero invalidates the arm.' },
+  { name: 'collateralFixes', type: 'array', since: 1, required: true, unit: 'rows ({site, defect, live})',
+    note: 'Corrections found by the same sweep that stand independently of the headline — kept ON the card so a zero headline does not bury them.' },
+];
+
 /** All variant + shared entries, spread into SOR_SCHEMAS by schemas.js. */
 export const METRICS_SCHEMA_ENTRIES = Object.freeze({
   'metrics.shared.conditioned-rate': Object.freeze(CONDITIONED_RATE_FIELDS),
@@ -507,4 +536,5 @@ export const METRICS_SCHEMA_ENTRIES = Object.freeze({
   'metrics.teachable-arms': Object.freeze(TEACHABLE_ARMS_FIELDS),
   'metrics.fold-curve-shape': Object.freeze(FOLD_CURVE_SHAPE_FIELDS),
   'metrics.fold-curve-axis': Object.freeze(FOLD_CURVE_AXIS_FIELDS),
+  'metrics.continuation-rate-threading': Object.freeze(CONTINUATION_RATE_THREADING_FIELDS),
 });

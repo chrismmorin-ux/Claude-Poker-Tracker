@@ -64,14 +64,20 @@ const main = async () => {
   const maxDecisions = int(args['max-decisions'], 130);
   // DEPTH-1 BY DEFAULT, AND THAT IS A DECISION, NOT A SHORTCUT.
   //
-  // `refinementBudgetMs` is a WALL-CLOCK budget, so with it non-zero the answer depends on
-  // machine load (`.claude` memory: "advice depth tracks machine load") and two arms run at
-  // different times are not comparable — the very thing the per-decision seeding above exists
-  // to guarantee. 0 means "the depth-1 answer is the whole answer", which is the configuration
-  // that shipped in production for the life of the project (WS-334 measured zero depth-2 calls
-  // on a live evaluation) and is the path the depth-1 fold estimate under test actually lives
-  // on. Pass `--refinement-ms 2000` for the engine default, and expect the run to take ~20x
-  // longer and to be non-reproducible between invocations.
+  // 0 means "the depth-1 answer is the whole answer", which is the configuration that shipped
+  // in production for the life of the project (WS-334 measured zero depth-2 calls on a live
+  // evaluation) and is the path the depth-1 fold estimate under test actually lives on.
+  //
+  // THE "NON-REPRODUCIBLE" WARNING THAT USED TO BE HERE IS RETIRED (WS-482). It said
+  // `refinementBudgetMs` is a WALL-CLOCK budget, so two arms run at different times are not
+  // comparable. That was true before WS-432 and is not true now: the refinement gates read a
+  // LOGICAL WORK METER (`gameTreeEvaluator.js` — "the budget is now a LOGICAL WORK-UNIT
+  // budget, not a wall-clock one"), so a budget trips at the same point on every machine.
+  // MEASURED, not merely re-read: two separate processes at `--refinement-ms 2000` over the
+  // same 40 seeded decisions produced ZERO divergent rows (out/ws482-det-A.json vs
+  // out/ws482-det-B.json). The comment was the last thing still asserting the old behaviour,
+  // and it would have talked the next reader out of the only configuration that can measure
+  // depth-2. Pass `--refinement-ms 2000` for the engine default; expect ~20x the runtime.
   const refinementBudgetMs = int(args['refinement-ms'], 0);
   const policyPath = typeof args['behavior-policy'] === 'string'
     ? args['behavior-policy'] : 'out/behavior-policy.json';

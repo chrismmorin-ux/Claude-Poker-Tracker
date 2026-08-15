@@ -213,6 +213,19 @@ const SHIPPED_FIELDS = {
     // v2 (WS-434 Stage 2)
     holdOutBySizeBucketConditioned: 'array',
   },
+  // WS-481. The AXIS a fold curve is fitted and evaluated on — deliberately a separate kind
+  // from fold-curve-shape, which warrants a curve's PARAMETERS.
+  'metrics.fold-curve-axis': {
+    kind: 'string', axisDefinition: 'object', trainingSideBefore: 'object',
+    blindInstruments: 'array', reach: 'object', pairedAdviceDelta: 'object',
+    controlUnfedMustBeZero: 'object', aggressionShift: 'object', instrumentBuilt: 'object',
+  },
+  // WS-482. A threading change whose headline is a zero, which is why `reachability` is a
+  // required field: a null EV delta means nothing until the reader knows the input was read.
+  'metrics.continuation-rate-threading': {
+    kind: 'string', threading: 'object', reachability: 'object', evDelta: 'object',
+    stagesRan: 'object', adviceDelta: 'object', collateralFixes: 'array',
+  },
 };
 
 const DECISION_RECORD_META_SHIPPED_FIELDS = {
