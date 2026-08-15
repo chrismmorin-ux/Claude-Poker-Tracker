@@ -1,0 +1,88 @@
+id: "FIND-138"
+title: "Every backtest instrument passes villainModel: null — the personalized fold curve is fitted for 62.6% of corpus players, reaches the engine in the app, and is invisible to all 11 harnesses"
+severity: high
+status: open
+program: prog-methodology-integrity
+created_at: "2026-08-15T03:00:00Z"
+created_by: ai
+source:
+  type: measurement
+  run_id: "ws481-measurement-2026-08-15"
+  ticket: "WS-481"
+
+summary: |
+  WS-481 corrected the axis `personalizedFoldCurve` is FITTED on. Attempting to price that
+  correction per its accept criterion surfaced a defect in the measurement apparatus that is
+  larger than the ticket: NO backtest instrument in this repo can observe the personalized
+  villain model at all.
+
+evidence:
+  - claim: "The WS-273 villain-prediction harness cannot see the fold curve."
+    method: |
+      `scripts/backtest/runner.mjs` contains zero references to personalizedFoldCurve,
+      foldCurve, gameTree, estimateFoldPct or sizingTells. It scores `queryActionDistribution`
+      (the decision-bucket model). Confirmed EMPIRICALLY against a pre-registered prediction:
+      pre-change and post-change scorecards are BIT-IDENTICAL at the 12-player config
+      (logLoss 0.7727800304049595 both, Brier 0.21729761110920295 both, n=438, delta exactly 0).
+    artifacts: ["out/ws481-BEFORE-smoke.json", "out/ws481-after-smoke.json"]
+
+  - claim: "probeFrequency cannot see it either — and neither can any other harness."
+    method: |
+      `scripts/backtest/heroPolicy.mjs:304` passes `villainModel: null` UNCONDITIONALLY, and
+      its own header (line 41) states "WHAT V1 DOES NOT DO — the villain is at POPULATION
+      baseline, not personalized". A sweep of every script that drives `evaluateGameTree`
+      found 11 call sites and ALL 11 pass `villainModel: null`:
+        calibrate-refinement-units.mjs:177, dumpGameTreeEV.mjs:194, entryEvaluator.mjs:196,
+        heroPolicy.mjs:304, probeCeilingInteraction.mjs:159, probeCheckRaise.mjs:47,
+        probeFoldSizingResponse.mjs:90, probeLevel.mjs:71, probeRaiseBranch.mjs:84,
+        probeRepresentedRange.mjs:88, run-optimism-probe.mjs:210
+      Consequence measured: paired probeFrequency before/after over 130 seeded decisions
+      returned 0 divergent decisions (0.0%), meanTV 0.0000, on every street.
+    artifacts: ["out/ws481-probe-BEFORE.json", "out/ws481-probe-AFTER.json"]
+
+  - claim: "The curve is NOT inert in production — the null is the instrument, not the fix."
+    method: |
+      `scripts/backtest/probe-foldcurve-reach.mjs` (written for this) runs the production
+      derivation (`accumulateDecisions` + `fitFoldCurveParams`) over 300 EVAL players:
+        players considered (>=15 hands)  222
+        players with >=1 fold-curve obs  217
+        players with a FITTED curve      139  (62.6%)
+        fold-curve observations total    2826
+        per-player samples p50=10 p90=25 max=120
+        dropped sizing samples           {unknownBlinds: 0, estimatedPot: 0}
+      So `personalizedFoldCurve` is produced for most players and, in the app, OUTRANKS the
+      population curve on the bet path (`gameTreeEvaluator.js:705`).
+    artifacts: ["scripts/backtest/probe-foldcurve-reach.mjs"]
+
+why_it_matters: |
+  This is the shipped-but-inert failure one level up: the INSTRUMENT is inert with respect to
+  an entire channel of the engine. Anything reaching the game tree only through `villainModel`
+  — the personalized fold curve, and the whole per-villain decision model — has never been
+  priced by any harness, and cannot be. A change to it can be neither validated nor refuted,
+  which means "measured on the corpus" has silently never covered this channel.
+
+  It also means any past corpus result that reported "no effect" for a villainModel-borne
+  change was measuring the absence of the villain model. Such prior claims should be re-read
+  with that in mind.
+
+falsifier: |
+  Point any existing backtest script at a decision where the villain has a fitted
+  `personalizedFoldCurve` and show the engine's advice differs from the same decision with
+  `villainModel: null`. If that can be done with an existing instrument unmodified, this
+  finding is wrong.
+
+recommended_fix: |
+  Build the missing instrument — do NOT accept "unmeasurable" (improvement-default).
+  Thread a real villain model through `heroPolicy.mjs`: build it with
+  `buildVillainDecisionModel(accumulateDecisions(villainPid, villainPastHands, ...))` from the
+  villain seat's OWN PRIOR hands only, so the two-level split holds (POOL/EVAL across players,
+  walk-forward within a player — `feedback_backtest_split_and_leakage`). Expose it as a
+  `--villain-model personalized|null` arm on `probeFrequency` so the comparison is paired by
+  seed exactly as the existing arms are.
+
+  Until it exists, WS-481's correctness rests on construction and unit test (the training and
+  consumption axes are now the SAME exported function, proven identical across 52,896
+  geometries) — sound for correctness, and silent on EV magnitude. Say that rather than
+  quoting a null.
+
+blocked_items: ["WS-481 accept criterion 3"]
