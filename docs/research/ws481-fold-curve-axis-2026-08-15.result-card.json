@@ -1,0 +1,237 @@
+{
+  "schemaVersion": 3,
+  "resultCardId": "RC-FOLD-CURVE-AXIS-2026-08-15",
+  "match": {
+    "surfaceId": "SURF-engine-advice-probe",
+    "dealBookId": "handhq-FTP+PS-0.5-43497117",
+    "fieldId": "FIELD-handhq-50nl-2009-07-behavior-policy"
+  },
+  "estimand": "The paired, per-decision change to the engine's advised action distribution from correcting the VARIABLE `personalizedFoldCurve` is fitted on. Before, `decisionAccumulator` fitted it on `facingBetAmount / hand.gameState.potSize` — the hand's FINAL total pot, with the raise-TO level in the numerator — while `gameTreeEvaluator` evaluated it at the street-pot fraction via `villainFacingFraction`. Both sides now resolve to ONE exported definition. Scored on the SAME seeded decisions before and after; nothing is compared across different decision sets.",
+  "treatment": "WS-481: `personalizedFoldCurve` fitted on `foldCurveAxisFraction(owed, potIncludingFacedBet)` — the same definition `villainFacingFraction` evaluates it on — instead of on `facingBetAmount / hand.gameState.potSize` (raise-TO level over the hand's FINAL pot). Control arm is the identical harness against the engine at 70a2a192~1.",
+  "metrics": {
+    "kind": "fold-curve-axis",
+    "axisDefinition": {
+      "formula": "owed / (potIncludingFacedBet - owed)",
+      "sharedBy": [
+        "src/utils/exploitEngine/foldEquityCalculator.js foldCurveAxisFraction (the definition)",
+        "villainFacingFraction (consumption) — delegates to it",
+        "src/utils/exploitEngine/decisionAccumulator.js (training) — imports it"
+      ],
+      "anchorCheck": {
+        "documented": 0.235,
+        "recomputedViaDefinition": 0.23478260869565218,
+        "recomputedViaConsumer": 0.23478260869565218,
+        "consumerAgreesWithDefinition": true,
+        "note": "exploitEngine/CLAUDE.md records P=100, B=65, a 54 raise on top as 0.235 on the fitted axis."
+      }
+    },
+    "trainingSideBefore": {
+      "numerator": "the aggressor's raise-TO level (not the increment owed) — `amount` is the raise-to in both corpus (phhAdapter.mjs:256) and live app (recordSeatAction.js:20)",
+      "denominator": "hand.gameState.potSize — the FINAL total pot (phhAdapter.mjs states it)",
+      "worked": {
+        "scenario": "pot-sized flop bet of 13 into 13, in a hand whose final pot is 156",
+        "before": 0.08333333333333333,
+        "after": 1,
+        "note": "Trained as 0.083 where the truth is 1.0 — an order of magnitude, in the direction that makes every bet look small and therefore cheap to call."
+      }
+    },
+    "blindInstruments": [
+      {
+        "instrument": "WS-273 villain-prediction harness (scripts/backtest/run.mjs → runner.mjs)",
+        "blindBecause": "It scores queryActionDistribution (the decision-bucket model) and never reads personalizedFoldCurve, foldCurve, gameTree, estimateFoldPct or sizingTells.",
+        "evidence": {
+          "preRegisteredPrediction": "the two arms will be BIT-IDENTICAL",
+          "held": true,
+          "logLossBefore": 0.7727800304049595,
+          "logLossAfter": 0.7727800304049595,
+          "brierBefore": 0.21729761110920295,
+          "brierAfter": 0.21729761110920295,
+          "n": 438
+        }
+      },
+      {
+        "instrument": "probeFrequency at its default villain source (null-stats villains)",
+        "blindBecause": "heroPolicy.mjs passed `villainModel: null` unconditionally — as did all 11 game-tree call sites under scripts/backtest/ (FIND-138).",
+        "evidence": {
+          "pairedDecisions": 130,
+          "divergentDecisions": 0,
+          "note": "Zero divergence. This doubles as the cross-process determinism control for the harness: two processes, two code states, identical output where the channel is absent."
+        }
+      }
+    ],
+    "reach": {
+      "playersConsidered": 222,
+      "playersWithFittedCurve": 139,
+      "conditioned": {
+        "k": 139,
+        "n": 222,
+        "rate": 0.6261261261261262,
+        "conditional": "P(villain has a fitted personalizedFoldCurve | EVAL player with >=15 corpus hands)"
+      },
+      "note": "scripts/backtest/probe-foldcurve-reach.mjs. Establishes that a null divergence would have been the instrument, not an inert feature — the curve is produced for most players and OUTRANKS the population curve on the bet path (gameTreeEvaluator.js)."
+    },
+    "pairedAdviceDelta": {
+      "paired": 300,
+      "fed": 55,
+      "divergent": 12,
+      "meanTvOnDivergent": 0.21666666666666667,
+      "conditioned": {
+        "k": 12,
+        "n": 55,
+        "rate": 0.21818181818181817,
+        "conditional": "P(advice distribution changed | decision where a personalized villain model was served)"
+      },
+      "unconditionedRate": 0.04,
+      "unconditionedNote": "Reported and NOT quoted as the headline: it is diluted by decisions the channel cannot reach, where the change is zero by construction."
+    },
+    "controlUnfedMustBeZero": {
+      "n": 245,
+      "divergent": 0,
+      "passed": true,
+      "note": "Decisions with no villain model must diverge on zero rows. A nonzero value would mean the measured effect is not carried by the channel claimed."
+    },
+    "aggressionShift": {
+      "before": 0.7272727272727272,
+      "after": 0.709090909090909,
+      "delta": -0.018181818181818188,
+      "basis": "mean (bet + raise) mass over the fed decisions",
+      "signPrediction": "NEGATIVE — the old axis understated every faced sizing, and exploitEngine/CLAUDE.md records that inflated fold equity makes the engine RECKLESS, not timid. Removing the inflation should reduce aggression.",
+      "signAsPredicted": true
+    },
+    "instrumentBuilt": {
+      "what": "villainFeed MODEL source + resolveVillainModel + heroPolicy threading, so a harness can serve a real villainModel for the first time (FIND-138).",
+      "coverage": {
+        "villainsInFeed": 4000,
+        "withFittedCurveBefore": 1993,
+        "withFittedCurveAfter": 1987,
+        "decisionsServed": 55,
+        "decisionsTotal": 300
+      },
+      "omits": [
+        "_buckets"
+      ],
+      "omitsNote": "`_buckets` is ~89% of a serialized model (19,751 B whole vs 2,349 B without; 96 MB at 5,000 villains). queryActionDistribution reads it, so a fed villain's SITUATIONAL action distribution still resolves to population. The fold-curve and fold-LEVEL channels are live; the bucket channel needs a different transport, not a bigger cap."
+    }
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "quotable": true,
+    "reasons": [],
+    "caveats": [
+      "TRANSFERRED, NOT MEASURED for live 9-handed 1/2-1/3. Corpus is online cash, July 2009, 50NL.",
+      "ARGMAX-distribution instrument at depth-1: an EV shift that flips no combo's best action is invisible to it. The headline is an ADVICE-CHANGE rate, not an EV delta in chips.",
+      "Depth-1 is the correct configuration here and not a cheaper one: the corrected curve is consumed at the depth-1 fold estimate (gameTreeEvaluator), which is where the defect lives.",
+      "Villain models are an oracle-prefix snapshot (villainFeed.mjs header). Both arms share the construction, so the CONTRAST subtracts it out; a level claim from one arm would not.",
+      "Feed coverage is 55 of 300 decisions. The conditioned rate is the claim; the unconditioned one is diluted by decisions the channel cannot reach."
+    ]
+  },
+  "manifest": {
+    "engineCommit": "521dd5f0eefc3206dc65bca88271697103f5e2a5",
+    "engineDirty": true,
+    "dealBookHash": "sha256:43497117ea775c88b9e0f81a664d91eabb4e2d2e1e588e7dabc26339a02fb895",
+    "fieldVersion": "handhq-50nl-2009-07-ftp+ps · behavior-policy out/behavior-policy.json (400 POOL players, 13,976 decisions) · villain feed 4,000 POOL villains with decision models",
+    "partition": "player-level POOL/EVAL at poolPct=50; villain feed POOL-side only; before-arm engine at 70a2a192~1 with the WS-481 instrument scripts overlaid unchanged in both arms",
+    "seeds": {
+      "probePairing": "mulberry32(fnv1a-32(`${playerId}|${handId}|${order}`)) per decision"
+    },
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "MAX_STAGE_SHARE": 0.4,
+      "REFINEMENT_UNITS_PER_MS": 319,
+      "REFINEMENT_CLOCK_VERSION": "logical-v1",
+      "KL_FLOOR": 0.000001,
+      "RAKE_SENSITIVITY_BB_PER_RAKE_DOUBLING": -0.1842,
+      "RAKE_SENSITIVITY_PROVENANCE": {
+        "faultId": "FAULT-modelled-rake",
+        "basis": "fixture-sweep",
+        "basisNote": "Measured on the canonical 12-decision / 6-player fixture in rakeSensitivity.mjs, NOT on the corpus of the run this manifest describes. It proves the non-cancellation mechanism and calibrates its order of magnitude under a mixed weight/pot-size covariance; the run-level exposure depends on the run's own covariance and needs the per-run sweep (named follow-up in rakeSensitivity.mjs).",
+        "schedules": {
+          "zeroRake": {
+            "pct": 0,
+            "cap": 0,
+            "noFlopNoDrop": true
+          },
+          "online2009": {
+            "pct": 0.05,
+            "cap": 3,
+            "noFlopNoDrop": true
+          },
+          "liveDouble": {
+            "pct": 0.1,
+            "cap": 6,
+            "noFlopNoDrop": true
+          }
+        },
+        "toleranceBB": 0.01,
+        "verdict": "not-rake-invariant",
+        "n": 12,
+        "players": 6,
+        "edgeBBBySchedule": {
+          "zeroRake": 5.8704,
+          "online2009": 5.6861,
+          "liveDouble": 5.5019
+        },
+        "deltaZeroToOnlineBB": -0.1843,
+        "bbPerRakeDoubling": -0.1842
+      },
+      "REFINEMENT_BUDGET_MS": 0,
+      "MIN_FOLD_CURVE_OBS": 8,
+      "MIN_DISTINCT_SIZES": 2,
+      "FOLD_CURVE_AXIS": "owed-over-pot-before-faced-bet",
+      "FEED_BEFORE": {
+        "group": "POOL",
+        "poolPct": 50,
+        "maxHandsPerVillain": 200,
+        "files": 1756,
+        "referenceTier": "founder-estimate",
+        "withDecisionModel": true,
+        "decisionModelOmits": [
+          "_buckets"
+        ],
+        "villainsWithFittedFoldCurve": 1993
+      },
+      "FEED_AFTER": {
+        "group": "POOL",
+        "poolPct": 50,
+        "maxHandsPerVillain": 200,
+        "files": 1756,
+        "referenceTier": "founder-estimate",
+        "withDecisionModel": true,
+        "decisionModelOmits": [
+          "_buckets"
+        ],
+        "villainsWithFittedFoldCurve": 1987
+      }
+    },
+    "disclaimerRegisterVersion": "FR-1+cc63d16f2ff8",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:661",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null,
+  "decisionRecord": null
+}
