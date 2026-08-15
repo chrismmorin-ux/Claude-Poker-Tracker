@@ -326,6 +326,7 @@ describe('PlayerRow', () => {
       const editBtn = screen.getByRole('button', { name: 'Edit' });
       const deleteBtn = screen.getByRole('button', { name: 'Delete' });
       // Tailwind classes assert sizing — DOM doesn't compute layout in jsdom
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
       expect(editBtn.className).toMatch(/min-h-\[44px\]/);
       expect(editBtn.className).toMatch(/min-w-\[44px\]/);
       expect(deleteBtn.className).toMatch(/min-h-\[44px\]/);

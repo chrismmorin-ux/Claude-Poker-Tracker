@@ -115,6 +115,7 @@ describe('TendencyStatsCard', () => {
     it('disclosure button has ≥44×44 tap target', () => {
       render(<TendencyStatsCard stats={baseStats()} title="X" defaultCollapsed />);
       const toggle = screen.getByTestId('tendency-stats-card-toggle');
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
       expect(toggle.style.minHeight).toBe('44px');
       expect(toggle.style.minWidth).toBe('44px');
     });

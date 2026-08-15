@@ -161,6 +161,7 @@ describe('CardDetail — lineage modal integration', () => {
 });
 
 describe('CardDetail — accessibility', () => {
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
   it('Back / lineage / 3 actions all have ≥44px tap targets', () => {
     render(<CardDetail card={baseCard} onBack={vi.fn()} />);
     const buttons = screen.getAllByRole('button');

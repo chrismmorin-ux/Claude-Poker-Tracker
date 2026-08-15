@@ -100,6 +100,7 @@ describe('SuppressConfirmModal — accessibility', () => {
     expect(dialog).toHaveAttribute('aria-labelledby', 'suppress-modal-title');
   });
 
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
   it('Cancel + Confirm buttons each have ≥44px tap targets', () => {
     render(<SuppressConfirmModal classId="math" currentlySuppressed={false} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.getByRole('button', { name: /Cancel/i })).toHaveStyle({ minHeight: '44px' });

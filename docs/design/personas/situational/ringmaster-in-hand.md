@@ -1,10 +1,30 @@
 # Situational Persona — Ringmaster In Hand
 
 **Type:** Situational (derived from [Ringmaster / Home-Game Host](../core/ringmaster-home-host.md))
-**Evidence status:** PROTO — no Chris observation yet; inferred from core persona + audit blind-spot
-**Last reviewed:** 2026-04-21
-**Owner review:** Pending
+**Evidence status:** **PROTO — and REFUTED for the owner's own play (2026-07-31).** Still inferred from the core persona; no observation of anyone backs it.
+**Last reviewed:** 2026-07-31
+**Owner review:** **ANSWERED 2026-07-31** (TVR Gate 3, `WS-312` R5) — see Owner ruling below.
 **Surfaced:** [Blind-spot audit 2026-04-21 table-view §A1](../../audits/2026-04-21-blindspot-table-view.md)
+
+---
+
+## Owner ruling — 2026-07-31 (closes the open question from 2026-04-21)
+
+Asked directly whether he deals and records simultaneously, the owner answered:
+
+> "There is always a dealer who handles the cards. I am the single source of persistent, non-human memory, data beyond a hand."
+
+**Two consequences, and the second is the important one.**
+
+**1. This persona does not describe the owner's play.** In his venues a house dealer always handles the cards, so the dealing-and-recording cognitive load below is not a situation he is ever in. It had been cited as a beneficiary of two Table View Redesign directions (pre-armed defaults, dynamic narrowing); **those citations are struck.** The persona is not deleted — the [core Ringmaster / Home-Game Host](../core/ringmaster-home-host.md) may still be a real market persona — but it is **PROTO with no observation behind it anywhere**, and it must not be used to justify surface area until someone is observed in it. Open question #4 from the [2026-04-21 blind-spot audit](../../audits/2026-04-21-blindspot-table-view.md) is now closed as REFUTED-for-owner.
+
+**2. The owner defined his actual role, and it is a stronger design principle than the persona it replaces.** He is not the ringmaster — **he is the memory.** The single source of persistent, non-human recall at the table, holding data beyond the hand in front of him.
+
+That reframing propagates directly into the redesign:
+
+- **It is why the look-away is the job.** He watches the table because watching *is* the recording function. See [glance-return-chris](./glance-return-chris.md).
+- **It is why rare events outrank common ones.** Memory's value is disproportionately in the unusual — the out-of-character raise, not the fifth fold. This independently confirms Gate 2 amendment C2-A: never make a rare action harder to record than a common one.
+- **It is why data integrity beats entry speed at every tie.** A fast entry path that records the wrong thing does not merely lose time, it corrupts the one thing the owner is at the table to provide. This is the principle behind the standing "defaults never auto-commit" constraint.
 
 ---
 

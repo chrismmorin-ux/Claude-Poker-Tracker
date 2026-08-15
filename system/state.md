@@ -19,6 +19,7 @@ Last updated: 2026-08-14 (SPR-182 complete: WS-442 domain merge — 4 cherry-pic
 | Build | GREEN | `npm run build` | 2026-08-12: clean. |
 | Git | GREEN | `git status --short` | 2026-08-12: session committed in 8 (`a771d86e`..close); tree clean except hook-churned workstream state. |
 | Dependencies | NEEDS CHECK | `npm audit` | Last verified: never since CWOS adoption (2026-05-01) |
+| Target device | **Galaxy S22 — DPR provisional** | open `/device-probe.html` on the phone | WS-334 founder ruling; 2340×1080 physical, CSS viewport ≈1170×540 assumed at DPR 2 (never measured on-device). Touch floor enforced at this profile by `tests/playwright/touch-floor.spec.js` (WS-441); DPR correction is one line in `tests/playwright/deviceProfiles.mjs`. |
 
 ## Project Phase
 

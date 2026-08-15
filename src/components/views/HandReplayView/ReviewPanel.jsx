@@ -148,7 +148,7 @@ export const ReviewPanel = ({
   }, [actionAnalysis]);
 
   return (
-    <div className="flex flex-col h-full p-3 gap-3">
+    <div data-testid="review-panel" className="flex flex-col h-full p-3 gap-3">
       {/* A. Street Progress */}
       <div className="flex gap-1.5 shrink-0">
         {availableStreets.map((street) => {
@@ -177,18 +177,22 @@ export const ReviewPanel = ({
         })}
       </div>
 
-      {/* B. Playback Transport */}
+      {/* B. Playback Transport.
+          WS-441 interim: transport buttons previously had NO declared size (text-height
+          ~9 rendered px on the founder's device). 64 ≥ ceil(44 / 0.695) clears the 44px
+          rendered touch floor at the provisional S22 profile (deviceProfiles.mjs).
+          WS-489 removes this when the panel exits the scaled canvas. */}
       <div className="flex items-center gap-2 shrink-0 bg-gray-800/50 rounded-lg px-3 py-2">
-        <button onClick={jumpToStart} className="text-gray-400 hover:text-white text-sm px-1" title="Jump to start (Home)">
+        <button onClick={jumpToStart} className="text-gray-400 hover:text-white text-sm px-1" style={{ height: '64px', minWidth: '64px' }} title="Jump to start (Home)">
           |&#9664;
         </button>
-        <button onClick={stepBack} className="text-gray-400 hover:text-white text-lg px-1" title="Step back (Left)">
+        <button onClick={stepBack} className="text-gray-400 hover:text-white text-lg px-1" style={{ height: '64px', minWidth: '64px' }} title="Step back (Left)">
           &#9664;
         </button>
-        <button onClick={stepForward} className="text-gray-400 hover:text-white text-lg px-1" title="Step forward (Right)">
+        <button onClick={stepForward} className="text-gray-400 hover:text-white text-lg px-1" style={{ height: '64px', minWidth: '64px' }} title="Step forward (Right)">
           &#9654;
         </button>
-        <button onClick={jumpToEnd} className="text-gray-400 hover:text-white text-sm px-1" title="Jump to end (End)">
+        <button onClick={jumpToEnd} className="text-gray-400 hover:text-white text-sm px-1" style={{ height: '64px', minWidth: '64px' }} title="Jump to end (End)">
           &#9654;|
         </button>
         <span className="text-gray-500 text-xs ml-auto">

@@ -543,6 +543,60 @@ The 3 umbrella JTBDs that the **Player Identification v2 (PIO)** program serves.
 
 **Scope per owner decision 2026-05-02:** across-session at same venue. Cross-venue / cross-operator deferred to PIO-G2 amendment if owner plays at 2+ venues.
 
+## JTBD-PM-16 — Keep the table roster matching reality all session
+
+> When players come and go at my table, I want the app's picture of who is sitting where to stay correct without me stopping to manage it, so my reads are always attached to the right person.
+
+**Authored:** 2026-07-31 (TVR Gate 3, `WS-312` R4) to close blind-spot finding B3.
+
+### Job statement rationale — why this is not PM-02
+
+[`JTBD-PM-02`](#jtbd-pm-02--assign-a-known-player-to-a-seat) is a **discrete act**: assign this player to this seat. It is written for a moment of intent, and its cost model assumes that moment is rare enough to justify a menu.
+
+The real load is **continuous**. In live cash, players bust, get moved by the floor, take seats, leave for the night, and swap chairs — repeatedly, all session. Each of those is currently paid at full PM-02 cost (long-press → menu → scroll past four seat-config rows → find the name), and the cost is paid *during* a session, competing with hand entry.
+
+The Table View Redesign's roster rail (direction D-3) is specified against this job, not PM-02. Specified against PM-02 alone, the rail would be built as "a faster way to do the rare thing" and would miss the maintenance case entirely.
+
+### Dimensions
+- **Frequency:** many times per session; clustered around dealer changes, breaks, and busts.
+- **Time budget:** the between-hands window (30–90s), and often *less* — a seat change can happen mid-hand.
+- **Consequence of drift:** reads attach to the wrong person. This is the worst data failure in the product, because it is silent and it actively poisons the model rather than merely leaving it thin.
+- **Reversibility:** must be cheap. A misassignment noticed three hands later needs a repair path.
+
+### Applicable personas
+[seat-swap-chris](../../personas/situational/seat-swap-chris.md) (primary), [between-hands-chris](../../personas/situational/between-hands-chris.md), [cold-read-chris](../../personas/situational/cold-read-chris.md) (arrivals who are unknown), [ringmaster-in-hand](../../personas/situational/ringmaster-in-hand.md) (PROTO — he is the one *doing* the seating).
+
+### Success criteria
+- Seating a returning, recently-seen player costs **one tap from the table**, with no menu traversal and no scrolling.
+- Clearing a departed seat is equally cheap and reversible.
+- The roster's current state is legible **at a glance from the table view** — who the app thinks is where, without opening anything.
+- Mid-hand roster changes are possible without disturbing hand entry in progress.
+
+### Failure modes
+- **Silent drift.** The most dangerous: the app believes seat 4 is still Dave, Dave left an hour ago, and every observation since has been attributed to a stranger. Nothing surfaces this.
+- **Deferred maintenance.** Cost is high enough that the user postpones it "until after this hand" and never returns — drift by procrastination.
+- **Duplicate creation.** The known player is hard to find, so the user creates a second record. Already a known risk at PM-02 (the `max-h-96` recents scroll, AUDIT-2026-04-21-TV F6) and it worsens as the recents list grows.
+- **Maintenance competing with entry.** Any roster work that blocks hand recording will lose, correctly, and the roster will drift.
+
+### Non-goals
+- Not identification of an unknown player — that is [`PM-13`](#pm-13--describe-someone-into-existence) and the `PlayerFinderView` builder.
+- Not editing a player's attributes.
+- Not automatic detection of seat changes. There is no signal for it; this job is about making the manual act cheap, not about removing it.
+
+### Surfaces involved
+`TableView` (seats + proposed roster rail), `seat-context-menu`, `PlayerFinderView` (overflow / creation only).
+
+### Related JTBD
+- **Composes:** PM-01 (clear a seat) + PM-02 (assign to a seat), repeatedly, as one continuous activity.
+- **Escalates to:** PM-13 when the arriving player is unknown.
+- **Competes with:** [`HE-23`](../hand-entry.md) — roster maintenance and orbit recording contend for the same between-hands window, and the roster loses unless it is nearly free.
+
+### Notes / non-obvious constraints
+- The rail that serves this job must stay **bounded** (Gate 2 amendment C6-A): it is a fast path for the likely few, not an index of everyone. Overflow routes to `PlayerFinderView`. An unbounded rail would scroll horizontally, violating H-ML05 and repeating the orbit-strip F7 defect closed 2026-04-21.
+- **Ownership boundary** (Gate 2 finding D1): the rail owns *known, recently-seen* players; `PlayerFinderView` owns *search, create, identify, edit*. Without this stated, the design regresses the deliberate removal of "+ Create New Player" (documented at `SeatContextMenu.jsx:11-13`), which was cut precisely because two paths to player entry is a defect.
+
+---
+
 ## PM-13 — Describe someone into existence
 
 > When I sit at a table with a player I half-recognize or have never seen, I want to capture them as a record from any combination of partial signals (name fragment, half-stable visual features, today's wardrobe, a photo) — without forcing a complete identity I don't actually know yet.

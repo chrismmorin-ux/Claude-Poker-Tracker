@@ -100,6 +100,7 @@ describe('PrintConfirmationModal — accessibility', () => {
     expect(dialog).toHaveAttribute('aria-labelledby', 'print-confirm-title');
   });
 
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
   it('all buttons have minHeight ≥ 44px (H-ML06)', () => {
     render(<PrintConfirmationModal context={baseContext} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     screen.getAllByRole('button').forEach((b) => {

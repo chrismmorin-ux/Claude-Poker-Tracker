@@ -17,9 +17,9 @@
  * captures its own per-browser baselines under the same `<spec>-snapshots/`
  * directory with file suffixes `-{chromium,firefox,webkit}-{platform}.png`.
  * Per-browser thresholds slightly relaxed for firefox + webkit to absorb
- * subpixel rendering jitter at A22 viewport.
+ * subpixel rendering jitter at the design-canvas viewport.
  *
- * Galaxy A22 1600×720 viewport per CLAUDE.md mobile-optimized target.
+ * 1600×720 design-canvas viewport (the app's fixed canvas — NOT the target device, which is a Galaxy S22; see CLAUDE.md Responsive Design).
  */
 
 import { defineConfig, devices } from '@playwright/test';
@@ -46,7 +46,8 @@ export default defineConfig({
 
   use: {
     baseURL: BASE_URL,
-    // Galaxy A22 landscape — matches CLAUDE.md mobile target.
+    // 1600×720 design canvas (not the device — that's the S22; touch-floor.spec.js
+    // additionally measures at the device profile via per-test setViewportSize).
     viewport: { width: 1600, height: 720 },
     // Don't keep traces locally to avoid bloating the repo; CI can override.
     trace: 'off',
@@ -77,7 +78,7 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'], viewport: { width: 1600, height: 720 } },
       expect: {
         // Firefox font hinting + subpixel positioning differs from Chromium
-        // by a few hundred pixels per snapshot at A22 viewport. Relax slightly
+        // by a few hundred pixels per snapshot at the design-canvas viewport. Relax slightly
         // so genuine layout regressions still fail but rendering jitter doesn't.
         toHaveScreenshot: { maxDiffPixels: 800, threshold: 0.25, animations: 'disabled' },
       },

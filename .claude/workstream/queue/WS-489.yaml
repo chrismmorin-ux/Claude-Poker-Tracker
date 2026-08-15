@@ -1,0 +1,79 @@
+id: "WS-489"
+title: "Interactive regions render in real CSS px — TableView/HandReplay split (felt scales, controls don't) + ~9 views to fluid. Executes layout-doctrine.md §3; re-file of the collision-lost WS-322"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P1"
+category: "ux"
+capability: "core"
+program: "design"
+finding_id: ""
+description: |
+  The founder-ratified layout doctrine (docs/design/surfaces/layout-doctrine.md, DECIDED
+  2026-08-01 "appwide") says: spatial regions scale, interactive regions do not — a 44px
+  target is 44 real CSS px. WS-441 landed the doctrine docs, the device evidence, the
+  devshot tooling, the touch-floor enforcement spec, and an interim design-px inflation so
+  primary in-hand controls truly hit 44px at the provisional S22 profile. This ticket is
+  the real fix the doctrine specifies: controls exit the scaled canvas entirely.
+
+  Phases:
+    A. TableView split — the command column leaves the 1600x720 canvas and becomes a
+       real-CSS-px sibling; the felt keeps useCanvasFit scaling. The column's content
+       (839 design px in a ~540 real-px box) forces the geometry contract's scroll
+       structure: street tabs pin top, control zone pins bottom, middle band scrolls
+       (this also closes the CommandStrip-compression defect, original WS-311).
+       Re-anchor cross-region elements: LAYOUT.CONTEXT_MENU_OFFSET_X/Y, the F12
+       reopen-range affordance (table-view-geometry.md "Re-anchoring required").
+    B. HandReplayView split — ReviewPanel/transport un-scale the same way. Add the e2e
+       replay coverage the touch-floor spec could not reach without a deep link.
+    C. Fluid migration — Stats, Analysis, Online, Tournament, Homebase, drill views to
+       FluidView per the doctrine §3 table.
+    D. ShowdownView classification — doctrine §6 open founder call (spatial vs fluid).
+    E. Remove WS-441's interim inflated design-px values (CommandStrip street tabs/orbit,
+       SizingPresetsPanel input/GO, ReviewPanel transport); re-derive sizes in real px.
+    F. Flip every pinned_bug entry in tests/playwright/touch-floor.spec.js to must-pass
+       at the MEASURED device profile (deviceProfiles.mjs dpr updated from the founder's
+       /device-probe.html reading). Suite green with zero pins is the accept criterion.
+    G. Update src/test/viewScrollContainers.test.js shell rules / EXEMPT map as views
+       migrate.
+accept_criteria: |
+  Touch-floor Playwright suite green with an EMPTY pinned ledger at the measured (not
+  provisional) S22 profile; command column and ReviewPanel lay out in real CSS px
+  (no ancestor scale transform); the ~9 doctrine-§3 views render via FluidView;
+  ShowdownView classification decided and recorded; WS-441's interim px inflation
+  removed; viewScrollContainers.test.js green throughout.
+effort: "L"
+files_involved:
+  - "src/components/views/TableView/TableView.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/HandReplayView/HandReplayView.jsx"
+  - "src/components/views/HandReplayView/ReviewPanel.jsx"
+  - "tests/playwright/touch-floor.spec.js"
+  - "src/test/viewScrollContainers.test.js"
+blocked_by: ["WS-441"]
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "ShowdownView classification (doctrine §6): spatial split vs fully fluid — founder call"
+  - "Phase C scope: do the ~9 fluid views ride with the split or split into their own ticket"
+source:
+  type: doctrine-recovery
+  created_by: ai
+  finding_id: ""
+  run_id: ""
+created_at: "2026-08-15T01:45:00Z"
+status_note: |
+  Re-file of the layout migration originally tracked as WS-322 (2026-08-01), lost to the
+  2026-08-07 ticket-ID collision (WS-322 on disk is the unrelated Standard of Record
+  ticket). Doctrine + geometry contract + device evidence recovered from orphan branch
+  merge 9de247d1 by WS-441 on 2026-08-15. Depends on WS-441's enforcement instrument and
+  on WS-440's useCanvasFit rotation mechanics (the felt keeps them; in portrait the
+  rotated felt and the unrotated real-px column must be designed together — Phase A's
+  first design question).

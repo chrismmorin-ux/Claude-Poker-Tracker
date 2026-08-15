@@ -15,7 +15,7 @@ export const ControlZone = ({
   onClearStreet, onResetHand, onNextHand,
   reviewTagged = false, onToggleReviewTag,
 }) => (
-  <div style={{ background: 'var(--panel-surface)', borderTop: '1px solid var(--panel-border)' }}>
+  <div style={{ background: 'var(--panel-surface)', borderTop: '1px solid var(--panel-border)', flexShrink: 0 }}>
     {/* Clear Seat / Undo — per-seat action management */}
     {singleSeat && actionArray.length > 0 && (
       <div className="flex gap-1.5 px-2 pt-2 pb-1">

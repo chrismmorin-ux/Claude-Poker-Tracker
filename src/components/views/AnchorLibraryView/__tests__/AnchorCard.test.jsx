@@ -153,6 +153,7 @@ describe('AnchorCard — ⓘ button', () => {
   it('has ≥44×44 tap target (H-ML06)', () => {
     render(<AnchorCard anchor={baseAnchor} />);
     const info = screen.getByTestId('anchor-card-info');
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
     expect(info).toHaveStyle({ minHeight: '44px', minWidth: '44px' });
   });
 

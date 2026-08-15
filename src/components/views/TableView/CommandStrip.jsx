@@ -684,6 +684,7 @@ export const CommandStrip = ({
 
   return (
     <div
+      data-testid="command-column"
       className="absolute flex flex-col"
       style={{
         width: `${LAYOUT.ACTION_PANEL_WIDTH}px`,
@@ -695,7 +696,9 @@ export const CommandStrip = ({
       }}
     >
       {/* Street Progress Tabs */}
-      <div className="flex gap-1 px-1.5 py-1" style={{ background: 'var(--panel-surface)' }}>
+      {/* Pinned top anchor (table-view-geometry.md Overflow contract): street tabs
+          never scroll away; the middle band below owns the overflow. WS-441. */}
+      <div className="flex gap-1 px-1.5 py-1" style={{ background: 'var(--panel-surface)', flexShrink: 0 }}>
         {STREETS.map((street) => {
           const state = getStreetState(street, currentStreet, actionSequence);
           return (
@@ -704,7 +707,10 @@ export const CommandStrip = ({
               onClick={() => handleStreetChange(street)}
               className="btn-press flex-1 rounded-md font-bold transition-all"
               style={{
-                height: '40px',
+                // WS-441 interim: 64 ≥ ceil(44 / 0.695) so the RENDERED tab clears the
+                // 44px touch floor at the provisional S22 profile (deviceProfiles.mjs).
+                // WS-489 removes this when the column exits the scaled canvas.
+                height: '64px',
                 background: state === 'active'
                   ? 'linear-gradient(180deg, #d4a847 0%, #b8922e 100%)'
                   : state === 'completed'
@@ -742,6 +748,12 @@ export const CommandStrip = ({
           onClearHole={handleClearHole}
         />
       )}
+
+      {/* Middle band — the ONLY scroll region in the column (table-view-geometry.md
+          Overflow contract, implemented by WS-441 when the interim 64px raises made
+          the 839px content over-subscription clip the Next Hand CTA; WS-489 re-derives
+          this in real CSS px). Tabs stay pinned above, ControlZone pinned below. */}
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
 
       {/* Push/fold verdict (≤15bb) supersedes the equity tag — the equity model
           is wrong at push/fold depth (DISC-2026-04-21-push-fold-widget). */}
@@ -879,7 +891,10 @@ export const CommandStrip = ({
                     // the row still can't fit them all, flex-wrap on the parent
                     // sends overflowing buttons to a second row — no silent
                     // off-screen content.
-                    height: '36px', padding: '4px 8px', fontSize: '12px', fontWeight: isCurrent ? 800 : 600,
+                    // WS-441 interim: 64 ≥ ceil(44 / 0.695) — rendered 44px touch floor
+                    // (BOTH axes; the measured width failures were 21-38px) at the
+                    // provisional S22 profile. WS-489 removes this.
+                    height: '64px', minWidth: '64px', padding: '4px 8px', fontSize: '12px', fontWeight: isCurrent ? 800 : 600,
                     background: bg, color, whiteSpace: 'nowrap', flexShrink: 1,
                     textDecoration: hasFolded ? 'line-through' : 'none',
                     border: isCurrent ? '2px solid #fbbf24' : '1px solid transparent',
@@ -1051,9 +1066,13 @@ export const CommandStrip = ({
         </div>
       )}
 
-      {/* ═══ CONTROL ZONE (bottom) — table management ═══ */}
-      <div className="flex-1" />
+      </div>{/* end middle scroll band */}
 
+      {/* ═══ CONTROL ZONE (bottom) — table management ═══
+          Pinned bottom anchor: Next Hand is structurally unclippable (the WS-441
+          devshot run reproduced the clip before this structure landed). The old
+          flex-1 spacer measured 0px (geometry contract §1) and is gone — the
+          scroll band above owns the flexible space. */}
       <ControlZone
         singleSeat={singleSeat}
         actionArray={actionArray}
