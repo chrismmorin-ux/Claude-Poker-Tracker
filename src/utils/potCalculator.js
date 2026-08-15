@@ -122,24 +122,44 @@ export const calculatePot = (actionSequence, blinds, opts = {}) => {
  * converting amounts to pot fractions (anchor matcher bridge) must skip
  * conversion when `estimated` is set or `potBefore` is 0.
  *
+ * Each entry also carries the acting seat's `owed` (what they must ADD to continue) and
+ * their `streetContrib` (what they already have in on this street) at the moment they act.
+ * Together with `potBefore` those are the three quantities `foldCurveAxisFraction` needs, so
+ * a consumer fitting or scoring on the fold-curve axis never has to re-walk the sequence and
+ * risk a second, divergent accounting (WS-481).
+ *
+ * Pass `{ smallBlindSeat, bigBlindSeat }` for the same reason `calculatePot` takes them: a
+ * blind seat that later raises has `alreadyIn` of 0 without the seeding, so its raise-TO is
+ * added whole and the pot over-counts by that blind for the REST OF THE HAND — every
+ * postflop `potBefore` inherits the error. Omitting them preserves the previous behaviour.
+ *
  * @param {Array} actionSequence - Array of ActionEntry objects
  * @param {{ sb: number, bb: number }} blinds - Blind amounts
- * @returns {Array<{ potBefore: number, estimated: boolean }>} aligned by index
+ * @param {{ smallBlindSeat?: number, bigBlindSeat?: number }} [opts] - Blind seats for exact seeding
+ * @returns {Array<{ potBefore: number, estimated: boolean, owed: number, streetContrib: number,
+ *   currentBet: number }>} aligned by index
  */
-export const calculatePotProgression = (actionSequence, blinds) => {
+export const calculatePotProgression = (actionSequence, blinds, opts = {}) => {
   const { sb, bb } = blinds || { sb: 1, bb: 2 };
+  const { smallBlindSeat, bigBlindSeat } = opts;
   let total = sb + bb;
   let currentBet = bb;
   let currentStreet = 'preflop';
   let estimated = false;
-  let seatContribs = {};
+  const seedContribs = () => {
+    const c = {};
+    if (smallBlindSeat) c[smallBlindSeat] = sb;
+    if (bigBlindSeat) c[bigBlindSeat] = bb;
+    return c;
+  };
+  let seatContribs = seedContribs();
   const progression = [];
 
   if (!Array.isArray(actionSequence)) return progression;
 
   for (const entry of actionSequence) {
     if (!entry || typeof entry !== 'object') {
-      progression.push({ potBefore: total, estimated });
+      progression.push({ potBefore: total, estimated, owed: 0, streetContrib: 0, currentBet });
       continue;
     }
     if (entry.street !== currentStreet) {
@@ -148,7 +168,14 @@ export const calculatePotProgression = (actionSequence, blinds) => {
       seatContribs = {};
     }
 
-    progression.push({ potBefore: total, estimated });
+    const streetContrib = seatContribs[entry.seat] || 0;
+    progression.push({
+      potBefore: total,
+      estimated,
+      owed: Math.max(0, currentBet - streetContrib),
+      streetContrib,
+      currentBet,
+    });
 
     switch (entry.action) {
       case PRIMITIVE_ACTIONS.FOLD:
