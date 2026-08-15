@@ -64,6 +64,11 @@ export const METRICS_SCHEMA_VERSIONS = Object.freeze({
   'metrics.style-collapse': 1,
   'metrics.teachable-arms': 1,
   'metrics.fold-curve-shape': 2,
+  // WS-481. A SEPARATE kind from fold-curve-shape on purpose: that one warrants a refit of
+  // the population curve's PARAMETERS, this one warrants the AXIS both sides of any such
+  // curve are measured on. Sharing a kind would force the two estimand families to
+  // co-evolve, which the header forbids.
+  'metrics.fold-curve-axis': 1,
 });
 
 /**
@@ -84,6 +89,7 @@ export const METRICS_KINDS = Object.freeze({
   'style-collapse': 'metrics.style-collapse',
   'teachable-arms': 'metrics.teachable-arms',
   'fold-curve-shape': 'metrics.fold-curve-shape',
+  'fold-curve-axis': 'metrics.fold-curve-axis',
 });
 
 /** The discriminator, identical on every variant. */
@@ -456,6 +462,34 @@ const FOLD_CURVE_SHAPE_FIELDS = [
     note: 'The known remaining defect (sub-0.15x over-prediction) and the principled fix deliberately not taken — stated on the card, not in a doc.' },
 ];
 
+/**
+ * scripts/backtest/emit-ws481-result-card.mjs — the WS-481 fold-curve AXIS correction.
+ *
+ * The estimand is not a curve's parameters but the VARIABLE the curve is fitted and
+ * evaluated on. Its falsification half is unusual and is why the kind exists: the two
+ * instruments the ticket named are BLIND to the change, and proving that — rather than
+ * quoting their null — is part of the result (FIND-138).
+ */
+const FOLD_CURVE_AXIS_FIELDS = [
+  kindField('fold-curve-axis'),
+  { name: 'axisDefinition', type: 'object', since: 1, required: true, unit: 'record ({formula, sharedBy, anchorCheck})',
+    note: 'The single exported definition both sides now resolve to, and the documented anchor it reproduces. A card whose axis cannot be stated is the defect this ticket removed.' },
+  { name: 'trainingSideBefore', type: 'object', since: 1, required: true, unit: 'record ({numerator, denominator, worked})',
+    note: 'What the TRAINING side computed before — the defect, with a worked example, so the magnitude is on the card rather than in a commit message.' },
+  { name: 'blindInstruments', type: 'array', since: 1, required: true, unit: 'rows ({instrument, blindBecause, evidence})',
+    note: 'Instruments that CANNOT observe this estimand, each with the evidence that establishes it. Reporting a blind instrument\'s null as a result is the failure this field exists to prevent (FIND-138).' },
+  { name: 'reach', type: 'object', since: 1, required: true, unit: 'record ({playersConsidered, playersWithFittedCurve, conditioned})',
+    note: 'Whether the corrected object reaches production at all. Without it a null divergence cannot be told from an inert feature.' },
+  { name: 'pairedAdviceDelta', type: 'object', since: 1, required: true, unit: 'record ({paired, fed, divergent, meanTvOnDivergent, conditioned})',
+    note: 'The per-decision paired divergence, CONDITIONED on a served villain model — the unconditioned rate is diluted by decisions the channel cannot reach.' },
+  { name: 'controlUnfedMustBeZero', type: 'object', since: 1, required: true, unit: 'record ({n, divergent})',
+    note: 'Internal control: decisions with no villain model must diverge on ZERO rows, because the channel is absent there. A nonzero value falsifies the attribution.' },
+  { name: 'aggressionShift', type: 'object', since: 1, required: true, unit: 'record ({before, after, delta, basis})',
+    note: 'Direction of the change in bet+raise mass. Signed, because the mechanism predicts a sign (inflated fold equity makes the engine reckless) and a result that cannot be signed cannot be checked against it.' },
+  { name: 'instrumentBuilt', type: 'object', since: 1, required: true, unit: 'record ({what, coverage, omits})',
+    note: 'The instrument built to make this measurable, and what it still does NOT cover — stated as data so the next reader does not rediscover the gap.' },
+];
+
 /** All variant + shared entries, spread into SOR_SCHEMAS by schemas.js. */
 export const METRICS_SCHEMA_ENTRIES = Object.freeze({
   'metrics.shared.conditioned-rate': Object.freeze(CONDITIONED_RATE_FIELDS),
@@ -472,4 +506,5 @@ export const METRICS_SCHEMA_ENTRIES = Object.freeze({
   'metrics.style-collapse': Object.freeze(STYLE_COLLAPSE_FIELDS),
   'metrics.teachable-arms': Object.freeze(TEACHABLE_ARMS_FIELDS),
   'metrics.fold-curve-shape': Object.freeze(FOLD_CURVE_SHAPE_FIELDS),
+  'metrics.fold-curve-axis': Object.freeze(FOLD_CURVE_AXIS_FIELDS),
 });
