@@ -1,0 +1,59 @@
+id: "WS-493"
+title: "Keep cm-node1 fed with the most important node1 work — the compute supply chain"
+legacy_id: ""
+type: task
+status: done
+claimed_by: null
+claimed_at: null
+started_at: "2026-08-16T08:20:00Z"
+completed_at: "2026-08-16T09:15:00Z"
+completion_commit: "39c7f134"
+priority_score: 24.0
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  cm-node1's compute runner was never the missing piece. Measured 2026-08-16: it had ticked
+  cleanly every five minutes since 2026-08-15 and 314 of its 379 ledger events were
+  `tick_idle` — ~27 hours of a machine waking up to discover it had nothing to do — while six
+  `runs_on: node1` items sat unclaimed in this repo's queue. The supply chain was missing.
+
+  Four links were broken, and the first is the one that would have been missed by patching
+  the obvious place:
+
+  1. `runs_on` never reached state. The workstream reducer's ITEM_FIELDS whitelist omitted
+     it, so all 174 labels from the 2026-08-05 backfill were invisible to every consumer.
+     Patching only the cwos-next.js candidates projection would NOT have worked.
+  2. No item was executable. A WS-*.yaml is prose; the runner needs argv + expectFiles.
+  3. Nothing ever asked. /next had no fleet step.
+  4. node1's claude-poker-tracker clone is absent from repo-pull.ps1's $Repos, so nothing
+     refreshes it on a cadence (see WS-495).
+accept_criteria: |
+  - DONE: reducer materializes runs_on + compute_ready; ranker projects both.
+  - DONE: kit/scripts/lib/cwos-compute-job.js validates a compute_job block, shared between
+    the reducer's readiness stamp and the dispatcher so they cannot disagree.
+  - DONE: kit/scripts/cwos-fleet-compute.js status|rank|feed|validate, runs from either end.
+  - DONE: /next Step 1b surfaces node1 state; information, never a gate.
+  - DONE: Fleet-ComputeFeeder on node1, every 2h + at boot, pulls then feeds.
+  - DONE: WS-320 dispatched and verified running on the full 21,782-file corpus.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "kit/scripts/lib/cwos-compute-job.js"
+  - "kit/scripts/cwos-fleet-compute.js"
+  - "kit/scripts/core/reducers/workstream.js"
+  - "kit/scripts/cwos-next.js"
+  - ".claude/commands/next.md"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-494"
+  - "WS-495"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder"
+  detail: "2026-08-16 — get node1 consistently running long processes; check at /next; always working on the next most important thing"
+created_at: "2026-08-16T08:20:00Z"

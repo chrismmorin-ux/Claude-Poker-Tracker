@@ -1,0 +1,59 @@
+id: "WS-494"
+title: "The optimizer's-curse corpus arm does not exist — shapeReport is wired to nothing but a synthetic probe"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 22.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found 2026-08-16 while authoring WS-295's compute_job block, by reading the script rather
+  than trusting the ticket.
+
+  WS-295's accept criteria ask for the curse as a SHAPE — gap vs posterior width and vs
+  top-two EV margin, each with a cluster-bootstrap CI — over the existing WS-287 pass
+  (heroEvRunner.mjs, ipsEstimator.mjs), explicitly "no second pipeline, no new corpus read".
+
+  `run-optimism-probe.mjs` cannot produce that. Its own header states it runs on a FIXED SET
+  OF SYNTHETIC NODES and measures the curse's SIZE — `E[max_a EVhat(a)] - max_a E[EVhat(a)]`,
+  which needs repeated draws at the SAME node and which a corpus pass cannot supply because
+  each corpus decision is visited exactly once. Size and shape are complementary and neither
+  substitutes for the other; the script says so.
+
+  `shapeReport` (scripts/backtest/optimismBias.mjs:328) is imported by run-optimism-probe.mjs
+  and by NOTHING ELSE — verified 2026-08-16. So nothing wires it over heroEv output. The
+  corpus arm is unbuilt, and WS-295 cannot close without it.
+accept_criteria: |
+  - A runner scores shapeReport over the WS-287 heroEv corpus pass — reusing that pass, not
+    opening a second pipeline or a second corpus read.
+  - Gap vs posterior width and gap vs top-two margin, each with a cluster-bootstrap CI.
+  - A FLAT relationship is reported as a refutation in the headline, not buried.
+  - ESS and clipped share reported alongside every figure.
+  - Emits a Result Card; the live/online transfer caveat is carried.
+  - WS-295 then closes on size + shape together, never on the synthetic arm alone.
+effort: "M"
+runs_on: "any"
+compute_note: >-
+  The RUNNER is code work (machine any). Once it exists, its execution is a node1 compute job
+  and gets a compute_job block like WS-320's.
+files_involved:
+  - "scripts/backtest/optimismBias.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/ipsEstimator.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "ai-finding"
+  detail: "WS-493 spec authoring, 2026-08-16 — read the script instead of the ticket"
+created_at: "2026-08-16T09:10:00Z"
