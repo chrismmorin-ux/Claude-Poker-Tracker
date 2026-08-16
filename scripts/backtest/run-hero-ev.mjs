@@ -108,7 +108,7 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, resolveCorpusRoot } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runHeroEv } = await loader.load('/scripts/backtest/heroEvRunner.mjs');
     const { buildHeroEvReport, renderHeroEvReport } = await loader.load('/scripts/backtest/heroEvReport.mjs');
 
@@ -193,7 +193,12 @@ const main = async () => {
     // run actually saw, not the ones that matched the filter. A book built before slicing
     // would hash a set the measurement never touched, which is a worse failure than no book
     // at all because it would look correct.
-    const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
+    // `resolveCorpusRoot`, not the deprecated DEFAULT_CORPUS_ROOT constant: precedence is
+    // explicit flag > $HANDHQ_CORPUS_ROOT > the G16 path, read at call time. The constant
+    // cannot see the environment, and importing it is exactly what pinned six scripts to
+    // the G16 (WS-321). Same resolution the --max-files discovery above already uses, so
+    // the Deal Book describes the tree that was actually scanned.
+    const corpusRoot = resolveCorpusRoot(args['corpus-root']);
     const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
     const {
       buildStampInput, HERO_EV_UNSEEDED_SOURCES,
