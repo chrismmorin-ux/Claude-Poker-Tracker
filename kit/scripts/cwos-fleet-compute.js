@@ -294,11 +294,14 @@ function feed({ dryRun }) {
     };
   }
 
-  if (dryRun) return { ok: true, action: 'dry-run', spec: m.spec, picked: top, status };
+  // `skipped` rides along on success too: "why did it not pick the top-ranked item" is the
+  // first question anyone asks of a dispatcher, and answering it only on failure is how a
+  // silently-wrong selection goes unnoticed.
+  if (dryRun) return { ok: true, action: 'dry-run', spec: m.spec, picked: top, skipped, status };
 
   const submitted = submitSpec(m.spec);
-  if (!submitted.ok) return { ok: false, action: 'none', reason: submitted.reason, spec: m.spec, status };
-  return { ok: true, action: 'submitted', jobId: m.spec.id, picked: top, spec: m.spec, status };
+  if (!submitted.ok) return { ok: false, action: 'none', reason: submitted.reason, spec: m.spec, skipped, status };
+  return { ok: true, action: 'submitted', jobId: m.spec.id, picked: top, spec: m.spec, skipped, status };
 }
 
 /** Write the spec where the runner can see it and ask the runner to take it. */
@@ -392,6 +395,7 @@ function main() {
     if (r.action === 'submitted') console.log(`submitted ${r.jobId} (${r.picked.id}, score ${r.picked.adjusted_score}) to ${TARGET}`);
     else if (r.action === 'dry-run') console.log(`would submit ${r.spec.id} (${r.picked.id}): ${r.spec.steps.length} step(s)`);
     else console.log(`no submission — ${r.reason}`);
+    for (const s of r.skipped || []) console.log(`  skipped ${s}`);
     if (!r.ok) process.exitCode = 1;
     return;
   }
