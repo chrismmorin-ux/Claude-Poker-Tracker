@@ -36,6 +36,28 @@
  * footer string changes.
  */
 
+// v127 (2026-08-16, WS-320 review): names the engine era that arrived with merge 27e4ea39,
+// "integrate/orphans-20260807 — 78 commits of recovered orphan-branch work". That merge landed
+// real algorithm change on BOTH parents and no bump followed it, so every predictionAudit
+// record written since 2026-08-16T05:00 has been stamped v126 while running code v126 never
+// saw. Against the first parent: decisionAccumulator.js restructured (−166 lines),
+// preflopAdvisor.js, and four handAnalysis modules. Against the second: villainModelData.js
+// (258 lines), villainDecisionModel.js (111), villainProfileBuilder.js, bayesianUpdater.js,
+// populationPriors.js, crossRangeConstraints.js, lineTaxonomy.js and ~40 more.
+//
+// THIS IS THE GATE WORKING, NOT FAILING. It was misread once in this session as another
+// instance of FIND-140 (a comment-only commit opening a spurious era) on the strength of a
+// `git log --since` listing that showed a test-only commit first. Running the gate's OWN
+// excluded query returns the merge, not the test commit: the test exclusion is intact. FIND-140
+// remains a real defect in the gate's design; it is not what happened here, and the bump is
+// genuinely owed.
+//
+// NUMBERING COLLISION, RECORDED SO IT CANNOT BE LOST: the uncommitted `ws-445-label-ledger`
+// worktree also claims v127, on the FIND-140 premise disproved above, and its note asserts
+// v126 is held by the "unmerged" ws-481-482-foldcurve branch. That branch merged as 4013fe96
+// and v126 is on mainline. Mainline takes v127 because this era is merged and shared; that
+// branch must renumber to v128 before it lands. Two eras must not share a name.
+//
 // v126 (2026-08-15, SPR-186): WS-481 fits the personalized fold curve on the axis it is
 // EVALUATED on. `foldCurveAxisFraction` (foldEquityCalculator.js) is now the single
 // definition, imported by the training side (decisionAccumulator) and delegated to by the
@@ -54,5 +76,5 @@
 // DEC-022 guard; CR fallback fold aligned to MODEL_CONFIDENCE_THRESHOLD +
 // POPULATION_PRIORS.raise.fold) and WS-315 blocker tie-break in the final ranking
 // (blockerScore.excess breaks EV ties within 1% of pot).
-export const ENGINE_VERSION = 'v126';
+export const ENGINE_VERSION = 'v127';
 export const APP_VERSION = 'v123';

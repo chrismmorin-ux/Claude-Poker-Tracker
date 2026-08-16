@@ -136,6 +136,26 @@ export const LADDER_RUNGS = Object.freeze(['limpRate', 'threeBetRate', 'cbetRate
 export const CONTROL_AXIS = 'flopBetFreq';
 
 /**
+ * The control EACH candidate is verdicted against.
+ *
+ * WHY THIS IS NOT JUST `CONTROL_AXIS` FOR EVERYONE. `cbetRate` is a STRICT SUBSET of
+ * `flopBetFreq`: every c-bet is a flop bet with nothing owed. Scoring a subset's dispersion
+ * against a superset that contains it is not a control — the two share the observations that
+ * are supposed to be independent, and the comparison is biased toward "no excess" by
+ * construction. `crossAxisCorrelation` already flags this pair as `overlapping` (see
+ * studyLadderReport), and `flopBetFreqNonPfa` was built precisely to be the disjoint
+ * counterpart: flop bets by actors who were NOT the preflop aggressor, which is exactly the
+ * population a c-bet cannot come from.
+ *
+ * The disjoint control existed and the verdict path never used it (WS-320 review, 2026-08-16).
+ */
+export const CONTROL_FOR = Object.freeze({
+  limpRate: 'flopBetFreq',
+  threeBetRate: 'flopBetFreq',
+  cbetRate: 'flopBetFreqNonPfa',
+});
+
+/**
  * Extract every axis observation from one converted hand.
  *
  * Returns a flat list of `{ playerKey, axis, hit }` rather than mutating a tally, so the

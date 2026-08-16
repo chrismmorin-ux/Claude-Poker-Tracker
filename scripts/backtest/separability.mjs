@@ -437,6 +437,31 @@ export const ladderNesting = ({ orderedFlagMaps, labels }) => {
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Standardised excess of an axis's dispersion OVER THE CONTROL'S, not over the binomial null.
+ *
+ * χ²/df has E = 1 and Var = 2/df, so the difference of two dispersion ratios has
+ * Var ≈ 2/df_a + 2/df_c and (r_a − r_c) / sqrt(that) is a Wald z.
+ *
+ * THE OVERLAP CAVEAT, STATED RATHER THAN CORRECTED. The two axes are measured on overlapping
+ * player sets, so the ratios are positively correlated and the true Var(difference) is SMALLER
+ * than the independent sum used here. That makes this z CONSERVATIVE — it under-states
+ * significance, so a "separates" it returns is not an artifact of the approximation, while a
+ * near-threshold negative could be. The direction of the error is the reason it is acceptable
+ * to leave uncorrected; it is not acceptable to leave unsaid.
+ *
+ * Returns null when either df is absent — callers must then fall back to the ratio alone.
+ */
+export const dispersionVsControl = (stats, controlStats) => {
+  const ra = stats?.chi2PerDf;
+  const rc = controlStats?.chi2PerDf;
+  if (ra === null || ra === undefined || !rc) return { ratio: null, z: null };
+  const ratio = ra / rc;
+  if (!stats?.df || !controlStats?.df) return { ratio, z: null };
+  const se = Math.sqrt(2 / stats.df + 2 / controlStats.df);
+  return { ratio, z: se > 0 ? (ra - rc) / se : null };
+};
+
+/**
  * The separability verdict for one axis, read against the control FROM THE SAME RUN.
  *
  * THREE OUTCOMES, NOT TWO. "Does not separate" and "cannot be told apart at this sample size"
@@ -446,23 +471,74 @@ export const ladderNesting = ({ orderedFlagMaps, labels }) => {
  *
  * A null NEVER licenses removing a capability (founder standing rule). It licenses not
  * BUILDING one, which is a different act.
+ *
+ * ── WS-320 REVIEW, 2026-08-16: THE CONTROL WAS PRINTED AND NEVER APPLIED ──
+ * This function used to decide on `stats.z >= 3` alone — an excess over the BINOMIAL null —
+ * while interpolating `controlStats` into the reason string. Every sentence of this module's
+ * header says the non-circular test is dispersion measured against a CONTROL AXIS, and the
+ * code did not do it. In the live run that shipped "separates" for three axes that do not
+ * clear their control, including `threeBetRate` at χ²/df = 5.57 against a control of 9.36 —
+ * an axis LESS dispersed between players than the control, reported as separating.
+ *
+ * A FOURTH OUTCOME follows, and must not be collapsed into `does-not-separate`. An axis can
+ * carry real heterogeneity (z vs null ≫ 3) that is nonetheless no larger than what the
+ * control already shows on the same players. That is not "players don't differ here" — it is
+ * "players differ here no more than they differ generally", which forbids building a channel
+ * on THIS axis while saying nothing against the trait existing. It is `not-beyond-control`.
+ *
+ * `minDispersionRatio` is the EFFECT floor, separate from the significance test, because at
+ * df in the tens of thousands significance is nearly automatic: `cbetRate` clears z = 26
+ * against its control on an excess of 3.4%. A significance-only rule at this n is barely more
+ * falsifiable than the binomial rule it replaced. The default of 1 asserts only "must exceed
+ * the control"; raising it is a founder decision and the run reports the ratio so the choice
+ * can be made against evidence rather than in the abstract.
  */
-export const separabilityVerdict = ({ stats, controlStats, obsThreshold = OBS_FOR_MOVEABLE_ESTIMATE }) => {
+export const separabilityVerdict = ({
+  stats,
+  controlStats,
+  obsThreshold = OBS_FOR_MOVEABLE_ESTIMATE,
+  minDispersionRatio = 1,
+  controlLabel = 'the control',
+}) => {
   if (stats.chi2PerDf === null || stats.z === null) {
     return { verdict: 'undefined', reason: stats.note ?? 'statistic could not be computed' };
   }
   const powered = (stats.obsPerPlayerMedian ?? 0) >= obsThreshold;
-  const separates = stats.z >= 3;
+  const separatesVsNull = stats.z >= 3;
+  const vsControl = dispersionVsControl(stats, controlStats);
+  // Significance against the control where df allows it; the ratio alone where it does not.
+  const beatsControl = vsControl.ratio !== null
+    && vsControl.ratio >= minDispersionRatio
+    && (vsControl.z === null || vsControl.z >= 3);
 
-  if (separates) {
+  if (separatesVsNull && beatsControl) {
     return {
       verdict: 'separates',
       reason:
-        `χ²/df = ${stats.chi2PerDf.toFixed(3)} (z = ${stats.z.toFixed(1)}), against the control's `
-        + `${controlStats.chi2PerDf?.toFixed(3)} (z = ${controlStats.z?.toFixed(1)}) in this same run. `
-        + `Between-player SD ≈ ${(100 * (stats.betweenPlayerSd ?? 0)).toFixed(1)}pp — real variation `
-        + 'beyond what each player\'s own n explains.',
+        `χ²/df = ${stats.chi2PerDf.toFixed(3)} (z = ${stats.z.toFixed(1)}), against ${controlLabel}'s `
+        + `${controlStats.chi2PerDf?.toFixed(3)} (z = ${controlStats.z?.toFixed(1)}) in this same run — `
+        + `${vsControl.ratio.toFixed(2)}× the control`
+        + (vsControl.z === null ? '' : ` (z = ${vsControl.z.toFixed(1)} on the difference)`)
+        + `. Between-player SD ≈ ${(100 * (stats.betweenPlayerSd ?? 0)).toFixed(1)}pp — real variation `
+        + 'beyond what each player\'s own n explains, AND beyond what the control already shows.',
       powered,
+      vsControl,
+    };
+  }
+
+  if (separatesVsNull) {
+    return {
+      verdict: 'not-beyond-control',
+      reason:
+        `χ²/df = ${stats.chi2PerDf.toFixed(3)} (z = ${stats.z.toFixed(1)}) — real heterogeneity against `
+        + `the binomial null — but only ${vsControl.ratio?.toFixed(2)}× ${controlLabel}'s `
+        + `${controlStats.chi2PerDf?.toFixed(3)}`
+        + (vsControl.z === null ? '' : ` (z = ${vsControl.z.toFixed(1)} on the difference)`)
+        + `, against a floor of ${minDispersionRatio.toFixed(2)}×. Players differ on this axis no more `
+        + 'than they differ generally, so it earns no channel of its own. This is NOT proof the trait '
+        + 'is absent and licenses deleting nothing.',
+      powered,
+      vsControl,
     };
   }
   if (!powered) {
@@ -474,6 +550,7 @@ export const separabilityVerdict = ({ stats, controlStats, obsThreshold = OBS_FO
         + 'An axis at this density returns χ²/df ≈ 1 whether or not the type exists. This is a '
         + 'weak-power null, NOT proof of absence (§11.8).',
       powered,
+      vsControl,
     };
   }
   return {
@@ -481,8 +558,9 @@ export const separabilityVerdict = ({ stats, controlStats, obsThreshold = OBS_FO
     reason:
       `χ²/df = ${stats.chi2PerDf.toFixed(3)} (z = ${stats.z.toFixed(1)}) at a median of `
       + `${stats.obsPerPlayerMedian} observations per player — enough to detect heterogeneity, and `
-      + `none found. The control reached ${controlStats.chi2PerDf?.toFixed(3)} on the same players, `
+      + `none found. ${controlLabel} reached ${controlStats.chi2PerDf?.toFixed(3)} on the same players, `
       + 'so the instrument was working. Do not build a channel here; do not delete anything either.',
     powered,
+    vsControl,
   };
 };
