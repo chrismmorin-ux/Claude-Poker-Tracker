@@ -13,7 +13,7 @@ export const ImportConfirmModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 max-w-md w-full mx-4 max-h-[90dvh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-white mb-4">Confirm Import</h2>
         <p className="text-red-400 font-semibold mb-4">
           Warning: This will replace ALL existing data!

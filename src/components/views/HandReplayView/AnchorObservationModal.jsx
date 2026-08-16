@@ -304,7 +304,12 @@ export const AnchorObservationModal = ({
         style={{
           width: '100%',
           maxWidth: '34rem',
-          maxHeight: '90vh',
+          // 90% not 90vh (WS-440 sweep): this modal renders inside the
+          // transformed 1600×720 canvas, which is the containing block for its
+          // fixed positioning — but vh units still resolve against the REAL
+          // viewport, so 90vh on a landscape phone yielded a ~150 physical px
+          // sliver. Percentage resolves against the canvas, which is correct.
+          maxHeight: '90%',
           overflowY: 'auto',
           background: '#1f2937',
           color: '#e5e7eb',

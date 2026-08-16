@@ -20,14 +20,21 @@ export const CardGrid = ({
   const canSelect = highlightedSeat !== null && highlightedHoleSlot !== null;
 
   // AUDIT-2026-04-21-SDV F5: overflow-hidden previously clipped the 13×4 fixed-pixel
-  // card table on sub-reference viewports (Samsung Galaxy A22 @ 1600×720 is the
+  // card table on sub-reference viewports (the 1600×720 design canvas is the
   // design reference — at smaller landscape viewports the rightmost low-rank columns
   // became silently inaccessible). overflow-auto restores horizontal scroll as a
   // fallback on narrow devices. Full responsive layout (larger cards at scale <0.75)
   // is tracked as a discovery candidate; this fix unblocks the JTBD-HE-11 regression.
+  //
+  // WS-440 sweep 2026-08-13: centering must be m-auto on the CHILD, not
+  // items-center/justify-center on the scroll container — flex centering makes
+  // an oversized child overflow at BOTH edges, and start-direction overflow is
+  // unreachable (scrollLeft can't go below 0), which re-clipped the A/K/Q
+  // columns the F5 fix was meant to expose. Auto margins center when it fits
+  // and collapse to zero when it doesn't, keeping every column reachable.
   return (
-    <div className="flex-1 bg-white py-1 px-2 overflow-auto flex items-center justify-center">
-      <table className="border-collapse">
+    <div className="flex-1 bg-white py-1 px-2 overflow-auto flex">
+      <table className="border-collapse m-auto">
         <thead>
           <tr>
             <th style={{ width: '40px' }}></th>

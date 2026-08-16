@@ -238,7 +238,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
         data-testid="camera-upload-input"
       />
 
-      <div className="bg-slate-900 rounded-lg max-w-md w-full text-gray-200 flex flex-col" style={{ maxHeight: '90vh' }}>
+      <div className="bg-slate-900 rounded-lg max-w-md w-full text-gray-200 flex flex-col" style={{ maxHeight: '90dvh' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <h3 className="text-white text-base font-semibold">
@@ -258,7 +258,7 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
 
         {/* Body */}
         {stage === STAGE.SOURCE || stage === STAGE.PREPARING ? (
-          <div className="px-4 py-6 flex flex-col gap-3" data-testid="camera-capture-stage-source">
+          <div className="px-4 py-6 flex flex-col gap-3 min-h-0 overflow-y-auto" data-testid="camera-capture-stage-source">
             <p className="text-sm text-gray-400 mb-1">
               Take a new photo or upload one from your gallery. You'll be
               able to drag and pinch-zoom to position the crop after.
@@ -286,8 +286,11 @@ export const CameraCaptureModal = ({ playerId, onClose, onSaved, onAcceptOverrid
           </div>
         ) : null}
 
+        {/* min-h-0 + overflow-y-auto on the crop stage (WS-440 sweep): on a
+            landscape phone, 90dvh ≈ 324px against ~490px of crop UI — without
+            a scroller the Save button was unreachable. */}
         {(stage === STAGE.CROPPING || stage === STAGE.SAVING) && imageUrl ? (
-          <div className="flex flex-col" data-testid="camera-capture-stage-crop">
+          <div className="flex flex-col min-h-0 overflow-y-auto" data-testid="camera-capture-stage-crop">
             {/* Crop surface — fixed-aspect square via aspect ratio 1; the
                 crop area is fixed in viewport, image moves under it via
                 pinch+drag. */}

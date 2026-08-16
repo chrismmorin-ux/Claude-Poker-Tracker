@@ -1,51 +1,14 @@
 /**
  * useScale.js - Viewport scale calculation hook
  *
- * Calculates scale factor to fit the design dimensions (1600x720)
- * within the current viewport. Uses visualViewport API on mobile
- * for stable dimensions that account for browser chrome (URL bars).
+ * Calculates scale factor to fit the design dimensions (1600x720) within the
+ * current viewport. Since WS-440 this is a thin wrapper over useCanvasFit,
+ * which owns the measurement (visualViewport, orientationchange settling) and
+ * the portrait auto-rotate fallback: in a portrait touch viewport the scale
+ * returned here is the ROTATED fit (canvas 1600px axis along the viewport
+ * height), matching the rotate(90deg) transform the canvas sites apply.
  */
 
-import { useState, useEffect } from 'react';
-import { LAYOUT } from '../constants/gameConstants';
+import { useCanvasFit } from './useCanvasFit';
 
-export const useScale = () => {
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const calculateScale = () => {
-      // Prefer visualViewport (stable on mobile, ignores URL bar changes)
-      const vv = window.visualViewport;
-      const viewportWidth = vv ? vv.width : window.innerWidth;
-      const viewportHeight = vv ? vv.height : window.innerHeight;
-      const designWidth = LAYOUT.TABLE_WIDTH;
-      const designHeight = LAYOUT.TABLE_HEIGHT;
-
-      // 0.95 leaves a 5% margin so scaled views don't touch the viewport edges
-      // / collapsing browser chrome (matches the documented formula in CLAUDE.md).
-      const scaleX = (viewportWidth * 0.95) / designWidth;
-      const scaleY = (viewportHeight * 0.95) / designHeight;
-      const newScale = Math.min(scaleX, scaleY, 1);
-
-      setScale(newScale);
-    };
-
-    calculateScale();
-
-    // Listen to both window resize and visualViewport resize
-    window.addEventListener('resize', calculateScale);
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener('resize', calculateScale);
-    }
-
-    return () => {
-      window.removeEventListener('resize', calculateScale);
-      if (vv) {
-        vv.removeEventListener('resize', calculateScale);
-      }
-    };
-  }, []);
-
-  return scale;
-};
+export const useScale = () => useCanvasFit().scale;

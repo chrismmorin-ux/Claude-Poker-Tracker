@@ -260,7 +260,7 @@ export const ExplorerMode = () => {
 
         {confirm && (
           <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 max-w-sm w-full mx-4">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-5 max-w-sm w-full mx-4 max-h-[90%] overflow-y-auto">
               <div className="text-sm text-gray-200 mb-4">{confirm.message}</div>
               <div className="flex justify-end gap-2">
                 <ToolbarButton onClick={() => setConfirm(null)}>Cancel</ToolbarButton>

@@ -38,8 +38,10 @@ export const VersionMismatchModal = ({
         onClick={onCancel}
       />
 
-      {/* Modal */}
-      <div className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      {/* Modal — max-h-[90%] not dvh: rendered inside the transformed canvas,
+          where the fixed backdrop resolves to the canvas box, not the viewport
+          (WS-440 sweep). Percentage is correct in both coordinate systems. */}
+      <div className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6 max-h-[90%] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onCancel}

@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useToast as useToastState } from '../hooks/useToast';
 import { ToastContainer } from '../components/ui/Toast';
+import { RotatedViewport } from '../components/ui/RotatedViewport';
 
 const ToastContext = createContext(null);
 
@@ -18,7 +19,12 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
+      {/* RotatedViewport keeps toasts readable when the canvas auto-rotates
+          (WS-440). Requires ToastProvider to sit inside UIProvider — see
+          AppProviders.jsx; degrades to unrotated when UIContext is absent. */}
+      <RotatedViewport zClassName="z-50">
+        <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
+      </RotatedViewport>
     </ToastContext.Provider>
   );
 };

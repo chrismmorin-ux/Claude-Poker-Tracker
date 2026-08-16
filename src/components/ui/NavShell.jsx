@@ -43,7 +43,7 @@ export const NavShell = () => {
     <button
       type="button"
       onClick={() => setCurrentScreen(SCREEN.HOMEBASE)}
-      className="fixed top-3 left-3 z-[55] flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-white/60"
+      className="fixed top-3 left-3 z-[55] pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-white/60"
       style={{ backgroundColor: NAV_COLORS.home.base }}
       title="Home"
       aria-label={title ? `Home — leave ${title}` : 'Home'}

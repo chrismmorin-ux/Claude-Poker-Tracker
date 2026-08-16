@@ -111,6 +111,8 @@ export const SuppressConfirmModal = ({
         style={{
           width: '100%',
           maxWidth: '28rem',
+          maxHeight: '90dvh',
+          overflowY: 'auto',
           background: '#1f2937',
           color: '#e5e7eb',
           border: '1px solid #374151',

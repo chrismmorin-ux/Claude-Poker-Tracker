@@ -115,6 +115,8 @@ export const RetirementConfirmModal = ({ copy, onCancel, onConfirm }) => {
           padding: '1.25rem',
           maxWidth: '460px',
           width: '100%',
+          maxHeight: '90dvh',
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.875rem',

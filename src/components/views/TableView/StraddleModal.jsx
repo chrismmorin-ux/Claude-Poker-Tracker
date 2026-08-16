@@ -48,7 +48,7 @@ export const StraddleModal = ({
       {/* Modal */}
       <form
         onSubmit={handleSubmit}
-        className="relative bg-gray-800 rounded-lg shadow-xl max-w-sm w-full mx-4 p-6"
+        className="relative bg-gray-800 rounded-lg shadow-xl max-w-sm w-full mx-4 p-6 max-h-[90%] overflow-y-auto"
       >
         <button
           type="button"

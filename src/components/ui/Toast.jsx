@@ -104,7 +104,7 @@ export const ToastContainer = ({ toasts, onDismiss }) => {
 
   return (
     <div
-      className="fixed top-4 right-4 z-50 flex flex-col gap-2"
+      className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-auto"
       aria-live="polite"
     >
       {toasts.map(toast => (

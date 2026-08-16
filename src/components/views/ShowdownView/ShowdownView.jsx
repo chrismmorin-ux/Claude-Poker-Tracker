@@ -23,12 +23,15 @@ import { SidePotAttribution } from './SidePotAttribution';
 import { CardGrid } from './CardGrid';
 import { ActionHistoryGrid } from './ActionHistoryGrid';
 import { useShowdownEquity } from '../../../hooks/useShowdownEquity';
+import { useCanvasFit, canvasTransform } from '../../../hooks/useCanvasFit';
 
 /**
  * ShowdownView - Showdown card assignment and summary interface
  * Two modes: card selection (assigns cards to players) and summary (shows action history)
  */
 export const ShowdownView = ({ scale }) => {
+  // Portrait auto-rotate fallback (WS-440) — scale is already the rotated fit.
+  const { rotated } = useCanvasFit();
   // Get card state from CardContext
   const {
     communityCards,
@@ -229,10 +232,10 @@ export const ShowdownView = ({ scale }) => {
 
   return (
     <div className="flex items-center justify-center h-dvh bg-gray-800 overflow-hidden">
-      <div style={{
+      <div data-canvas-rotated={rotated ? 'true' : undefined} style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
-        transform: `scale(${scale})`,
+        transform: canvasTransform(scale, rotated),
         transformOrigin: 'center center'
       }}>
         <div

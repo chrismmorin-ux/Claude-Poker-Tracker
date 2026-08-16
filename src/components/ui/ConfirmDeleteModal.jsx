@@ -26,8 +26,8 @@ export const ConfirmDeleteModal = ({
         onClick={onCancel}
       />
 
-      {/* Modal */}
-      <div className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      {/* Modal — max-h + scroll so buttons stay reachable on short viewports (WS-440 sweep) */}
+      <div className="relative bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6 max-h-[90dvh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onCancel}

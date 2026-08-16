@@ -121,7 +121,11 @@ export const ExtensionPanel = () => {
         // LARGE viewport, so it overshoots the visible area under the 100dvh
         // page lock and pushes the bottom of the scroll region below the fold.
         // In the extension side panel the two are identical, so nothing changes there.
-        className="w-[400px] h-dvh flex flex-col relative overflow-hidden font-display antialiased border-l border-r"
+        // w-full max-w-[400px], not w-[400px] (WS-440 sweep): a hard 400px on a
+        // 360-390px portrait phone clipped the right edge with no scroll (root
+        // and body are both overflow-hidden). In the 400px side panel and on
+        // desktop the rendered width is unchanged.
+        className="w-full max-w-[400px] h-dvh flex flex-col relative overflow-hidden font-display antialiased border-l border-r"
         style={{
           background: SURFACE.body,
           borderLeftColor: BORDER.default,
