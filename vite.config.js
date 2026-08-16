@@ -141,6 +141,8 @@ export default defineConfig({
             'src/utils/drillContent/__tests__/matchupShapeRouting.test.js',
             'src/utils/drillContent/__tests__/precisionAudit.test.js',
             'src/utils/drillContent/__tests__/shapesCatalog.test.js',
+            'src/utils/pokerCore/__tests__/equityOperator.test.js',
+            'src/utils/exploitEngine/__tests__/advisorAccuracy.test.js',
           ],
           pool: 'threads',
           poolOptions: { threads: { maxThreads: 4 } },
@@ -170,6 +172,16 @@ export default defineConfig({
             'src/utils/drillContent/__tests__/matchupShapeRouting.test.js',
             'src/utils/drillContent/__tests__/precisionAudit.test.js',
             'src/utils/drillContent/__tests__/shapesCatalog.test.js',
+            // Same class, different directory. Both enumerate Monte-Carlo
+            // equity and both sat just under the `unit` project's 5s ceiling
+            // on a fast dev box, so they passed here and failed on CI —
+            // equityOperator's three MC assertions run ~3s each locally.
+            // They tipped over when the 2026-08-16 orphan merge added ~368
+            // tests and raised co-runner contention. Registered here rather
+            // than given bigger inline timeouts: contention, not duration,
+            // is what breaks them.
+            'src/utils/pokerCore/__tests__/equityOperator.test.js',
+            'src/utils/exploitEngine/__tests__/advisorAccuracy.test.js',
           ],
           pool: 'forks',
           poolOptions: { forks: { maxForks: 1 } },
