@@ -79,6 +79,14 @@ runs_on: "node1"        # long unattended compute
 # uncapped on purpose — the 40-file smoke already flagged LOW_SPLIT_HALF_RELIABILITY on
 # threeBetRate, which is a power complaint and the reason the item exists.
 compute_job:
+  # RE-RUN 2026-08-16 (founder-approved). The first run's card, RC-study-ladder-d908f09d, is
+  # WRONG and must be superseded rather than annotated: `separabilityVerdict` decided on an
+  # excess over the BINOMIAL null and only printed the control axis, so it shipped "separates"
+  # for threeBetRate at 0.59x its control and for the control compared against itself. Fixed in
+  # a60d4084 (control decides the verdict; cbetRate scored against the DISJOINT control). This
+  # comment is also the re-key: the job fingerprint is content-derived, so editing this block is
+  # what lets the feeder submit the work again instead of treating it as already done.
+  #
   # Measured on G16 2026-08-16, not guessed: 100 files 13s, 800 files 31s — ~10.4s fixed
   # startup plus ~0.026 s/file, so the full 21,782-file corpus projects to ~10 minutes here.
   # cm-node1 is a Surface Pro 8 and slower, so the cap is set well above a pessimistic
