@@ -29,18 +29,45 @@ $pullMsg = $null
 $feedOut = $null
 
 # --- 1. sync the queue from G16 (origin already points at the peer clone) -----------------
-if (Test-Path (Join-Path $Repo '.git')) {
+#
+# PULL AND FEED RUN ON DIFFERENT CLOCKS, ON PURPOSE. They were one cadence at first, and the
+# cost was measured on 2026-08-16: WS-320 finished at 09:20 and the next 2-hourly tick was
+# 11:00, so the machine sat idle 1h40m after a 35-minute job. Simply running the whole thing
+# every 10 minutes would have fixed the idle gap by hammering a shutdown-prone laptop with
+# twelve times the git traffic.
+#
+# So the task now fires every 10 minutes and the FEED check — which is cheap and local —
+# runs every time, while the pull is rate-limited to $PullIntervalMinutes. The idle window
+# after a job completes drops from up to 2h to at most ~10 minutes, at unchanged git cost.
+$PullIntervalMinutes = 120
+$PullStamp = Join-Path $env:USERPROFILE 'fleet\compute-feed-lastpull.txt'
+
+$needPull = $true
+if (Test-Path $PullStamp) {
+    try {
+        $last = [datetime]::Parse((Get-Content $PullStamp -Raw).Trim()).ToUniversalTime()
+        if (((Get-Date).ToUniversalTime() - $last).TotalMinutes -lt $PullIntervalMinutes) { $needPull = $false }
+    } catch { $needPull = $true }   # an unreadable stamp means pull, never means skip
+}
+
+if (-not (Test-Path (Join-Path $Repo '.git'))) {
+    $pullMsg = 'repo not found at ' + $Repo
+} elseif (-not $needPull) {
+    $pullOk = $true
+    $pullMsg = 'skipped (last pull under ' + $PullIntervalMinutes + 'm ago)'
+} else {
     $out = (& git -C $Repo pull --rebase --autostash origin main 2>&1 | Out-String).Trim()
     if ($LASTEXITCODE -eq 0) {
         $pullOk = $true
         $pullMsg = $out
+        # Stamp only on success: a failed pull must not buy two hours of silence, or a G16
+        # that was briefly asleep would freeze the queue until long after it woke up.
+        try { (Get-Date).ToUniversalTime().ToString('o') | Out-File -FilePath $PullStamp -Encoding utf8 } catch { }
     } else {
         # G16 is a laptop and is shutdown-prone; an unreachable peer is expected, not an
         # incident. Record it and carry on with the queue already on disk.
         $pullMsg = $out.Substring(0, [Math]::Min(400, $out.Length))
     }
-} else {
-    $pullMsg = 'repo not found at ' + $Repo
 }
 
 $head = (& git -C $Repo rev-parse --short HEAD 2>$null)

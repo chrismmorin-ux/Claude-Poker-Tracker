@@ -4,9 +4,10 @@
 # the inner quoting is stripped on the double hop and a half-parsed Register-ScheduledTask
 # is worse than none. Same reason the fleet skill says to copy a script over and run that.
 #
-# Cadence: every 2 hours, plus at boot. The runner itself ticks every 5 minutes and will
-# start a submitted job within that window, so the feeder only has to keep the queue from
-# running dry.
+# Cadence: every 10 minutes, plus at boot. It was 2 hours, and the cost was measured on
+# 2026-08-16 — WS-320 finished at 09:20, the next tick was 11:00, so the machine idled 1h40m
+# after a 35-minute job. compute-feed.ps1 rate-limits the git pull to 2h internally, so this
+# closes the idle window without multiplying git traffic against a shutdown-prone laptop.
 
 $ErrorActionPreference = 'Stop'
 
@@ -27,7 +28,7 @@ $action = New-ScheduledTaskAction -Execute 'powershell.exe' `
 # auto-resume when AC returns, so the first thing it should do on waking is find out whether
 # it owes anyone compute.
 $start = (Get-Date).Date
-$t1 = New-ScheduledTaskTrigger -Once -At $start -RepetitionInterval (New-TimeSpan -Hours 2)
+$t1 = New-ScheduledTaskTrigger -Once -At $start -RepetitionInterval (New-TimeSpan -Minutes 10)
 $t2 = New-ScheduledTaskTrigger -AtStartup
 
 $principal = New-ScheduledTaskPrincipal -UserId 'CM-NODE1\chris' -LogonType S4U -RunLevel Limited
