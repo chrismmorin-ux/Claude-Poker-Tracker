@@ -41,6 +41,12 @@ const ITEM_FIELDS = [
   // every consumer downstream of state — /next could not rank "the most
   // important node1 item" because the field never reached the ranker.
   'runs_on',
+  // WS-493: why a machine-bound item has no runnable spec yet. Without it, an item needing
+  // CODE before it can ever be compute (a miner that does not yet mine the asked-for family,
+  // a harness bug that must be fixed before a run means anything) is indistinguishable from
+  // one that merely needs a compute_job block typed out — and the fleet check would report
+  // "needs a spec" forever on work no spec could unblock.
+  'compute_note',
 ];
 // Array fields that come through as YAML block sequences
 const ARRAY_FIELDS = ['blocked_by', 'blocks', 'enables', 'depends_on', 'files_involved'];

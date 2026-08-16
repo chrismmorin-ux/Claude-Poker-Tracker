@@ -279,7 +279,13 @@ function main() {
     } else {
       console.log(humanStatusLine(status, ranked));
       if (ranked.ok && ranked.unready.length) {
-        console.log('  needs a compute_job spec: ' + ranked.unready.slice(0, 6).map((c) => c.id).join(', '));
+        // Split the two reasons apart. An item that needs CODE before any spec could help is
+        // not the same backlog as one that needs a spec typed out, and collapsing them is how
+        // "needs a spec" gets reported forever against work no spec can unblock.
+        const blocked = ranked.unready.filter((c) => c.compute_note);
+        const specable = ranked.unready.filter((c) => !c.compute_note);
+        if (specable.length) console.log('  needs a compute_job spec: ' + specable.map((c) => c.id).join(', '));
+        for (const c of blocked) console.log(`  ${c.id} not dispatchable: ${String(c.compute_note).slice(0, 150)}`);
       }
     }
     // Exit 0 even when unreachable: /next reads this for information, never for a gate.

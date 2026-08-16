@@ -1002,6 +1002,7 @@ function runCandidates(args) {
       // against the SAME ranking the founder sees, rather than a second private ordering.
       runs_on: normalizeRunsOn(item.runs_on),
       compute_ready: item.compute_ready === true,
+      compute_note: item.compute_note || null,
     };
     if (priorityFloorApplied) entry.priority_floor_applied = priorityFloorApplied;
     ranked.push(entry);
@@ -1205,6 +1206,7 @@ function candidatesInline(store) {
       blocked_by_note: (item.blocked_by_note && String(item.blocked_by_note).length > 0) ? item.blocked_by_note : null,
       soft_block_factor: softBlockFactor, source_damping: sourceDamping,
       runs_on: normalizeRunsOn(item.runs_on), compute_ready: item.compute_ready === true,
+      compute_note: item.compute_note || null,
     };
     if (priorityFloorApplied) entry.priority_floor_applied = priorityFloorApplied;
     ranked.push(entry);

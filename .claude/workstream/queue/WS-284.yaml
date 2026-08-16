@@ -68,6 +68,8 @@ accept_criteria: |
     re-pointed; note in scripts/__tests__/leakageGuard.test.js which it is.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+compute_note: >-
+  The FIX is code, not compute. Making the --reference tier reach the scored path is a harness bug fix; a node1 run before it lands would reproduce the bit-identical scorecard that IS the bug. Labelled node1 by the 2026-08-05 rule-based backfill.
 files_involved:
   - "scripts/backtest/runner.mjs"
   - "scripts/backtest/leakageGuard.mjs"

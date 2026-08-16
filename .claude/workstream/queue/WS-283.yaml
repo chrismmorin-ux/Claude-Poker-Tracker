@@ -63,6 +63,8 @@ accept_criteria: |
     shape changes.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+compute_note: >-
+  The FIX is code, not compute. Correcting a sizing-dependent fold curve is an edit to the model; only the validation run afterwards belongs on node1. Labelled node1 by the 2026-08-05 rule-based backfill, which matched on prose. Split the run out, or re-run the fold-curve probe here once the curve changes.
 files_involved:
   - "src/utils/exploitEngine/villainModelData.js"
   - "src/utils/exploitEngine/foldEquityCalculator.js"

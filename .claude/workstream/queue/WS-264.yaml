@@ -41,6 +41,8 @@ accept_criteria: |
   - Any engine-relevant deltas listed with concrete consumer pointers.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+compute_note: >-
+  NOT dispatchable as compute yet — needs miner code first. Verified 2026-08-16: phh_miner.py contains no reference to pot sizes, board texture, or position open/fold trees (0 matches), and exposes no argparse CLI, so none of the four pass-2 families this item asks for can be mined by running it. Write the pass-2 streams (machine: any), THEN this becomes a node1 job.
 files_involved:
   - "docs/research/mass-pool-data-2026-07-25.md"
 blocked_by: []
