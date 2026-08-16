@@ -2,12 +2,12 @@ id: "WS-482"
 title: "Depth-2/3 tightens villain continuation with a hard-coded population 0.45 at nodes where per-combo pFold was just computed — the foldRate parameter that would fix it exists and is dead at all 12 call sites"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-15T13:20:53.234Z"
+completion_commit: af69702c
 priority_score: 34.0
 priority_label: "P1"
 category: "engine"
@@ -56,3 +56,4 @@ created_at: "2026-08-14T20:00:00Z"
 status_note: |
   Filed from the WS-434 Phase E dispatched survey. POKER_THEORY.md + exploitEngine/CLAUDE.md
   mandatory before starting.
+closed_by_event: ev-1786800055703-ce0f5f051572

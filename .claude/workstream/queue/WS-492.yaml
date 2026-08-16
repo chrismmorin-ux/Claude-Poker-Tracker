@@ -1,0 +1,124 @@
+id: "WS-492"
+title: "Every prior, policy, curve and reference table in this system is fitted on 2 of the 27 available corpus stake directories — the other 25 have never been read"
+legacy_id: ""
+type: improvement
+status: claimed
+claimed_by: "ses-20260815-0620-63500894"
+claimed_at: "2026-08-15T06:41:15Z"
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 44.0
+priority_label: "P0"
+category: "data-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  Measured 2026-08-15, not inferred.
+
+  C:/Users/chris/data/phh-dataset is a blobless sparse checkout of uoftcprg/phh-dataset
+  (commit e47fbd58). `git ls-tree origin/main data/handhq/` lists 27 stake directories.
+  `git sparse-checkout list` returns 2:
+    data/handhq/FTP-2009-07-01_2009-07-23_50NLH_OBFU
+    data/handhq/PS-2009-07-01_2009-07-23_50NLH_OBFU
+  On disk: 1756 .phhs files. mine-pool-reference.py:30-33 states the full set is 21,783 files
+  across 28 dirs and passes all of it in 278 s at 8 workers.
+
+  So the corpus actually being mined is roughly 8% of the corpus already available, and the
+  missing 92% is not merely "more of the same": the materialised pair is 50NLH only, from two
+  sites. The unread directories span 25NLH through 1000NLH across ABS, FTP, IPN, ONG, PS and PTY.
+  Every stake-dependent quantity in the system — SPR distributions, sizing tells, fold curves,
+  the pool baseline, pole priors — is therefore estimated at one stake level and one price point,
+  from two operators.
+
+  This is not a compute-cost problem. The full mine is minutes, not hours. Nothing chose this
+  slice on the evidence; it is the default a sparse checkout produces, and it has been silently
+  bounding every result since.
+
+  Two consequences that need separating:
+  (a) VARIANCE — n is ~12x smaller than available, so intervals are wider than they need to be.
+  (b) BIAS — a 50NLH-only, two-site fit is a different population from the full pool. This is a
+      distinct transfer step ON TOP of the already-recorded online-2009-vs-live-9-handed transfer
+      in DISCLAIMER-AND-FAULT-REGISTER §3. That register entry names one population gap; there
+      are two, and only one is written down.
+accept_criteria: |
+  - Corpus materialised to all 27 directories on the machine(s) that mine (both G16 and cm-node1),
+    with the resulting file count recorded. Sparse-checkout state is stamped into any manifest that
+    currently records only the corpus root/commit — a commit hash does not describe a sparse tree.
+  - Re-mine the artifacts that feed everything downstream, at full corpus, each emitting a Result
+    Card: pool reference, behavior policy (coordinate with WS-490 — do not re-mine onto an
+    unrecorded provenance), fold-vs-sizing curve, behavioral features, pole priors.
+  - Report full-corpus vs 2-dir as a PAIRED comparison per stake band, not as a replacement. The
+    delta is the finding. State per quantity whether it moved outside the old interval.
+  - Stake-stratified reporting where a quantity is stake-dependent: do not average 25NLH and
+    1000NLH into one number and call it the pool. Carry the conditioning set per the standing rule.
+  - DISCLAIMER-AND-FAULT-REGISTER gains an entry for the stake/site restriction as a population
+    gap distinct from the online-vs-live one, with a falsifier. If the full-corpus re-mine shows
+    the quantities are stable across stakes, record that unhedged and retire the entry with the
+    evidence attached.
+  - Any committed Result Card produced against the 2-dir slice is annotated with what it was
+    actually fitted on.
+effort: "L"
+files_involved:
+  - "scripts/backtest/corpusFiles.mjs"
+  - "scripts/backtest/mine-pool-reference.py"
+  - "scripts/backtest/mine-behavior-policy.mjs"
+  - "scripts/foldCurve/mine-fold-vs-sizing.mjs"
+  - "scripts/backtest/dealBook.mjs"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Scope: re-mine everything at full corpus, or stage by downstream consumer?"
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "node1-compute-verification-2026-08-15"
+created_at: "2026-08-15T00:00:00Z"
+status_note: |
+  PREMISE CORRECTION (measured 2026-08-15, cm-node1 + G16 paired run). The title claim
+  "every prior, policy, curve and reference table" is OVERSTATED. The shipped production
+  Reference tier src/utils/exploitEngine/handhqReferencePool.js (SRC-011) carries all 7
+  stake bands and 12,927,164 hands - it was mined during WS-262 while the corpus was fully
+  materialised, BEFORE the sparse regression. It was never fitted on the slice. The
+  full-corpus arm run today sums to exactly 12,927,164 hands with per-stake counts matching
+  to the unit, which both proves the corpus is restored to the WS-262 state and clears the
+  shipped table.
+
+  Actually slice-fitted: out/pool-reference.json (stakesMined 50NLH only);
+  out/fold-vs-sizing.json (files: 1756 - the 2-dir count exactly); out/behavior-policy.json
+  (intends --stakes 50NLH but silently got 2 of the 3 sites carrying 50NLH, missing ABS).
+  out/pole-priors.json and out/behavioral-features.json record NOTHING about their corpus
+  and cannot be audited at all.
+
+  DONE SO FAR: corpus materialised on cm-node1 (27 dirs / 21,782 files / 12.93M hands, 12.1x);
+  paired pool-reference mine (2-dir arm on G16 in a clean worktree at 48bd185e reproduces the
+  shipped artifact byte-identically, so it is the true baseline); scripts/backtest/corpus_stamp.py
+  added and wired into mine-pool-reference.py so a manifest can no longer describe a 2-dir tree
+  and a 27-dir tree identically.
+
+  HEADLINE FINDING - the bias, not the variance. Every stat carries a large monotone stake
+  gradient (6max 3-bet +57% from 25NLH to 1000NLH, PFR +31%; full-ring 3-bet +56%, PFR +40%;
+  smallest cell still 138k hands). The founder plays live 1/2-1/3 = canonical 1-2 = 200NLH,
+  while the backtest artifacts are fitted at 50NLH - a 4x stake mismatch. Full ring, fitted vs
+  his stake: 3-bet UNDERSTATED 26.4%, PFR understated 16.2%, VPIP overstated 10.3%. Still a
+  transferred claim for live play; the stake/site gap sits ON TOP of the online-vs-live gap.
+
+  Full record: docs/research/ws-492-full-corpus-2026-08-15.md
+
+  STILL OPEN: re-mine fold-vs-sizing / behavior-policy (with WS-490) / behavioral features /
+  pole priors at full corpus with Result Cards; stamp the remaining miners; G16 corpus is
+  still the 2-dir slice (28 GB free, 95% full - needs a founder call on disk); the
+  DISCLAIMER-AND-FAULT-REGISTER entry for the stake/site population gap.
+
+  Filed in place of a third item that did NOT survive checking: an apparent protobufjs
+  postinstall tree difference between G16 and cm-node1 turned out to be an npm-version artifact
+  (npm 11.6.2 has no approve-scripts command). Both trees carry protobufjs 7.5.4 with 77 files.
+  Recorded here so the negative is not lost.
+
+  This is the work cm-node1 was provisioned for. Compute is not the constraint — the full mine
+  is minutes. The constraint was that nobody had looked at what the sparse checkout excluded.

@@ -1,0 +1,64 @@
+id: "ses-20260815-0206-0ab1df9d"
+status: "abandoned"
+revived_at: "2026-08-15T13:21:36.121Z"
+started_at: "2026-08-15T02:06:15.227Z"
+ended_at: "2026-08-15T13:48:03Z"
+mode: auto
+last_heartbeat: "2026-08-15T13:42:48.118Z"
+pid: 40140
+pid_recorded_at: "2026-08-15T13:42:48.118Z"
+host: MorinComputer
+agent_session_id: "0ab1df9d-637e-4adc-a31f-ebb2eaf6e6c4"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-481"
+  - "WS-482"
+
+files_locked:
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/foldEquityCalculator.js"
+  - ".claude/worktrees/ws-481-482/src/utils/potCalculator.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/decisionAccumulator.js"
+  - ".claude/worktrees/ws-481-482/src/utils/__tests__/potCalculator.test.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/__tests__/decisionAccumulator.test.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/villainModelData.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/__tests__/item24Improvements.test.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/__tests__/item27Improvements.test.js"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/probe-foldcurve-reach.mjs"
+  - ".claude/worktrees/ws-481-482/.claude/workstream/findings/FIND-138.yaml"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/probe-villainmodel-size.mjs"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/villainFeed.mjs"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/heroPolicy.mjs"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/build-villain-feed.mjs"
+  - ".claude/worktrees/ws-481-482/src/utils/standardOfRecord/metricsSchemas.js"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/emit-ws481-result-card.mjs"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/gameTreeSizingHelpers.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/gameTreeDepth2.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/gameTreeEvaluator.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/gameTreeEquity.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/villainProfileBuilder.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/preflopFlopEV.js"
+  - ".claude/worktrees/ws-481-482/src/utils/exploitEngine/decisionTreeBuilder.js"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/probe-depth2-reach.mjs"
+  - ".claude/worktrees/ws-481-482/.claude/workstream/findings/FIND-139.yaml"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/probeFrequency.mjs"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/emit-ws482-result-card.mjs"
+  - ".claude/worktrees/ws-481-482/src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - ".claude/worktrees/ws-481-482/scripts/backtest/show-ws481-flips.mjs"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-15.
+  Original start: 2026-08-15T02:06:15.227Z.
+  Last heartbeat: 2026-08-15T13:42:48.118Z.
+
+  Git commits during this session (1):
+    - 0d7ddf81 kit: add the 5 scripts /status and /session-start invoke but never received
+
+  Released 2 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

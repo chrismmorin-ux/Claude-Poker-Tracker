@@ -1,0 +1,46 @@
+id: "ses-20260814-1721-cadf8459"
+status: "abandoned"
+started_at: "2026-08-14T17:21:41.565Z"
+ended_at: "2026-08-14T23:18:01Z"
+mode: auto
+last_heartbeat: "2026-08-14T19:16:47.340Z"
+pid: 31760
+pid_recorded_at: "2026-08-14T17:21:41.565Z"
+host: MorinComputer
+agent_session_id: "cadf8459-fde5-4105-9a14-0c8c290a8eb3"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-442"
+
+files_locked:
+  - "src/contexts/UIContext.jsx"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/constants/runtimeVersions.js"
+  - "src/utils/exploitEngine/__tests__/checkRaiseFoldEquityGuard.test.js"
+  - "src/utils/exploitEngine/__tests__/blockerTieBreak.test.js"
+  - ".claude/context/POKER_THEORY.md"
+  - ".claude/workstream/evidence/ws442-domain-merge-2026-08-14.md"
+  - ".claude/workstream/queue/WS-477.yaml"
+  - ".claude/workstream/queue/WS-478.yaml"
+  - ".claude/workstream/queue/WS-479.yaml"
+  - ".claude/workstream/queue/WS-318.yaml"
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "system/state.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-14.
+  Original start: 2026-08-14T17:21:41.565Z.
+  Last heartbeat: 2026-08-14T19:16:47.340Z.
+
+  Git commits during this session (1):
+    - af3f7e16 feat(sor): WS-435 — pre-flight MDE gate and the power ledger
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

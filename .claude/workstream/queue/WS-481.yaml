@@ -2,12 +2,12 @@ id: "WS-481"
 title: "The personalized fold curve is FITTED on the hand's final pot and EVALUATED on the street pot — the WS-402 axis-mismatch defect, alive on the training side and outranking the population curve"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-15T13:20:53.234Z"
+completion_commit: af69702c
 priority_score: 34.0
 priority_label: "P1"
 category: "engine"
@@ -56,3 +56,4 @@ status_note: |
   Filed from the WS-434 Phase E dispatched survey. Highest-ranked engine finding: a systematically
   wrong slope on the curve that wins the priority race at every bet node. POKER_THEORY.md +
   exploitEngine/CLAUDE.md mandatory before starting.
+closed_by_event: ev-1786800053322-6ec70e02c559

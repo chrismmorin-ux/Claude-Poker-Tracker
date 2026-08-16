@@ -2,12 +2,12 @@ id: "WS-435"
 title: "No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-14T22:25:57.979Z"
+completion_commit: af3f7e16
 priority_score: 40.0
 priority_label: "P1"
 category: "measurement"
@@ -82,3 +82,4 @@ status_note: |
   runs at the gated scale are affordable. If the founder wants the MDE first, it can be built against
   the single stored CI as an interim — say so explicitly in the card rather than implying more basis
   than exists.
+closed_by_event: ev-1786746358002-8a5a591067a5

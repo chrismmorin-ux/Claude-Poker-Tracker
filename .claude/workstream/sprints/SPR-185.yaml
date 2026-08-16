@@ -1,0 +1,31 @@
+id: "SPR-185"
+title: "Ship WS-441: No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer fa"
+status: done
+approved_at: "2026-08-15T01:08:43.388Z"
+completed_at: "2026-08-15T02:31:40.811Z"
+completed_by_commit: "9b345a62"
+program_focus: "design"
+
+goal: |
+  Ship WS-441: No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-15T01:08:43.388Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-441 selected (40 × no damping = 40).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-441"
+    title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-15T02:31:40.811Z"
+
+created_at: "2026-08-15T01:08:43.388Z"

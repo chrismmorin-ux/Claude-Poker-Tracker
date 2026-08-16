@@ -2,12 +2,12 @@ id: "WS-441"
 title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
 legacy_id: ""
 type: bug
-status: backlog
-claimed_by: ses-20260815-0010-73766ceb
-claimed_at: "2026-08-15T01:08:43.388Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-15T02:31:40.811Z"
+completion_commit: 9b345a62
 priority_score: 40.0
 priority_label: "P1"
 category: "ux"
@@ -54,3 +54,4 @@ correction_2026_08_15: |
   44px control renders ~30.6px; the declared floor at this profile is ceil(44/0.695)=64.
   The DPR itself is still an assumption — /device-probe.html measures it on-device;
   tests/playwright/deviceProfiles.mjs is the single place the correction lands.
+closed_by_event: ev-1786761100840-5ab315b901a7

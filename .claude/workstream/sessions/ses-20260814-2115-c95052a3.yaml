@@ -1,0 +1,47 @@
+id: "ses-20260814-2115-c95052a3"
+status: "abandoned"
+started_at: "2026-08-14T21:15:19.479Z"
+ended_at: "2026-08-15T02:33:01Z"
+mode: auto
+last_heartbeat: "2026-08-14T22:26:22.485Z"
+pid: 31760
+pid_recorded_at: "2026-08-14T22:26:22.485Z"
+host: MorinComputer
+agent_session_id: "c95052a3-909a-4e4b-b907-e02d62372803"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-435"
+
+files_locked:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "src/utils/standardOfRecord/metricsSchemas.js"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/powerLedger.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/backfill-power-ledger.mjs"
+  - "scripts/__tests__/powerLedger.test.js"
+  - "scripts/__tests__/depthAblation.test.js"
+  - "scripts/__tests__/heroEvResultCard.test.js"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-15.
+  Original start: 2026-08-14T21:15:19.479Z.
+  Last heartbeat: 2026-08-14T22:26:22.485Z.
+
+  Git commits during this session (3):
+    - 48bd185e docs(state): SPR-185/WS-441 session row — touch floor shipped, S22 DPR provisional, sessionRecoveryLiveness green again
+    - 9b345a62 feat(design): WS-441 — the 44px touch floor becomes a measured, enforced property
+    - 53fcb068 chore(domain): delta-protocol hygiene — dead STYLE_FOLD_DEFAULTS test import, INV-07 mechanism text, stale fold-curve docblock
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

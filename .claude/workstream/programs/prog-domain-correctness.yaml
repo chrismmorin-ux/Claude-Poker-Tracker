@@ -396,11 +396,11 @@ last_run_by_protocol:
     run_id: "run-domain-correctness-baseline-2026-05-01"
     result: "21 findings (5 HIGH auto-promoted to queue); engines mostly compliant on 9 anti-patterns; theory-doc drift identified. (Reformatted flow->block 2026-06-20 so the naive YAML reader parses date — was silently undefined, zeroing protocol_currency.)"
   delta:
-    date: "2026-08-07"
+    date: "2026-08-15"
     engine: "preflight"
-    run_id: "run-domain-correctness-delta-2026-08-07"
+    run_id: "run-domain-correctness-delta-2026-08-15"
     run_by: "founder"
-    event_id: "ev-1786084200338-00211a3ab13f"
+    event_id: "ev-1786753950340-cdbd8aeaba56"
   sweep:
     date: "2026-08-13"
     engine: "eng-engine"

@@ -1,0 +1,31 @@
+id: "SPR-184"
+title: "Ship WS-435: No minimum detectable effect can be computed before a run — the only MDE in the repo ne"
+status: done
+approved_at: "2026-08-14T21:17:26.086Z"
+completed_at: "2026-08-14T22:25:57.979Z"
+completed_by_commit: "af3f7e16"
+program_focus: "domain-correctness"
+
+goal: |
+  Ship WS-435: No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-14T21:17:26.086Z"
+  matches: []
+
+composition_notes: |
+  Anchor: WS-435 selected (40 × no damping = 40).
+  Program cap-breach: data-quality, design, strategy-of-record (priority_floor applied to candidates from these programs).
+  priority_floor applied: WS-311 18→22, WS-419 19→22, WS-237 6→18 (+2 more).
+  Cap usage: 1.5 session(s) / 2 (5 items max).
+
+items:
+  - id: "WS-435"
+    title: "No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power"
+    mode: plan-first
+    effort: M
+    status: done
+    completed_at: "2026-08-14T22:25:57.979Z"
+
+created_at: "2026-08-14T21:17:26.086Z"

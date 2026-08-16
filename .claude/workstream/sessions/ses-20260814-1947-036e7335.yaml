@@ -1,0 +1,63 @@
+id: "ses-20260814-1947-036e7335"
+status: "abandoned"
+started_at: "2026-08-14T19:47:24.002Z"
+ended_at: "2026-08-15T01:03:01Z"
+mode: auto
+last_heartbeat: "2026-08-14T20:57:14.490Z"
+pid: 31760
+pid_recorded_at: "2026-08-14T19:47:24.002Z"
+host: MorinComputer
+agent_session_id: "036e7335-da15-439d-ae14-abbb849afd19"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-434"
+
+files_locked:
+  - "src/utils/standardOfRecord/metricsSchemas.js"
+  - "src/utils/standardOfRecord/metrics.js"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "src/utils/standardOfRecord/index.js"
+  - "src/utils/standardOfRecord/__tests__/schemas.test.js"
+  - "src/utils/standardOfRecord/__tests__/metrics.test.js"
+  - "scripts/backtest/heroEvReport.mjs"
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/deviationMap.mjs"
+  - "scripts/backtest/layerAblation.mjs"
+  - "scripts/backtest/rangeCalibrationProbe.mjs"
+  - "scripts/backtest/rangeCalibrationReport.mjs"
+  - "scripts/backtest/run-atoms.mjs"
+  - "scripts/backtest/run-river-flip-replicate.mjs"
+  - "scripts/backtest/studyLadderReport.mjs"
+  - "scripts/backtest/emit-ws436-result-card.mjs"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "scripts/foldCurve/emit-result-card.mjs"
+  - "src/utils/standardOfRecord/__tests__/resultCard.test.js"
+  - "src/utils/standardOfRecord/resultCard.js"
+  - "scripts/standardOfRecord/check-additive.mjs"
+  - "docs/standard-of-record/VOCABULARY.md"
+  - "docs/standard-of-record/SCORED-READOUT-SPEC.md"
+  - "docs/research/engine-vocabulary-survey-2026-08-14.md"
+  - ".claude/workstream/queue/WS-480.yaml"
+  - ".claude/workstream/queue/WS-481.yaml"
+  - ".claude/workstream/queue/WS-482.yaml"
+  - ".claude/workstream/queue/WS-483.yaml"
+  - ".claude/workstream/queue/WS-484.yaml"
+  - ".claude/workstream/queue/WS-485.yaml"
+  - ".claude/workstream/queue/WS-486.yaml"
+  - ".claude/workstream/queue/WS-487.yaml"
+  - ".claude/workstream/queue/WS-488.yaml"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-15.
+  Original start: 2026-08-14T19:47:24.002Z.
+  Last heartbeat: 2026-08-14T20:57:14.490Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

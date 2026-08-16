@@ -984,3 +984,102 @@ findings:
     program: domain-correctness
     created_at: "2026-08-13"
 
+  - id: "FIND-127"
+    title: "ENGINE_VERSION never bumped across three algorithm-shape changes — prediction-ledger provenance is retroactively unrecoverable"
+    engine: eng-engine
+    severity: high
+    status: resolved
+    dedup_key: "challenge-2026-08-13-engine-version-never-bumped"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-128"
+    title: "The hindsight coach is an unraked, unseamed second implementation of the live engine's arithmetic, invisible to the seam gate"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "challenge-2026-08-13-hindsight-unraked-unseamed"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-129"
+    title: "No wall-clock bound on the live path, the fast-answer mechanism has no production caller, and latency has never been measured on the target device"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "challenge-2026-08-13-live-wallclock-unbounded-fastpath-dead"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-130"
+    title: "The required-equity seam gate's guarantee is a commit-message claim, not a code property — and the same file holds two rake idioms the gate cannot see"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "challenge-2026-08-13-seam-gate-weaker-than-claimed"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-131"
+    title: "Live advice carries no hand identity — the extension stamps whichever hand is cached at receipt time, and the main app never checks"
+    engine: eng-engine
+    severity: high
+    status: resolved
+    dedup_key: "challenge-2026-08-13-advice-no-hand-identity"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-132"
+    title: "The live TableView cannot show that a recompute is in flight — within-street advice goes silently stale (Online panel already has the affordance)"
+    engine: eng-engine
+    severity: medium
+    status: resolved
+    dedup_key: "challenge-2026-08-13-tableview-no-inflight-signal"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-133"
+    title: "The refinement clock is timing code it was never measured against — its own re-calibration rule was violated four times inside this review window"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "challenge-2026-08-13-refinement-clock-stale-calibration"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-134"
+    title: "Candidate generation can emit sizes hero cannot legally or meaningfully make"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "challenge-2026-08-13-illegal-degenerate-candidates"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-135"
+    title: "Cross-cutting evaluation options have no contract — FIND-113's omission shape recurs by construction on every future concern"
+    engine: eng-engine
+    severity: medium
+    status: open
+    dedup_key: "challenge-2026-08-13-no-evaluation-context-contract"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-136"
+    title: "Absence is systematically indistinguishable from measurement — five verified instances of one mechanism, needing one primitive"
+    engine: eng-engine
+    severity: high
+    status: open
+    dedup_key: "challenge-2026-08-13-unmeasured-value-primitive"
+    program: domain-correctness
+    created_at: "2026-08-13"
+
+  - id: "FIND-137"
+    title: "POKER_THEORY §11.3 gates rake on the SHOWDOWN; live rooms gate it on the FLOP — the fold branch of every postflop EV is untaxed, and WS-451 is about to weld that in"
+    engine: founder
+    severity: high
+    status: open
+    dedup_key: "founder-2026-08-14-rake-gate-is-flop-not-showdown"
+    program: domain-correctness
+    created_at: "2026-08-14"
+

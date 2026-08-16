@@ -1,0 +1,56 @@
+id: "ses-20260814-0138-022e623d"
+status: "abandoned"
+revived_at: "2026-08-14T21:31:49.936Z"
+started_at: "2026-08-14T01:38:14.662Z"
+ended_at: "2026-08-14T22:03:01Z"
+mode: auto
+last_heartbeat: "2026-08-14T21:31:49.938Z"
+pid: 9168
+pid_recorded_at: "2026-08-14T21:31:49.938Z"
+host: MorinComputer
+agent_session_id: "022e623d-4a55-42d8-9ff4-f690f108f014"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - "scripts/check-deploy-freshness.mjs"
+  - ".claude/settings.json"
+  - "system/invariants.md"
+  - ".claude/commands/status.md"
+  - "kit/scripts/lib/session-liveness.js"
+  - "kit/scripts/cwos-session-recovery.js"
+  - "scripts/__tests__/sessionRecoveryLiveness.test.js"
+  - "kit/scripts/lib/cwos-claims.js"
+  - "kit/scripts/cwos-session-register.js"
+  - "scripts/format-test-failures.cjs"
+  - "scripts/smart-test-runner.sh"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-14.
+  Original start: 2026-08-14T01:38:14.662Z.
+  Last heartbeat: 2026-08-14T21:31:49.938Z.
+
+  Git commits during this session (16):
+    - 21d205a1 fix(kit): touchSession dates the pid it re-asserts — back-port from kit 3.14.2
+    - 9a5f3797 docs(research): WS-434 Phase E engine + measurement vocabulary survey, filed as WS-480..WS-488
+    - 89c0a5b8 fix(sor): river-flip canonical CI aliases carry the unrounded bootstrap bounds
+    - 2dbfb013 feat(sor): WS-434 commit D — canonical vocabulary (Stage 2), founder-approved
+    - f32ed196 feat(sor): WS-434 commit C — metrics validation enforced on the publish path, additive gate covers unit/shape
+    - 4fe63150 feat(sor): WS-434 commit B — every producer stamps its metrics kind
+    - 132b8b91 feat(sor): WS-434 commit A — declare the Result Card metrics union (12 kinds + 2 shared shapes), validator not yet wired
+    - 476be674 chore(state): SPR-182 session row + 2026-08-04 row archived per append discipline
+    - 9832a0f4 chore(workstream): close SPR-182 / WS-442; WS-314 + WS-315 drift-corrected done and archived
+    - 29e6a741 chore(workstream): WS-442 evidence report, WS-318 founder-decision recovery, and three follow-up tickets
+    - e456030e docs(poker-theory): §13.3 gains the two §7.4a corollaries from the WS-307 parallel line (WS-442 salvage)
+    - 9b636fb0 feat(engine): WS-314 check-raise fold-equity guard + WS-315 blocker tie-break, re-expressed at HEAD (WS-442 salvage)
+    - 7defa008 fix(drills): resolve cross-view tab label collisions by naming the object
+    - cdc47580 feat(study): Study Home v1 — purpose-grouped index over the study surfaces
+    - 931bc255 feat(lessons): field-size scaling lesson + `benchmark` section kind
+    - 4033f16a docs(research): multiway flop strategy benchmarks for 9-handed live play
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

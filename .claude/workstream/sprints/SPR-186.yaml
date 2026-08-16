@@ -1,0 +1,34 @@
+id: "SPR-186"
+title: "Remove two fold-rate defects that corrupt every depth-2 EV: the fold curve fitted on the final pot b"
+status: done
+approved_at: "2026-08-15T02:26:42.365Z"
+completed_at: "2026-08-15T13:20:53.234Z"
+completed_by_commit: "af69702c"
+program_focus: "domain-correctness"
+
+goal: |
+  Remove two fold-rate defects that corrupt every depth-2 EV: the fold curve fitted on the final pot but evaluated on the street pot (WS-481), and the population 0.45 substituted for computed per-combo pFold at all 12 tighten call sites (WS-482).
+
+anti_goal_check:
+  status: passed
+  reviewed_at: "2026-08-15T02:26:42.365Z"
+  matches: []
+
+composition_notes: |
+  Manual focus override (/next Step 4 option 3): founder selected WS-481+WS-482 after SPR-185/WS-441 was found claimed by live session ses-20260815-0010-73766ceb. Executing in isolated worktree .claude/worktrees/ws-481-482 (branch ws-481-482-foldcurve) from HEAD af3f7e16. Effort 3.0 sessions vs cap 2.0 — OVER CAP, accepted deliberately by founder: the two defects share gameTreeEvaluator/villainModelData and one measurement harness.
+
+items:
+  - id: "WS-481"
+    title: "The personalized fold curve is FITTED on the hand's final pot and EVALUATED on the street pot — the WS-402 axis-mismatch defect, alive on the training side and outranking the population curve"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-08-15T13:20:53.234Z"
+  - id: "WS-482"
+    title: "Depth-2/3 tightens villain continuation with a hard-coded population 0.45 at nodes where per-combo pFold was just computed — the foldRate parameter that would fix it exists and is dead at all 12 call sites"
+    mode: execute
+    effort: M
+    status: done
+    completed_at: "2026-08-15T13:20:53.234Z"
+
+created_at: "2026-08-15T02:26:42.365Z"

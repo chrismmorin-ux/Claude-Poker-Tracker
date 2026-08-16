@@ -1,0 +1,50 @@
+id: "ses-20260815-0010-73766ceb"
+status: "abandoned"
+started_at: "2026-08-15T00:10:51.077Z"
+ended_at: "2026-08-15T04:33:02Z"
+mode: auto
+last_heartbeat: "2026-08-15T02:51:11.546Z"
+pid: 31760
+pid_recorded_at: "2026-08-15T02:51:11.546Z"
+host: MorinComputer
+agent_session_id: "73766ceb-2f89-45d4-878a-9d59a546384c"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-441"
+
+files_locked:
+  - "src/utils/exploitEngine/__tests__/gameTreeEvaluator.test.js"
+  - "system/invariants.md"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/villainModelData.js"
+  - "CLAUDE.md"
+  - "docs/design/surfaces/table-view.md"
+  - "docs/design/jtbd/ATLAS.md"
+  - "scripts/devshot.mjs"
+  - ".claude/workstream/queue/WS-489.yaml"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/SizingPresetsPanel.jsx"
+  - "src/components/views/HandReplayView/ReviewPanel.jsx"
+  - "tests/playwright/deviceProfiles.mjs"
+  - "public/device-probe.html"
+  - "tests/playwright/touch-floor.spec.js"
+  - ".github/workflows/ci.yml"
+  - ".claude/context/SYSTEM_MODEL.md"
+  - "docs/design/personas/core/chris-live-player.md"
+  - "system/state.md"
+  - "src/components/views/TableView/ControlZone.jsx"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-15.
+  Original start: 2026-08-15T00:10:51.077Z.
+  Last heartbeat: 2026-08-15T02:51:11.546Z.
+
+  Released 1 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.
