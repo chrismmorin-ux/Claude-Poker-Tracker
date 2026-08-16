@@ -52,6 +52,7 @@ const REMOTE_RUNNER = process.env.CWOS_COMPUTE_RUNNER
   || 'C:\\Users\\chris\\repos\\ai-personal\\nodes\\scripts\\compute-runner.js';
 const REMOTE_REPO = process.env.CWOS_COMPUTE_REPO || 'C:\\Users\\chris\\repos\\claude-poker-tracker';
 const REMOTE_INBOX = process.env.CWOS_COMPUTE_INBOX || 'C:\\Users\\chris\\fleet\\compute\\incoming';
+const REMOTE_DONE = process.env.CWOS_COMPUTE_DONE || 'C:\\Users\\chris\\fleet\\compute\\done';
 
 const SSH_TIMEOUT_MS = Number(process.env.CWOS_COMPUTE_TIMEOUT_MS || 20000);
 
@@ -123,6 +124,42 @@ function computeStatus() {
     doneCount: parsed.doneCount ?? null,
     idle: !parsed.running && (parsed.queued || []).length === 0,
   };
+}
+
+/**
+ * Job ids the compute node has already finished (succeeded or failed).
+ *
+ * The feeder consults this before submitting so a completed item is not re-run. A failed job
+ * is included deliberately: the runner already retried it `maxAttempts` times internally, so
+ * a failure here means the spec or the code needs a human, and silently re-submitting it
+ * every two hours would burn the machine on a known-broken job instead of advancing to the
+ * next item.
+ */
+function doneJobIds() {
+  // Emit id|ws_id|job_hash per terminal job. Reading the recorded provenance rather than
+  // pattern-matching the id is what makes this survive an id-scheme change: the first jobs
+  // were commit-keyed (ws-320-48bd185e7587) and the current ones are content-keyed, and a
+  // check that only compared ids would have silently re-run every pre-existing job once.
+  const summary = onTarget()
+    ? path.join(REPO_ROOT, 'scripts', 'fleet', 'done-summary.js')
+    : `${REMOTE_REPO}\\scripts\\fleet\\done-summary.js`;
+  const r = onTarget()
+    ? run(process.execPath, [summary, REMOTE_DONE])
+    : run('ssh', [TARGET, `${quote(REMOTE_NODE)} ${quote(summary)} ${quote(REMOTE_DONE)}`]);
+  if (!r.ok) return { ok: false, ids: new Set(), byWs: new Map() };
+  const ids = new Set();
+  const byWs = new Map();   // WS-NNN -> Set(job_hash) that already reached a terminal state
+  for (const line of r.stdout.split('\n')) {
+    const l = line.trim();
+    if (!l || /^\*\*|post-quantum|store now|upgraded/.test(l)) continue;
+    const [id, wsId, jobHash] = l.split('|');
+    if (id) ids.add(id);
+    if (wsId) {
+      if (!byWs.has(wsId)) byWs.set(wsId, new Set());
+      if (jobHash) byWs.get(wsId).add(jobHash);
+    }
+  }
+  return { ok: true, ids, byWs };
 }
 
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
@@ -201,15 +238,61 @@ function feed({ dryRun }) {
     };
   }
 
-  const top = ranked.ready[0];
-  const item = readQueueItem(QUEUE_DIR, top.id);
-  if (!item) return { ok: false, action: 'none', reason: `${top.id}.yaml unreadable`, status };
-
   const commit = computeHead();
   if (!commit) return { ok: false, action: 'none', reason: `cannot read HEAD of ${REMOTE_REPO} on ${TARGET}`, status };
 
-  const m = materializeSpec({ item, commit, repoPath: REMOTE_REPO, nodePath: onTarget() ? process.execPath : REMOTE_NODE });
-  if (!m.ok) return { ok: false, action: 'none', reason: `${top.id}: ${m.problems.join('; ')}`, status };
+  // Walk DOWN the ranking rather than only considering the top item. The top-ranked node1
+  // item stays `backlog` after its job succeeds — finishing a compute job does not close a
+  // queue item — so without this the feeder re-submits the same item every cycle and never
+  // reaches the second-ranked one.
+  const already = doneJobIds();
+  const nodePath = onTarget() ? process.execPath : REMOTE_NODE;
+  const skipped = [];
+  let top = null;
+  let m = null;
+  let item = null;
+
+  for (const cand of ranked.ready) {
+    const candItem = readQueueItem(QUEUE_DIR, cand.id);
+    if (!candItem) { skipped.push(`${cand.id}: yaml unreadable`); continue; }
+    const built = materializeSpec({ item: candItem, commit, repoPath: REMOTE_REPO, nodePath });
+    if (!built.ok) { skipped.push(`${cand.id}: ${built.problems.join('; ')}`); continue; }
+    if (already.ok) {
+      const wsPrefix = String(cand.id).toLowerCase() + '-';
+      const priorHashes = already.byWs.get(cand.id);
+      if (already.ids.has(built.spec.id)) {
+        skipped.push(`${cand.id}: this exact spec already ran (${built.spec.id})`);
+        continue;
+      }
+      if (priorHashes && priorHashes.has(built.spec.source.job_hash)) {
+        skipped.push(`${cand.id}: this exact spec already ran`);
+        continue;
+      }
+      // Legacy bridge: the first jobs were commit-keyed and recorded no source.job_hash, so
+      // their spec cannot be compared to the current one. Refusing is the conservative call
+      // — re-running burns real compute to reproduce a result that is already sitting in the
+      // G16 inbox. Editing the compute_job block is NOT enough to unstick one of these; say
+      // so, rather than leaving the founder to wonder why an edit changed nothing.
+      if (!priorHashes && [...already.ids].some((id) => id.startsWith(wsPrefix))) {
+        skipped.push(`${cand.id}: a job ran before spec-hashing existed — re-run it explicitly if the spec changed`);
+        continue;
+      }
+    }
+    top = cand; m = built; item = candItem;
+    break;
+  }
+
+  if (!top) {
+    return {
+      ok: true,
+      action: 'none',
+      reason: skipped.length
+        ? `every ready node1 item is already done or unbuildable — ${skipped.join(' | ')}`
+        : 'no ready node1 candidate survived selection',
+      skipped,
+      status,
+    };
+  }
 
   if (dryRun) return { ok: true, action: 'dry-run', spec: m.spec, picked: top, status };
 
@@ -331,4 +414,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { computeStatus, rankNode1, feed, humanStatusLine };
+module.exports = { computeStatus, rankNode1, feed, humanStatusLine, doneJobIds };

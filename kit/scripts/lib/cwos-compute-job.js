@@ -87,6 +87,38 @@ function validateComputeJob(job) {
 }
 
 /**
+ * Stable 12-hex digest of an authored compute_job block.
+ *
+ * THIS IS WHAT STOPS THE MACHINE LOOPING ON ONE ITEM. Found by exercising the feeder
+ * 2026-08-16: WS-320's job finished successfully, and the very next feed submitted WS-320
+ * again. Completing a compute JOB does not mark the queue ITEM done — the item is still
+ * `backlog`, so it is still the top-ranked node1 candidate, forever. The machine would have
+ * re-run the same 35-minute corpus pass indefinitely and never reached WS-295 or WS-293,
+ * which is the exact opposite of "always working on the next most important thing".
+ *
+ * Keying the job id on the spec's content rather than on the commit gives the right
+ * behaviour in both directions: an unchanged spec resolves to a job id already sitting in
+ * the runner's done/ dir and is skipped, while re-authoring the block yields a new id and
+ * legitimately re-runs. Keying on the commit instead would have re-run every item on every
+ * unrelated push.
+ */
+function computeJobHash(job) {
+  const canonical = JSON.stringify(job, Object.keys(flatten(job)).sort());
+  return require('crypto').createHash('sha256').update(canonical).digest('hex').slice(0, 12);
+}
+
+/** Collect every key path in an object so JSON.stringify's replacer sorts deterministically. */
+function flatten(o, out = {}, prefix = '') {
+  if (o && typeof o === 'object') {
+    for (const k of Object.keys(o)) {
+      out[k] = true;
+      flatten(o[k], out, prefix + k + '.');
+    }
+  }
+  return out;
+}
+
+/**
  * Normalize a `runs_on` label to a bare lowercase token, or null.
  *
  * The shared YAML reader does strip the trailing `# long unattended compute` comment that
@@ -165,15 +197,18 @@ function materializeSpec({ item, commit, repoPath, jobId, nodePath }) {
     ? job.artifacts.slice()
     : Array.from(new Set(steps.flatMap((s) => s.expectFiles)));
 
+  const jobHash = computeJobHash(job);
   const spec = {
-    id: jobId || `${String(item.id).toLowerCase()}-${String(commit).slice(0, 12)}`,
+    // Content-keyed, NOT commit-keyed — see computeJobHash for why the machine would
+    // otherwise re-run its top item forever.
+    id: jobId || `${String(item.id).toLowerCase()}-${jobHash}`,
     commit,
     repoPath,
     steps,
     artifacts,
     // Provenance: which queue item asked for this, so a returned artifact set can be traced
     // back to the claim it was meant to support without consulting a separate index.
-    source: { ws_id: item.id, title: item.title || null, submitted_by: 'cwos-fleet-compute' },
+    source: { ws_id: item.id, title: item.title || null, job_hash: jobHash, submitted_by: 'cwos-fleet-compute' },
   };
   if (job.maxJobHours !== undefined) spec.maxJobHours = Number(job.maxJobHours);
   if (Array.isArray(job.inputs)) spec.inputs = job.inputs;
@@ -195,6 +230,7 @@ function readQueueItem(queueDir, wsId) {
 module.exports = {
   NODE_CMD_TOKEN,
   normalizeRunsOn,
+  computeJobHash,
   validateComputeJob,
   isComputeReady,
   resolveCmd,
