@@ -1,0 +1,56 @@
+id: "WS-500"
+title: "Cold 4-bet does not exist in the engine — one of the three named escape tools is simply absent"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 24.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Verified 2026-08-16: a case-insensitive search for cold-4bet across
+  src/utils/exploitEngine/ returns ZERO files. Squeeze exists (squeeze_ip / squeeze_oop
+  sizing plus squeeze-specific reasoning in preflopAdvisor.js) and overbet exists across
+  21 files. Of the three escape tools the founder named, cold 4-bet is the one with no
+  implementation at all.
+
+  WHY IT BELONGS TO THE LIMPED-POT WORK. A cold 4-bet is the escape tool for precisely the
+  sequence this project is about: hero has not yet invested, limpers are in, someone
+  iso-raises, someone else 3-bets. Hero's decision there is not an ordinary 4-bet — the
+  range that cold-4-bets over a raise plus a 3-bet plus dead limper money differs in both
+  composition and sizing from a 4-bet made after hero opened.
+
+  A cold 4-bet is NOT a 4-bet with a different number, any more than a cold 3-bet is a
+  3-bet. Tag it from the SEQUENCE STATE, never from first-action-only — the same rule the
+  derived-line-tags doctrine already sets.
+accept_criteria: |
+  - Cold 4-bet is a recognised situation with its own sizing band and range treatment,
+    derived from dead money / SPR / players-remaining rather than from a position label.
+  - Sizing accounts for limper dead money, which is what makes this spot differ from a
+    standard 4-bet.
+  - Subclass discipline: the cold-4-bet grid is CARVED from its parent 4-bet grid and
+    shrinks toward it, never built independently (DEC-025 Amd 1).
+  - Tested on a sequence where hero is cold, not one where hero opened — a test that
+    passes with hero as the original raiser has not tested this at all.
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/preflopFoldResolver.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-499"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "ai-finding"
+  detail: "scoping the founder's multiway limped-pot directive, 2026-08-16"
+created_at: "2026-08-16T16:30:00Z"

@@ -1,0 +1,73 @@
+id: "WS-501"
+title: "Is limping conditional? Measure limp rate against field size and price, and pick the metric-matched slice to fit on"
+legacy_id: ""
+type: research
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 28.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  TWO QUESTIONS IN ONE PASS, because both decide which population this strategy is fitted to.
+
+  Q1 — IS THE LIMP READ CONDITIONAL? WS-320 established that limp rate separates players
+  decisively: chi2/df 79.5 against a control of 9.4, split-half reliability 0.86 over
+  105,782 players and 18.3M hands. That clears the standing bar of proving an archetype
+  separates before building its channel. But the founder's refinement is that limping is
+  NOT monotonic evidence of weakness — strong players limp more and wider when a cheap
+  multiway flop is likely. If that holds, a flat limp-to-weak mapping is wrong and the
+  channel must condition on field size and price.
+
+  PRE-REGISTERED FALSIFIER, written before the run. Split limp decisions by
+  players-already-in and by price-to-enter, then compare limp rate across a player-quality
+  axis measured from something OTHER than limping — use the WS-320 control, flop bet
+  frequency, so the axis is not defined by the thing under test. If strong players' limp
+  rate RISES with field size while weak players' stays flat, the conditional structure is
+  real and the channel must carry it. If both groups are flat in field size, the founder's
+  refinement is NOT SUPPORTED and the simpler monotonic read survives. Record whichever way
+  it lands, unhedged, including against the founder's stated expectation.
+
+  Q2 — WHICH SLICE DO WE FIT ON? Per the metrics-not-stakes ruling, never match an online
+  band to a live stake by bb level; the skill axis inverts. Match on the METRIC VECTOR
+  instead. The founder's game is characterised by heavy limping and frequent multiway pots,
+  so the right training population is the slice whose VPIP / limp rate / players-per-flop /
+  c-bet / fold-to-c-bet vector sits closest to it, WHATEVER its nominal stake. Emit that
+  vector for every one of the 27 corpus directories and name the nearest match.
+
+  This is the population every number in WS-498 and WS-499 gets fitted against, so it is
+  the first thing to get right, not the last.
+accept_criteria: |
+  - Limp rate reported per (players-already-in x price-to-enter) cell, with k/n and the
+    conditioning set on every figure, plus the inverse conditional.
+  - The player-quality axis is measured independently of limping and the split is stated.
+  - The pre-registered falsifier above is answered explicitly, including when it fails.
+  - A metric vector per corpus slice, and a named nearest slice to the founder's live game,
+    stated as a game-type identity and never as "maps to 1/2".
+  - Result Card; the online-2009 provenance carried as an identity, not a caveat to skip.
+effort: "M"
+runs_on: "node1"
+compute_note: >-
+  Extending the study-ladder harness (conditioning limp rate on field size and price, plus
+  per-slice metric vectors) is code work FIRST. Once it runs from a CLI it gets a
+  compute_job block and the feeder dispatches it unattended, exactly like WS-320.
+files_involved:
+  - "scripts/backtest/run-study-ladder.mjs"
+  - "scripts/backtest/ladderAxes.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-498"
+  - "WS-499"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder"
+  detail: "2026-08-16 — good players limp wider when a cheap multiway flop is likely"
+created_at: "2026-08-16T16:30:00Z"

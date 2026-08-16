@@ -1,0 +1,72 @@
+id: "WS-498"
+title: "Realized equity ignores how many players are in the pot — the one number the multiway limped-pot strategy rests on"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 while scoping the multiway limped-pot directive. `REALIZATION_TABLE`
+  (src/utils/exploitEngine/gameTreeConstants.js:35) is keyed on
+  (street, position, sprZone), with a texture multiplier applied on top. There is NO
+  players-remaining dimension anywhere in it.
+
+  WHY THIS IS THE LOAD-BEARING DEFECT rather than a refinement. The founder's model of a
+  multiway limped pot is exactly two moves:
+    1. raw equity RISES for suited connectors and small pocket pairs (dead money, high
+       SPR, implied odds get paid);
+    2. REALIZED equity FALLS — many opponents left to act, hero often OOP, and the hand
+       gets folded off far more often than it would heads-up.
+  The engine models (1) and is blind to (2). Both errors point the SAME WAY, so the very
+  hands this strategy wants to play multiway are the hands the engine currently
+  over-values, and it over-values them twice.
+
+  The miss is largest exactly where this project operates. flop / oop / deep reads 0.63
+  today, and that figure was fitted for a heads-up pot. A 5-way limped pot at the same
+  SPR and position does not realize 63% of raw equity.
+
+  DO NOT "fix" this with a flat multiway haircut on the final EV. Realization is a
+  per-(street, position, spr) surface and players-count interacts with all three: the OOP
+  penalty compounds with each player left to act, and the SPR gradient is steeper multiway
+  because there are more ways to be raised off a hand. A scalar applied at the end is the
+  shape-cancellation failure this repo has already paid for once.
+accept_criteria: |
+  - REALIZATION_TABLE gains a players-remaining dimension (or an explicit interaction
+    term), and every caller passes the real count rather than silently defaulting to 2.
+  - The players axis is DERIVED, not a label: it enters through the same first-principles
+    path as equity / pot odds / SPR per POKER_THEORY §7. No `if (multiway) x *= 0.9`.
+  - The numbers are fitted against the corpus slice chosen in WS-501, with the fit and its
+    n recorded. An invented constant here silently sets the value of every suited
+    connector in the strategy.
+  - Known-answer anchor: a hand folded to the first aggressor realizes 0 of its raw
+    equity. The table must reproduce the OBSERVED multiway fold-out rate, not assume one.
+  - Result Card comparing hero-EV before/after on limped multiway spots, so the size AND
+    SIGN of the correction are on the record.
+effort: "L"
+runs_on: "any"
+compute_note: >-
+  The FIT is node1 compute once WS-501 has chosen the slice; the table change and threading
+  the real player count through every caller is code work and belongs here.
+files_involved:
+  - "src/utils/exploitEngine/gameTreeConstants.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-499"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "ai-finding"
+  detail: "scoping the founder's multiway limped-pot directive, 2026-08-16"
+created_at: "2026-08-16T16:30:00Z"

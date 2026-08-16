@@ -1,0 +1,77 @@
+id: "WS-499"
+title: "Multiway limped pots — an airtight line, with the decision node at the first villain aggressor"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 29.0
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER DIRECTIVE 2026-08-16, following the WS-320 study-ladder result.
+
+  THE SITUATION. Limping is one of the easier tells of inferior play — but it is NOT
+  monotonic, and that is the entire design constraint. Good players limp MORE and WIDER
+  when they judge they can see a flop cheaply, especially 6-way. This happens frequently
+  and consistently enough to deserve a real strategy rather than a leak-punishing
+  heuristic.
+
+  THE FRAME THAT MAKES IT TRACTABLE — the founder's, and the load-bearing idea here.
+  Hero is NOT modelled as deciding to "play the hand". In a cheap multiway pot, raw
+  equity goes UP for suited connectors and small pairs while realized equity is assumed
+  BAD. So the decision carrying the EV is not entry — it is the FIRST VILLAIN AGGRESSOR
+  POINT. That is where hero learns the price, the field still to act, and whether the
+  equity can actually be realized. Build the tree around that node.
+
+  TWO BRANCHES, both first-class:
+    ESCAPE   — get out, or get the pot heads-up, before the bad realization bites:
+               preflop squeeze (exists), overbets (exist), cold 4-bet (MISSING — WS-500).
+    MAXIMIZE — the hands whose equity rises with field size and stack depth: suited
+               connectors, low pocket pairs, suited aces. High SPR pays the implied odds;
+               the field supplies the dead money.
+
+  WHAT ALREADY EXISTS — verified 2026-08-16 by reading the code, not assumed:
+    - `facing_limpers` situation, iso-raise sizing (+1bb per limper), limperSeatEntries,
+      deadMoney, trapWarning — src/utils/exploitEngine/preflopAdvisor.js
+    - squeeze_ip / squeeze_oop sizing plus squeeze-specific reasoning — same file
+    - multiwayFoldPct and multiway protection equity — gameTreeEquity / gameTreeEvaluator
+    - overbet sizing candidates and nut-advantage overbet reasoning
+  WHAT DOES NOT:
+    - realized equity does not know how many players are in the pot (WS-498 — BLOCKING,
+      because every number in both branches is computed through it)
+    - cold 4-bet does not exist at all (WS-500)
+accept_criteria: |
+  - The advisor treats the first-aggressor node in a limped multiway pot as an explicit
+    decision point with its own EV comparison, not a continuation of the entry choice.
+  - Escape and maximize are both reachable recommendations with stated conditions; the
+    engine says WHICH and WHY, citing field size, price, SPR and position — never a
+    hand-class label as an input.
+  - Hand classes are evaluated on computed multiway equity AND WS-498 realization, so a
+    suited connector's recommendation changes correctly when a 6th player enters.
+  - No claim about the profitability of any line ships without a Result Card against the
+    WS-501 metric-matched slice.
+  - The population is stated as a game-type identity, never as a stake mapping, per the
+    metrics-not-stakes ruling.
+effort: "XL"
+runs_on: "any"
+files_involved:
+  - "src/utils/exploitEngine/preflopAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+blocked_by:
+  - "WS-498"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Escape vs maximize threshold: what field size / SPR / price flips the recommendation, and is that fitted from the corpus or declared by the founder?"
+source:
+  kind: "founder"
+  detail: "2026-08-16 — build on the limping finding; decision node at the first villain aggressor"
+created_at: "2026-08-16T16:30:00Z"
