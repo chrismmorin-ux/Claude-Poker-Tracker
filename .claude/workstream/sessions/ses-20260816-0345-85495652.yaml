@@ -1,7 +1,7 @@
 id: "ses-20260816-0345-85495652"
-status: active
+status: "abandoned"
 started_at: "2026-08-16T03:45:27.919Z"
-ended_at: null
+ended_at: "2026-08-16T07:48:03Z"
 mode: auto
 last_heartbeat: "2026-08-16T03:45:27.919Z"
 pid: 26892
@@ -14,3 +14,13 @@ agent_session_id: "85495652-014c-41b9-a5d8-cb096fb35578"
 # that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
 claimed_items: []
 files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
+  Original start: 2026-08-16T03:45:27.919Z.
+  Last heartbeat: 2026-08-16T03:45:27.919Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

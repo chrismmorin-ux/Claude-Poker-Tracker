@@ -3278,3 +3278,168 @@ console.log('blob:'"
     bundle: "math-blindspot"
     path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
     tool: Read
+  - at: "2026-08-16T04:39:50.177Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
+  - at: "2026-08-16T04:39:50.446Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Grep
+  - at: "2026-08-16T04:39:50.718Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Glob
+  - at: "2026-08-16T04:39:50.927Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "head -3 .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T04:39:51.074Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "Get-Content .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: PowerShell
+  - at: "2026-08-16T04:39:51.285Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "{'uri':'.claude/context/MEASUREMENT_OVERSIGHTS.md'}"
+    tool: mcp__whatever__read_file
+  - at: "2026-08-16T04:39:51.510Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "cd .claude/context && cat MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T04:39:52.674Z"
+    kind: fail-open:expired-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:39:52.817Z"
+    kind: fail-open:malformed-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:39:52.931Z"
+    kind: fail-open:unreadable-bundle
+    bundle: "no-such-bundle"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:39:53.371Z"
+    kind: bypass
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
+  - at: "2026-08-16T04:49:51.354Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
+  - at: "2026-08-16T04:49:51.638Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Grep
+  - at: "2026-08-16T04:49:51.912Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Glob
+  - at: "2026-08-16T04:49:52.258Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "head -3 .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T04:49:52.703Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "Get-Content .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: PowerShell
+  - at: "2026-08-16T04:49:53.114Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "{'uri':'.claude/context/MEASUREMENT_OVERSIGHTS.md'}"
+    tool: mcp__whatever__read_file
+  - at: "2026-08-16T04:49:53.488Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "cd .claude/context && cat MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T04:49:55.396Z"
+    kind: fail-open:expired-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:49:55.680Z"
+    kind: fail-open:malformed-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:49:55.993Z"
+    kind: fail-open:unreadable-bundle
+    bundle: "no-such-bundle"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T04:49:56.657Z"
+    kind: bypass
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
+  - at: "2026-08-16T05:42:34.488Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
+  - at: "2026-08-16T05:42:34.643Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Grep
+  - at: "2026-08-16T05:42:34.783Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Glob
+  - at: "2026-08-16T05:42:34.904Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "head -3 .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T05:42:35.061Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "Get-Content .claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: PowerShell
+  - at: "2026-08-16T05:42:35.203Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "{'uri':'.claude/context/MEASUREMENT_OVERSIGHTS.md'}"
+    tool: mcp__whatever__read_file
+  - at: "2026-08-16T05:42:35.371Z"
+    kind: blocked
+    bundle: "math-blindspot"
+    path: "cd .claude/context && cat MEASUREMENT_OVERSIGHTS.md"
+    tool: Bash
+  - at: "2026-08-16T05:42:36.142Z"
+    kind: fail-open:expired-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T05:42:36.278Z"
+    kind: fail-open:malformed-declaration
+    bundle: "-"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T05:42:36.411Z"
+    kind: fail-open:unreadable-bundle
+    bundle: "no-such-bundle"
+    path: "-"
+    tool: Read
+  - at: "2026-08-16T05:42:36.715Z"
+    kind: bypass
+    bundle: "math-blindspot"
+    path: ".claude/context/MEASUREMENT_OVERSIGHTS.md"
+    tool: Read
