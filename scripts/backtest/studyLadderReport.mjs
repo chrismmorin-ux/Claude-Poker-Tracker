@@ -38,6 +38,7 @@ import {
   AXES,
   AXIS_IDS,
   CONTROL_AXIS,
+  CONTROL_FOR,
   LADDER_RUNGS,
 } from './ladderAxes.mjs';
 import {
@@ -56,6 +57,19 @@ import {
 /** Minimum-observation floors the χ² is reported at. The primary is the middle one. */
 export const DEFAULT_MIN_N_SWEEP = Object.freeze([5, 20, 50]);
 export const DEFAULT_PRIMARY_MIN_N = 20;
+
+/**
+ * How many times the control's dispersion a candidate must reach to be called `separates`.
+ *
+ * 1.00 asserts only "must exceed the control" — the minimum the module's stated method
+ * requires, and deliberately the weakest defensible floor rather than a number invented to
+ * produce a preferred answer. It is NOT settled: at this corpus's df, significance against the
+ * control is nearly automatic (`cbetRate` reaches z = 26 on a 3.4% excess), so the floor rather
+ * than the p-value is what makes this test falsifiable. Raising it is a founder decision;
+ * `verdict.vsControl.ratio` is emitted on every axis so the choice is made against the run's
+ * own numbers. See the WS-320 review, 2026-08-16.
+ */
+export const MIN_DISPERSION_RATIO = 1;
 
 const rateOf = (rows) => {
   const N = rows.reduce((s, r) => s + r.n, 0);
@@ -144,12 +158,37 @@ export const analyseLadder = ({
   }
 
   // ── verdicts, read against the control FROM THIS RUN ──
-  const controlStats = axes[CONTROL_AXIS].primary.poolAnchored;
+  //
+  // A CONTROL DOES NOT GET A SEPARABILITY VERDICT. It used to: every axis was passed through
+  // `separabilityVerdict` against `CONTROL_AXIS`, so `flopBetFreq` was compared to itself and
+  // came back "separates" on a ratio of exactly 1.000. That is a tautology occupying a verdict
+  // slot on the Result Card, and it read as a fourth corroborating result. Controls now report
+  // `control-reference` — their dispersion is the yardstick, not a claim.
   for (const axisId of AXIS_IDS) {
-    axes[axisId].verdict = separabilityVerdict({
-      stats: axes[axisId].primary.poolAnchored,
-      controlStats,
+    const axis = axes[axisId];
+    const stats = axis.primary.poolAnchored;
+
+    if (axis.role === 'control') {
+      axis.verdict = {
+        verdict: 'control-reference',
+        reason:
+          `χ²/df = ${stats.chi2PerDf?.toFixed(3)} (z = ${stats.z?.toFixed(1)}) at a median of `
+          + `${stats.obsPerPlayerMedian} observations per player. This axis is the YARDSTICK the `
+          + 'candidates are read against — it makes no separability claim of its own.',
+        powered: (stats.obsPerPlayerMedian ?? 0) >= OBS_FOR_MOVEABLE_ESTIMATE,
+        vsControl: { ratio: null, z: null },
+      };
+      continue;
+    }
+
+    const controlId = CONTROL_FOR[axisId] ?? CONTROL_AXIS;
+    axis.controlAxis = controlId;
+    axis.verdict = separabilityVerdict({
+      stats,
+      controlStats: axes[controlId].primary.poolAnchored,
       obsThreshold: OBS_FOR_MOVEABLE_ESTIMATE,
+      minDispersionRatio: MIN_DISPERSION_RATIO,
+      controlLabel: axes[controlId].label,
     });
   }
 
@@ -333,6 +372,13 @@ export const ladderResultCard = ({
         splitHalfPlayers: a.reliability.players,
         verdict: a.verdict.verdict,
         verdictReason: a.verdict.reason,
+        // The comparison the verdict is actually made on, emitted so a reader can re-derive it
+        // instead of trusting the prose. `controlAxis` is per-candidate: `cbetRate` is a subset
+        // of `flopBetFreq` and is scored against the disjoint control instead.
+        controlAxis: a.controlAxis ?? null,
+        dispersionRatioVsControl: a.verdict.vsControl?.ratio ?? null,
+        zVsControl: a.verdict.vsControl?.z ?? null,
+        minDispersionRatio: a.role === 'control' ? null : MIN_DISPERSION_RATIO,
         sweep: Object.fromEntries(Object.entries(a.sweep).map(([k, v]) => [k, {
           players: v.poolAnchored.players,
           chi2PerDf: v.poolAnchored.chi2PerDf,

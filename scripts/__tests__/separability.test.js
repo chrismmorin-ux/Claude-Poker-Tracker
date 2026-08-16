@@ -273,6 +273,72 @@ describe('ordering — a ladder must be distinguishable from independent habits'
   });
 });
 
+describe('verdict — the control must decide the verdict, not just decorate it', () => {
+  // WS-320 review, 2026-08-16. The verdict was `stats.z >= 3` — an excess over the BINOMIAL
+  // null — while the control was interpolated into the reason string and never tested. The
+  // live run shipped "separates" for an axis LESS dispersed than its control.
+  const control = { chi2PerDf: 9.363, z: 1425.3, df: 58092, betweenPlayerSd: 0.119 };
+
+  it('refuses SEPARATES to an axis below the control, however large its z vs the null', () => {
+    // threeBetRate as it actually ran: overwhelming against the binomial null, and 0.59× the
+    // control measured on the same players in the same run.
+    const stats = {
+      chi2PerDf: 5.569, z: 841.6, df: 67868, obsPerPlayerMedian: 63, betweenPlayerSd: 0.029, note: null,
+    };
+    const v = separabilityVerdict({ stats, controlStats: control });
+    expect(v.verdict).toBe('not-beyond-control');
+    expect(v.vsControl.ratio).toBeCloseTo(0.5948, 3);
+    expect(v.vsControl.z).toBeLessThan(-100);
+    // A null here licenses not BUILDING, never deleting (founder standing rule).
+    expect(v.reason).toMatch(/licenses deleting nothing/i);
+  });
+
+  it('separates only when the excess is over the CONTROL, and says by how much', () => {
+    const stats = {
+      chi2PerDf: 79.514, z: 16325.6, df: 86472, obsPerPlayerMedian: 78, betweenPlayerSd: 0.147, note: null,
+    };
+    const v = separabilityVerdict({ stats, controlStats: control });
+    expect(v.verdict).toBe('separates');
+    expect(v.vsControl.ratio).toBeCloseTo(8.4923, 3);
+    expect(v.reason).toContain('8.49× the control');
+  });
+
+  it('an axis compared against itself is 1.00× and cannot separate', () => {
+    const v = separabilityVerdict({
+      stats: { ...control, obsPerPlayerMedian: 54, note: null },
+      controlStats: control,
+    });
+    expect(v.vsControl.ratio).toBeCloseTo(1, 6);
+    expect(v.verdict).not.toBe('separates');
+  });
+
+  it('the effect floor is separate from significance — a 3.4% excess can clear z=3', () => {
+    // cbetRate vs the disjoint control: significant (huge df) on a small effect. Whether that
+    // should count is the founder's floor to set; the instrument must expose both numbers.
+    const stats = {
+      chi2PerDf: 9.681, z: 819.4, df: 17816, obsPerPlayerMedian: 45, betweenPlayerSd: 0.130, note: null,
+    };
+    const permissive = separabilityVerdict({ stats, controlStats: control, minDispersionRatio: 1 });
+    expect(permissive.verdict).toBe('separates');
+    expect(permissive.vsControl.z).toBeGreaterThan(3);
+    expect(permissive.vsControl.ratio).toBeCloseTo(1.034, 2);
+
+    const strict = separabilityVerdict({ stats, controlStats: control, minDispersionRatio: 1.5 });
+    expect(strict.verdict).toBe('not-beyond-control');
+  });
+
+  it('falls back to the ratio alone when df is absent', () => {
+    const noDf = { chi2PerDf: 1.86, z: 15.5, betweenPlayerSd: 0.09 };
+    const v = separabilityVerdict({
+      stats: { chi2PerDf: 2.4, z: 22, obsPerPlayerMedian: 40, betweenPlayerSd: 0.11, note: null },
+      controlStats: noDf,
+    });
+    expect(v.verdict).toBe('separates');
+    expect(v.vsControl.z).toBeNull();
+    expect(v.vsControl.ratio).toBeCloseTo(1.2903, 3);
+  });
+});
+
 describe('verdict — an underpowered null must never be reported as a negative', () => {
   const control = { chi2PerDf: 1.86, z: 15.5, betweenPlayerSd: 0.09 };
 
