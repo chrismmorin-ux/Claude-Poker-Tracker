@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 3,
+  "resultCardId": "RC-CONTINUATION-RATE-THREADING-2026-08-15",
+  "match": {
+    "surfaceId": "SURF-engine-advice-probe",
+    "dealBookId": "handhq-FTP+PS-0.5-3ae06489",
+    "fieldId": "FIELD-handhq-50nl-2009-07-behavior-policy"
+  },
+  "estimand": "The paired change to the engine's per-action EV, and to its advised action distribution, from replacing a population fold-rate constant with the node's own computed fold probability in the depth-2/3 continuation tightener. Scored on the SAME scenarios and the SAME seeded decisions before and after.",
+  "treatment": "WS-482: `tightenRatesForContinuation` receives the node's computed villain fold probability (`candidate.villainResponse.foldPct`) instead of its hardcoded population default at the 10 call sites where a computed value exists, and its default is read from POPULATION_PRIORS rather than repeated as the literal 0.45. Control arm is the same harness against the engine at 5d113990~1 (WS-481 applied, WS-482 absent).",
+  "metrics": {
+    "kind": "continuation-rate-threading",
+    "threading": {
+      "parameter": "tightenRatesForContinuation(rates, priorAction, foldRate)",
+      "from": "hardcoded 0.45 at all 12 call sites (every site passed two arguments)",
+      "to": "the node's computed pFold, plus a default READ from POPULATION_PRIORS.bet.fold",
+      "sitesThreaded": 10,
+      "sitesLeftOnPrior": 2,
+      "why": "The two are the double-tighten for a HYPOTHESIZED turn barrel. No fold rate has been computed for a street that has not happened, so they take the prior — which is what a prior is for. Threading the flop node's number there would assert villain folds a turn barrel at exactly the rate they folded the flop bet."
+    },
+    "reachability": {
+      "deadParameters": [
+        {
+          "parameter": "callingRates",
+          "consumer": "computePerComboEV",
+          "span": "gameTreeDepth2.js:441-497",
+          "occurrences": 1,
+          "note": "destructured at :443, never referenced again",
+          "discardedBy": [
+            "gameTreeDepth2.js:914",
+            ":1051",
+            ":1171",
+            ":1298",
+            ":1358"
+          ]
+        },
+        {
+          "parameter": "bettingRates",
+          "consumer": "computePerComboCheckEV",
+          "span": "gameTreeDepth2.js:565-664",
+          "occurrences": 1,
+          "note": "destructured at :565, never referenced again",
+          "discardedBy": [
+            "gameTreeDepth2.js:905",
+            ":1043"
+          ]
+        }
+      ],
+      "liveConsumers": [
+        {
+          "path": "foldFromRates -> bluffCommitmentPenalty",
+          "site": "gameTreeDepth2.js:1413-1422",
+          "guard": "heroEquity != null && heroEquity < 0.25, depth-3 FLOP path only"
+        }
+      ],
+      "evidence": "What the dead-parameter consumers use instead is `villainRequiredEquity` + per-combo iteration (gameTreeDepth2.js:450) — the first-principles path exploitEngine/CLAUDE.md prescribes OVER bucket labels. The threaded parameter is a vestige of a bucket-rate path that per-combo computation superseded. Filed as FIND-139.",
+      "consequenceForTheTicket": "WS-482 states the constant \"moves every depth-2 EV — that is the point\". That premise is FALSE. It reaches EV only through the one guarded bluff-penalty path above."
+    },
+    "evDelta": {
+      "instrument": "dumpGameTreeEV.mjs at WS334_REFINEMENT_MS=600000 (full tree, frozen clock), paired",
+      "scenarios": 12,
+      "recommendations": 38,
+      "moved": 0,
+      "topActionFlips": 0,
+      "meanAbsDelta": 0,
+      "statement": "Zero. No recommendation's EV changed and no top action flipped, ON THE MEASURED SCENARIO SET. This is a REACHABILITY result, not an \"effect too small to see\"."
+    },
+    "stagesRan": {
+      "census": {
+        "checkCheckDepth2": {
+          "completed": 3,
+          "other": 0,
+          "scenarios": [
+            "flop-dry-noaction-tight",
+            "flop-wet-noaction-top30",
+            "turn-noaction-top30"
+          ]
+        },
+        "betCallDepth2": {
+          "completed": 8,
+          "other": 0,
+          "scenarios": [
+            "flop-dry-noaction-tight",
+            "flop-dry-facing-bet-tight",
+            "flop-wet-noaction-top30"
+          ]
+        },
+        "raiseResponseDepth2": {
+          "completed": 10,
+          "other": 0,
+          "scenarios": [
+            "flop-dry-noaction-tight",
+            "flop-dry-facing-bet-tight",
+            "flop-dry-facing-bet-tight"
+          ]
+        },
+        "callDepth2": {
+          "completed": 5,
+          "other": 0,
+          "scenarios": [
+            "flop-dry-facing-bet-tight",
+            "flop-wet-facing-bet-top30",
+            "flop-wet-facing-raise-full"
+          ]
+        },
+        "depth3Barrel": {
+          "completed": 5,
+          "other": 0,
+          "scenarios": [
+            "flop-dry-facing-bet-tight",
+            "flop-wet-facing-bet-top30",
+            "turn-noaction-top30"
+          ]
+        },
+        "riverPerCombo": {
+          "completed": 4,
+          "other": 0,
+          "scenarios": [
+            "river-dry-noaction-top30",
+            "river-dry-facing-bet-tight",
+            "river-wet-noaction-top50"
+          ]
+        }
+      },
+      "note": "The stages containing the threaded call sites executed to completion at weightConsumed ~1.0, so the zero is not a gating artifact. This is the field that separates \"ran and changed nothing\" from \"never ran\"."
+    },
+    "adviceDelta": {
+      "instrument": "probeFrequency paired-by-seeded-key at --refinement-ms 2000 (depth-2 enabled)",
+      "paired": 40,
+      "divergent": 0,
+      "control": {
+        "description": "SAME code, two separate processes, identical parameters",
+        "paired": 40,
+        "divergent": 0,
+        "passed": true,
+        "note": "Zero divergence across processes confirms WS-432's logical work-unit clock and REFUTES probeFrequency's own docblock, which claimed a non-zero refinement budget is \"non-reproducible between invocations\". The docblock is corrected in this ticket."
+      }
+    },
+    "collateralFixes": [
+      {
+        "site": "villainProfileBuilder.js POP_ACTIONS_FACING_NONE",
+        "defect": "declared {check:0.55, bet:0.45} against the definition's {check:0.45, bet:0.55} — INVERTED, not merely duplicated. Every displayed \"deviation from population\" on an unopened street was measured against a baseline leaning passive where the engine's own population leans aggressive, so a villain betting at exactly the population rate showed as +0.10 aggressive.",
+        "live": true
+      },
+      {
+        "site": "decisionTreeBuilder.js computeFoldPct",
+        "defect": "a POSTFLOP 0.45 used as a PREFLOP population fallback, sitting beside the real ladder. Guard and literal both removed; preflop fold rates now use the one choke point.",
+        "live": true
+      },
+      {
+        "site": "foldEquityCalculator.js (3), gameTreeEquity.js (2), gameTreeDepth2.js (2), preflopFlopEV.js (1), gameTreeSizingHelpers.js (2)",
+        "defect": "fold/continue literals duplicating POPULATION_PRIORS; now read from the definition. Facing a RAISE these had been priced with the BET population's marginal (0.45 vs 0.55).",
+        "live": true
+      }
+    ]
+  },
+  "clusterUnit": "players",
+  "admissibility": {
+    "quotable": true,
+    "reasons": [],
+    "caveats": [
+      "The zero EV delta is exact ON THE MEASURED SCENARIO SET (12 scenarios, 38 recommendations) and is not a claim about decisions outside it.",
+      "It is a REACHABILITY finding: the parameter is not consumed by the two depth-2 EV functions. It must NOT be read as \"the population constant is harmless\" — it is a statement about wiring, and the wiring is filed as FIND-139 for a decision.",
+      "TRANSFERRED, NOT MEASURED for live 9-handed 1/2-1/3. Corpus is online cash, July 2009, 50NL.",
+      "The collateral fixes are NOT covered by the zero: they are live, and the inverted population table is a display-path correction this measurement did not price."
+    ]
+  },
+  "manifest": {
+    "engineCommit": "0e9943511dca4912f0967eaa543d9593fbfa9012",
+    "engineDirty": true,
+    "dealBookHash": "sha256:3ae06489473d9a46b7735b3924ed61a7bbc42b443724ca2be84e822b9f3e957a",
+    "fieldVersion": "handhq-50nl-2009-07-ftp+ps · behavior-policy out/behavior-policy.json",
+    "partition": "before-arm engine at 5d113990~1 (WS-481 applied, WS-482 absent); instrument scripts identical in both arms",
+    "seeds": {
+      "probePairing": "mulberry32(fnv1a-32(`${playerId}|${handId}|${order}`)) per decision",
+      "evDump": "Date.now frozen at 1700000000000; Math.random seeded per scenario by dumpGameTreeEV"
+    },
+    "unseededSources": [],
+    "constants": {
+      "PRIOR_WEIGHT": 10,
+      "SUBCLASS_PRIOR_WEIGHT": 10,
+      "ACTION_TAU_FRACTION": {
+        "check": 1,
+        "bet": 0.3,
+        "call": 0.3,
+        "raise": 0.3
+      },
+      "TAU_FRACTION": 0.3,
+      "MIN_CONTINUATION_WEIGHT": 0.05,
+      "MAX_STAGE_SHARE": 0.4,
+      "REFINEMENT_UNITS_PER_MS": 319,
+      "REFINEMENT_CLOCK_VERSION": "logical-v1",
+      "KL_FLOOR": 0.000001,
+      "RAKE_SENSITIVITY_BB_PER_RAKE_DOUBLING": -0.1842,
+      "RAKE_SENSITIVITY_PROVENANCE": {
+        "faultId": "FAULT-modelled-rake",
+        "basis": "fixture-sweep",
+        "basisNote": "Measured on the canonical 12-decision / 6-player fixture in rakeSensitivity.mjs, NOT on the corpus of the run this manifest describes. It proves the non-cancellation mechanism and calibrates its order of magnitude under a mixed weight/pot-size covariance; the run-level exposure depends on the run's own covariance and needs the per-run sweep (named follow-up in rakeSensitivity.mjs).",
+        "schedules": {
+          "zeroRake": {
+            "pct": 0,
+            "cap": 0,
+            "noFlopNoDrop": true
+          },
+          "online2009": {
+            "pct": 0.05,
+            "cap": 3,
+            "noFlopNoDrop": true
+          },
+          "liveDouble": {
+            "pct": 0.1,
+            "cap": 6,
+            "noFlopNoDrop": true
+          }
+        },
+        "toleranceBB": 0.01,
+        "verdict": "not-rake-invariant",
+        "n": 12,
+        "players": 6,
+        "edgeBBBySchedule": {
+          "zeroRake": 5.8704,
+          "online2009": 5.6861,
+          "liveDouble": 5.5019
+        },
+        "deltaZeroToOnlineBB": -0.1843,
+        "bbPerRakeDoubling": -0.1842
+      },
+      "REFINEMENT_BUDGET_MS": 600000,
+      "REFINEMENT_BUDGET_MS_ADVICE_ARM": 2000,
+      "POPULATION_PRIORS_BET_FOLD": 0.45,
+      "POPULATION_PRIORS_RAISE_FOLD": 0.55
+    },
+    "disclaimerRegisterVersion": "FR-1+cc63d16f2ff8",
+    "knownDivergences": [
+      {
+        "name": "PRIOR_WEIGHT",
+        "canonical": 10,
+        "shadowAt": "src/utils/exploitEngine/foldEquityCalculator.js:661",
+        "shadowValue": null,
+        "agrees": null,
+        "note": "foldEquityCalculator declares a module-local PRIOR_WEIGHT that shadows the canonical one in rangeEngine/populationPriors.js. It is not exported, so its value cannot be read from outside — recorded here so a future divergence has somewhere to surface."
+      }
+    ]
+  },
+  "census": null,
+  "warrantAttribution": null,
+  "atomSetHash": null,
+  "atomCount": null,
+  "anchorGeneration": null,
+  "fragility": null,
+  "flipRegister": null,
+  "comparisonCensus": null,
+  "decisionRecord": null
+}

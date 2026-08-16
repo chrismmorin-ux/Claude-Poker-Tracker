@@ -57,7 +57,7 @@ import { RESPONSES_BY_FACING } from './behaviorPolicy.mjs';
 import { decisionGeometry, liveOpponentCount } from './decisionGeometry.mjs';
 import { comboLabel, comboClass, compactCandidate, compactLatency } from './decisionRecord.mjs';
 import { makeSeededEquityFn } from './seededEquity.mjs';
-import { resolveVillain, VILLAIN_SOURCES } from './villainFeed.mjs';
+import { resolveVillain, resolveVillainModel, VILLAIN_SOURCES } from './villainFeed.mjs';
 
 /** Default number of holdings sampled from hero's range per decision. */
 export const DEFAULT_COMBO_SAMPLES = 10;
@@ -223,6 +223,13 @@ export const heroPolicyAt = async ({
     ? (hand.seatPlayers?.[String(villainSeat)] ?? null)
     : null;
   const fed = resolveVillain(villainFeed, villainPid, villainSource);
+  // FIND-138. Until this line every instrument in scripts/backtest/ passed `villainModel:
+  // null` — all 11 of them — so anything reaching the game tree ONLY through the villain
+  // model was structurally unmeasurable. `personalizedFoldCurve` is the case that forced it:
+  // it is fitted for 62.6% of corpus players, it OUTRANKS the population curve on the bet
+  // path (gameTreeEvaluator.js), and no harness could tell whether changing it changed
+  // anything. Null on every source but MODEL, so all existing runs stay byte-identical.
+  const fedModel = resolveVillainModel(villainFeed, villainPid, villainSource);
   const villainData = fed ?? { vpip: null, pfr: null, af: null, style: null, rawStats: {} };
   const playerStats = buildPlayerStats(villainData, villainPos);
   const villainRange = buildBaselineRange(null, null, villainPos);
@@ -301,7 +308,7 @@ export const heroPolicyAt = async ({
         villainBet,
         deadCards: board,
         playerStats,
-        villainModel: null,
+        villainModel: fedModel,
         trials,
         contextHints: {
           observations: [],

@@ -36,10 +36,23 @@
  * footer string changes.
  */
 
+// v126 (2026-08-15, SPR-186): WS-481 fits the personalized fold curve on the axis it is
+// EVALUATED on. `foldCurveAxisFraction` (foldEquityCalculator.js) is now the single
+// definition, imported by the training side (decisionAccumulator) and delegated to by the
+// consumption side (villainFacingFraction) — previously the curve was fitted on the hand's
+// FINAL pot and evaluated on the STREET pot, so a pot-sized flop bet in a hand that reached
+// the river trained as ~0.2 instead of 1.0. Priced in RC-FOLD-CURVE-AXIS-2026-08-15.
+// WS-482 threads the node's computed pFold through tightenRatesForContinuation and reads the
+// shadow 0.45/0.55 fold/continue constants from POPULATION_PRIORS. Its EV delta is ZERO and
+// that is the recorded result (RC-CONTINUATION-RATE-THREADING-2026-08-15): the tightened
+// rates are dead at both depth-2 consumers (FIND-139). The collateral fix that is NOT inert
+// is villainProfileBuilder's POP_ACTIONS_FACING_NONE, which was INVERTED against its own
+// definition and is live in the displayed population deviation for every unopened street.
+//
 // v125 (2026-08-14, WS-442): WS-314 check-raise fold-equity guard (fold-equity-only
 // check-raise requires a reliable villain read, mirroring bestResponseToAggression's
 // DEC-022 guard; CR fallback fold aligned to MODEL_CONFIDENCE_THRESHOLD +
 // POPULATION_PRIORS.raise.fold) and WS-315 blocker tie-break in the final ranking
 // (blockerScore.excess breaks EV ties within 1% of pot).
-export const ENGINE_VERSION = 'v125';
+export const ENGINE_VERSION = 'v126';
 export const APP_VERSION = 'v123';

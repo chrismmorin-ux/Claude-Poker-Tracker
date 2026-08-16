@@ -1948,6 +1948,112 @@
       }
     ]
   },
+  "metrics.fold-curve-axis": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "axisDefinition",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({formula, sharedBy, anchorCheck})"
+      },
+      {
+        "name": "trainingSideBefore",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({numerator, denominator, worked})"
+      },
+      {
+        "name": "blindInstruments",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({instrument, blindBecause, evidence})"
+      },
+      {
+        "name": "reach",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({playersConsidered, playersWithFittedCurve, conditioned})"
+      },
+      {
+        "name": "pairedAdviceDelta",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({paired, fed, divergent, meanTvOnDivergent, conditioned})"
+      },
+      {
+        "name": "controlUnfedMustBeZero",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({n, divergent})"
+      },
+      {
+        "name": "aggressionShift",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({before, after, delta, basis})"
+      },
+      {
+        "name": "instrumentBuilt",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({what, coverage, omits})"
+      }
+    ]
+  },
+  "metrics.continuation-rate-threading": {
+    "version": 1,
+    "fields": [
+      {
+        "name": "kind",
+        "type": "string",
+        "since": 1,
+        "unit": "enum"
+      },
+      {
+        "name": "threading",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({parameter, from, to, sitesThreaded, sitesLeftOnPrior, why})"
+      },
+      {
+        "name": "reachability",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({deadParameters, liveConsumers, evidence})"
+      },
+      {
+        "name": "evDelta",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({instrument, scenarios, recommendations, moved, topActionFlips, meanAbsDelta})"
+      },
+      {
+        "name": "stagesRan",
+        "type": "object",
+        "since": 1,
+        "unit": "record (stage → outcome/weightConsumed)"
+      },
+      {
+        "name": "adviceDelta",
+        "type": "object",
+        "since": 1,
+        "unit": "record ({instrument, paired, divergent, control})"
+      },
+      {
+        "name": "collateralFixes",
+        "type": "array",
+        "since": 1,
+        "unit": "rows ({site, defect, live})"
+      }
+    ]
+  },
   "__manifest": {
     "version": null,
     "fields": [

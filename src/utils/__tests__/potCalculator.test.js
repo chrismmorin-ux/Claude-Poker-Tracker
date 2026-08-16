@@ -449,13 +449,31 @@ describe('calculatePotProgression', () => {
       { seat: 4, action: PRIMITIVE_ACTIONS.CALL, street: 'flop' }, // auto-call 8
       { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'turn', amount: 23 },
     ];
+    // `owed`/`streetContrib`/`currentBet` accompany each entry (WS-481) so a consumer
+    // fitting on the fold-curve axis never re-walks the sequence with its own accounting.
     expect(calculatePotProgression(seq, blinds)).toEqual([
-      { potBefore: 3, estimated: false },  // sb + bb
-      { potBefore: 9, estimated: false },  // after raise to 6
-      { potBefore: 15, estimated: false }, // after auto-call 6
-      { potBefore: 23, estimated: false }, // after flop bet 8
-      { potBefore: 31, estimated: false }, // after auto-call 8
+      // sb + bb; seat 1 faces the bb with nothing in (blind seats not seeded here)
+      { potBefore: 3, estimated: false, owed: 2, streetContrib: 0, currentBet: 2 },
+      { potBefore: 9, estimated: false, owed: 6, streetContrib: 0, currentBet: 6 },  // after raise to 6
+      { potBefore: 15, estimated: false, owed: 0, streetContrib: 0, currentBet: 0 }, // after call; flop resets
+      { potBefore: 23, estimated: false, owed: 8, streetContrib: 0, currentBet: 8 }, // after flop bet 8
+      { potBefore: 31, estimated: false, owed: 0, streetContrib: 0, currentBet: 0 }, // after call; turn resets
     ]);
+  });
+
+  it('reports the acting seat owed 0 once it has already matched the current bet', () => {
+    // A seat that bets and is then raised owes only the INCREMENT — the quantity the
+    // fold-curve axis is defined on. Reading its raise-TO level instead double-counts
+    // the chips it already posted (WS-481).
+    const seq = [
+      { seat: 1, action: PRIMITIVE_ACTIONS.BET, street: 'flop', amount: 65 },
+      { seat: 4, action: PRIMITIVE_ACTIONS.RAISE, street: 'flop', amount: 119 },
+      { seat: 1, action: PRIMITIVE_ACTIONS.CALL, street: 'flop', amount: 54 },
+    ];
+    const prog = calculatePotProgression(seq, blinds);
+    // Seat 1 decides facing the raise: it has 65 in, the bet stands at 119, so it owes 54.
+    expect(prog[2].owed).toBe(54);
+    expect(prog[2].streetContrib).toBe(65);
   });
 
   it('matches calculatePot final total (same walk semantics)', () => {

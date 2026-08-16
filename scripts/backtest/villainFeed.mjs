@@ -45,6 +45,29 @@ import {
   classifyStyle,
 } from '../../src/utils/tendencyCalculations.js';
 import { resolveStatPriors } from '../../src/utils/exploitEngine/poolBaseline.js';
+import { buildRangeProfile } from '../../src/utils/rangeEngine/index.js';
+import { accumulateDecisions } from '../../src/utils/exploitEngine/decisionAccumulator.js';
+import { buildVillainDecisionModel } from '../../src/utils/exploitEngine/villainDecisionModel.js';
+
+/**
+ * `_buckets` is ~89% of a serialized villain model and is the only field that has to go.
+ *
+ * Measured on POOL villains (`probe-villainmodel-size.mjs`): the whole model averages
+ * 19,751 bytes each — 96 MB at 5,000 villains, which a JSON artifact crossing worker
+ * boundaries by value cannot carry — and 2,349 bytes with `_buckets` dropped.
+ *
+ * WHAT THAT LEAVES UNCOVERED, named rather than implied. `queryActionDistribution` reads
+ * `_buckets`, so a fed villain's SITUATIONAL action distribution still resolves to the
+ * population ladder. What the feed does carry is `personalizedFoldCurve`, `foldEstimates`
+ * and `personalizedMultipliers` — which is the channel FIND-138 blocked and the one WS-481
+ * needed. A future ticket wanting the bucket channel measured needs a different transport,
+ * not a bigger cap.
+ */
+const stripBuckets = (model) => {
+  if (!model) return null;
+  const { _buckets, ...rest } = model;
+  return rest;
+};
 
 export const VILLAIN_FEED_SCHEMA_VERSION = 1;
 
@@ -66,6 +89,12 @@ export const VILLAIN_SOURCES = Object.freeze({
    *  continuous value leaks around the bins. */
   STATS_BIN3: 'stats-bin3',
   STATS_BIN5: 'stats-bin5',
+  /** FIND-138. The stats arm PLUS the villain's own decision model, so the engine
+   *  receives a non-null `villainModel` — the channel `personalizedFoldCurve` and the
+   *  per-villain fold LEVELS travel on. Requires a feed built with
+   *  `withDecisionModel: true`; without one it degrades to STATS rather than
+   *  silently pretending, and `resolveVillainModel` returns null. */
+  MODEL: 'model',
 });
 
 export const ALL_VILLAIN_SOURCES = Object.values(VILLAIN_SOURCES);
@@ -163,6 +192,10 @@ export const buildVillainFeed = async ({
   poolPct = DEFAULT_POOL_PCT,
   maxVillains = Infinity,
   maxHandsPerVillain = 200,
+  // FIND-138. Off by default so every existing feed and caller stays byte-identical; the
+  // per-villain range profile + decision accumulation this turns on is the expensive part
+  // of the build, and only the MODEL source consumes it.
+  withDecisionModel = false,
   log = () => {},
 }) => {
   const { byPlayer, handsRead } = await indexEvalPlayers({
@@ -173,6 +206,7 @@ export const buildVillainFeed = async ({
 
   const players = {};
   let built = 0;
+  let withCurve = 0;
   for (const [pid, hands] of byPlayer) {
     const stats = buildPlayerStats(pid, hands);
     const { segmentKey, seatBucket } = segmentFor(hands);
@@ -202,10 +236,28 @@ export const buildVillainFeed = async ({
       },
       handCount: hands.length,
     };
+
+    if (withDecisionModel) {
+      // The villain's own model, from the villain's own hands, built through the SAME
+      // production derivation the app uses — a reimplementation here would model a villain
+      // the engine never sees. Failures are non-fatal and leave `decisionModel` null, which
+      // resolves to the population fallback exactly as a missing entry does.
+      try {
+        const profile = buildRangeProfile(pid, hands, 'villainfeed');
+        const summary = accumulateDecisions(pid, hands, profile, 'villainfeed');
+        players[pid].decisionModel = stripBuckets(buildVillainDecisionModel(summary, pct));
+        if (players[pid].decisionModel?.personalizedFoldCurve) withCurve++;
+      } catch {
+        players[pid].decisionModel = null;
+      }
+    }
     built++;
   }
 
   log(`villain feed: ${built} POOL villains from ${handsRead} hands read.`);
+  if (withDecisionModel) {
+    log(`  decision models: ${withCurve}/${built} carry a fitted personalizedFoldCurve.`);
+  }
   return {
     schemaVersion: VILLAIN_FEED_SCHEMA_VERSION,
     builtFrom: {
@@ -214,6 +266,11 @@ export const buildVillainFeed = async ({
       maxHandsPerVillain,
       files: files.length,
       referenceTier: referenceTable ? 'stamped-table' : 'founder-estimate',
+      withDecisionModel,
+      // Stamped so a consumer can tell a model-bearing feed from a stats-only one, and so
+      // the omission is a property of the artifact rather than folklore (FIND-138).
+      decisionModelOmits: withDecisionModel ? ['_buckets'] : null,
+      villainsWithFittedFoldCurve: withDecisionModel ? withCurve : null,
     },
     players,
   };
@@ -242,5 +299,25 @@ export const resolveVillain = (feed, pid, source = VILLAIN_SOURCES.NULL) => {
   if (source === VILLAIN_SOURCES.STYLED) return entry;
   if (source === VILLAIN_SOURCES.STATS_BIN3) return quantizeEntry(entry, feedBins(feed, 3));
   if (source === VILLAIN_SOURCES.STATS_BIN5) return quantizeEntry(entry, feedBins(feed, 5));
+  // MODEL serves the same stats as STATS; the model travels separately via
+  // `resolveVillainModel`, so this function's contract (villainData for
+  // buildPlayerStats) is unchanged and its existing callers need no edit.
   return { ...entry, style: null };
+};
+
+/**
+ * The villain's decision model, or null when one should not be served (FIND-138).
+ *
+ * Null on: any source but MODEL, a missing feed or entry, or a feed built without
+ * `withDecisionModel`. Null is the legacy path — the engine falls back to population — so a
+ * consumer that forgets to build a model-bearing feed gets the OLD behaviour rather than a
+ * half-populated one.
+ *
+ * The model carries no `_buckets` (see `stripBuckets`): `personalizedFoldCurve` and the fold
+ * LEVELS are live, `queryActionDistribution` is not.
+ */
+export const resolveVillainModel = (feed, pid, source = VILLAIN_SOURCES.NULL) => {
+  if (source !== VILLAIN_SOURCES.MODEL) return null;
+  const entry = pid != null ? feed?.players?.[pid] : null;
+  return entry?.decisionModel ?? null;
 };

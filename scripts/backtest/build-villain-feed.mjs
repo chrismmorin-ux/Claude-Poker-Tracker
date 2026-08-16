@@ -5,7 +5,12 @@
  * USAGE
  *   node scripts/backtest/build-villain-feed.mjs --reference out/pool-reference.json \
  *     [--out out/villain-feed.json] [--max-villains 5000] [--max-hands-per-villain 200] \
- *     [--pool-pct 50] [--stakes 50NLH]
+ *     [--pool-pct 50] [--stakes 50NLH] [--with-decision-model]
+ *
+ * `--with-decision-model` additionally builds each villain's decision model (FIND-138),
+ * which is what the `model` villain source serves as a non-null `villainModel`. Without it
+ * every harness passes `villainModel: null` and no change carried by the villain model —
+ * `personalizedFoldCurve` above all — can be measured at all.
  *
  * `--reference` is required (pass `none` to fall back to the founder-estimate
  * tier) for the same reason the runner requires it: a feed whose priors have an
@@ -67,6 +72,10 @@ const main = async () => {
       poolPct: int(args['pool-pct'], 50),
       maxVillains: int(args['max-villains'], Infinity),
       maxHandsPerVillain: int(args['max-hands-per-villain'], 200),
+      // FIND-138: `--with-decision-model` makes the `model` villain source usable. Off by
+      // default — it costs a range profile and a decision accumulation per villain, and only
+      // that one source reads it.
+      withDecisionModel: args['with-decision-model'] === true || args['with-decision-model'] === 'true',
       log: (m) => console.log(m),
     });
     const out = typeof args.out === 'string' ? args.out : 'out/villain-feed.json';

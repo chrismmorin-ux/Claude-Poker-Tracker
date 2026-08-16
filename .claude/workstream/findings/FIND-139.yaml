@@ -1,0 +1,107 @@
+id: "FIND-139"
+title: "tightenRatesForContinuation is inert on both depth-2 paths — callingRates and bettingRates are destructured and never used, so WS-482's premise that the population 0.45 'moves every depth-2 EV' is FALSE"
+severity: high
+status: open
+program: prog-domain-correctness
+created_at: "2026-08-15T03:30:00Z"
+created_by: ai
+source:
+  type: measurement
+  run_id: "ws482-measurement-2026-08-15"
+  ticket: "WS-482"
+
+summary: |
+  WS-482 was filed to stop depth-2/3 substituting a hardcoded population 0.45 for the node's
+  computed pFold, on the stated grounds that it "moves every depth-2 EV — that is the point".
+  The threading was implemented and then measured. It moves nothing, and the reason is not
+  that the correction is small: the parameter the tightened rates are passed as is DEAD at
+  both consumers.
+
+evidence:
+  - claim: "computePerComboEV never uses callingRates."
+    method: |
+      `src/utils/exploitEngine/gameTreeDepth2.js` — the function spans lines 441-497 (brace
+      balance). `callingRates` occurs exactly ONCE in that span, in the destructuring at
+      line 443 (`callingRates = POP_CALLING_RATES`). It is never referenced again.
+      Call sites that pass it and have it discarded: 914, 1051, 1171, 1298, 1358.
+
+  - claim: "computePerComboCheckEV never uses bettingRates."
+    method: |
+      Same file, function spans 565-664. `bettingRates` occurs exactly once, in the
+      destructuring at line 565 (`bettingRates = POP_BETTING_RATES`). Never referenced again.
+      Call sites discarding it: 905, 1043.
+
+  - claim: "What those functions use INSTEAD is the first-principles path."
+    method: |
+      `computePerComboEV` computes `potOddsNeeded = villainRequiredEquity('bet', …)` (line 450)
+      and iterates per combo. That is exactly what exploitEngine/CLAUDE.md prescribes — "DO NOT
+      use bucket labels when per-combo equity is available… the logistic of equity ratio is
+      always more precise than a bucket lookup". So the dead parameters look like the vestige
+      of a bucket-rate path that per-combo computation SUPERSEDED, with the threading left
+      behind.
+
+  - claim: "Exactly one live consumer remains, and it is narrow."
+    method: |
+      `foldFromRates(...)` (line 1413) → `bluffCommitmentPenalty` (1417-1422) reads
+      `callingRates`, `turnCallingRates`, `riverCallingRates`. It sits inside
+      `if (heroEquity != null && heroEquity < 0.25)` at line 1406, on the depth-3 FLOP barrel
+      path only. So the tighten reaches EV solely through a bluff-commitment penalty for
+      low-equity hero hands — not through "every depth-2 EV".
+
+  - claim: "Measured: zero EV movement with the full tree running."
+    method: |
+      `dumpGameTreeEV.mjs` at WS334_REFINEMENT_MS=600000, paired before/after WS-482 threading,
+      12 scenarios / 38 recommendations: 0 EVs moved, 0 top-action flips.
+      The stages DID run — the dump records callDepth2, betCallDepth2, raiseResponseDepth2 and
+      depth3Barrel all `outcome: completed` with weightConsumed ~1.0, so this is not a gating
+      artifact. Separately, a paired probeFrequency at --refinement-ms 2000 over 40 seeded
+      decisions returned 0 divergence, against a same-code determinism control that also
+      returned 0 (so the instrument is sound; WS-432's work-unit clock makes depth-2 runs
+      reproducible across processes).
+    artifacts:
+      - "out/ws482-ev-BEFORE.json"
+      - "out/ws482-ev-AFTER.json"
+      - "out/ws482-BEFORE.json"
+      - "out/ws482-det-A.json"
+      - "out/ws482-det-B.json"
+
+why_it_matters: |
+  Two things, and the second is the larger one.
+
+  1. WS-482 as written cannot deliver an EV improvement, because the defect it removes is
+     mostly not connected to EV. Shipping it with the ticket's claim attached would have put
+     an unearned improvement into the record — the exact failure the Standard of Record and
+     the Amendment-1 pricing requirement exist to prevent.
+
+  2. A dead parameter that is still threaded through twelve call sites reads to every future
+     reader as a live mechanism. It survived a ticket being written ABOUT it. Anything else
+     reasoning about villain continuation in depth-2 is reasoning about a value that is
+     discarded.
+
+falsifier: |
+  Show `callingRates` or `bettingRates` being read anywhere inside computePerComboEV
+  (441-497) or computePerComboCheckEV (565-664) respectively. If either is used, the
+  inertness claim is wrong.
+
+recommended_fix: |
+  DECIDE WHAT THE MECHANISM IS FOR, then make the code say it — do not leave a dead parameter
+  threaded (improvement-default: remove the limitation).
+
+  The repo's own doctrine points at deletion: per-combo equity is available at these nodes,
+  and bucket-label rates are what CLAUDE.md forbids using when it is. On that reading
+  `tightenRatesForContinuation` is vestigial except for its one live consumer, and the honest
+  change is to delete the dead parameters and the call sites that feed them, keeping the
+  tighten only where `bluffCommitmentPenalty` consumes it.
+
+  The alternative — wiring the tightened rates INTO the per-combo EV — would re-introduce a
+  bucket-label input beside a per-combo one, which is the double-counting anti-pattern.
+
+  Either way this is a founder-level call about what the depth-2 villain-continuation model
+  IS, not a mechanical cleanup, which is why it is filed rather than done.
+
+  WS-482's OTHER half stands on its own and is already shipped: the shadow-constant sweep
+  found `villainProfileBuilder`'s POP_ACTIONS_FACING_NONE INVERTED against the definition
+  ({check:0.55,bet:0.45} vs {check:0.45,bet:0.55}), which is live in the displayed
+  "deviation from population" for every unopened street.
+
+blocked_items: ["WS-482 accept criterion 3"]
