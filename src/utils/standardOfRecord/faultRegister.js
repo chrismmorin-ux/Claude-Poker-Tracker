@@ -935,6 +935,65 @@ export const SUSPECTED_FAULTS = Object.freeze([
   }),
 
   buildFaultEntry({
+    faultId: 'FAULT-untaxed-fold-branch',
+    title: 'The fold branch of every postflop EV paid an unraked pot — the gate was read as the showdown, not the flop',
+    site: 'ev',
+    mechanism:
+      'POKER_THEORY §11.3 stated that rake "never affects fold-equity from villain folding (no '
+      + 'showdown, no drop)". That renamed a real rule: the live rule is NO FLOP, NO DROP — the '
+      + 'house drops once a flop is dealt, however the hand ends, so a bet that takes the pot '
+      + 'down uncontested IS raked. Nine postflop fold branches across four modules therefore '
+      + 'paid out an untaxed pot while their call/raise siblings were correctly raked. This is '
+      + 'NOT the same fault as `FAULT-modelled-rake` (which schedule) or '
+      + '`FAULT-rake-inert-on-live-path` (rake absent on the live surface): it fired even where '
+      + 'a rake config WAS supplied, which includes the corpus instrument '
+      + '(heroEvRunner.DEFAULT_RAKE_CONFIG = 5% to $3). So it contaminates MEASURED figures, not '
+      + 'only transferred ones. Direction is sign-consistent: it understates the §6.3 '
+      + 'auto-profit threshold, i.e. inflates fold equity, which makes the engine reckless '
+      + 'rather than timid (§13.3).',
+    contaminates:
+      'Every postflop bb-denominated EV figure for an action carrying a fold branch — bet, '
+      + 'raise and check-raise — and therefore every aggression-frequency and top-action claim '
+      + 'derived from one.',
+    // Structural matcher: any card whose metrics carry an EV/bb quantity stands on this
+    // arithmetic. Deliberately NOT gated on population — unlike the two rake entries above,
+    // this one fires on the online corpus too, which is the whole reason it is separate.
+    matches: (card) => metricKeys(card).some((k) => /bb|ev|edge/i.test(k)),
+    matchesOn: ['metrics.keys'],
+    falsifier:
+      'Price the same decision set with the fold branch taxed and untaxed, paired, same seeds. '
+      + 'If the aggression mix and the top-action argmax are unchanged, the omission was inert '
+      + 'and the entry retires. Run and RECORDED POSITIVE 2026-08-15 — see `evidence`.',
+    probability: 1.0,
+    probabilityBasis:
+      'CONFIRMED as a code fact at nine sites, and confirmed as a rule by the founder from '
+      + 'direct play plus an independent external check. Fixed by WS-451; the entry exists to '
+      + 'flag the cards computed BEFORE the fix, which is the WS-291 failure this register was '
+      + 'built for.',
+    priorBreadth: 0.55,
+    status: 'confirmed',
+    evidence: [
+      'Founder, direct observation 2026-08-14: "folded pots postflop are raked"; and "there is '
+      + 'no rake preflop in almost all games that I play in" (the noFlopNoDrop half).',
+      'Independent external check 2026-08-14 (PokerCoaching, PokerNews, Pokercode, 2+2 '
+      + 'cardroom forum): the waiver trigger is the flop being dealt, not the showdown.',
+      'Nine code sites enumerated in .claude/workstream/findings/FIND-137.yaml and fixed under '
+      + 'WS-451; potCalculator.rakedShowdownPot renamed to rakedPot because the word "showdown" '
+      + 'in the name WAS the error.',
+      'Magnitude, unit-pinned in rakePerBranch.test.js at the founder\'s 1/3 structure (10% to '
+      + '$6 plus $2 drop): the §6.3 threshold moves 40.0%→44.4% ($20 into $30), 40.0%→43.5% '
+      + '($40 into $60), 39.9%→40.9% ($133 into $200) — largest where the flat drop dominates.',
+      'Production divergence probe (scripts/backtest/probeFoldBranchRake.mjs, depth-1, 8 flop spots, '
+      + 'live 1/3 config): aggressive candidates lost 2.30–9.08 bb where the check lost only '
+      + '0.77–1.94; bet-minus-check edge narrowed on 8 of 8 spots and flipped bet→check on 1. '
+      + 'Both directions were pre-registered before the run.',
+      'The full suite (664 files, 15,321 tests) passed BEFORE the fix and after — no existing '
+      + 'test pinned a fold branch against a rake config, which is how this survived a six-lens '
+      + 'eng-engine challenge that ruled the rake arithmetic "right twice over".',
+    ],
+  }),
+
+  buildFaultEntry({
     faultId: 'FAULT-rake-inert-on-live-path',
     title: 'Rake is inert on the live app path — estimateRake returns 0 on every live decision',
     site: 'instrument',
