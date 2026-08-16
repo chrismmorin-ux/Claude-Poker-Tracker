@@ -46,6 +46,7 @@ Surface the single status line verbatim above the sprint preview. It resolves to
 | `IDLE — N ready item(s) waiting, top is WS-NNN` | Run `node kit/scripts/cwos-fleet-compute.js feed` and report what was submitted. The machine should not stay idle through a session. |
 | `IDLE — N node1 item(s) ranked but NONE has a compute_job spec` | Surface the ids. **Authoring a missing `compute_job` block is itself queue-worthy work** — offer it as a sprint item rather than reporting an idle machine as "nothing to do". |
 | `N job(s) QUEUED, none started yet` | Report only; the scheduled runner will pick them up within 5 minutes. |
+| `feed` says *every ready node1 item is already done* | The expected steady state once the authored specs have all run. Their artifacts are in `C:\Users\chris\fleet\inbox\<jobId>\` — **review them and close the items**, which is the thing that actually advances the queue. A finished compute job does NOT close a queue item; nothing else will do it. |
 | `UNREACHABLE` | One line, then continue. Do not retry, do not block. |
 
 **Why this is here.** Measured 2026-08-16: cm-node1's runner had ticked cleanly every five minutes for ~27 hours and 314 of its 379 ledger events were `tick_idle`, while six `runs_on: node1` items sat unclaimed in the queue. Nothing in any command ever asked the machine what it was doing, so nobody found out. The autonomous feeder (`Fleet-ComputeFeeder`, every 2h on cm-node1) is the primary supply; this step is the founder-visible half and the top-up when a session happens to be open.
