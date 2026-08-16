@@ -47,6 +47,7 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from partition import partition_of, GROUP_POOL, DEFAULT_POOL_PCT  # noqa: E402
+from corpus_stamp import corpus_stamp  # noqa: E402
 
 # Mirrors STAKE_MAP in scripts/generate-handhq-reference.mjs. Mined labels are
 # buy-in denominated (25NL = $25 max buy-in = $0.10/$0.25 blinds).
@@ -197,6 +198,11 @@ def main():
             "poolPct": args.pool_pct,
             "generator": "scripts/backtest/mine-pool-reference.py",
             "corpusRoot": args.corpus_root,
+            # WS-492 — WHAT WAS ACTUALLY ON DISK. corpusRoot is a path and cannot
+            # distinguish the 2-dir sparse slice this repo mined until 2026-08-15
+            # from the full 27-dir corpus. Without this the two runs are
+            # indistinguishable in their own manifests.
+            "corpus": corpus_stamp(args.corpus_root),
             "stakesMined": sorted(by_stake.keys()),
             "elapsedS": round(time.time() - t0, 1),
             "caveat": (

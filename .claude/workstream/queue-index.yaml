@@ -2,34 +2,37 @@
 # Rebuild from: queue/WS-*.yaml
 # Updated by /next, /workstream, /session-end (via cwos-reconcile)
 
-total_items: 254
+total_items: 296
 by_status:
   decomposed: 1
-  done: 50
-  in_progress: 3
+  done: 59
+  in_progress: 4
   deferred: 46
-  backlog: 134
-  dismissed: 2
+  backlog: 162
+  dismissed: 3
   completed: 7
   review: 1
   blocked: 10
+  active: 2
+  claimed: 1
 
 by_category:
-  architecture: 6
+  architecture: 11
   compliance: 1
   correctness: 19
-  data-integrity: 4
+  data-integrity: 7
   data-isolation: 1
   data-quality: 4
   design: 5
   design-comprehension: 4
   documentation: 2
-  domain-correctness: 86
-  engine: 10
+  domain-correctness: 111
+  engine: 15
+  engine-accuracy: 2
   engineering: 2
   exploit-anchor-library: 5
   hero-state-primitive: 2
-  infrastructure: 2
+  infrastructure: 3
   input-ux: 2
   kit-quality: 2
   line-study-slice-widening: 10
@@ -58,7 +61,7 @@ by_category:
   table-view: 1
   test-reliability: 1
   testing: 2
-  ux: 5
+  ux: 6
 
 items:
   - id: "WS-008"
@@ -1556,26 +1559,6 @@ items:
     program: domain-correctness
     capability: core
 
-  - id: "WS-314"
-    title: "Check-raise ranks first for EVERY weak hand — including 5-high with 12% equity"
-    status: backlog
-    priority_score: 28
-    category: domain-correctness
-    effort: M
-    type: "bug"
-    program: domain-correctness
-    capability: core
-
-  - id: "WS-315"
-    title: "Blocker-based bluff selection cannot fire on ace-high boards — the cards that block villain's nuts give hero top pair"
-    status: backlog
-    priority_score: 27
-    category: domain-correctness
-    effort: M
-    type: "bug"
-    program: domain-correctness
-    capability: core
-
   - id: "WS-316"
     title: "A check-back and a check are pooled into one 'check' — 10.3% strong vs 34.3%, and the likelihood is the average of two numbers that differ threefold"
     status: backlog
@@ -1605,7 +1588,7 @@ items:
     effort: S
     type: "bug"
     blocked_by: ["WS-362"]
-    decision_flags: ["What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision.", "|"]
+    decision_flags: ["RESOLVED 2026-08-14 (recovered from branch commit b8797690, decided by founder 2026-08-04): rule (c) — same street, same role, AND same action. See status_note. The OPEN block below is preserved as the record of why work stopped; the semantics half of it is now settled, the WS-362 sequencing half still binds.", "What does 'a matching weakness' mean — same action (contextAction), same role (isAgg), or both? Changes match rate and the user-visible copy. Current behaviour is isAgg by accident, not by decision.", "|"]
     program: domain-correctness
     capability: core
 
@@ -2258,7 +2241,7 @@ items:
 
   - id: "WS-389"
     title: "Refinement depth is gated on wall-clock time, so the same hand scored twice can produce a different top action — no per-improvement EV delta is trustworthy until a scored run is reproducible, and 5 of 19 tests in one suite already time out on a quiet machine"
-    status: backlog
+    status: dismissed
     priority_score: 26
     category: correctness
     effort: L
@@ -2727,7 +2710,7 @@ items:
 
   - id: "WS-434"
     title: "Declare the Result Card `metrics` schema — the one required field in the Standard of Record that nothing validates, where five committed cards share no shape and the additive guard has never looked inside"
-    status: backlog
+    status: done
     priority_score: 40
     category: architecture
     effort: M
@@ -2737,7 +2720,7 @@ items:
 
   - id: "WS-435"
     title: "No minimum detectable effect can be computed before a run — the only MDE in the repo needs a per-player variance that exists solely as the output of a completed pass, so a null result cannot be told apart from an instrument with no power"
-    status: backlog
+    status: done
     priority_score: 40
     category: measurement
     effort: M
@@ -2769,7 +2752,7 @@ items:
 
   - id: "WS-440"
     title: "RotateDeviceHint hard-blocks hand entry with no dismiss and no recovery on rotate (founder device-verified, re-filed after ticket-ID collision lost the original WS-315)"
-    status: backlog
+    status: in_progress
     priority_score: 45
     category: ux
     effort: S
@@ -2779,7 +2762,7 @@ items:
 
   - id: "WS-441"
     title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
-    status: backlog
+    status: done
     priority_score: 40
     category: ux
     effort: M
@@ -2789,7 +2772,7 @@ items:
 
   - id: "WS-442"
     title: "Domain-merge the three surviving orphan engine branches - parallel WS-307/WS-313 implementations that conflict with HEAD evolved state (Poker Analysis Guardrail required)"
-    status: backlog
+    status: done
     priority_score: 42
     category: architecture
     effort: L
@@ -2859,5 +2842,476 @@ items:
     type: "bug"
     blocked_by: ["WS-436"]
     program: domain-correctness
+    capability: core
+
+  - id: "WS-449"
+    title: "Ship the k=2 pole prior into production — the first villain-conditioned seed to clear the WS-436 measurement bar (ΔLL −0.0033, t=−2.80), with the live re-fit trigger designed in"
+    status: backlog
+    priority_score: 34
+    category: domain-correctness
+    effort: M
+    type: "feature"
+    decision_flags: ["|"]
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-450"
+    title: "Fix the caller's required-equity formula at all five sites — import villainRequiredEquity, pin with known-answer tests, then re-run the depth ablation"
+    status: active
+    priority_score: 38
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    claimed_by: "ses-20260813-1429-9fc43dcf"
+    finding_id: "FIND-112"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-451"
+    title: "Per-branch rake on the pot each branch actually reaches — including the fold branch, which IS raked postflop (premise corrected by FIND-137)"
+    status: active
+    priority_score: 34
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    claimed_by: "ses-20260815-0027-08103047"
+    finding_id: "FIND-113"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-452"
+    title: "Thread rakeResolver's tier/reason to the surface — an unresolved rake must not read as a zero rake"
+    status: backlog
+    priority_score: 32
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-114"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-453"
+    title: "Price river raises against the raise population — add facingAction to comboActionProbabilities and a 'raise' branch to hasReliableModel"
+    status: backlog
+    priority_score: 32
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    finding_id: "FIND-115"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-454"
+    title: "Completeness-aware ranking — discount partial depth-2 like depth-3, continuously, and add a completeness term at the argmax"
+    status: backlog
+    priority_score: 33
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    finding_id: "FIND-116"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-455"
+    title: "Scope imported players and sessions to the signed-in user, and gate userId threading mechanically"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-117"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-456"
+    title: "decisionRecord.mjs must refuse a truncated capture — port atomStore's TRUNCATED/HASH_MISMATCH discipline"
+    status: backlog
+    priority_score: 33
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-118"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-457"
+    title: "Use the computed per-combo equity baseline in gameTreeDepth2 (or founder rules the flat marginal) — the void popCallRate line"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-119"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-458"
+    title: "A no-read state for empty ranges — refuse to rank on heroEquity=0.5/foldPct=0 defaults, and measure the state's reachability"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    finding_id: "FIND-120"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-459"
+    title: "OnlineStakesBackfill: persist completion, batch the writes, and known-answer-test the stakes derivation before it self-seals"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-121"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-460"
+    title: "Retention bound + user purge for the extension's on-disk hand journal, and an ADR recording the session→local tradeoff"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-122"
+    program: domain-correctness
+    capability: extension
+
+  - id: "WS-461"
+    title: "Bring SYSTEM_MODEL.md current (10-edit list) and build the doc-currency gate so it cannot silently go stale again"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: M
+    type: "maintenance"
+    finding_id: "FIND-123"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-462"
+    title: "Direct unit tests for seatPricing.js edge cases (empty seat list, single stand-in, all-fold-through)"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "test"
+    finding_id: "FIND-125"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-463"
+    title: "Route the phase-1 MC refinement and enrichWithEquity catch blocks through the stage ledger"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-126"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-464"
+    title: "Reachability gate in CI — every exported engine symbol has a production importer or a dated @inert-until annotation"
+    status: backlog
+    priority_score: 30
+    category: domain-correctness
+    effort: M
+    type: "infrastructure"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-465"
+    title: "Generated-artifact drift checks for equitySkewDecomposition.js and handhqReferencePool.js"
+    status: backlog
+    priority_score: 27
+    category: domain-correctness
+    effort: S
+    type: "infrastructure"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-466"
+    title: "Bump ENGINE_VERSION for the WS-436/450/451 wave and gate future engine changes on a bump"
+    status: done
+    priority_score: 38
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-127"
+    program: domain-correctness
+    capability: provenance
+
+  - id: "WS-467"
+    title: "Make the hand-replay coach and the live engine answer the same question the same way (rake + seam + agreement harness)"
+    status: backlog
+    priority_score: 37
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    finding_id: "FIND-128"
+    program: domain-correctness
+    capability: engine
+
+  - id: "WS-468"
+    title: "Wall-clock truth on the founder's phone: measure it, bound it, and turn the fast answer on"
+    status: backlog
+    priority_score: 38
+    category: domain-correctness
+    effort: L
+    type: "feature"
+    finding_id: "FIND-129"
+    program: domain-correctness
+    capability: live-delivery
+
+  - id: "WS-469"
+    title: "Harden the seam gate into a checker that cannot be talked out of its job, then generate check-rake-seam from it and unify the rake idioms"
+    status: backlog
+    priority_score: 34
+    category: domain-correctness
+    effort: M
+    type: "infrastructure"
+    finding_id: "FIND-130"
+    program: domain-correctness
+    capability: governance
+
+  - id: "WS-470"
+    title: "Advice carries the hand it was computed for, and both surfaces check it"
+    status: done
+    priority_score: 36
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-131"
+    program: domain-correctness
+    capability: live-delivery
+
+  - id: "WS-471"
+    title: "The live table shows when it is thinking — surface parity with the Online panel's isComputing affordance"
+    status: done
+    priority_score: 29
+    category: domain-correctness
+    effort: S
+    type: "fix"
+    finding_id: "FIND-132"
+    program: domain-correctness
+    capability: live-delivery
+
+  - id: "WS-472"
+    title: "Re-calibrate the refinement clock at HEAD and make the re-run rule a build gate instead of a sentence in a document"
+    status: backlog
+    priority_score: 31
+    category: domain-correctness
+    effort: S
+    type: "infrastructure"
+    finding_id: "FIND-133"
+    program: domain-correctness
+    capability: provenance
+
+  - id: "WS-473"
+    title: "Refuse candidate actions the founder could not actually make (legality + degenerate sizes + stack-capped canonical raise)"
+    status: backlog
+    priority_score: 29
+    category: domain-correctness
+    effort: M
+    type: "fix"
+    finding_id: "FIND-134"
+    program: domain-correctness
+    capability: engine
+
+  - id: "WS-474"
+    title: "One required evaluation context instead of twenty hand-threaded options through the depth-2/3 call graph"
+    status: backlog
+    priority_score: 28
+    category: domain-correctness
+    effort: L
+    type: "refactor"
+    finding_id: "FIND-135"
+    program: domain-correctness
+    capability: engine
+
+  - id: "WS-475"
+    title: "A first-class unmeasured value, and a gate that forbids returning a plausible constant in its place"
+    status: backlog
+    priority_score: 33
+    category: domain-correctness
+    effort: L
+    type: "infrastructure"
+    finding_id: "FIND-136"
+    program: domain-correctness
+    capability: engine
+
+  - id: "WS-476"
+    title: "Upstream the session-recovery catastrophic-backtracking fix to HomeBase and pin it with a regression test"
+    status: backlog
+    priority_score: 25
+    category: infrastructure
+    effort: S
+    type: "fix"
+    program: infrastructure
+    capability: kit
+
+  - id: "WS-477"
+    title: "Per-action fold conditioning at depth-1 — foldPct.bet and foldPct.raise are priced against ONE represented range, and the discarded branch measured a 3x separation when each action got its own"
+    status: backlog
+    priority_score: 24
+    category: engine-accuracy
+    effort: M
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-478"
+    title: "Nut-blocking bluff component for the represented range — the one branch idea with no HEAD counterpart, to be tested against the measurement that rejected generic polarisation"
+    status: backlog
+    priority_score: 22
+    category: engine-accuracy
+    effort: M
+    type: "task"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-479"
+    title: "Land or retire integrate/orphans-20260807 — all 78 commits of the deploy-freshness RED belong to this one branch, it is reachable from nothing, and the 2026-08-07 landing sequence stalled before its step"
+    status: backlog
+    priority_score: 30
+    category: architecture
+    effort: L
+    type: "task"
+    program: infrastructure
+    capability: core
+
+  - id: "WS-480"
+    title: "betFraction carries three incompatible units under one field name — a 5x preflop open renders as \\\"500% pot\\\" and the drill engine silently reads a bb-multiple as a pot fraction"
+    status: backlog
+    priority_score: 33
+    category: engine
+    effort: M
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-481"
+    title: "The personalized fold curve is FITTED on the hand's final pot and EVALUATED on the street pot — the WS-402 axis-mismatch defect, alive on the training side and outranking the population curve"
+    status: done
+    priority_score: 34
+    category: engine
+    effort: M
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-482"
+    title: "Depth-2/3 tightens villain continuation with a hard-coded population 0.45 at nodes where per-combo pFold was just computed — the foldRate parameter that would fix it exists and is dead at all 12 call sites"
+    status: done
+    priority_score: 34
+    category: engine
+    effort: M
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-483"
+    title: "villainResponse ships in two shapes on one object and the flat one omits raisePct — riskAnalysis reads raise-branch variance as zero on every bet/raise candidate"
+    status: backlog
+    priority_score: 30
+    category: engine
+    effort: S
+    type: "bug"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-484"
+    title: "Engine vocabulary hygiene — ten seam findings from the Phase E survey: name collisions, scale splits, shadow constants, an unreachable fourth fold channel, and a stale CLAUDE.md violation"
+    status: backlog
+    priority_score: 28
+    category: engine
+    effort: M
+    type: "chore"
+    program: domain-correctness
+    capability: core
+
+  - id: "WS-485"
+    title: "Declare the admissibility sub-schema — two incompatible dialects mean a {quotable:false} card enters the readiness scorecard silently, and 'contributing players' sometimes prints a cell count"
+    status: backlog
+    priority_score: 33
+    category: architecture
+    effort: M
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-486"
+    title: "clusterUnit: 'players' is asserted on four cards whose intervals are not player-clustered, and layerAblation's quotable bar counts decisions where it means players"
+    status: backlog
+    priority_score: 32
+    category: architecture
+    effort: M
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-487"
+    title: "Precision and rederivability at the card boundary — a 4dp-rounded CI bound decides the C3 gate, record metas stamp bootstrap constants the runs don't use, and two emitters hand-transcribe what collectConstants exists to read"
+    status: backlog
+    priority_score: 31
+    category: architecture
+    effort: M
+    type: "bug"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-488"
+    title: "One measurement toolbox — collapse the four paired-CI implementations, four TV copies, five verdict vocabularies, and the free-text partition strings into a shared module with an estimand registry"
+    status: backlog
+    priority_score: 28
+    category: architecture
+    effort: L
+    type: "feature"
+    program: strategy-of-record
+    capability: core
+
+  - id: "WS-489"
+    title: "Interactive regions render in real CSS px — TableView/HandReplay split (felt scales, controls don't) + ~9 views to fluid. Executes layout-doctrine.md §3; re-file of the collision-lost WS-322"
+    status: backlog
+    priority_score: 30
+    category: ux
+    effort: L
+    type: "feature"
+    blocked_by: ["WS-441"]
+    decision_flags: ["ShowdownView classification (doctrine §6): spatial split vs fully fluid — founder call", "Phase C scope: do the ~9 fluid views ride with the split or split into their own ticket"]
+    program: design
+    capability: core
+
+  - id: "WS-490"
+    title: "out/behavior-policy.json — the denominator of every hero-EV importance weight — cannot be reproduced by its own documented command, and its provenance is unrecoverable from the file"
+    status: backlog
+    priority_score: 38
+    category: data-integrity
+    effort: M
+    type: "bug"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-491"
+    title: "The Python miners have no pinned dependency versions and no Result Card records numpy/scipy — the same manifest gap ADR-009 exists to close, in the language nobody checked"
+    status: backlog
+    priority_score: 30
+    category: data-integrity
+    effort: M
+    type: "bug"
+    program: methodology-integrity
+    capability: core
+
+  - id: "WS-492"
+    title: "Every prior, policy, curve and reference table in this system is fitted on 2 of the 27 available corpus stake directories — the other 25 have never been read"
+    status: claimed
+    priority_score: 44
+    category: data-integrity
+    effort: L
+    type: "improvement"
+    claimed_by: "ses-20260815-0620-63500894"
+    decision_flags: ["Scope: re-mine everything at full corpus, or stage by downstream consumer?"]
+    program: methodology-integrity
     capability: core
 

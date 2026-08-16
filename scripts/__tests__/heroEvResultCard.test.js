@@ -188,9 +188,9 @@ describe('buildHeroEvReport — the Standard of Record retrofit', () => {
   it('bumped its schema version', () => {
     // v2 = WS-322 (Result Card), v3 = WS-331 (pier posts), v4 = WS-295 (the optimizer's-curse
     // block), v5 = WS-428 (overallEv — the §3.3 headline with both factors), v6 = WS-431
-    // (decisionRecord by-hash reference on the card). All additive; the assertion below is
-    // the one that guards the additive property.
-    expect(HERO_EV_SCHEMA_VERSION).toBe(6);
+    // (decisionRecord by-hash reference on the card), v7 = WS-435 (preflight block + card MDE
+    // fields). All additive; the assertion below is the one that guards the additive property.
+    expect(HERO_EV_SCHEMA_VERSION).toBe(7);
   });
 
   it('carries the decision-record reference when the run captured one, null when it did not (WS-431)', () => {

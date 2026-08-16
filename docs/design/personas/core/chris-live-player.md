@@ -16,7 +16,7 @@ Chris owns and directs this project. He is a live poker player using the app at 
 ## Context
 
 - **Environment:** Live poker rooms. Variable lighting, often dim. Other players and a dealer at the table. Ambient noise. Interruptions (dealer shuffle, player arrivals/departures, food delivery, bathroom breaks).
-- **Device:** Samsung Galaxy A22 landscape is the primary target device (1600x720 CSS pixels after Android's chrome). Other phones in portrait or landscape are possible. Tablet use is plausible but not primary.
+- **Device:** Samsung Galaxy S22 landscape is the primary target device (2340×1080 physical; CSS viewport ≈1170×540 at provisional DPR 2 — WS-334 founder ruling 2026-08-04, correcting the A22 previously recorded here; the old "1600x720 CSS pixels" claim conflated the app's design canvas with the device). Other phones in portrait or landscape are possible. Tablet use is plausible but not primary.
 - **Session shape:** 3–6 hour live poker sessions. Bursty usage — active for ~60s per hand, mostly idle between. ~30 hands per hour.
 - **Available attention:** Split between cards, chips, opponents, dealer, and app. App cannot demand sustained focus; it must survive half-second glances.
 - **Available hands:** Often one-handed. Dominant hand is sometimes on chips, cards, or a drink. Thumb reach in landscape is the binding constraint.
@@ -183,7 +183,7 @@ These goals correspond 1:1 to JTBDs CO-54 / CO-55 / CO-56 / CO-57 (see Related J
 
 Marked PROTO until owner confirms or refines. Key assumptions:
 
-- **[A1]** Primary use context is live in-person poker rooms (not online). Basis: exploit engine designed for 9-handed live play; memory notes "live poker hand tracker"; Samsung A22 landscape target. Verify by owner statement.
+- **[A1]** Primary use context is live in-person poker rooms (not online). Basis: exploit engine designed for 9-handed live play; memory notes "live poker hand tracker"; Samsung S22 landscape target (corrected from A22 per WS-334). Verify by owner statement.
 - **[A2]** Session length 3–6 hours typical. Basis: industry norm for live sessions. Verify by owner statement or session-length data from IndexedDB.
 - **[A3]** One-handed operation is the binding ergonomic constraint during hands. Basis: live-table reality. Verify by owner report of which hand holds phone vs. chips/cards.
 - **[A4]** Chris uses the app across both cash and tournament play. Basis: presence of Tournament context and Online view in codebase. Verify by usage breakdown.

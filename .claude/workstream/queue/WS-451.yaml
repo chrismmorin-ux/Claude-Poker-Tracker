@@ -1,10 +1,10 @@
 id: "WS-451"
-title: "Per-branch rake at depth-2/3 — stop taxing the fold branch, compute depth-3 rake on the pot actually reached, add the fold-invariance test"
+title: "Per-branch rake on the pot each branch actually reaches — including the fold branch, which IS raked postflop (premise corrected by FIND-137)"
 legacy_id: ""
 type: fix
 status: active
-claimed_by: "ses-20260813-1429-9fc43dcf"
-claimed_at: "2026-08-13T15:20:00Z"
+claimed_by: "ses-20260815-0027-08103047"
+claimed_at: "2026-08-15T00:40:00Z"
 started_at: "2026-08-13T15:20:00Z"
 completed_at: null
 completion_commit: null
@@ -14,21 +14,68 @@ category: "domain-correctness"
 capability: "core"
 program: "domain-correctness"
 finding_id: "FIND-113"
+amended_by_finding: "FIND-137"
+amended_at: "2026-08-14"
 description: |
+  PREMISE CORRECTED 2026-08-14 — READ THIS BEFORE THE ORIGINAL DESCRIPTION BELOW.
+
+  This ticket was written against POKER_THEORY §11.3's claim that rake "never affects
+  fold-equity from villain folding (no showdown, no drop)". That claim is FALSE and is
+  FIND-137. The live rule is "no FLOP, no drop": the house drops once a flop is dealt,
+  regardless of showdown. Confirmed by the founder in his own games ("folded pots postflop
+  are raked"; no preflop rake) and by an independent external check.
+
+  So the fold branch of every postflop EV SHOULD be taxed, and is currently not. The original
+  accept criterion "fold-branch EV is bit-identical with rake on and off" is inverted and would
+  weld the error in permanently. It has been replaced below.
+
+  WHAT SURVIVES UNCHANGED. The structural defect FIND-113 found is real, with its reason
+  changed: a single flat estimateRake() subtracted from a blended fold+call+raise EV uses ONE
+  pot for branches that reach DIFFERENT pots. The fold branch pays out P; the called branch pays
+  out P + 2B. Under a 10%/$6 cap plus a $2 drop those differ at small pots and coincide once both
+  clear the cap. Per-branch rake on the pot each branch actually reaches is still the fix.
+
+  SCOPE WAS WIDER THAN EITHER FINDING STATED (found during implementation, 2026-08-15).
+  FIND-113 named four depth-2/3 stage sites; FIND-137 named five. The actual count of
+  postflop fold branches paying an untaxed pot was NINE, across four files:
+    foldEquityCalculator.js  calcFoldEquity, calcBluffEV
+    gameTreeDepth2.js        computePerComboEV (:488), river per-combo (:1705)
+    gameTreeEvaluator.js     depth-1 (:793), depth-2 refinement (:1832), depth-3 (:2005),
+                             AND :1265 — an inline `pFold * effectivePot` with no `foldEV`
+                             binding at all, which is why every grep for `foldEV` missed it
+                             and why neither finding nor the six-lens challenge listed it
+    riskAnalysis.js          computeActionRisk — priced EVERY branch rake-free, so a risk
+                             figure and an EV figure for the same action sat on different
+                             scales. Pre-existing gap, not the FIND-137 asymmetry; closed
+                             here rather than left as a named residual.
+  Lesson for the register: `foldEV` as a named binding is not a reliable search handle for
+  "the fold branch". The reliable one is `pFold *` / `foldPct *`.
+
+  ORIGINAL DESCRIPTION (premise now corrected):
   Four depth-2/3 stage sites subtract one flat estimateRake() from the blended fold+call+raise
-  EV, taxing fold-branch mass in violation of POKER_THEORY §11.3 — while the river functions in
-  the same file already do per-branch rake correctly. Depth-3's rake is additionally computed
-  from potAfterFlopCall, the pot BEFORE the barrels it discounts. Open question to resolve
-  in-ticket: :1707 raiseEV nets no rake at all. Full mechanism: findings/FIND-113.yaml.
-  Structural half (S3): extract the river pattern into a shared rakeAdjustedBranchEV helper used
-  by every EV site.
+  EV. Depth-3's rake is additionally computed from potAfterFlopCall, the pot BEFORE the barrels
+  it discounts. Open question resolved in-ticket: :1707 raiseEV nets no rake at all.
+  Structural half (S3): extract a shared rakeAdjustedBranchEV helper used by every EV site.
 accept_criteria: |
+  - POKER_THEORY §11.3 corrected first: the gate is the FLOP, not the showdown. Founder's game
+    stated explicitly (no preflop rake; postflop folded pots raked). Immediate-rake jurisdictions
+    (California, some AC) recorded as deliberately out of scope by founder ruling 2026-08-14.
+  - potCalculator.js:460-463 `rakedShowdownPot` docblock corrected; "showdown" in the name is the
+    error in miniature — rename to `rakedPot` or document why not.
   - All four stage-level sites use per-branch rake via the shared helper; no flat post-hoc
     subtraction remains.
+  - The fold branch is raked on the pot it actually wins (P, excluding hero's returned uncalled
+    bet) at foldEquityCalculator.js:168, foldEquityCalculator.js:210-211,
+    gameTreeDepth2.js:1699, and the river check path at :1604-1612.
   - Depth-3 rake computed on the pot actually reached after turn/river betting.
   - The :1707 raiseEV rake question is resolved (raked, or documented why not).
-  - Invariance test: fold-branch EV is bit-identical with rake on and off.
-  - Plain English: only pots that go to showdown lose money to the house; "opponent folds" is
-    worth the same with rake on or off.
+  - INVERTED INVARIANCE TEST (replaces the original): fold-branch EV MUST change when rake is on
+    for a postflop street, and MUST NOT change preflop under noFlopNoDrop. A test asserting
+    fold-branch invariance postflop is the defect, not the guard.
+  - Corpus backtest re-run with the shift priced. PRE-REGISTERED DIRECTION: bluff/raise frequency
+    should FALL, because every bluff's fold branch now pays less. Record it unhedged if it does
+    not.
+  - Plain English: once the flop is dealt, the house takes its cut however the hand ends — so
+    winning the pot by making everyone fold is worth slightly less than the chips in the middle.
 effort: "M"
 created_at: "2026-08-13"

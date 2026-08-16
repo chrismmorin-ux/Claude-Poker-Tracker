@@ -1,0 +1,81 @@
+id: "WS-491"
+title: "The Python miners have no pinned dependency versions and no Result Card records numpy/scipy — the same manifest gap ADR-009 exists to close, in the language nobody checked"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 30.0
+priority_label: "P2"
+category: "data-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  Found 2026-08-15 while provisioning a second machine (node1) to run the corpus miners.
+
+  There is no requirements.txt, pyproject.toml, or any other pin file anywhere in the repo.
+  Verified by search, not assumed. The ~13 Python miners under scripts/backtest/ and the two
+  research scripts under scripts/research/ import numpy and scipy:
+    mine-pool-reference.py, mine-runout-response.py, mine-behavioral-features.py,
+    mine-intent-splits.py, mine-sizing-and-lines.py, mine-stationarity.py,
+    mine-rare-act-inference.py, cluster-player-types.py, cluster-behavioral.py,
+    latent-class-behaviors.py, analyze_records.py, spectrum.py, verify-cycles.py
+
+  Several are not merely descriptive. mine-sizing-and-lines.py runs PCA/eigendecomposition for a
+  "sophistication factor"; latent-class-behaviors.py selects between binomial / beta-binomial /
+  2-component models by BIC; mine-stationarity.py does a step-vs-drift BIC comparison. Those are
+  numerical routines whose output can move with a scipy minor version — eigenvector sign and
+  ordering conventions, optimizer defaults, tie-breaking in model selection.
+
+  ADR-009 requires a complete replication manifest — "engine commit, Deal Book hash, partition,
+  every seed, every load-bearing constant". A scipy version that changes which model BIC selects
+  is load-bearing by any reading, and it is recorded nowhere. This is exactly the gap the Node
+  side closes with engine-commit stamping, left open on the Python side because there was only
+  ever one machine and the question could not arise.
+
+  Current versions, measured on both machines this session: Python 3.14.0, numpy 2.3.5,
+  scipy 1.17.0. node1 was deliberately pinned to match G16 by hand — which is the workaround,
+  not the fix.
+accept_criteria: |
+  - A pin file exists (requirements.txt with == pins, or equivalent) covering numpy, scipy, and any
+    other third-party import across scripts/backtest/*.py and scripts/research/*.py. Generated from
+    the versions actually in use, not from latest.
+  - Every Python miner that emits a Result Card (or emits JSON consumed by a runner that does)
+    stamps the interpreter version and the resolved versions of its third-party imports into the
+    manifest. Prefer reading them at runtime (importlib.metadata) over restating them in prose,
+    so the stamp cannot drift from reality.
+  - manifestProblems (src/utils/standardOfRecord/) rejects a card from a Python-derived surface that
+    carries no interpreter/dependency stamp, matching how it already rejects a missing
+    disclaimerRegisterVersion.
+  - A falsifier is run and recorded, not reasoned about: re-run at least one BIC-selecting miner
+    (latent-class-behaviors.py or mine-stationarity.py) under two adjacent scipy versions on the
+    same corpus slice and record whether the selected model or the reported statistics change.
+    If they do not move, say so unhedged — that is a real negative result and it bounds the risk.
+  - Register entry in docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md carrying that
+    falsifier and its outcome.
+effort: "M"
+files_involved:
+  - "scripts/backtest/mine-sizing-and-lines.py"
+  - "scripts/backtest/latent-class-behaviors.py"
+  - "scripts/backtest/mine-stationarity.py"
+  - "scripts/research/spectrum.py"
+  - "src/utils/standardOfRecord/schemas.js"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "node1-compute-verification-2026-08-15"
+created_at: "2026-08-15T00:00:00Z"
+status_note: |
+  Independent of the node1 work that surfaced it. The Node-side equivalent of this gap is already
+  closed by engine-commit stamping; this is the same discipline missing in Python.

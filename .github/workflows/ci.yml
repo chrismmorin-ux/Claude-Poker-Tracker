@@ -34,3 +34,24 @@ jobs:
             docs/engine/CANONICAL_PIPELINE.md
             docs/engine/SURFACE_SUBSCRIBERS.md
             docs/engine/INTEGRATION_DEBT.md
+
+  # WS-441: rendered-px 44px touch-floor enforcement. BLOCKING by design — the
+  # defect class this guards ("44px targets" believed shipped, delivered at
+  # ~31px under the canvas scale transform) survived four months because no
+  # instrument measured rendered size. boundingBox() needs no snapshot
+  # baselines, so this stays blocking while visual-regression.yml stays advisory.
+  touch-floor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Placeholder env (guest mode — no Firebase project needed)
+        run: node scripts/setup-local-env.mjs
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+      - name: Touch-floor enforcement
+        run: npx playwright test tests/playwright/touch-floor.spec.js --project=chromium

@@ -31,6 +31,11 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
+// WS-435 — static, not loader-loaded: the gate fires before the loader spends anything.
+import {
+  preflightForPlan, gateVerdict, extractPowerRows, buildLedgerEntry, appendLedgerEntry,
+  TARGET_EFFECT_BB, POWER_LEDGER_DIR, DEFAULT_POWER_GATE_MODE,
+} from './powerLedger.mjs';
 
 const parseArgs = (argv) => {
   const args = {};
@@ -77,6 +82,29 @@ const main = async () => {
     console.error('Refused: --refinement-ms must be > 0. A zero budget would make both arms depth-1 and the contrast vacuous.');
     process.exit(2);
   }
+
+  // ── WS-435: the pre-flight MDE gate (paired-delta basis) ───────────────────────────
+  const targetEffectBB = num(args['target-effect-bb'], TARGET_EFFECT_BB);
+  const powerGateMode = typeof args['power-gate'] === 'string' ? args['power-gate'] : DEFAULT_POWER_GATE_MODE;
+  if (powerGateMode !== 'refuse' && powerGateMode !== 'warn') {
+    console.error(`Refused: --power-gate must be "refuse" or "warn", got "${powerGateMode}".`);
+    process.exit(2);
+  }
+  const powerOverride = typeof args['power-override'] === 'string' ? args['power-override'] : null;
+  const powerLedgerDir = typeof args['power-ledger-dir'] === 'string' ? args['power-ledger-dir'] : POWER_LEDGER_DIR;
+  const preflight = preflightForPlan({
+    kind: 'depth-ablation',
+    dir: powerLedgerDir,
+    maxPlayers: int(args['max-players'], Infinity),
+    targetContributingPlayers: int(args['target-contributing-players'], null),
+    maxDecisionsPerPlayer: int(args['max-decisions-per-player'], null),
+    maxDecisions: int(args['max-decisions'], Infinity),
+    weightCap: num(args['weight-cap'], 20),
+    targetEffectBB,
+  });
+  const powerVerdict = gateVerdict(preflight, { mode: powerGateMode, overrideReason: powerOverride });
+  console.log(powerVerdict.banner);
+  if (!powerVerdict.proceed) process.exit(powerVerdict.exitCode);
 
   const loader = await openLoader(process.cwd());
   try {
@@ -175,6 +203,20 @@ const main = async () => {
       HERO_POLICY_COMBO_SAMPLES: comboSamples,
       HERO_POLICY_TRIALS: trials,
       IPS_WEIGHT_CAP: weightCap,
+      // WS-435: the gate's prediction and decision, in the provenance (see run-hero-ev.mjs).
+      POWER_PREFLIGHT: preflight
+        ? {
+          targetEffectBB,
+          mdeDetectBB: preflight.mdeDetectBB,
+          mdePower80BB: preflight.mdePower80BB,
+          gateFormula: preflight.gateFormula,
+          gateMode: powerGateMode,
+          overrideReason: powerOverride,
+          basisPlayers: preflight.basis.players,
+          basisFile: preflight.basis.file,
+          extrapolated: preflight.flags.extrapolated,
+        }
+        : { targetEffectBB, gateMode: powerGateMode, note: 'no power basis — first run seeds the ledger' },
     };
     if (replicationStamp.engineDirty) {
       console.log('  WARNING: working tree is dirty — the stamped commit does not identify the code that ran.');
@@ -281,8 +323,23 @@ const main = async () => {
       };
     }
 
+    // WS-435: the gate result travels on the run artifact beside the report.
+    run.preflight = preflight
+      ? { ...preflight, gateMode: powerGateMode, overrideReason: powerOverride }
+      : null;
+
     const report = buildDepthAblationReport(run, reportOpts);
     console.log(renderDepthAblationReport(report));
+
+    // WS-435 — persist this run's per-player PAIRED variance for the next gate.
+    {
+      const extracted = extractPowerRows(run.decisions, { arms: { base: 'depth1', test: 'depth2' } });
+      const entry = buildLedgerEntry({ run, kind: 'depth-ablation', extracted, weightCap });
+      const wrote = appendLedgerEntry({ dir: powerLedgerDir, entry, complete: run.complete !== false });
+      console.log(wrote.written
+        ? `Power ledger: wrote ${wrote.path} (${entry.players} players, ${entry.decisions} decisions)`
+        : `Power ledger: NOT written — ${wrote.reason}`);
+    }
 
     if (typeof args.out === 'string') {
       mkdirSync(dirname(args.out), { recursive: true });

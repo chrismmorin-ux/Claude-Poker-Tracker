@@ -20,6 +20,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   buildDepthAblationReport,
+  renderDepthAblationReport,
   adviceDivergence,
   pairedDelta,
   DEPTH_ABLATION_UNSEEDED_SOURCES,
@@ -157,6 +158,23 @@ describe('pairedDelta — the population term must cancel exactly', () => {
     const b = pairedDelta(decisions, { baseArm: 'depth1', testArm: 'depth2' });
     expect(a.deltaCiLowBB).toBe(b.deltaCiLowBB);
     expect(a.deltaCiHighBB).toBe(b.deltaCiHighBB);
+  });
+
+  it('WS-435: carries its MDE, and the render prints it beside the delta — with the NULL RESULT callout on a straddling interval', () => {
+    const delta = pairedDelta(manyPlayers(35), { baseArm: 'depth1', testArm: 'depth2' });
+    expect(delta.deltaMdeDetectBB).not.toBeNull();
+    expect(delta.deltaMdePower80BB).toBeGreaterThan(delta.deltaMdeDetectBB);
+
+    const report = buildDepthAblationReport(runFixture(manyPlayers(40), {
+      replicationStamp: stampFixture(),
+      dealBook: { dealBookId: 'handhq-allsites-50NLH-deadbeef' },
+    }), { baseArm: 'depth1', testArm: 'depth2' });
+    const text = renderDepthAblationReport(report);
+    expect(text).toContain('min detectable effect (this run)');
+    if (report.delta.excludesZero === false) {
+      expect(text).toContain('NULL RESULT');
+      expect(text).toContain('POWER, not sample size');
+    }
   });
 });
 

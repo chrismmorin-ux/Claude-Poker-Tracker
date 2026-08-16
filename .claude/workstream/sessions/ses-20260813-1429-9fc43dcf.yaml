@@ -1,0 +1,88 @@
+id: "ses-20260813-1429-9fc43dcf"
+status: "abandoned"
+started_at: "2026-08-13T14:29:00.540Z"
+ended_at: "2026-08-14T17:26:42Z"
+mode: auto
+last_heartbeat: "2026-08-14T03:56:07.065Z"
+pid: 31760
+host: MorinComputer
+agent_session_id: "9fc43dcf-efce-4814-92b4-e3cea1ecbf1a"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/systems-architect.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/product-ux-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/failure-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/security-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/senior-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/performance-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-2/cross-critique.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-1/gameTreeDepth2-targeted.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/phase-3/synthesis.md"
+  - ".claude/workstream/findings/FIND-112.yaml"
+  - ".claude/workstream/findings/FIND-113.yaml"
+  - ".claude/workstream/findings/FIND-114.yaml"
+  - ".claude/workstream/findings/FIND-115.yaml"
+  - ".claude/workstream/findings/FIND-116.yaml"
+  - ".claude/workstream/findings/FIND-117.yaml"
+  - ".claude/workstream/findings/FIND-118.yaml"
+  - ".claude/workstream/findings/FIND-119.yaml"
+  - ".claude/workstream/findings/FIND-120.yaml"
+  - ".claude/workstream/findings/FIND-121.yaml"
+  - ".claude/workstream/findings/FIND-122.yaml"
+  - ".claude/workstream/findings/FIND-123.yaml"
+  - ".claude/workstream/findings/FIND-124.yaml"
+  - ".claude/workstream/findings/FIND-125.yaml"
+  - ".claude/workstream/findings/FIND-126.yaml"
+  - ".claude/workstream/queue/WS-450.yaml"
+  - ".claude/workstream/queue/WS-451.yaml"
+  - ".claude/workstream/queue/WS-452.yaml"
+  - ".claude/workstream/queue/WS-453.yaml"
+  - ".claude/workstream/queue/WS-454.yaml"
+  - ".claude/workstream/queue/WS-455.yaml"
+  - ".claude/workstream/queue/WS-456.yaml"
+  - ".claude/workstream/queue/WS-457.yaml"
+  - ".claude/workstream/queue/WS-458.yaml"
+  - ".claude/workstream/queue/WS-459.yaml"
+  - ".claude/workstream/queue/WS-460.yaml"
+  - ".claude/workstream/queue/WS-461.yaml"
+  - ".claude/workstream/queue/WS-462.yaml"
+  - ".claude/workstream/queue/WS-463.yaml"
+  - ".claude/workstream/queue/WS-464.yaml"
+  - ".claude/workstream/queue/WS-465.yaml"
+  - ".claude/workstream/findings-index.yaml"
+  - ".claude/workstream/findings/FIND-051.yaml"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "src/utils/exploitEngine/bluffValueConstruction.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeEquity.js"
+  - "src/utils/exploitEngine/actionClassifier.js"
+  - "scripts/check-required-equity-seam.mjs"
+  - "scripts/smart-test-runner.sh"
+  - "src/utils/exploitEngine/__tests__/requiredEquitySeam.test.js"
+  - "src/utils/potCalculator.js"
+  - "src/utils/exploitEngine/__tests__/rakePerBranch.test.js"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-sweep-2026-08-13/ablation-rerun-attribution.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-14.
+  Original start: 2026-08-13T14:29:00.540Z.
+  Last heartbeat: 2026-08-14T03:56:07.065Z.
+
+  Git commits during this session (6):
+    - 881b960e fix(test-runner): failure summary undercounted 13 failures as 1 and printed no detail
+    - 08361f4e fix(kit): restore WS-351 liveness semantics the 3.10.3 kit sync silently reverted (FIND-108)
+    - 3052c6e1 feat(release-hygiene): deploy-freshness check — finished work stranded off main is now a surfaced RED, not a silent gap
+    - d23e490a chore(workstream): challenge protocol run 2026-08-13 — the arithmetic held, everything around it did not; FIND-127..136, WS-466..476, SPR-181 executed and closed
+    - 0d011fbe feat(engine+ui): SPR-181 — engine-era provenance, advice hand identity, and the live table's thinking signal (WS-466/470/471)
+    - da9f2f7b fix(kit): session recovery could never recover — the handoff_notes block regex backtracks catastrophically on any file already carrying one (WS-476)
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

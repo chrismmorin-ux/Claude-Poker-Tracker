@@ -99,21 +99,22 @@ convention. Entries never quietly disappear.
 | 2 | `FAULT-temporal-staleness` — July 2009, sixteen years of drift | corpus | 0.90 | 0.85 | **0.765** | untested · **falsifier blocked** |
 | 3 | `FAULT-modelled-rake` — the corpus records none, so every figure assumes a schedule | instrument | 0.90 | 0.80 | **0.720** | untested |
 | 4 | `FAULT-static-field-overstatement` — a Field that never adapts inflates aggression | instrument | 0.85 | 0.70 | **0.595** | untested |
-| 5 | `FAULT-masked-hole-cards` — range-marginalized advice, not cards-known | range | 0.99 | 0.50 | **0.495** | untested |
-| 6 | `FAULT-self-grading-circularity` — the engine graded by its own arithmetic | instrument | 0.80 | 0.60 | **0.480** | untested |
-| 7 | `FAULT-precision-overstatement` — ESS, not n, is the honest denominator | statistics | 0.75 | 0.60 | **0.450** | untested |
-| 8 | `FAULT-horizon-bias` — a one-decision edge read as a winrate | instrument | 0.60 | 0.70 | **0.420** | untested |
-| 9 | `FAULT-monte-carlo-irreproducibility` — the hero-EV instrument is not bit-reproducible | instrument | 1.00 | 0.40 | **0.400** | partially-supported |
-| 10 | `FAULT-constants-by-taste` — any unswept constant is a suspected fault by default | process | 0.70 | 0.50 | **0.350** | untested |
-| 11 | `FAULT-refinement-depth-non-monotonicity` — more refinement is not known to be better (WS-432) | ev | 0.60 | 0.50 | **0.300** | untested |
-| 12 | `FAULT-stat-definition-mismatch` — `foldTo3Bet` counts folds facing ANY preflop raise | foldProbability | 1.00 | 0.30 | **0.300** | **confirmed** |
-| 13 | `FAULT-showdown-selection` — showdown-conditional quantities are a selected set | statistics | 0.85 | 0.35 | **0.297** | untested |
-| 14 | `FAULT-model-opponent-bias` — the simulator's opponents are our model of people | instrument | 0.70 | 0.40 | **0.280** | untested |
-| 15 | `FAULT-rake-inert-on-live-path` — `estimateRake` returns 0 on every live decision | instrument | 1.00 | 0.25 | **0.250** | partially-supported |
-| 16 | `FAULT-hand-clustering` — hands are not independent within a session | statistics | 0.50 | 0.45 | **0.225** | partially-supported |
-| 17 | `FAULT-multiway-approximation` — multiway equity and fold correlation are approximated | equity | 0.90 | 0.20 | **0.180** | untested |
-| 18 | `FAULT-degenerate-signal` — a metric that cannot fail is not evidence | instrument | 0.60 | 0.30 | **0.180** | untested |
-| 19 | `FAULT-leakage-unclosed-channel` — corpus-mined priors leaking into corpus backtests | process | 0.15 | 1.00 | **0.150** | untested |
+| 5 | `FAULT-untaxed-fold-branch` — the fold branch of every postflop EV paid an unraked pot | ev | 1.00 | 0.55 | **0.550** | **confirmed** |
+| 6 | `FAULT-masked-hole-cards` — range-marginalized advice, not cards-known | range | 0.99 | 0.50 | **0.495** | untested |
+| 7 | `FAULT-self-grading-circularity` — the engine graded by its own arithmetic | instrument | 0.80 | 0.60 | **0.480** | untested |
+| 8 | `FAULT-precision-overstatement` — ESS, not n, is the honest denominator | statistics | 0.75 | 0.60 | **0.450** | untested |
+| 9 | `FAULT-horizon-bias` — a one-decision edge read as a winrate | instrument | 0.60 | 0.70 | **0.420** | untested |
+| 10 | `FAULT-monte-carlo-irreproducibility` — the hero-EV instrument is not bit-reproducible | instrument | 1.00 | 0.40 | **0.400** | partially-supported |
+| 11 | `FAULT-constants-by-taste` — any unswept constant is a suspected fault by default | process | 0.70 | 0.50 | **0.350** | untested |
+| 12 | `FAULT-refinement-depth-non-monotonicity` — more refinement is not known to be better (WS-432) | ev | 0.60 | 0.50 | **0.300** | untested |
+| 13 | `FAULT-stat-definition-mismatch` — `foldTo3Bet` counts folds facing ANY preflop raise | foldProbability | 1.00 | 0.30 | **0.300** | **confirmed** |
+| 14 | `FAULT-showdown-selection` — showdown-conditional quantities are a selected set | statistics | 0.85 | 0.35 | **0.297** | untested |
+| 15 | `FAULT-model-opponent-bias` — the simulator's opponents are our model of people | instrument | 0.70 | 0.40 | **0.280** | untested |
+| 16 | `FAULT-rake-inert-on-live-path` — `estimateRake` returns 0 on every live decision | instrument | 1.00 | 0.25 | **0.250** | partially-supported |
+| 17 | `FAULT-hand-clustering` — hands are not independent within a session | statistics | 0.50 | 0.45 | **0.225** | partially-supported |
+| 18 | `FAULT-multiway-approximation` — multiway equity and fold correlation are approximated | equity | 0.90 | 0.20 | **0.180** | untested |
+| 19 | `FAULT-degenerate-signal` — a metric that cannot fail is not evidence | instrument | 0.60 | 0.30 | **0.180** | untested |
+| 20 | `FAULT-leakage-unclosed-channel` — corpus-mined priors leaking into corpus backtests | process | 0.15 | 1.00 | **0.150** | untested |
 
 <!-- RANKED-REGISTER:END -->
 

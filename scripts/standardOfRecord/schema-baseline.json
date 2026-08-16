@@ -791,7 +791,7 @@
     ]
   },
   "metrics.hero-ev": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "kind",
@@ -876,11 +876,23 @@
         "type": "number|null",
         "since": 1,
         "unit": "opportunities/hand"
+      },
+      {
+        "name": "mdeDetectBB",
+        "type": "number|null",
+        "since": 2,
+        "unit": "bb"
+      },
+      {
+        "name": "mdePower80BB",
+        "type": "number|null",
+        "since": 2,
+        "unit": "bb"
       }
     ]
   },
   "metrics.depth-ablation": {
-    "version": 2,
+    "version": 3,
     "fields": [
       {
         "name": "kind",
@@ -911,6 +923,18 @@
         "type": "boolean|null",
         "since": 1,
         "unit": "flag"
+      },
+      {
+        "name": "depthDeltaMdeDetectBB",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb"
+      },
+      {
+        "name": "depthDeltaMdePower80BB",
+        "type": "number|null",
+        "since": 3,
+        "unit": "bb"
       },
       {
         "name": "edgeBaseArmBB",

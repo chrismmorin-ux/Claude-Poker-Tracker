@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect, Suspense } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useScale } from './hooks/useScale';
+import { useRotatedTouchScroll } from './hooks/useRotatedTouchScroll';
 import { useScreenOrientationLock } from './hooks/useScreenOrientationLock';
 import { useAppState } from './hooks/useAppState';
 import { AppProviders } from './AppProviders';
@@ -22,8 +23,11 @@ import { NavShell } from './components/ui/NavShell';
 // settings.voiceCardEntry.enabled (default OFF). Renders only on TableView
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
-import { RotateDeviceHint } from './components/ui/RotateDeviceHint';
 import { ViewLoadingFallback } from './components/ui/ViewLoadingFallback';
+// WS-440: rotates fixed chrome with the canvas so nothing reads sideways in
+// the portrait auto-rotate fallback. Each piece is wrapped individually to
+// preserve its own z-index layer (a transform is its own stacking context).
+import { RotatedViewport } from './components/ui/RotatedViewport';
 
 // =============================================================================
 // ROUTER — Pure view selection based on UI state, driven by VIEW_REGISTRY
@@ -46,6 +50,10 @@ const orientationFor = (currentView, isShowdownOpen) => {
 
 const ViewRouter = () => {
   const scale = useScale();
+  // Rotated-canvas touch bridge (WS-440): Chromium pans touch scrolls in
+  // SCREEN space, so inside the rotated canvas the natural vertical swipe is
+  // the wrong axis. This singleton remaps gestures; inert when not rotated.
+  useRotatedTouchScroll();
   const { currentView, isShowdownViewOpen, setCurrentScreen } = useUI();
   const { isInitialized } = useAuth();
   const { hasActiveSession } = useSession();
@@ -64,7 +72,7 @@ const ViewRouter = () => {
   }, [setCurrentScreen]);
 
   if (!isInitialized) {
-    return <AuthLoadingScreen />;
+    return <RotatedViewport><AuthLoadingScreen /></RotatedViewport>;
   }
 
   // Error-boundary "return" target: the live table if a session is in progress,
@@ -95,7 +103,7 @@ const ViewRouter = () => {
 
   // All other views are lazy-loaded (RT-23: route-level code splitting).
   return (
-    <Suspense fallback={<ViewLoadingFallback />}>
+    <Suspense fallback={<RotatedViewport><ViewLoadingFallback /></RotatedViewport>}>
       <VEB viewName={viewName} onReturnToTable={onReturnToTable}>{renderView(resolved, scale)}</VEB>
     </Suspense>
   );
@@ -132,12 +140,16 @@ const AppRoot = () => {
       anchorLibraryState={anchorLibraryState} dispatchAnchorLibrary={dispatchAnchorLibrary}
       shapeMasteryState={shapeMasteryState} dispatchShapeMastery={dispatchShapeMastery}
     >
-      <UpdateBanner />
+      {/* RotateDeviceHint (the "please rotate" wall) was REMOVED (WS-440,
+          founder ruling 2026-08-13): orientation may never block the app.
+          Portrait viewports get the auto-rotate canvas fallback instead —
+          see src/hooks/useCanvasFit.js. All fixed chrome below rotates with
+          the canvas via RotatedViewport so nothing ever reads sideways. */}
+      <RotatedViewport zClassName="z-50"><UpdateBanner /></RotatedViewport>
       <ViewRouter />
-      <RotateDeviceHint />
-      <VoiceCardEntryOverlay />
-      <NavShell />
-      <HealthIndicator />
+      <RotatedViewport zClassName="z-40"><VoiceCardEntryOverlay /></RotatedViewport>
+      <RotatedViewport zClassName="z-[55]"><NavShell /></RotatedViewport>
+      <RotatedViewport zClassName="z-[60]"><HealthIndicator /></RotatedViewport>
     </AppProviders>
   );
 };

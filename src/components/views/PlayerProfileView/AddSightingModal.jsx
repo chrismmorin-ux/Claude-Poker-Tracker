@@ -358,7 +358,7 @@ export const AddSightingModal = ({ player, onClose, onSaved }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-stretch sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/70 flex items-stretch sm:items-center justify-center z-50 p-0 sm:p-4"
       data-testid="add-sighting-modal"
     >
       <div className="bg-gray-100 sm:rounded-lg max-w-md w-full max-h-[100dvh] sm:max-h-[90dvh] flex flex-col text-gray-800 shadow-xl">

@@ -609,7 +609,7 @@ export const PlayersView = ({ scale: _scale = 1 }) => {
           onClick={handleCancelReplace}
         >
           <div
-            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96"
+            className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-6 w-[90vw] max-w-96 max-h-[90dvh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold text-white mb-4">Replace Player?</h2>

@@ -102,7 +102,7 @@ export const HealthIndicator = () => {
         if (fault.settingsFocus) openSettings(fault.settingsFocus);
         else setCurrentScreen(fault.target);
       }}
-      className="fixed bottom-3 right-3 z-[60] flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-white/60"
+      className="fixed bottom-3 right-3 z-[60] pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-full text-white text-sm font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-white/60"
       style={{ backgroundColor: bg }}
       title={`${fault.label} — tap to view`}
       data-testid="health-indicator"

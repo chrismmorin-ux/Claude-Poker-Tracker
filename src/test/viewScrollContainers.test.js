@@ -39,8 +39,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, statSync } from 'node:fs';
-import { resolve, dirname, relative } from 'node:path';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { resolve, dirname, relative, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -65,6 +65,16 @@ const EXEMPT = {
 // --- source helpers ---------------------------------------------------------
 
 const isFile = (p) => { try { return statSync(p).isFile(); } catch { return false; } };
+
+const readdirSyncRecursive = (dir) => {
+  const out = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...readdirSyncRecursive(full));
+    else out.push(full);
+  }
+  return out;
+};
 
 const resolveModule = (spec, fromDir) => {
   const base = resolve(fromDir, spec);
@@ -121,11 +131,61 @@ const collectRoutableViews = () => {
 
 const usesFluidView    = (s) => /\bFluidView\b/.test(s);
 const usesScaledCanvas = (s) => /\bScaledContainer\b/.test(s) || /LAYOUT\.TABLE_/.test(s);
-const hasHeightBound   = (s) => /h-dvh|h-\[100dvh\]|height:\s*['"]100dvh['"]|LAYOUT\.TABLE_HEIGHT/.test(s);
-const hasScrollRegion  = (s) => /overflow-y-auto|overflow-auto|overflowY:\s*['"]auto['"]/.test(s);
+// `fixed inset-0` counts as a bound: the element is pinned to its containing
+// block (viewport, or the rotated chrome viewport under WS-440) on all sides.
+const hasHeightBound   = (s) => /h-dvh|h-\[100dvh\]|height:\s*['"]100dvh['"]|LAYOUT\.TABLE_HEIGHT|fixed inset-0/.test(s);
+const hasScrollRegion  = (s) => /overflow-y-auto|overflow-auto|overflowY:\s*['"]auto['"]|overflow:\s*['"]auto['"]/.test(s);
 const hasUnboundedRoot = (s) => /min-h-dvh|min-h-screen|minHeight:\s*['"]?100dvh/.test(s);
 
+/**
+ * The centered-scroller antipattern (WS-440 sweep, 2026-08-13): flex centering
+ * on BOTH axes of a scroll container pushes an oversized child past the START
+ * edge, where scrollTop/scrollLeft 0 cannot reach it — the scroll region is
+ * present but non-functional. Found live in ShowdownView/CardGrid and two
+ * PresessionDrill modes. Center the CHILD with m-auto instead.
+ * Checked per className attribute, since outer-scroll + inner-center on
+ * DIFFERENT elements (the FluidView/LoginView pattern) is correct.
+ */
+const CENTERED_SCROLLER = /className=(?:"[^"]*"|\{`[^`]*`\})/g;
+const hasCenteredScroller = (src) => {
+  for (const m of src.match(CENTERED_SCROLLER) ?? []) {
+    const cls = m;
+    if (
+      /overflow-(?:y-)?auto/.test(cls) &&
+      /items-center/.test(cls) &&
+      /justify-center/.test(cls)
+    ) return true;
+  }
+  return false;
+};
+
 const views = collectRoutableViews();
+
+/**
+ * Surfaces the registry derivation can NEVER see, each with the reason it is
+ * out of registry reach. The 2026-08-13 sweep found real unreachable-content
+ * bugs in four of these — the registry-only scan was the blind spot.
+ */
+const EXTRA_SURFACES = {
+  'src/components/views/ShowdownView/ShowdownView.jsx':
+    'Overlay routed by isShowdownViewOpen in PokerTracker, deliberately not in the registry.',
+  'src/components/ui/ViewErrorBoundary.jsx':
+    'Wraps every routed view; its crash card IS the view when rendering fails.',
+  'src/components/ErrorBoundary.jsx':
+    'Top-level boundary around AppRoot; the last screen standing on a crash.',
+  'src/components/ui/AuthLoadingScreen.jsx':
+    'Full-screen pre-auth surface rendered before any registry view.',
+  'src/components/ui/ViewLoadingFallback.jsx':
+    'Suspense fallback shown while lazy views load.',
+  'src/components/views/CalibrationDashboardView/CalibrationDashboardView.jsx':
+    'Registered deferred: true — the registry imports a stub, not the component, ' +
+    'so the derived scan skips it; it must not ship broken when un-deferred.',
+};
+
+const extraSurfaces = Object.entries(EXTRA_SURFACES).map(([path, reason]) => {
+  const file = resolve(REPO_ROOT, path);
+  return { path, reason, src: stripComments(readFileSync(file, 'utf8')) };
+});
 
 // --- the guard --------------------------------------------------------------
 
@@ -167,6 +227,53 @@ describe('INV-VIEW-SCROLL — routable views bound their height and scroll', () 
     },
   );
 
+  it.each(views.map((v) => [v.path, v]))(
+    '%s — no centered scroll container (start-edge overflow is unreachable)',
+    (_path, view) => {
+      expect(hasCenteredScroller(view.src)).toBe(false);
+    },
+  );
+
+  it.each(extraSurfaces.map((s) => [s.path, s]))(
+    '%s — non-registry surface bounds its height and scrolls',
+    (path, surface) => {
+      // Same rules as routable views: no unbounded-growth root, no centered
+      // scroller, and (for surfaces with real content) a scroll shell.
+      expect(hasUnboundedRoot(surface.src), `${path} has an unbounded-growth root`).toBe(false);
+      expect(hasCenteredScroller(surface.src), `${path} centers a scroll container`).toBe(false);
+      // Loading screens are a spinner + a line of text — height-bound is
+      // enough. Everything else must actually scroll.
+      const spinnerOnly = /LoadingScreen|LoadingFallback/.test(path);
+      if (!spinnerOnly) {
+        expect(
+          hasScrollRegion(surface.src),
+          `${path} has no scroll region — its content can exceed a short viewport`,
+        ).toBe(true);
+      }
+      expect(hasHeightBound(surface.src), `${path} has no viewport height bound`).toBe(true);
+    },
+  );
+
+  it('modal shells bound their height (files named *Modal*)', () => {
+    // A fixed-inset-0 modal with no max-height and no scroll region clips its
+    // footer buttons on short viewports (the 2026-08-13 sweep found five).
+    // Every modal component file must carry SOME height bound or scroll region.
+    const modalFiles = readdirSyncRecursive(resolve(REPO_ROOT, 'src/components'))
+      .filter((f) => /Modal[^/\\]*\.jsx$/.test(f) && !/__tests__/.test(f));
+    expect(modalFiles.length).toBeGreaterThan(5); // derivation sanity
+    const offenders = [];
+    for (const file of modalFiles) {
+      const src = stripComments(readFileSync(file, 'utf8'));
+      const isOverlay = /fixed inset-0|position:\s*['"]fixed['"]/.test(src);
+      if (!isOverlay) continue;
+      const bounded =
+        /max-h-\[|maxHeight/.test(src) || hasScrollRegion(src);
+      if (!bounded) offenders.push(rel(file));
+      if (hasCenteredScroller(src)) offenders.push(`${rel(file)} (centered scroller)`);
+    }
+    expect(offenders, `modal shells with no height bound/scroll: ${offenders.join(', ')}`).toEqual([]);
+  });
+
   it('exemptions are still accurate — PresessionDrill modes each scroll', () => {
     // Keeps the EXEMPT entry honest: the shell is only allowed to skip the rule
     // because its children carry it. If a mode loses its scroll region, fail here
@@ -179,11 +286,24 @@ describe('INV-VIEW-SCROLL — routable views bound their height and scroll', () 
     for (const mode of modes) {
       const file = resolve(dir, mode);
       expect(isFile(file), `${mode} missing — update EXEMPT`).toBe(true);
+      const src = stripComments(readFileSync(file, 'utf8'));
       expect(
-        hasScrollRegion(stripComments(readFileSync(file, 'utf8'))),
+        hasScrollRegion(src),
         `${mode} lost its scroll region; PresessionDrillView's exemption no longer holds`,
       ).toBe(true);
+      expect(
+        hasCenteredScroller(src),
+        `${mode} centers its scroll container — start-edge content is unreachable`,
+      ).toBe(false);
     }
+    // DrillReveal has no scroll region of its own; that is only sound because
+    // DrillFlashcards wraps it inside its scroller. Pin that wrap relation so
+    // the exemption reason ("each child owns its scroll region") stays honest.
+    const flashcards = stripComments(readFileSync(resolve(dir, 'DrillFlashcards.jsx'), 'utf8'));
+    expect(
+      /<DrillReveal/.test(flashcards),
+      'DrillFlashcards no longer renders DrillReveal — its scroll coverage is gone; give DrillReveal its own scroll region',
+    ).toBe(true);
   });
 
   it('every exemption carries a reason and still points at a real view', () => {

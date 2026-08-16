@@ -2,12 +2,12 @@ id: "WS-434"
 title: "Declare the Result Card `metrics` schema — the one required field in the Standard of Record that nothing validates, where five committed cards share no shape and the additive guard has never looked inside"
 legacy_id: ""
 type: feature
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-14T20:56:35.309Z"
+completion_commit: 9a5f3797
 priority_score: 40.0
 priority_label: "P1"
 category: "architecture"
@@ -103,3 +103,4 @@ status_note: |
   DIRECTION (declare it); the record-shape failure engineer falsified the ticket's stated METHOD
   ("additive-only", hypotheses H2 and H3 both confirmed) and the record-shape architect supplied the
   minimum-shape scoping caveat.
+closed_by_event: ev-1786740995334-42125b460e57

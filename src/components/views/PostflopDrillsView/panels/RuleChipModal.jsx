@@ -52,7 +52,7 @@ export const RuleChipModal = ({ chipId, onClose }) => {
       >
         <div className="absolute inset-0 bg-black/70" />
         <div
-          className="relative w-full max-w-lg rounded-lg border border-rose-800 bg-rose-950/80 p-5 text-sm text-rose-100"
+          className="relative w-full max-w-lg rounded-lg border border-rose-800 bg-rose-950/80 p-5 text-sm text-rose-100 max-h-[90%] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="font-semibold mb-1">Unknown rule chip</div>
@@ -82,8 +82,10 @@ export const RuleChipModal = ({ chipId, onClose }) => {
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/70" />
+      {/* max-h-[90%] + scroll (WS-440 sweep): rule bodies are arbitrary-length
+          and this renders inside the fixed 720px canvas. */}
       <div
-        className="relative w-full max-w-lg rounded-lg border border-amber-700/70 bg-gray-900 p-5 space-y-3 shadow-xl"
+        className="relative w-full max-w-lg rounded-lg border border-amber-700/70 bg-gray-900 p-5 space-y-3 shadow-xl max-h-[90%] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">

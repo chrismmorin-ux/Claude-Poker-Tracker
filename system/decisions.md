@@ -1045,3 +1045,48 @@ assumptions:
 **Date:** 2026-08-08 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
 **Decision:** Record contentHash is EXECUTION identity; atomSetHash is MEASUREMENT identity
 **Reasoning:** Measured on identical smoke runs: only latency.totalMs/preRefinementMs differ between records (deliberate wall-clock forensics) while atom sets are bit-identical (940661f0 across fresh A, fresh B, and killed+resumed C). Cards carry both hashes; resolve-by-hash treats re-executions as one measurement; finalization refusal fires per record file, not across executions
+
+### DEC-073: The villain decision model's Dirichlet prior seed is POPULATION-ONLY, by measurement: the…
+**Date:** 2026-08-12 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** The villain decision model's Dirichlet prior seed is POPULATION-ONLY, by measurement: the style-label seed carried zero information and a continuous shrunk-posterior seed was significantly worse (dLL -0.00691, t=-5.64, 10147 paired decisions) because the shrunk stats and the decision buckets count the same hands. Standing bar: any future villain-conditioned seed must beat the population arm on the paired dump-records instrument before shipping. Tiers 1 and 2 of the §7.4 hierarchy are separate pipelines consumed mutually exclusively.
+**Reasoning:** Same-source prior seeding double-counts under the shrinkage ladder; measured, not reasoned — the correction reversed the approved plan's A4 design mid-execution on the pre-registered instrument's verdict
+
+### DEC-074: The k=2 pole prior earned a production path: group-mean partial pooling (pole values from…
+**Date:** 2026-08-13 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** The k=2 pole prior earned a production path: group-mean partial pooling (pole values from OTHER players, soft assignment from the villain's own coords) beat the population seed at dLL -0.0033 (t=-2.80) on 10,147 paired decisions — the first seed to clear the WS-436 tombstone bar, and it clears it because the values are not same-source. Ship decision is WS-449 with the transferred-not-measured flag
+**Reasoning:** Pre-registered §4d rule met with CI excluding zero; the structural reason (other players' data) is what §4b predicted would survive
+
+### DEC-075: Orientation may never block the app: RotateDeviceHint deleted; landscape 1600x720 canvas…
+**Date:** 2026-08-13 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Orientation may never block the app: RotateDeviceHint deleted; landscape 1600x720 canvas auto-rotates 90deg in portrait touch viewports (scale fit against swapped dims, one transform at all 4 canvas sites via useCanvasFit); fine-pointer tall windows (Ignition side-by-side) get plain scale-to-fit, never rotation, never a blocking overlay
+**Reasoning:** Founder ruling 2026-08-13: the rotate-to-landscape wall made portrait and browser use completely unusable; the app must work in both orientations and fix itself into landscape for table-style views. Rotation+scale as one CSS transform keeps hit-testing, centering and scroll regions correct with no layout changes. WS-440.
+
+### DEC-076: Scroll-shell conventions enforced repo-wide: scroll containers never flex-center both axe…
+**Date:** 2026-08-13 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Scroll-shell conventions enforced repo-wide: scroll containers never flex-center both axes (center the child with m-auto); every fixed-inset modal carries max-h (90dvh viewport-anchored, 90% inside the transformed canvas) + overflow-y-auto; INV-VIEW-SCROLL extended to non-registry surfaces (Showdown, error boundaries, loading screens, deferred views), a centered-scroller detector, and a *Modal* file sweep
+**Reasoning:** 2026-08-13 sweep found 10 unreachable-content defect sites the registry-derived static guard could not see; the guard's blind spots (entry-module-only, substring-match, registry-only, vertical-only) are now each covered by a structural check that failed on a live offender (AddSightingModal) before fixes. WS-440.
+
+### DEC-077: WS-442 salvage ranking contract: an unrecommendable fold-equity-only check-raise stays IN…
+**Date:** 2026-08-14 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** WS-442 salvage ranking contract: an unrecommendable fold-equity-only check-raise stays IN the output (generated, priced, inspectable per FIND-029) but is flagged notRecommendable, ranked below every recommendable action, and excluded from mixing frequencies — reconciling the branch's hard-filter DEC-022 design with HEAD's 'loses on the number' test doctrine
+**Reasoning:** Hard-filtering broke HEAD's inspection tests and FIND-029's no-pre-gate doctrine; pure pricing left DEC-022 unenforced on the check-raise path while its twin path enforces it. Flag-and-rank-last satisfies both: the advice can never be an unread fold-equity exploit, and the candidate stays measurable.
+
+### DEC-078: Canonical metrics vocabulary adopted repo-wide: Result Card metrics becomes a discriminat…
+**Date:** 2026-08-14 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Canonical metrics vocabulary adopted repo-wide: Result Card metrics becomes a discriminated union (metrics.kind, 12 kinds one per producer), with {k,n,rate,conditional} as the canonical conditioned-rate shape and unit annotations mandatory on every declared metrics field
+**Reasoning:** Founder approved full normalization 2026-08-14: 12 producers had 11 distinct shapes, 5 sample-size dialects, 3 CI dialects - the WS-291 two-shapes mechanism inside the Standard of Record itself. Old dialect keys stay forever (additive-only + fault-register regex matchers key on them); canonical keys ride beside.
+
+### DEC-079: Pre-flight power gate refuses underpowered runs (override recorded); blocking bar is 80%…
+**Date:** 2026-08-14 | **Status:** Accepted | **Detected:** implicit | **Weight:** medium
+**Decision:** Pre-flight power gate refuses underpowered runs (override recorded); blocking bar is 80% power, kept as a named constant and an OPEN question — founder anticipates synthetic-data bridging and flags extreme-tail spots (nutted-hand collisions) for special attention
+**Reasoning:** founder ruling 2026-08-14 during WS-435 sprint approval
+
+### DEC-080: Rake gate is the FLOP, not the showdown
+**Date:** 2026-08-15 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Rake gate is the FLOP, not the showdown — postflop folded pots are raked; POKER_THEORY 11.3 corrected, WS-451 premise inverted
+**Reasoning:** Founder confirmed from direct play plus independent external check. Doctrine said 'no showdown, no drop' which renamed the real 'no flop, no drop' rule. Fold branch of every postflop EV is untaxed at HEAD, inflating fold equity 1-4.5pp on the autoprofit threshold. WS-451 was about to weld it in via a fold-invariance test. California/AC immediate-rake structures ruled OUT OF SCOPE by founder.
+
+### DEC-081: Materialized the full 27-dir HandHQ corpus on cm-node1 and measured it paired against the…
+**Date:** 2026-08-15 | **Status:** Accepted | **Detected:** implicit | **Weight:** heavy
+**Decision:** Materialized the full 27-dir HandHQ corpus on cm-node1 and measured it paired against the 2-dir slice, rather than replacing any shipped artifact. New outputs go to new filenames; the delta is the deliverable.
+**Reasoning:** WS-492 flagged 're-mine everything vs stage by consumer' as a founder call. Measuring first answers it with numbers instead of blind: the stake gradient turns out to be large and monotone, and the founder's stake (200NLH) is mis-fitted by 26% on 3-bet. Replacing priors is still his decision; producing the evidence is not.

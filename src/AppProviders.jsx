@@ -91,7 +91,6 @@ export const AppProviders = ({
   // <EngineCtxBridge/> below; read by usePersistence at hand-save time.
   engineCtxGetterRef,
 }) => (
-  <ToastProvider>
     <AuthProvider authState={authState} dispatchAuth={dispatchAuth}>
       <EntitlementProvider entitlementState={entitlementState} dispatchEntitlement={dispatchEntitlement}>
         <AnchorLibraryProvider
@@ -111,6 +110,12 @@ export const AppProviders = ({
         >
           <GameProvider gameState={gameState} dispatchGame={dispatchGame} blinds={blinds}>
             <UIProvider uiState={uiState} dispatchUi={dispatchUi}>
+              {/* ToastProvider sits INSIDE UIProvider (WS-440 chrome rotation):
+                  its auto-rendered ToastContainer wraps itself in
+                  RotatedViewport, which reads the active view's orientation
+                  from UIContext to decide whether chrome rotates. No consumer
+                  of useToast exists above this point (verified 2026-08-13). */}
+              <ToastProvider>
               <SessionProvider sessionState={sessionState} dispatchSession={dispatchSession} userId={authState?.user?.uid || GUEST_USER_ID}>
                 <TournamentProvider tournamentState={tournamentState} dispatchTournament={dispatchTournament}>
                   <PlayerProvider playerState={playerState} dispatchPlayer={dispatchPlayer} userId={authState?.user?.uid || GUEST_USER_ID}>
@@ -139,6 +144,7 @@ export const AppProviders = ({
                   </PlayerProvider>
                 </TournamentProvider>
               </SessionProvider>
+              </ToastProvider>
             </UIProvider>
           </GameProvider>
         </RefresherProvider>
@@ -146,7 +152,6 @@ export const AppProviders = ({
         </AnchorLibraryProvider>
       </EntitlementProvider>
     </AuthProvider>
-  </ToastProvider>
 );
 
 export default AppProviders;

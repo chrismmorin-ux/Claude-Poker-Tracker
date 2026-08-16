@@ -1,0 +1,82 @@
+id: "WS-490"
+title: "out/behavior-policy.json — the denominator of every hero-EV importance weight — cannot be reproduced by its own documented command, and its provenance is unrecoverable from the file"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 38.0
+priority_label: "P1"
+category: "data-integrity"
+capability: "core"
+program: "methodology-integrity"
+finding_id: ""
+description: |
+  Found 2026-08-15 while establishing byte-identical inputs for the node1 cross-machine
+  replication test (see WS-493). It was caught only because a two-machine comparison forces
+  the inputs to be stated exactly; a single-machine workflow never has to.
+
+  The file currently on G16 at out/behavior-policy.json hashes
+    57c69e8346d30b0e20d56515720fe21aee405c43df7eabb28747b71dfb2f73da
+  Re-mining it with the flags documented in that miner's own usage header
+  (scripts/backtest/mine-behavior-policy.mjs:16-18):
+    node scripts/backtest/mine-behavior-policy.mjs --stakes 50NLH --max-players 400 \
+      --max-hands-per-player 200 --out out/behavior-policy.json
+  produces a DIFFERENT file:
+    2467ef3383bffaedc7a771c9edc75377fd1460b6ff55b9fb3d209da368a0e250
+  (verified byte-identical on two machines, so the divergence is not machine-dependent —
+  it is a provenance gap. 400 players / 13976 decisions on the reproduction.)
+
+  Why this is load-bearing rather than cosmetic. mine-behavior-policy.mjs:3-13 states it
+  plainly: pi_pool "sits in the DENOMINATOR of every importance weight the hero-EV instrument
+  computes, which makes it as load-bearing as the outcomes themselves and gives it the same
+  leakage exposure". run-hero-ev.mjs:65-72 refuses to start without an explicitly supplied
+  table for exactly that reason. So the discipline is enforced at the call site while the
+  artifact's own lineage is unrecorded.
+
+  The unknown is which of these differs: the flags actually used, the corpus state at mining
+  time (the corpus is a sparse checkout — see WS-493 notes), or the engine commit. Nothing in
+  the file records any of them. Any Result Card whose run consumed 57c69e83... therefore has an
+  incomplete replication manifest under ADR-009, because a load-bearing input cannot be
+  regenerated.
+accept_criteria: |
+  - Determine which artifact is correct: re-derive 57c69e83... by finding the flags/corpus/commit
+    that produce it, OR establish that the documented-flag output (2467ef33...) is the correct
+    table and 57c69e83... is stale. Do not assume the newer one wins — check which runs consumed it.
+  - mine-behavior-policy.mjs writes a sidecar manifest (or an embedded block) recording at
+    minimum: every CLI flag, the corpus root + corpus commit + the resolved file list hash, the
+    engine commit, and whether the tree was dirty. Same discipline dealBook.mjs already applies
+    to hand sets.
+  - Loading a behavior policy that carries no manifest is REFUSED by run-hero-ev.mjs, matching the
+    existing refusal for a missing table. An unstamped denominator is not a warning case.
+  - Enumerate every committed Result Card in docs/standard-of-record/cards/ whose run consumed a
+    behavior policy, and record which hash each used. Cards consuming an unreproducible input are
+    flagged per the DISCLAIMER-AND-FAULT-REGISTER mechanism (suspect-pending-review), not silently
+    left standing.
+  - Register entry added to docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md with a
+    falsifier, per the repo rule that confirming or retiring an entry requires recorded evidence.
+effort: "M"
+files_involved:
+  - "scripts/backtest/mine-behavior-policy.mjs"
+  - "scripts/backtest/run-hero-ev.mjs"
+  - "scripts/backtest/behaviorPolicyMiner.mjs"
+  - "scripts/backtest/dealBook.mjs"
+  - "docs/standard-of-record/DISCLAIMER-AND-FAULT-REGISTER.md"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: manual
+  created_by: ai
+  finding_id: ""
+  run_id: "node1-compute-verification-2026-08-15"
+created_at: "2026-08-15T00:00:00Z"
+status_note: |
+  Evidence log: the session scratchpad node1-verification-log.md carries both hashes and the
+  exact commands. This defect is independent of the node1 work that surfaced it — it is a
+  property of the G16 measurement setup and would be worth fixing if node1 did not exist.

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Device Probe</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 1rem; font-size: 18px; }
+  b { color: #ffd75e; }
+</style>
+</head>
+<body>
+<h2>Device probe (WS-441)</h2>
+<p>Open on the target phone in Chrome, LANDSCAPE, and report these numbers.</p>
+<pre id="out">measuring…</pre>
+<script>
+  function report() {
+    var vv = window.visualViewport;
+    var w = vv ? vv.width : innerWidth, h = vv ? vv.height : innerHeight;
+    // Same formula as src/hooks/useCanvasFit.js
+    var s = Math.min((w * 0.95) / 1600, (h * 0.95) / 720, 1);
+    document.getElementById('out').innerHTML =
+      'devicePixelRatio     : <b>' + devicePixelRatio + '</b>\n' +
+      'innerWidth x Height  : <b>' + innerWidth + ' x ' + innerHeight + '</b>\n' +
+      'visualViewport       : <b>' + (vv ? vv.width.toFixed(0) + ' x ' + vv.height.toFixed(0) : 'n/a') + '</b>\n' +
+      'screen (CSS px)      : ' + screen.width + ' x ' + screen.height + '\n' +
+      'computed canvas scale: <b>' + s.toFixed(3) + '</b>\n' +
+      'a declared 44px control renders at <b>' + (44 * s).toFixed(1) + '</b> CSS px\n' +
+      'declared px needed for a 44px target: <b>' + Math.ceil(44 / s) + '</b>';
+  }
+  report();
+  addEventListener('resize', report);
+  if (window.visualViewport) visualViewport.addEventListener('resize', report);
+  addEventListener('orientationchange', function () { setTimeout(report, 300); });
+</script>
+</body>
+</html>

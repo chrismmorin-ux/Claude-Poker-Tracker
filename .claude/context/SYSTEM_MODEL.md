@@ -374,7 +374,7 @@ New player observed → populationPriors.js creates default profile
 - **`usePlayerTendencies` recomputes all players**: No incremental update. At 500+ players, this blocks UI. Mitigation: memoize per-player, invalidate only on new hand for that player.
 - **Monte Carlo equity calculations**: `enrichWithEquity` runs 300 MC simulations per call. Skipped when `comboDistribution` available (Item 26.4). But falls back to MC for unknown distributions.
 - **Extension message passing**: Chrome's `runtime.sendMessage` is async but single-threaded. Burst hand imports from Ignition may queue.
-- **Zero React.memo across component tree**: Every gameReducer dispatch re-renders all mounted components including all 9 SeatComponents. On target device (Helio G80), adds measurable jank during rapid action recording. Mitigation: RT-36.
+- **Zero React.memo across component tree**: Every gameReducer dispatch re-renders all mounted components including all 9 SeatComponents. On the target device, may add jank during rapid action recording — the "Helio G80" (the A22's SoC) figure previously cited here derived from the WRONG device; the real target is the Galaxy S22 (WS-334) and S22 performance is unmeasured (FIND-109 / WS-468). Mitigation: RT-36.
 
 ---
 
@@ -416,7 +416,7 @@ New player observed → populationPriors.js creates default profile
 | HC-01 | Single active session assumption | Architecture design | No multi-user, no concurrent editing sessions |
 | HC-02 | IndexedDB only (no server) | Local-first design | No cloud sync without Firebase; all data on-device |
 | HC-03 | Chrome MV3 for extension | Browser requirement | No MV2 APIs, service worker lifecycle constraints |
-| HC-04 | Mobile-first 1600x720 | Target device (Samsung Galaxy A22 landscape) | All UI must fit this viewport; scale factor applied |
+| HC-04 | Mobile-first, 1600×720 design canvas | Target device: Samsung Galaxy S22 (2340×1080 physical, CSS viewport ≈1170×540 at provisional DPR 2 — WS-334 founder ruling; A22 previously named here was wrong, FIND-109) | Landscape UI renders on the fixed 1600×720 canvas scaled ≈0.695 on device; rendered 44px touch floor enforced by tests/playwright/touch-floor.spec.js |
 | HC-05 | React + Vite + Tailwind stack | Established architecture | No server-side rendering, no SSR, client-only |
 | HC-06 | 9-handed game format | Poker game rules | CONSTANTS.NUM_SEATS = 9, SEAT_ARRAY = [1..9] |
 

@@ -1,0 +1,75 @@
+id: "ses-20260813-2143-1d10d3d2"
+status: "abandoned"
+started_at: "2026-08-13T21:43:44.077Z"
+ended_at: "2026-08-14T01:30:21Z"
+mode: auto
+last_heartbeat: "2026-08-13T23:23:51.056Z"
+pid: 36300
+host: MorinComputer
+agent_session_id: "1d10d3d2-5b89-45d2-820d-504b332399c5"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items: []
+files_locked:
+  - ".claude/workstream/queue/WS-440.yaml"
+  - ".claude/workstream/queue-index.yaml"
+  - ".claude/workstream/sessions/ses-20260813-2152-eabd38c8.yaml"
+  - "src/hooks/useCanvasFit.js"
+  - "src/hooks/useScale.js"
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/components/views/TableView/TableView.jsx"
+  - "src/components/views/ShowdownView/ShowdownView.jsx"
+  - "src/components/views/HandReplayView/HandReplayView.jsx"
+  - "src/PokerTracker.jsx"
+  - "src/hooks/__tests__/useCanvasFit.test.js"
+  - "docs/design/audits/2026-08-13-orientation-never-blocks.md"
+  - "docs/design/audits/2026-06-19-responsive-layout-audit.md"
+  - "src/hooks/useRotatedTouchScroll.js"
+  - "src/components/ui/CollapsibleSidebar.jsx"
+  - "src/components/views/ShowdownView/CardGrid.jsx"
+  - "src/components/views/PresessionDrillView/DrillFlashcards.jsx"
+  - "src/components/views/PresessionDrillView/DrillRetryQueue.jsx"
+  - "src/components/ui/ViewErrorBoundary.jsx"
+  - "src/components/ErrorBoundary.jsx"
+  - "src/components/views/PlayerEditorView/CameraCaptureModal.jsx"
+  - "src/components/views/PrintableRefresherView/PrintConfirmationModal.jsx"
+  - "src/components/views/PrintableRefresherView/SuppressConfirmModal.jsx"
+  - "src/components/views/AnchorLibraryView/RetirementConfirmModal.jsx"
+  - "src/components/views/HandReplayView/AnchorObservationModal.jsx"
+  - "src/components/views/OnlineView/ExtensionPanel.jsx"
+  - "src/components/views/CalibrationDashboardView/CalibrationDashboardView.jsx"
+  - "src/components/ui/ConfirmDeleteModal.jsx"
+  - "src/components/ui/VersionMismatchModal.jsx"
+  - "src/components/views/TableView/StraddleModal.jsx"
+  - "src/components/views/PostflopDrillsView/panels/RuleChipModal.jsx"
+  - "src/components/views/SessionsView/ImportConfirmModal.jsx"
+  - "src/components/views/PostflopDrillsView/ExplorerMode.jsx"
+  - "src/components/views/PlayersView.jsx"
+  - "src/test/viewScrollContainers.test.js"
+  - "src/components/views/PlayerProfileView/AddSightingModal.jsx"
+  - "src/hooks/__tests__/useRotatedTouchScroll.test.js"
+  - "system/state.md"
+  - "src/components/ui/__tests__/ViewErrorBoundary.test.jsx"
+  - "src/AppProviders.jsx"
+  - "src/contexts/UIContext.jsx"
+  - "src/components/ui/RotatedViewport.jsx"
+  - "src/contexts/ToastContext.jsx"
+  - "src/components/ui/Toast.jsx"
+  - "src/components/ui/NavShell.jsx"
+  - "src/components/ui/HealthIndicator.jsx"
+  - "src/components/ui/UpdateBanner.jsx"
+  - "src/components/ui/ViewLoadingFallback.jsx"
+  - "src/components/ui/AuthLoadingScreen.jsx"
+  - "src/components/ui/__tests__/RotatedViewport.test.jsx"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-14.
+  Original start: 2026-08-13T21:43:44.077Z.
+  Last heartbeat: 2026-08-13T23:23:51.056Z.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

@@ -1,0 +1,84 @@
+id: "ses-20260813-2152-eabd38c8"
+status: "abandoned"
+started_at: "2026-08-13T21:52:31.121Z"
+ended_at: "2026-08-14T01:30:21Z"
+mode: auto
+last_heartbeat: "2026-08-13T23:44:16.031Z"
+pid: 11800
+host: MorinComputer
+agent_session_id: "eabd38c8-8c3a-4fa7-9e21-3a2e64d1f29e"
+
+# Registered automatically by cwos-session-register (SessionStart hook, WS-533).
+# Registration is deliberately NOT dependent on anyone running /session-start —
+# that dependency is why this registry sat empty from 2026-05-15 to 2026-07-26.
+claimed_items:
+  - "WS-440"
+  - "WS-466"
+  - "WS-470"
+  - "WS-471"
+files_locked:
+  - "src/components/ui/RotateDeviceHint.jsx"
+  - "src/components/ui/ScaledContainer.jsx"
+  - "src/hooks/useScale.js"
+  - "src/hooks/useCanvasFit.js"
+  - "src/PokerTracker.jsx"
+  - "src/components/views/TableView/TableView.jsx"
+  - "src/components/views/ShowdownView/ShowdownView.jsx"
+  - "src/components/views/HandReplayView/HandReplayView.jsx"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/senior-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/systems-architect.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/product-ux-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/failure-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/performance-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-1/security-engineer.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-2/cross-critique.md"
+  - ".claude/workstream/evidence/domain-correctness/run-domain-correctness-challenge-2026-08-13/phase-3/synthesis.md"
+  - ".claude/workstream/findings/FIND-127.yaml"
+  - ".claude/workstream/findings/FIND-128.yaml"
+  - ".claude/workstream/findings/FIND-129.yaml"
+  - ".claude/workstream/findings/FIND-130.yaml"
+  - ".claude/workstream/findings/FIND-131.yaml"
+  - ".claude/workstream/findings/FIND-132.yaml"
+  - ".claude/workstream/findings/FIND-133.yaml"
+  - ".claude/workstream/findings/FIND-134.yaml"
+  - ".claude/workstream/findings/FIND-135.yaml"
+  - ".claude/workstream/findings/FIND-136.yaml"
+  - ".claude/workstream/queue/WS-466.yaml"
+  - ".claude/workstream/queue/WS-467.yaml"
+  - ".claude/workstream/queue/WS-468.yaml"
+  - ".claude/workstream/queue/WS-469.yaml"
+  - ".claude/workstream/queue/WS-470.yaml"
+  - ".claude/workstream/queue/WS-471.yaml"
+  - ".claude/workstream/queue/WS-472.yaml"
+  - ".claude/workstream/queue/WS-473.yaml"
+  - ".claude/workstream/queue/WS-474.yaml"
+  - ".claude/workstream/queue/WS-475.yaml"
+  - ".claude/workstream/queue/WS-281.yaml"
+  - ".claude/workstream/queue/WS-447.yaml"
+  - ".claude/workstream/programs/prog-domain-correctness.yaml"
+  - "kit/scripts/cwos-session-recovery.js"
+  - ".claude/workstream/queue/WS-476.yaml"
+  - ".claude/.tmp-sprint.json"
+  - "src/constants/runtimeVersions.js"
+  - "scripts/check-engine-version-bump.mjs"
+  - "scripts/smart-test-runner.sh"
+  - "src/hooks/useLiveActionAdvisor.js"
+  - "src/contexts/OnlineAnalysisContext.jsx"
+  - "src/components/views/TableView/CommandStrip.jsx"
+  - "src/components/views/TableView/LiveAdviceBar.jsx"
+  - "src/hooks/__tests__/useLiveActionAdvisor.handIdentity.test.js"
+  - "ignition-poker-tracker/side-panel/render-coordinator.js"
+  - "ignition-poker-tracker/side-panel/STATE_FIELD_SCOPES.md"
+  - "docs/design/surfaces/table-view.md"
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-14.
+  Original start: 2026-08-13T21:52:31.121Z.
+  Last heartbeat: 2026-08-13T23:44:16.031Z.
+
+  Released 4 claimed work item(s) back to backlog.
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

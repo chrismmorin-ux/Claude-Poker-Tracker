@@ -273,7 +273,7 @@ When working autonomously: active sprint → resume | no sprint → `/next` → 
 
 Live poker hand tracker and exploit engine for 9-handed games. Records actions, builds Bayesian player models, and surfaces maximally exploitative plays — compensating for human limitations in memory and pattern recognition at the table. Every installed component (program, engine, surface) must earn its place by advancing this goal — proportional value over governance ceremony.
 
-React + Vite + Tailwind, mobile-optimized (1600x720).
+React + Vite + Tailwind, mobile-optimized (1600×720 design canvas; target device Galaxy S22 — see Responsive Design).
 
 ## Commands
 ```bash
@@ -281,7 +281,31 @@ npm run dev                          # Dev server (localhost:5173)
 npm run build                        # Production build
 bash scripts/smart-test-runner.sh    # Tests (token-optimized, use before commits)
 npm test                             # Tests (verbose, for debugging)
+
+npm run env:local                    # Write .env.local placeholders — app boots WITHOUT a Firebase project
+npm run devshot                      # Drive a real browser: screenshots + RENDERED control sizes
+npm run devshot:portrait             # Same, portrait viewport (orientation repro)
 ```
+
+## Visual Verification (no credentials needed)
+
+**You can always run and see this app.** It is IndexedDB-first with an existing guest
+mode, so real Firebase credentials are NOT required — they are only needed for
+sign-in/sync. Without them `initializeApp()` throws at module scope and the app dies at
+boot, which is the only reason it ever looked unrunnable.
+
+```bash
+npm run env:local     # once — writes gitignored placeholder config
+npm run dev           # terminal 1
+npm run devshot       # terminal 2 — writes ./.devshots/*.png
+```
+
+`scripts/devshot.mjs` also reports the **rendered** size of controls and the
+canvas scale factor. Use it, not declared px values: the whole canvas sits
+under a single CSS `transform: scale(s)`, so a `min-h-[44px]` class does **not** produce
+a 44px target (see `WS-441`, re-file of the collision-lost WS-316). Never claim a UI
+change works from code alone — and never assert a touch-target size from a class string.
+Rendered-size enforcement lives in `tests/playwright/touch-floor.spec.js`.
 
 ## Session Start Protocol (MANDATORY)
 
@@ -438,8 +462,15 @@ Quick ref: React + Vite + Tailwind, 8 reducers, 12 contexts, 33 hooks, 13 views,
 Do not invent work. If all checks pass and user has no requests, the project is healthy.
 
 ## Responsive Design
-- Target: 1600x720 (Samsung Galaxy A22 landscape)
-- Scale: `min(viewportWidth * 0.95 / 1600, viewportHeight * 0.95 / 720, 1.0)`
+- **Target device: Samsung Galaxy S22** (2340×1080 physical; CSS viewport ≈1170×540 at
+  assumed DPR 2 — provisional, verify via `/device-probe.html` on the phone). Founder
+  ruling WS-334 (2026-08-04); the A22 previously named here was wrong (FIND-109).
+- **1600×720 is the DESIGN CANVAS, not the device.** Landscape views render on that
+  fixed canvas and are scaled by `min(vw * 0.95 / 1600, vh * 0.95 / 720, 1.0)`
+  (src/hooks/useCanvasFit.js) — ≈0.695 on the S22, so a declared 44px control renders
+  ~30.6px. Layout doctrine: spatial regions scale, interactive regions do not
+  (docs/design/surfaces/layout-doctrine.md). Rendered-size floor is enforced by
+  `tests/playwright/touch-floor.spec.js` against `tests/playwright/deviceProfiles.mjs`.
 
 ## Testing
 - ~5,400+ tests across ~184 test files (Vitest + fake-indexeddb)

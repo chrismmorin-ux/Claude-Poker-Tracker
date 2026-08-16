@@ -1420,9 +1420,45 @@ bluff/value thresholds. `estimateRake(potSize, rakeConfig, street)` (`potCalcula
 - Applied to the **showdown pot** (`potSize + betSize · 2`) inside `findOptimalBetSize`, so
   the fold-equity EV (`calcFoldEquity`) nets out the rake hero pays when called to showdown.
 
-Rake reduces the EV of marginal value bets and thin calls; it never affects fold-equity
-from villain folding (no showdown, no drop). This is a refinement of the §6.1 fold-equity
-formula, not a replacement.
+**THE GATE IS THE FLOP, NOT THE SHOWDOWN (corrected 2026-08-14, FIND-137).** This section
+previously read *"it never affects fold-equity from villain folding (no showdown, no drop)"* —
+which renamed a real rule into a different one. The live rule is **no FLOP, no drop**: once a
+flop is dealt the house takes the drop however the hand ends. **A flop bet that takes the pot
+down uncontested is raked.** Confirmed by the founder in his own games (live 9-handed 1/2–1/3,
+Chicago-area rooms: no preflop rake, postflop folded pots raked) and by an independent external
+check. Immediate-rake jurisdictions (California, some AC rooms) are **deliberately out of
+scope** — founder ruling 2026-08-14 — and `estimateRake` cannot express them.
+
+`estimateRake` has always had the correct gate (`street === 'preflop' && noFlopNoDrop`,
+`potCalculator.js:448`). The error was never in the function; it was in this paragraph and in
+the call sites that read it.
+
+So the correct shape is **per-branch rake on the pot each branch actually reaches**:
+
+```
+fold branch      pays P            raked on P          (hero's uncalled bet is returned first)
+called branch    pays P + 2B       raked on P + 2B
+```
+
+A single flat `estimateRake` subtracted from a blended fold+call+raise average uses one pot for
+branches that reach different pots. Under a 10%/$6 cap plus a $2 drop those amounts differ at
+small pots and coincide once both clear the cap.
+
+Rake reduces the EV of marginal value bets and thin calls, **and it reduces the fold branch
+too** — so the auto-profit threshold of §6.3 sits ABOVE `bet/(pot+bet)` on every postflop
+street. Worked at a Chicago-area 1/3 structure (10% to $6 plus $2 drop): a $20 bet into $30
+needs **44.4%** fold-through, not 40.0%; $40 into $60 needs **43.5%**; $133 into $200 needs
+**40.9%**. Largest at small pots, where the flat drop dominates.
+
+Direction, stated because it decides which way the engine errs: omitting it **inflates fold
+equity**, and inflated fold equity makes the engine **reckless, not timid** (§13.4). Same family
+as the WS-365 blocker double-count and the WS-402 raise-axis miscount.
+
+**Not yet implemented at HEAD** — `foldEquityCalculator.js:168`, `:210-211` and
+`gameTreeDepth2.js:1699` still pay the fold branch untaxed. WS-451 carries the fix. Until it
+lands, any postflop bluff EV this engine reports is optimistic by the amounts above.
+
+This is a refinement of the §6.1 fold-equity formula, not a replacement.
 
 ### 11.4 Preflop Fold-Through — Per-Seat Resolution and the Chain Rule (WS-274)
 

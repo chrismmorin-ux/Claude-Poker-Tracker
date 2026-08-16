@@ -92,3 +92,4 @@ Paradigm: **S** = scaled-landscape, **F** = fluid-portrait. "Should-be" flags mi
 
 ## Change log
 - 2026-06-19 — Created. Two-pass responsive audit. Core finding: two layout paradigms applied inconsistently; ~18 views catalogued. Worst: PlayersView (still scaled). Recurring clip-bug class (minHeight-no-scroll) in 5 surfaces → root fix = shared `<FluidView>`. Cross-cutting: orientation-lock-without-fallback, sub-44px modal targets, keyboard-unaware modals, ScaledContainer duplication + missing 0.95 margin. Tailwind-version correction recorded.
+- 2026-08-13 — Cross-Cutting #1 SUPERSEDED. The "rotate to landscape" portrait fallback this audit proposed shipped as a full-screen blocking overlay and was ruled out by the founder ("terrible design element"). Replaced by the auto-rotate canvas fallback — see `2026-08-13-orientation-never-blocks.md` (WS-440).

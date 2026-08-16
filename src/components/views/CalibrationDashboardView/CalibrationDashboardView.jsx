@@ -86,7 +86,13 @@ export const CalibrationDashboardView = () => {
       data-testid="calibration-dashboard-view"
       role="main"
       style={{
-        minHeight: '100dvh',
+        // height + overflowY, NOT minHeight (WS-440 sweep): index.css locks
+        // html/body/#root to 100dvh overflow-hidden, so a min-height root grows
+        // past the viewport and clips with no scrollbar — the exact bug class
+        // INV-VIEW-SCROLL guards. This view is deferred in the registry, which
+        // is the only reason the guard didn't catch it.
+        height: '100dvh',
+        overflowY: 'auto',
         background: '#0f172a',
         color: '#e5e7eb',
         padding: '1rem',

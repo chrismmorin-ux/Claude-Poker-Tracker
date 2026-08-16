@@ -2,10 +2,10 @@ id: "WS-440"
 title: "RotateDeviceHint hard-blocks hand entry with no dismiss and no recovery on rotate (founder device-verified, re-filed after ticket-ID collision lost the original WS-315)"
 legacy_id: ""
 type: bug
-status: backlog
+status: in_progress
 claimed_by: null
 claimed_at: null
-started_at: null
+started_at: "2026-08-13T22:05:00Z"
 completed_at: null
 completion_commit: null
 priority_score: 45.0
@@ -36,6 +36,21 @@ status_note: |
   Re-filed 2026-08-07 by launch/sweep (ses-20260807-0535-df53cf18) after discovering the original
   2026-07-31 tickets (WS-311/315/316) were overwritten by an ID-allocation collision and the project
   file deleted. Evidence trail: docs/design/audits/2026-07-31-*.md + docs/design/evidence/2026-07-31-tvr-device-baseline/.
+progress_note: |
+  2026-08-13 (ses-20260813-2152-eabd38c8): founder ruling supersedes the accept criteria —
+  the hint is not made dismissable, it is DELETED; orientation may never block the app.
+  Shipped: useCanvasFit auto-rotate fallback (portrait touch viewport -> canvas renders
+  rotate(90deg) at swapped-dim fit, ~0.95 scale) at all 4 canvas sites; useRotatedTouchScroll
+  bridge (Chromium pans touch in screen space through transforms - measured via CDP - so
+  gestures are remapped, with momentum); rotate-away/rotate-back recovery test per original
+  accept criteria; plus the 10-site non-scrollable-surface sweep and INV-VIEW-SCROLL guard
+  extension (82 tests). Evidence: docs/design/audits/2026-08-13-orientation-never-blocks.md.
+  UPDATE same day: founder ruled the chrome residual unacceptable ("It needs to function
+  properly ALWAYS") - RotatedViewport now rotates ALL fixed chrome (NavShell, HealthIndicator,
+  UpdateBanner, toasts, VCE overlay, both loading screens) with the canvas, only when the
+  active view is landscape-classified; ToastProvider moved inside UIProvider; tap-through
+  and per-view predicate pinned by RotatedViewport.test.jsx; verified live (rotated pill
+  clickable, canvas tappable beneath wrappers, Sessions chrome stays upright). No residuals.
 recovered_doctrine_note: |
   UPDATE 2026-08-07 (orphan-branch recovery): THE FIX ALREADY EXISTS - commit 954972df (fix(orientation):
   the rotate gate is a hint, not a dead end - WS-315 Phase 2) with RotateDeviceHint.jsx + useIsPortraitViewport.js

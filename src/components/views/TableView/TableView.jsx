@@ -26,6 +26,7 @@ import { PotDisplay } from '../../ui/PotDisplay';
 import { useLiveEquity } from '../../../hooks/useLiveEquity';
 import { useEquityWorker } from '../../../contexts';
 import { EquityBadge } from '../../ui/EquityBadge';
+import { useCanvasFit, canvasTransform } from '../../../hooks/useCanvasFit';
 
 
 /**
@@ -35,6 +36,9 @@ import { EquityBadge } from '../../ui/EquityBadge';
 export const TableView = ({ scale }) => {
   const tableRef = useRef(null);
   const numSeats = LIMITS.NUM_SEATS;
+  // Portrait auto-rotate fallback (WS-440) — the canvas fixes itself into
+  // landscape instead of blocking or shrinking; scale is already the rotated fit.
+  const { rotated } = useCanvasFit();
 
   // Toast notifications from context
   const { showSuccess, addToast } = useToast();
@@ -511,10 +515,10 @@ export const TableView = ({ scale }) => {
 
   return (
     <div className="flex items-center justify-center h-dvh overflow-hidden" style={{ background: '#111318' }}>
-      <div style={{
+      <div data-canvas-rotated={rotated ? 'true' : undefined} style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
-        transform: `scale(${scale})`,
+        transform: canvasTransform(scale, rotated),
         transformOrigin: 'center center'
       }}>
         <div

@@ -61,9 +61,12 @@ export const DrillFlashcards = ({
         </button>
       </div>
 
-      {/* Body — card content */}
-      <div className="flex-1 flex items-center justify-center px-8 py-6 overflow-y-auto">
-        <div className="max-w-3xl w-full">
+      {/* Body — card content. Centering lives on the CHILD as m-auto, never as
+          items-center/justify-center on the scroll container: flex centering
+          pushes an overflowing card past the start edge where scrollTop 0
+          cannot reach it (WS-440 sweep; DrillExit had this right already). */}
+      <div className="flex-1 flex px-8 py-6 overflow-y-auto">
+        <div className="max-w-3xl w-full m-auto">
           {/* Spot description */}
           <div className="p-6 rounded-lg bg-gray-800 border border-gray-700 mb-6">
             <h2 className="text-lg font-semibold text-white mb-3">Spot</h2>

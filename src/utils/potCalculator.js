@@ -454,20 +454,48 @@ export const estimateRake = (potSize, rakeConfig, street = 'flop') => {
 };
 
 /**
- * The pot a showdown/called branch actually pays after the drop — the one seam for
- * per-branch rake in EV formulas (WS-451 / FIND-113, POKER_THEORY §11.3).
+ * The pot a branch actually pays after the drop — the one seam for per-branch rake in EV
+ * formulas (WS-451 / FIND-113 / FIND-137, POKER_THEORY §11.3).
  *
- * Rake is a property of a pot that goes to showdown (or is called), NEVER of a fold
- * branch: when villain folds there is no drop, so `foldEV = pot` stays untaxed. Apply
- * this to the called/showdown pot inside each branch payoff — never subtract one flat
- * `estimateRake` from a blended fold+call+raise average, which taxes fold-branch mass.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * THE GATE IS THE FLOP, NOT THE SHOWDOWN. (Renamed from `rakedShowdownPot`, FIND-137.)
+ * ─────────────────────────────────────────────────────────────────────────────────────
  *
- * @param {number} potSize - the pot the branch pays out at showdown
+ * This function used to be called `rakedShowdownPot` and its contract read: *"Rake is a
+ * property of a pot that goes to showdown (or is called), NEVER of a fold branch: when
+ * villain folds there is no drop, so `foldEV = pot` stays untaxed."*
+ *
+ * That renamed a real rule into a different one. The live rule is **no FLOP, no drop**:
+ * once a flop is dealt the house takes the drop however the hand ends. **A flop bet that
+ * takes the pot down uncontested IS raked.** Confirmed by the founder in his own games
+ * (live 9-handed 1/2–1/3, Chicago-area rooms: no preflop rake, postflop folded pots
+ * raked) and by an independent external check, 2026-08-14.
+ *
+ * `estimateRake` always had the correct gate (`street === 'preflop' && noFlopNoDrop`).
+ * The error was in this contract and in the seven call sites that trusted it. The word
+ * "showdown" in the old name was the error in miniature, which is why the name moved.
+ *
+ * Immediate-rake jurisdictions (California, some AC rooms) are deliberately out of scope
+ * — founder ruling 2026-08-14 — and this module cannot express them.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * HOW TO USE IT: pass the pot THIS branch actually pays out.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ *     fold branch      P            hero's uncalled bet is returned before the drop
+ *     called branch    P + 2B       both bets are in the pot that gets dropped
+ *     raise-called     P + 2R
+ *
+ * Never subtract one flat `estimateRake` from a blended fold+call+raise average: under a
+ * cap plus a flat drop those branches reach different pots and therefore owe different
+ * amounts (they coincide only once every branch clears the cap).
+ *
+ * @param {number} potSize - the pot THIS branch pays out, not the pot at the decision node
  * @param {object|null} rakeConfig - see estimateRake
  * @param {string} [street='flop']
  * @returns {number} potSize net of the estimated drop
  */
-export const rakedShowdownPot = (potSize, rakeConfig, street = 'flop') =>
+export const rakedPot = (potSize, rakeConfig, street = 'flop') =>
   potSize - estimateRake(potSize, rakeConfig, street);
 
 /**

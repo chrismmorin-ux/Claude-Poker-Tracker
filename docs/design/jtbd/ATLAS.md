@@ -20,9 +20,9 @@ Expanded Session 1b (2026-04-21) from engine run — ~90 JTBDs across 14 domains
 
 | ID prefix | Domain | File | Entries |
 |-----------|--------|------|---------|
-| PM | Player management (incl. PIO umbrella JTBDs) | [domains/player-management.md](./domains/player-management.md) | PM-01..15 |
+| PM | Player management (incl. PIO umbrella JTBDs) | [domains/player-management.md](./domains/player-management.md) | PM-01..16 |
 | MH | Mid-hand decision | [domains/mid-hand-decision.md](./domains/mid-hand-decision.md) | MH-01..13 |
-| HE | Hand entry | [domains/hand-entry.md](./domains/hand-entry.md) | HE-11..17 |
+| HE | Hand entry | [domains/hand-entry.md](./domains/hand-entry.md) | HE-11..18, HE-22..23 (HE-19/20a/20b/21 allocated to the all-in family in `audits/2026-06-19-blindspot-allin-side-pots.md` but **not yet written into the domain file**) |
 | SM | Session management | [domains/session-management.md](./domains/session-management.md) | SM-17..22 |
 | SR | Session review | [domains/session-review.md](./domains/session-review.md) | SR-23..34, SR-88..89 |
 | SE | Session entry | [domains/session-entry.md](./domains/session-entry.md) | SE-01..04 |
@@ -315,6 +315,7 @@ authoring commits it to this table.
 
 ## Change log
 
+- 2026-07-31 — HE-22 (accept/override a proposed action) + HE-23 (record a full orbit) + PM-16 (keep the table roster matching reality) added by TVR Gate 3 (original ticket `WS-312`, lost to the 2026-08-07 ID collision). **ID-space hygiene flagged:** HE-19/20a/20b/21 exist only in an audit, not in the domain file, which caused a real collision during this pass — the 2026-07-31 roundtable proposed HE-19/HE-20 before the clash was caught. Writing them up is outstanding work. (Landed on this branch 2026-08-15 via WS-441's orphan-branch doc recovery.)
 - 2026-04-21 — Created with player-management domain seeded (Session 1).
 - 2026-04-21 — Expanded to 14 domains / ~90 JTBDs (Session 1b engine run).
 - 2026-04-23 — Added new **session-entry** domain (SE-01..03) + MH-12 / MH-13 as Gate 3 output of exploit-deviation project Phase 3. Atlas now has 15 domains. See `../audits/2026-04-23-exploit-deviation-blindspot.md`.

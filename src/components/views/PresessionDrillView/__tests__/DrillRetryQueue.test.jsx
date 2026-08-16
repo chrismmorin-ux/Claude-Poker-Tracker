@@ -90,6 +90,7 @@ describe('DrillRetryQueue — populated queue', () => {
 });
 
 describe('DrillRetryQueue — touch target compliance', () => {
+  // NOTE (WS-441): this component renders inside the scaled 1600x720 canvas, where declared px are DEFLATED by the canvas scale (~0.695 on the target device) — this asserts declared intent only, NOT a rendered 44px target. Rendered-size enforcement: tests/playwright/touch-floor.spec.js.
   it('Retry button has minHeight ≥ 44', () => {
     render(<DrillRetryQueue {...defaultProps} retryDeck={[makeCard()]} />);
     const btn = screen.getByTestId('drill-retry-replay');

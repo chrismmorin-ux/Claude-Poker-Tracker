@@ -21,7 +21,9 @@ const Spinner = () => (
  */
 export const AuthLoadingScreen = () => {
   return (
-    <div className="h-dvh bg-gray-900 flex flex-col items-center justify-center">
+    // fixed inset-0, not h-dvh (WS-440): fills the rotated chrome viewport
+    // when the auto-rotate fallback is active, and the real viewport otherwise.
+    <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center">
       <Spinner />
       <p className="mt-4 text-gray-400 text-sm">Loading...</p>
     </div>

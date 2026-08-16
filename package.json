@@ -22,7 +22,10 @@
     "test:coverage": "vitest run --coverage",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "test:visual:debug": "playwright test --headed"
+    "test:visual:debug": "playwright test --headed",
+    "devshot": "node scripts/devshot.mjs",
+    "devshot:portrait": "node scripts/devshot.mjs --portrait",
+    "env:local": "node scripts/setup-local-env.mjs"
   },
   "dependencies": {
     "firebase": "^12.6.0",

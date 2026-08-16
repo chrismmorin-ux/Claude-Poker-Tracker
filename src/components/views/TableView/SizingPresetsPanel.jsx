@@ -164,14 +164,18 @@ export const SizingPresetsPanel = ({
             min={minRaise}
             step="any"
             className="w-full px-3 rounded text-white font-semibold focus:outline-none"
-            style={{ height: '48px', fontSize: '15px', background: '#1a1d23', border: '1px solid var(--panel-border)' }}
+            // WS-441 interim: 64 ≥ ceil(44 / 0.695) — rendered 44px floor at the
+            // provisional S22 profile (deviceProfiles.mjs). WS-489 removes this.
+            style={{ height: '64px', fontSize: '15px', background: '#1a1d23', border: '1px solid var(--panel-border)' }}
           />
         </div>
         <button
           type="submit"
           disabled={!customValue || parseFloat(customValue) < minRaise}
           className="btn-press px-5 rounded font-bold text-white"
-            style={{ height: '48px', fontSize: '15px', background: !customValue || parseFloat(customValue) < minRaise ? '#374151' : ACTION_COLORS.bet.base }}
+            // WS-441 interim: matches the input's 64px raise; minWidth because the
+            // padding-driven width measured 39px rendered. WS-489 removes this.
+            style={{ height: '64px', minWidth: '64px', fontSize: '15px', background: !customValue || parseFloat(customValue) < minRaise ? '#374151' : ACTION_COLORS.bet.base }}
         >
           GO
         </button>

@@ -46,9 +46,10 @@ export const DrillRetryQueue = ({
         </button>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 flex items-center justify-center px-8 py-6 overflow-y-auto">
-        <div className="max-w-2xl w-full text-center">
+      {/* Body — m-auto on the child, not flex centering on the scroller:
+          centered overflow spills past the unreachable start edge (WS-440 sweep). */}
+      <div className="flex-1 flex px-8 py-6 overflow-y-auto">
+        <div className="max-w-2xl w-full text-center m-auto">
           <div className="p-6 rounded-lg bg-gray-800 border border-gray-700 mb-6 text-left">
             <h2 className="text-sm text-gray-500 uppercase tracking-wider mb-3">
               {queueCount} card{queueCount === 1 ? '' : 's'} to retry

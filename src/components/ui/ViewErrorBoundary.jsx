@@ -117,7 +117,12 @@ export class ViewErrorBoundary extends React.Component {
       // leaves the app just as broken. The only working exit is a hard refresh.
       if (isStale) {
         return (
-          <div className="h-dvh bg-gray-900 flex items-center justify-center p-6">
+          // Scroll shell (WS-440 sweep): the card is ~500px tall and a landscape
+          // phone viewport is ~360px. h-dvh + overflow-y-auto outside,
+          // min-h-full (grows, never clips) centering inside — the recovery
+          // button must never be off-screen on the crash screen.
+          <div className="h-dvh bg-gray-900 overflow-y-auto">
+            <div className="min-h-full flex items-center justify-center p-6">
             <div className="max-w-md w-full text-center">
               <div className="flex justify-center mb-4">
                 <RefreshCw className="w-16 h-16 text-blue-400" />
@@ -151,12 +156,16 @@ export class ViewErrorBoundary extends React.Component {
                 If this keeps happening, close the app and reopen it.
               </p>
             </div>
+            </div>
           </div>
         );
       }
 
       return (
-        <div className="h-dvh bg-gray-900 flex items-center justify-center p-6">
+        // Same scroll shell as the stale-build card above (WS-440 sweep):
+        // "Try Again" / "Return to Table" must stay reachable at any height.
+        <div className="h-dvh bg-gray-900 overflow-y-auto">
+          <div className="min-h-full flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center">
             {/* Error Icon */}
             <div className="flex justify-center mb-4">
@@ -207,6 +216,7 @@ export class ViewErrorBoundary extends React.Component {
             <p className="text-xs text-gray-600 mt-6">
               If this keeps happening, try reloading the page or check the console for details.
             </p>
+          </div>
           </div>
         </div>
       );

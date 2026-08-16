@@ -35,8 +35,8 @@ context_notes: |
   ws436-priors-records*.json. POKER_THEORY is at v2.4; §7.4's hierarchy is the
   binding statement of the separate-pipelines rule.
 mode: auto
-last_heartbeat: "2026-08-12T20:44:33.466Z"
-pid: 25408
+last_heartbeat: "2026-08-13T14:22:39.945Z"
+pid: "12800"
 host: MorinComputer
 agent_session_id: "dabcbfdf-fafe-42d9-9c85-b774a5997b70"
 
@@ -91,4 +91,8 @@ files_locked:
   - ".claude/workstream/queue/WS-445.yaml"
   - "system/state.md"
   - ".claude/workstream/sessions/ses-20260812-1343-dabcbfdf.yaml"
+  - "scripts/backtest/mine-pole-priors.mjs"
+  - "scripts/backtest/phhAdapter.mjs"
+  - "scripts/backtest/probe-player-drift.mjs"
+  - ".claude/workstream/queue/WS-449.yaml"
 

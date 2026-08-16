@@ -27,10 +27,13 @@ import { PRIMITIVE_BUTTON_CONFIG } from '../../../constants/primitiveActions';
 import { SCREEN } from '../../../constants/uiConstants';
 import { CardSlot } from '../../ui/CardSlot';
 import { ReviewPanel } from './ReviewPanel';
+import { useCanvasFit, canvasTransform } from '../../../hooks/useCanvasFit';
 
 const POSITION_BADGES = { D: '#d4a847', SB: '#9ca3af', BB: '#60a5fa' };
 
 export const HandReplayView = ({ scale }) => {
+  // Portrait auto-rotate fallback (WS-440) — scale is already the rotated fit.
+  const { rotated } = useCanvasFit();
   const { replayHandId, replayHand, setCurrentScreen } = useUI();
   const { allPlayers } = usePlayer();
   const { tendencyMap } = useTendency();
@@ -167,10 +170,11 @@ export const HandReplayView = ({ scale }) => {
       // transform:scale fits it to the viewport. Other views avoid this via
       // ScaledContainer, whose inner box has no overflow and keeps min-width:auto.
       className="relative overflow-hidden shrink-0"
+      data-canvas-rotated={rotated ? 'true' : undefined}
       style={{
         width: `${LAYOUT.TABLE_WIDTH}px`,
         height: `${LAYOUT.TABLE_HEIGHT}px`,
-        transform: `scale(${scale})`,
+        transform: canvasTransform(scale, rotated),
         transformOrigin: 'center center',
       }}
     >

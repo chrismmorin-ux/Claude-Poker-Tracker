@@ -191,6 +191,7 @@ describe('PrintControls — W-URC-1 patchConfig wiring', () => {
 });
 
 describe('PrintControls — accessibility', () => {
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
   it('all enabled toggle buttons have minHeight ≥ 44px (H-ML06)', () => {
     render(<PrintControls />);
     const buttons = screen.getAllByRole('button');

@@ -125,19 +125,29 @@ export class ErrorBoundary extends React.Component {
       const isStale = this.state.errorCode === ERROR_CODES.CHUNK_LOAD_FAILED;
 
       return (
+        // Scroll shell (WS-440 sweep): the card is taller than a landscape
+        // phone viewport (~360px), and centered-without-scroll clips BOTH ends
+        // — including the recovery buttons. Outer scrolls; inner centers via
+        // minHeight so it grows instead of clipping.
         <div
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             height: '100dvh',
-            padding: '20px',
+            overflowY: 'auto',
             backgroundColor: '#1a1a2e',
             color: '#eee',
             fontFamily: 'system-ui, -apple-system, sans-serif',
           }}
         >
+          <div
+            style={{
+              minHeight: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+            }}
+          >
           <div
             style={{
               maxWidth: '500px',
@@ -295,6 +305,7 @@ export class ErrorBoundary extends React.Component {
                 </>
               )}
             </p>
+          </div>
           </div>
         </div>
       );

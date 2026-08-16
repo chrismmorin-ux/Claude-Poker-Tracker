@@ -1,0 +1,108 @@
+id: "FIND-137"
+engine: "founder"
+run_id: "founder-observation-2026-08-14"
+severity: HIGH
+status: open
+category: "domain-defect"
+program: "domain-correctness"
+problem_class: "Game tree EV correctness"
+source:
+  engine: "founder"
+  protocol: "direct observation, confirmed against independent external check"
+  run_id: "founder-observation-2026-08-14"
+  date: "2026-08-14"
+title: "POKER_THEORY §11.3 gates rake on the SHOWDOWN; live rooms gate it on the FLOP — the fold branch of every postflop EV is untaxed, and WS-451 is about to weld that in"
+description: |
+  §11.3 states: "it never affects fold-equity from villain folding (no showdown, no drop)."
+  That sentence renames a real rule. The live rule is "no FLOP, no drop": the house takes the
+  drop once a flop is dealt, regardless of whether the hand reaches showdown. A flop bet that
+  takes the pot down uncontested IS raked.
+
+  CONFIRMED TWICE, INDEPENDENTLY:
+  - Founder, direct observation in his own games (live 9-handed 1/2-1/3, Chicago-area rooms):
+    "there is no rake preflop in almost all games that I play in" and "folded pots postflop are
+    raked."
+  - External check (PokerCoaching, PokerNews, Pokercode, 2+2 cardroom forum, retrieved
+    2026-08-14): the trigger for the waiver is the flop being dealt, not the showdown. Immediate
+    -rake variants (California, some AC rooms) exist and are OUT OF SCOPE per founder ruling —
+    they are not the games he plays.
+
+  `estimateRake` itself is CORRECT and needs no change: its gate is
+  `street === 'preflop' && rakeConfig.noFlopNoDrop` (potCalculator.js:448) — the flop, not the
+  showdown. The defect is entirely in the doctrine and in the call sites that read it.
+
+  LIVE SITES IMPLEMENTING THE WRONG RULE:
+  - .claude/context/POKER_THEORY.md §11.3 — the doctrine's home, the sentence quoted above.
+  - src/utils/potCalculator.js:460-463 — `rakedShowdownPot` docblock: "Rake is a property of a
+    pot that goes to showdown (or is called), NEVER of a fold branch: when villain folds there
+    is no drop, so `foldEV = pot` stays untaxed."
+  - src/utils/exploitEngine/foldEquityCalculator.js:168 — `const foldEquity = foldPct * potSize`
+    with the comment "Fold branch: hero wins full pot (no showdown, no rake)".
+  - src/utils/exploitEngine/foldEquityCalculator.js:210-211 — same omission in `calcBluffEV`;
+    the pure-bluff branch reads `potSize * foldPct - betSize * (1 - foldPct)`.
+  - src/utils/exploitEngine/gameTreeDepth2.js:1699 — `const foldEV = potSize;`
+    ("Fold EV: hero wins pot uncontested"), and the river check-check / check-bet path at
+    :1604-1612 which taxes only the showdown branches.
+
+  DIRECTION AND MAGNITUDE. Sign-consistent: it inflates fold equity, i.e. it makes every bluff
+  look better than it is. Worked at a Chicago-area 1/3 structure (10% to $6 plus $2 drop), where
+  the uncalled bet is returned so the raked pot is the pre-bet pot P:
+    flop pot $30,  bet $20  -> breakeven 40.0% -> 44.4%   (+4.4pp)
+    flop pot $60,  bet $40  -> breakeven 40.0% -> 43.5%   (+3.5pp)
+    flop pot $200, bet $133 -> breakeven 39.9% -> 40.9%   (+1.0pp)
+  Largest at small pots, where the flat drop dominates. Same family as FIND-040, WS-365
+  (blocker double-count) and WS-402 (raise-axis miscount): all four inflated fold equity, and
+  inflated fold equity makes the engine RECKLESS rather than timid (POKER_THEORY §13.3).
+
+  WHY THIS SURVIVED A SIX-LENS CHALLENGE. run-domain-correctness-challenge-2026-08-13 recorded
+  "rake arithmetic right twice over (two idioms agree)" and REFUTED the depth-3 double-rake
+  accusation. Both rulings are correct GIVEN §11.3. Six fresh-context lenses shared one false
+  premise because the premise lives in the context file every lens is briefed from — so agreement
+  measured inheritance, not independence. This is the `.claude/rules/dispatch-dont-assert.md`
+  mechanism operating on a doctrine file rather than on a session context.
+
+  INVERTS FIND-113 / WS-451. FIND-113 reports the depth-2/3 stage sites as defective FOR taxing
+  fold-branch mass, holds up the river functions (:1699-1703, foldEV untaxed) as the correct
+  model, and WS-451's accept criteria demand "Invariance test: fold-branch EV is bit-identical
+  with rake on and off" and "Plain English: only pots that go to showdown lose money to the
+  house". Those criteria are now falsified and would weld the error in permanently. WS-451 has
+  ALREADY begun landing (gameTreeDepth2.js:1705 carries a `WS-451:` comment), so this is
+  time-critical.
+
+  THE REAL DEFECT UNDERNEATH FIND-113 SURVIVES, with its reason changed. A single flat
+  `estimateRake` subtracted from a blended fold+call+raise EV uses ONE pot for branches that
+  reach DIFFERENT pots: the fold branch pays out P, the called branch P + 2B. Under a 10%/$6 cap
+  plus a $2 drop those are different amounts at small pots and identical once both clear the cap.
+  Per-branch rake on the pot each branch actually reaches is still the correct fix — applied to a
+  rule pointing the other way.
+
+  CONTAMINATES SCORED FIGURE: YES — level error on the fold branch of every postflop EV, on every
+  path (depth-1 `calcFoldEquity`/`calcBluffEV`, depth-2/3 stages, and river). Sign-consistent
+  (understates the cost of bluffing). Any Result Card carrying a postflop bluff EV computed
+  before the fix is suspect.
+affected_files:
+  - ".claude/context/POKER_THEORY.md"
+  - "src/utils/potCalculator.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+recommended_fix: |
+  1. Correct POKER_THEORY §11.3: the gate is the FLOP, not the showdown. State the founder's
+     game explicitly (no preflop rake; postflop folded pots raked) and record immediate-rake
+     jurisdictions as deliberately out of scope.
+  2. Correct the `rakedShowdownPot` docblock (potCalculator.js:460-463) — the function is fine,
+     the contract it advertises is not. Consider renaming to `rakedPot`, since "showdown" in the
+     name is the error in miniature.
+  3. Tax the fold branch on the pot it actually wins (P, excluding hero's returned uncalled bet)
+     at foldEquityCalculator.js:168 and :210-211, and at gameTreeDepth2.js:1699 and the river
+     check path.
+  4. Re-point WS-451: keep the shared per-branch helper and the depth-3 pot-actually-reached fix;
+     REPLACE the fold-invariance criterion with its inverse — fold-branch EV MUST move when rake
+     is on for a postflop street, and MUST NOT move preflop under noFlopNoDrop.
+  5. Re-run the corpus backtest and price the shift in bluff frequency. Pre-register the
+     direction: bluff/raise frequency should FALL, since every bluff's fold branch now pays less.
+  6. Out of scope by founder ruling: California/AC immediate-rake structures. `estimateRake`
+     already cannot express them and does not need to.
+dedup_key: "founder-2026-08-14-rake-gate-is-flop-not-showdown"
+supersedes_premise_of: "FIND-113"
+created_at: "2026-08-14"
+updated_at: "2026-08-14"

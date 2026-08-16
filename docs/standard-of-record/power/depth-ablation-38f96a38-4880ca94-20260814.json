@@ -1,0 +1,2625 @@
+{
+ "schemaVersion": 1,
+ "kind": "depth-ablation",
+ "createdAt": "2026-08-14T22:11:51.216Z",
+ "dealBookId": "handhq-allsites-50NLH-38f96a38",
+ "dealBookHash": "sha256:38f96a3873d262ee0461c7de9937af541fa316d0eeeaf49b69fb156cc5ad7aef",
+ "engineCommit": "4880ca94fef37db4e3048d1d26d158b6cf7ce42b",
+ "engineDirty": true,
+ "weightCap": 20,
+ "players": 260,
+ "decisions": 260,
+ "skipped": {},
+ "config": {
+  "maxPlayers": null,
+  "maxDecisions": 260,
+  "maxDecisionsPerPlayer": 1,
+  "refinementBudgetMs": [
+   0,
+   2000
+  ]
+ },
+ "caveat": "POWER BASIS ONLY — per-player raw importance ratios persisted for pre-flight MDE simulation (WS-435). Not a result; no figure in this file may be quoted as one.",
+ "byPlayer": [
+  {
+   "playerId": "FTP:++EgNoMC1cMmAU3sQCN+/w",
+   "rows": [
+    {
+     "rA": 0.717341,
+     "rB": 0.717341,
+     "net": 95.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:++tLZS2f4TEXZ+e64cmxwA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.127892,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+/u5c2vvyOH9lOcIuAfi6g",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.35867,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+14UjQZc0M03aSJEeEOj7w",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+1xCwAIqP7Z5Mx1D1tcPEg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+3KtKbKEwe98kYY+Awm6KQ",
+   "rows": [
+    {
+     "rA": 0.338591,
+     "rB": 0.846478,
+     "net": -12.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+3Y/A8DiG8Bb5fIjD8gHdA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+3tm0xOeeD3YPDT5xiBjtw",
+   "rows": [
+    {
+     "rA": 0.626023,
+     "rB": 0.834697,
+     "net": 0.11
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+4Jbawn9e5oKKyYHizztrw",
+   "rows": [
+    {
+     "rA": 0.136492,
+     "rB": 0.136492,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+4OI33ma+rHRM+tGzExVIA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.344294,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+4zyRW3n73QBFk6dGlkWZw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+5LCzXPHjjsnN8JGrUJD6g",
+   "rows": [
+    {
+     "rA": 0.639461,
+     "rB": 1.15103,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+6JKc0gbDO4g0+YXHfeueg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.175241,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+6Y+32RGe7SAvFAJqchPCw",
+   "rows": [
+    {
+     "rA": 0.344294,
+     "rB": 1.032881,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+7STbAVR3G+DamBm5R+Sqg",
+   "rows": [
+    {
+     "rA": 0.952508,
+     "rB": 0.680363,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+7s0iGSoy716HhqsK7tFjw",
+   "rows": [
+    {
+     "rA": 1.373973,
+     "rB": 1.373973,
+     "net": -7
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+8M9JscFv6ZCV/+MoX0Hiw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 7.4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+AVP6tQBWZws8AFc3X22Ng",
+   "rows": [
+    {
+     "rA": 0.344294,
+     "rB": 0.860734,
+     "net": -30
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+B67etmJwxmvImXohghuxA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 10.35
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+BEBjzDHbg1FUGBxfOPX6w",
+   "rows": [
+    {
+     "rA": 0.229777,
+     "rB": 0,
+     "net": 6.85
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+CS/UiRqLl2UWNjNZKMxSA",
+   "rows": [
+    {
+     "rA": 0.40148,
+     "rB": 1.204441,
+     "net": 1.25
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+DIW4LNH0b6uqiPg11lOTQ",
+   "rows": [
+    {
+     "rA": 0.414576,
+     "rB": 0.414576,
+     "net": 1.33
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+DXF/RzFU8TjoyRHU94F0Q",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+DiKUqeRgnviJaJ5oJ3SAg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+EAvny4IrHnfORbPSBkHXA",
+   "rows": [
+    {
+     "rA": 0.57785,
+     "rB": 0.433388,
+     "net": -9
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+EWU3c08azYthQvsGfguvw",
+   "rows": [
+    {
+     "rA": 1.788453,
+     "rB": 1.117783,
+     "net": -11
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+HWBBcshYg1tdDYiauAtGA",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.239114,
+     "net": 11.32
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+HZwW7WO/8N99owuQdz0TQ",
+   "rows": [
+    {
+     "rA": 0.268969,
+     "rB": 0.268969,
+     "net": 6.32
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+HqfUSAimv42cpxi85eCeA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.255784,
+     "net": 1.75
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+I2On1bfEN9Vy08zcBVYaw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+JRZVjUhRl9IGlJoBUaWcA",
+   "rows": [
+    {
+     "rA": 0.931571,
+     "rB": 0.815125,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+JtLVDeWJU/llqm7uDkeww",
+   "rows": [
+    {
+     "rA": 0.232893,
+     "rB": 0.931571,
+     "net": -15.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+L6bTsvNVRbQpZGdoTg5sw",
+   "rows": [
+    {
+     "rA": 0.866775,
+     "rB": 0.722313,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+LeAiwmqu+jZ32Ucmm4aqA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -19.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+LzUCDplH8GxGJ6OSG2aqA",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 1.90885,
+     "net": 2.22
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+MxmpS7L1I6QjEXQCBs3Vw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+Myp54K6St/TZmTh23FUpA",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.639461,
+     "net": 0.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+N20ix8B2wWcx2tt7ZfMng",
+   "rows": [
+    {
+     "rA": 0.304506,
+     "rB": 0.609013,
+     "net": -16.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+N2d7sDQoIb9rSfi6s3vBQ",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.127892,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+NBMItDnxnxI6apM6ItHZA",
+   "rows": [
+    {
+     "rA": 1.247865,
+     "rB": 0.83191,
+     "net": 6.02
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+RMXcPCGr4rG5sZLmhAR0w",
+   "rows": [
+    {
+     "rA": 0.116446,
+     "rB": 0.465786,
+     "net": 5.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+RZonr9iHwmqB5B0MlKt7Q",
+   "rows": [
+    {
+     "rA": 4.476499,
+     "rB": 4.476499,
+     "net": -18.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+RicixpcfqKrMhWzX+uhFQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 6.35
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+T/ud58xtW1RHIK7MNy5RA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.634256,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+Txx9b+CvJ7kFID56uB0Ng",
+   "rows": [
+    {
+     "rA": 4.126706,
+     "rB": 2.751137,
+     "net": 5.95
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+WeA7FFBt9f8UhN+eORndg",
+   "rows": [
+    {
+     "rA": 2.147457,
+     "rB": 0.954425,
+     "net": 2.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+XUAUiQuS2hHW2p0/1um9w",
+   "rows": [
+    {
+     "rA": 1.45411,
+     "rB": 0.908819,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+Xj9KHunADz6O55XmBbW4g",
+   "rows": [
+    {
+     "rA": 1.503449,
+     "rB": 1.169349,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+Y8vsR2Rph9h8F+iHnBcAg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.3341,
+     "net": 11.3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+YCfQ6HgaG8SjCvrJKWDSg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+YiFlgDP53mdPqD57JIHtA",
+   "rows": [
+    {
+     "rA": 0.111436,
+     "rB": 0.222872,
+     "net": -15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+b8aEgKD+XChS2Uo7R61aw",
+   "rows": [
+    {
+     "rA": 0.544071,
+     "rB": 0.544071,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+c72qVHvkO3xSIIFcItVrg",
+   "rows": [
+    {
+     "rA": 1.406121,
+     "rB": 0.984285,
+     "net": 25.6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+cxb4g1sOyFPVtIjJW8RYA",
+   "rows": [
+    {
+     "rA": 0.97968,
+     "rB": 1.14296,
+     "net": 33.19
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+ePBgJV4a6at/QN6N40PlA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.829153,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+eYw2ePntxHkyde0LV3gQg",
+   "rows": [
+    {
+     "rA": 1.522532,
+     "rB": 1.370279,
+     "net": 3.03
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+h9oFmUF4gg8jY5zD4dX5A",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.511569,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+hLOKSG0asWsxBlBQb8r7g",
+   "rows": [
+    {
+     "rA": 2.143205,
+     "rB": 1.837033,
+     "net": 3.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+hW+7DzXlqiXErdAleZpDg",
+   "rows": [
+    {
+     "rA": 0.344294,
+     "rB": 0.344294,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+kLgvHZjTESn9B16QUDBxg",
+   "rows": [
+    {
+     "rA": 0.425946,
+     "rB": 1.277839,
+     "net": -12
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+kjzUKXKJuJxUqMnX/YsIw",
+   "rows": [
+    {
+     "rA": 0.134484,
+     "rB": 0.403453,
+     "net": 29.08
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+l/S4Uc0wjUGvrlIcjhHXg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 1.75
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+meKaCuBdSZdtl16BbY4Qg",
+   "rows": [
+    {
+     "rA": 0.116446,
+     "rB": 0.116446,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+nEzH4jH903Fbu3/lX/TeA",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.119557,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+nQ9oGnPwPy4G1v9fcsf4w",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.383677,
+     "net": 7.85
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+nkD/KULZKVYnOtIsEo9yA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+nwEAH2QDIOji6XSk1hNdA",
+   "rows": [
+    {
+     "rA": 1.594122,
+     "rB": 1.594122,
+     "net": 1.38
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+p73RIQbd/9ovb0fzEQK1Q",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.110502,
+     "net": -21.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+q83ZMicNM/jNb53a/AmNg",
+   "rows": [
+    {
+     "rA": 1.405181,
+     "rB": 0.802961,
+     "net": 2.22
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+qbnmnLN0zxrWIDlh88Few",
+   "rows": [
+    {
+     "rA": 0.255784,
+     "rB": 0.383677,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+qoGSCC1d49yxJ8J44TAGw",
+   "rows": [
+    {
+     "rA": 8.772979,
+     "rB": 8.772979,
+     "net": 92.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+rUJkokHoQTMUcxzvJkqSQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+sP8P85hKV9QYGD9OSHiVQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+to3bId5R2D6qM1YUY7HpA",
+   "rows": [
+    {
+     "rA": 0.802961,
+     "rB": 1.003701,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+uG09JEmYWk0BhxW8Knr8Q",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.119557,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+uJRngofirkRxWN4XIztBQ",
+   "rows": [
+    {
+     "rA": 0.43118,
+     "rB": 1.509131,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+ueAoxWMj7qVFGM+wcmC7g",
+   "rows": [
+    {
+     "rA": 1.065883,
+     "rB": 0.947452,
+     "net": -10.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+ulio++Qs8+IB+a+4zjSoQ",
+   "rows": [
+    {
+     "rA": 7.455336,
+     "rB": 7.455336,
+     "net": -23.3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+wNkDh321havdrdOEKMXjg",
+   "rows": [
+    {
+     "rA": 1.406121,
+     "rB": 1.406121,
+     "net": 2.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+xbhF5L76HNsuB16zquN9w",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.255784,
+     "net": -9
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+xcWAhqszDTTaI3zvwWhPg",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.255784,
+     "net": 5.45
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:+zwO2BtGdnYJEhNnJaVCsw",
+   "rows": [
+    {
+     "rA": 0.96009,
+     "rB": 0.576054,
+     "net": 21.63
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/+WBugXlojxybpOilAooLA",
+   "rows": [
+    {
+     "rA": 1.793387,
+     "rB": 0.597796,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/+kOz+/gRn6lVsrVqfaNGA",
+   "rows": [
+    {
+     "rA": 0.272145,
+     "rB": 0.680363,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP://5Kt5k7+ehdWMwfZ6E6gA",
+   "rows": [
+    {
+     "rA": 0.285315,
+     "rB": 0.570629,
+     "net": 14.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP://G4bMKpwowqfint45Vvog",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -28.6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP://ay+92hRfVw60tL+f0Qrw",
+   "rows": [
+    {
+     "rA": 0.408218,
+     "rB": 0.816435,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP://s0PYKj5IDIUULBEjFNLQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 10.23
+    }
+   ]
+  },
+  {
+   "playerId": "FTP://wR78cGxBsPY5DcJbFFXw",
+   "rows": [
+    {
+     "rA": 1.206332,
+     "rB": 1.206332,
+     "net": 3.3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/0O+hRwcS9eUT3Oq80dvyQ",
+   "rows": [
+    {
+     "rA": 0.239114,
+     "rB": 0.119557,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/1YsERhxLSOQckbNAJd15w",
+   "rows": [
+    {
+     "rA": 1.377174,
+     "rB": 1.377174,
+     "net": 4.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/47xxCy7BsT1Z0xChunznw",
+   "rows": [
+    {
+     "rA": 0.537938,
+     "rB": 0.537938,
+     "net": 5.07
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/4ZI6yb/kmUpwJRoU4LdUw",
+   "rows": [
+    {
+     "rA": 0.996326,
+     "rB": 0.996326,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/4eTxAshFvtbJDqSGrNPVg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.700966,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/4sPJ2WAo84/SDm8Ax1vcQ",
+   "rows": [
+    {
+     "rA": 1.065773,
+     "rB": 1.370279,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/5RWc4mu5tcnXD/fDu8g1w",
+   "rows": [
+    {
+     "rA": 2.542369,
+     "rB": 2.542369,
+     "net": -35.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/70ODgupDWUj6tAHlSBYOw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.338204,
+     "net": 12.52
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/7HGN5vqvmHbnEg+oq226w",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.582751,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/7SyWz89NfERTv6EET1Amw",
+   "rows": [
+    {
+     "rA": 1.384797,
+     "rB": 1.615596,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/7naEG7OElcQdOY2lPYR6w",
+   "rows": [
+    {
+     "rA": 4.126706,
+     "rB": 4.126706,
+     "net": 5.1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/8YHswN8xObvaBiBovTt8g",
+   "rows": [
+    {
+     "rA": 2.01201,
+     "rB": 0.894227,
+     "net": 1.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/8nv1FKEq8zPpgO3LbC9XQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.172147,
+     "net": 1.85
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/97bEQD8pzT46IIM8lY9HA",
+   "rows": [
+    {
+     "rA": 1.370279,
+     "rB": 1.065773,
+     "net": 3.38
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/9BTELIInkOKBdcweAymig",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.35867,
+     "net": 15.18
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/ANi9MneQ9aIF35toTw/ig",
+   "rows": [
+    {
+     "rA": 1.593497,
+     "rB": 1.593497,
+     "net": 4.32
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Av1Opo4kjaBiB9YCfL3/A",
+   "rows": [
+    {
+     "rA": 0.229777,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/BMZ6H6IaO8dbf6TNm+z9Q",
+   "rows": [
+    {
+     "rA": 0.478759,
+     "rB": 0.957517,
+     "net": 2.4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Bw8GTtUoYFrRFVNmXA5rw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/C4+xkvwe/pXedx7Fv5Rqw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/C414u0VBFJ9zsyavQB52A",
+   "rows": [
+    {
+     "rA": 0.172147,
+     "rB": 0.172147,
+     "net": 1.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Db/4NTRoeNABNnYj3qMxQ",
+   "rows": [
+    {
+     "rA": 0.543233,
+     "rB": 0.543233,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/En6vXRidoeCo/hSjqKmhw",
+   "rows": [
+    {
+     "rA": 2.539968,
+     "rB": 2.539968,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/H2lDIWHGK4pRaQURm477g",
+   "rows": [
+    {
+     "rA": 1.344844,
+     "rB": 0.537938,
+     "net": 7.98
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/IPKt0YZrzd2IW8SB7OUkw",
+   "rows": [
+    {
+     "rA": 0.974725,
+     "rB": 1.94945,
+     "net": 2.55
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/IWhXDFOzVgeiz9VCrTugA",
+   "rows": [
+    {
+     "rA": 0.380248,
+     "rB": 0.126749,
+     "net": 2.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/IcjOILUDOsKcA/hEMyBdA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.136492,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/IdnZlg84p5QFT2ara1lkA",
+   "rows": [
+    {
+     "rA": 1.065773,
+     "rB": 0.761266,
+     "net": 11.95
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/JT1sF3YGmyircK+bevQtQ",
+   "rows": [
+    {
+     "rA": 0.64121,
+     "rB": 0.854947,
+     "net": 2.6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Jpt/64u2/cSCSag8hHkfg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.454555,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Jqx3f3Os9TqhPhVMDlsfg",
+   "rows": [
+    {
+     "rA": 0.136073,
+     "rB": 0.136073,
+     "net": -10
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/KQpZEecl0fs9e+ICr4mNQ",
+   "rows": [
+    {
+     "rA": 0.268969,
+     "rB": 0.403453,
+     "net": 6.72
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/LUozdDtBZNPGw588gs/4Q",
+   "rows": [
+    {
+     "rA": 1.885166,
+     "rB": 0.942583,
+     "net": 4.22
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/LsAQq+RghTgXjYsRept7g",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 1.352815,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/My8rk1r3vHQ1LKTy44CSg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 24.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/MzyD5nOclia39a7A69TQA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -9.3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/NTqja/qforYDgYEGmPl4Q",
+   "rows": [
+    {
+     "rA": 0.403453,
+     "rB": 0.403453,
+     "net": 4.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/NVp+pCxHfVo/iUPScHyCg",
+   "rows": [
+    {
+     "rA": 5.218735,
+     "rB": 2.982135,
+     "net": -9
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/PMfcojZzsFOCeDtQhZuSQ",
+   "rows": [
+    {
+     "rA": 0.954425,
+     "rB": 1.90885,
+     "net": -9.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/QLusoTzTQZwo5/wuUPiKw",
+   "rows": [
+    {
+     "rA": 0.609013,
+     "rB": 0.45676,
+     "net": 3.9
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/QSG1D6qPe2ZBYEKMcvpUQ",
+   "rows": [
+    {
+     "rA": 0.856039,
+     "rB": 0.428019,
+     "net": 10.95
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/QWL0JEeOlvalgTQ0nIKMQ",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 1.670244,
+     "net": 1.25
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Qah2LS8V27410uPCuanFg",
+   "rows": [
+    {
+     "rA": 0.393799,
+     "rB": 0.393799,
+     "net": 6.1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/QpOjrL46jGXn1i2LaxVcA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -20.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/SG0xQ0ul+C4ScmJduQbIQ",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.511569,
+     "net": 6.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/SeaVpg6GIykBUHfTTevLw",
+   "rows": [
+    {
+     "rA": 3.07635,
+     "rB": 3.07635,
+     "net": 8.15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/SiIBupZfoI1QHDk1F/Pxg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 6.25
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Tv7KFgW6s4pckXvNKleUw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.229777,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/W7R/Ttzg01VnGtPYTdM7Q",
+   "rows": [
+    {
+     "rA": 4.126706,
+     "rB": 2.751137,
+     "net": 5.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/WTrzj4FVDkQ5U4A1YNwZQ",
+   "rows": [
+    {
+     "rA": 1.6328,
+     "rB": 1.46952,
+     "net": 21.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Wym1vRMiJbe7ZwtoUYTAg",
+   "rows": [
+    {
+     "rA": 1.135776,
+     "rB": 1.135776,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Y/9u6I3vsi5eEPDVQWtzA",
+   "rows": [
+    {
+     "rA": 1.992652,
+     "rB": 1.594122,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Y50zAHVo3T4Z+g5GLTSqg",
+   "rows": [
+    {
+     "rA": 1.806662,
+     "rB": 1.204441,
+     "net": 6.68
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/YNgqv5xG7/r9vJXB5rgBA",
+   "rows": [
+    {
+     "rA": 0.119557,
+     "rB": 0.119557,
+     "net": -27
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/YX+dkE6ZmQerkwwN991cg",
+   "rows": [
+    {
+     "rA": 0.609013,
+     "rB": 0.609013,
+     "net": 5.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/YoIDqei0gtq7lnXdRmMdw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/Z5j3dVstsOjqax8oYOK3w",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/ZEZKFqPgimyNyloohtbog",
+   "rows": [
+    {
+     "rA": 1.14296,
+     "rB": 0.8164,
+     "net": 8.43
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/ZOcPdXs3R/XDRvYHBLx1w",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 2.147457,
+     "net": 13.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/ZmAEpGL158ajz3QUEmYQw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 1.7
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/aqxgSjRo7PfcvvEWSMZ4A",
+   "rows": [
+    {
+     "rA": 0.384036,
+     "rB": 0.768072,
+     "net": 1.33
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/btvmm3bQQjes9ctRvWhYQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -19
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/d7uq19SsCon68KqZeLdEw",
+   "rows": [
+    {
+     "rA": 1.643471,
+     "rB": 1.643471,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/eiL7XeUWJKwCAubgLh3ZQ",
+   "rows": [
+    {
+     "rA": 0.239114,
+     "rB": 0.119557,
+     "net": 8.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/fDKO0VncLai7hlcrJVDOQ",
+   "rows": [
+    {
+     "rA": 0.507887,
+     "rB": 0.677183,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/fTG4pX34pkCnA7DcL/kxA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.688587,
+     "net": 2.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/hGiClGQOzYgnOOoObsG2g",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.119557,
+     "net": 2.05
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/heIfOhrGok3o2E8TB7ODA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.172147,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/hfjhqB5I9v5XjCCyaVaZA",
+   "rows": [
+    {
+     "rA": 1.205028,
+     "rB": 0.860734,
+     "net": 4.13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/in0NBusxrxLL6UuW2Mhgg",
+   "rows": [
+    {
+     "rA": 0.661883,
+     "rB": 0.926637,
+     "net": 230.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/j2qqWlhdwtFFO99ZVn7BQ",
+   "rows": [
+    {
+     "rA": 0.344294,
+     "rB": 0.688587,
+     "net": 1.17
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/kSxBhIJXyzeKdMD0lnXUg",
+   "rows": [
+    {
+     "rA": 1.30624,
+     "rB": 1.14296,
+     "net": 3.07
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/l8IZDWmigZQrdvxCDTYpg",
+   "rows": [
+    {
+     "rA": 0.802961,
+     "rB": 1.204441,
+     "net": 4.68
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/mT2LOWOnrvTvTTXF9j3dg",
+   "rows": [
+    {
+     "rA": 1.525839,
+     "rB": 1.525839,
+     "net": -13
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/n0mG7xpy1AbS5hmjbwFeg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 5.55
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/n1eeYD0yUdUlO/2ecOoQg",
+   "rows": [
+    {
+     "rA": 1.426574,
+     "rB": 0.570629,
+     "net": 2.65
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/oriz9xGWgjniPAkbpDFoQ",
+   "rows": [
+    {
+     "rA": 2.086743,
+     "rB": 1.252046,
+     "net": 2.17
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/pHoFF7oZRy/Mw/cCIpcRw",
+   "rows": [
+    {
+     "rA": 4.585229,
+     "rB": 4.585229,
+     "net": 43.97
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/q+CufrfaVPIqGfQXfW/aA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/q/XkbMzFy2b8u7vK8BXxg",
+   "rows": [
+    {
+     "rA": 1.204441,
+     "rB": 1.003701,
+     "net": 1.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/qPgUO4/ldRmdjL6Du8Agg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/qe+muDB2Lro0IuVYMBH2w",
+   "rows": [
+    {
+     "rA": 2.751137,
+     "rB": 2.751137,
+     "net": 7.7
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/rVCFGApOgOwlYqpKaE8hw",
+   "rows": [
+    {
+     "rA": 1.770552,
+     "rB": 1.416441,
+     "net": 4.68
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/smzQ1ZT5kM24K5/fSewWQ",
+   "rows": [
+    {
+     "rA": 1.416441,
+     "rB": 1.416441,
+     "net": 4.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/t4UwTalxGbg3Iy+Y4Wcew",
+   "rows": [
+    {
+     "rA": 0.45676,
+     "rB": 0.45676,
+     "net": 7.15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/u47mTX79y1x86F1TyswIA",
+   "rows": [
+    {
+     "rA": 0.459554,
+     "rB": 0.459554,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/uh97hUypH+C8IfEfchiwA",
+   "rows": [
+    {
+     "rA": 0.22001,
+     "rB": 0.44002,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/wkggPDRc9UiAe6/x1FI+g",
+   "rows": [
+    {
+     "rA": 4.94877,
+     "rB": 4.94877,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/wljAKfQu26XmrV4ay6mgw",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 2.147457,
+     "net": 2.97
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/wvDMbCsJYEHhzk1Y7mohA",
+   "rows": [
+    {
+     "rA": 0.761266,
+     "rB": 0.913519,
+     "net": 2.22
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/wyi83Fc6eRPohG9r2HeEw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/y89NxzhpSNEFnq+olx1Wg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.127892,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/yFFUEpjgZ8TyYPweSbfDQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/ylsEeqUC7xBb7xQht1ROw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.192018,
+     "net": -0.02
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/z8zguwcIY6gxdfec4z9kw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:/zYAURBgtSxLMZWmdh2eDg",
+   "rows": [
+    {
+     "rA": 0.50115,
+     "rB": 0.16705,
+     "net": 11.32
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:007CxNQqoybmj5ZA24L9aQ",
+   "rows": [
+    {
+     "rA": 0.477213,
+     "rB": 1.431638,
+     "net": 2.6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:00rnibtAibK+IcjvSNwonw",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 2.147457,
+     "net": 1.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:022VOMEfc2u+/dY9t9Uarg",
+   "rows": [
+    {
+     "rA": 1.878069,
+     "rB": 1.669395,
+     "net": 9.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:02M+hSid4b7m5+fBPtpqxQ",
+   "rows": [
+    {
+     "rA": 104.7488,
+     "rB": 104.7488,
+     "net": -10.1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:05VF1dCbHNssao63HwAOqQ",
+   "rows": [
+    {
+     "rA": 0.403453,
+     "rB": 0.403453,
+     "net": 19.85
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:065SWpxoznILbh/Dq2T7Sw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.327778,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:06qhgJVeV7lq1yvvC2Kg7A",
+   "rows": [
+    {
+     "rA": 0.172147,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:07K2U2UlYHXwEkTsllvK0g",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.383677,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:08SoGQ6OUl8kTIceKvW8Jw",
+   "rows": [
+    {
+     "rA": 7.455336,
+     "rB": 2.982135,
+     "net": -11.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:09OoUAEVRDfuvciRVTSjWA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 1.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:09RGFdlXEsTHBnltuGTGRQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:09tePn1LI1dKdGDEeFJ70w",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 1.245714,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:09wZhT4spbn3eHRGggy3RQ",
+   "rows": [
+    {
+     "rA": 1.386516,
+     "rB": 0.970561,
+     "net": 3.35
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0BCm8J6fAHUdJnmfHRCXUA",
+   "rows": [
+    {
+     "rA": 0.304506,
+     "rB": 0.609013,
+     "net": 8.15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0BnKZ8Osy0llHtAz+zEDBg",
+   "rows": [
+    {
+     "rA": 4.451388,
+     "rB": 2.967592,
+     "net": 6.15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Br+PAuMcOtSAj3bV5x4NA",
+   "rows": [
+    {
+     "rA": 2.386063,
+     "rB": 1.670244,
+     "net": 2.15
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0CbRzGHG9UtkIB9LBy+Fgg",
+   "rows": [
+    {
+     "rA": 0.816107,
+     "rB": 0.680089,
+     "net": 3.6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0EB7j/HrWYW98CY2E/8m8A",
+   "rows": [
+    {
+     "rA": 0.272036,
+     "rB": 0.816107,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0EKqpuVIwiUtjE3qItWbNQ",
+   "rows": [
+    {
+     "rA": 0.255784,
+     "rB": 0.639461,
+     "net": -9.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0EQh7YBXk9RxLFo0uhA0TA",
+   "rows": [
+    {
+     "rA": 2.339916,
+     "rB": 1.559944,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0EVzQWzgCt7JodzBDj82AQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0FhvEC6NU6DKRRtjBOTM4w",
+   "rows": [
+    {
+     "rA": 3.509874,
+     "rB": 3.509874,
+     "net": 12.05
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0FiBGaWbAytugGoz/tM0OQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -9.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Fv4cwbpUbmTSaEGASAyZg",
+   "rows": [
+    {
+     "rA": 1.394857,
+     "rB": 1.394857,
+     "net": 2.22
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0H6t1nhAuI82It8crL9sJQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0HKsRwJthZyhoZBmTb3Zkw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.172147,
+     "net": 6.7
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Ii4/qd5w1nypcYYapblYg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.211864,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0IvIcYbPFsNpLUFeEcVeOQ",
+   "rows": [
+    {
+     "rA": 0.134484,
+     "rB": 0.403453,
+     "net": 8.45
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0J/0Py0aYG+7p/c6JSZz+w",
+   "rows": [
+    {
+     "rA": 1.670244,
+     "rB": 1.90885,
+     "net": 2.28
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0JQ3jT2QSC85CJMLiwqZEA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 0.7
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0KtHpi0NWXvLzhPSCqEZTw",
+   "rows": [
+    {
+     "rA": 1.406121,
+     "rB": 1.124897,
+     "net": 6.1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0MR3W39odK0IaRSm4jYRrQ",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.255784,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Mx5s/bY4+CAJcYVCy+q6Q",
+   "rows": [
+    {
+     "rA": 1.431638,
+     "rB": 1.431638,
+     "net": 0.84
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0NqO7+ETzmWu9Qi+1GloXg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 20.38
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0OyrZjmtvBlLVbHEH5wRTw",
+   "rows": [
+    {
+     "rA": 0.136018,
+     "rB": 0.272036,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0PQ58CQWq9yttR7PZ+x7hQ",
+   "rows": [
+    {
+     "rA": 0.700966,
+     "rB": 0.700966,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0QWfromCN1fCesnH9ka5Xw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.181078,
+     "net": -4.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0QhAvZEBP0a7YDvqqICuDw",
+   "rows": [
+    {
+     "rA": 0.229777,
+     "rB": 0.229777,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0R2ELsmpqP0iRm/4VDeRpw",
+   "rows": [
+    {
+     "rA": 1.243729,
+     "rB": 1.243729,
+     "net": 1.75
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0RRtsJT4oa36Q5YwDfdANg",
+   "rows": [
+    {
+     "rA": 0.239114,
+     "rB": 0.239114,
+     "net": -3
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0RcdJRaNsH0VLz1ZPWngcQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": 0
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0RhqmlVRsgEh862oFJWvOA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.615509,
+     "net": -10
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0RkD/ENdmawg0ElXMiRBZA",
+   "rows": [
+    {
+     "rA": 1.065773,
+     "rB": 1.218026,
+     "net": 16
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0SoE11VBLdGfja84uo12lA",
+   "rows": [
+    {
+     "rA": 0.127892,
+     "rB": 0.255784,
+     "net": 0.79
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0TV31TROkEMoWIqLz4z2WA",
+   "rows": [
+    {
+     "rA": 5.50198,
+     "rB": 6.113311,
+     "net": 5.25
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0TpK7/uaatt1jK73hDYqTg",
+   "rows": [
+    {
+     "rA": 2.292614,
+     "rB": 2.751137,
+     "net": 0.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0TqTUF4tBCQAfkAeEd8HlQ",
+   "rows": [
+    {
+     "rA": 3.668183,
+     "rB": 3.20966,
+     "net": -9.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0UIH/iW6KMpl44sgscw0CA",
+   "rows": [
+    {
+     "rA": 0.408053,
+     "rB": 0.952125,
+     "net": -29
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0VN7ERYC9utgzo2iOmvPIw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0VcC/CKSEVCngpDVDJWfKQ",
+   "rows": [
+    {
+     "rA": 1.30624,
+     "rB": 1.14296,
+     "net": 3.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Xv5yaq55P/XYr/0+ucMNQ",
+   "rows": [
+    {
+     "rA": 3.398763,
+     "rB": 3.021122,
+     "net": 0.8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0YQRlRK5aZKVdh3K2bivLw",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0YW8caphrIoFB+LRqgoTGg",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.383677,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0YmfFjVYOLSCVqzyr8A4Rw",
+   "rows": [
+    {
+     "rA": 9.707729,
+     "rB": 8.736956,
+     "net": 6.4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0Z9m1JG+FQBAAIPjPMHJVQ",
+   "rows": [
+    {
+     "rA": 1.68573,
+     "rB": 2.247641,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0ZggKkOJ/Fz78STPP7Yy1Q",
+   "rows": [
+    {
+     "rA": 0.255784,
+     "rB": 0.895246,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0ZiF3xMYylerX9zqC27T3Q",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0ZzajDx5bJykU7Z2FHVdcA",
+   "rows": [
+    {
+     "rA": 1.193031,
+     "rB": 0.477213,
+     "net": 3.55
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0afMvo2HRpYI2cKj+GFDRA",
+   "rows": [
+    {
+     "rA": 0.609013,
+     "rB": 0.761266,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0cqpX1ipV16bFMJa2i7O7A",
+   "rows": [
+    {
+     "rA": 1.224688,
+     "rB": 1.530861,
+     "net": -8
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0ct0t5KtGGSm5NoH/ttdhA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.127892,
+     "net": -4
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0cuyztEmDbH+n4j1C3AEpA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.860734,
+     "net": -1
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0dD42+b3h8TCZwpM2uIpbQ",
+   "rows": [
+    {
+     "rA": 3.07635,
+     "rB": 3.07635,
+     "net": -11.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0dSYoECZQGGANHLK1kyyOQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.767353,
+     "net": -16.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0dhzlLkr35QGracGTlJi5w",
+   "rows": [
+    {
+     "rA": 1.137327,
+     "rB": 1.137327,
+     "net": -3.5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0dj0OOsLYXFo+gTlBlDdFw",
+   "rows": [
+    {
+     "rA": 0.823238,
+     "rB": 0.411619,
+     "net": 4.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0e3QKi08oODNiyXvGQPboA",
+   "rows": [
+    {
+     "rA": 0.255784,
+     "rB": 0.255784,
+     "net": 0.9
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0eXeKGMNR3zmDxOB151hdA",
+   "rows": [
+    {
+     "rA": 0.116446,
+     "rB": 0.116446,
+     "net": 2.88
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0es5nssqPv4QEOOF41/1LQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.260147,
+     "net": -6
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0fVH9G4XSzLOjpyQl7MgYg",
+   "rows": [
+    {
+     "rA": 0.302277,
+     "rB": 0.453416,
+     "net": 16.82
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0g4+2Ia85lersWlByUpSmA",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.127892,
+     "net": -2
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0gX/6wZw/LtFhjddBH6VlQ",
+   "rows": [
+    {
+     "rA": 0,
+     "rB": 0.856039,
+     "net": 10.43
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0hpE8Vnsma6kd8U2BsZtZQ",
+   "rows": [
+    {
+     "rA": 4.585229,
+     "rB": 4.585229,
+     "net": -5
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0jkbGwKOXcF/cNjpuaRcyg",
+   "rows": [
+    {
+     "rA": 1.522532,
+     "rB": 1.522532,
+     "net": 10.77
+    }
+   ]
+  },
+  {
+   "playerId": "FTP:0jt+lLg0EeHLDV6eR5W2SQ",
+   "rows": [
+    {
+     "rA": 0.136018,
+     "rB": 0.136018,
+     "net": -3.5
+    }
+   ]
+  }
+ ]
+}

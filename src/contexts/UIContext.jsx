@@ -9,8 +9,10 @@ import { createContext, useContext, useMemo, useCallback } from 'react';
 import { UI_ACTIONS } from '../reducers/uiReducer';
 import { SCREEN } from '../constants/uiConstants';
 
-// Create context
-const UIContext = createContext(null);
+// Create context. Exported (WS-440) so RotatedViewport can read the active
+// view's orientation TOLERANTLY — chrome rendered outside a UIProvider (unit
+// tests, storybook-style harnesses) must degrade to unrotated, not throw.
+export const UIContext = createContext(null);
 
 /**
  * UI context provider component

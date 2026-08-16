@@ -44,7 +44,12 @@ export const ViewLoadingFallback = () => {
 
   return (
     <div
-      className="h-dvh bg-gray-900 flex flex-col items-center justify-center gap-5 px-6 text-center"
+      // fixed inset-0, not h-dvh (WS-440): inside the rotated chrome viewport
+      // the containing block is the rotated box, and inset-0 fills it; in the
+      // normal flow it fills the real viewport identically. h-dvh would size
+      // against the wrong axis when rotated. pointer-events-auto because the
+      // rotated wrapper is pointer-events-none and this has buttons.
+      className="fixed inset-0 pointer-events-auto bg-gray-900 flex flex-col items-center justify-center gap-5 px-6 text-center"
       data-testid="view-loading-fallback"
     >
       <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin" />

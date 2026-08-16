@@ -135,6 +135,11 @@ export const PrintConfirmationModal = ({ context, onConfirm, onCancel }) => {
         style={{
           width: '100%',
           maxWidth: '32rem',
+          // Height bound + scroll (WS-440 sweep): centered flex overflow is
+          // clipped at BOTH edges with the start side unreachable; bounding the
+          // dialog keeps every control reachable on short viewports.
+          maxHeight: '90dvh',
+          overflowY: 'auto',
           background: '#1f2937',
           color: '#e5e7eb',
           border: '1px solid #374151',

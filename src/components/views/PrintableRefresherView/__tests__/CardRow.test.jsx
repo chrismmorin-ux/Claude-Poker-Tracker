@@ -37,6 +37,7 @@ describe('CardRow — basic render', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBe(4);
     buttons.forEach((b) => {
+  // NOTE (WS-441): this surface is portrait-fluid (unscaled), so declared px = rendered px and this assertion is truthful. Rendered-size enforcement for SCALED canvas surfaces lives in tests/playwright/touch-floor.spec.js — jsdom cannot measure layout.
       expect(b).toHaveStyle({ minWidth: '44px', minHeight: '44px' });
     });
   });

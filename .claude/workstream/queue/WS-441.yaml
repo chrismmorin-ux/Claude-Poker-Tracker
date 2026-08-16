@@ -2,12 +2,12 @@ id: "WS-441"
 title: "No control anywhere reaches the declared 44px touch floor - the 0.95 ScaledContainer factor nullifies the AUDIT-2026-04-21 F8 fix believed shipped (re-filed after ticket-ID collision lost the original WS-316)"
 legacy_id: ""
 type: bug
-status: backlog
+status: done
 claimed_by: null
 claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-15T02:31:40.811Z"
+completion_commit: 9b345a62
 priority_score: 40.0
 priority_label: "P1"
 category: "ux"
@@ -44,3 +44,14 @@ recovered_doctrine_note: |
   rendering 41.8/30.6px. Interactive regions move to real CSS px app-wide (layout-doctrine.md + WS-322
   migration). The device-identity question (A22 vs S22) remains FIND-109 and must still be resolved for the
   verification measurements.
+
+correction_2026_08_15: |
+  CORRECTION (WS-441 execution, 2026-08-15): the claim above that the scale formula
+  "clamps to 1.0" on the S22 is FALSE — it conflates physical px with CSS px. The
+  formula reads the CSS viewport; at the S22's assumed-DPR-2 CSS viewport (1170x540)
+  the scale is min(1170*0.95/1600, 540*0.95/720, 1) = 0.695, matching the 2026-07-31
+  measured evidence (docs/design/evidence/2026-07-31-tvr-device-baseline/). A declared
+  44px control renders ~30.6px; the declared floor at this profile is ceil(44/0.695)=64.
+  The DPR itself is still an assumption — /device-probe.html measures it on-device;
+  tests/playwright/deviceProfiles.mjs is the single place the correction lands.
+closed_by_event: ev-1786761100840-5ab315b901a7

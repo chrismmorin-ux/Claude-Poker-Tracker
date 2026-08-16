@@ -60,6 +60,8 @@ screenshots/
 !public/*.png
 # Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
 !docs/design/audits/**/*.png
+!docs/design/evidence/**/*.png
+!docs/design/evidence/**/*.jpg
 # Playwright snapshot baselines ARE tracked (visual regression source-of-truth)
 !tests/playwright/**/*.png
 audit-*.png
@@ -118,3 +120,6 @@ out/
 # src/utils/pokerCore/data/equitySkewDecomposition.js
 equity-matrix*.csv
 equity-matrix*.csv.meta.json
+
+# devshot output (scripts/devshot.mjs)
+.devshots/

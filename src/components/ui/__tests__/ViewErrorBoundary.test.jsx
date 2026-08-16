@@ -315,7 +315,7 @@ describe('ViewErrorBoundary', () => {
       expect(container.firstChild.className).toContain('bg-gray-900');
     });
 
-    it('centers content', () => {
+    it('centers content inside a scrollable shell (WS-440: recovery buttons must stay reachable)', () => {
       const error = new Error('Test error');
 
       const { container } = render(
@@ -324,9 +324,14 @@ describe('ViewErrorBoundary', () => {
         </ViewErrorBoundary>
       );
 
-      expect(container.firstChild.className).toContain('flex');
-      expect(container.firstChild.className).toContain('items-center');
-      expect(container.firstChild.className).toContain('justify-center');
+      // Outer shell scrolls; the inner wrapper centers via min-h-full so a
+      // card taller than a landscape-phone viewport grows instead of clipping.
+      expect(container.firstChild.className).toContain('overflow-y-auto');
+      const inner = container.firstChild.firstChild;
+      expect(inner.className).toContain('min-h-full');
+      expect(inner.className).toContain('flex');
+      expect(inner.className).toContain('items-center');
+      expect(inner.className).toContain('justify-center');
     });
 
     it('uses full screen height', () => {

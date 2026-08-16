@@ -59,7 +59,10 @@ const CORPUS_CAVEAT =
 // v6 (WS-431): the Result Card carries `decisionRecord` {contentHash, rowCount,
 // schemaVersion} — the by-hash reference to the per-decision JSONL record the headline
 // was computed from. v5 (WS-428) added overallEv metrics.
-export const HERO_EV_SCHEMA_VERSION = 6;
+// v7 (WS-435) — ADDITIVE. The report gained `preflight` (the pre-run MDE gate result, when
+// the runner performed one; null on runs that predate the power ledger), and the card
+// metrics gained mdeDetectBB / mdePower80BB. Every pre-existing field is unchanged.
+export const HERO_EV_SCHEMA_VERSION = 7;
 
 /**
  * The estimand, stated in words.
@@ -243,6 +246,10 @@ const buildCardFor = (run, arms, headline, pbr = null, overallEv = null) => {
         // opportunity census. Population per HC-011 travels on the composed object.
         overallEvBB100: overallEv?.overallEvBB100 ?? null,
         opportunitiesPerHand: overallEv?.factors?.opportunitiesPerHand ?? null,
+        // WS-435 — a null without its MDE is not a result. The smallest edge THIS run
+        // could have resolved, on the same bb scale as edgeBB above.
+        mdeDetectBB: headline.mdeDetectBB ?? null,
+        mdePower80BB: headline.mdePower80BB ?? null,
       },
       // PLAYERS, not hands. The CI is a cluster bootstrap over players because decisions
       // inside one player are not independent (POKER_THEORY 14.3).
@@ -649,6 +656,9 @@ export const buildHeroEvReport = (run, { foldShiftPp = 13, weightCap = 20, oppor
     schemaVersion: HERO_EV_SCHEMA_VERSION,
     caveat: CORPUS_CAVEAT,
     treatment: TREATMENT,
+    // WS-435 — additive. The pre-run MDE gate result the runner stamped on the run, or
+    // null on a run that predates the power ledger (an absent gate is stated, not implied).
+    preflight: run.preflight ?? null,
     // WS-428 — additive. Null on a run with no opportunity census; carries both factors,
     // the opportunity provenance, and the HC-011 population statement when present.
     overallEv,
@@ -909,6 +919,20 @@ export const renderHeroEvReport = (r) => {
   L.push('  ' + '─'.repeat(90));
   L.push(`    corpus arm        edge ${bb(r.gate.heroEvEdge)} bb, CI low ${bb(r.gate.heroEvCiLow)}  →  ${r.gate.corpusArmPasses ? 'PASS' : 'FAIL'}`);
   L.push(`    live-shifted arm  CI low ${bb(r.arms.liveShifted.edgeCiLowBB)}  →  ${r.gate.liveShiftedArmPasses ? 'PASS' : 'FAIL'}`);
+  // WS-435: the MDE prints ALWAYS, not only on a null — a pass needs its resolution stated
+  // as much as a null needs its excuse examined.
+  const hl = r.arms.engineRaked;
+  if (hl?.mdeDetectBB !== null && hl?.mdeDetectBB !== undefined) {
+    const target = r.preflight?.targetEffectBB;
+    L.push(`    min detectable effect (this run): detect ${bb(hl.mdeDetectBB)} bb · 80% power ${bb(hl.mdePower80BB)} bb`
+      + (target !== undefined && target !== null ? `  (targeted effect: ${bb(target)} bb)` : ''));
+    const straddles = hl.edgeCiLowBB !== null && hl.edgeCiLowBB <= 0 && hl.edgeCiHighBB >= 0;
+    if (straddles) {
+      L.push(`    NULL RESULT — this instrument could not resolve effects smaller than ${bb(hl.mdePower80BB)} bb`);
+      L.push('    (80% power). A smaller real effect and no effect print identically here;');
+      L.push('    the separator is POWER, not sample size.');
+    }
+  }
 
   const adm = r.admissibility;
   if (adm && !adm.admissible) {
@@ -939,6 +963,16 @@ export const renderHeroEvReport = (r) => {
     L.push(`    player supply: ${c.qualifyingPlayers} qualifying → ${c.plannedPlayers} planned → `
       + `${c.contributingPlayers} contributing (power lever is --max-players; --max-decisions is a ceiling)`);
     if (c.playerTaskErrors > 0) L.push(`    ! ${c.playerTaskErrors} player task(s) failed and were skipped`);
+  }
+  // WS-435 — what the pre-flight gate predicted and decided, beside what the run delivered.
+  if (r.preflight) {
+    const pf = r.preflight;
+    L.push(`    pre-flight MDE: predicted 80%-power ${bb(pf.mdePower80BB)} bb at ${pf.plannedPlayers} planned players `
+      + `vs target ${bb(pf.targetEffectBB)} bb → ${pf.resolvable ? 'resolvable' : 'NOT resolvable'}`
+      + (pf.overrideReason ? ` (OVERRIDDEN: ${pf.overrideReason})` : ''));
+    if (pf.basis) L.push(`      basis: ${pf.basis.players} players, ${pf.basis.file ?? 'ledger entry'}`);
+    const fl = Object.entries(pf.flags ?? {}).filter(([, v]) => v === true).map(([k]) => k);
+    if (fl.length) L.push(`      ! preflight flags: ${fl.join(', ')}`);
   }
   L.push(`    behaviour policy: ${r.generatedFrom.integrity.behaviorPolicy.observations} pool decisions from ` +
          `${r.generatedFrom.integrity.behaviorPolicy.players} POOL players (${r.generatedFrom.integrity.behaviorPolicy.partition})`);
