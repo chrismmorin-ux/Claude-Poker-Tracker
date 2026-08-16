@@ -142,28 +142,64 @@ steadily. These are not noise — the smallest cell here still holds 138k hands.
 bottom-heavy (25NLH alone is 40% of full-ring hands), so an unstratified average is dragged
 toward the softest games.
 
-### The consequence that matters for the founder's game
+### CORRECTED 2026-08-16 — this section originally drew the wrong inference
 
-The founder plays **live 1/2–1/3**, which maps to canonical `1-2` = **200NLH**. The
-backtest artifacts were fitted at **50NLH** (`0.25-0.5`) — a 4x stake mismatch. Full ring,
-50NLH fit vs 200NLH actual:
+> **Founder ruling, 2026-08-16.** The paragraph below originally read: *"The founder plays
+> live 1/2–1/3, which maps to canonical `1-2` = 200NLH"*, and treated the 50NLH→200NLH
+> column as the error to correct for his game. **That mapping is wrong, and the direction
+> of the error is not what it looks like.**
+>
+> Online and live are not comparable by bb level. The skill axis *inverts*: online pools are
+> substantially tougher than live pools at the same nominal stake, so online 200NL is a far
+> harder game than live 1/2 or even 2/5. Founder: *"200NL online, which it might seem
+> comparable to 1/2 or 2/5, has a MUCH higher skill level of player, since online has better
+> players at lower stakes than live games. The types of mistakes are already different."*
+>
+> Picking the bb-matched band is therefore **not** picking the skill-matched band, and
+> 200NLH may sit *further* from his table than 50NLH does. No band in this corpus "is" his
+> game. See DEC-082.
 
-| stat | 50NLH (fitted) | 200NLH (his stake) | error in the fit |
+**What the data below actually shows, stated correctly.** The gradient is real and the
+numbers are unchanged — what changes is what they license. A stake band is not a dial on one
+underlying game; each band **is a different game type**, and the metric vector is what
+identifies it. Founder: *"IE 200NL 3bets 57% more, it's instantly a different type of game,
+and our preflop charts for that game are almost certainly off. They likely checkraise more,
+bet thinly for value more."*
+
+| stat | 50NLH (what the artifacts were fitted on) | 200NLH | difference |
 |---|---|---|---|
-| threeBet | 0.0289 | 0.0365 | **understates by 26.4%** |
-| pfr | 0.0847 | 0.0984 | **understates by 16.2%** |
-| vpip | 0.2134 | 0.1914 | overstates by 10.3% |
-| cbet | 0.6050 | 0.5842 | overstates by 3.4% |
-| foldToCbet | 0.5681 | 0.5599 | overstates by 1.5% |
-| foldTo3Bet | 0.8581 | 0.8669 | understates by 1.0% |
+| threeBet | 0.0289 | 0.0365 | +26.4% |
+| pfr | 0.0847 | 0.0984 | +16.2% |
+| vpip | 0.2134 | 0.1914 | −10.3% |
+| cbet | 0.6050 | 0.5842 | −3.4% |
+| foldToCbet | 0.5681 | 0.5599 | −1.5% |
+| foldTo3Bet | 0.8581 | 0.8669 | +1.0% |
 
-A villain model carrying these priors expects opponents to 3-bet about a quarter less often
-than the matched-stake online population does.
+Read as: these are **two different games**, and a preflop chart fitted on the first is
+wrong for the second — not by a scaling factor, but structurally. The 3-bet difference alone
+implies different opening ranges, different defence frequencies, and a different postflop
+mistake distribution downstream of both.
+
+**What follows, and what does not.**
+
+- **Does NOT follow:** "adopt 200NLH priors because that is the founder's stake." The premise
+  is the mapping this correction retracts.
+- **Does follow:** the shipped artifacts are fitted on *one specific game type* (50NLH online
+  2009, FTP+PS), and that fact should be stamped on them as an identity, not as a stake label.
+- **The open question this actually raises:** what is the metric vector of the founder's live
+  1/2–1/3 game? That is measurable from his own tracked hands, and it is the only thing that
+  can say which corpus slice — if any — is near his table in the space that matters. Until
+  then every band here is *transferred, not measured*, and the transfer distance is
+  **unknown rather than small**.
+- **The exploitability question is the mistake distribution.** Founder: *"The types of
+  mistakes usually dictate the game and how exploitable it is, and are going to be the polish
+  study items before a session is played."* That reframes the deliverable: the useful output
+  of a corpus slice is not a prior table but a characterisation of what that pool gets wrong.
 
 **Two population gaps, not one.** This stake/site gap sits *on top of* the online-2009 vs
 live-9-handed gap already in DISCLAIMER-AND-FAULT-REGISTER §3. Both are transfers, and only
 one was written down. The numbers above are **transferred, not measured**, for the live
-game: they are matched-stake online 2009, not the founder's table.
+game — and per the correction above, the bb-matched band is not the closest one.
 
 ---
 
