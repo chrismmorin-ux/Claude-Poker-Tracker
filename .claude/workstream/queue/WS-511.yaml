@@ -1,0 +1,102 @@
+id: "WS-511"
+title: "Decompose c-bet: texture-conditional rate, range composition, and the trap-vs-give-up split that a frequency deficit alone CANNOT make"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 41.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER (2026-08-16): "One of the things about cbet rate is what hand class we're seeing when
+  the cbet is made. Are players 100% cbetting certain types of flops, not others? Are they just
+  cbetting all their value, never a bluff? We can also pull out trapping 'rates' if cbet is
+  lower than we expect it should be, and those players we can watch out for trappy behavior and
+  they will need more 'capping'."
+
+  WHY NOW: in the corrected WS-320 run, aggregate c-bet rate separates between players at only
+  1.111x its disjoint control — the weakest surviving signal in that run (limp rate reaches
+  8.493x). A weak aggregate is exactly what you see when averaging a player who c-bets 90% of
+  dry boards and 30% of wet ones against a player who does the reverse: same number, opposite
+  strategies. The founder's decomposition is the natural test of that.
+
+  PRE-REGISTERED, BEFORE THE RESULT IS SEEN: if the trait lives in texture, at least one
+  adequately-powered texture cell shows a dispersion ratio ABOVE the aggregate's 1.111x. If every
+  adequately-powered cell comes back at or below it, the texture decomposition adds nothing over
+  the aggregate and this hypothesis is REFUTED for this corpus. Record that unhedged if it fails.
+
+  ── THE CORRECTION THIS TICKET CARRIES: A C-BET DEFICIT DOES NOT MEAN TRAPPING ──
+  A missing c-bet means the player CHECKED, and the checked range holds two opposite players:
+    - GAVE UP: whiffed, will not fight. Exploit is to barrel relentlessly; they fold.
+    - TRAPPED: checked strength to induce. Exploit is to check back, pot-control, and cap your
+      own value betting.
+  A frequency deficit alone cannot distinguish them, and the PRIOR FAVOURS GIVE-UP — most
+  low-c-bet players in a 50NL pool are weak-tight, not tricky. Reading a deficit as trappy when
+  the truth is give-up means checking back in the most profitable spots available, and it errs
+  toward passivity, which is the direction this engine already drifts (80% of top-action flips
+  are river, 38 of 40 toward passivity).
+
+  WHAT ACTUALLY SEPARATES THEM: the composition of the CHECKED range at showdown — hands where
+  the preflop raiser checked the flop and the hand still reached showdown, bucketed by strength.
+  A trapper's checked range has a strong tail; a give-up player's is flat and weak. That is a
+  showdown-outcome distribution, which is the correct shape for the question. The deficit is a
+  SCREEN, not a verdict: deficit -> check-back showdown composition -> then trap vs give-up. Only
+  the second step earns the "capping" adjustment.
+
+  ── POWER IS THE BINDING CONSTRAINT, AND IT IS TO BE ENGINEERED, NOT DODGED ──
+  The median player has 45 c-bet observations (measured, WS-320 run). The module refuses a
+  verdict below 30 (separability.mjs OBS_FOR_MOVEABLE_ESTIMATE). Cut c-bets into 8 texture
+  classes and the median player has ~5 per cell, at which chi2/df returns ~1 whether or not the
+  trait exists — which is exactly how WS-295 produced six UNDERPOWERED verdicts and answered
+  nothing. Do NOT respond by slicing coarser until it fits. Carve texture cells from the parent
+  with shrinkage toward the overall c-bet rate (DEC-025 Amd 1), and run a power pre-flight first.
+
+  TEXTURE MUST BE COMPUTED, NOT LABELLED. Cut cells on computed board properties (pairedness,
+  suitedness, connectedness, high-card structure) rather than on a named texture category.
+  Texture categories are themselves label-shaped inputs and belong in the WS-445 ledger; using
+  one as an input here would reproduce the exact defect WS-320 just removed.
+accept_criteria: |
+  - Power pre-flight artifact FIRST: observations per player per candidate texture partition,
+    including partitions rejected for insufficient power and why.
+  - Texture-conditional c-bet separability run through the corrected separabilityVerdict, each
+    cell reporting its dispersion ratio against the disjoint control.
+  - The pre-registration above is answered explicitly, including if refuted.
+  - Check-back showdown composition measured per player: strength distribution of hands the
+    preflop raiser checked on the flop and showed down. Reported as a distribution, not a
+    single "trap rate" scalar.
+  - Trap-vs-give-up classification is derived from that composition, NOT from the frequency
+    deficit. A player with a deficit but no strong tail is classified GIVE-UP, and the artifact
+    states how many deficit players fell each way — that ratio is itself the finding.
+  - Every rate carries its conditioning set and its inverse conditional; base rates come from
+    board combinatorics, never from the model being evaluated.
+  - Result Card with ONLINE_2009_NOT_LIVE: 2009 online was a high-c-bet era and live 1/2-1/3
+    c-bet norms differ, so any live reading is transferred, not measured.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/ladderAxes.mjs"
+  - "scripts/backtest/separability.mjs"
+  - "scripts/backtest/studyLadderReport.mjs"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by:
+  - "WS-320"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: "ses-20260816-1735-4010b29f"
+created_at: "2026-08-16T19:00:00Z"
+status_note: |
+  Blocked by WS-320 only for its corrected Result Card, which supplies the 1.111x aggregate
+  baseline this ticket's pre-registration is stated against. The re-run was queued 2026-08-16.

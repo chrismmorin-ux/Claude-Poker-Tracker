@@ -1,0 +1,84 @@
+id: "WS-510"
+title: "Table composition — does a seat's EV depend on how many exploitable players are at it, and on sitting to an aggressor's left? Power measured BEFORE the run"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 40.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Stage 4 of the player-segmentation program (docs/research/player-segmentation-program.md), and
+  the stage that answers the founder's most specific hypothesis.
+
+  FOUNDER (2026-08-16): "Maybe it happens when there are at least 3 fish at the table, or less
+  than x% winning players, or the best results come from 2 aggressive players and it's best to
+  be on their left."
+
+  Table composition is the most under-explored axis available and the corpus supports it
+  directly: table id, seat, and stable player ids are all present, so for any hand we can
+  reconstruct who else was seated and what their measured behavior class is.
+
+  IT IS ALSO THE MOST POWER-HUNGRY STAGE, AND THAT IS THE THING TO ENGINEER, NOT TO AVOID.
+  Composition multiplies cells against a fixed corpus. WS-295 is the cautionary case: it drew
+  200 seeds and returned six UNDERPOWERED verdicts because the run could not have produced an
+  answer at ANY replicate count. The response to that is not a coarser slice — it is measuring
+  power first and building the estimator that survives it.
+
+  REQUIRED APPROACH:
+    - PRE-FLIGHT: compute observations-per-cell for each candidate partition BEFORE running, and
+      choose granularity from measured power rather than from intuition. The module already
+      refuses a verdict below 30 observations per player (separability.mjs OBS_FOR_MOVEABLE_ESTIMATE).
+    - Carve composition cells FROM THE PARENT with shrinkage toward it (DEC-025 Amd 1). Never
+      estimate a cell independently; never normalise a prior grid into a distribution.
+    - "Fish", "aggressive", "winning" are computed from measured behavior deviation (WS-508),
+      never applied as labels. Position relative to an aggressor is computed from seat offsets,
+      not from a position NAME.
+    - Report the relative-seat effect (on their left vs right) as its own axis, since that is a
+      directly actionable table-selection claim if it survives.
+accept_criteria: |
+  - A power pre-flight artifact exists and is reported: observations per cell for every candidate
+    partition considered, including the ones rejected for insufficient power and why.
+  - Per-cell EV with n and CI; underpowered cells are reported AS underpowered, never as a point
+    estimate and never silently dropped.
+  - The relative-seat axis (hero's position relative to each aggressor) is measured, since the
+    founder's hypothesis is directional.
+  - Any cap on coverage (top-N compositions, sampling) is logged explicitly — silent truncation
+    reads as full coverage when it is not.
+  - Result Card, full manifest, with the ONLINE_2009_NOT_LIVE warning. Table composition in
+    online 2009 50NL differs from live 9-handed 1/2-1/3 more than almost any other quantity
+    here — live tables are softer and slower — so a live reading is transferred, not measured,
+    and the card says so prominently.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/"
+  - "docs/research/player-segmentation-program.md"
+blocked_by:
+  - "WS-509"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - |
+    Composition partition granularity: how many behavior classes, and how many of them present
+    at a table, define a cell. This should be settled by the power pre-flight rather than chosen
+    up front — but the founder should ratify the resulting granularity, because it determines
+    what questions the run can and cannot answer.
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: "ses-20260816-1735-4010b29f"
+created_at: "2026-08-16T18:59:00Z"
+status_note: |
+  Premise verified at composition: table id, seats, and stable obfuscated player ids are all
+  present in the PHH corpus (checked 2026-08-16), so table composition IS reconstructible. The
+  open risk is power, not data availability.

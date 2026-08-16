@@ -534,9 +534,13 @@ export const separabilityVerdict = ({
         + `the binomial null — but only ${vsControl.ratio?.toFixed(2)}× ${controlLabel}'s `
         + `${controlStats.chi2PerDf?.toFixed(3)}`
         + (vsControl.z === null ? '' : ` (z = ${vsControl.z.toFixed(1)} on the difference)`)
-        + `, against a floor of ${minDispersionRatio.toFixed(2)}×. Players differ on this axis no more `
-        + 'than they differ generally, so it earns no channel of its own. This is NOT proof the trait '
-        + 'is absent and licenses deleting nothing.',
+        + `, against a floor of ${minDispersionRatio.toFixed(2)}×. Players differ on this AGGREGATE, `
+        + 'UNCONDITIONAL axis no more than they differ generally, so it earns no channel AT THIS '
+        + 'CONDITIONING. This is NOT proof the trait is absent, it licenses deleting nothing, and it '
+        + 'is NOT a terminal verdict: an aggregate can be flat while its sub-channels separate '
+        + 'strongly — a player who 3-bets 2% overall but 15% against one late-position opener is '
+        + 'invisible here. The axis may only be abandoned once its conditioned children have been '
+        + 'tested and have also failed.',
       powered,
       vsControl,
     };

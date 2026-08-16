@@ -1,0 +1,79 @@
+id: "WS-507"
+title: "Is 'winning player' even a measurable trait here? Split-half reliability of the win-rate label — the gate that can end the segmentation program"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 45.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Stage 1b of the player-segmentation program (docs/research/player-segmentation-program.md).
+  Standalone and FIRST among the analysis stages because it can end the program, and finding
+  that out cheaply is worth more than any result that assumes the answer.
+
+  THE PROBLEM IT EXISTS TO CATCH. Labeling a player a winner by their money won and then
+  auditing their behavior IN THE SAME HANDS is circular. At 9-handed variance that label is
+  mostly noise, so the audit answers "what do players who ran hot do", and the honest answer is
+  "they were dealt better cards". This is the founder's own standing rule — a tail always
+  exists, and selecting it and reporting its mean looks convincing (the same mechanism that
+  falsified the slowplay archetype: χ²/df 1.005 against a control's 1.859).
+
+  THE TEST. Split each player's hands in half (odd/even sessions, so table-and-day effects fall
+  on both sides). Does first-half win rate predict second-half win rate? `splitHalfReliability`
+  in scripts/backtest/separability.mjs already implements this shape for behavioral axes; this
+  points it at the win-rate label instead.
+
+  PRE-REGISTERED, BEFORE THE RESULT IS SEEN: if reliability is indistinguishable from 0 at the
+  available hands-per-player, then "winning player" is NOT a measurable trait in this corpus and
+  every segmentation result downstream of it is noise. That is a real finding and gets recorded
+  unhedged as one.
+
+  WHAT THAT OUTCOME DOES NOT LICENSE: picking a looser label until something correlates. If the
+  label is unmeasurable at this n, the honest responses are to state the n that WOULD measure it
+  and to build toward that, or to move to the WS-508 formulation which does not need a
+  per-player win-rate label at all. Not to weaken the label until it passes.
+
+  Report reliability WITH observations-per-player, because a null at low n is a weak-power null
+  and not proof of absence (§11.8) — the same three-outcome discipline the separability verdict
+  uses.
+accept_criteria: |
+  - Split-half reliability of per-player win rate, reported with a CI and with the
+    hands-per-player distribution beside it.
+  - The result is stated against the pre-registration above, unhedged, including if it fails.
+  - The reliability curve is reported ACROSS hands-per-player thresholds, so the answer to "how
+    many hands does it take before the label means anything" is a number this run produces
+    rather than a question it leaves open.
+  - Rake-adjusted win rate is used, per charter §3 — an unadjusted rate labels competent
+    break-even players as losers.
+  - Emits a Result Card. "Winning is/is not a stable trait in this pool" is a claim someone
+    would act on.
+effort: "S"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/separability.mjs"
+  - "scripts/backtest/"
+  - "docs/research/player-segmentation-program.md"
+blocked_by:
+  - "WS-506"
+blocked_by_legacy: []
+enables:
+  - "WS-508"
+sprint_id: null
+decision_flags: []
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: "ses-20260816-1735-4010b29f"
+created_at: "2026-08-16T18:56:00Z"
+status_note: |
+  Blocked by WS-506 only for the net-won input. Needs a full-corpus pass, so it is a node1 job;
+  author its compute_job block when WS-506 lands.

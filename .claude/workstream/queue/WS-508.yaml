@@ -1,0 +1,87 @@
+id: "WS-508"
+title: "Which behaviors predict winning, out of sample — invert the question so the noise sits on the outcome, not on the label"
+legacy_id: ""
+type: feature
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 43.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Stage 2 of the player-segmentation program (docs/research/player-segmentation-program.md).
+
+  THE INVERSION, WHICH IS THE POINT OF THIS TICKET. The founder's framing was "identify the
+  winning sessions, then audit their decisions — they overfold x% compared to the pool, cbet
+  bluff y% compared to the pool". Run literally, that selects on a noisy label and then reads
+  behavior off the selected set, which is the circularity WS-507 tests for.
+
+  Asking instead WHICH BEHAVIORS PREDICT WINNING, OUT OF SAMPLE removes the selection problem
+  entirely: behaviors are measured on sample A, win rate is scored on held-out sample B. The
+  noise then sits on the OUTCOME side, where it costs precision, instead of on the LABEL side,
+  where it propagates into every downstream comparison. It also produces the deliverable
+  directly — a ranked list of behaviors with EV attached, which is what the founder actually
+  asked for ("quantify this").
+
+  BEHAVIORS ARE MEASURED, NEVER LABELED. Per the standing first-principles rule, the regressors
+  are quantities computed from game state — fold frequency against the pot odds actually
+  offered, c-bet frequency against board and range, showdown calls against the equity needed —
+  not "is a nit", "is aggressive", "is a fish". Style labels are outputs of this analysis and
+  must never be inputs to it. Each new regressor is a label-shaped input candidate and belongs
+  in the WS-445 ledger with its data foundation named.
+
+  DEVIATION FROM WHAT, STATED PER REGRESSOR. "Overfolds x% compared to the pool" and "z%
+  compared to equilibrium" are different claims with different foundations and must not share a
+  column: the pool baseline is mined and empirical (poolBaseline.js), the equilibrium baseline
+  is IMPORTED reference and carries every caveat that comes with that. Report both, labelled.
+
+  Every rate carries its conditioning set and its inverse conditional, and base rates come from
+  board combinatorics rather than from the model being evaluated.
+accept_criteria: |
+  - A two-level split (behaviors on A, win rate on B) with the partition recorded in the
+    manifest. Never a by-player split — per the standing rule, per-villain quantities need
+    POOL/EVAL plus walk-forward.
+  - Ranked behaviors by predictive strength on held-out win rate, each with an effect size in
+    bb/100 and a CI, not just a significance flag.
+  - Each regressor states its baseline explicitly: pool-empirical or imported-equilibrium.
+  - Leakage guard: any regressor derived from corpus-mined priors is flagged, because
+    corpus-mined priors leak into corpus backtests by construction (leakageGuard.mjs exists).
+  - Negative results are kept and reported, not dropped. A behavior that does NOT predict is a
+    result about the pool.
+  - Emits a Result Card with the full replication manifest.
+  - The aggregate-null rule from the charter applies: a behavior that fails at the aggregate is
+    not abandoned until its conditioned children have been tested.
+effort: "L"
+runs_on: "node1"
+files_involved:
+  - "scripts/backtest/"
+  - "src/utils/standardOfRecord/"
+  - "docs/research/player-segmentation-program.md"
+blocked_by:
+  - "WS-507"
+blocked_by_legacy: []
+enables:
+  - "WS-509"
+sprint_id: null
+decision_flags:
+  - |
+    Behavior set and their baselines: which deviations are worth measuring first, and for each
+    one whether the reference is the mined pool baseline or an imported equilibrium. The founder
+    named overfold rate and c-bet bluff frequency; the full set should be ratified rather than
+    assembled by whatever is easiest to compute — that is the measurability bias this repo
+    guards against.
+source:
+  type: founder-request
+  created_by: founder
+  finding_id: ""
+  run_id: "ses-20260816-1735-4010b29f"
+created_at: "2026-08-16T18:57:00Z"
+status_note: |
+  Hard-blocked by WS-507: if the win-rate label has no split-half reliability, the outcome
+  variable here is noise and the regression cannot mean anything.
