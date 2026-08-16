@@ -10,6 +10,7 @@ Composes a sprint (coherent batch, approved once) and executes it. The ADR-037 P
 
 ## Output Shape
 
+**Fleet compute:** `<one line from Step 1b — what cm-node1 is doing right now>`.
 **Sprint arc:** `<active | proposed | resuming>` — `<one-clause status>`.
 `<Delta line: what this invocation did — composed a new sprint, resumed an active one, or executed N items.>`
 `<Remainder: the Items table — # / Title / Mode / Effort / Decisions Needed — never prose-only.>`
@@ -28,6 +29,28 @@ node kit/scripts/cwos-next.js gate
 Exits 0 (clean), 1 (blocked), 2 (invalid arg). JSON output. If `result.active_sprint` is non-null, jump to **Step 6** and resume. If `result.blocked` is true, surface `result.sprint_blocks[]` + `result.drift_items[]` + `result.token_budget.note` verbatim and stop. Block entries carry a `reason:` discriminator — `first-run-required` (WS-365: an active/critical block_sprint:true program has never been run; surface the `hint:` and direct the founder to `/pulse run <program> <protocol>`) or no reason field (stale protocol from cadence check). Founder may unblock a token-budget block via `--override-token-budget "<rationale ≥20 chars>"` (Step 7).
 
 If `result.drift_auto_reconciled` is non-empty (advisory; never blocks), surface a one-line summary before continuing — e.g., `Auto-reconciled 1 item: WS-XXX (closed by event ev-...)`. Per ADR-045, drift between the canonical event log and queue YAMLs is healed inline; the founder gets visibility, not a stop.
+
+## Step 1b: Fleet compute check (WS-493)
+
+```bash
+node kit/scripts/cwos-fleet-compute.js status
+```
+
+Runs at the start of every `/next`. Always exits 0 — this is information, **never a gate**. If cm-node1 is asleep or off-tailnet it reports `UNREACHABLE` after a 20s timeout and composition continues unchanged.
+
+Surface the single status line verbatim above the sprint preview. It resolves to one of:
+
+| State | What to do |
+|-------|------------|
+| `RUNNING WS-NNN — step i/n, Xh elapsed` | Report it. Do **not** compose that item into the sprint — it is already being worked, on another machine. |
+| `IDLE — N ready item(s) waiting, top is WS-NNN` | Run `node kit/scripts/cwos-fleet-compute.js feed` and report what was submitted. The machine should not stay idle through a session. |
+| `IDLE — N node1 item(s) ranked but NONE has a compute_job spec` | Surface the ids. **Authoring a missing `compute_job` block is itself queue-worthy work** — offer it as a sprint item rather than reporting an idle machine as "nothing to do". |
+| `N job(s) QUEUED, none started yet` | Report only; the scheduled runner will pick them up within 5 minutes. |
+| `UNREACHABLE` | One line, then continue. Do not retry, do not block. |
+
+**Why this is here.** Measured 2026-08-16: cm-node1's runner had ticked cleanly every five minutes for ~27 hours and 314 of its 379 ledger events were `tick_idle`, while six `runs_on: node1` items sat unclaimed in the queue. Nothing in any command ever asked the machine what it was doing, so nobody found out. The autonomous feeder (`Fleet-ComputeFeeder`, every 2h on cm-node1) is the primary supply; this step is the founder-visible half and the top-up when a session happens to be open.
+
+**Never compose a `runs_on: node1` item as a normal sprint item when node1 is reachable.** It belongs on the compute node; pulling it into a G16 sprint is how the fleet ends up doing the same work twice.
 
 ## Step 2: Candidates
 

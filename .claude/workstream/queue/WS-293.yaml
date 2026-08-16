@@ -62,6 +62,32 @@ accept_criteria: |
     threshold and the reason. Not added silently.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+# WS-493: executable spec for the fleet compute runner. Smoke-verified 2026-08-16 at
+# --max-files 40 --max-players 60: both files written, Result Card RC-range-calibration-*
+# emitted with its leakage and online-2009-vs-live warnings intact.
+#
+# DELIBERATELY NO `--record`. The flag appends a history row inside the repo, and this runs in
+# a pinned worktree that is discarded after the artifacts are collected — the row would be
+# written and thrown away, leaving the standing-metric history silently one run short. The
+# card comes back to the G16 inbox and the row gets appended there, against the real repo.
+compute_job:
+  maxJobHours: 12
+  steps:
+    - name: range-calibration-full-corpus
+      cmd: node
+      args:
+        - "scripts/backtest/run-range-calibration.mjs"
+        - "--out"
+        - "out/range-calibration.json"
+        - "--card"
+        - "out/range-calibration.card.json"
+      expectFiles:
+        - "out/range-calibration.json"
+        - "out/range-calibration.card.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/range-calibration.json"
+    - "out/range-calibration.card.json"
 files_involved:
   - "scripts/backtest/rangeCalibrationProbe.mjs"
   - "scripts/backtest/run-range-calibration.mjs"

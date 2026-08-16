@@ -72,6 +72,38 @@ accept_criteria: |
     is as valuable as a confirmed one and gets the same treatment §11.8 gave the slowplayer.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+# WS-493: executable spec for the fleet compute runner. `cwos-fleet-compute feed` pins a
+# worktree to a commit on cm-node1, runs these steps there, and ships the artifacts back to
+# the G16 inbox. Smoke-verified 2026-08-16 at --max-files 40: both files written, Result Card
+# RC-study-ladder-* emitted admissible. This is the FULL-corpus run (27 dirs / 21,782 files),
+# uncapped on purpose — the 40-file smoke already flagged LOW_SPLIT_HALF_RELIABILITY on
+# threeBetRate, which is a power complaint and the reason the item exists.
+compute_job:
+  # Measured on G16 2026-08-16, not guessed: 100 files 13s, 800 files 31s — ~10.4s fixed
+  # startup plus ~0.026 s/file, so the full 21,782-file corpus projects to ~10 minutes here.
+  # cm-node1 is a Surface Pro 8 and slower, so the cap is set well above a pessimistic
+  # multiple of that rather than at the hours a "full corpus run" sounds like it should take.
+  maxJobHours: 4
+  steps:
+    - name: study-ladder-full-corpus
+      cmd: node
+      args:
+        - "scripts/backtest/run-study-ladder.mjs"
+        - "--min-n"
+        - "20"
+        - "--pool-pct"
+        - "50"
+        - "--out"
+        - "out/study-ladder.json"
+        - "--card-out"
+        - "out/study-ladder.card.json"
+      expectFiles:
+        - "out/study-ladder.json"
+        - "out/study-ladder.card.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/study-ladder.json"
+    - "out/study-ladder.card.json"
 files_involved:
   - "scripts/backtest/"
   - ".claude/context/POKER_THEORY.md"

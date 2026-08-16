@@ -21,6 +21,7 @@ const path = require('path');
 
 const { readYAMLFile, globFiles } = require('../../lib/cwos-utils');
 const { classifySource } = require('../../cwos-classify');
+const { isComputeReady } = require('../../lib/cwos-compute-job');
 
 const TRACK = 'T6:workstream';
 const DOMAIN = 'queue';
@@ -35,6 +36,11 @@ const ITEM_FIELDS = [
   'id', 'title', 'status', 'priority_score', 'category', 'effort',
   'program', 'capability', 'sprint_id', 'claimed_at', 'completed_at',
   'source', 'created', 'blocked_by_note',
+  // WS-493: machine affinity. Absent from this list until 2026-08-16, which is
+  // why `runs_on` existed on 174 backfilled WS-*.yaml files and was invisible to
+  // every consumer downstream of state — /next could not rank "the most
+  // important node1 item" because the field never reached the ranker.
+  'runs_on',
 ];
 // Array fields that come through as YAML block sequences
 const ARRAY_FIELDS = ['blocked_by', 'blocks', 'enables', 'depends_on', 'files_involved'];
@@ -42,7 +48,11 @@ const ARRAY_FIELDS = ['blocked_by', 'blocks', 'enables', 'depends_on', 'files_in
 // WS-262 cached fields — reducer-stamped, replay-pure derivations of
 // canonical input. Listed separately so /reducer-cached-fields tests +
 // docs can inspect them programmatically.
-const CACHED_FIELDS = ['source_class'];
+// WS-493 adds `compute_ready` — a pure function of the item's `compute_job` block, so it
+// replays identically. It is a boolean rather than the block itself because the spec is
+// human-editable content (same category as description / accept_criteria, which are
+// deliberately not mirrored); the dispatcher reads the one YAML it is about to submit.
+const CACHED_FIELDS = ['source_class', 'compute_ready'];
 
 function reduce(event, allState, ctx) {
   if (!event || event.source_track !== TRACK) return undefined;
@@ -68,6 +78,10 @@ function reduce(event, allState, ctx) {
     // (verified by INV-044). Used by /next Step 2d source-class damping
     // without re-classifying at composition time.
     summary.source_class = classifySource(d);
+    // WS-493: stamp compute-runner readiness. Pure function of d.compute_job, so replay-safe.
+    // Only meaningful for machine-bound items, but stamped unconditionally so a later
+    // `runs_on` correction does not require a re-reduce to become dispatchable.
+    summary.compute_ready = isComputeReady(d);
     items[d.id] = summary;
   }
 

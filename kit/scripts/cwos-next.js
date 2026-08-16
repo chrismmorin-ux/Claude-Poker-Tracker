@@ -68,6 +68,7 @@ const {
   staleActiveSessions,
 } = require('./lib/cwos-claims');
 const { classifySource, classifyMode } = require('./cwos-classify');
+const { normalizeRunsOn } = require('./lib/cwos-compute-job');
 
 const { appendEvent, ensureCommandId } = loadEventDeps();
 
@@ -996,6 +997,11 @@ function runCandidates(args) {
       blocked_by_note: (item.blocked_by_note && String(item.blocked_by_note).length > 0) ? item.blocked_by_note : null,
       soft_block_factor: softBlockFactor,
       source_damping: sourceDamping,
+      // WS-493: machine affinity + compute-runner readiness. Projected so `/next` and
+      // cwos-fleet-compute can ask "the most important node1 item that can actually run"
+      // against the SAME ranking the founder sees, rather than a second private ordering.
+      runs_on: normalizeRunsOn(item.runs_on),
+      compute_ready: item.compute_ready === true,
     };
     if (priorityFloorApplied) entry.priority_floor_applied = priorityFloorApplied;
     ranked.push(entry);
@@ -1198,6 +1204,7 @@ function candidatesInline(store) {
       source_class: sourceClass,
       blocked_by_note: (item.blocked_by_note && String(item.blocked_by_note).length > 0) ? item.blocked_by_note : null,
       soft_block_factor: softBlockFactor, source_damping: sourceDamping,
+      runs_on: normalizeRunsOn(item.runs_on), compute_ready: item.compute_ready === true,
     };
     if (priorityFloorApplied) entry.priority_floor_applied = priorityFloorApplied;
     ranked.push(entry);

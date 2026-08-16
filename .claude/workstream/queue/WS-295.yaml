@@ -72,6 +72,37 @@ accept_criteria: |
     is evidence about the estimator's shape, never a live-game constant.
 effort: "M"
 runs_on: "node1"        # long unattended compute
+# WS-493: executable spec for the fleet compute runner. Smoke-verified 2026-08-16 at
+# --replicates 2 on one scenario: artifact written, exit 0.
+#
+# SCOPE WARNING — THIS JOB DOES NOT CLOSE THIS ITEM, and the gap is not cosmetic.
+# `run-optimism-probe.mjs` states in its own header that it runs on a FIXED SET OF SYNTHETIC
+# NODES and measures the curse's SIZE (`E[max_a EVhat(a)] - max_a E[EVhat(a)]`, recoverable
+# only from repeated draws at the same node). The accept criteria below ask for its SHAPE —
+# gap vs posterior width and vs top-two margin with a cluster-bootstrap CI — over the WS-287
+# corpus pass, "no second pipeline, no new corpus read".
+#
+# That corpus arm DOES NOT EXIST: `shapeReport` in optimismBias.mjs is imported by
+# run-optimism-probe.mjs and by nothing else (verified 2026-08-16), so nothing wires it over
+# heroEvRunner/ipsEstimator output. Building that runner is the remaining work and it is
+# `any`-machine code work, not compute. This job buys the size half, which is real and which
+# the corpus arm cannot produce — do not mark WS-295 done on it.
+compute_job:
+  maxJobHours: 6
+  steps:
+    - name: optimism-size-synthetic-replicates
+      cmd: node
+      args:
+        - "scripts/backtest/run-optimism-probe.mjs"
+        - "--replicates"
+        - "200"
+        - "--out"
+        - "out/optimism-size.json"
+      expectFiles:
+        - "out/optimism-size.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/optimism-size.json"
 files_involved:
   - "scripts/backtest/heroEvRunner.mjs"
   - "scripts/backtest/ipsEstimator.mjs"
