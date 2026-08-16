@@ -141,8 +141,8 @@ function doneJobIds() {
   // were commit-keyed (ws-320-48bd185e7587) and the current ones are content-keyed, and a
   // check that only compared ids would have silently re-run every pre-existing job once.
   const summary = onTarget()
-    ? path.join(REPO_ROOT, 'scripts', 'fleet', 'done-summary.js')
-    : `${REMOTE_REPO}\\scripts\\fleet\\done-summary.js`;
+    ? path.join(REPO_ROOT, 'scripts', 'fleet', 'done-summary.cjs')
+    : `${REMOTE_REPO}\\scripts\\fleet\\done-summary.cjs`;
   const r = onTarget()
     ? run(process.execPath, [summary, REMOTE_DONE])
     : run('ssh', [TARGET, `${quote(REMOTE_NODE)} ${quote(summary)} ${quote(REMOTE_DONE)}`]);
