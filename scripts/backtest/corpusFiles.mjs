@@ -142,6 +142,18 @@ export const discoverCorpusFiles = async ({
     }
   }
 
+  // SORTED, for the same reason buildDealBook sorts its members: directory iteration order
+  // is a filesystem detail, not a property of the hand set. The Deal Book sorts before
+  // HASHING, which makes the hash machine-independent — but `--max-files` slices THIS list,
+  // before the book is built, so an unsorted order meant the same command on two machines
+  // scored a different subset of hands while both looked equally legitimate. The differing
+  // Deal Book hash was the only symptom, and it reads as "a different slice was requested"
+  // rather than "the filesystem picked for you".
+  //
+  // Sorted on the site/stake-qualified path so the ordering is stable across roots too: a
+  // machine whose corpus lives at a different --corpus-root yields the same RELATIVE order.
+  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+
   if (files.length === 0) {
     throw new Error(
       `No .phhs files found under ${root}` +
