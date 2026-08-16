@@ -4,9 +4,9 @@ revived_at: "2026-08-15T21:35:51.978Z"
 started_at: "2026-08-15T16:21:16.370Z"
 ended_at: null
 mode: auto
-last_heartbeat: "2026-08-16T06:48:32.680Z"
+last_heartbeat: "2026-08-16T08:05:13.926Z"
 pid: 26892
-pid_recorded_at: "2026-08-16T06:48:32.680Z"
+pid_recorded_at: "2026-08-16T08:05:13.926Z"
 host: MorinComputer
 agent_session_id: "c5dfb8f8-09c6-4a1c-a183-38e5f7b77777"
 
@@ -17,6 +17,7 @@ claimed_items: []
 files_locked:
   - "vite.config.js"
   - "src/utils/exploitEngine/__tests__/advisorAccuracy.test.js"
+  - "scripts/backtest/run-hero-ev.mjs"
 
 handoff_notes: |
   Session auto-recovered by cwos-session-recovery on 2026-08-15.
