@@ -1,0 +1,82 @@
+id: "WS-504"
+title: "`--max-files` slices a SORTED list, so every capped multi-stake run is silently stake-biased — add stratified corpus selection"
+legacy_id: ""
+type: defect
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 76.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUND 2026-08-16 while routing the C3 continuation (WS-503) to cm-node1.
+
+  THE DEFECT. `discoverCorpusFiles` returns a SORTED file list (6d785025 made it sorted,
+  correctly — before that it was filesystem-ordered and irreproducible across machines).
+  `--max-files N` then takes the first N of that sorted list. Directory names lead with
+  the site code, so on cm-node1's 27-directory corpus the first 60 files are ALL from
+  `ABS-2009-07-01_2009-07-23_1000NLH_OBFU`.
+
+  A run invoked as "full corpus, capped at 60 files for cost" therefore measures ONE SITE
+  AT ONE STAKE, and says nothing about it. Nothing in the artifact reveals this: the Deal
+  Book is named `handhq-allsites-allstakes-<hash>` because that is the discovery filter,
+  not the realised sample.
+
+  WHY IT MATTERS RIGHT NOW, WITH A NUMBER. WS-492 measured a monotone stake gradient
+  across this corpus — 6-max 3-bet +57% from 25NLH to 1000NLH, PFR +31%. A sample that
+  silently collapses onto one stake is not a smaller version of the corpus; it is a
+  different population. This is the same class of error as WS-492's own finding that the
+  shipped tables were fitted 4x below the founder's stake.
+
+  It did NOT corrupt anything measured so far, because G16 holds only two directories and
+  both are 50NLH — the bias had nothing to express. It becomes live the moment a capped
+  run executes on cm-node1, which is exactly what the fleet compute feeder now routes
+  there. WS-503 is pinned with `--sites FTP,PS --stakes 50NLH` to sidestep it, and that
+  pin is a workaround, not the fix.
+
+  THE FIX — build the instrument, do not shrink the question.
+  1. Add stratified selection: `--max-files` should draw PROPORTIONALLY (or round-robin)
+     across the discovered directories rather than taking a sorted prefix. Deterministic
+     and seeded, so it stays reproducible.
+  2. Make the realised sample self-describing: the Deal Book / replication stamp must
+     record the per-directory file counts actually used, so "allsites-allstakes" can never
+     again name a single-stake sample.
+  3. Refuse-or-warn when a cap collapses the sample onto fewer directories than were
+     discovered — the artifact should say so rather than the reader having to notice.
+
+  Until (1) and (2) exist, the broad-population hero-EV question (does the engine's edge
+  hold across 25NLH-1000NLH, not just 50NLH?) cannot be asked honestly, because any
+  affordable capped run answers a different question than it appears to.
+accept_criteria:
+  - "`--max-files N` over multiple directories yields a sample spanning them, deterministically and reproducibly."
+  - "Replication stamp / Deal Book records per-directory file counts of the REALISED sample, not just the filter."
+  - "A cap that collapses the sample onto a strict subset of discovered directories is reported in the artifact."
+  - "Regression test: capped discovery over >=3 synthetic directories draws from all of them."
+  - "WS-503's pinned invocation still reproduces the identical two-directory 50NLH sample."
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/corpusFiles.mjs"
+  - "scripts/backtest/replicationStamp.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-503"
+sprint_id: ""
+decision_flags: []
+source:
+  type: session-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "session-2026-08-16-gate"
+created_at: "2026-08-16"
+updated_at: "2026-08-16"
+status_note: |
+  Sibling to WS-492 (stake gradient). Latent on G16 (2 dirs, both 50NLH); live on cm-node1
+  (27 dirs, 25NLH-1000NLH) which is where the compute feeder now sends node1 work.

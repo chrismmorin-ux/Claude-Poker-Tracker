@@ -44,3 +44,22 @@ runs:
     notes: >
       Treatment: per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy.
       Carried forward unchanged from 2026-07-27: accuracy, logLoss, lift, worstCalibrationError — inherited, not re-measured.
+
+  - date: "2026-08-16"
+    label: "C3 re-baseline — clean tree, corrected rake arithmetic, sorted corpus (308 player-clusters)"
+    source: "WS-286 C3 / commit c5b8beaf / FAULT-untaxed-fold-branch confirmed 2026-08-15"
+    arm: "hero-ev"
+    decisions: 1160
+    corpus: "HandHQ online cash, July 2009, 50NL"
+    metrics:
+      accuracy: 0.587
+      logLoss: 0.75819
+      lift: 0.0603
+      worstCalibrationError: 0.058
+      heroEvEdge: 2.2669
+      heroEvCiLow: -1.1685
+      heroEvClusters: 308
+    disclaimerRegisterVersion: "FR-1+bb7d37d9aeac"
+    notes: >
+      Treatment: per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy.
+      Carried forward unchanged from 2026-07-28: accuracy, logLoss, lift, worstCalibrationError — inherited, not re-measured.

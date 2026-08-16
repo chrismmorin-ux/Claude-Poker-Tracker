@@ -22,7 +22,7 @@
  * EXIT CODES  0 = gate OPEN · 1 = gate CLOSED · 2 = evidence missing or stale
  */
 
-import { readFileSync, existsSync, appendFileSync } from 'node:fs';
+import { readFileSync, existsSync, appendFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,6 +32,7 @@ const p = (...s) => resolve(ROOT, ...s);
 const GATE_DOC = 'docs/domain/MODEL_READINESS_GATE.md';
 const HISTORY = p('docs/domain/readiness/scorecard-history.yaml');
 const OVERTURNS = p('docs/domain/readiness/overturn-ledger.yaml');
+const OUT_DIR = p('out');
 
 // Thresholds — MIRRORED FROM THE GATE DOC. Changing one here without changing it
 // there (and recording the founder decision) is exactly the silent-bar-move the doc
@@ -89,6 +90,9 @@ const parseHistory = (text) => {
       // 2026-07-31, which is why `null` is treated as "unknown, therefore not certifiable"
       // below rather than as "fine" — see C3.
       heroEvClusters: num(readScalar(body, 'heroEvClusters')),
+      // The fault register this row's number was computed under. Rows written before
+      // 2026-08-16 have none, which is treated as "unknown" and never as "same as mine".
+      disclaimerRegisterVersion: readScalar(body, 'disclaimerRegisterVersion'),
     };
   });
 };
@@ -250,7 +254,98 @@ const evaluate = () => {
     runCount: runs.length,
     criteria,
     problems,
+    unrecorded: unrecordedHeroEvEvidence(latest),
   };
+};
+
+/**
+ * Hero-EV artifacts on disk that the scorecard has not been told about.
+ *
+ * WHY THIS EXISTS — the failure it caught on the day it was written (2026-08-16).
+ *
+ * The gate's stated design rule is that it must never report a criterion as MET when it
+ * cannot verify it. That rule held. Nothing guarded the INVERSE, and the inverse is just
+ * as damaging: for ~20 days the gate reported C3 as failing on `edge 12.042, CI low
+ * -7.597` — the 2026-07-28 SMOKE run, 9 contributing players — while
+ * `out/hero-ev-300p.json` had been sitting on disk since 2026-08-07 reading
+ * `c3Passes: true, admissible: true, clusters: 278`. C5 did the same thing over the same
+ * window against a protocol that had actually run.
+ *
+ * A criterion failing on superseded evidence looks EXACTLY like a criterion that is
+ * honestly failing. That is the whole problem: there is no visible difference, so nobody
+ * looks. The scorecard is hand-appended, has no producer and no freshness check, and the
+ * SessionStart hook fails open by design — so a gate frozen on stale rows is silent in
+ * every channel that was supposed to report it.
+ *
+ * DELIBERATELY ADVISORY. This function CANNOT change a verdict, and must never be made
+ * able to. `--record --from` is still the only path from an artifact to the scorecard,
+ * and it still refuses inadmissible reports. Auto-adopting a number found on disk would
+ * be a way to open the gate as a side effect of writing a file, which is precisely the
+ * silent-bar-move the gate doc forbids. This only ever says: LOOK, and names the command.
+ *
+ * Depends on nothing: if `out/` is absent or unreadable this returns [] and the checker
+ * behaves exactly as before, preserving the rule that it must run when the backtest cannot.
+ */
+export const unrecordedHeroEvEvidence = (latest, outDir = OUT_DIR) => {
+  try {
+    if (!existsSync(outDir)) return [];
+    const found = [];
+    for (const name of readdirSync(outDir)) {
+      // Completed artifacts only. `.partial` files say of themselves that they are not a
+      // validated result, and a partial is the one thing that must never look like evidence.
+      if (!name.startsWith('hero-ev-') || !name.endsWith('.json')) continue;
+      let payload;
+      try {
+        payload = JSON.parse(readFileSync(resolve(outDir, name), 'utf8'));
+      } catch { continue; }
+      const adm = payload?.report?.admissibility;
+      const gate = payload?.report?.gate;
+      if (!adm || adm.admissible !== true || !gate) continue;
+
+      // A NUMBER IS ONLY COMPARABLE TO ONE COMPUTED UNDER THE SAME KNOWN FAULTS.
+      //
+      // This guard exists because the first version of this detector was WRONG in exactly
+      // the way it was built to prevent, within an hour of being written. It flagged
+      // out/hero-ev-300p.json (edge 5.26, CI low +2.13, 278 players) as evidence that a
+      // recorded FAILURE "may be stale" — but that artifact ran under FR-1+746d7b4aaea4,
+      // which predates FAULT-untaxed-fold-branch (confirmed 2026-08-15: the fold branch of
+      // every postflop EV paid an unraked pot). The corrected run at 308 players read
+      // edge 2.27, CI [-1.17, +5.56]. The old number was not better evidence; it was
+      // inflated by a fault. Pointing at it would have argued the founder OUT of an honest
+      // failure and into a contaminated pass — the precise inversion of this file's purpose.
+      //
+      // So: an artifact stamped under a different register than the recorded row is not
+      // "newer evidence", it is "not comparable", and this detector says nothing about it.
+      // Unknown on either side is also not a match — absence is never treated as agreement.
+      const artifactRegister = payload?.run?.replicationStamp?.disclaimerRegisterVersion ?? null;
+      const rowRegister = latest?.disclaimerRegisterVersion ?? null;
+      if (!artifactRegister || !rowRegister || artifactRegister !== rowRegister) continue;
+
+      // Same field names the `--record --from` path reads, so this can never disagree
+      // with what recording would actually put in the scorecard.
+      const edge = num(gate.heroEvEdge ?? null);
+      const ciLow = num(gate.heroEvCiLow ?? null);
+      const clusters = num(adm.clusters ?? null);
+      if (ciLow === null || clusters === null) continue;
+
+      // Would this artifact clear C3 on its own terms?
+      const wouldPass = ciLow > 0 && clusters >= BAR.heroEvClusters;
+      if (!wouldPass) continue;
+
+      // Already the row we are reading? Then it is recorded, not unrecorded.
+      const sameAsRow = latest
+        && latest.heroEvClusters === clusters
+        && latest.heroEvCiLow !== null
+        && Math.abs(latest.heroEvCiLow - ciLow) < 1e-6;
+      if (sameAsRow) continue;
+
+      found.push({ file: `out/${name}`, edge, ciLow, clusters });
+    }
+    // Most clusters first — the strongest evidence is the one worth looking at.
+    return found.sort((a, b) => b.clusters - a.clusters);
+  } catch {
+    return [];
+  }
 };
 
 const fmtPct = (v) => (v === null ? 'n/a' : `${(v * 100).toFixed(1)}%`);
@@ -305,6 +400,7 @@ const recordRun = (args) => {
   let decisions = flag('decisions');
   let treatment = flag('treatment');
   let source = flag('source');
+  let registerVersion = flag('register-version');
 
   // Reading straight from the instrument's own output beats retyping four numbers.
   const from = flag('from');
@@ -351,6 +447,14 @@ const recordRun = (args) => {
     decisions ??= String(head.n);
     treatment ??= payload.report.treatment;
     source ??= from;
+    // WHICH FAULT REGISTER THIS RAN UNDER. Recorded because a number is only comparable to
+    // another number computed under the same set of known faults. On 2026-08-16 the two
+    // hero-EV artifacts on disk carried FR-1+746d7b4aaea4 and FR-1+bb7d37d9aeac: the older
+    // one predates FAULT-untaxed-fold-branch (confirmed 2026-08-15, "the fold branch of
+    // every postflop EV paid an unraked pot"), and it read edge 5.26 / CI low +2.13 where
+    // the corrected run read 2.27 / -1.17. Same instrument, same bar, opposite verdict.
+    // Without this field the scorecard cannot tell those two apart.
+    registerVersion ??= payload?.run?.replicationStamp?.disclaimerRegisterVersion ?? undefined;
   }
 
   const label = flag('label');
@@ -396,6 +500,8 @@ const recordRun = (args) => {
     // The interval is a cluster bootstrap over players; without this number the row cannot
     // say whether its own CI is believable, so C3 treats its absence as unknown.
     `      heroEvClusters: ${v(heroEvClusters)}`,
+    // Flat scalar on its own line, per the simple-reader constraint at the top of this file.
+    `    disclaimerRegisterVersion: ${JSON.stringify(registerVersion ?? null)}`,
     '    notes: >',
     `      ${treatment ? `Treatment: ${treatment}.` : 'Treatment: UNSTATED.'}`,
     carried.length
@@ -449,8 +555,30 @@ const main = () => {
   for (const c of r.criteria) {
     console.log(`  ${c.pass ? 'PASS' : 'FAIL'}  ${c.id}  ${c.name.padEnd(28)} ${c.detail}`);
   }
+
+  // Loud, and above the exit — a stale FAILURE is indistinguishable from an honest one,
+  // so the only defence is to say so where the failure is being read.
+  if (r.unrecorded.length) {
+    const c3 = r.criteria.find((c) => c.id === 'C3');
+    console.log('\n  ' + '!'.repeat(76));
+    console.log(`  !!  UNRECORDED EVIDENCE — ${r.unrecorded.length} admissible hero-EV artifact(s) on disk`);
+    console.log(`  !!  would clear C3, and the scorecard has not been told about them.`);
+    if (c3 && !c3.pass) {
+      console.log(`  !!  C3 is currently reported FAILING on the row above. That failure may be STALE.`);
+    }
+    console.log('  ' + '!'.repeat(76));
+    for (const u of r.unrecorded) {
+      console.log(`     ${u.file}  edge ${fmt3(u.edge)}  CI low ${fmt3(u.ciLow)}  ${u.clusters} players`);
+    }
+    console.log('\n     Recording is still a deliberate act — this check cannot do it for you:');
+    console.log(`       node scripts/readiness/model-readiness.mjs --record --from ${r.unrecorded[0].file} \\`);
+    console.log('         --label "<what this run was>" --source "<WS-id / commit>"');
+  }
+
   console.log('');
   process.exit(r.open ? 0 : 1);
 };
 
-main();
+// Importable for tests: without this guard, ing this module runs the CLI and
+// calls process.exit inside the test runner. See __tests__/modelReadinessStaleness.test.js.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

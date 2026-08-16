@@ -20,13 +20,31 @@ attestation:
   # protocol actually last ran according to the EVENT LOG — the record that cannot
   # be written by asserting it.
   #
-  # These diverge right now, which is the whole point. The program YAML claims
-  # 2026-07-22; the event log says 2026-06-20. A self-attestation would have passed
-  # C5 on the strength of someone writing today's date next to their own name.
-  # WS-268 heals the drift.
-  domain_protocol_last_run_per_event_log: "2026-06-20"
-  domain_protocol_yaml_claims: "2026-07-22"
-  domain_protocol_drift_days: 32
+  # RECONCILED 2026-08-16. These fields were frozen on 2026-07-30 and reported a
+  # 32-day drift for the next 17 days while the protocol was in fact running. The
+  # drift was real when written and was healed by execution, not by editing: three
+  # domain-correctness protocol runs have since completed, each with a
+  # `protocol_run_completed` event carrying `program: domain-correctness`.
+  #
+  # The dates below are read OFF those events, never typed from a program YAML —
+  # that is the whole reason C5 reads this field instead of `last_reviewed`.
+  #
+  #   sweep     2026-08-13T15:13:20Z  ev-1786634000374-9a778282d161
+  #   challenge 2026-08-13T22:32:46Z  ev-1786660366121-c27d0ad821e0
+  #   delta     2026-08-15T00:32:30Z  ev-1786753950340-cdbd8aeaba56
+  #
+  # `prog-domain-correctness.yaml` records the same three runs with the same event
+  # IDs, so the two records agree at 2026-08-15 and the drift is 0.
+  #
+  # WHAT THIS EPISODE COST, recorded so it is not repeated: these are hand-typed
+  # scalars with no producer and no freshness check, so a criterion can report
+  # FAILURE on superseded evidence indefinitely and look exactly like a criterion
+  # that is honestly failing. C3 did the same thing over the same window. The gate
+  # doc promises it never assumes an unverifiable criterion is MET; nothing guards
+  # the inverse. See WS-268 for the remaining reconcile work.
+  domain_protocol_last_run_per_event_log: "2026-08-15"
+  domain_protocol_yaml_claims: "2026-08-15"
+  domain_protocol_drift_days: 0
   domain_protocol_stale_after_days: 21
   open_findings_that_could_overturn: 1
   open_findings_note: >
