@@ -33,6 +33,7 @@ accept_criteria:
   - "Default OFF (AP-PIO-03 privacy-first)"
   - "Tests for reducer + visibility gating + CI-grep"
 effort: "S"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/constants/settingsConstants.js (add SET_PRIVACY_PHOTO_CAPTURE_ENABLED + DEFAULT_SETTINGS.privacy.photoCaptureEnabled)"
   - "src/reducers/settingsReducer.js (add reducer case)"

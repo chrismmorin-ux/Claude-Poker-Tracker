@@ -33,6 +33,7 @@ accept_criteria:
   - "A leak-targeted 'what should I drill today?' entry exists (the WS-230 nav investment), routing from the user's actual leaks rather than a default tab."
   - "Gate 4 surface spec authored before code; references DS-45 + the WS-229 audit."
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: ["WS-198"]
 blocked_by_legacy: []

@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Deferred until sequence-mode harness (RT-74) lands — will author as sequences not snapshots"
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

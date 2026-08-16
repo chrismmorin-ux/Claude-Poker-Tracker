@@ -17,6 +17,7 @@ accept_criteria:
   - "✓ Every flagged turn decision has `comboPlans` declared"
   - "✓ tests green"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

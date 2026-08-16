@@ -75,6 +75,7 @@ accept_criteria: |
     just at the builder.
   - Commit / PR references the audit-id or surface-id it implements.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/design/surfaces/"
   - "src/utils/exploitEngine/heroSelfObservation.js"

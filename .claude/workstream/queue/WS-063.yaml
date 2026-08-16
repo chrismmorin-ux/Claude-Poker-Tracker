@@ -20,6 +20,7 @@ accept_criteria:
   - "verdict GREEN/YELLOW/RED"
   - "addresses 6 open owner questions from Gate 1."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

@@ -23,6 +23,9 @@ import { NavShell } from './components/ui/NavShell';
 // settings.voiceCardEntry.enabled (default OFF). Renders only on TableView
 // with empty board slots. ShowdownView per-villain wiring deferred.
 import VoiceCardEntryOverlay from './components/ui/VoiceCardEntryOverlay';
+// Renders nothing — seeds new seats from the buy-in and self-heals the stack
+// ledger from observed action (surface `seat-stack-ledger`, C-3).
+import { SeatStackLedger } from './hooks/useSeatStackLedger';
 import { ViewLoadingFallback } from './components/ui/ViewLoadingFallback';
 // WS-440: rotates fixed chrome with the canvas so nothing reads sideways in
 // the portrait auto-rotate fallback. Each piece is wrapped individually to
@@ -148,6 +151,7 @@ const AppRoot = () => {
       <RotatedViewport zClassName="z-50"><UpdateBanner /></RotatedViewport>
       <ViewRouter />
       <RotatedViewport zClassName="z-40"><VoiceCardEntryOverlay /></RotatedViewport>
+      <SeatStackLedger />
       <RotatedViewport zClassName="z-[55]"><NavShell /></RotatedViewport>
       <RotatedViewport zClassName="z-[60]"><HealthIndicator /></RotatedViewport>
     </AppProviders>

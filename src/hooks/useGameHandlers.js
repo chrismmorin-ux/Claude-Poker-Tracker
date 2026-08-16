@@ -13,6 +13,7 @@ import { SESSION_ACTIONS } from '../reducers/sessionReducer';
 import { allCardsAssigned as allCardsAssignedUtil } from '../utils/actionUtils';
 import { isSeatInactive as seatUtilsIsSeatInactive } from '../utils/seatUtils';
 import { getSeatContributions } from '../utils/potCalculator';
+import { settleHand } from '../utils/seatStacks/handSettlement';
 import {
   SEAT_ARRAY,
   STREETS,
@@ -182,12 +183,24 @@ export const useGameHandlers = () => {
   }, [communityCards, holeCardsVisible, holeCards]);
 
   const nextHand = useCallback(() => {
+    // Settle the hand that just finished BEFORE the action sequence is cleared —
+    // it is the only record of what each seat put in and took out. The reducer
+    // stays free of blinds and pot-partitioning logic; it just applies the result.
+    const settlement = settleHand(actionSequence, blinds, {
+      smallBlindSeat,
+      bigBlindSeat,
+      street: currentStreet,
+    });
+
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });
-    dispatchGame({ type: GAME_ACTIONS.NEXT_HAND });
+    dispatchGame({ type: GAME_ACTIONS.NEXT_HAND, payload: settlement });
     dispatchSession({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
     clearSelection();
-    log('nextHand: dealer advanced, all cards/actions cleared, hand count incremented');
-  }, [dispatchCard, dispatchGame, dispatchSession, clearSelection]);
+    log('nextHand: dealer advanced, all cards/actions cleared, stacks carried, hand count incremented');
+  }, [
+    dispatchCard, dispatchGame, dispatchSession, clearSelection,
+    actionSequence, blinds, smallBlindSeat, bigBlindSeat, currentStreet,
+  ]);
 
   const resetHand = useCallback(() => {
     dispatchCard({ type: CARD_ACTIONS.RESET_CARDS });

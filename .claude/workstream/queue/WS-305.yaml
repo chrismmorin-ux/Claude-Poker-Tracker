@@ -110,6 +110,7 @@ accept_criteria: |
   - `pokerCore` suite green. No change to any shipped range, prior, or advice —
     this ticket adds a capability and is behaviour-neutral by design.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/pokerCore/preflopEquity.js"
   - "src/utils/pokerCore/equityDecomposition.js"

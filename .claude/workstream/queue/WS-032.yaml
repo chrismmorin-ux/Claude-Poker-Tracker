@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "6-action panel shipped"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_note: "Pending MPMF Gate 4 surface S5 (BillingSettings spec, not yet ticketed in queue). Cannot ship implementation before the surface spec exists per design framework guardrail."

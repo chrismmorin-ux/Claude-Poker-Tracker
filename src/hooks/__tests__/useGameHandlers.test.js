@@ -103,7 +103,19 @@ describe('useGameHandlers', () => {
       });
 
       expect(mockDispatchCard).toHaveBeenCalledWith({ type: CARD_ACTIONS.RESET_CARDS });
-      expect(mockDispatchGame).toHaveBeenCalledWith({ type: GAME_ACTIONS.NEXT_HAND });
+      // NEXT_HAND now carries the settlement of the hand just finished — the
+      // action sequence is about to be cleared, so this is the last moment the
+      // stack ledger can learn what each seat put in and took out.
+      expect(mockDispatchGame).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: GAME_ACTIONS.NEXT_HAND,
+          payload: expect.objectContaining({
+            contributions: expect.any(Object),
+            payouts: expect.any(Object),
+            estimated: expect.any(Boolean),
+          }),
+        }),
+      );
       expect(mockDispatchSession).toHaveBeenCalledWith({ type: SESSION_ACTIONS.INCREMENT_HAND_COUNT });
       expect(mockClearSelection).toHaveBeenCalled();
     });

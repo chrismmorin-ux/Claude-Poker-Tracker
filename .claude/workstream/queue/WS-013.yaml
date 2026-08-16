@@ -43,6 +43,7 @@ accept_criteria:
   - "curriculum scaffolding shipped"
   - "≥10 lessons across ≥3 tiers landed"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-012"

@@ -81,7 +81,10 @@ Paradigm: **S** = scaled-landscape, **F** = fluid-portrait. "Should-be" flags mi
 **Standardize so it can't drift:** the two shared shells — `<FluidView>` and a single `<ScaledView>` — plus a shared `<Modal>` (44px footers + `90dvh`) are the structural fix; the per-view bugs are symptoms of not having them.
 
 ## Open questions for owner
-1. **Stats/Analysis/Online/Tournament** — keep the fixed game-canvas (scaled), or reflow as fluid phone reading surfaces? (Determines Phase-3 scope.)
+1. ~~**Stats/Analysis/Online/Tournament** — keep the fixed game-canvas (scaled), or reflow as fluid phone reading surfaces? (Determines Phase-3 scope.)~~
+   **ANSWERED 2026-08-01: FLUID.** Founder chose app-wide un-scaling during TVR Gate 4 Phase A (`WS-319`). The answer is *derived*, not asserted: none of those four contains a region whose geometry carries meaning — they are panels of numbers.
+   The same decision **promoted this audit's rule from per-view to per-region** (*spatial regions scale, interactive regions do not*), because the per-view framing cannot express TableView, which holds a spatial felt and an interactive command column at once. Forcing both into one paradigm is what produced 30.6px touch targets and a clipped primary CTA — measured under `WS-316` / `WS-311`.
+   Doctrine: [`surfaces/layout-doctrine.md`](../surfaces/layout-doctrine.md). Phase 3 scope is now settled; migration filed as `WS-322`.
 2. Browser-tab support — is the installed PWA the only target (lower the orientation-fallback priority), or do you want the app usable in a plain mobile browser tab too?
 3. Phase 1 first (stop clipping + fix PlayersView), or a different priority?
 

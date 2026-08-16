@@ -61,6 +61,10 @@ export const sanitizeReasoningNote = (note) => {
     createdAt: Number(note.createdAt) || 0,
     endedAt: Number(note.endedAt) || 0,
     interrupted: !!note.interrupted,
+    // Why the session closed. Not validated against a whitelist — engine error
+    // codes are open-ended and an unrecognised reason is still better evidence
+    // than none. `null` on notes written before this field existed.
+    endReason: typeof note.endReason === 'string' && note.endReason ? note.endReason : null,
     segments: note.segments.map((s) => ({
       text: String(s.text ?? ''),
       confidence: Number.isFinite(s.confidence) ? s.confidence : null,

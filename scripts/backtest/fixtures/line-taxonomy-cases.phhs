@@ -1,0 +1,75 @@
+# Hand-built cases pinning the postflop first-aggression taxonomy (WS-318).
+#
+# Each hand isolates exactly ONE cell, so a misclassification shows up as a cell that
+# fires when it should not. Blinds are 1/2 and every bet is engineered to be exactly
+# 0.50 pot, so the reported figure doubles as an arithmetic check on the running pot.
+#
+# Expected output — one sample per cell, each at 0.50 pot:
+#   [1] turn_probe        [2] flop_stab         [3] flop_donk
+#   [4] turn_delayed_cbet [5] flop_cbet + turn_barrel
+#
+# The distinction the fixture exists to protect (founder, 2026-07-31): a DONK leads
+# INTO an aggressor who has not yet acted; a STAB bets AFTER that aggressor has
+# checked. Same seat, same street, opposite information — must not be pooled.
+
+[1]
+# PROBE (turn). p3 opens to 6 = PFA in position; p1 calls from the SB.
+# Preflop pot = 6 + 6 + 2 dead BB = 14. Flop checks through.
+# Turn: p1 bets 7 before the PFA acts, and the PFA declined the previous street.
+# 7/14 = 0.50 pot -> turn_probe.
+variant = 'NT'
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [200, 200, 200]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'p3 cbr 6', 'p1 cc', 'p2 f', 'd db 2c7hKd', 'p1 cc', 'p3 cc', 'd db 3s', 'p1 cbr 7', 'p3 f']
+players = ['A', 'B', 'C']
+
+[2]
+# STAB (flop) — the founder's case. p1 opens to 6 from the SB = PFA and is OUT of
+# position; p3 calls in position. Preflop pot = 6 + 6 + 2 dead BB = 14.
+# Flop: the PFA CHECKS, then p3 bets 7 into that check.
+# 7/14 = 0.50 pot -> flop_stab. Must NOT report flop_donk.
+variant = 'NT'
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [200, 200, 200]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'p3 cc', 'p1 cbr 6', 'p2 f', 'p3 cc', 'd db 2c7hKd', 'p1 cc', 'p3 cbr 7', 'p1 f']
+players = ['A', 'B', 'C']
+
+[3]
+# DONK (flop). p3 opens to 6 = PFA in position; p1 calls from the SB.
+# Preflop pot = 14. Flop: p1 leads 7 BEFORE the PFA has acted.
+# 7/14 = 0.50 pot -> flop_donk. Same seat and street as [2]; different action.
+variant = 'NT'
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [200, 200, 200]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'p3 cbr 6', 'p1 cc', 'p2 f', 'd db 2c7hKd', 'p1 cbr 7', 'p3 f']
+players = ['A', 'B', 'C']
+
+[4]
+# DELAYED C-BET (turn). p3 opens to 6 = PFA; p1 calls. Flop checks through.
+# Turn: p1 checks, then the PFA bets 7 having NOT bet the flop.
+# 7/14 = 0.50 pot -> turn_delayed_cbet. Must NOT report turn_barrel.
+variant = 'NT'
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [200, 200, 200]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'p3 cbr 6', 'p1 cc', 'p2 f', 'd db 2c7hKd', 'p1 cc', 'p3 cc', 'd db 3s', 'p1 cc', 'p3 cbr 7', 'p1 f']
+players = ['A', 'B', 'C']
+
+[5]
+# C-BET then BARREL. p3 opens to 6 = PFA; p1 calls. Preflop pot = 14.
+# Flop: p1 checks, PFA bets 7 -> flop_cbet at 0.50 pot; p1 calls. Pot = 28.
+# Turn: p1 checks, PFA bets 14 -> turn_barrel at 0.50 pot (it DID bet the flop).
+variant = 'NT'
+antes = [0, 0, 0]
+blinds_or_straddles = [1, 2, 0]
+min_bet = 2
+starting_stacks = [200, 200, 200]
+actions = ['d dh p1 ????', 'd dh p2 ????', 'd dh p3 ????', 'p3 cbr 6', 'p1 cc', 'p2 f', 'd db 2c7hKd', 'p1 cc', 'p3 cbr 7', 'p1 cc', 'd db 3s', 'p1 cc', 'p3 cbr 14', 'p1 f']
+players = ['A', 'B', 'C']

@@ -30,6 +30,7 @@ accept_criteria:
   - "validateAnchor (or its caller) executes base-contract validation per the decision"
   - "claimContractSeam.test.js widened to the decided contract; all 4 seeds pass"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/anchorLibrary/validateAnchor.js
   - src/utils/assumptionEngine/assumptionTypes.js

@@ -33,6 +33,7 @@ accept_criteria: |
   primary surface audited against it with a remediation backlog produced.
   Gate 1 (Entry) and Gate 4 (Design) passed per docs/design/LIFECYCLE.md.
 effort: L
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - docs/design/
 deferred_reason: "Owner flagged as future work (2026-06-19) — not started; other priorities active first."

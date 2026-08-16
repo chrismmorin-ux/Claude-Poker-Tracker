@@ -31,6 +31,11 @@
  * @param {Array} entries — timeline entries in scope
  * @param {Object|null} selectedHand
  */
+// Read-only stack derivation. Neither module can reach card or game state — the
+// structural half of the contamination guard is unaffected.
+import { buildStackBinding, STACK_SOURCE } from '../seatStacks/stackLedger';
+import { committedSoFar } from '../seatStacks/handSettlement';
+
 export function potFromEntries(entries, selectedHand) {
   let pot = 0;
   const blindsPosted = selectedHand?.gameState?.blindsPosted;
@@ -101,6 +106,42 @@ export function buildHandReviewSnapshot(reviewState = {}, selectedHand = null) {
     }
   }
 
+  // Stack binding. `entriesInScope` is the same set the pot is computed from, so
+  // stacks and pot are conditioned on the identical moment — and therefore carry
+  // the same `potBasis` caveat. At 'street-start' basis these are stacks as the
+  // street began, not as it stands.
+  const ledger = selectedHand?.gameState?.seatStacks ?? null;
+  const blinds = selectedHand?.gameState?.blinds ?? selectedHand?.blinds ?? null;
+  let stackBinding = {
+    stacks: null,
+    stackSources: null,
+    effStack: null,
+    effStackSource: STACK_SOURCE.UNKNOWN,
+    effStackBB: null,
+    spr: null,
+    stacksAdmissible: false,
+  };
+  if (ledger && Object.keys(ledger).length > 0 && seat !== null) {
+    const folded = new Set(
+      entriesInScope.filter((e) => e?.action === 'fold').map((e) => Number(e.seat)),
+    );
+    const liveSeats = Object.keys(ledger).map(Number).filter((s) => !folded.has(s));
+    const committed = blinds
+      ? committedSoFar(entriesInScope, blinds, {
+          smallBlindSeat: selectedHand?.gameState?.smallBlindSeat,
+          bigBlindSeat: selectedHand?.gameState?.bigBlindSeat,
+        })
+      : {};
+    stackBinding = buildStackBinding(ledger, {
+      heroSeat: seat,
+      liveSeats,
+      currentHand: Number(selectedHand?.gameState?.handNumber) || 0,
+      pot: potFromEntries(entriesInScope, selectedHand),
+      bb: blinds?.bb ?? null,
+      committed,
+    });
+  }
+
   return {
     // Where in the hand
     street: currentStreet,
@@ -115,8 +156,7 @@ export function buildHandReviewSnapshot(reviewState = {}, selectedHand = null) {
     // Pot geometry — the number and what it is conditioned on
     pot: potFromEntries(entriesInScope, selectedHand),
     potBasis: hasFocus ? 'action' : 'street-start',
-    stacks: null,
-    spr: null,
+    ...stackBinding,
 
     // Seat occupancy is not derived at this surface's granularity — the
     // walkthrough shows a street's actions, not a running per-seat state. Null

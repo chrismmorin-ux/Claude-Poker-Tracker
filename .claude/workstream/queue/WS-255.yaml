@@ -54,6 +54,7 @@ accept_criteria: |
     weaknessDetector) re-checked against the new stat scale.
   - No regression in the full src/utils engine suite + extension suite.
 effort: "S"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/utils/tendencyCalculations.js"
   - "ignition-poker-tracker/shared/stats-engine.js"

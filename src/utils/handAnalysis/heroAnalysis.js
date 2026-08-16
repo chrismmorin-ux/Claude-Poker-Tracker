@@ -11,7 +11,9 @@
  */
 
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions.js';
-import { tryParseSituationKey } from '../pokerCore/situationKey.js';
+import {
+  tryParseSituationKey, matchesWeaknessSpot, contextActionLabel,
+} from '../pokerCore/situationKey.js';
 
 /**
  * Assess whether hero's action was +EV/-EV given their equity.
@@ -205,40 +207,27 @@ export const suggestOptimalPlay = (heroEquity, villainSegmentation, boardTexture
 export const matchHeroWeakness = (situationKey, heroWeaknesses) => {
   if (!situationKey || !heroWeaknesses || heroWeaknesses.length === 0) return null;
 
-  // ⚠ DEFECT MADE VISIBLE, NOT FIXED (WS-317, filed as WS-318).
+  // WS-318: matching is now street + contextAction, via the one shared predicate in
+  // pokerCore. Before this, the comparison was street + isAgg, and because hero-side keys
+  // carried a primitive action ('bet') where villain-side keys carry a role ('agg'), it
+  // was comparing disjoint value sets — no hand ever matched, at any of the three sites.
   //
-  // This read `const [actionStreet, , , actionType] = situationKey.split(':')`. Axis 3 is
-  // `isAgg` — values 'agg' / 'def' — NOT an action type. The name was wrong, and because a
-  // skipped-slot destructure is unreadable, nothing caught it. Two consequences, both live:
-  //   1. Matching is far looser than intended. `isAgg` is effectively binary, so ANY hero
-  //      weakness on the same street with the same aggressor status matches, where the
-  //      naming implies it should match on the action taken (`contextAction`, axis 6).
-  //   2. The message is user-visible and reads "in flop agg spots" rather than naming the
-  //      action, e.g. "in flop cbet spots".
-  //
-  // Behaviour is PRESERVED here deliberately: WS-317 is a migration whose acceptance is
-  // bit-identical output, and folding a semantic fix into it would make neither change
-  // verifiable. The variable is now named for what it actually holds.
-  // tryParse, not parse: the pre-WS-317 code never threw on a malformed key, and a display
-  // helper must not start crashing its callers over one. An unparseable key simply matches
-  // nothing.
+  // tryParse, not parse: a display helper must not crash its callers over one malformed
+  // key. An unparseable key simply matches nothing.
   const parsedAction = tryParseSituationKey(situationKey);
   if (!parsedAction) return null;
-  const { street: actionStreet, isAgg: heroIsAgg } = parsedAction;
+  const { street: actionStreet, contextAction } = parsedAction;
 
   for (const weakness of heroWeaknesses) {
     if (!weakness.situationKeys || weakness.situationKeys.length === 0) continue;
 
-    const match = weakness.situationKeys.some(sk => {
-      const parsed = tryParseSituationKey(sk);
-      return !!parsed && parsed.street === actionStreet && parsed.isAgg === heroIsAgg;
-    });
+    const match = weakness.situationKeys.some(sk => matchesWeaknessSpot(situationKey, sk));
 
     if (match) {
       return {
         weakness,
         matchCount: weakness.sampleSize || 1,
-        message: `Pattern: ${weakness.label} — occurrence #${weakness.sampleSize || 1} in ${actionStreet} ${heroIsAgg} spots`,
+        message: `Pattern: ${weakness.label} — occurrence #${weakness.sampleSize || 1} in ${actionStreet} ${contextActionLabel(contextAction)} spots`,
       };
     }
   }

@@ -18,6 +18,7 @@ description: |
 accept_criteria:
   - "Current per-row `(stale)` suffix invisible at 1.5 s glance. Promote to Z3 band per R-1.5. Owner verifies live: stale state obvious without reading row labels"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

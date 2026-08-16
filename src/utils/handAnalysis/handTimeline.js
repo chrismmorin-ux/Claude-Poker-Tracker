@@ -272,6 +272,43 @@ export const findLastRaiser = (timeline, street) => {
   return lastRaiserSeat;
 };
 
+const PREV_STREET = { flop: 'preflop', turn: 'flop', river: 'turn' };
+
+/**
+ * Determine the street aggressor (seat that has betting initiative).
+ * - Flop: preflop raiser (PF aggressor carries c-bet initiative)
+ * - Turn/River: last bettor or raiser on the previous street
+ * Falls back to the preflop aggressor if the previous street checked through.
+ *
+ * Moved here from `exploitEngine/decisionAccumulator` under WS-318. It belongs with the
+ * timeline it reads, and — more to the point — the two hero-side situation-key producers
+ * could not import it from an engine (INV-08), which is why they never derived an aggressor
+ * at all and put a primitive action in the `isAgg` slot instead.
+ *
+ * @param {Array} timeline - Full hand timeline
+ * @param {string} street - Current street
+ * @returns {string|null} Seat as string, or null
+ */
+export const deriveStreetAggressor = (timeline, street) => {
+  if (street === 'flop') {
+    return findLastRaiser(timeline, 'preflop');
+  }
+  const prevStreet = PREV_STREET[street];
+  if (!prevStreet) return null;
+
+  const prevActions = getStreetTimeline(timeline, prevStreet);
+  let aggSeat = null;
+  for (const e of prevActions) {
+    if (e.action === PRIMITIVE_ACTIONS.BET || e.action === PRIMITIVE_ACTIONS.RAISE) {
+      aggSeat = e.seat;
+    }
+  }
+  if (!aggSeat && prevStreet !== 'preflop') {
+    return deriveStreetAggressor(timeline, prevStreet);
+  }
+  return aggSeat;
+};
+
 /**
  * Check if a player continuation bet.
  * C-bet = player was the last preflop raiser AND bet the flop.

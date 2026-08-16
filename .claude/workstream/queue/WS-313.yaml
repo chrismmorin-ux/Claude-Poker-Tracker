@@ -67,6 +67,7 @@ accept_criteria: |
     field, so this cannot silently revert to unreachable.
   - Gate 1 design entry required before any new UI surface (docs/design/LIFECYCLE.md).
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/bluffValueConstruction.js"
   - "src/utils/exploitEngine/gameTreeEvaluator.js"

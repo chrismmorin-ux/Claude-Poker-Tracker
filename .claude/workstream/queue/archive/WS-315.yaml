@@ -69,6 +69,7 @@ accept_criteria: |
     first.
   - Behavioural test using shared `__tests__/fixtures/ranges.js` fixtures.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/heroActionBuilder.js"
   - "src/utils/exploitEngine/rangeSegmenter.js"

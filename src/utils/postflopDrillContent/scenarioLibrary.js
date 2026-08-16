@@ -96,9 +96,16 @@ export const SCENARIOS = [
     opposingContext:  { position: 'BB',  action: 'call', vs: 'BTN' },
     board: 'As Kh 7d',
     primary: 'range_advantage',
-    expectedSubcase: 'significant',
+    // 2026-08-04 (P-1a): 'significant' → 'slight'. BB_vs_BTN is authored as
+    // '22-JJ,A2s-AJs,...,A2o-AQo,...' but parseRangeString silently dropped every
+    // dash span, so BB defended with NO pocket pair below QQ, NO weak suited ace,
+    // and NO offsuit ace at all — 244 combos missing. On an ace-high flop that
+    // absence is decisive: BTN looked dominant because BB could not hold an ace.
+    // With the range as authored, BB has abundant top pair here. BTN keeps the
+    // nut edge (see nut_btn_open_vs_bb_call_* ) but the raw range edge is slight.
+    expectedSubcase: 'slight',
     tags: ['classic'],
-    notes: 'BTN opens, BB defends — AK7r is the textbook PFR-favored flop.',
+    notes: 'BTN opens, BB defends — AK7r is PFR-favored, but BB defends wide enough to hold plenty of A-x, so the range edge is slight rather than significant.',
   },
   {
     id: 'adv_btn_open_vs_bb_call_654',
@@ -106,11 +113,12 @@ export const SCENARIOS = [
     opposingContext:  { position: 'BB',  action: 'call', vs: 'BTN' },
     board: '6h 5d 4c',
     primary: 'range_advantage',
-    // On 654 rainbow, BB's defending range matches BTN's closely — the
-    // structural-fallback heuristic returns neutral. When MC equity is
-    // attached (Explorer mode), the signed delta becomes more informative,
-    // but the subcase under the structural heuristic is neutral.
-    expectedSubcase: 'neutral',
+    // On 654 rainbow, BB's defending range matches BTN's closely. When MC equity
+    // is attached (Explorer mode), the signed delta becomes more informative.
+    // 2026-08-04 (P-1a): 'neutral' → 'slight' once BB's dropped dash spans
+    // ('22-JJ', 'A2s-AJs', 'A2o-AQo') were restored — the added offsuit aces are
+    // mostly air on 654, which tilts the structural heuristic off neutral.
+    expectedSubcase: 'slight',
     tags: ['classic', 'low-connected'],
     notes: 'Low connected board — BB defend range catches up; neutral under structural heuristic.',
   },
@@ -130,9 +138,14 @@ export const SCENARIOS = [
     opposingContext: { position: 'BB', action: 'call', vs: 'BTN' },
     board: 'Qd 9c 8s',
     primary: 'range_advantage',
-    expectedSubcase: 'neutral',
+    // 2026-08-04 (P-1a): 'neutral' → 'moderate'. Restoring BB's dropped dash
+    // spans widens BB with hands that MISS Q98 (offsuit aces, weak suited aces),
+    // diluting BB's range with air and moving the tier-weighted heuristic toward
+    // BTN. Note the direction differs from the ace-high boards — that is the
+    // point: a real range change is board-dependent, not a uniform shift.
+    expectedSubcase: 'moderate',
     tags: ['middling', 'wet'],
-    notes: 'Middling wet board; ranges roughly equal under tier-weighted heuristic. Real delta requires MC.',
+    notes: 'Middling wet board. BB defends wide, so much of its range is air here — BTN gets a moderate edge under the tier-weighted heuristic. Real delta requires MC.',
   },
   {
     id: 'adv_btn_open_vs_bb_call_j87',
@@ -140,9 +153,12 @@ export const SCENARIOS = [
     opposingContext: { position: 'BB', action: 'call', vs: 'BTN' },
     board: 'Jh 8h 7c',
     primary: 'range_advantage',
-    expectedSubcase: 'moderate',
+    // 2026-08-04 (P-1a): 'moderate' → 'slight'. BB's restored dash spans are
+    // mostly offsuit aces and weak suited aces, which whiff J87 — they dilute the
+    // suited-connector core that gave BB the edge, narrowing it to slight.
+    expectedSubcase: 'slight',
     tags: ['two-tone', 'middling'],
-    notes: "Two-tone J87. BB's low-suited-connector-heavy flat range outperforms BTN's broadway-heavy open — moderate BB edge.",
+    notes: "Two-tone J87. BB's low-suited-connector core still outperforms BTN's broadway-heavy open, but the full wide defend range dilutes it to a slight edge.",
   },
 
   // ================= NUT_ADVANTAGE =================
@@ -152,9 +168,14 @@ export const SCENARIOS = [
     opposingContext:  { position: 'BB',  action: 'call', vs: 'BTN' },
     board: 'Ah Qd 7s',
     primary: 'nut_advantage',
-    expectedSubcase: 'real',
+    // 2026-08-04 (P-1a): 'real' → 'nominal'. The old note's premise — "BTN has
+    // AA/AQ/QQ/77 combos BB doesn't" — was only true because BB's 'A2o-AQo' and
+    // '22-JJ' spans were being silently dropped by the parser. As authored, BB
+    // holds AQ and 77, so the top of the two ranges overlaps and the nut edge is
+    // nominal rather than real.
+    expectedSubcase: 'nominal',
     tags: ['classic'],
-    notes: 'BTN has AA/AQ/QQ/77 combos BB doesn\'t — nut advantage is real.',
+    notes: 'BTN is ahead at the top, but BB defends A-x and small pairs wide enough to share AQ and 77 — the nut advantage is nominal, not real.',
   },
   {
     id: 'nut_btn_open_vs_bb_call_765',
@@ -162,9 +183,14 @@ export const SCENARIOS = [
     opposingContext: { position: 'BB', action: 'call', vs: 'BTN' },
     board: '7s 6d 5c',
     primary: 'nut_advantage',
-    expectedSubcase: 'real',
+    // 2026-08-04 (P-1a): 'real' → 'nominal'. The old note already described the
+    // right poker — "BB's flat range has more small pairs (55, 66, 77)" — but
+    // '22-JJ' was exactly the span the parser dropped, so BB held NO small pair
+    // when this expectation was calibrated. With the sets restored on both sides
+    // the top of the ranges converges, and the edge reads nominal.
+    expectedSubcase: 'nominal',
     tags: ['low-connected', 'bb-favored'],
-    notes: "BB's flat range has more small pairs (55, 66, 77), more suited connectors (76s, 65s), and 98/89 straights. Nut advantage flips to BB.",
+    notes: "BB's flat range has more small pairs (55, 66, 77), more suited connectors (76s, 65s), and 98/89 straights — but BTN opens those too, so the nut edge leans BB only nominally.",
   },
   {
     id: 'nut_bb_3bet_vs_btn_akq',

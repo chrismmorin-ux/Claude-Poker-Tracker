@@ -37,6 +37,7 @@ accept_criteria: |
     lookup redundant.
   - Engine tests pass; no regression in the model-present (high-fidelity) paths.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/gameTreeEquity.js"
   - "src/utils/exploitEngine/decisionTreeBuilder.js"

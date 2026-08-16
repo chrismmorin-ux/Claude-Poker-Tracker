@@ -108,12 +108,12 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runHeroEv } = await loader.load('/scripts/backtest/heroEvRunner.mjs');
     const { buildHeroEvReport, renderHeroEvReport } = await loader.load('/scripts/backtest/heroEvReport.mjs');
 
     let files = await discoverCorpusFiles({
-      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT,
+      root: typeof args['corpus-root'] === 'string' ? args['corpus-root'] : undefined,  // WS-321
       sites: list(args.sites),
       stakes: list(args.stakes),
     });

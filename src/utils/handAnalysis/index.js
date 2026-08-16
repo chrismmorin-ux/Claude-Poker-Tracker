@@ -13,6 +13,7 @@ export {
 export {
   buildTimeline, getStreetTimeline, getPlayerTimeline,
   findLastRaiser, didPlayerFaceRaise, getCbetInfo, sortByPositionalOrder,
+  deriveStreetAggressor,
 } from './handTimeline.js';
 export { computeHandSignificance } from './handSignificance.js';
 export { buildSeatNameMap, getPlayerName } from './playerNameMap.js';

@@ -1,0 +1,94 @@
+id: "ses-20260801-0140-790d7777"
+status: completed
+started_at: "2026-08-01T01:40:30.949Z"
+ended_at: "2026-08-01T05:20:00Z"
+mode: auto
+last_heartbeat: "2026-08-01T01:44:28.756Z"
+pid: 568
+agent_session_id: "790d7777-ef7f-4bea-9cfc-e1e6aabc7567"
+
+# Minted by cwos-claims because no registered session matched this process.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items:
+  - "WS-307"
+
+files_locked: []
+
+handoff_notes: |
+  TABLE VIEW REDESIGN KICKOFF — and a priority re-order that changes what comes next.
+
+  COMPLETED
+    WS-312  Gate 3 research — glance-return-chris persona + HE-22 / HE-23 / PM-16
+    WS-319  Gate 4 Phase A — the geometry decision (SPR-162)
+    Gates 1 (RED) + 2 (YELLOW, then re-run GREEN) authored
+    Local dev/verification harness — the app is runnable again
+
+  FILED (14 items, WS-311..WS-324)
+    P0  WS-311 Next Hand CTA clipped     — confirmed on device AND at design resolution
+    P0  WS-315 orientation gate blocks entry — mechanism NOT established, see below
+    P0  WS-316 touch floor met nowhere   — 44px renders at 30.6px on the founder's phone
+    P0  WS-324 robustness protocol       — gates the north star
+        WS-313/320/322 Gate 4 Phases B/C + the app-wide migration
+        WS-317/318/321/323 gesture vocabulary, sizing mining, miner fix, north star
+
+  THE BIGGEST THING THAT CHANGED
+    Priority re-ordered to engine -> EV -> education (DEC-027). TVR SLOWS. It is not
+    cancelled and keeps all its evidence, but it queues behind trust work. Do not
+    resume Gate 4 Phase B assuming it is still the active thread.
+
+  WHAT THE NEXT SESSION SHOULD DO FIRST
+    WS-324 Phase 0 is a TWO-MINUTE CHECK with a potentially large payoff:
+      `git sparse-checkout list` in C:\Users\chris\data\phh-dataset, and list data/.
+    handhq is ONE SUBSET of the uoftcprg repo, the clone is blobless-sparse with the
+    git pack RETAINED, and any directory re-materializes with no re-download. A sibling
+    subset would make the cross-era robustness test free. Do this before proposing any
+    new dataset — and read mass-pool-data-2026-07-25.md first, which already evaluated
+    and rejected IRC (play-money era) and commercial vendors (ToS-gray).
+
+    Then WS-324 Phase 2 (math validation) — it needs NO behavioural data at all and is
+    currently unmeasured. Equity vs an independent implementation, property tests on
+    pot/side-pot arithmetic. This is most of what "all corners looked into" means and
+    it is not blocked on anything.
+
+  BLOCKED ON THE FOUNDER
+    - run `mine-sizing-distributions.py` against the corpus (it is on his machine)
+    - the sizing prototype: is the drag uninterrupted now, and does 180ms or instant
+      feel right?
+    - WS-315 needs reproduction ON HIS DEVICE. I proved the CSS media query works, so
+      the cause is device-specific. Do not "fix" the media query.
+
+  KEY FINDINGS WORTH NOT RE-DERIVING
+    - The command column needs 839px and has 720. The flex-1 spacer is ALREADY at 0,
+      so "collapse the spacer first" is dead. No coordinate-system change fixes this —
+      it is over-subscribed on CONTENT.
+    - Preflop entry is already ~4 taps and near-optimal. The speed problem is postflop,
+      player entry, and legibility. Scoping the redesign by HE-11 would re-optimise the
+      one thing that works.
+    - Card-grid cells are ~2x the touch floor. The card selector's problem is
+      HOMOGENEITY, not size.
+    - The sizing track is roughly height-NEUTRAL. Phase C must not bank on space it
+      does not create.
+    - HE-19/20/21 were already allocated to the all-in family in an audit but never
+      written into the domain file, which caused a real ID collision. The ID space is
+      not self-describing.
+
+  Autopilot eligible: low. Most open items are design/research or need founder input.
+
+context_notes: |
+  ZERO src/ CHANGES this session. Everything is docs, queue YAMLs, and two new scripts
+  (devshot.mjs, setup-local-env.mjs, mine-sizing-distributions.py). No production code
+  before Gate 4 Phase C produces a surface artifact — that is the design guardrail, not
+  a preference.
+
+  Branch: claude/poker-table-redesign-z0h4rc, 11 commits, HEAD b68fcea, pushed, clean.
+
+  intention.md Principles were filled for the FIRST time (they were all placeholders).
+  P1 "take the better branch" carries an explicit boundary so it does not silently
+  cancel CLAUDE.md's "minimal scope" — it governs choices already on the table, not
+  unprompted expansion. Read that boundary before invoking P1.
+
+  Bookkeeping trap worth knowing: hand-writing a queue YAML is fine (the reducer
+  re-reads queue/*.yaml) but an event must fire or state/queue.json goes stale and
+  /next cannot see the item. WS-311..317 were invisible to the composer for exactly
+  this reason until item_created events were emitted.
+

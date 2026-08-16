@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CheckCircle2, RefreshCw, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ChevronDown, ChevronUp, AlertTriangle, TableProperties } from 'lucide-react';
 import { logger } from '../../../utils/errorHandler';
 import { SETTINGS_FIELDS } from '../../../constants/settingsConstants';
 import { GOLD } from '../../../constants/designTokens';
@@ -33,7 +33,7 @@ const UNDO_TOAST_DURATION_MS = 12000;
 // can't claim currency on a hours-old answer.
 const ANSWER_FRESH_MS = 150_000;
 
-export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSettings, showWarning, showSuccess, showError, addToast }) => {
+export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSettings, showWarning, showSuccess, showError, addToast, userId }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
   const [simCount, setSimCount] = useState(10);
@@ -48,6 +48,9 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
   const [updating, setUpdating] = useState(false);
   // W4-A4-F2: Pending sim-clear timer ID for deferred-commit + undo.
   const pendingSimClearRef = useRef(null);
+  // Bankroll-history import (one-shot, idempotent).
+  const [historyImporting, setHistoryImporting] = useState(false);
+  const [historyResult, setHistoryResult] = useState(null);
   const { latestVersion, latestBuiltAt, lastCheckedAt, error: versionError } = useBuildVersion();
   // Stale = the bundle running now (BUILD_SHA, baked into this build) differs from the
   // latest the server is advertising (version.json). This is the definitive cache-stale
@@ -174,6 +177,48 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
     await hardRefresh();
   }, []);
 
+  /**
+   * Import the bankroll history transcribed from the founder's Google Sheet.
+   *
+   * Purely additive and idempotent — rows already present are skipped by their
+   * import key, so pressing this twice is safe and reports "already imported".
+   * Deliberately NOT routed through the Sessions view's Import button, which
+   * restores a full backup and clears existing data first.
+   *
+   * Modules are imported lazily so the 78-row dataset stays out of the main bundle.
+   */
+  const handleImportHistory = useCallback(async () => {
+    setHistoryImporting(true);
+    setHistoryResult(null);
+    try {
+      const [{ STRATEGY_SHEET_SESSIONS }, { buildSessionRecords }, { importHistoricalSessions }] =
+        await Promise.all([
+          import('../../../data/strategySheetSessions'),
+          import('../../../utils/sessionStats/sheetImport'),
+          import('../../../utils/persistence/sessionsStorage'),
+        ]);
+
+      const { records } = buildSessionRecords(STRATEGY_SHEET_SESSIONS);
+      const result = await importHistoricalSessions(records, userId);
+      setHistoryResult(result);
+
+      if (result.imported > 0) {
+        showSuccess?.(`Imported ${result.imported} past session${result.imported === 1 ? '' : 's'}`);
+      } else if (result.skipped > 0) {
+        showSuccess?.('Bankroll history already imported');
+      }
+      if (result.errors.length > 0) {
+        showError?.(`${result.errors.length} row(s) could not be imported`);
+      }
+    } catch (err) {
+      logger.error('DataAndAbout', err);
+      showError?.(`Import failed: ${err.message}`);
+      setHistoryResult({ imported: 0, skipped: 0, errors: [err.message] });
+    } finally {
+      setHistoryImporting(false);
+    }
+  }, [userId, showSuccess, showError]);
+
   return (
     <div className="bg-gray-800 rounded-lg p-5">
       <h3 className="text-lg font-bold mb-4" style={{ color: GOLD.base }}>Data & About</h3>
@@ -268,6 +313,40 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
             is <span className="text-gray-400">not</span> affected.
           </p>
         </div>
+      </div>
+
+      {/* Bankroll history import — brings the sessions tracked in the Google
+          Sheet into the app so the Insights and Variance bands see the full
+          record. Additive and idempotent; safe to press twice. */}
+      <div className="mb-4 pt-3 border-t border-gray-700">
+        <h4 className="text-sm font-bold mb-2" style={{ color: GOLD.base }}>Bankroll history</h4>
+        <p className="text-gray-400 text-xs mb-2 leading-relaxed">
+          Loads the sessions from your bankroll spreadsheet (Nov 2024 onward). Profit is
+          recalculated from buy-in, rebuys and cash-out, so the rows the sheet left blank are
+          filled in. Nothing already in the app is changed or removed.
+        </p>
+        <button
+          onClick={handleImportHistory}
+          disabled={historyImporting}
+          className="px-4 min-h-[44px] bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium flex items-center gap-1.5"
+          data-testid="import-bankroll-history"
+        >
+          <TableProperties className="w-4 h-4" />
+          {historyImporting ? 'Importing…' : 'Import bankroll history'}
+        </button>
+        {historyResult && (
+          <p className="text-gray-400 text-xs mt-2" data-testid="import-history-result">
+            {historyResult.imported > 0
+              ? `Added ${historyResult.imported} session${historyResult.imported === 1 ? '' : 's'}`
+              : 'Nothing new to add'}
+            {historyResult.skipped > 0 && (
+              <span className="text-gray-500"> · {historyResult.skipped} already present</span>
+            )}
+            {historyResult.errors.length > 0 && (
+              <span className="text-yellow-400"> · {historyResult.errors.length} skipped</span>
+            )}
+          </p>
+        )}
       </div>
 
       {/* Reset to Defaults */}

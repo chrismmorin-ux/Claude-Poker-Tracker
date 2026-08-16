@@ -12,33 +12,64 @@
 
 import { BETTING_STREETS } from '../../constants/gameConstants.js';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions.js';
-import { getRangePositionCategory } from '../positionUtils.js';
-import { tryParseSituationKey } from '../pokerCore/situationKey.js';
+import { getRangePositionCategory, isInPosition } from '../positionUtils.js';
+import {
+  formatSituationKey, buildSpotAxes, findPrimaryOpponent, matchesWeaknessSpot,
+} from '../pokerCore/situationKey.js';
+import { buildTimeline, getStreetTimeline, deriveStreetAggressor } from './handTimeline.js';
 
 /**
- * Build approximate situationKeys from action sequence without full board texture.
- * Uses street + position category + primitive action.
+ * Build situationKeys for one seat's postflop actions.
+ *
+ * WS-318: these used to be four-axis strings — `street:unknown:posCategory:primitive` —
+ * which the canonical parser rejects outright (it requires 7 or 8 axes), so every weakness
+ * comparison downstream silently returned false. They are now full identity keys built by
+ * the same `buildSpotAxes` the villain accumulator uses, which is what makes them
+ * comparable to the weakness keys they are checked against.
+ *
+ * Board texture stays 'unknown' — this function is deliberately synchronous and cheap
+ * enough to run over the whole hand list in a useMemo, and texture is not a matched axis.
+ *
  * @param {Object} hand
  * @param {number} seat - The seat to build keys for
  * @param {number} buttonSeat
  * @returns {string[]}
  */
 const buildQuickSituationKeys = (hand, seat, buttonSeat) => {
-  const seq = hand.gameState?.actionSequence;
-  if (!Array.isArray(seq)) return [];
+  const timeline = buildTimeline(hand);
+  if (!timeline.length) return [];
 
   const posCategory = getRangePositionCategory(Number(seat), buttonSeat);
+  const streetActionsCache = {};
+  const aggressorCache = {};
   const keys = [];
 
-  for (const entry of seq) {
+  for (const entry of timeline) {
     if (Number(entry.seat) !== Number(seat)) continue;
     if (entry.street === 'preflop') continue; // Preflop keys are less useful for weakness matching
 
     const primitive = LEGACY_TO_PRIMITIVE[entry.action] ?? entry.action;
     if (!primitive) continue;
 
-    // Use 'unknown' texture since we don't compute board texture here
-    keys.push(`${entry.street}:unknown:${posCategory}:${primitive}`);
+    if (!streetActionsCache[entry.street]) {
+      streetActionsCache[entry.street] = getStreetTimeline(timeline, entry.street);
+    }
+    if (!(entry.street in aggressorCache)) {
+      aggressorCache[entry.street] = deriveStreetAggressor(timeline, entry.street);
+    }
+
+    const streetActions = streetActionsCache[entry.street];
+    const opponent = findPrimaryOpponent(streetActions, entry.seat);
+    const ipStatus = opponent
+      ? isInPosition(Number(entry.seat), Number(opponent), buttonSeat)
+      : false;
+
+    keys.push(formatSituationKey(buildSpotAxes({
+      street: entry.street, posCategory, playerSeat: entry.seat,
+      entryOrder: entry.order, primitive, streetActions,
+      aggSeat: aggressorCache[entry.street], isIP: ipStatus,
+      primitives: PRIMITIVE_ACTIONS,
+    })));
   }
 
   return keys;
@@ -117,22 +148,10 @@ export const computeHandSignificance = (hand, heroPlayerId, tendencyMap) => {
     const heroWeaknesses = heroTendency?.weaknesses;
     if (heroWeaknesses && heroWeaknesses.length > 0) {
       const heroKeys = buildQuickSituationKeys(hand, heroSeat, buttonSeat);
-      // Matches on street + isAgg. ⚠ The comment used to say "same street + action" and the
-      // variables were named hAction/wAction, but axis 3 is isAgg ('agg'/'def') — NOT the
-      // action. Same defect as heroAnalysis.matchHeroWeakness, duplicated here; behaviour
-      // preserved under WS-317 and the semantics filed as WS-318.
-      heroWeaknessMatch = heroKeys.some(hk => {
-        const heroParsed = tryParseSituationKey(hk);
-        if (!heroParsed) return false;
-        return heroWeaknesses.some(w =>
-          w.situationKeys?.some(sk => {
-            const wParsed = tryParseSituationKey(sk);
-            return !!wParsed
-              && wParsed.street === heroParsed.street
-              && wParsed.isAgg === heroParsed.isAgg;
-          })
-        );
-      }) ? 1 : 0;
+      // WS-318: one shared predicate, matching on street + contextAction.
+      heroWeaknessMatch = heroKeys.some(hk =>
+        heroWeaknesses.some(w => w.situationKeys?.some(sk => matchesWeaknessSpot(hk, sk)))
+      ) ? 1 : 0;
     }
   }
 
@@ -156,20 +175,10 @@ export const computeHandSignificance = (hand, heroPlayerId, tendencyMap) => {
     // Weakness match
     if (!villainWeaknessRevealed && tendency?.weaknesses?.length > 0) {
       const villainKeys = buildQuickSituationKeys(hand, seat, buttonSeat);
-      // Same street + isAgg match as the hero branch above — see the note there; the
-      // variables were likewise named for an action they do not hold (WS-318).
-      if (villainKeys.some(vk => {
-        const villainParsed = tryParseSituationKey(vk);
-        if (!villainParsed) return false;
-        return tendency.weaknesses.some(w =>
-          w.situationKeys?.some(sk => {
-            const wParsed = tryParseSituationKey(sk);
-            return !!wParsed
-              && wParsed.street === villainParsed.street
-              && wParsed.isAgg === villainParsed.isAgg;
-          })
-        );
-      })) {
+      // Same shared predicate as the hero branch above (WS-318).
+      if (villainKeys.some(vk =>
+        tendency.weaknesses.some(w => w.situationKeys?.some(sk => matchesWeaknessSpot(vk, sk)))
+      )) {
         villainWeaknessRevealed = 1;
       }
     }

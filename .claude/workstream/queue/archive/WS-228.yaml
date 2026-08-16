@@ -29,6 +29,7 @@ accept_criteria:
   - "On successful reconnect, isExtensionConnected flips back to true and queued hands flush without user action."
   - "Backoff does not thrash (capped interval) and does not interfere with the existing 3-failure circuit breaker."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/hooks/useSyncBridge.js"
 blocked_by: []

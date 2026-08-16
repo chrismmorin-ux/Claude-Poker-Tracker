@@ -74,6 +74,7 @@ accept_criteria: |
   - Emitted in the §14 spirit: the curve carries the universe it was computed against (board,
     villain range, n combos), because a strength claim without its denominator is meaningless.
 effort: "M"
+runs_on: "g16"        # needs visual verification
 files_involved:
   - "src/utils/pokerCore/handEvaluator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

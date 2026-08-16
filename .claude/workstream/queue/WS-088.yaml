@@ -18,6 +18,7 @@ accept_criteria:
   - "✓ tests green"
   - "✓ visual verification"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-087"

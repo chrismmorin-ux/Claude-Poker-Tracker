@@ -38,6 +38,7 @@ accept_criteria: |
     no longer drives EV once per-street is available.
   - Tests: EV decision flips only above the gate; below gate, behavior unchanged.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/decisionAccumulator.js"
   - "src/utils/exploitEngine/gameTreeDepth2.js"

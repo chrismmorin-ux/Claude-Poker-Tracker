@@ -33,6 +33,7 @@ accept_criteria:
   - "Tier-to-concept mapping ratified (6 tiers × ~3-5 concepts each)"
   - "Tests for composite formula + tier mapping + per-concept mastery"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/skillAssessment/conceptMastery.js (NEW)"
   - "src/utils/skillAssessment/composite.js (NEW)"

@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   createSessionAtomic,
+  createCompletedSession,
   endSessionAtomic,
   getActiveSession,
   clearActiveSession,
@@ -144,6 +145,12 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
       try {
         log(`Auto-saving session ${currentSession.sessionId}...`);
         await updateSession(currentSession.sessionId, {
+          // startTime is in the auto-save set because ActiveSessionCard lets the
+          // founder correct it when the app was opened after sitting down. Absent
+          // this, the correction would update the UI and be silently lost on the
+          // next reload. For an uncorrected session this writes back the value it
+          // was hydrated with — a no-op.
+          startTime: currentSession.startTime,
           venue: currentSession.venue,
           gameType: currentSession.gameType,
           buyIn: currentSession.buyIn,
@@ -239,9 +246,13 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
    *   When omitted, the session's tipAmount field is not written; legacy sessions
    *   without the field remain legacy-shaped on round-trip. Readers treat any
    *   missing/null value as 0 for P&L purposes.
+   * @param {number|null} endTime - Optional explicit end timestamp. Defaults to
+   *   now. Set when the founder finished earlier than they tapped End Session —
+   *   hours drive every rate in the Variance band, so an over-long session
+   *   silently deflates $/hr.
    * @returns {Promise<void>}
    */
-  const endCurrentSession = useCallback(async (cashOut = null, tipAmount = null) => {
+  const endCurrentSession = useCallback(async (cashOut = null, tipAmount = null, endTime = null) => {
     try {
       const sessionId = sessionState.currentSession.sessionId;
 
@@ -253,14 +264,15 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
       log(`Ending session ${sessionId} with cashOut: ${cashOut}, tipAmount: ${tipAmount}...`);
 
       // Atomic: end session + clear active marker in single transaction
-      await endSessionAtomic(sessionId, cashOut, userId, tipAmount);
+      const resolvedEnd = endTime ?? Date.now();
+      await endSessionAtomic(sessionId, cashOut, userId, tipAmount, resolvedEnd);
       log(`Session ${sessionId} ended atomically`);
 
       // Update reducer state
       dispatchSession({
         type: SESSION_ACTIONS.END_SESSION,
         payload: {
-          endTime: Date.now(),
+          endTime: resolvedEnd,
           cashOut: cashOut,
           tipAmount: tipAmount,
         }
@@ -329,6 +341,51 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
   }, [dispatchSession, userId]);
 
   /**
+   * Log a session that was already played (the backfill path).
+   *
+   * Writes a finished record — never an active one — so logging last night's
+   * session can't collide with a session in progress. Reloads the list so the
+   * Insights and Variance bands recompute immediately.
+   *
+   * @param {Object} sessionData - from SessionLogForm (explicit start/end times)
+   * @returns {Promise<number>} the new sessionId
+   */
+  const logCompletedSession = useCallback(async (sessionData) => {
+    try {
+      log(`Logging completed session for user ${userId}...`);
+      const sessionId = await createCompletedSession(sessionData, userId);
+      await loadAllSessions();
+      return sessionId;
+    } catch (error) {
+      logError('Failed to log completed session:', error);
+      throw error;
+    }
+  }, [loadAllSessions, userId]);
+
+  /**
+   * Edit an already-stored session.
+   *
+   * Deliberately refuses to touch `isActive`: the live session's lifecycle is
+   * owned by start/end, and letting an edit flip that flag is how a view ends up
+   * with two active sessions or none.
+   *
+   * @param {number} sessionId
+   * @param {Object} updates
+   * @returns {Promise<void>}
+   */
+  const editSession = useCallback(async (sessionId, updates) => {
+    try {
+      const { isActive, sessionId: _ignored, userId: _ignoredUser, ...safe } = updates || {};
+      log(`Editing session ${sessionId}...`);
+      await updateSession(sessionId, safe);
+      await loadAllSessions();
+    } catch (error) {
+      logError(`Failed to edit session ${sessionId}:`, error);
+      throw error;
+    }
+  }, [loadAllSessions]);
+
+  /**
    * Delete a session by ID
    * @param {number} sessionId - Session ID to delete
    * @returns {Promise<void>}
@@ -358,6 +415,8 @@ export const useSessionPersistence = (sessionState, dispatchSession, userId = GU
     endCurrentSession,
     updateSessionField,
     loadAllSessions,
+    logCompletedSession,
+    editSession,
     deleteSessionById
   };
 };

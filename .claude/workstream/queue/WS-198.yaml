@@ -49,6 +49,7 @@ accept_criteria:
   - "IDB schema migration (if applicable) reversible + tested"
   - "Cross-domain grep clean (pokerCore / rangeEngine / shapeLanguage / exploitEngine)"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/upperSurface/nodeMatcher.js (NEW)"
   - "src/utils/upperSurface/recencyQuery.js (NEW)"

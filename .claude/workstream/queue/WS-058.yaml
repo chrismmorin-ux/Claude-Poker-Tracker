@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "The \"better than Flopzilla\" claim cashed in."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-057"

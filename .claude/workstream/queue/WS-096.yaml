@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "✓ UI change shipped + tests green + visual verification at 1600×720 documented + originating audit's row marked resolved"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

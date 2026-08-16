@@ -1,0 +1,49 @@
+id: "ses-20260805-1801-ed38c311"
+status: "abandoned"
+started_at: "2026-08-05T18:01:29.752Z"
+ended_at: "2026-08-16T04:33:02Z"
+mode: auto
+last_heartbeat: "2026-08-05T18:01:34.273Z"
+pid: 554
+agent_session_id: "ed38c311-c6d2-572c-a84b-98da269d1be8"
+
+# Minted by cwos-claims because no registered session matched this process.
+# A session that never ran /session-start still needs an identity to claim under.
+claimed_items: []
+files_locked: []
+handoff_notes: |
+  Session auto-recovered by cwos-session-recovery on 2026-08-16.
+  Original start: 2026-08-05T18:01:29.752Z.
+  Last heartbeat: 2026-08-05T18:01:34.273Z.
+
+  Sprints completed during this session (1):
+    - SPR-178: Ship WS-439: Next Hand CTA is clipped off-screen at preflop - the primary control unreachable in the
+
+  Git commits during this session (89):
+    - 4013fe96 merge: ws-481-482-foldcurve — WS-481 fold-curve axis, WS-482 depth-2 pFold, ENGINE_VERSION v126
+    - 38a4582e merge: ws-292-holding-knowledge — WS-435 pre-flight MDE gate, WS-441 touch floor, FIND-137 rake gate, WS-440 orientation, WS-492 corpus provenance
+    - a2178ef3 chore(workstream): land in-flight CWOS state from recovered sessions
+    - da811c71 feat(backtest): miners stamp the corpus they actually read — WS-492 / DEC-081
+    - 0ea1e246 feat(ui): orientation never blocks the app, and scroll shells stop trapping content — WS-440 / DEC-075 / DEC-076
+    - 5f48ae27 fix(engine): the rake gate is the FLOP, not the showdown — FIND-137 / DEC-080
+    - a2757c5b chore(engine): ENGINE_VERSION v125 -> v126 — SPR-186's engine era gets a name
+    - e7460d4f chore(backtest): resolve WS-481's changed decisions back to actual hands
+    - 0d7ddf81 kit: add the 5 scripts /status and /session-start invoke but never received
+    - af69702c docs(sor): RC-CONTINUATION-RATE-THREADING-2026-08-15 — WS-482 priced at zero, with the reason
+    - 0e994351 measure(ws-482): the tighten is inert on both depth-2 paths — FIND-139
+    - 5d113990 fix(engine): WS-482 — depth-2/3 uses the node's computed pFold, not a population 0.45
+    - e08cc442 docs(sor): RC-FOLD-CURVE-AXIS-2026-08-15 — WS-481 priced
+    - 521dd5f0 feat(backtest): a harness can finally serve a real villainModel — FIND-138
+    - 54000264 measure(ws-481): no harness can see the personalized fold curve — FIND-138
+    - 70a2a192 fix(engine): WS-481 — fit the fold curve on the axis it is evaluated on
+    - 48bd185e docs(state): SPR-185/WS-441 session row — touch floor shipped, S22 DPR provisional, sessionRecoveryLiveness green again
+    - 9b345a62 feat(design): WS-441 — the 44px touch floor becomes a measured, enforced property
+    - 53fcb068 chore(domain): delta-protocol hygiene — dead STYLE_FOLD_DEFAULTS test import, INV-07 mechanism text, stale fold-curve docblock
+    - af3f7e16 feat(sor): WS-435 — pre-flight MDE gate and the power ledger
+    - ... and 69 more
+
+  RECOVERY NOTES:
+    - system/state.md may be stale — next /session-start should flag it.
+    - Any decisions made during this session should be verified against system/decisions.md.
+    - Any plan docs authored may have WS items not yet promoted to the queue.
+      Run node kit/scripts/cwos-plan-scan.js to check.

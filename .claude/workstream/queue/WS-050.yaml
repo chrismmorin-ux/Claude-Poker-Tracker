@@ -64,6 +64,7 @@ accept_criteria:
   - "margin: 0.4in }` default"
   - "`.refresher-print-page[data-cards-per-sheet=\"12"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by: []
 blocked_by_legacy: []

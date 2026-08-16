@@ -17,6 +17,7 @@ accept_criteria:
   - "Author DS-56/57/58/59 as `Proposed` in `drills-and-study.md`"
   - "possibly owner-interview on session-prep workflow."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-063"

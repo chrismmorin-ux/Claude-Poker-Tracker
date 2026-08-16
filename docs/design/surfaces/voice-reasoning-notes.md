@@ -231,6 +231,43 @@ three graders are modality-independent.
 
 ## Known issues
 
+**[VRN-3] FIXED 2026-08-01 — the tail of every session was discarded, and an auto-end was
+indistinguishable from a deliberate stop.** Reported from the first real capture: *"I think the
+second, more in-depth one got cut off at some point."* Two independent causes.
+
+1. **Teardown outran the engine's last result.** `SpeechRecognition.stop()` does not merely stop
+   listening — it finalizes the audio already captured and delivers it through `onresult`,
+   *asynchronously*. Session teardown detached `onresult` **before** calling `stop()`, so that final
+   result landed on a null handler and was lost. With `interimResults` off there was no local copy
+   either, so **everything said since the last pause was dropped from every session**. During a long
+   uninterrupted stretch — which is what an in-depth breakdown is — the engine holds a lot before it
+   settles, so the loss was not a trailing word but potentially the whole closing argument.
+   Fix: on the paths where waiting is possible (deliberate stop, silence ceiling, length ceiling),
+   leave `onresult` attached, call `stop()`, and close out on `onend` with a bounded 1.2s fallback.
+   Delivery is guarded so the two paths cannot double-fire.
+2. **In-flight speech had no local copy at all.** `interimResults` is now ON, with the pending
+   partial held in a ref and committed on close. This is the only thing that can save the tail on
+   paths that *cannot* wait — tab hidden, unmount, permission revoked, mic dropped — and it also
+   covers Chrome auto-ending without finalizing before a restart. A flushed partial is stored with
+   `confidence: null` (the engine never scored it) and `interrupted: true` (it may be clipped), so a
+   grader never reads it as a settled sentence.
+
+**Reporting defect, same report, same root complaint — "I *think* it got cut off."** Sessions ending
+on the silence timer or the length ceiling were delivered as `interrupted: false`, i.e. recorded as
+deliberate stops. A truncated note was byte-indistinguishable from a finished one and the founder had
+no way to tell. Now every close carries an `endReason` (`stopped` | `silence` | `max-duration` |
+`hidden` | `unmounted` | `restart-failed` | engine error code), persisted on the note and surfaced
+twice: an immediate notice at the control, and a line on the expanded note. Both ceilings now
+correctly report `interrupted: true`.
+
+Length ceiling also raised 5min → 10min: a full preflop-through-showdown breakdown runs past five
+minutes, and hitting the ceiling truncated a narration mid-thought. The 45s silence timer is what
+ends a session in practice; the ceiling remains a runaway-mic backstop.
+
+Regression tests pin both truncation paths, exactly-once delivery, interim/final de-duplication, and
+the interrupted-vs-stopped distinction — with a mock whose `stop()` models Chrome's finalize-then-end
+behaviour rather than only the "stops listening" half, which is what let this live untested.
+
 **[VRN-2] FIXED 2026-08-01 — recording died on finger-lift, capturing only fragments.** Reported
 from live use: *"sometimes it turns on and then off very quickly, even when I don't move my pressed
 finger."* Two independent causes, both producing the same symptom:

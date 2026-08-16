@@ -41,7 +41,7 @@ import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { openLoader } from './loader.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
-import { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } from './corpusFiles.mjs';
+import { discoverCorpusFiles } from './corpusFiles.mjs';
 import {
   HIERARCHY_VARIANTS, hierarchyOptionsFor, buildAblationArms, buildCandidateArms,
   buildShrinkWeightSweepArms, buildPriorSourceArms, buildPoleArms,
@@ -113,7 +113,7 @@ const main = async () => {
   }
 
   const files = await discoverCorpusFiles({
-    root: args['corpus-root'] || DEFAULT_CORPUS_ROOT,
+    root: args['corpus-root'],  // WS-321: undefined -> resolveCorpusRoot() (env, then G16)
     sites: list(args.sites),
     stakes: list(args.stakes),
   });

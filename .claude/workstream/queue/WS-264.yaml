@@ -40,6 +40,7 @@ accept_criteria: |
     censored-sample labeling where applicable).
   - Any engine-relevant deltas listed with concrete consumer pointers.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "docs/research/mass-pool-data-2026-07-25.md"
 blocked_by: []

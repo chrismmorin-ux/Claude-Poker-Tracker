@@ -94,6 +94,7 @@ accept_criteria:
     seat ID."
 
 effort: "L"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "docs/design/audits/YYYY-MM-DD-entry-table-rotation.md (NEW)"
   - "docs/design/surfaces/table-rotation.md (NEW)"
@@ -132,6 +133,13 @@ source:
 
 created_at: "2026-05-11T00:00:00Z"
 status_note: |
+  DEFERRED BEHIND TVR 2026-08-01 by WS-319 (Gate 4 Phase A). Rotation and the redesign's
+  narrowing are two spatial transforms over the same coordinate system; specified
+  separately they conflict. Phase A's contract actually makes this item CHEAPER later —
+  under it the felt is the only scaled region, so a 180-degree flip becomes a transform
+  on the felt alone rather than on the whole canvas including the controls. Re-scope
+  once WS-313 (Phase C) fixes the felt's final geometry. Do not start in parallel.
+
   Authored 2026-05-11 from owner session-issue consolidation. FEATURE — subject
   to Refactor Sprint charter ratification 4 ('no new features during this
   sprint'). Cannot enter active queue until Refactor Sprint Items 1+2+3+4

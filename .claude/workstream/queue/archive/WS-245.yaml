@@ -33,6 +33,7 @@ accept_criteria: |
     bayesianSampleConfidence; formatPips renders a confidence badge.
   - Tests cover the low-sample -> unknown/low-confidence path; build clean.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/handAnalysis/replayAnalysis.js"
   - "src/utils/rangeEngine/pipCalculator.js"

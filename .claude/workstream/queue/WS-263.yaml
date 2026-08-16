@@ -43,6 +43,7 @@ accept_criteria: |
   - No live segment ever receives imported online aggregates (test).
   - Segment keys match post-WS-260 canonical shape.
 effort: "M"
+runs_on: "node1"        # long unattended compute
 files_involved:
   - "src/utils/exploitEngine/poolBaseline.js"
   - ".claude/projects/exploit-model-architecture.md"

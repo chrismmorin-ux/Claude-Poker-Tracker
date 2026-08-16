@@ -24,6 +24,7 @@ accept_criteria:
   - "createSession and createSessionAtomic produce identical record schemas"
   - "endSessionAtomic tipAmount round-trip test green"
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - src/utils/persistence/sessionsStorage.js
   - src/utils/persistence/__tests__/sessionsStorage.test.js

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseBlinds, calculatePot, calculatePotProgression, getCurrentBet, getSeatContributions, getTotalContributions, calculateSidePots, getSizingOptions, estimateRake, calculateStartingPot } from '../potCalculator';
+import { parseBlinds, calculatePot, calculatePotProgression, getCurrentBet, getSeatContributions, getTotalContributions, calculateSidePots, getSizingOptions, estimateRake, calculateStartingPot, getMinRaise } from '../potCalculator';
 import { PRIMITIVE_ACTIONS } from '../../constants/primitiveActions';
 
 describe('parseBlinds', () => {
@@ -513,5 +513,220 @@ describe('calculatePotProgression', () => {
     const progression = calculatePotProgression(seq, blinds);
     expect(progression).toHaveLength(3);
     expect(progression[2].potBefore).toBe(9);
+  });
+});
+
+// =============================================================================
+// WS-324 Phase 2 — math validation
+// =============================================================================
+
+describe('getMinRaise — the min-raise ladder', () => {
+  const blinds = { sb: 1, bb: 2 };
+  const A = PRIMITIVE_ACTIONS;
+  const at = (street) => (seat, action, amount) => ({ seat, action, street, amount });
+
+  describe('baseline ladder', () => {
+    const f = at('flop');
+    const p = at('preflop');
+
+    it('preflop with no action: min raise is 2x the big blind', () => {
+      expect(getMinRaise([], 'preflop', blinds)).toBe(4);
+    });
+
+    it('preflop open to 6: min 3-bet is to 10 (increment 4)', () => {
+      expect(getMinRaise([p(3, A.RAISE, 6)], 'preflop', blinds)).toBe(10);
+    });
+
+    it('preflop 3-bet to 18: min 4-bet is to 30 (increment 12)', () => {
+      const seq = [p(3, A.RAISE, 6), p(5, A.RAISE, 18)];
+      expect(getMinRaise(seq, 'preflop', blinds)).toBe(30);
+    });
+
+    it('a straddle to 4 sets the ladder at the straddle increment', () => {
+      expect(getMinRaise([p(2, A.STRADDLE, 4)], 'preflop', blinds)).toBe(6);
+    });
+
+    it('flop bet 10: min raise is to 20', () => {
+      expect(getMinRaise([f(1, A.BET, 10)], 'flop', blinds)).toBe(20);
+    });
+
+    it('flop bet 10, raise to 20: min re-raise is to 30', () => {
+      const seq = [f(1, A.BET, 10), f(2, A.RAISE, 20)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(30);
+    });
+
+    it('a raise larger than the minimum advances the ladder by its own increment', () => {
+      // bet 10, raise to 45 (increment 35) -> next min raise is to 80.
+      const seq = [f(1, A.BET, 10), f(2, A.RAISE, 45)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(80);
+    });
+
+    it('never returns less than one big blind over the current bet', () => {
+      expect(getMinRaise([f(1, A.BET, 1)], 'flop', blinds)).toBe(3);
+    });
+
+    it('ignores actions on other streets', () => {
+      const seq = [p(3, A.RAISE, 40), f(1, A.BET, 10)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(20);
+    });
+
+    it('calls and checks do not move the ladder', () => {
+      const seq = [f(1, A.BET, 10), f(2, A.CALL, 10), f(3, A.CALL, 10)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(20);
+    });
+  });
+
+  // INV-POT-INCOMPLETE-RAISE-LADDER. An all-in for less than a full raise moves
+  // the amount owed but NOT the ladder. Regression: the walk used to take the
+  // short increment as the new minimum, offering an illegal raise size.
+  describe('incomplete (sub-min) all-in raises', () => {
+    const f = at('flop');
+    const p = at('preflop');
+
+    it('flop bet 10 then a shove to 14: min raise stays to 24, not 18', () => {
+      const seq = [f(1, A.BET, 10), f(2, A.RAISE, 14, true)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(24);
+    });
+
+    it('preflop open 6 then a shove to 9: min raise is to 13, not 12', () => {
+      // Last FULL increment is 4 (the open, 6 over the bb). 9 + 4 = 13.
+      const seq = [p(3, A.RAISE, 6), p(5, A.RAISE, 9)];
+      expect(getMinRaise(seq, 'preflop', blinds)).toBe(13);
+    });
+
+    it('two stacked short shoves still ladder off the last full increment', () => {
+      const seq = [f(1, A.BET, 20), f(2, A.RAISE, 25), f(3, A.RAISE, 28)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(48); // 28 + 20
+    });
+
+    it('a full raise after a short shove resets the ladder to its own increment', () => {
+      // bet 10, short shove to 14, then a genuine raise to 40 (increment 26).
+      const seq = [f(1, A.BET, 10), f(2, A.RAISE, 14), f(3, A.RAISE, 40)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(66);
+    });
+
+    it('a shove to exactly the minimum IS a full raise and advances the ladder', () => {
+      const seq = [f(1, A.BET, 10), f(2, A.RAISE, 20)];
+      expect(getMinRaise(seq, 'flop', blinds)).toBe(30);
+    });
+  });
+
+  it('amountless bets are skipped rather than treated as zero', () => {
+    const seq = [
+      { seat: 1, action: A.BET, street: 'flop' },
+      { seat: 2, action: A.RAISE, street: 'flop', amount: 30 },
+    ];
+    expect(getMinRaise(seq, 'flop', blinds)).toBe(60);
+  });
+});
+
+describe('calculateSidePots — randomized properties', () => {
+  const blinds = { sb: 1, bb: 2 };
+  const A = PRIMITIVE_ACTIONS;
+
+  // Deterministic LCG — tests must not depend on Math.random.
+  const lcg = (seed) => {
+    let s = seed >>> 0;
+    return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  };
+
+  /**
+   * Build a flop-only sequence with exact per-seat contributions. On flop there
+   * are no seeded blinds, a BET sets the seat's contribution to its amount, and
+   * a CALL with an explicit amount adds that increment to a seat at zero.
+   */
+  const buildSequence = (contributions, foldedSeats) => {
+    const seats = Object.keys(contributions).map(Number);
+    const top = seats.reduce((a, b) => (contributions[a] >= contributions[b] ? a : b));
+    const seq = [{ seat: top, action: A.BET, street: 'flop', amount: contributions[top] }];
+    for (const seat of seats) {
+      if (seat === top) continue;
+      seq.push({ seat, action: A.CALL, street: 'flop', amount: contributions[seat] });
+    }
+    for (const seat of foldedSeats) {
+      seq.push({ seat, action: A.FOLD, street: 'flop' });
+    }
+    return seq;
+  };
+
+  const TRIALS = 300;
+
+  it('holds the pot invariants across randomized all-in structures', () => {
+    const rand = lcg(20260801);
+    for (let t = 0; t < TRIALS; t++) {
+      const n = 2 + Math.floor(rand() * 5); // 2..6 seats
+      const contributions = {};
+      for (let i = 1; i <= n; i++) contributions[i] = 1 + Math.floor(rand() * 200);
+
+      // Fold a random subset. The largest contributor never folds: forcing the
+      // biggest stack out requires a live player with chips behind, who would
+      // then be eligible themselves, so "every big contributor folded" is not a
+      // state legal play can reach. Generating it would test a fiction.
+      const top = Object.keys(contributions)
+        .map(Number)
+        .reduce((a, b) => (contributions[a] >= contributions[b] ? a : b));
+      const folded = [];
+      for (let i = 1; i <= n; i++) if (i !== top && rand() < 0.3) folded.push(i);
+
+      const seq = buildSequence(contributions, folded);
+      const r = calculateSidePots(seq, blinds, {});
+      const expectedTotal = Object.values(contributions).reduce((a, b) => a + b, 0);
+      const label = `seed trial ${t}: ${JSON.stringify(contributions)} folded=${JSON.stringify(folded)}`;
+
+      // P1 — conservation: nothing is created or destroyed.
+      const potSum = r.pots.reduce((s, p) => s + p.amount, 0);
+      expect(potSum + r.returned, label).toBeCloseTo(expectedTotal, 9);
+      expect(r.totalContributed, label).toBeCloseTo(expectedTotal, 9);
+
+      // P2 — every pot holds a strictly positive amount.
+      for (const p of r.pots) expect(p.amount, label).toBeGreaterThan(0);
+
+      // P3 — returned chips are non-negative and attributed to a real contributor.
+      expect(r.returned, label).toBeGreaterThanOrEqual(0);
+      if (r.returned > 0) expect(contributions[r.returnedSeat], label).toBeGreaterThan(0);
+
+      // P4 — no folded seat is ever eligible to win.
+      for (const p of r.pots) {
+        for (const s of p.eligibleSeats) expect(folded, label).not.toContain(s);
+      }
+
+      // P5 — side pots nest: each later pot is contested by a subset of the
+      // players eligible for the pot beneath it, and never by more of them.
+      for (let i = 1; i < r.pots.length; i++) {
+        const prev = new Set(r.pots[i - 1].eligibleSeats);
+        for (const s of r.pots[i].eligibleSeats) expect(prev.has(s), label).toBe(true);
+        expect(r.pots[i].eligibleSeats.length, label).toBeLessThan(prev.size);
+      }
+
+      // P6 — a seat eligible for a pot contributed at least its per-head share.
+      for (const p of r.pots) {
+        for (const s of p.eligibleSeats) {
+          expect(contributions[s], label).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  // Guard, not a real spot — see the note in calculateSidePots. Legal play
+  // cannot strand chips this way, but a malformed or imported sequence can, and
+  // the failure must not be silent.
+  it('conserves chips even when every large contributor folded (degenerate input)', () => {
+    const contributions = { 1: 38, 2: 22, 3: 86, 4: 156, 5: 36 };
+    const seq = buildSequence(contributions, [3, 4]);
+    const r = calculateSidePots(seq, blinds, {});
+    const potSum = r.pots.reduce((s, p) => s + p.amount, 0);
+    expect(r.totalContributed).toBe(338);
+    expect(potSum + r.returned).toBe(338);
+    for (const p of r.pots) {
+      for (const s of p.eligibleSeats) expect([3, 4]).not.toContain(s);
+    }
+  });
+
+  it('a seat that contributed more than everyone else gets the excess back', () => {
+    const seq = buildSequence({ 1: 100, 2: 40, 3: 40 }, []);
+    const r = calculateSidePots(seq, blinds, {});
+    expect(r.returned).toBe(60);
+    expect(r.returnedSeat).toBe(1);
+    expect(r.pots.reduce((s, p) => s + p.amount, 0)).toBe(120);
   });
 });

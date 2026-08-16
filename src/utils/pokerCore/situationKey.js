@@ -231,3 +231,180 @@ export const withCarriedContext = (key, carried = {}) => {
   }
   return { situationKey: key, ...context };
 };
+
+// =============================================================================
+// AXIS DERIVATION (WS-318)
+// =============================================================================
+//
+// These moved here from `exploitEngine/decisionAccumulator` because they were the reason
+// hero-side and villain-side keys could disagree about what axis 3 MEANS. The villain
+// accumulator derived all seven axes; the two hero-side producers derived three and put a
+// primitive action where `isAgg` belongs. Nothing compared the two shapes, so the weakness
+// matcher compared `'bet'` against `'agg'` and returned false for every hand ever played.
+//
+// They are pure by construction — `streetActions` and `aggSeat` are PARAMETERS, not
+// computed here — for two reasons. It keeps this module free of a `handAnalysis` import
+// (which would close a cycle, since `handAnalysis` imports this file), and it lets the
+// accumulator keep its per-street caches on a hot path that runs over thousands of hands.
+
+/**
+ * Determine the primary opponent seat on this street (for IP/OOP).
+ * Scans street actions for the most recent non-player seat that acted.
+ */
+export const findPrimaryOpponent = (streetActions, playerSeat) => {
+  const ps = String(playerSeat);
+  for (let i = streetActions.length - 1; i >= 0; i--) {
+    if (String(streetActions[i].seat) !== ps) return streetActions[i].seat;
+  }
+  return null;
+};
+
+/**
+ * Determine what action the player is facing (last aggressive action before theirs).
+ *
+ * @returns {'none'|'bet'|'raise'}
+ */
+export const deriveFacingAction = (streetActions, entryOrder, playerSeat, primitives) => {
+  const ps = String(playerSeat);
+  let facing = 'none';
+  for (const e of streetActions) {
+    if (e.order >= entryOrder) break;
+    if (String(e.seat) === ps) continue;
+    if (e.action === primitives.BET) facing = 'bet';
+    else if (e.action === primitives.RAISE) facing = 'raise';
+  }
+  return facing;
+};
+
+/** Check if any bet/raise happened before this entry on the street. */
+export const isFirstToAct = (streetActions, entryOrder, playerSeat, primitives) => {
+  const ps = String(playerSeat);
+  for (const e of streetActions) {
+    if (e.order >= entryOrder) break;
+    if (String(e.seat) === ps) continue;
+    if (e.action === primitives.BET || e.action === primitives.RAISE) return false;
+  }
+  return true;
+};
+
+/**
+ * Derive the contextual meta-action from primitive + context.
+ *
+ * This is the axis the weakness matcher keys on (WS-318 founder decision). It is strictly
+ * richer than `isAgg`: `cbet` already means "aggressor, first to act, facing nothing", so
+ * matching on it subsumes matching on role while also distinguishing a c-bet from a
+ * check-give-up — two lines the old comparison could not tell apart even in principle.
+ *
+ * @param {string} primitive - 'bet'|'check'|'call'|'raise'|'fold'
+ * @param {boolean} isAgg - Is this player the street aggressor?
+ * @param {boolean} firstToAct - Is this the first aggressive action on street?
+ * @param {'none'|'bet'|'raise'} facing - What action is being faced?
+ * @returns {string} Contextual action label
+ */
+export const deriveContextAction = (primitive, isAgg, firstToAct, facing, primitives) => {
+  if (facing === 'none' && firstToAct) {
+    if (isAgg) return primitive === primitives.BET ? 'cbet' : 'check_give_up';
+    return primitive === primitives.BET ? 'donk' : 'check';
+  }
+
+  if (facing === 'none' && !firstToAct) {
+    if (primitive === primitives.BET) return 'stab';
+    if (primitive === primitives.CHECK) return 'check_back';
+  }
+
+  if (facing === 'bet') {
+    if (primitive === primitives.CALL) return 'call';
+    if (primitive === primitives.RAISE) return 'raise';
+    if (primitive === primitives.FOLD) return 'fold';
+  }
+
+  if (facing === 'raise') {
+    if (primitive === primitives.CALL) return 'call_raise';
+    if (primitive === primitives.RAISE) return 'reraise';
+    if (primitive === primitives.FOLD) return 'fold_to_raise';
+  }
+
+  return primitive;
+};
+
+/**
+ * Assemble all seven identity axes for one decision.
+ *
+ * THE point of this function is that there is exactly one of it. Every producer of a
+ * situation key — villain accumulation, hero replay coaching, hero significance scoring —
+ * goes through here, so a key from any of them is comparable to a key from any other.
+ * That comparability is what WS-318 restored; it had never held.
+ *
+ * @param {Object} args
+ * @param {Array}  args.streetActions - timeline entries for this street (caller-supplied)
+ * @param {string|number|null} args.aggSeat - street aggressor seat (caller-supplied)
+ * @param {Object} args.primitives - PRIMITIVE_ACTIONS (injected; pokerCore takes no constants dep)
+ * @returns {{street,texture,posCategory,isAgg,isIP,facingAction,contextAction}}
+ */
+export const buildSpotAxes = ({
+  street, texture = 'unknown', posCategory, playerSeat, entryOrder,
+  primitive, streetActions = [], aggSeat = null, isIP = false, primitives,
+}) => {
+  const isAgg = aggSeat !== null && String(aggSeat) === String(playerSeat);
+  const facing = deriveFacingAction(streetActions, entryOrder, playerSeat, primitives);
+  const firstAct = isFirstToAct(streetActions, entryOrder, playerSeat, primitives);
+  return {
+    street,
+    texture,
+    posCategory,
+    isAgg: isAgg ? 'agg' : 'def',
+    isIP: isIP ? 'ip' : 'oop',
+    facingAction: facing,
+    contextAction: deriveContextAction(primitive, isAgg, firstAct, facing, primitives),
+  };
+};
+
+/**
+ * Human-readable names for `contextAction`, for anything shown to the founder.
+ *
+ * WS-318 acceptance: the weakness message used to render the raw `isAgg` axis, producing
+ * "in flop agg spots" — not a phrase a poker player uses. These are the words for the thing
+ * that actually happened at the table.
+ */
+export const CONTEXT_ACTION_LABELS = Object.freeze({
+  cbet: 'c-bet',
+  check_give_up: 'check-give-up',
+  donk: 'donk-bet',
+  check: 'check',
+  stab: 'stab',
+  check_back: 'check-back',
+  call: 'call',
+  raise: 'raise',
+  fold: 'fold',
+  call_raise: 'call-vs-raise',
+  reraise: 're-raise',
+  fold_to_raise: 'fold-to-raise',
+});
+
+/** Display name for a contextAction, falling back to the raw value. */
+export const contextActionLabel = (contextAction) =>
+  CONTEXT_ACTION_LABELS[contextAction] || contextAction;
+
+/**
+ * Do two situation keys describe the same spot for weakness-matching purposes?
+ *
+ * ONE definition, three call sites (`heroAnalysis.matchHeroWeakness` and both branches of
+ * `handSignificance`). They were three copies of one idea and had already drifted; the
+ * ticket's acceptance criteria require they cannot drift again.
+ *
+ * Matches on **street + contextAction** — the founder decision recorded on WS-318. The
+ * discarded alternative was `isAgg`, which is what the code appeared to do but never
+ * actually did: hero keys carried a primitive action in that slot, so the comparison was
+ * `'bet' === 'agg'` and no hand in the app's history ever matched.
+ *
+ * Deliberately NOT matched on: texture (hero-side producers may not have computed a board
+ * texture and pass 'unknown'), position, and IP — a leak is a leak wherever you sit, and
+ * requiring all seven axes to agree would make matches vanishingly rare on live sample
+ * sizes. Widen this only with a measurement attached.
+ */
+export const matchesWeaknessSpot = (keyA, keyB) => {
+  const a = tryParseSituationKey(keyA);
+  const b = tryParseSituationKey(keyB);
+  if (!a || !b) return false;
+  return a.street === b.street && a.contextAction === b.contextAction;
+};

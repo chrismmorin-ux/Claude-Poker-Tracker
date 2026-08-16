@@ -386,8 +386,25 @@ export const calculateSidePots = (actionSequence, blinds, opts = {}) => {
     if (contributors.length === 0) break;
 
     const eligibleContributors = contributors.filter(s => !foldedSeats.has(s));
-    // Only folded money left — dead chips with no eligible winner (degenerate).
-    if (eligibleContributors.length === 0) break;
+    // Only folded money left — dead chips with no eligible winner. Unreachable
+    // in legal play (forcing the last big contributor to fold requires a live
+    // player with chips behind, who would then be eligible), so this is a guard
+    // against malformed or imported sequences rather than a real spot. Attach
+    // the remainder to the highest pot as dead money instead of dropping it:
+    // silent non-conservation is the worst available failure mode here.
+    if (eligibleContributors.length === 0) {
+      let stranded = 0;
+      for (const s of contributors) {
+        stranded += remaining.get(s);
+        remaining.set(s, 0);
+      }
+      if (stranded > EPS && pots.length > 0) {
+        pots[pots.length - 1].amount += stranded;
+      } else if (stranded > EPS) {
+        returned += stranded;
+      }
+      break;
+    }
 
     // An uncalled top bet (one lone contributor) is returned, not a pot.
     if (contributors.length === 1) {
@@ -607,7 +624,18 @@ export const getSizingOptions = (street, actionType, blinds, potTotal, currentBe
 
 /**
  * Get minimum legal raise amount for the current action sequence.
- * In NL holdem: min raise = currentBet + lastRaiseIncrement.
+ * In NL holdem: min raise-to = currentBet + the last FULL raise increment.
+ *
+ * The "full" qualifier is load-bearing (INV-POT-INCOMPLETE-RAISE-LADDER). An
+ * all-in for less than a full raise still moves the amount owed — you must call
+ * the larger number — but it does NOT advance the min-raise ladder. Treating it
+ * as if it did understates the next legal raise and lets the UI offer an illegal
+ * size (e.g. flop bet 10, shove to 14, next raise offered at 18 instead of 24).
+ *
+ * The increment is re-derived from the amounts rather than read off the entry's
+ * `reopensAction` flag, so imported and hand-built sequences get the same answer
+ * as ones produced by `recordSeatAction`. The two are answering different
+ * questions: `reopensAction` governs WHO may act again, this governs HOW MUCH.
  *
  * @param {Array} actionSequence - Array of ActionEntry objects
  * @param {string} street - Current street
@@ -616,8 +644,8 @@ export const getSizingOptions = (street, actionType, blinds, potTotal, currentBe
  */
 export const getMinRaise = (actionSequence, street, blinds) => {
   const { bb } = blinds || { sb: 1, bb: 2 };
-  let previousBet = 0;
   let currentBet = street === 'preflop' ? bb : 0;
+  let lastFullIncrement = bb;
 
   if (actionSequence) {
     for (const entry of actionSequence) {
@@ -628,12 +656,13 @@ export const getMinRaise = (actionSequence, street, blinds) => {
           entry.action === PRIMITIVE_ACTIONS.STRADDLE) &&
         entry.amount !== undefined
       ) {
-        previousBet = currentBet;
+        const increment = entry.amount - currentBet;
+        // A short all-in leaves the ladder where it was; a full raise resets it.
+        if (increment >= lastFullIncrement) lastFullIncrement = increment;
         currentBet = entry.amount;
       }
     }
   }
 
-  const lastIncrement = currentBet - previousBet;
-  return currentBet + Math.max(lastIncrement, bb);
+  return currentBet + Math.max(lastFullIncrement, bb);
 };

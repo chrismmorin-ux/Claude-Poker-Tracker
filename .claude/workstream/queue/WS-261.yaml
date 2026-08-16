@@ -45,6 +45,7 @@ accept_criteria: |
   - Display copy ("confirmed by showdowns") is true after the change.
   - exploitEngine suite green.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/exploitEngine/decisionAccumulator.js"
   - "src/utils/exploitEngine/villainProfileBuilder.js"

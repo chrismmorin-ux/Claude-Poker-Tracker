@@ -33,6 +33,7 @@ accept_criteria:
   - "SIGHTING_FEATURE_PRIORS empty-object scaffold + JSDoc"
   - "Migration is additive only — no existing test regression"
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/utils/persistence/database.js (modify)"
   - "src/utils/persistence/migrations.js (modify)"

@@ -60,6 +60,7 @@ accept_criteria: |
     `docs/domain/readiness/overturn-ledger.yaml` with its reasoning, either way.
   - WS-295's result cited as the empirical basis for §12.3, including a null.
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - ".claude/context/POKER_THEORY.md"
   - "docs/domain/readiness/overturn-ledger.yaml"

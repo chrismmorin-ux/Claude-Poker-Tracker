@@ -80,6 +80,7 @@ accept_criteria: |
     versions.
   - Full rangeEngine + exploitEngine suites green.
 effort: "L"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/utils/rangeEngine/lineTaxonomy.js"
   - "src/utils/rangeEngine/rangeProfile.js"

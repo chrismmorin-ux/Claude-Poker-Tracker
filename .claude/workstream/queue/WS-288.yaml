@@ -55,6 +55,7 @@ accept_criteria: |
   - Cross-links to POKER_THEORY sections rather than restating them — the report is
     the WHY, the theory doc is the WHAT.
 effort: "L"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "docs/domain/BUILD_REPORT.md"
   - ".claude/context/POKER_THEORY.md"

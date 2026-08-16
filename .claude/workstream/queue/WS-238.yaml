@@ -30,6 +30,7 @@ accept_criteria:
   - "A test asserts a manually-saved hand while signed in is readable under the account's userId (not guest)."
   - "Guest behavior preserved when signed out (userId resolves to 'guest')."
 effort: "S"
+runs_on: "any"        # no machine constraint identified
 files_involved:
   - "src/hooks/useAppState.js"
   - "src/hooks/usePersistence.js"

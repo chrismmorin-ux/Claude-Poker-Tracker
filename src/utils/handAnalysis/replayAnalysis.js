@@ -17,6 +17,8 @@ import { bayesianSampleConfidence } from '../pokerCore/betaMath.js';
 import { PRIMITIVE_ACTIONS, LEGACY_TO_PRIMITIVE } from '../../constants/primitiveActions.js';
 import { getPopulationPrior } from '../rangeEngine/populationPriors.js';
 import { assessHeroEV, suggestOptimalPlay, matchHeroWeakness } from './heroAnalysis.js';
+import { buildSpotAxes, findPrimaryOpponent } from '../pokerCore/situationKey.js';
+import { getStreetTimeline, deriveStreetAggressor } from './handTimeline.js';
 
 /**
  * Classify a bet/raise as value, thin value, or bluff based on the actor's
@@ -657,7 +659,30 @@ export const analyzeTimelineAction = async ({
     }
   }
 
-  const situationKey = buildSituationKeyFn(street, boardTexture?.texture || 'unknown', posCategory, action);
+  // WS-318: this called a SEVEN-parameter builder with FOUR arguments, so `action` landed
+  // in the `isAgg` slot and the last three axes serialized empty — 'flop:dry:BTN:bet:::'.
+  // Weakness keys carry 'agg'/'def' there, so the matcher compared disjoint value sets and
+  // returned false for every hand. Derive all seven axes from the timeline we already have.
+  const streetActions = getStreetTimeline(timeline, street);
+  const opponentSeat = findPrimaryOpponent(streetActions, seat);
+  const spotAxes = buildSpotAxes({
+    street,
+    texture: boardTexture?.texture || 'unknown',
+    posCategory,
+    playerSeat: seat,
+    entryOrder: entry.order,
+    primitive: action,
+    streetActions,
+    aggSeat: deriveStreetAggressor(timeline, street),
+    isIP: opponentSeat
+      ? isInPosition(Number(seat), Number(opponentSeat), buttonSeat)
+      : false,
+    primitives: PRIMITIVE_ACTIONS,
+  });
+  const situationKey = buildSituationKeyFn(
+    spotAxes.street, spotAxes.texture, spotAxes.posCategory, spotAxes.isAgg,
+    spotAxes.isIP, spotAxes.facingAction, spotAxes.contextAction,
+  );
 
   // Hero coaching analysis
   let heroAnalysis = null;

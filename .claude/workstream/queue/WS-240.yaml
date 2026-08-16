@@ -56,6 +56,7 @@ accept_criteria: |
     once the parser proves out.
 
 effort: "L"
+runs_on: "g16"        # touches UI files
 files_involved:
   - "src/utils/voiceHandTree/grammar.js (NEW — action + trigger vocabulary)"
   - "src/utils/voiceHandTree/parser.js (NEW — transcript → hand-tree)"

@@ -262,4 +262,99 @@ describe('rangeMatrix', () => {
       expect(range[rangeIndex(12, 12, false)]).toBe(0);
     });
   });
+
+  describe('parseRangeString dash spans', () => {
+    // Regression: dash tokens matched no branch and were SILENTLY DROPPED, so a
+    // truncated range read as an intentionally narrow one. Every 3-bet range in
+    // archetypeRanges.js lost its entire bluff slice ("A5s-A4s") this way, and
+    // BB defending ranges lost their "22-JJ" / "A2s-AJs" core, with a green suite.
+    const cellsSet = (range) => {
+      const out = [];
+      for (let i = 0; i < 169; i++) if (range[i] > 0) out.push(i);
+      return out.sort((a, b) => a - b);
+    };
+
+    test('expands a pair span', () => {
+      const range = parseRangeString('22-JJ');
+      expect(cellsSet(range)).toEqual(cellsSet(parseRangeString('22,33,44,55,66,77,88,99,TT,JJ')));
+    });
+
+    test('pair span is order-independent', () => {
+      expect(Array.from(parseRangeString('QQ-JJ'))).toEqual(Array.from(parseRangeString('JJ-QQ')));
+      expect(cellsSet(parseRangeString('QQ-JJ'))).toEqual(cellsSet(parseRangeString('JJ,QQ')));
+    });
+
+    test('expands a suited kicker span (descending, as written in the codebase)', () => {
+      const range = parseRangeString('A5s-A2s');
+      expect(cellsSet(range)).toEqual(cellsSet(parseRangeString('A2s,A3s,A4s,A5s')));
+    });
+
+    test('expands a suited kicker span (ascending)', () => {
+      const range = parseRangeString('ATs-AQs');
+      expect(cellsSet(range)).toEqual(cellsSet(parseRangeString('ATs,AJs,AQs')));
+    });
+
+    test('expands an offsuit kicker span', () => {
+      const range = parseRangeString('ATo-AQo');
+      expect(cellsSet(range)).toEqual(cellsSet(parseRangeString('ATo,AJo,AQo')));
+    });
+
+    test('suited and offsuit spans stay disjoint', () => {
+      const suited = parseRangeString('A5s-A2s');
+      const offsuit = parseRangeString('A5o-A2o');
+      for (let i = 0; i < 169; i++) expect(suited[i] * offsuit[i]).toBe(0);
+    });
+
+    test('dash span accepts a :weight suffix', () => {
+      const range = parseRangeString('22-44:0.5');
+      expect(range[rangeIndex(0, 0, false)]).toBe(0.5);
+      expect(range[rangeIndex(2, 2, false)]).toBe(0.5);
+    });
+
+    test('the motivating case: BTN 3-bet range keeps its bluff slice', () => {
+      // "TT+,AQs+,A5s-A4s,AQo+" — 70 combos. Before the fix the A5s-A4s token
+      // vanished and the range parsed to 62 combos, i.e. zero bluffs.
+      const range = parseRangeString('TT+,AQs+,A5s-A4s,AQo+');
+      const combos = enumerateCombos(range).length;
+      expect(combos).toBe(70);
+      expect(range[rangeIndex(12, 3, true)]).toBe(1); // A5s present
+      expect(range[rangeIndex(12, 2, true)]).toBe(1); // A4s present
+    });
+
+    test('rejects endpoints that do not share a high card', () => {
+      expect(() => parseRangeString('KQs-QJs')).toThrow(/unsupported dash range/);
+    });
+
+    test('rejects endpoints that differ in suitedness', () => {
+      expect(() => parseRangeString('A5s-A2o')).toThrow(/unsupported dash range/);
+    });
+
+    test('rejects a pair-to-nonpair span', () => {
+      expect(() => parseRangeString('22-AKs')).toThrow(/unsupported dash range/);
+    });
+  });
+
+  describe('parseRangeString strict token validation', () => {
+    test('throws on an unrecognized token', () => {
+      expect(() => parseRangeString('AA,ZZZ')).toThrow(/unrecognized token/);
+    });
+
+    test('throws on a bare two-card token instead of silently reading it as a pair', () => {
+      // Previously "AK" hit the length-2 branch and set AA — a label saying one
+      // thing while the value said another.
+      expect(() => parseRangeString('AK')).toThrow(/unrecognized token/);
+    });
+
+    test('throws on a malformed "+" token', () => {
+      expect(() => parseRangeString('XY+')).toThrow(/unrecognized "\+" token/);
+    });
+
+    test('throws on a non-string input', () => {
+      expect(() => parseRangeString(null)).toThrow(/expected a string/);
+    });
+
+    test('still accepts every valid form', () => {
+      expect(() => parseRangeString('22+,A2s+,ATo+,AKs,AKo,QQ,22-JJ,A5s-A2s,AA:0.5')).not.toThrow();
+    });
+  });
 });

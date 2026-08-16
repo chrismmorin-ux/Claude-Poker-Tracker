@@ -16,6 +16,7 @@ description: |
 accept_criteria:
   - "Per spike's proposed architecture: 7 files in `src/utils/spotResolver/` (extractor, pot-type inference, board shorthand, node classifier, corpus index, match scorer, golden tests). ~200 LoC + ~150 LoC test corpus. No imports from exploitEngine/ or rangeEngine/. Effort: M-L."
 effort: "M"
+runs_on: "any"        # no machine constraint identified
 files_involved: []
 blocked_by:
   - "WS-067"

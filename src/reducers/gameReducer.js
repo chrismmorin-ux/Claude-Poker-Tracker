@@ -11,6 +11,13 @@ import { isValidSeat } from '../utils/validation';
 import { logger, DEBUG } from '../utils/errorHandler';
 import { createActionEntry, getNextOrder, isValidActionEntry, legacyToSequence } from '../utils/sequenceUtils';
 import { getNextActiveSeat } from '../utils/seatUtils';
+import {
+  advanceHand,
+  setSeatStack,
+  clearSeatStack,
+  seedLedger,
+  reconcileWithContributions,
+} from '../utils/seatStacks/stackLedger';
 
 // Action types
 export const GAME_ACTIONS = {
@@ -31,6 +38,11 @@ export const GAME_ACTIONS = {
   RECORD_STRADDLE: 'RECORD_STRADDLE',
   SET_POT_OVERRIDE: 'SET_POT_OVERRIDE',
   TOGGLE_REVIEW_TAG: 'TOGGLE_REVIEW_TAG',
+  // Seat stack ledger (surface `seat-stack-ledger`)
+  SET_SEAT_STACK: 'SET_SEAT_STACK',
+  CLEAR_SEAT_STACK: 'CLEAR_SEAT_STACK',
+  SEED_SEAT_STACKS: 'SEED_SEAT_STACKS',
+  RECONCILE_SEAT_STACKS: 'RECONCILE_SEAT_STACKS',
 };
 
 // Initial state
@@ -42,6 +54,14 @@ export const initialGameState = {
   actionSequence: [], // Ordered list of { seat, action, street, order, amount? } — single source of truth for all actions (betting + showdown)
   potOverride: null, // Manual pot correction (number or null)
   reviewTag: null, // WS-190: mid-hand tag-for-review. null = untagged; { tagged: true, taggedAt: number } = flagged for later study. Persisted to the hand record at save time.
+  // Seat stack ledger (surface `seat-stack-ledger`). START-OF-HAND stacks keyed
+  // by seat: { amount, source, observedAtHand }. `source` is load-bearing — see
+  // INV-STK-01: only 'entered'/'carried' may disprove a stack-depth claim.
+  // Stack AT A POINT is derived (start minus committed), never stored.
+  seatStacks: {},
+  // Monotonic within a session. Drives provenance decay only — deliberately not
+  // sessionReducer's handCount, so the ledger never depends on another reducer.
+  handNumber: 0,
 };
 
 // Use centralized LIMITS.NUM_SEATS instead of hardcoded value
@@ -63,6 +83,8 @@ export const GAME_STATE_SCHEMA = {
   actionSequence: SCHEMA_RULES.array,
   potOverride: SCHEMA_RULES.optionalNumber,
   reviewTag: { type: 'object', required: false }, // null | { tagged: true, taggedAt: number }
+  seatStacks: { type: 'object', required: false }, // { [seat]: { amount, source, observedAtHand } }
+  handNumber: SCHEMA_RULES.optionalNumber,
 };
 
 // =============================================================================
@@ -251,7 +273,12 @@ const rawGameReducer = (state, action) => {
         reviewTag: null,
       };
 
-    case GAME_ACTIONS.NEXT_HAND:
+    case GAME_ACTIONS.NEXT_HAND: {
+      // Carry-forward inputs are COMPUTED BY THE CALLER (useGameHandlers via
+      // settleHand) and passed in, so this reducer needs neither blinds nor
+      // pot-partitioning logic. Absent payload = no settlement information, in
+      // which case the ledger is carried with zero movement rather than guessed.
+      const { contributions = {}, payouts = {}, estimated = false } = action.payload || {};
       return {
         ...state,
         currentStreet: 'preflop',
@@ -259,8 +286,59 @@ const rawGameReducer = (state, action) => {
         actionSequence: [],
         potOverride: null,
         reviewTag: null,
+        seatStacks: advanceHand(state.seatStacks, { contributions, payouts, estimated }),
+        handNumber: (Number(state.handNumber) || 0) + 1,
         // Keep absentSeats as-is (don't clear)
       };
+    }
+
+    // Founder typed a stack for one seat. The strongest source there is.
+    case GAME_ACTIONS.SET_SEAT_STACK: {
+      const { seat, amount } = action.payload || {};
+      if (!isValidSeat(seat, NUM_SEATS)) {
+        if (DEBUG) logger.warn('gameReducer', `Invalid seat in SET_SEAT_STACK: ${seat}`);
+        return state;
+      }
+      const seatStacks = setSeatStack(state.seatStacks, {
+        seat,
+        amount,
+        atHand: state.handNumber,
+      });
+      return seatStacks === state.seatStacks ? state : { ...state, seatStacks };
+    }
+
+    case GAME_ACTIONS.CLEAR_SEAT_STACK: {
+      const { seat } = action.payload || {};
+      if (!isValidSeat(seat, NUM_SEATS)) return state;
+      return { ...state, seatStacks: clearSeatStack(state.seatStacks, seat) };
+    }
+
+    // Seed unknown seats from the session buy-in. Never overwrites a seat that
+    // already has a stack — an assumption must not displace an observation.
+    case GAME_ACTIONS.SEED_SEAT_STACKS: {
+      const { seats = [], buyIn = null } = action.payload || {};
+      const missing = seats.filter((s) => !(s in (state.seatStacks || {})));
+      if (missing.length === 0) return state;
+      const seeded = seedLedger({ seats: missing, buyIn, atHand: state.handNumber });
+      if (Object.keys(seeded).length === 0) return state;
+      return { ...state, seatStacks: { ...state.seatStacks, ...seeded } };
+    }
+
+    // C-3: observed action corrects derived inference. A seat that committed
+    // more than the ledger credits it with has proved the ledger wrong.
+    case GAME_ACTIONS.RECONCILE_SEAT_STACKS: {
+      const { contributions = {}, estimated = false } = action.payload || {};
+      const { ledger, corrections } = reconcileWithContributions(state.seatStacks, {
+        contributions,
+        atHand: state.handNumber,
+        estimated,
+      });
+      if (corrections.length === 0) return state;
+      if (DEBUG) {
+        logger.debug('gameReducer', `seat stack corrections: ${JSON.stringify(corrections)}`);
+      }
+      return { ...state, seatStacks: ledger };
+    }
 
     // WS-190: toggle the mid-hand review tag for the in-progress hand. One-tap
     // semantics — tagging an untagged hand stamps taggedAt (passed in payload to
