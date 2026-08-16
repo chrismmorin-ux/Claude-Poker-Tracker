@@ -41,6 +41,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const { materializeSpec, readQueueItem, normalizeRunsOn, validateComputeJob } = require('./lib/cwos-compute-job');
+const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor } = require('./lib/cwos-fleet-harvest');
 
 // ------------------------------------------------------------------ config
 
@@ -53,6 +54,9 @@ const REMOTE_RUNNER = process.env.CWOS_COMPUTE_RUNNER
 const REMOTE_REPO = process.env.CWOS_COMPUTE_REPO || 'C:\\Users\\chris\\repos\\claude-poker-tracker';
 const REMOTE_INBOX = process.env.CWOS_COMPUTE_INBOX || 'C:\\Users\\chris\\fleet\\compute\\incoming';
 const REMOTE_DONE = process.env.CWOS_COMPUTE_DONE || 'C:\\Users\\chris\\fleet\\compute\\done';
+
+// Where returned artifact sets land on THIS machine (the runner's `returnTo.dir`).
+const INBOX_DIR = process.env.CWOS_COMPUTE_INBOX_LOCAL || 'C:\\Users\\chris\\fleet\\inbox';
 
 const SSH_TIMEOUT_MS = Number(process.env.CWOS_COMPUTE_TIMEOUT_MS || 20000);
 
@@ -327,6 +331,54 @@ function submitSpec(spec) {
   return r.ok ? { ok: true } : { ok: false, reason: (r.stderr || r.stdout || `submit exited ${r.status}`).slice(0, 400) };
 }
 
+// ------------------------------------------------------------------ harvest
+
+/**
+ * File a review item for every completed run whose artifacts came back unreviewed.
+ *
+ * Runs at the top of `/next`, so a finished run reaches the founder through the queue they
+ * already read rather than through an inbox they have no reason to open. Founder, 2026-08-16:
+ * "if it's running properly (max utilization) then I won't see it in my normal course of
+ * starting sessions" — success is what causes the results to go unseen, which is why this
+ * cannot be left to habit.
+ */
+function harvest({ dryRun }) {
+  const now = new Date().toISOString();
+  const sets = pendingSets(INBOX_DIR);
+  const filed = [];
+  const skipped = [];
+
+  for (const set of sets) {
+    if (set.nonQueue) { skipped.push(`${set.jobId}: not a queue-driven job (no WS id in the job id)`); continue; }
+    const highlights = extractHighlights(set.dir, set.manifest);
+    const source = set.wsId ? (readQueueItem(QUEUE_DIR, set.wsId) || null) : null;
+
+    if (dryRun) {
+      filed.push({ reviewId: '(dry-run)', title: headlineFor(highlights, set.jobId), jobId: set.jobId, wsId: set.wsId });
+      continue;
+    }
+
+    const alloc = run(process.execPath, [path.join(__dirname, 'cwos-next.js'), 'allocate-ws-id'], { cwd: REPO_ROOT });
+    let reviewId = null;
+    try {
+      const at = alloc.stdout.indexOf('{');
+      reviewId = JSON.parse(alloc.stdout.slice(at)).ws_id;
+    } catch { /* handled below */ }
+    if (!reviewId) { skipped.push(`${set.jobId}: could not allocate a WS id`); continue; }
+
+    const yaml = buildReviewItem({ reviewId, set, highlights, source, now });
+    try {
+      fs.writeFileSync(path.join(QUEUE_DIR, `${reviewId}.yaml`), yaml);
+    } catch (e) {
+      skipped.push(`${set.jobId}: ${String(e.message).slice(0, 120)}`);
+      continue;
+    }
+    markHarvested(set, reviewId, now);
+    filed.push({ reviewId, title: headlineFor(highlights, set.jobId), jobId: set.jobId, wsId: set.wsId });
+  }
+  return { ok: true, filed, skipped, scanned: sets.length };
+}
+
 // ------------------------------------------------------------------ output
 
 /** One line for `/next`. The founder should learn the machine's state without reading JSON. */
@@ -397,6 +449,15 @@ function main() {
     else console.log(`no submission — ${r.reason}`);
     for (const s of r.skipped || []) console.log(`  skipped ${s}`);
     if (!r.ok) process.exitCode = 1;
+    return;
+  }
+
+  if (cmd === 'harvest') {
+    const r = harvest({ dryRun });
+    if (asJson) return void console.log(JSON.stringify(r, null, 2));
+    if (!r.filed.length && !r.skipped.length) return void console.log('nothing to harvest');
+    for (const f of r.filed) console.log(`${dryRun ? 'would file' : 'filed'} ${f.reviewId} — ${f.title}`);
+    for (const s of r.skipped) console.log(`  skipped ${s}`);
     return;
   }
 

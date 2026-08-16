@@ -33,8 +33,11 @@ If `result.drift_auto_reconciled` is non-empty (advisory; never blocks), surface
 ## Step 1b: Fleet compute check (WS-493)
 
 ```bash
+node kit/scripts/cwos-fleet-compute.js harvest    # file review items for finished runs
 node kit/scripts/cwos-fleet-compute.js status
 ```
+
+`harvest` runs FIRST and is the reason results reach the founder at all. A finished compute job does not close its queue item and does not announce itself, so **the better the compute node is utilised, the more results pile up in an inbox nobody opens.** Harvest turns each completed run into a normal queue item carrying its own headline — Result Card id, admissibility, warnings, verdicts — so it competes for attention in the ordinary ranking instead of waiting to be remembered. Any item it files should be surfaced to the founder in this invocation's output, not left to be discovered in the sprint table.
 
 Runs at the start of every `/next`. Always exits 0 — this is information, **never a gate**. If cm-node1 is asleep or off-tailnet it reports `UNREACHABLE` after a 20s timeout and composition continues unchanged.
 

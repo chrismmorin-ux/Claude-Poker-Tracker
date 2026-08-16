@@ -1,0 +1,81 @@
+id: "WS-496"
+title: "Review the WS-295 run — 6× UNDERPOWERED — the run answered NOTHING, check the instrument before re-running"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 27
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A compute run finished on cm-node1 and its artifacts are back on this machine.
+  Nothing else will surface this: finishing a job does not close a queue item, and
+  the better the compute node is utilised the less likely these are to be noticed.
+
+  SOURCE ITEM : WS-295 — The optimizer's curse — is the engine's stated EV systematically above what its advice actually realizes?
+  JOB         : ws-295-bc1cf2ea6256
+  RAN ON      : CM-NODE1 @ d281b938474d
+  COLLECTED   : 2026-08-16T11:25:03.837Z
+  ARTIFACTS   : C:\Users\chris\fleet\inbox\ws-295-bc1cf2ea6256
+     - out/optimism-size.json  (32846 bytes, sha256 fe3eae6d938f…)
+
+  VERDICTS
+     arms.depth-1.shape.vsNoise: UNDERPOWERED
+     arms.depth-1.shape.vsMargin: UNDERPOWERED
+     arms.depth-1.shape.vsNActions: UNDERPOWERED
+     arms.depth-2plus.shape.vsNoise: UNDERPOWERED
+     arms.depth-2plus.shape.vsMargin: UNDERPOWERED
+     arms.depth-2plus.shape.vsNActions: UNDERPOWERED
+
+  DIAGNOSIS (added by hand 2026-08-16 — do NOT just re-run this bigger).
+  The six UNDERPOWERED verdicts are not a sample-size complaint. The probe drew 200
+  distinct RNG seeds (1000-1199, mulberry32) and got LITERALLY ZERO VARIATION:
+  noiseSd = 0.0e+0 on all 8 nodes in BOTH arms, meanArgmaxStability = 1.0, and every
+  reported "curse" is 1e-13 to 1e-15 — floating-point rounding, not signal.
+
+  The quantity this probe exists to measure is E[max_a EVhat(a)] - max_a E[EVhat(a)],
+  which is induced BY estimator sampling noise. With zero noise the estimand is
+  identically zero by construction, so the run could not have produced an answer at any
+  replicate count. More replicates is the one response guaranteed not to help.
+
+  Two candidate mechanisms, and they need distinguishing before any re-run:
+    (a) the seed never reaches the estimator's RNG — a wiring bug in the probe;
+    (b) these 8 scenarios are evaluated by enumeration rather than Monte Carlo, so
+        nothing downstream of the seed is stochastic.
+  (a) is the more likely of the two: the standing note in engine test determinism is
+  that FLOP equity is Monte Carlo and therefore flaky, which is why deterministic
+  assertions need a river board plus a fixed equityFn stub. Five of the eight scenarios
+  here are flop nodes and should have varied. That is a contradiction worth resolving
+  first, and it is cheap: log the equity calculator's sample count and RNG identity for
+  one node across two seeds. If the draws are identical, it is (a).
+
+  Separately and regardless: n = 8 hand-picked scenarios gives 8 clusters, and every
+  shape test reported informativeClusters = 0. Even with working noise injection, the
+  scenario set is too small for the rho CIs to exclude anything. Both need fixing.
+
+accept_criteria: |
+  - The artifacts above are read and the finding is recorded where it belongs
+    (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.
+  - WS-295 is either closed, or its remaining work is stated explicitly.
+  - Any warning on the Result Card is answered or explicitly accepted, in writing.
+  - If the run needs re-running with different parameters, the compute_job block is
+    edited (which re-keys the job hash and lets the feeder pick it up again).
+effort: "S"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest from job ws-295-bc1cf2ea6256"
+created_at: "2026-08-16T15:59:22.110Z"
