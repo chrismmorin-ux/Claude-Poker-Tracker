@@ -50,6 +50,8 @@ if (Test-Path $PullStamp) {
     } catch { $needPull = $true }   # an unreadable stamp means pull, never means skip
 }
 
+$prevHead = (& git -C $Repo rev-parse --short HEAD 2>$null)
+
 if (-not (Test-Path (Join-Path $Repo '.git'))) {
     $pullMsg = 'repo not found at ' + $Repo
 } elseif (-not $needPull) {
@@ -71,6 +73,34 @@ if (-not (Test-Path (Join-Path $Repo '.git'))) {
 }
 
 $head = (& git -C $Repo rev-parse --short HEAD 2>$null)
+
+# --- 1b. materialize the state cache ------------------------------------------------------
+#
+# THE AUTONOMOUS PATH DIED HERE AND NOWHERE ELSE. `.claude/workstream/state/*.json` is
+# gitignored -- an untracked per-node cache by design (ADR-058) -- so a fresh clone has none.
+# The ranker reads state, not the YAMLs, so on cm-node1 it returned ZERO node1 candidates
+# while the identical command on G16 returned three. Measured 2026-08-16: node1 sat idle 4.5
+# hours with WS-293 ready, logging "no node1 candidates in the queue" every ten minutes. Every
+# test run from G16 passed, because G16 has the cache locally. Nothing about the feeder was
+# wrong; it was ranking an empty index and saying so.
+#
+# Rebuilt only when the cache is missing or HEAD moved -- a full reconcile every ten minutes
+# is wasted work when nothing changed.
+$StateFile = Join-Path $Repo '.claude\workstream\state\queue.json'
+$stateMissing = -not (Test-Path $StateFile)
+$headMoved = ($head -ne $prevHead)
+
+if ($stateMissing -or $headMoved) {
+    & C:\Users\chris\.local\node\node.exe (Join-Path $Repo 'kit\scripts\cwos-reconcile.js') --refresh-state --quiet 2>&1 | Out-Null
+
+    # Reconcile also rewrites shared DERIVED state (queue-index, sprint-index, events log,
+    # system-summary). Those are tracked, and this node authors nothing -- keeping its copies
+    # would make every subsequent `pull --rebase --autostash` fight a conflict it can only
+    # lose. Discard them and keep only the untracked cache, which is the artifact wanted.
+    Push-Location $Repo
+    & git checkout -- . 2>&1 | Out-Null
+    Pop-Location
+}
 
 # --- 2. feed the runner -------------------------------------------------------------------
 if (Test-Path $Feeder) {
