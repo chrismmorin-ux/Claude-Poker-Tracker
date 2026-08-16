@@ -41,7 +41,26 @@ node kit/scripts/cwos-fleet-compute.js status
 
 Runs at the start of every `/next`. Always exits 0 — this is information, **never a gate**. If cm-node1 is asleep or off-tailnet it reports `UNREACHABLE` after a 20s timeout and composition continues unchanged.
 
-Surface the single status line verbatim above the sprint preview. It resolves to one of:
+**Surface the whole panel verbatim above the sprint preview.** It is four lines and it is a *different workstream* from the sprint — a pipeline, not a batch. A sprint answers "what am I doing next"; this answers three other questions, and assurance is the product rather than prioritisation:
+
+```
+Fleet compute — cm-node1
+  NOW      RUNNING WS-320 · step 1/1 · 0.4h · healthy
+  RUNWAY   1 job(s) ready behind it — next WS-293 (26)
+  REVIEWS  3 finished run(s) waiting to be read — WS-497 (28), WS-496 (27), WS-502 (26)
+  BLOCKED  4 item(s) need CODE before they can ever run: WS-501, WS-283, WS-284, WS-264
+```
+
+| Line | What it answers | When to act |
+|------|-----------------|-------------|
+| `NOW` | Is it alive? | `NOT ALIVE` means the process died; the runner retries or fails it next tick. `UNREACHABLE` — one line, continue, never block. |
+| `RUNWAY` | Is it fed? | **`EMPTY` is the alert.** node1 will idle until a `compute_job` spec exists. Authoring one is queue-worthy work — offer it, don't report an idle machine as "nothing to do". |
+| `REVIEWS` | Are results being read? | A number that grows across sessions means finished runs are piling up unread — the exact failure the harvester exists to prevent. Offer the top one. |
+| `BLOCKED` | What can never run as-is? | These need CODE, not a spec. Do not offer to "write a spec" for them. |
+
+Priority rarely changes here. Do not turn the panel into a recommendation unless `RUNWAY` is empty or `REVIEWS` is growing.
+
+The older single-line states still apply when composing prose:
 
 | State | What to do |
 |-------|------------|
