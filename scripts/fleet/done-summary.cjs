@@ -18,6 +18,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Same fingerprint function the feeder uses on a candidate — that symmetry IS the dedupe.
+const { stepsFingerprint } = require(path.join(__dirname, '..', '..', 'kit', 'scripts', 'lib', 'cwos-compute-job.js'));
+
 const DONE = process.argv[2]
   || path.join(process.env.USERPROFILE || os.homedir(), 'fleet', 'compute', 'done');
 
@@ -37,11 +40,17 @@ for (const f of files) {
   } catch {
     continue;   // a half-written terminal file is not evidence of anything
   }
+  // The runner does NOT preserve the submitted spec's `source` block into its terminal
+  // record (verified 2026-08-16 on ws-295-bc1cf2ea6256), so ws_id and job_hash are usually
+  // empty and cannot be relied on. It DOES preserve `steps`, which is the better key anyway:
+  // fingerprinting the recorded steps with the same function the feeder uses on a candidate
+  // makes the comparison symmetric, so changing the fingerprint definition re-keys both
+  // sides instead of silently invalidating history and re-running finished work.
   const src = j.source || {};
   process.stdout.write([
     f.replace(/\.json$/, ''),
     src.ws_id || '',
-    src.job_hash || '',
+    stepsFingerprint(j.steps, j.inputs),
     j.outcome || '',
   ].join('|') + '\n');
 }

@@ -102,6 +102,49 @@ function validateComputeJob(job) {
  * legitimately re-runs. Keying on the commit instead would have re-run every item on every
  * unrelated push.
  */
+/**
+ * Canonical fingerprint of a MATERIALIZED steps array.
+ *
+ * This is the dedupe key, and it is computed from the same representation on both sides —
+ * the candidate's materialized steps, and the steps the runner recorded in its terminal
+ * file. That symmetry is the point. The previous key was a hash of the AUTHORED block
+ * compared against a job id, and changing the hash definition silently invalidated every
+ * prior record: it happened twice on 2026-08-16 (first when ids moved from commit-keyed to
+ * content-keyed, then when maxJobHours was dropped from the material), and each time the
+ * feeder cheerfully re-ran completed work. Hashing both sides at read time with one function
+ * means a future change to this function re-keys BOTH and stays consistent.
+ *
+ * Only fields that can change the OUTPUT are included. `maxJobHours` is a timeout bound and
+ * `artifacts` is a collection list; neither can alter what the run produces.
+ */
+function stepsFingerprint(steps, inputs) {
+  const material = (Array.isArray(steps) ? steps : []).map((s) => ({
+    name: s.name || null,
+    cmd: s.cmd || null,
+    args: Array.isArray(s.args) ? s.args.map(String) : [],
+    env: s.env || null,
+    expectFiles: Array.isArray(s.expectFiles) ? s.expectFiles.slice().sort() : [],
+  }));
+  const canonical = JSON.stringify({ steps: material, inputs: inputs || null });
+  return require('crypto').createHash('sha256').update(canonical).digest('hex').slice(0, 12);
+}
+
+/** Build the runner-ready steps for a job, without needing a commit. Shared so the dedupe
+ *  path and the submit path cannot diverge in how they resolve `cmd: node`. */
+function materializeSteps(job, nodePath) {
+  return (job.steps || []).map((s) => {
+    const step = {
+      name: s.name,
+      cmd: resolveCmd(s.cmd, nodePath),
+      args: Array.isArray(s.args) ? s.args.map(String) : [],
+      expectFiles: s.expectFiles.slice(),
+    };
+    if (s.env) step.env = s.env;
+    if (s.maxAttempts !== undefined) step.maxAttempts = Number(s.maxAttempts);
+    return step;
+  });
+}
+
 function computeJobHash(job) {
   // Hash only what can CHANGE THE RESULT: the steps (cmd, args, env, expectFiles) and any
   // staged inputs. `maxJobHours` and `artifacts` are operational — a timeout bound and a
@@ -184,17 +227,7 @@ function materializeSpec({ item, commit, repoPath, jobId, nodePath }) {
   if (!repoPath) return { ok: false, problems: ['no repoPath'] };
 
   const job = item.compute_job;
-  const steps = job.steps.map((s) => {
-    const step = {
-      name: s.name,
-      cmd: resolveCmd(s.cmd, nodePath),
-      args: Array.isArray(s.args) ? s.args.map(String) : [],
-      expectFiles: s.expectFiles.slice(),
-    };
-    if (s.env) step.env = s.env;
-    if (s.maxAttempts !== undefined) step.maxAttempts = Number(s.maxAttempts);
-    return step;
-  });
+  const steps = materializeSteps(job, nodePath);
 
   // Default the returned artifact set to everything the steps promised to produce. An
   // artifact list that silently omits a file the run generated is how a result becomes
@@ -237,6 +270,8 @@ module.exports = {
   NODE_CMD_TOKEN,
   normalizeRunsOn,
   computeJobHash,
+  stepsFingerprint,
+  materializeSteps,
   validateComputeJob,
   isComputeReady,
   resolveCmd,

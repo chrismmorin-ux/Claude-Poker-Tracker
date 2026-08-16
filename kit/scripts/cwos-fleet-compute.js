@@ -40,7 +40,8 @@ const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const { materializeSpec, readQueueItem, normalizeRunsOn, validateComputeJob } = require('./lib/cwos-compute-job');
+const { materializeSpec, readQueueItem, normalizeRunsOn, validateComputeJob,
+        stepsFingerprint, materializeSteps } = require('./lib/cwos-compute-job');
 const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor, HARVEST_MARKER } = require('./lib/cwos-fleet-harvest');
 
 // ------------------------------------------------------------------ config
@@ -152,20 +153,20 @@ function doneJobIds() {
   const r = onTarget()
     ? run(process.execPath, [summary, REMOTE_DONE])
     : run('ssh', [TARGET, `${quote(REMOTE_NODE)} ${quote(summary)} ${quote(REMOTE_DONE)}`]);
-  if (!r.ok) return { ok: false, ids: new Set(), byWs: new Map() };
+  if (!r.ok) return { ok: false, ids: new Set(), prints: new Set() };
   const ids = new Set();
-  const byWs = new Map();   // WS-NNN -> Set(job_hash) that already reached a terminal state
+  const prints = new Set();  // fingerprints of work that already reached a terminal state
   for (const line of r.stdout.split('\n')) {
     const l = line.trim();
     if (!l || /^\*\*|post-quantum|store now|upgraded/.test(l)) continue;
-    const [id, wsId, jobHash] = l.split('|');
+    const [id, wsId, fingerprint] = l.split('|');
     if (id) ids.add(id);
-    if (wsId) {
-      if (!byWs.has(wsId)) byWs.set(wsId, new Set());
-      if (jobHash) byWs.get(wsId).add(jobHash);
-    }
+    // Fingerprints of every terminal job, regardless of which item they came from. The
+    // fingerprint identifies the WORK, so this needs no ws_id -- which is just as well,
+    // since the runner does not preserve one.
+    if (fingerprint) prints.add(fingerprint);
   }
-  return { ok: true, ids, byWs };
+  return { ok: true, ids, prints };
 }
 
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
@@ -263,29 +264,13 @@ function feed({ dryRun }) {
     if (!candItem) { skipped.push(`${cand.id}: yaml unreadable`); continue; }
     const built = materializeSpec({ item: candItem, commit, repoPath: REMOTE_REPO, nodePath });
     if (!built.ok) { skipped.push(`${cand.id}: ${built.problems.join('; ')}`); continue; }
-    if (already.ok) {
-      const wsPrefix = String(cand.id).toLowerCase() + '-';
-      const priorHashes = already.byWs.get(cand.id);
-      if (already.ids.has(built.spec.id)) {
-        skipped.push(`${cand.id}: this exact spec already ran (${built.spec.id})`);
-        continue;
-      }
-      if (priorHashes && priorHashes.has(built.spec.source.job_hash)) {
-        skipped.push(`${cand.id}: this exact spec already ran`);
-        continue;
-      }
-      // NO PREFIX MATCH ON THE WS ID. That was a real bug on 2026-08-16: compute-runner.js
-      // does not preserve the spec's `source` block into its terminal record (done-summary
-      // returns an empty ws_id and job_hash for every job), so `byWs` is always empty and a
-      // prefix rule fired for EVERY item. It blocked precisely what it must never block — a
-      // re-run after the founder edits a compute_job block, which is the only way to unstick
-      // a failed job. WS-293's heap fix was refused by it.
-      //
-      // Exact content-keyed ids are sufficient and are the honest rule: same spec, same id,
-      // already in done/, skip. A changed spec is a DIFFERENT id and SHOULD run — including
-      // the one job that predates content-keying, whose spec has since changed anyway. An
-      // extra run of a genuinely-edited spec costs one slot on an otherwise idle machine;
-      // a wrong skip freezes the queue silently, which is far more expensive.
+    // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
+    // at read time by one shared function, so the comparison stays symmetric even if that
+    // function changes later. Two earlier keying schemes each silently invalidated history
+    // and re-ran finished work; this one cannot.
+    if (already.ok && already.prints.has(stepsFingerprint(built.spec.steps, built.spec.inputs))) {
+      skipped.push(`${cand.id}: this exact work already ran`);
+      continue;
     }
     top = cand; m = built; item = candItem;
     break;
@@ -499,7 +484,113 @@ function failureDetail(jobId) {
 
 // ------------------------------------------------------------------ output
 
-/** One line for `/next`. The founder should learn the machine's state without reading JSON. */
+/** Open review items the harvester filed — the "are finished runs being read" signal. */
+function reviewDebt() {
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, '.claude', 'workstream', 'state', 'queue.json'), 'utf8'));
+    return Object.values(j.items || {})
+      .filter((i) => i.source && i.source.kind === 'fleet-compute')
+      .filter((i) => i.status !== 'done' && i.status !== 'completed' && i.status !== 'dismissed')
+      .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0));
+  } catch { return []; }
+}
+
+/**
+ * Ready items whose exact spec has NOT already run — the real runway.
+ *
+ * `ranked.ready` counts items that COULD run; it says nothing about whether they already
+ * did. On 2026-08-16 that gap read as "3 ready item(s) waiting" while all three were in fact
+ * spent, which is the reassuring-but-wrong reading this panel exists to prevent.
+ */
+function runwayFor(ranked, already, status) {
+  if (!ranked || !ranked.ok) return [];
+  // The job currently RUNNING (or already queued) is not runway behind itself. Counting it
+  // read as "3 jobs ready" while the top one was the job in flight — reassuring and wrong,
+  // which is the failure mode this panel exists to prevent.
+  const inFlight = new Set();
+  if (status && status.running) inFlight.add(wsIdOfJob(status.running.jobId));
+  for (const q of (status && status.queued) || []) inFlight.add(wsIdOfJob(q));
+
+  const nodePath = onTarget() ? process.execPath : REMOTE_NODE;
+  return ranked.ready.filter((c) => {
+    if (inFlight.has(c.id)) return false;
+    const item = readQueueItem(QUEUE_DIR, c.id);
+    if (!item || !item.compute_job) return false;
+    const fp = stepsFingerprint(materializeSteps(item.compute_job, nodePath), item.compute_job.inputs);
+    return !(already.ok && already.prints.has(fp));
+  });
+}
+
+/** `ws-320-f6c3e820c448.json` -> `WS-320`. */
+function wsIdOfJob(jobId) {
+  const m = /^(ws-\d+)-/i.exec(String(jobId || ''));
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
+ * The node1 panel for `/next`.
+ *
+ * Founder 2026-08-16: this is its own workstream with a different design mechanism than the
+ * sprint. A sprint answers "what am I doing next"; a pipeline answers three different
+ * questions, and the panel is built around exactly those — is it ALIVE, is it FED, and is
+ * anything BACKING UP unread. Priority rarely changes here; assurance is the product.
+ */
+function panel(status, ranked, already) {
+  const L = [];
+  const head = `Fleet compute — ${TARGET}`;
+  if (!status.reachable) {
+    L.push(head);
+    L.push(`  NOW      UNREACHABLE — ${status.reason}`);
+    L.push('           (not a blocker; composition continues)');
+    return L.join('\n');
+  }
+
+  const runway = runwayFor(ranked, already);
+  const needSpec = ranked.ok ? ranked.unready.filter((c) => !c.compute_note) : [];
+  const blocked = ranked.ok ? ranked.unready.filter((c) => c.compute_note) : [];
+  const reviews = reviewDebt();
+
+  L.push(head);
+
+  // NOW — is it alive?
+  if (status.running) {
+    const r = status.running;
+    const ws = (r.jobId.match(/^ws-\d+/i) || [r.jobId])[0].toUpperCase();
+    const health = r.alive ? 'healthy' : 'NOT ALIVE — runner will retry or fail it on the next tick';
+    L.push(`  NOW      RUNNING ${ws} · step ${r.step + 1}/${r.totalSteps} · ${r.hours}h · ${health}`);
+  } else if (status.queued.length) {
+    L.push(`  NOW      ${status.queued.length} job(s) QUEUED — the runner starts them within 5 min`);
+  } else {
+    L.push('  NOW      IDLE');
+  }
+
+  // RUNWAY — is it fed? This is the number that decides whether the machine keeps working.
+  if (runway.length) {
+    L.push(`  RUNWAY   ${runway.length} job(s) ready behind it — next ${runway[0].id} (${runway[0].adjusted_score})`);
+  } else if (!status.running && !status.queued.length) {
+    L.push('  RUNWAY   EMPTY — node1 will idle until a compute_job spec exists');
+  } else {
+    L.push('  RUNWAY   EMPTY — nothing queued behind the current job');
+  }
+  if (needSpec.length) L.push(`           ${needSpec.length} item(s) need a spec written: ${needSpec.map((c) => c.id).join(', ')}`);
+
+  // REVIEWS — are results being read? The failure the whole harvest exists to prevent.
+  if (reviews.length) {
+    const top = reviews.slice(0, 3).map((r) => `${r.id} (${r.priority_label || r.priority_score})`).join(', ');
+    L.push(`  REVIEWS  ${reviews.length} finished run(s) waiting to be read — ${top}${reviews.length > 3 ? ', …' : ''}`);
+  } else {
+    L.push('  REVIEWS  none outstanding');
+  }
+
+  // BLOCKED — named so they stop reading as "just needs a spec" forever.
+  if (blocked.length) {
+    L.push(`  BLOCKED  ${blocked.length} item(s) need CODE before they can ever run: ${blocked.map((c) => c.id).join(', ')}`);
+  }
+
+  return L.join('\n');
+}
+
+/** Kept for callers that want the single line. */
 function humanStatusLine(status, ranked) {
   if (!status.reachable) return `Fleet compute (${TARGET}): UNREACHABLE — ${status.reason}`;
   if (status.running) {
@@ -509,10 +600,8 @@ function humanStatusLine(status, ranked) {
   }
   if (status.queued.length) return `Fleet compute (${TARGET}): ${status.queued.length} job(s) QUEUED, none started yet`;
   const ready = ranked && ranked.ok ? ranked.ready.length : 0;
-  const unready = ranked && ranked.ok ? ranked.unready.length : 0;
   if (ready) return `Fleet compute (${TARGET}): IDLE — ${ready} ready item(s) waiting, top is ${ranked.ready[0].id}`;
-  if (unready) return `Fleet compute (${TARGET}): IDLE — ${unready} node1 item(s) ranked but NONE has a compute_job spec`;
-  return `Fleet compute (${TARGET}): IDLE — no node1 work in the queue`;
+  return `Fleet compute (${TARGET}): IDLE`;
 }
 
 // ------------------------------------------------------------------ cli
@@ -533,16 +622,7 @@ function main() {
         needs_spec: ranked.ok ? ranked.unready.map((c) => ({ id: c.id, score: c.adjusted_score, title: c.title })) : [],
       }, null, 2));
     } else {
-      console.log(humanStatusLine(status, ranked));
-      if (ranked.ok && ranked.unready.length) {
-        // Split the two reasons apart. An item that needs CODE before any spec could help is
-        // not the same backlog as one that needs a spec typed out, and collapsing them is how
-        // "needs a spec" gets reported forever against work no spec can unblock.
-        const blocked = ranked.unready.filter((c) => c.compute_note);
-        const specable = ranked.unready.filter((c) => !c.compute_note);
-        if (specable.length) console.log('  needs a compute_job spec: ' + specable.map((c) => c.id).join(', '));
-        for (const c of blocked) console.log(`  ${c.id} not dispatchable: ${String(c.compute_note).slice(0, 150)}`);
-      }
+      console.log(panel(status, ranked, doneJobIds()));
     }
     // Exit 0 even when unreachable: /next reads this for information, never for a gate.
     return;
@@ -597,4 +677,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { computeStatus, rankNode1, feed, humanStatusLine, doneJobIds };
+module.exports = { computeStatus, rankNode1, feed, humanStatusLine, panel, reviewDebt, doneJobIds };
