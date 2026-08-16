@@ -70,6 +70,17 @@ runs_on: "node1"        # long unattended compute
 # a pinned worktree that is discarded after the artifacts are collected — the row would be
 # written and thrown away, leaving the standing-metric history silently one run short. The
 # card comes back to the G16 inbox and the row gets appended there, against the real repo.
+#
+# HEAP: the first dispatch died with "FATAL ERROR: Ineffective mark-compacts near heap limit
+# — JavaScript heap out of memory" on BOTH attempts (2026-08-16, job ws-293-eba55a589dfd),
+# about 5 minutes and ~250k hands in. Node's default old-space cap was the binding limit, not
+# cm-node1, which has 15.8 GB. Raised to 12 GB, leaving ~3.8 GB for the OS.
+#
+# NOT capped with --max-files instead, deliberately. Shrinking the corpus until it fits is
+# measuring the easy thing: this is the standing-metric run and its whole value is that it
+# scores the WHOLE pool. If 12 GB still is not enough, the accumulation in the probe is the
+# defect to fix (stream per-player state rather than holding every player in memory) — see
+# the failure item the harvester filed. Do not respond to a second OOM by shrinking the run.
 compute_job:
   maxJobHours: 12
   steps:
@@ -81,6 +92,8 @@ compute_job:
         - "out/range-calibration.json"
         - "--card"
         - "out/range-calibration.card.json"
+      env:
+        NODE_OPTIONS: "--max-old-space-size=12288"
       expectFiles:
         - "out/range-calibration.json"
         - "out/range-calibration.card.json"

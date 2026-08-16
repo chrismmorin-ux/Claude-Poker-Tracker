@@ -103,7 +103,13 @@ function validateComputeJob(job) {
  * unrelated push.
  */
 function computeJobHash(job) {
-  const canonical = JSON.stringify(job, Object.keys(flatten(job)).sort());
+  // Hash only what can CHANGE THE RESULT: the steps (cmd, args, env, expectFiles) and any
+  // staged inputs. `maxJobHours` and `artifacts` are operational — a timeout bound and a
+  // collection list — and folding them in meant that raising a timeout re-keyed the job and
+  // triggered a full re-run producing byte-identical output. Compute is the scarce thing
+  // here; spending 35 minutes to reproduce a result because a cap moved is pure waste.
+  const material = { steps: job.steps, inputs: job.inputs || null };
+  const canonical = JSON.stringify(material, Object.keys(flatten(material)).sort());
   return require('crypto').createHash('sha256').update(canonical).digest('hex').slice(0, 12);
 }
 

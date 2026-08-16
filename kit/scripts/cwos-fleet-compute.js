@@ -41,7 +41,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const { materializeSpec, readQueueItem, normalizeRunsOn, validateComputeJob } = require('./lib/cwos-compute-job');
-const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor } = require('./lib/cwos-fleet-harvest');
+const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor, HARVEST_MARKER } = require('./lib/cwos-fleet-harvest');
 
 // ------------------------------------------------------------------ config
 
@@ -54,6 +54,8 @@ const REMOTE_RUNNER = process.env.CWOS_COMPUTE_RUNNER
 const REMOTE_REPO = process.env.CWOS_COMPUTE_REPO || 'C:\\Users\\chris\\repos\\claude-poker-tracker';
 const REMOTE_INBOX = process.env.CWOS_COMPUTE_INBOX || 'C:\\Users\\chris\\fleet\\compute\\incoming';
 const REMOTE_DONE = process.env.CWOS_COMPUTE_DONE || 'C:\\Users\\chris\\fleet\\compute\\done';
+
+const REMOTE_LOGS = process.env.CWOS_COMPUTE_LOGS || 'C:\\Users\\chris\\fleet\\compute\\logs';
 
 // Where returned artifact sets land on THIS machine (the runner's `returnTo.dir`).
 const INBOX_DIR = process.env.CWOS_COMPUTE_INBOX_LOCAL || 'C:\\Users\\chris\\fleet\\inbox';
@@ -272,15 +274,18 @@ function feed({ dryRun }) {
         skipped.push(`${cand.id}: this exact spec already ran`);
         continue;
       }
-      // Legacy bridge: the first jobs were commit-keyed and recorded no source.job_hash, so
-      // their spec cannot be compared to the current one. Refusing is the conservative call
-      // — re-running burns real compute to reproduce a result that is already sitting in the
-      // G16 inbox. Editing the compute_job block is NOT enough to unstick one of these; say
-      // so, rather than leaving the founder to wonder why an edit changed nothing.
-      if (!priorHashes && [...already.ids].some((id) => id.startsWith(wsPrefix))) {
-        skipped.push(`${cand.id}: a job ran before spec-hashing existed — re-run it explicitly if the spec changed`);
-        continue;
-      }
+      // NO PREFIX MATCH ON THE WS ID. That was a real bug on 2026-08-16: compute-runner.js
+      // does not preserve the spec's `source` block into its terminal record (done-summary
+      // returns an empty ws_id and job_hash for every job), so `byWs` is always empty and a
+      // prefix rule fired for EVERY item. It blocked precisely what it must never block — a
+      // re-run after the founder edits a compute_job block, which is the only way to unstick
+      // a failed job. WS-293's heap fix was refused by it.
+      //
+      // Exact content-keyed ids are sufficient and are the honest rule: same spec, same id,
+      // already in done/, skip. A changed spec is a DIFFERENT id and SHOULD run — including
+      // the one job that predates content-keying, whose spec has since changed anyway. An
+      // extra run of a genuinely-edited spec costs one slot on an otherwise idle machine;
+      // a wrong skip freezes the queue silently, which is far more expensive.
     }
     top = cand; m = built; item = candItem;
     break;
@@ -348,6 +353,22 @@ function harvest({ dryRun }) {
   const filed = [];
   const skipped = [];
 
+  // A FAILED job returns no artifacts, so it lands in no inbox and is exactly as invisible
+  // as an unreviewed success — arguably worse, since the machine then sits idle having
+  // achieved nothing. WS-293 exhausted both attempts on a JavaScript heap OOM on
+  // 2026-08-16 and would have vanished silently. Failures are pulled from the compute
+  // node's own done/ records and filed like any other result.
+  const terminal = doneOutcomes();
+  for (const t of terminal) {
+    if (t.outcome === 'succeeded') continue;
+    if (!/^ws-\d+-/i.test(t.id)) continue;
+    const markerDir = path.join(INBOX_DIR, t.id);
+    if (fs.existsSync(path.join(markerDir, HARVEST_MARKER))) continue;
+    if (dryRun) { filed.push({ reviewId: '(dry-run)', title: `FAILED: ${t.id}`, jobId: t.id, wsId: t.wsId }); continue; }
+    const res = fileFailureItem(t, now);
+    if (res.ok) filed.push(res.entry); else skipped.push(`${t.id}: ${res.reason}`);
+  }
+
   for (const set of sets) {
     if (set.nonQueue) { skipped.push(`${set.jobId}: not a queue-driven job (no WS id in the job id)`); continue; }
     const highlights = extractHighlights(set.dir, set.manifest);
@@ -377,6 +398,103 @@ function harvest({ dryRun }) {
     filed.push({ reviewId, title: headlineFor(highlights, set.jobId), jobId: set.jobId, wsId: set.wsId });
   }
   return { ok: true, filed, skipped, scanned: sets.length };
+}
+
+/** Terminal jobs on the compute node with their outcome, via the versioned reader. */
+function doneOutcomes() {
+  const summary = onTarget()
+    ? path.join(REPO_ROOT, 'scripts', 'fleet', 'done-summary.cjs')
+    : `${REMOTE_REPO}\\scripts\\fleet\\done-summary.cjs`;
+  const r = onTarget()
+    ? run(process.execPath, [summary, REMOTE_DONE])
+    : run('ssh', [TARGET, `${quote(REMOTE_NODE)} ${quote(summary)} ${quote(REMOTE_DONE)}`]);
+  if (!r.ok) return [];
+  const out = [];
+  for (const line of r.stdout.split('\n')) {
+    const l = line.trim();
+    if (!l || /^\*\*|post-quantum|store now|upgraded/.test(l)) continue;
+    const [id, wsId, jobHash, outcome] = l.split('|');
+    if (id) out.push({ id, wsId: wsId || null, jobHash: jobHash || null, outcome: outcome || '' });
+  }
+  return out;
+}
+
+/** File a review item for a job that did NOT succeed, and mark it so it files once. */
+function fileFailureItem(t, now) {
+  const detail = failureDetail(t.id);
+  const alloc = run(process.execPath, [path.join(__dirname, 'cwos-next.js'), 'allocate-ws-id'], { cwd: REPO_ROOT });
+  let reviewId = null;
+  try { reviewId = JSON.parse(alloc.stdout.slice(alloc.stdout.indexOf('{'))).ws_id; } catch { /* below */ }
+  if (!reviewId) return { ok: false, reason: 'could not allocate a WS id' };
+
+  const wsId = t.wsId || (/^(ws-\d+)-/i.exec(t.id) || [])[1]?.toUpperCase() || null;
+  const source = wsId ? (readQueueItem(QUEUE_DIR, wsId) || null) : null;
+  const esc = (s) => '"' + String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+
+  const body = [
+    `id: ${esc(reviewId)}`,
+    `title: ${esc(`${wsId || t.id} FAILED on cm-node1 — ${detail.headline}`)}`,
+    'legacy_id: ""', 'type: bug', 'status: backlog',
+    'claimed_by: null', 'claimed_at: null', 'started_at: null',
+    'completed_at: null', 'completion_commit: null',
+    `priority_score: ${source && source.priority_score ? source.priority_score : 22.0}`,
+    'priority_label: "P1"',
+    `category: ${esc((source && source.category) || 'infrastructure')}`,
+    'capability: "core"',
+    `program: ${esc((source && source.program) || 'infrastructure')}`,
+    'finding_id: ""',
+    'description: |',
+    '  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no',
+    '  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the',
+    '  machine went idle having achieved nothing.',
+    '',
+    `  JOB       : ${t.id}`,
+    `  SOURCE    : ${wsId || '(unknown)'}${source ? ` — ${source.title}` : ''}`,
+    `  OUTCOME   : ${t.outcome || 'unknown'}`,
+    `  DETAIL    : ${detail.headline}`,
+    ...detail.lines.map((l) => `    ${l}`),
+    '',
+    '  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the',
+    '  identical spec will fail identically. The spec or the code has to change first — which',
+    '  also re-keys the job hash and lets the feeder pick it up again.',
+    'accept_criteria: |',
+    '  - The cause is identified and fixed in the code or the compute_job block, not worked',
+    '    around by shrinking the run until it fits.',
+    `  - ${wsId || 'The source item'} either runs to completion or its blocker is stated explicitly.`,
+    'effort: "S"',
+    'runs_on: "any"',
+    'files_involved: []', 'blocked_by: []', 'blocked_by_legacy: []', 'enables: []',
+    'sprint_id: null', 'decision_flags: []',
+    'source:', '  kind: "fleet-compute"',
+    `  detail: ${esc(`auto-filed by cwos-fleet-compute harvest — failed job ${t.id}`)}`,
+    `created_at: ${esc(now)}`, '',
+  ].join('\n');
+
+  try {
+    fs.writeFileSync(path.join(QUEUE_DIR, `${reviewId}.yaml`), body);
+    const markerDir = path.join(INBOX_DIR, t.id);
+    fs.mkdirSync(markerDir, { recursive: true });
+    fs.writeFileSync(path.join(markerDir, HARVEST_MARKER),
+      JSON.stringify({ harvested_at: now, review_item: reviewId, job_id: t.id, outcome: t.outcome }, null, 2));
+  } catch (e) {
+    return { ok: false, reason: String(e.message).slice(0, 120) };
+  }
+  return { ok: true, entry: { reviewId, title: `FAILED: ${detail.headline}`, jobId: t.id, wsId } };
+}
+
+/** Pull the actual error out of the job's step log — a failure with no cause is not a report. */
+function failureDetail(jobId) {
+  const ps = `Get-Content '${REMOTE_LOGS}\\${jobId}.0.log' -ErrorAction SilentlyContinue | Select-String -Pattern 'FATAL ERROR|Error:|ENOENT|out of memory' | Select-Object -First 3`;
+  const r = onTarget()
+    ? run('powershell', ['-NoProfile', '-Command', ps])
+    : run('ssh', [TARGET, `powershell -NoProfile -Command "${ps}"`]);
+  const lines = (r.stdout || '').split('\n').map((l) => l.trim())
+    .filter((l) => l && !/^\*\*|post-quantum|store now|upgraded/.test(l)).slice(0, 3);
+  const oom = lines.some((l) => /out of memory|heap limit/i.test(l));
+  return {
+    headline: oom ? 'JavaScript heap out of memory' : (lines[0] ? lines[0].slice(0, 90) : 'no error captured in the step log'),
+    lines,
+  };
 }
 
 // ------------------------------------------------------------------ output
