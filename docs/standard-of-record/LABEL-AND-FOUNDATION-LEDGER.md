@@ -125,7 +125,7 @@ doc-side mirror of the module-side impossibility in §3.
 | # | Label | Site | Foundation | Foundation status | Read sites | Cells | Primary path | Instrument ticket |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 6 | 12 | yes | WS-445 |
-| 2 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 2 | 30 | yes | WS-407 |
+| 2 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 4 | 30 | yes | WS-407 |
 | 3 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
 
 <!-- LABEL-LEDGER-UNMEASURED:END -->
@@ -217,6 +217,10 @@ silently replaced by the other, and the reconciliation between them is the triag
    If the source states no provenance, the honest `provenance` value says so.
 3. Write the row in `labelLedger.js`. Pick the impact constructor that matches the evidence you
    actually have. If that is `buildUnmeasuredReach`, name the instrument and its ticket.
+   **Do not count `readSites` by hand** — `node scripts/standardOfRecord/traceLabelReaders.mjs
+   --key '<harvest key>'` derives it, and `--verify` will fail the build if your row disagrees
+   with the trace. The three figures that predated the tool had been counted three different
+   ways and one of them was wrong; the counting rule now lives in `reachOf`, in code.
 4. Point the baseline row's `ledger` field at the new `LBL-` id, and list the harvest key in the
    row's `sites`.
 5. Add the row to the table in §4 or §5 in its ranked position. The drift test will tell you if

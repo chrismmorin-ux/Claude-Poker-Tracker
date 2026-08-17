@@ -447,7 +447,7 @@ export const LABEL_LEDGER = Object.freeze([
       + 'and no measurement, no citation, no sample. Founder estimate by omission.',
     liveness: 'unconditional',
     impact: buildUnmeasuredReach({
-      readSites: 2,
+      readSites: 4,
       cellCount: 30,
       primaryPath: true,
       instrument: {
@@ -460,6 +460,14 @@ export const LABEL_LEDGER = Object.freeze([
     notes: [
       'Read via gameTreeEquity.js:39 (adjustedRealization) -> :121 rolloutValue -> '
       + 'gameTreeEvaluator.js:331,386 and eight sites in gameTreeDepth2. No guard, no fallback.',
+      'readSites CORRECTED 2 -> 4 on 2026-08-17 by traceLabelReaders.mjs, on the first run of '
+      + 'the instrument that defines the counting rule. The three sites the hand count missed '
+      + 'are gameTreeConstants.js:61-63, where the `REALIZATION` back-compat alias reads 6 of '
+      + 'these 30 cells. THE ALIAS HAS ZERO IMPORTERS anywhere in src/ or scripts/ — so 3 of '
+      + 'the 4 sites are reach through dead code, and the live reach is gameTreeEquity.js:39 '
+      + 'alone. The count stays mechanical and this note carries the interpretation, which is '
+      + 'the same split `liveness` makes: a reach figure that quietly editorialised about '
+      + 'which readers "really count" could not be reproduced by anyone.',
       'THREE separate instrument tickets already exist for this one table and none references '
       + 'the others: WS-404 (P=28), WS-407 (24), WS-498 (30). Collapsing them onto one row is '
       + 'the clearest evidence the ledger is a deduplicating index, not just an inventory.',

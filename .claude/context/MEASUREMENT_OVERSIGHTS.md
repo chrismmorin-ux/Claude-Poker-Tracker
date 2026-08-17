@@ -61,9 +61,31 @@ now a harvested construct that must be claimed rather than an observation in a d
    every consumer of `micro` and none of its manufacture. This is the same objection §11.4
    already recorded — *"a threshold label, the same anti-pattern in another costume"* — and it
    remains open.
-2. **The control-flow form is harvested but not reach-checked.** 6 label-switches and 11
-   label-ternaries are enumerated and must be claimed, but nothing yet fails when a NEW READER of
-   an already-ledgered table appears. That is `REACH EXCEEDED`, specified and not yet shipped.
+2. ~~**The control-flow form is harvested but not reach-checked.**~~ **REACH EXCEEDED SHIPPED
+   2026-08-17.** `scripts/standardOfRecord/traceLabelReaders.mjs --verify` re-derives every
+   unmeasured row's `readSites` from the AST and fails on disagreement, wired into
+   `check-label-ledger.sh` behind the claim gate. Reach is now a DERIVED quantity, not an
+   assertion — which matters because reach is the only thing the unmeasured half of the ledger
+   is ranked on (`reachScore`, labelLedger.js:610), and a new consumer is exactly when a rank
+   goes stale and nobody re-reads the row.
+
+   Three things it found on its first runs, none of which had been noticed by reading:
+   - `LBL-realization-table` asserted **2** read sites and the true figure is **4**. The
+     counting rule for `readSites` had never been written down, and the three hand-authored
+     figures had been counted three different ways.
+   - Keying reads by bare symbol reported **392** sites for a construct named `card` and **66**
+     for each `leakRules/*.js::rule` — name collisions, not reach. Fixed to resolve
+     per-definition through the import graph.
+   - Ten live production leak rules traced as **VESTIGIAL**, because `heroLeakDetector.js:19`
+     loads them by `import.meta.glob` and no static import names them. `vestigial` is the
+     liveness value that licenses deletion, so that was the one error class here that can
+     destroy working code. Registry globs are now detected.
+
+   Residual, stated rather than closed: for an anonymous switch/ternary the traced name is the
+   enclosing binding, not the construct, so those carry `indirect: true` and report
+   `vestigial: null` — the tool says it does not know, which is true, instead of `true`, which
+   would not be. Re-export chains and dynamic `TABLE[key]` reads through a parameter are also
+   invisible.
 3. **Runtime-assembled and storage-read labels are invisible in principle.** No AST answer
    exists; measured today at zero JSON data imports in scope.
 4. **The gate proves a row EXISTS, not that it is honest.** `labelEntryProblems` and the

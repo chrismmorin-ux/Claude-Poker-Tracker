@@ -30,6 +30,7 @@
 set -euo pipefail
 
 CHECKER="scripts/standardOfRecord/check-label-ledger.mjs"
+TRACER="scripts/standardOfRecord/traceLabelReaders.mjs"
 
 if [[ ! -f "$CHECKER" ]]; then
   echo "❌ Label & Foundation Ledger check: $CHECKER not found"
@@ -37,3 +38,20 @@ if [[ ! -f "$CHECKER" ]]; then
 fi
 
 node "$CHECKER"
+
+# REACH EXCEEDED. The gate above proves every construct is CLAIMED; it says
+# nothing about whether a claimed row's reach is still true. MEASUREMENT_OVERSIGHTS
+# MO-1 records that hole verbatim: "nothing yet fails when a NEW READER of an
+# already-ledgered table appears."
+#
+# This re-derives every unmeasured row's readSites from the AST and fails on
+# disagreement, which makes reach a DERIVED quantity rather than an assertion —
+# and reach is the only thing the unmeasured half of the ledger is ranked on
+# (reachScore, labelLedger.js:610). Wiring a ledgered table into a new module is
+# exactly when its rank goes stale and exactly when nobody re-reads the row.
+if [[ ! -f "$TRACER" ]]; then
+  echo "❌ Label & Foundation Ledger check: $TRACER not found"
+  exit 1
+fi
+
+node "$TRACER" --verify

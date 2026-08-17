@@ -284,6 +284,50 @@ describe('the document and the module cannot drift apart', () => {
     expect(idsIn(section)).toEqual(rankLabels().unmeasured.map((r) => r.labelId));
   });
 
+  /**
+   * The id-for-id checks above caught a REORDERED table and would not have caught a WRONG
+   * NUMBER in one — which is not hypothetical: the doc carried `2` read sites for
+   * `LBL-realization-table` while the module said `4`, and every test passed. A drift test
+   * that guards the row order but not the row contents is guarding the cheaper half.
+   */
+  const cellsOf = (section, labelId) => {
+    const line = section.split('\n').find((l) => l.includes(`\`${labelId}\``));
+    expect(line, `${labelId} has no row in the doc table`).toBeDefined();
+    return line.split('|').map((c) => c.trim()).filter(Boolean);
+  };
+
+  it('the §5 reach numbers match the module cell-for-cell', () => {
+    const section = between(
+      '<!-- LABEL-LEDGER-UNMEASURED:BEGIN -->',
+      '<!-- LABEL-LEDGER-UNMEASURED:END -->',
+    );
+    for (const row of rankLabels().unmeasured) {
+      const cells = cellsOf(section, row.labelId);
+      // | # | Label | Site | Foundation | Foundation status | Read sites | Cells | Primary | Ticket |
+      expect(cells[5], `${row.labelId} read sites`).toBe(String(row.readSites));
+      expect(cells[6], `${row.labelId} cell count`).toBe(String(row.cellCount));
+      expect(cells[7], `${row.labelId} primary path`).toBe(row.primaryPath ? 'yes' : 'no');
+      expect(cells[8], `${row.labelId} instrument ticket`)
+        .toBe(row.entry.impact.instrument.ticket);
+    }
+  });
+
+  it('the §4 impact figures match the module cell-for-cell', () => {
+    const section = between('<!-- LABEL-LEDGER:BEGIN -->', '<!-- LABEL-LEDGER:END -->');
+    for (const row of rankLabels().ranked) {
+      const cells = cellsOf(section, row.labelId);
+      // | # | Label | Site | Foundation | Foundation status | Tier | Abs-EV | Basis |
+      expect(cells[5], `${row.labelId} tier`).toBe(row.tier);
+      const i = row.entry.impact;
+      const shown = i.tier === 'measured'
+        ? String(i.absEvBB100)
+        : `${i.boundDirection === '<=' ? '≤' : '≥'} ${i.boundBB100}`;
+      expect(cells[6], `${row.labelId} impact figure`).toBe(shown);
+      expect(cells[7], `${row.labelId} basis`)
+        .toBe(i.tier === 'measured' ? i.resultCardId : i.method);
+    }
+  });
+
   it('the §5 table has NO EV column, and never will', () => {
     // The doc-side mirror of the module-side impossibility. Cheap, and it stops the drift where
     // someone "helpfully" adds an estimate column six months from now.
