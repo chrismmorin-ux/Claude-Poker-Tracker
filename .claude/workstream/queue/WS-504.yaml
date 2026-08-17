@@ -40,6 +40,33 @@ description: |
   there. WS-503 is pinned with `--sites FTP,PS --stakes 50NLH` to sidestep it, and that
   pin is a workaround, not the fix.
 
+  ── CORRECTION 2026-08-17 (measured, while fixing WS-513). ────────────────────────────
+  THE TWO PARAGRAPHS ABOVE ARE WRONG ON BOTH COUNTS, and in the same way.
+
+  "It did NOT corrupt anything measured so far" is false. The STAKE bias had nothing to
+  express on G16 — that part holds. The SITE bias expressed fully and always has.
+  `discoverCorpusFiles({sites:['FTP','PS'],stakes:['50NLH']})` returns 1756 files sorted:
+  FTP 525, then PS 1231. The first PS file sits at index 525. So on G16, with its two
+  directories, ANY `--max-files <= 525` is 100% FTP and 0% PS.
+
+  The C3 re-baseline is affected. out/hero-ev-c3-20260816.json ran `--max-files 60` and
+  contains 4,640 occurrences of `FTP:` and ZERO of `PS:`. The row quoted everywhere as
+  "edge 2.2669, CI [-1.1685,+5.5626], 308 clusters, the pinned 50NLH FTP+PS population"
+  is a ONE-SITE measurement. Every artifact naming that population is mis-labelled the
+  same way the Deal Book hash is: the name records the discovery filter, not the sample.
+
+  "WS-503 is pinned with `--sites FTP,PS` to sidestep it" is also false, and it is the
+  more dangerous sentence because it reads as reassurance. The site pin selects which
+  directories are DISCOVERED; the sorted prefix then decides which are READ. A filter
+  upstream of a prefix cannot correct the prefix. There is no value of `--max-files`
+  that yields a two-site sample here — raising the cap while
+  `--target-contributing-players` binds just stops the run earlier inside the FTP block.
+  Stratification is not the preferred fix among several. It is the only one.
+
+  CONSEQUENCE: this ticket is now a hard prerequisite of WS-503 (recorded in its
+  `blocked_by`), and closing it should also re-run or explicitly re-label the C3 row.
+  ──────────────────────────────────────────────────────────────────────────────────────
+
   THE FIX — build the instrument, do not shrink the question.
   1. Add stratified selection: `--max-files` should draw PROPORTIONALLY (or round-robin)
      across the discovered directories rather than taking a sorted prefix. Deterministic
@@ -58,7 +85,14 @@ accept_criteria:
   - "Replication stamp / Deal Book records per-directory file counts of the REALISED sample, not just the filter."
   - "A cap that collapses the sample onto a strict subset of discovered directories is reported in the artifact."
   - "Regression test: capped discovery over >=3 synthetic directories draws from all of them."
-  - "WS-503's pinned invocation still reproduces the identical two-directory 50NLH sample."
+  # AC5 AMENDED 2026-08-17 AT CLOSING TIME, because as written it is unsatisfiable and closing
+  # it unamended would mean asserting something this ticket's own CORRECTION section refutes.
+  # It asked that WS-503's pinned invocation "still reproduce the identical two-directory 50NLH
+  # sample". That sample HAS NEVER EXISTED — the site pin chose what was DISCOVERED and the
+  # sorted prefix then chose what was READ, so every pinned run was one directory. Split into
+  # the two invariants it was reaching for; both are asserted in corpusFiles.test.js.
+  - "AC5a: an UNCAPPED draw returns the same array identity, so nothing pre-WS-504 moves."
+  - "AC5b: `--file-selection prefix` reproduces a published sample bit-identically. Measured on the real 1,756-file 50NLH slice (525 FTP / 1231 PS): prefix at 300 files yields contentHash sha256:1c560bcc8ba77b640… — IDENTICAL to the published handhq-allsites-50NLH-1c560bcc — with only the NAME moving to handhq-FTP-50NLH-1c560bcc. Proportional yields 90/210 as handhq-FTP+PS-50NLH-ae2172f5."
 effort: "S"
 runs_on: "any"
 files_involved:
@@ -80,3 +114,33 @@ updated_at: "2026-08-16"
 status_note: |
   Sibling to WS-492 (stake gradient). Latent on G16 (2 dirs, both 50NLH); live on cm-node1
   (27 dirs, 25NLH-1000NLH) which is where the compute feeder now sends node1 work.
+
+  ── CLOSING NOTE 2026-08-17 ───────────────────────────────────────────────────────────
+  THE BLAST RADIUS IS WIDER THAN THIS TICKET DESCRIBED, and that is the main finding.
+  The C3 row is not the exception; it is the one that got noticed. Measured:
+  `handhq-allsites-50NLH-1c560bcc` — the Deal Book behind RC-depth-ablation.json and BOTH
+  RC-river-flip-replicate cards, and quoted in DEPTH-ABLATION-2026-08-05.md,
+  SCORED-READOUT-SPEC.md and POKER_THEORY.md — is 300 of 300 Full Tilt files. Siblings:
+  ...-aa3f0447 (RC-layer-divergence), ...-790a6ffd (per-player-width), ...-38f96a38,
+  ...-c0043f8b, ...-24302c8e. Handled by FAULT-prefix-corpus-selection (confirmed), which
+  matches structurally on manifest.fileSelection rather than by editing published cards.
+
+  ALSO CORRECTED: this ticket says the C3 run was "the pinned 50NLH FTP+PS population".
+  It was not pinned at all — its sliceSpec is {sites: null, stakes: null, maxFiles: 60}.
+
+  THE DEFECT THAT WAS STILL LIVE when this was picked up. Stratified selection was already
+  written and uncommitted, with 32 green tests — and `buildReplicationManifest` destructured
+  a FIXED KEY LIST and rebuilt the object, so the `fileSelection` that schemas.js registered
+  and replicationStamp.mjs produced was dropped before it reached the Result Card. The
+  schema advertised a field the builder could not deliver. The builder is now driven by
+  MANIFEST_SCHEMA, so a registered field cannot be silently dropped again, and an
+  UNregistered one still cannot get in.
+
+  NOT DONE HERE, WITH OWNERS (see WS-504-followon items):
+    - Five reports share the admissibility shape and still need their runner to thread
+      fileSelection into buildStampInput: depthAblationReport, rangeCalibrationReport,
+      studyLadderReport, teachableArmsProbe, layerAblation. sampleAdmissibility.mjs makes
+      each a two-line change; the work is in the runners.
+    - verify-ws433-determinism.mjs discovers with NO site/stake filter and N_FILES defaults
+      to 3, so on cm-node1's 27 directories it reports collapsed on 24 of 27. Separate item.
+    - The k>=679 hero-EV question: WS-503, unblocked by this ticket.

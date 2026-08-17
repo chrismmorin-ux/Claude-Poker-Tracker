@@ -684,6 +684,9 @@ export const MATCHABLE_CARD_FIELDS = Object.freeze([
   'manifest.fieldVersion',
   'manifest.constants',
   'manifest.unseededSources',
+  // WS-504. HOW the corpus cap drew the sample. Added because the sorted-prefix fault is
+  // matched on the SELECTION, not on the Deal Book id — the id was the thing that lied.
+  'manifest.fileSelection',
   'metrics.keys',
   'metrics.values',
   'estimand',
@@ -1051,6 +1054,53 @@ export const SUSPECTED_FAULTS = Object.freeze([
     evidence: [
       'WS-236 / WS-254 — the counting rule was traced to the definition site and the name kept',
       'WS-325 carries this as the worked example for the Mass Data Field stack audit',
+    ],
+  }),
+
+  buildFaultEntry({
+    faultId: 'FAULT-prefix-corpus-selection',
+    title: 'A file cap took a sorted prefix, so a capped run read one site under a multi-site name',
+    site: 'corpus',
+    mechanism:
+      '`discoverCorpusFiles` returns a PATH-SORTED list, and corpus directory names lead with '
+      + 'the site code. `--max-files N` then took the first N. So any capped run read whole '
+      + 'directories in sorted order and stopped inside the first one — while the Deal Book '
+      + 'named itself from the DISCOVERY FILTER rather than the realised sample, so a one-site '
+      + 'sample was published as `allsites`. WS-492 measured a monotone stake gradient across '
+      + 'these directories (6-max 3-bet +57% from 25NLH to 1000NLH), so the strata are not '
+      + 'exchangeable: an affected figure estimates a different population, not the same one '
+      + 'more noisily. A --sites filter does NOT correct this — a filter upstream of a prefix '
+      + 'cannot fix the prefix, and no value of the cap yields a multi-site sample.',
+    contaminates:
+      'Every Result Card whose Deal Book was drawn under a cap before 2026-08-17, and every '
+      + 'figure quoted from one.',
+    // Structural, on the selection record itself. A card carrying no `fileSelection` predates
+    // WS-504 and therefore took a prefix; one that records `prefix` says so outright. A card
+    // recording `proportional` is clean and must not match.
+    matches: (card) => onOnlineCorpus(card)
+      && (card?.manifest?.fileSelection == null || card.manifest.fileSelection.strategy === 'prefix'),
+    matchesOn: ['manifest.fileSelection', 'match.dealBookId'],
+    falsifier:
+      'Re-derive the Deal Book from its recorded sliceSpec and count members per directory. A '
+      + 'book whose realised composition spans every directory the sliceSpec discovers is clean; '
+      + 'one that lands in a strict subset carries the fault, and the omitted directories are '
+      + 'the measure of it.',
+    probability: 1.0,
+    probabilityBasis:
+      'CONFIRMED by direct composition counts, not inferred. The uncertainty is how far each '
+      + "affected figure moves, not whether the sample was collapsed.",
+    priorBreadth: 0.8,
+    status: 'confirmed',
+    evidence: [
+      'handhq-allsites-50NLH-1c560bcc (RC-depth-ablation, both RC-river-flip-replicate cards) '
+      + 'is 300 of 300 files from FTP-2009-07-01_2009-07-23_50NLH_OBFU and zero from PS',
+      'handhq-allsites-allstakes-4555adb4 (the 2026-08-16 C3 re-baseline) is 60 of 60 FTP; the '
+      + 'artifact contains 4,640 occurrences of `FTP:` and zero of `PS:`',
+      'Measured 2026-08-17 on the 1,756-file 50NLH slice (525 FTP, 1231 PS): a 300-file prefix '
+      + 'draw reproduces contentHash sha256:1c560bcc8ba77b640… bit-identically while yielding '
+      + '300/0, where proportional yields 90/210 as handhq-FTP+PS-50NLH-ae2172f5',
+      'WS-504 — stratified selection, and the manifest.fileSelection record that lets this '
+      + 'entry match structurally rather than by prose',
     ],
   }),
 

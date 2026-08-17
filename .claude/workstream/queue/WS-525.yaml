@@ -1,0 +1,158 @@
+id: "WS-525"
+title: "Re-run the three cards built on `handhq-allsites-50NLH-1c560bcc` — a Deal Book that is 300 of 300 Full Tilt files under an `allsites` name"
+legacy_id: ""
+type: task
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 58.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FILED 2026-08-17 while closing WS-504. Founder ruling the same day: flag the contaminated
+  cards in the fault register AND re-run them, rather than flag alone.
+
+  WHAT IS CONTAMINATED, MEASURED NOT INFERRED. `handhq-allsites-50NLH-1c560bcc` carries 300
+  members and 300 of 300 are `FTP-2009-07-01_2009-07-23_50NLH_OBFU`. Zero PokerStars. The
+  book was named from the discovery FILTER, not the realised sample, so `allsites` describes
+  a one-site measurement. Three published Result Cards stand on it:
+
+    docs/standard-of-record/cards/RC-depth-ablation.json:6
+    docs/standard-of-record/cards/RC-river-flip-replicate.json:6
+    docs/standard-of-record/cards/RC-river-flip-replicate-ws378fix.json:6
+
+  and it is quoted in DEPTH-ABLATION-2026-08-05.md:118, SCORED-READOUT-SPEC.md,
+  POKER_THEORY.md and docs/runbooks/baseline-ev-run.md.
+
+  WHY THIS IS NOT A RE-LABEL. WS-492 measured a monotone stake gradient across the corpus
+  directories (6-max 3-bet +57% from 25NLH to 1000NLH, PFR +31%), so directories are not
+  exchangeable. A one-site sample is an estimate of a different population, not a noisier
+  estimate of the same one. Re-labelling makes the card honest; it does not answer the
+  question the card was written to answer.
+
+  THE 300-FILE DRAW IS ALREADY MEASURED, so the re-run's population is known in advance:
+  the 50NLH slice is 1,756 files (525 FTP, 1231 PS), and proportional selection at 300 draws
+  90 FTP / 210 PS as `handhq-FTP+PS-50NLH-ae2172f5`. The prefix draw reproduces the published
+  `sha256:1c560bcc8ba77b640…` bit-identically, so the OLD cards remain replicable — this adds
+  a successor rather than destroying a predecessor.
+
+  BLOCKED BY WS-523 AND THIS IS A REAL DEPENDENCY, NOT A DEFERRAL. `depthAblationReport` and
+  the river-flip report do not yet read `manifest.fileSelection`, so re-running today produces
+  a correctly stratified sample carried by a card that still cannot state its own composition
+  — a corrected number with an uncorrected record, which is the WS-504 defect one layer along.
+
+  SIBLING BOOKS with the same shape, to be swept in the same pass or explicitly deferred with
+  a reason: `…-aa3f0447` (RC-layer-divergence), `…-790a6ffd` (per-player-width),
+  `…-38f96a38`, `…-c0043f8b`, `…-24302c8e`.
+accept_criteria:
+  - "Both runs complete on cm-node1 with `admissible: true` and no SAMPLE_COLLAPSED blocker."
+  - "Each new card's `manifest.fileSelection.realised.perDirectory` shows a non-zero count from BOTH 50NLH directories."
+  - "New cards are written alongside the old, not over them — the old ones stay replicable under `--file-selection prefix` and remain flagged by FAULT-prefix-corpus-selection."
+  - "The delta between old and new is reported for every headline figure, and reported whether it is large or small. A null delta is a result about transferability across sites, not a reason to drop the work."
+  - "DEPTH-ABLATION-2026-08-05.md, SCORED-READOUT-SPEC.md and POKER_THEORY.md point at the successor cards."
+  - "The five sibling books are each either swept or deferred with a stated reason."
+effort: "M"
+runs_on: "node1"
+files_involved:
+  - "docs/standard-of-record/cards/RC-depth-ablation.json"
+  - "docs/standard-of-record/cards/RC-river-flip-replicate.json"
+  - "docs/standard-of-record/DEPTH-ABLATION-2026-08-05.md"
+  - ".claude/context/POKER_THEORY.md"
+blocked_by: ["WS-523"]
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags: []
+compute_job:
+  # Authored 2026-08-17. NOT SUBMITTABLE UNTIL WS-523 CLOSES — see blocked_by. The spec is
+  # written now, while the invocations are in hand, rather than reconstructed later; the job
+  # fingerprint is content-derived, so editing this block is what re-keys it for the feeder.
+  #
+  # Parameters read out of the artifacts themselves, not recalled: out/depth-ablation.json
+  # config carries maxDecisions 260, poolPct 50, minTrainHands 15, comboSamples 10, trials 200,
+  # rake {pct 0.05, cap 3, noFlopNoDrop}, arms depth1@0ms / depth2@2000ms with depth2 primary.
+  # The river-flip invocation is in that script's own header (run-river-flip-replicate.mjs:53-56).
+  #
+  # Sizing: G16 ran the original 300-file depth ablation inside the baseline-ev runbook budget.
+  # cm-node1 is a Surface Pro 8 (8 logical cores, ~4 workers), so the cap is set above a
+  # pessimistic multiple rather than at the number it "should" take.
+  maxJobHours: 6
+  inputs:
+    # Same reasoning as WS-503: pi_pool is the denominator of every importance weight, so it is
+    # staged rather than re-mined. Re-mining on cm-node1 would fit the field on that machine's
+    # 27-directory corpus and swap the FIELD underneath a run whose purpose is "same field,
+    # honest sample". The sha256 makes a drifted file fail preflight instead of silently rebasing.
+    - from: "C:\\Users\\chris\\fleet\\compute-inputs\\behavior-policy-ws503.json"
+      to: "out/behavior-policy.json"
+      sha256: "57c69e8346d30b0e20d56515720fe21aee405c43df7eabb28747b71dfb2f73da"
+  steps:
+    - name: depth-ablation-stratified
+      cmd: node
+      args:
+        - "scripts/backtest/run-depth-ablation.mjs"
+        - "--reference"
+        - "none"
+        - "--behavior-policy"
+        - "out/behavior-policy.json"
+        - "--stakes"
+        - "50NLH"
+        - "--max-files"
+        - "300"
+        - "--max-decisions"
+        - "260"
+        - "--refinement-ms"
+        - "2000"
+        - "--out"
+        - "out/depth-ablation-stratified.json"
+        - "--card"
+        - "docs/standard-of-record/cards/RC-depth-ablation-stratified.json"
+      expectFiles:
+        - "out/depth-ablation-stratified.json"
+        - "docs/standard-of-record/cards/RC-depth-ablation-stratified.json"
+      maxAttempts: 2
+    - name: river-flip-replicate-stratified
+      cmd: node
+      args:
+        - "scripts/backtest/run-river-flip-replicate.mjs"
+        - "--reference"
+        - "none"
+        - "--behavior-policy"
+        - "out/behavior-policy.json"
+        - "--stakes"
+        - "50NLH"
+        - "--max-files"
+        - "300"
+        - "--max-players"
+        - "300"
+        - "--max-hands-per-player"
+        - "60"
+        - "--out"
+        - "out/river-flip-replicate-stratified.json"
+        - "--card"
+        - "docs/standard-of-record/cards/RC-river-flip-replicate-stratified.json"
+      expectFiles:
+        - "out/river-flip-replicate-stratified.json"
+        - "docs/standard-of-record/cards/RC-river-flip-replicate-stratified.json"
+      maxAttempts: 2
+  artifacts:
+    - "out/depth-ablation-stratified.json"
+    - "out/river-flip-replicate-stratified.json"
+    - "docs/standard-of-record/cards/RC-depth-ablation-stratified.json"
+    - "docs/standard-of-record/cards/RC-river-flip-replicate-stratified.json"
+source:
+  type: session-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-504-closing-2026-08-17"
+created_at: "2026-08-17"
+updated_at: "2026-08-17"
+status_note: |
+  Founder ruling 2026-08-17 chose "fault-register entry AND re-run", over flag-only. The
+  register entry (FAULT-prefix-corpus-selection, confirmed) ships with WS-504 and is what
+  makes these cards FINDABLE; this item is what makes them ANSWERED.

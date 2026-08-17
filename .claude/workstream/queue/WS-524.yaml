@@ -1,0 +1,70 @@
+id: "WS-524"
+title: "The determinism verifier discovers with NO site/stake filter and a default cap of 3 — on cm-node1 it checks determinism over an arbitrary cross-stake slice"
+legacy_id: ""
+type: defect
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 41.0
+priority_label: "P2"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FILED 2026-08-17 while closing WS-504, and deliberately NOT folded into it — WS-504 migrated
+  this call site to stratified selection, which is a different fix from the one below.
+
+  THE DEFECT. `scripts/backtest/verify-ws433-determinism.mjs:68` discovers with
+  `discoverCorpusFiles({})` — no `sites`, no `stakes` — and `N_FILES` defaults to 3
+  (`:37`, `int(args.files, 3)`).
+
+  On G16 this is inert: the corpus root holds two directories and both are 50NLH.
+
+  On cm-node1 it is not. That corpus has 27 directories spanning 25NLH-1000NLH, so:
+    - the tool verifies determinism over an arbitrary cross-stake slice rather than over the
+      population anything else is measured on, and
+    - with 27 strata and a cap of 3, `allocate` never reaches its floor-of-one branch
+      (`stratifiedSelect.mjs:64` — `left=3 < n=27`), so the run reports `collapsed: true` on
+      24 of 27 directories on EVERY invocation.
+
+  WHAT IS AND IS NOT BROKEN. The three gates still pass, and correctly: determinism is a
+  property of the code, not of the sample, and the gates compare two runs within a single
+  execution (`hashRun`, `:59-66`) with no stored baseline to move. So this does not produce a
+  wrong verdict. It produces a verifier that prints a collapse warning every time it runs on
+  the compute node and therefore looks broken — which is its own cost, because a tool that
+  cries wolf on every invocation is a tool whose warnings stop being read.
+
+  THE FIX. Pin the discovery to the population the verifier is meant to verify (almost
+  certainly `--stakes 50NLH`, matching every other baseline), and raise the default `N_FILES`
+  to at least the number of discovered directories so the floor-of-one branch engages. Decide
+  which population deliberately rather than inheriting whatever `{}` returns on whichever
+  machine happens to run it — that inheritance is the whole defect.
+accept_criteria:
+  - "Discovery is explicitly filtered; the verifier states which population it verifies rather than inheriting the machine's corpus."
+  - "The default file count is at least the number of discovered directories, so a stratified draw can reach every one."
+  - "Running on a 27-directory corpus produces no collapse warning."
+  - "The three determinism gates still pass, and the pass is shown to be unchanged by the filter."
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/verify-ws433-determinism.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: ""
+decision_flags:
+  - "Which population the verifier should pin to. 50NLH matches every other baseline, but a determinism check arguably WANTS breadth — in which case the fix is a larger N_FILES, not a filter."
+source:
+  type: session-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-504-closing-2026-08-17"
+created_at: "2026-08-17"
+updated_at: "2026-08-17"
+status_note: |
+  Named in WS-504's completion note. Kept separate because widening a ticket to cover every
+  defect found near it is how a ticket stops closing.

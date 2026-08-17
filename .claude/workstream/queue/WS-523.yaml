@@ -1,0 +1,87 @@
+id: "WS-523"
+title: "Five report families still cannot see a collapsed sample — thread `fileSelection` into their stamps and adopt `sampleAdmissibility`"
+legacy_id: ""
+type: defect
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 64.0
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FILED 2026-08-17 while closing WS-504. Named in that ticket's completion note rather than
+  left to be rediscovered — WS-504 fixed hero-EV and hero-EV only.
+
+  WHAT WS-504 SHIPPED. Corpus selection is stratified; the realised per-directory composition
+  reaches `manifest.fileSelection`; a collapsed sample is a BLOCKER on the hero-EV Result Card
+  via `scripts/backtest/sampleAdmissibility.mjs`, so `gate.c3Passes` cannot flip on a sample
+  that is not the corpus.
+
+  WHAT IT DID NOT. Five other report families build the same `{admissible, blockers[],
+  warnings[]}` verdict and are blind to all of it:
+
+    - scripts/backtest/depthAblationReport.mjs   (assessDepthAdmissibility)
+    - scripts/backtest/rangeCalibrationReport.mjs (inline; warnings are bare strings)
+    - scripts/backtest/studyLadderReport.mjs      (inline)
+    - scripts/backtest/teachableArmsProbe.mjs     (inline)
+    - scripts/backtest/layerAblation.mjs          (inline)
+
+  The verdict side is a two-line change each — `sampleAdmissibility(stamp, config)` already
+  returns `{blockers, warnings, sampleComposition}` and was extracted precisely so these five
+  inherit ONE answer instead of each re-deriving the rules and one of them getting it wrong.
+
+  THE ACTUAL WORK IS IN THE RUNNERS. Each runner calls `applyFileCap` (so its SAMPLE is now
+  correct) but never passes the returned `selection` into `buildStampInput`, so there is
+  nothing for the assessor to read. `run-hero-ev.mjs:301-309` is the worked example.
+
+  WHY THIS BLOCKS THE RE-RUNS (WS-525). Re-running depth-ablation today produces a correctly
+  stratified sample carried by a card that still cannot say so — a corrected number with an
+  uncorrected record. That is the same defect WS-504 existed to remove, one layer along.
+
+  Also consider: `--file-selection` exists ONLY on run-hero-ev.mjs. The other runners take the
+  default, which is now right, but a run whose population depends on an unstated default is
+  the thing WS-504 objected to. Decide whether the flag becomes shared argument-parsing —
+  every runner today hand-rolls its own `parseArgs`/`list`/`int`, which is why it is not.
+accept_criteria:
+  - "Each of the five runners passes its `applyFileCap` selection into `buildStampInput` as `fileSelection`, with both `discovered` and `realised` sides."
+  - "Each of the five reports calls `sampleAdmissibility` and merges its blockers/warnings into its own verdict."
+  - "A collapsed sample makes each of those cards inadmissible, asserted by test — not merely warned about."
+  - "A run with no recorded fileSelection still WARNS and stays parseable, matching the hero-EV asymmetry: validation of new artifacts tightens, parsing of legacy ones does not."
+  - "The realised composition renders in each report, unprompted, not only on collapse."
+effort: "M"
+runs_on: "any"
+files_involved:
+  - "scripts/backtest/depthAblationReport.mjs"
+  - "scripts/backtest/rangeCalibrationReport.mjs"
+  - "scripts/backtest/studyLadderReport.mjs"
+  - "scripts/backtest/teachableArmsProbe.mjs"
+  - "scripts/backtest/layerAblation.mjs"
+  - "scripts/backtest/run-depth-ablation.mjs"
+  - "scripts/backtest/run-range-calibration.mjs"
+  - "scripts/backtest/run-study-ladder.mjs"
+  - "scripts/backtest/run-teachable-arms.mjs"
+  - "scripts/backtest/sampleAdmissibility.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-525"
+sprint_id: ""
+decision_flags:
+  - "Whether `--file-selection` becomes a shared flag across runners, or stays hero-EV-only with the others pinned to the default. Shared parsing does not exist today — each runner hand-rolls its own."
+source:
+  type: session-finding
+  created_by: ai
+  finding_id: ""
+  run_id: "ws-504-closing-2026-08-17"
+created_at: "2026-08-17"
+updated_at: "2026-08-17"
+status_note: |
+  Scope was deliberately NOT widened into WS-504 — that ticket's accept criterion 3 says "the
+  artifact", singular, and hero-EV is the one that gates readiness. This is the rest of it,
+  with an owner, rather than a gap that goes quiet.

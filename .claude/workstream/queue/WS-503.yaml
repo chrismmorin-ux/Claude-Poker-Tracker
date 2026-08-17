@@ -68,7 +68,11 @@ description: |
 accept_criteria:
   - "Run completes with admissible: true, complete: true, engineDirty: false at HEAD."
   - "Contributing players >= 679 (target 1200); artifact + Result Card written."
-  - "Deal Book covers exactly the two 50NLH directories FTP + PS — same population as the 2026-08-16 row."
+  # AMENDED 2026-08-17 when WS-504 shipped. The second clause was FALSE and had to go: the
+  # 2026-08-16 row is FTP-only (4,640 `FTP:` / 0 `PS:`), so "same population" named a sample
+  # that never existed. This run is the FIRST two-site measurement, not a higher-n repeat.
+  - "Deal Book `realisedComposition` covers BOTH 50NLH directories with a non-zero count from each."
+  - "The comparison is stated as being to a SUPERSEDED, re-labelled FTP-only row — not to the same population at lower n. The Deal Book hash will differ from 4555adb4; that is correct."
   - "Outcome recorded to scorecard via `--record --from`, INCLUDING disclaimerRegisterVersion, whether it passes or fails."
   - "If it fails at k >= 1200, that is written up as the answer — not as a request for more data."
 effort: "M"
@@ -77,6 +81,7 @@ files_involved:
   - "out/hero-ev-c3-1200.json"
   - "out/hero-ev-c3-1200.card.json"
   - "docs/domain/readiness/scorecard-history.yaml"
+# Unblocked 2026-08-17: WS-504 shipped stratified selection, which was the hard prerequisite.
 blocked_by: []
 blocked_by_legacy: []
 enables:
@@ -89,6 +94,61 @@ compute_job:
   # roughly 3-4x slower per player. 1200 players therefore projects to ~4-5 h. The cap is
   # set above a pessimistic multiple of that rather than at the number it "should" take.
   maxJobHours: 8
+  #
+  # ────────────────────────────────────────────────────────────────────────────────────
+  # ✅ RESOLVED 2026-08-17 — BOTH DEFECTS BELOW ARE FIXED IN THIS SPEC AND THIS JOB IS NOW
+  # SUBMITTABLE. Defect (1): `--max-files` raised 60 → 600. Defect (2): WS-504 shipped, so
+  # selection is stratified and `--file-selection proportional` is stated explicitly below.
+  # Accept criterion 3 was amended in the same change — it asserted a population that has
+  # never existed. The record of what was wrong is kept rather than deleted:
+  #
+  # DO NOT SUBMIT AS WRITTEN. Two defects found 2026-08-17 while fixing WS-513, BOTH
+  # measured on this machine, not reasoned about. The ENOENT fix below is correct and
+  # complete; these are separate and they are why the job is still not submittable.
+  #
+  # (1) `--max-files 60` makes `--target-contributing-players 1200` UNREACHABLE.
+  #     The k=308 row read 296 contributing players from exactly these 60 files
+  #     (out/hero-ev-c3-20260816.json: maxFiles=60, targetContributingPlayers=300,
+  #     contributingPlayers=296 — it exhausted the files 4 short of its own target;
+  #     decisions were never binding, 1045 used of maxDecisions=8000). Raising the target
+  #     to 1200 while leaving the file cap at 60 returns ~296 again after 4-5 h. That is
+  #     precisely the "shortfall reported as needs-more-data a third time" outcome this
+  #     ticket's pre-registered falsifier forbids.
+  #
+  # (2) THE k=308 BASELINE IS FTP-ONLY. The description above states that
+  #     `--sites FTP,PS --stakes 50NLH` "reproduces G16's two directories exactly".
+  #     It reproduces the DIRECTORY FILTER exactly and the SAMPLE not at all.
+  #     discoverCorpusFiles returns 1756 files sorted, FTP 525 then PS 1231 — the first
+  #     PS file sits at index 525, so ANY `--max-files <= 525` is 100% FTP. Confirmed in
+  #     the baseline record itself: 4,640 occurrences of `FTP:` and ZERO of `PS:`.
+  #     The pinned "FTP+PS population" has never included a single PS hand.
+  #
+  # CONSEQUENCE: WS-504 (stratified corpus selection) is a HARD PREREQUISITE, not the
+  # separate later question the description calls it. Note that simply raising the cap
+  # does NOT fix this — with the target binding at 1200 the run stops after ~243 files,
+  # still inside the FTP block. Sorted-prefix selection cannot produce a two-site sample
+  # at any cap. Only stratification can.
+  # ────────────────────────────────────────────────────────────────────────────────────
+  #
+  # WS-513 root cause. The first submission failed with
+  #   ENOENT ... C:\cj\ws-503-ba60a65f0e87\out\behavior-policy.json
+  # because `--behavior-policy out/behavior-policy.json` is an INPUT that nothing in this
+  # job produces. It exists on G16 only because it was mined there by hand on 2026-07-28;
+  # a fresh job worktree has an empty out/. The runner has always supported staging
+  # (compute-runner.js stageInputs, ~line 277) — this spec simply never declared one.
+  #
+  # It is staged rather than re-mined ON PURPOSE. pi_pool is the denominator of every
+  # importance weight, so it is as load-bearing as the corpus itself. The k=308 row this
+  # run continues stamps behaviorPolicyObservations=12191 / behaviorPolicyPlayers=400,
+  # which is exactly this artifact's provenance — verified 2026-08-17 against
+  # out/hero-ev-c3-20260816.json. Re-mining on cm-node1 would fit pi_pool on that
+  # machine's 27-directory corpus instead of G16's two, swapping the FIELD underneath a
+  # run whose entire purpose is "same population, higher n". The sha256 makes that
+  # failure loud: a drifted file fails preflight instead of silently rebasing the field.
+  inputs:
+    - from: "C:\\Users\\chris\\fleet\\compute-inputs\\behavior-policy-ws503.json"
+      to: "out/behavior-policy.json"
+      sha256: "57c69e8346d30b0e20d56515720fe21aee405c43df7eabb28747b71dfb2f73da"
   steps:
     - name: hero-ev-c3-1200
       cmd: node
@@ -103,7 +163,16 @@ compute_job:
         - "--stakes"
         - "50NLH"
         - "--max-files"
-        - "60"
+        # RAISED 60 → 600 when WS-504 shipped (defect 1 above). The k=308 row read 296
+        # contributing players from 60 files ≈ 5 clusters/file, so k=1200 needs ≥240 files;
+        # 600 carries margin and, under proportional selection, draws 180 FTP / 420 PS.
+        - "600"
+        # STATED EXPLICITLY, though it is the default. This run's entire question is WHICH
+        # population, and a run whose population depends on an unstated default is the exact
+        # defect WS-504 removed. Editing this block also re-keys the content-derived job
+        # fingerprint, which is what lets the feeder submit the work again.
+        - "--file-selection"
+        - "proportional"
         - "--max-decisions"
         - "40000"
         - "--max-decisions-per-player"

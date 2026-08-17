@@ -50,7 +50,7 @@ runs:
     source: "WS-286 C3 / commit c5b8beaf / FAULT-untaxed-fold-branch confirmed 2026-08-15"
     arm: "hero-ev"
     decisions: 1160
-    corpus: "HandHQ online cash, July 2009, 50NL"
+    corpus: "HandHQ online cash, July 2009, 50NL — FULL TILT ONLY (see corrections)"
     metrics:
       accuracy: 0.587
       logLoss: 0.75819
@@ -60,6 +60,33 @@ runs:
       heroEvCiLow: -1.1685
       heroEvClusters: 308
     disclaimerRegisterVersion: "FR-1+bb7d37d9aeac"
+    corrections:
+      - date: "2026-08-17"
+        ticket: "WS-504"
+        summary: >
+          THIS ROW IS A ONE-SITE MEASUREMENT. It ran `--max-files 60`, and corpus discovery
+          returned a path-SORTED list whose directory names lead with the site code, so the cap
+          took a pure prefix. Measured, not inferred: the run's own Deal Book carries 60 members
+          and 60 of 60 are FTP-2009-07-01_2009-07-23_50NLH_OBFU; the artifact contains 4,640
+          occurrences of "FTP:" and zero of "PS:". The first PS file sits at index 525 of 1756,
+          so ANY cap at or below 525 was 100% Full Tilt.
+        mislabelled_as: >
+          The Deal Book was named `handhq-allsites-allstakes-4555adb4` — "allsites" — because
+          deriveDealBookId built the label from the discovery FILTER rather than the realised
+          members. Re-deriving that same book under WS-504 yields
+          `handhq-FTP-50NLH-4555adb4`: identical content hash, honest name.
+        scope: >
+          The 308 player-clusters and the edge/CI above therefore describe Full Tilt 50NL in
+          July 2009, not the FTP+PS population the row was read as. The numbers are not known
+          to be wrong; the POPULATION they describe is narrower than stated.
+        fault_entry: "FAULT-prefix-corpus-selection"
+        status: >
+          Superseded rather than deleted. WS-503 re-runs this at higher n with stratified
+          selection, which is the comparable two-site measurement. The mechanism is registered
+          as FAULT-prefix-corpus-selection (confirmed 2026-08-17), so this row is not the only
+          place it is recorded — the register matches every card drawn under a cap before that
+          date, which is what makes the contamination findable rather than remembered.
     notes: >
       Treatment: per-decision IPS · one-decision horizon · pool continuation · range-marginalized policy.
       Carried forward unchanged from 2026-07-28: accuracy, logLoss, lift, worstCalibrationError — inherited, not re-measured.
+      SITE SCOPE: Full Tilt only — see `corrections` above (WS-504, 2026-08-17).
