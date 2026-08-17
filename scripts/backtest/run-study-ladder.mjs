@@ -42,7 +42,7 @@ const num = (x, d = 3) => (x === null || x === undefined ? 'n/a' : x.toFixed(d))
 
 const loader = await openLoader(process.cwd());
 try {
-  const { DEFAULT_CORPUS_ROOT, discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+  const { DEFAULT_CORPUS_ROOT, discoverCorpusFiles, applyFileCap } = await loader.load('/scripts/backtest/corpusFiles.mjs');
   const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
   const { LadderTally, AXIS_IDS, LADDER_RUNGS } = await loader.load('/scripts/backtest/ladderAxes.mjs');
   const { LeakageGuard, REFERENCE_DISABLED } = await loader.load('/scripts/backtest/leakageGuard.mjs');
@@ -55,7 +55,8 @@ try {
 
   // ── 1. The Deal Book. A slice defined by a hash, not by "whatever matched today". ──
   let files = await discoverCorpusFiles({ root: ROOT, sites: SITES, stakes: STAKES });
-  if (MAX_FILES) files = files.slice(0, MAX_FILES);
+  // WS-504: draws proportionally across directories; a sorted prefix read one site.
+  if (MAX_FILES) ({ files } = applyFileCap(files, { maxFiles: MAX_FILES }));
 
   const dealBook = await buildDealBook({
     files,

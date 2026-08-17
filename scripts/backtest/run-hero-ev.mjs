@@ -12,6 +12,11 @@
  *     --stakes 50NLH --max-players 60 --max-decisions 400 \
  *     --out out/hero-ev.json
  *
+ * `--file-selection proportional|prefix` (default proportional, WS-504) governs how BOTH the
+ * file cap and the player cap draw across the corpus directories. `prefix` restores the
+ * pre-WS-504 sorted-prefix behaviour, which read a single site, and exists only to replicate a
+ * Result Card published before 2026-08-17.
+ *
  * Like run.mjs, `--reference` has NO default and must be stated explicitly.
  * `--behavior-policy` is likewise mandatory: it is the denominator of every importance
  * weight, so an implicit one would silently decide the result.
@@ -108,7 +113,9 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, resolveCorpusRoot } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const {
+      discoverCorpusFiles, resolveCorpusRoot, selectCorpusFiles, FILE_SELECTION_STRATEGIES,
+    } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runHeroEv } = await loader.load('/scripts/backtest/heroEvRunner.mjs');
     const { buildHeroEvReport, renderHeroEvReport } = await loader.load('/scripts/backtest/heroEvReport.mjs');
 
@@ -125,10 +132,44 @@ const main = async () => {
     // filling hands for the players it already has. `--max-files` is the lever that
     // actually bounds a smoke run, and it is reported so a truncated scan is never
     // mistaken for a full one.
+    //
+    // WS-504: the cap draws PROPORTIONALLY across the discovered directories. It used to take a
+    // sorted prefix, and directory names lead with the site code — so on this machine any
+    // `--max-files <= 525` read 100% FTP while the Deal Book called itself `allsites`.
+    const fileSelectionStrategy = typeof args['file-selection'] === 'string'
+      ? args['file-selection']
+      : 'proportional';
+    if (!FILE_SELECTION_STRATEGIES.includes(fileSelectionStrategy)) {
+      console.error(
+        `Refused: --file-selection must be one of ${FILE_SELECTION_STRATEGIES.join(' | ')} ` +
+        `(got "${fileSelectionStrategy}"). 'prefix' is the pre-WS-504 single-site behaviour and ` +
+        'exists only to replicate an already-published card.',
+      );
+      process.exit(2);
+    }
+    // ONE flag governs BOTH caps, deliberately. `--max-files` and `--max-players` were the same
+    // defect at two layers, so replicating a pre-WS-504 card requires the old behaviour at both
+    // — and a run that stratified files but prefixed players would be neither the old
+    // measurement nor the new one.
+    const playerSelectionStrategy = fileSelectionStrategy;
     const maxFiles = int(args['max-files'], Infinity);
-    if (Number.isFinite(maxFiles) && files.length > maxFiles) {
-      console.log(`Corpus scan LIMITED to ${maxFiles} of ${files.length} matched file(s).`);
-      files = files.slice(0, maxFiles);
+    const { files: selectedFiles, selection: fileSelection } = selectCorpusFiles(files, {
+      maxFiles, strategy: fileSelectionStrategy,
+    });
+    files = selectedFiles;
+    if (fileSelection.capped) {
+      console.log(
+        `Corpus scan LIMITED to ${fileSelection.realised.total} of ` +
+        `${fileSelection.discovered.total} matched file(s) [${fileSelectionStrategy}].`,
+      );
+      console.log(`  realised composition: ${JSON.stringify(fileSelection.realised.perDirectory)}`);
+    }
+    if (fileSelection.collapsed) {
+      console.warn(
+        `WARNING: this cap collapsed the sample onto a strict subset of the discovered ` +
+        `directories. Missing: ${fileSelection.missingDirectories.join(', ')}. ` +
+        'Any figure from this run describes the directories listed above, not the filter.',
+      );
     }
 
     const reportOpts = {
@@ -218,9 +259,14 @@ const main = async () => {
         maxPlayers: int(args['max-players'], null),
         maxHandsPerPlayer: int(args['max-hands-per-player'], null),
       },
+      // WS-504 — `fileSelection` is deliberately NOT added to sliceSpec: sliceSpec is inside the
+      // Deal Book's hashed `canonical`, so putting it here would change every content hash and
+      // strand the checked-in Result Cards. It travels in the replication manifest instead, and
+      // the realised composition is computed by buildDealBook from its own members.
       identity: args['hash-members'] ? 'content' : 'path+size',
     });
     console.log(`Deal Book ${dealBook.dealBookId} — ${dealBook.memberCount} file(s), ${dealBook.identity}, ${dealBook.contentHash.slice(0, 20)}…`);
+    console.log(`  realised: ${JSON.stringify(dealBook.realisedComposition)}`);
 
     // WS-428 — the second factor of the §3.3 headline (`overallEvBB100 = edgeBB ×
     // opportunitiesPerHand × 100`), counted from the SAME post-slice file list the Deal Book
@@ -250,6 +296,21 @@ const main = async () => {
         ? `behavior-policy@${behaviorPolicy.provenance.partition}/${behaviorPolicy.provenance.observations ?? '?'}obs`
         : null,
       partition: `pool-train@${int(args['pool-pct'], 50)}`,
+      // WS-504 — how the corpus cap drew this sample. The Deal Book hash identifies the sample;
+      // this is the only field that DESCRIBES it.
+      fileSelection: {
+        strategy: fileSelection.strategy,
+        version: fileSelection.version,
+        capped: fileSelection.capped,
+        // Both sides, deliberately. `realised` alone cannot say what was MISSED, and a reader
+        // reconstructing the denominator from `realised + missing` is a reader who has to
+        // already suspect something. ~27 short keys on the largest corpus; the cost is nil.
+        discovered: fileSelection.discovered,
+        realised: fileSelection.realised,
+        collapsed: fileSelection.collapsed,
+        missingDirectories: fileSelection.missingDirectories,
+        playerSelection: playerSelectionStrategy,
+      },
       // WS-393/WS-433/WS-432. `unseededSources` is a positive claim, assembled from what
       // is actually live in THIS configuration:
       //   - Monte Carlo entry: present only when the run is UNSEEDED (--equity-seed none).
@@ -371,6 +432,10 @@ const main = async () => {
       onDecisionRecord: sink ? (rec) => sink.write(rec) : null,
       poolPct: int(args['pool-pct'], 50),
       maxPlayers: int(args['max-players'], Infinity),
+      // WS-504 — the BINDING cap. Player keys are `${site}:${pid}` and the enumeration sorts
+      // lexicographically, so a prefix here takes every FTP player before any PS one, whatever
+      // the file selection did.
+      playerSelectionStrategy,
       maxHandsPerPlayer: int(args['max-hands-per-player'], Infinity),
       minTrainHands: int(args['min-train-hands'], 15),
       checkpointInterval: int(args['checkpoint-interval'], 10),

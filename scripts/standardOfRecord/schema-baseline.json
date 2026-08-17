@@ -265,7 +265,7 @@
     ]
   },
   "dealBookManifest": {
-    "version": 1,
+    "version": 2,
     "fields": [
       {
         "name": "schemaVersion",
@@ -306,6 +306,11 @@
         "name": "contentHash",
         "type": "string",
         "since": 1
+      },
+      {
+        "name": "realisedComposition",
+        "type": "object",
+        "since": 2
       }
     ]
   },
@@ -2105,6 +2110,11 @@
       {
         "name": "knownDivergences",
         "type": "array",
+        "since": 1
+      },
+      {
+        "name": "fileSelection",
+        "type": "object|null",
         "since": 1
       }
     ]

@@ -86,7 +86,7 @@ const main = async () => {
   const args = parseArgs(process.argv);
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runRangeCalibrationProbe } = await loader.load('/scripts/backtest/rangeCalibrationProbe.mjs');
     const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
     const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
@@ -103,10 +103,8 @@ const main = async () => {
       stakes: list(args.stakes),
     });
     const maxFiles = int(args['max-files'], Infinity);
-    if (Number.isFinite(maxFiles) && files.length > maxFiles) {
-      console.log(`Corpus scan LIMITED to ${maxFiles} of ${files.length} matched file(s).`);
-      files = files.slice(0, maxFiles);
-    }
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    ({ files } = applyFileCap(files, { maxFiles }));
     if (files.length === 0) { console.error('No corpus files matched.'); process.exit(2); }
 
     const poolPct = int(args['pool-pct'], 50);

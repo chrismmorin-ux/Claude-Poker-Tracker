@@ -97,20 +97,45 @@ export const buildDealBook = async ({
   // which is the exact failure the hash exists to rule out.
   members.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 
+  // DELIBERATELY UNCHANGED (WS-504). `realisedComposition` is NOT in here. Adding a field to
+  // `canonical` changes every content hash ever computed, which would strand the four cards in
+  // docs/standard-of-record/cards/ and the three in docs/research/ — they could no longer be
+  // verified against a re-run. The composition sits outside the hash, exactly as `dealBookId`
+  // and `memberCount` already do.
   const canonical = { schemaVersion: DEAL_BOOK_SCHEMA_VERSION, identity, sliceSpec, seeds, members };
   const contentHash = hashObjectSync(canonical);
 
   return {
     schemaVersion: DEAL_BOOK_SCHEMA_VERSION,
-    dealBookId: dealBookId ?? deriveDealBookId(sliceSpec, contentHash),
+    dealBookId: dealBookId ?? deriveDealBookId(sliceSpec, contentHash, members),
     kind: 'corpus-slice',
     identity,
     sliceSpec,
     members,
     memberCount: members.length,
+    // WS-504 — the first SELF-COMPUTED description in this object. `sliceSpec` is a caller's
+    // assertion and nothing has ever checked it against `files`: four emitters declare
+    // `sites: ['FTP','PS']` while discovering with no site filter and slicing a 300-file
+    // prefix, so their books are 100% FTP under a two-site name. A composition derived from
+    // `members` cannot be talked out of the truth by its caller.
+    realisedComposition: realisedCompositionOf(members),
     seeds,
     contentHash,
   };
+};
+
+/**
+ * Per-directory counts of the REALISED members. Derived from `members`, never accepted from a
+ * caller. Member paths are root-relative with forward slashes (`describeMember`), so the first
+ * segment is the corpus directory — the stratum WS-504 stratifies on.
+ */
+const realisedCompositionOf = (members) => {
+  const counts = new Map();
+  for (const m of members) {
+    const dir = String(m.path).split('/')[0];
+    counts.set(dir, (counts.get(dir) ?? 0) + 1);
+  }
+  return Object.fromEntries([...counts.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)));
 };
 
 /**
@@ -120,11 +145,29 @@ export const buildDealBook = async ({
  * the corpus grew, a directory was re-materialised — must not share a name, or the Ladder
  * would compare them as if they were the same book.
  */
-export const deriveDealBookId = (sliceSpec = {}, contentHash = '') => {
-  const parts = [
-    (sliceSpec.sites ?? []).join('+') || 'allsites',
-    (sliceSpec.stakes ?? []).join('+') || 'allstakes',
-  ];
+export const deriveDealBookId = (sliceSpec = {}, contentHash = '', members = null) => {
+  // WS-504 — NAME THE SAMPLE, NOT THE FILTER.
+  //
+  // This used to read `sliceSpec.sites` / `sliceSpec.stakes`, i.e. what the caller ASKED FOR.
+  // With `--max-files` taking a sorted prefix, a two-site request routinely produced a one-site
+  // sample, and the name said `allsites` anyway: `out/hero-ev-c3-20260816.json` carries
+  // `handhq-allsites-allstakes-4555adb4` over 60 members that are 60/60 FTP/50NLH. The name was
+  // the last place a reader could have noticed, and it was reassuring them instead.
+  //
+  // The 8-hex contentHash suffix is unchanged, so an existing card's recorded id stays traceable
+  // to its re-run by that suffix even though the prefix now reads honestly.
+  const uniq = (xs) => [...new Set(xs.filter(Boolean))].sort();
+  const parts = (Array.isArray(members) && members.length > 0)
+    ? [
+      uniq(members.map((m) => m.site)).join('+') || 'allsites',
+      uniq(members.map((m) => m.stakeLabel)).join('+') || 'allstakes',
+    ]
+    // Fallback for the two-argument form, which has no member list to describe. Production
+    // always goes through `buildDealBook` and therefore always takes the branch above.
+    : [
+      (sliceSpec.sites ?? []).join('+') || 'allsites',
+      (sliceSpec.stakes ?? []).join('+') || 'allstakes',
+    ];
   const short = String(contentHash).replace('sha256:', '').slice(0, 8);
   return `handhq-${parts.join('-')}-${short}`;
 };

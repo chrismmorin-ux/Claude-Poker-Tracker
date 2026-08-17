@@ -49,7 +49,8 @@ export const SOR_SCHEMA_VERSIONS = Object.freeze({
   coverageCensus: 2,
   comparisonCensus: 1,
   resultCard: 3,
-  dealBookManifest: 1,
+  // WS-504: +realisedComposition, the per-directory counts of the realised members.
+  dealBookManifest: 2,
   fieldManifest: 1,
   faultEntry: 1,
   // WS-431: the per-decision JSONL record (scripts/backtest/decisionRecord.mjs) is
@@ -284,6 +285,8 @@ const DEAL_BOOK_MANIFEST_FIELDS = [
     note: 'Every seed the book depends on. Empty object is legal for a pure corpus slice and must be explicit, not absent.' },
   { name: 'contentHash', type: 'string', since: 1, required: true,
     note: 'sha256 over sliceSpec + member identities + seeds. THE property WS-326 leans on: same slice, same hash, always.' },
+  { name: 'realisedComposition', type: 'object', since: 2, required: false,
+    note: 'WS-504. Per-directory counts of the members ACTUALLY in the book, computed by buildDealBook from `members` — the first self-computed description in this object. Every other field describing the population is a caller assertion: `sliceSpec` is passed in and never checked against the files, and the dealBookId was derived from it, so a capped run that read one directory was named "allsites" and nothing contradicted it. Deliberately OUTSIDE the hashed `canonical`, so adding it leaves every historical contentHash valid.' },
 ];
 
 /**
@@ -409,6 +412,8 @@ const MANIFEST_FIELDS = [
     note: 'Which disclaimer + suspected-fault register the run stood under (WS-330). `required` stays FALSE here on purpose while manifestProblems rejects a missing one: the flagger has to be able to PARSE a legacy card in order to flag it, so validation tightens and reading does not.' },
   { name: 'knownDivergences', type: 'array', since: 1, required: false,
     note: 'Places the stamped value is known to disagree with a shadow copy elsewhere in the tree. Recording it beats silently picking one.' },
+  { name: 'fileSelection', type: 'object|null', since: 1, required: false,
+    note: 'WS-504. HOW the corpus cap drew this sample: strategy (proportional | prefix), algorithm version, and the realised per-directory counts. `dealBookHash` identifies the sample but does not describe it, so before this a manifest could not tell a reader that a run labelled allsites had read one site. `prefix` names the pre-WS-504 sorted-prefix behaviour, kept only to replicate an already-published card.' },
 ];
 
 /**

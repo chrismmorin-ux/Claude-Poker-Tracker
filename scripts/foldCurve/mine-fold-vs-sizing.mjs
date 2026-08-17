@@ -27,7 +27,7 @@ const REPO = process.cwd().split(String.fromCharCode(92)).join('/');
 const { openLoader } = await import(`file:///${REPO}/scripts/backtest/loader.mjs`);
 const loader = await openLoader(REPO);
 const { toAppHand } = await loader.load('/scripts/backtest/phhAdapter.mjs');
-const { discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+const { discoverCorpusFiles, applyFileCap } = await loader.load('/scripts/backtest/corpusFiles.mjs');
 const { partitionOf, GROUPS } = await loader.load('/scripts/backtest/partition.mjs');
 const { PRIMITIVE_ACTIONS } = await loader.load('/src/constants/primitiveActions.js');
 
@@ -132,7 +132,8 @@ const facingBetDecisions = (hand) => {
 const files = await discoverCorpusFiles({});
 files.sort((a, b) => a.path.localeCompare(b.path));
 const limitFiles = Number(process.env.MAX_FILES || files.length);
-const use = files.slice(0, limitFiles);
+// WS-504: draws proportionally across directories; a sorted prefix read one site.
+const { files: use } = applyFileCap(files, { maxFiles: limitFiles });
 
 /** Fine bins on fracEngine: 0.05 wide to 3.0, then one overflow bin. */
 const BIN_W = 0.05, BIN_MAX = 3.0;

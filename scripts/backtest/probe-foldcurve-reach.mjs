@@ -45,13 +45,17 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { indexEvalPlayers } = await loader.load('/scripts/backtest/runner.mjs');
     const { buildRangeProfile } = await loader.load('/src/utils/rangeEngine/index.js');
     const { accumulateDecisions } = await loader.load('/src/utils/exploitEngine/decisionAccumulator.js');
     const { fitFoldCurveParams } = await loader.load('/src/utils/exploitEngine/villainModelData.js');
 
-    const files = (await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] })).slice(0, maxFiles);
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    const { files } = applyFileCap(
+      await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] }),
+      { maxFiles },
+    );
     const { byPlayer } = await indexEvalPlayers({
       files, maxPlayers, maxHandsPerPlayer: maxHands,
       onProgress: (n) => { if (n % 100000 === 0) console.log(`  read ${n} hands`); },

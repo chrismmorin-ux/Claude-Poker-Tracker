@@ -20,7 +20,7 @@ const main = async () => {
   const REPO = process.cwd().split(String.fromCharCode(92)).join('/');
   const loader = await openLoader(REPO);
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { indexEvalPlayers } = await loader.load('/scripts/backtest/runner.mjs');
     const { calculatePotProgression } = await loader.load('/src/utils/potCalculator.js');
 
@@ -42,7 +42,15 @@ const main = async () => {
     changed.sort((x, y) => y.d - x.d);
     const wanted = new Map(changed.map(c => [c.a.key.split('|')[1], true]));
 
-    const files = (await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] })).slice(0, 300);
+    // WS-504: `strategy: 'prefix'` ON PURPOSE, and it is the one place a naive migration to
+    // the new default would break something silently. This tool reconstructs hands referenced
+    // BY AN ALREADY-EMITTED ARTIFACT, and emit-ws481-result-card.mjs pins the same 300-file
+    // prefix. Drawing proportionally here would look up hand ids in a file set that never
+    // contained them, and the tool would simply report fewer flips rather than fail.
+    const { files } = applyFileCap(
+      await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] }),
+      { maxFiles: 300, strategy: 'prefix' },
+    );
     const { byPlayer } = await indexEvalPlayers({ files, maxPlayers: 300 });
 
     // handId -> hand, for the hands we need

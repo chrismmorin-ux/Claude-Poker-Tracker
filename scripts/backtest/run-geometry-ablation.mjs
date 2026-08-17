@@ -36,7 +36,7 @@ const main = async () => {
   const args = parseArgs(process.argv);
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { minePolicyObservations } = await loader.load('/scripts/backtest/behaviorPolicyMiner.mjs');
     const { runGeometryAblation, renderGeometryAblation } = await loader.load('/scripts/backtest/geometryAblation.mjs');
 
@@ -46,10 +46,8 @@ const main = async () => {
       stakes: list(args.stakes),
     });
     const maxFiles = int(args['max-files'], Infinity);
-    if (Number.isFinite(maxFiles) && files.length > maxFiles) {
-      console.log(`Corpus scan LIMITED to ${maxFiles} of ${files.length} matched file(s).`);
-      files = files.slice(0, maxFiles);
-    }
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    ({ files } = applyFileCap(files, { maxFiles }));
 
     const common = {
       files,

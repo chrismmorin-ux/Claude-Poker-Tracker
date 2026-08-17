@@ -162,7 +162,7 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { indexEvalPlayers } = await loader.load('/scripts/backtest/runner.mjs');
     const { LeakageGuard } = await loader.load('/scripts/backtest/leakageGuard.mjs');
     const { validateBehaviorPolicy } = await loader.load('/scripts/backtest/behaviorPolicy.mjs');
@@ -181,7 +181,8 @@ const main = async () => {
     const corpusRoot = typeof args['corpus-root'] === 'string' ? args['corpus-root'] : DEFAULT_CORPUS_ROOT;
     let files = await discoverCorpusFiles({ root: corpusRoot, sites: list(args.sites), stakes: list(args.stakes) });
     const maxFiles = int(args['max-files'], Infinity);
-    if (Number.isFinite(maxFiles) && files.length > maxFiles) files = files.slice(0, maxFiles);
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    ({ files } = applyFileCap(files, { maxFiles }));
     if (files.length === 0) { console.error('No corpus files matched.'); process.exit(2); }
 
     const poolPct = int(args['pool-pct'], 50);

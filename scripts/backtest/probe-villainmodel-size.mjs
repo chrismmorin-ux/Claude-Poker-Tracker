@@ -11,14 +11,20 @@ import { openLoader } from './loader.mjs';
 const main = async () => {
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { indexEvalPlayers } = await loader.load('/scripts/backtest/runner.mjs');
     const { GROUPS } = await loader.load('/scripts/backtest/partition.mjs');
     const { buildRangeProfile } = await loader.load('/src/utils/rangeEngine/index.js');
     const { accumulateDecisions } = await loader.load('/src/utils/exploitEngine/decisionAccumulator.js');
     const { buildVillainDecisionModel } = await loader.load('/src/utils/exploitEngine/villainDecisionModel.js');
 
-    const files = (await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] })).slice(0, 120);
+    // WS-504: stratified, not a sorted prefix. This probe sizes a feed budget meant to hold
+    // for the whole corpus, and a sorted prefix would have measured one directory — model
+    // size is not obviously site-invariant, so a one-site basis is the wrong basis.
+    const { files } = applyFileCap(
+      await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] }),
+      { maxFiles: 120 },
+    );
     const { byPlayer } = await indexEvalPlayers({
       files, maxPlayers: 40, maxHandsPerPlayer: 200, group: GROUPS.POOL,
     });

@@ -15,6 +15,13 @@
 import { readdir, stat } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
+// WS-504. The allocation/emission primitive is SHARED with the player cap in heroEvRunner —
+// see stratifiedSelect.mjs for why fixing one cap without the other is not a fix.
+import {
+  stratifiedSelect, countByStratum,
+  STRATIFIED_SELECTION_VERSION, SELECTION_STRATEGIES, DEFAULT_SELECTION_STRATEGY,
+} from './stratifiedSelect.mjs';
+
 /**
  * The G16 location. Kept as the last-resort fallback so nothing on the cockpit changes.
  *
@@ -138,7 +145,10 @@ export const discoverCorpusFiles = async ({
   for (const d of dirs) {
     const paths = await walkPhhs(join(root, d.name), []);
     for (const path of paths) {
-      files.push({ path, site: d.meta.site, stakeLabel: d.meta.stakeLabel });
+      // `dir` is the STRATUM (WS-504). Not site+stakeLabel: cm-node1 holds 27 directories and
+      // two of them can share a site and a stake while covering different date ranges, so
+      // collapsing on site+stake would silently merge two distinct samples into one bucket.
+      files.push({ path, dir: d.name, site: d.meta.site, stakeLabel: d.meta.stakeLabel });
     }
   }
 
@@ -165,4 +175,101 @@ export const discoverCorpusFiles = async ({
   }
 
   return files;
+};
+
+/* ────────────────────────────────────────────────────────────────────────────────────────
+ * WS-504 — HOW A CAP CHOOSES WHICH FILES TO READ.
+ *
+ * The list above is sorted by path, and every caller used to cap it with
+ * `files.slice(0, maxFiles)`. Directory names lead with the site code, so a sorted PREFIX is
+ * a single directory until the cap exceeds that directory's size. Measured on G16
+ * (2026-08-17): `{sites:['FTP','PS'], stakes:['50NLH']}` returns 1756 files — FTP 525 then
+ * PS 1231, first PS file at index 525. So ANY `--max-files <= 525` was 100% FTP, while the
+ * Deal Book was named from the FILTER and therefore called itself `allsites`.
+ *
+ * This is not a smaller version of the corpus; it is a different population. WS-492 measured a
+ * monotone stake gradient across these directories (6-max 3-bet +57% from 25NLH to 1000NLH),
+ * so the strata are emphatically not exchangeable.
+ *
+ * `out/hero-ev-c3-20260816.json` was produced this way: 60 members, 60 of them FTP/50NLH,
+ * 4,640 `FTP:` occurrences and zero `PS:`.
+ * ──────────────────────────────────────────────────────────────────────────────────────── */
+
+/** Re-exported so corpus callers need only one import. Canonical definitions live in the primitive. */
+export const FILE_SELECTION_VERSION = STRATIFIED_SELECTION_VERSION;
+export const FILE_SELECTION_STRATEGIES = SELECTION_STRATEGIES;
+export const DEFAULT_FILE_SELECTION = DEFAULT_SELECTION_STRATEGY;
+
+/** The stratum. Falls back to site/stake for hand-constructed records that carry no `dir`. */
+const stratumOf = (f) => f.dir || `${f.site}/${f.stakeLabel}`;
+
+/**
+ * Apply a file cap across the discovered directories instead of down the sorted list.
+ *
+ * @param {Array<{path,dir,site,stakeLabel}>} files - as returned by `discoverCorpusFiles`
+ * @param {Object} [opts]
+ * @param {number} [opts.maxFiles] - the cap. Infinity/null/undefined mean "no cap".
+ * @param {'proportional'|'prefix'} [opts.strategy]
+ * @returns {{files: Array, selection: Object}} `selection` describes the REALISED sample.
+ */
+export const selectCorpusFiles = (files, { maxFiles = Infinity, strategy = DEFAULT_FILE_SELECTION } = {}) => {
+  const { items, selection } = stratifiedSelect(files, { max: maxFiles, keyOf: stratumOf, strategy });
+  // `perDirectory` / `missingDirectories` rather than the primitive's generic `perStratum` —
+  // for the corpus the stratum IS the directory, and a manifest reader should not have to know
+  // the primitive to read the field.
+  return {
+    files: items,
+    selection: {
+      strategy: selection.strategy,
+      version: selection.version,
+      capped: selection.capped,
+      discovered: { total: selection.discovered.total, perDirectory: selection.discovered.perStratum },
+      realised: { total: selection.realised.total, perDirectory: selection.realised.perStratum },
+      collapsed: selection.collapsed,
+      missingDirectories: selection.missingStrata,
+    },
+  };
+};
+
+/** Per-directory counts of an arbitrary file list — used to describe a Deal Book's realised members. */
+export const corpusComposition = (files) => countByStratum(files ?? [], stratumOf);
+
+/**
+ * Select + report, for the ~17 runners that all had the identical four-line cap block.
+ *
+ * The reporting is the point and is why this is a helper rather than a bare call. Every one of
+ * those sites logged `LIMITED to N of M` — a count, which is exactly the thing that looks fine
+ * when the sample has silently collapsed onto one directory. Saying WHICH directories were
+ * realised is what makes the collapse visible without the reader going and checking.
+ *
+ * @param {Array} files
+ * @param {Object} opts
+ * @param {number} [opts.maxFiles]
+ * @param {string} [opts.strategy]
+ * @param {Function} [opts.log]
+ * @param {Function} [opts.warn]
+ * @returns {{files: Array, selection: Object}}
+ */
+export const applyFileCap = (files, {
+  maxFiles = Infinity,
+  strategy = DEFAULT_FILE_SELECTION,
+  log = console.log,
+  warn = console.warn,
+} = {}) => {
+  const result = selectCorpusFiles(files, { maxFiles, strategy });
+  const { selection } = result;
+  if (selection.capped) {
+    log(
+      `Corpus scan LIMITED to ${selection.realised.total} of ${selection.discovered.total} ` +
+      `matched file(s) [${selection.strategy}] — ${JSON.stringify(selection.realised.perDirectory)}`,
+    );
+  }
+  if (selection.collapsed) {
+    warn(
+      `WARNING: this cap collapsed the sample onto a strict subset of the discovered directories. ` +
+      `Missing: ${selection.missingDirectories.join(', ')}. Any figure from this run describes ` +
+      'the directories listed above, not the filter that was requested.',
+    );
+  }
+  return result;
 };

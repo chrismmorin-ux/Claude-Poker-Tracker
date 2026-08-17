@@ -196,6 +196,7 @@ export const HERO_EV_UNSEEDED_SOURCES = Object.freeze([
  * @param {string} input.dealBookHash
  * @param {string|null} [input.fieldVersion]
  * @param {string|null} [input.partition]
+ * @param {Object|null} [input.fileSelection] - WS-504: how the corpus cap drew its sample
  */
 export const buildStampInput = async ({
   loader,
@@ -204,6 +205,7 @@ export const buildStampInput = async ({
   dealBookHash,
   fieldVersion = null,
   partition = null,
+  fileSelection = null,
   cwd = process.cwd(),
 } = {}) => {
   const { constants, knownDivergences } = await collectConstants(loader);
@@ -212,6 +214,11 @@ export const buildStampInput = async ({
     dealBookHash,
     fieldVersion,
     partition,
+    // WS-504. `dealBookHash` identifies the sample but does not DESCRIBE it, and the Deal Book's
+    // own name was derived from the caller's filter — so until now nothing in a manifest could
+    // tell a reader that a run labelled "allsites" had read one site. This records how the cap
+    // drew: the strategy, its version, and the realised per-directory counts.
+    fileSelection,
     seeds,
     unseededSources: [...unseededSources],
     constants,

@@ -174,7 +174,7 @@ const scanCorpus = async (loader, args) => {
   if (!maxFiles) {
     return { skipped: true, reason: '--max-files 0: corpus pass disabled; no rate column.' };
   }
-  const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+  const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
   const { iterAppHands } = await loader.load('/scripts/backtest/phhAdapter.mjs');
   const { resolveHandOutcome } = await loader.load('/scripts/backtest/handOutcome.mjs');
   const { decisionGeometryFull } = await loader.load('/scripts/backtest/decisionGeometry.mjs');
@@ -185,7 +185,8 @@ const scanCorpus = async (loader, args) => {
     stakes: list(args.stakes) ?? ['50NLH'],
   });
   const totalAvailable = files.length;
-  if (files.length > maxFiles) files = files.slice(0, maxFiles);
+  // WS-504: draws proportionally across directories; a sorted prefix read one site.
+  ({ files } = applyFileCap(files, { maxFiles }));
 
   const acc = makeLineAccumulator();
   const nodes = new Map();       // street|facing|sizeBucket -> {n, potBBs}

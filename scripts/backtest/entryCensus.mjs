@@ -66,7 +66,7 @@
 
 import { readFile } from 'node:fs/promises';
 
-import { discoverCorpusFiles } from './corpusFiles.mjs';
+import { discoverCorpusFiles, selectCorpusFiles } from './corpusFiles.mjs';
 import { enumerateCells, POS_CATEGORIES, FACING_ACTIONS } from './entryMap.mjs';
 import {
   buildCoverageCensus,
@@ -155,7 +155,8 @@ export const censusHand = (actions, tally) => {
  */
 export const buildEntryCensus = async (handClasses, { root, maxFiles = null } = {}) => {
   const files = await discoverCorpusFiles({ ...(root ? { root } : {}) });
-  const chosen = maxFiles ? files.slice(0, maxFiles) : files;
+  // WS-504: draws proportionally across directories; a sorted prefix read one site.
+  const chosen = maxFiles ? selectCorpusFiles(files, { maxFiles }).files : files;
 
   const tally = {
     decisions: 0,

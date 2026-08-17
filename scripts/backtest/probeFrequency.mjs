@@ -93,7 +93,7 @@ const main = async () => {
 
   const loader = await openLoader(REPO);
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { indexEvalPlayers } = await loader.load('/scripts/backtest/runner.mjs');
     const { heroPolicyAt } = await loader.load('/scripts/backtest/heroPolicy.mjs');
     const { queryPolicy, validateBehaviorPolicy } = await loader.load('/scripts/backtest/behaviorPolicy.mjs');
@@ -104,7 +104,8 @@ const main = async () => {
     const policy = validateBehaviorPolicy(behaviorPolicy, 50);
 
     let files = await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] });
-    if (files.length > maxFiles) files = files.slice(0, maxFiles);
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    ({ files } = applyFileCap(files, { maxFiles }));
     console.log(`corpus: ${files.length} file(s)`);
 
     const { byPlayer, handsRead } = await indexEvalPlayers({

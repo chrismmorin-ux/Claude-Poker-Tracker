@@ -60,7 +60,7 @@ const AXES = [
 
 const loader = await openLoader(process.cwd());
 try {
-  const { DEFAULT_CORPUS_ROOT, discoverCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+  const { DEFAULT_CORPUS_ROOT, discoverCorpusFiles, selectCorpusFiles } = await loader.load('/scripts/backtest/corpusFiles.mjs');
   const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
   const { iterAppHands } = await loader.load('/scripts/backtest/phhAdapter.mjs');
   const { buildStampInput } = await loader.load('/scripts/backtest/replicationStamp.mjs');
@@ -347,7 +347,11 @@ try {
 
   // ═══ GENERATION 1 ═══════════════════════════════════════════════════════════════════
   let files = await discoverCorpusFiles({ root: ROOT, sites: SITES, stakes: STAKES });
-  const gen1Files = files.slice(0, MAX_FILES);
+  // WS-504: both generations draw proportionally across directories. A sorted prefix made gen1
+  // one site — and gen2, taken from the NEXT slice, a different single site, so the "population
+  // shifted" this file is built to demonstrate was partly just the site changing.
+  const { files: gen1Files } = selectCorpusFiles(files, { maxFiles: MAX_FILES });
+  const gen1Paths = new Set(gen1Files.map((f) => f.path));
   const gen1Book = await buildDealBook({
     files: gen1Files, root: ROOT,
     sliceSpec: { sites: SITES, stakes: STAKES, maxFiles: MAX_FILES, generation: 1 },
@@ -376,7 +380,12 @@ try {
   console.log(`atoms resolved by hash: ${resolved.manifest.atomCount} atoms at ${resolved.atomSetHash}`);
 
   // ═══ GENERATION 2 — the Deal Book changes, so the Ladder must REBASE, not reset ═══════
-  const gen2Files = files.slice(MAX_FILES, MAX_FILES + REBASE_FILES);
+  // Drawn from what gen1 did NOT take, so the two generations stay disjoint (the rebase test
+  // depends on that) while each is still proportional across directories.
+  const { files: gen2Files } = selectCorpusFiles(
+    files.filter((f) => !gen1Paths.has(f.path)),
+    { maxFiles: REBASE_FILES },
+  );
   const gen2Book = await buildDealBook({
     files: gen2Files, root: ROOT,
     sliceSpec: { sites: SITES, stakes: STAKES, maxFiles: REBASE_FILES, generation: 2 },

@@ -37,7 +37,13 @@ const files = await discoverCorpusFiles({});
 const dealBook = await buildDealBook({
   files,
   root: DEFAULT_CORPUS_ROOT,
-  sliceSpec: { sites: ['FTP', 'PS'], stakes: ['0.5'], maxFiles: null },
+  // WS-504 — this sliceSpec was FALSE and is corrected. Discovery above is
+  // `discoverCorpusFiles({})` — NO filter at all — yet this declared sites [FTP,PS] and a stake
+  // of '0.5', which is a big-blind figure rather than a corpus stake label (DIR_PATTERN requires
+  // \d+NLH). Nothing ever caught it: sliceSpec is a caller assertion that the Deal Book only
+  // hashes and names itself from. The realised composition is now computed from the members.
+  // NOTE: this changes the card's dealBookId AND contentHash on next emit.
+  sliceSpec: { sites: null, stakes: null, maxFiles: null },
   identity: 'path+size',
 });
 

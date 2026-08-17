@@ -108,7 +108,7 @@ const main = async () => {
 
   const loader = await openLoader(process.cwd());
   try {
-    const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+    const { discoverCorpusFiles, applyFileCap, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
     const { runHeroEv } = await loader.load('/scripts/backtest/heroEvRunner.mjs');
     const { buildDepthAblationReport, renderDepthAblationReport, DEPTH_ABLATION_UNSEEDED_SOURCES } =
       await loader.load('/scripts/backtest/depthAblationReport.mjs');
@@ -129,10 +129,8 @@ const main = async () => {
       process.exit(2);
     }
     const maxFiles = int(args['max-files'], Infinity);
-    if (Number.isFinite(maxFiles) && files.length > maxFiles) {
-      console.log(`Corpus scan LIMITED to ${maxFiles} of ${files.length} matched file(s).`);
-      files = files.slice(0, maxFiles);
-    }
+    // WS-504: draws proportionally across directories; a sorted prefix read one site.
+    ({ files } = applyFileCap(files, { maxFiles }));
 
     // Built AFTER the slice, for the reason run-hero-ev states: the book must describe the
     // hands the run actually saw, not the ones that matched the filter.

@@ -36,6 +36,8 @@
  * partition unit, so POOL/EVAL membership is unchanged and mined policies stay valid.
  */
 
+import { createHash } from 'node:crypto';
+
 import { LeakageGuard } from './leakageGuard.mjs';
 import { validateBehaviorPolicy } from './behaviorPolicy.mjs';
 import { indexEvalPlayers } from './runner.mjs';
@@ -49,6 +51,13 @@ import {
   newCoverage, mergeCoverage, summarizeCoverage,
 } from './strategyArm.mjs';
 import { buildEnumeration } from './heroEvEnumeration.mjs';
+// WS-504. The SAME primitive that stratifies `--max-files`. The player cap is the BINDING one:
+// stratifying files alone leaves a capped run ~100% one site, because player keys are
+// `${site}:${pid}` and the enumeration's lexicographic sort puts every FTP player before every
+// PS one. See stratifiedSelect.mjs.
+import {
+  stratifiedSelect, stratifiedOrder, countByStratum, DEFAULT_SELECTION_STRATEGY,
+} from './stratifiedSelect.mjs';
 import { scoreHeroEvPlayer, newTaskCounters, mergeTaskCounters } from './heroEvTask.mjs';
 import { buildChunkStamp, writeChunk, loadChunk } from './mergeHeroEvChunks.mjs';
 import { DECISION_RECORD_SCHEMA_VERSION } from './decisionRecord.mjs';
@@ -180,6 +189,10 @@ export const runHeroEv = async ({
   // evidence), which is what the cluster-bootstrap CI actually narrows on.
   maxDecisionsPerPlayer = null,
   // Stop admitting waves once this many players have contributed >= 1 scored decision.
+  // WS-504. How the player cap draws across sites. 'proportional' (default) stratifies;
+  // 'prefix' is the pre-WS-504 single-site behaviour, retained only to replicate a published
+  // card and named so that using it is a deliberate, recorded act.
+  playerSelectionStrategy = DEFAULT_SELECTION_STRATEGY,
   // null = no target (process every planned player).
   targetContributingPlayers = null,
   // ── WS-436 B2 — the styled-villain feed ───────────────────────────────────────────
@@ -263,10 +276,55 @@ export const runHeroEv = async ({
   // The stable work index. Qualification (>= minTrainHands + 1) is what makes the
   // qualifying count reportable — the old runner admitted zero-window players silently.
   const enumeration = buildEnumeration({ byPlayer, minTrainHands });
-  const planned = Number.isFinite(maxPlayers)
-    ? enumeration.players.slice(0, maxPlayers)
-    : enumeration.players;
+
+  // ── WS-504: the player cap is the BINDING one ────────────────────────────────────
+  //
+  // Player keys are `${site}:${pid}` (runner.mjs, keyBySite below) and `buildEnumeration`
+  // sorts raw code-unit, so `'FTP:zzz'` sorts before `'PS:abc'`. Two distinct things broke:
+  //
+  //   * `maxPlayers` TRUNCATED the list — the old `slice(0, maxPlayers)` took every FTP
+  //     player before it reached a single PS one.
+  //   * `targetContributingPlayers` truncates nothing; it stops at a WAVE boundary, and
+  //     waves are contiguous slices of `planned` below. So even an UNCAPPED plan scored
+  //     FTP-first and stopped inside FTP. That is why the ORDER is stratified whenever a
+  //     stop rule exists, not only when `maxPlayers` is finite.
+  //
+  // Stratifying the corpus files alone does NOT fix either of these — it changes which files
+  // are read, then this prefix re-imposes the same single-site sample one layer down.
+  //
+  // `enumeration.players` and `enumerationHash` are deliberately UNTOUCHED: that list is the
+  // canonical identity order binding chunk slice indices, and it must stay a pure function of
+  // the corpus. Only the PLAN is stratified, and `plannedHash` (chunk stamp) binds it.
+  const playerStratum = (p) => {
+    const key = String(p.playerId);
+    const i = key.indexOf(':');
+    return i === -1 ? '' : key.slice(0, i);
+  };
+  const { items: selectedPlayers, selection: playerSelection } = stratifiedSelect(
+    enumeration.players,
+    { max: maxPlayers, keyOf: playerStratum, strategy: playerSelectionStrategy },
+  );
+  const planned = (playerSelectionStrategy === 'prefix' || targetContributingPlayers === null)
+    ? selectedPlayers
+    : stratifiedOrder(selectedPlayers, playerStratum);
+  const plannedComposition = countByStratum(planned, playerStratum);
+  // Waves are contiguous slices of `planned`, so a different planned ORDER means "wave i" is a
+  // different player set. `enumerationHash` cannot see that — it hashes the canonical list, not
+  // the plan — so the plan is bound separately, inside `config` (already MUST_MATCH). Chunks
+  // written under the pre-WS-504 lexicographic plan therefore refuse to seed a resume, which is
+  // the correct outcome: they are a slice of a different measurement.
+  const plannedHash = `sha256:${createHash('sha256')
+    .update(planned.map((p) => p.playerId).join('\n'))
+    .digest('hex')}`;
   log(`enumerated ${enumeration.qualifyingCount} qualifying players (of ${enumeration.totalPlayers} indexed) — planning ${planned.length}`);
+  log(`planned player composition: ${JSON.stringify(plannedComposition)} (${playerSelectionStrategy})`);
+  if (playerSelection.collapsed) {
+    console.warn(
+      `WARNING: the player cap collapsed the plan onto a strict subset of the indexed sites. ` +
+      `Missing: ${playerSelection.missingStrata.join(', ')}. ` +
+      'Any figure from this run describes those sites only, whatever the Deal Book is named.',
+    );
+  }
 
   const perPlayerCap = resolvePerPlayerCap({
     maxDecisionsPerPlayer, maxDecisions, plannedPlayers: planned.length,
@@ -384,6 +442,10 @@ export const runHeroEv = async ({
       waveSize: W,
       maxDecisions: Number.isFinite(maxDecisions) ? maxDecisions : null,
       targetContributingPlayers,
+      // WS-504 — see plannedHash above. Both are here rather than at the stamp's top level
+      // because `config` is already a MUST_MATCH field, so no change to mergeHeroEvChunks.
+      plannedHash,
+      playerSelection: playerSelectionStrategy,
       maxHandsPerPlayer: Number.isFinite(maxHandsPerPlayer) ? maxHandsPerPlayer : null,
       // WS-436 B2: a chunk scored under one villain arm may never seed a resume
       // under another. The feed's provenance (not its bulk) is the identity.
@@ -583,6 +645,8 @@ export const runHeroEv = async ({
         // invites the assumption that power scaled with n — it did not.
         qualifyingPlayers: enumeration.qualifyingCount,
         plannedPlayers: planned.length,
+        // WS-504. `plannedPlayers` is a total and a total cannot show a collapse.
+        plannedComposition,
         playersProcessed: fragments.length,
         contributingPlayers: folded.contributing,
         playerTaskErrors: failures.length,
@@ -621,6 +685,14 @@ export const runHeroEv = async ({
         chunkDir: chunkDir ?? null,
         resumedWaves,
         resumedEngineDirty,
+        // WS-504. The player cap is the BINDING one on a `--target-contributing-players` run,
+        // and its collapse was console-only — it never left the runner, so no artifact could
+        // say the run had scored one site's players. Note this `config` is a DIFFERENT object
+        // from buildChunkStamp's, so chunk-resume identity is untouched by adding to it.
+        playerSelection: playerSelectionStrategy,
+        plannedHash,
+        playerStrataDiscovered: Object.keys(playerSelection.discovered?.perStratum ?? {}),
+        playerStrataMissing: playerSelection.missingStrata ?? [],
       },
       strategyCoverage: Object.fromEntries(
         strategyArms.map((a) => [a.id, summarizeCoverage(folded.coverageByArm[a.id])]),

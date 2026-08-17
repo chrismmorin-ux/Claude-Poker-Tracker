@@ -19,7 +19,7 @@ const loader = await openLoader(REPO);
 const { buildResultCard, resultCardProblems } = await loader.load('/src/utils/standardOfRecord/resultCard.js');
 const { buildReplicationManifest } = await loader.load('/src/utils/standardOfRecord/manifest.js');
 const { registerVersion } = await loader.load('/src/utils/standardOfRecord/faultRegister.js');
-const { discoverCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
+const { discoverCorpusFiles, selectCorpusFiles, DEFAULT_CORPUS_ROOT } = await loader.load('/scripts/backtest/corpusFiles.mjs');
 const { buildDealBook } = await loader.load('/scripts/backtest/dealBook.mjs');
 const { gitStamp, collectConstants } = await loader.load('/scripts/backtest/replicationStamp.mjs');
 
@@ -111,9 +111,21 @@ const absoluteEV = {
 
 const files = await discoverCorpusFiles({ root: DEFAULT_CORPUS_ROOT, stakes: ['50NLH'] });
 const dealBook = await buildDealBook({
-  files: files.slice(0, 300),
+  // WS-504 — THIS CARD DESCRIBES A HISTORICAL, PREFIX-SELECTED MEASUREMENT.
+  // The metrics above are re-derived from out/*.json produced by a run that took a sorted
+  // 300-file PREFIX, so the Deal Book must describe THAT sample; switching to proportional
+  // here would make the card describe a population the numbers never came from.
+  // The `strategy: 'prefix'` below is therefore correct and deliberate.
+  //
+  // The sliceSpec below was FALSE and is corrected: it declared sites [FTP,PS] while discovery
+  // passed no sites filter at all, and a stake of '0.5' which is a big-blind figure, not a
+  // corpus stake label (corpusFiles DIR_PATTERN requires d+NLH). Nothing validated it, because
+  // sliceSpec is a caller assertion the Deal Book only hashes. The realised composition is now
+  // computed from the members instead, so the sample can no longer be mislabelled.
+  // NOTE: correcting sliceSpec changes this card's dealBookId AND contentHash on next emit.
+  files: selectCorpusFiles(files, { maxFiles: 300, strategy: 'prefix' }).files,
   root: DEFAULT_CORPUS_ROOT,
-  sliceSpec: { sites: ['FTP', 'PS'], stakes: ['0.5'], maxFiles: 300 },
+  sliceSpec: { sites: null, stakes: ['50NLH'], maxFiles: 300, fileSelection: 'prefix' },
   identity: 'path+size',
 });
 const { engineCommit, engineDirty } = gitStamp(REPO);

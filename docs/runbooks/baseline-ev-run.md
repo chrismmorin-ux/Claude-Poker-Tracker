@@ -125,7 +125,8 @@ If you would like a copy of everything that scrolls past, add ` | Tee-Object out
 | `--reference none` | Do not use the shipped lookup table. It was built from the whole corpus, so using it here would be marking our own homework. Stating it explicitly is required — there is no default. |
 | `--behavior-policy out/behavior-policy.json` | The "typical player" table. Also required, no default. |
 | `--stakes 50NLH` | Which stake to read. |
-| `--max-files 300` | Read 300 of the 1,756 corpus files. **This exact number reproduces the same Deal Book (`handhq-allsites-50NLH-1c560bcc`) as the last run**, which is what makes the two directly comparable. Do not change it without meaning to. |
+| `--max-files 300` | Read 300 of the 1,756 corpus files, **drawn proportionally across the corpus directories** (90 Full Tilt / 210 PokerStars on this machine). Changed by WS-504 on 2026-08-17: it used to take the first 300 of a path-sorted list, and because directory names lead with the site code that was **300 Full Tilt files and zero PokerStars** — while the Deal Book called itself `allsites`. Any earlier run of this command, including the one that produced `handhq-allsites-50NLH-1c560bcc`, was a one-site measurement. |
+| `--file-selection` | Optional. Defaults to `proportional`. Pass `prefix` **only** to replicate a Result Card published before 2026-08-17 — it restores the single-site behaviour above, and is named rather than silent so that using it is a deliberate act. It governs the player cap as well as the file cap, because both were biased the same way. |
 | `--max-decisions 600` | Stop after 600 scored decisions. Sized in section 4. |
 | `--refinement-ms 2000` | Give the deep look-ahead 2 seconds per evaluation — the production setting. |
 | `--out …json` | The summary file, the one you open. |
@@ -161,7 +162,8 @@ might not, choose the one that finishes.
 
 ```
 Corpus scan LIMITED to 300 of 1756 matched file(s).
-Deal Book handhq-allsites-50NLH-1c560bcc — 300 file(s), path+size, sha256:1c560bcc8ba77…
+  realised composition: {"FTP-2009-07-01_2009-07-23_50NLH_OBFU":90,"PS-2009-07-01_2009-07-23_50NLH_OBFU":210}
+Deal Book handhq-FTP+PS-50NLH-ae2172f5 — 300 file(s), path+size, sha256:ae2172f560eef…
 Decision-level record streaming to out/baseline-ev-run1.decisions.jsonl
   read 25000 hands, 300 eval players
   ...

@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { discoverCorpusFiles } from './corpusFiles.mjs';
+import { discoverCorpusFiles, applyFileCap } from './corpusFiles.mjs';
 import { runHeroEv } from './heroEvRunner.mjs';
 import { REFERENCE_DISABLED } from './leakageGuard.mjs';
 import { chunkPath } from './mergeHeroEvChunks.mjs';
@@ -65,7 +65,16 @@ const hashRun = (res) => createHash('sha256').update(JSON.stringify(stripTiming(
 }))).digest('hex');
 
 const behaviorPolicy = JSON.parse(fs.readFileSync(new URL('../../out/behavior-policy.json', import.meta.url), 'utf8'));
-const files = (await discoverCorpusFiles({})).slice(0, N_FILES);
+// WS-504: stratified, because this verifies the PRODUCTION path and must therefore exercise
+// the production default. Its three gates compare two runs within a single execution, so a
+// changed file set invalidates no stored baseline — there is no stored hash to move.
+//
+// KNOWN AND NOT FIXED HERE: `discoverCorpusFiles({})` has no site or stake filter, and
+// N_FILES defaults to 3. On G16's two directories that is inert. On cm-node1's 27 it is a
+// determinism check over an arbitrary cross-stake slice that reports `collapsed` on 24 of 27
+// directories — the gates still pass, since determinism is a property of the code and not of
+// the sample, but the tool looks broken. Filed separately rather than widened into WS-504.
+const { files } = applyFileCap(await discoverCorpusFiles({}), { maxFiles: N_FILES });
 const CHUNK_DIR = path.join(os.tmpdir(), `ws433-verify-${process.pid}`);
 fs.rmSync(CHUNK_DIR, { recursive: true, force: true });
 

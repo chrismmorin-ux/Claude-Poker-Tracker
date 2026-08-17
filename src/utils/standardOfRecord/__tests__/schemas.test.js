@@ -59,6 +59,8 @@ const SHIPPED_FIELDS = {
   dealBookManifest: {
     schemaVersion: 'number', dealBookId: 'string', kind: 'string', sliceSpec: 'object',
     members: 'array', memberCount: 'number', seeds: 'object', contentHash: 'string',
+    // WS-504 (v2): per-directory counts of the REALISED members, computed from `members`.
+    realisedComposition: 'object',
   },
   fieldManifest: {
     schemaVersion: 'number', fieldId: 'string', surfaceKind: 'string', sources: 'array',
@@ -247,6 +249,8 @@ const MANIFEST_SHIPPED_FIELDS = {
   fieldVersion: 'string|null', partition: 'string|null', seeds: 'object',
   unseededSources: 'array', constants: 'object',
   disclaimerRegisterVersion: 'string|null', knownDivergences: 'array',
+  // WS-504: how the corpus cap drew the sample (strategy, version, realised composition).
+  fileSelection: 'object|null',
 };
 
 const byName = (fields) => Object.fromEntries(fields.map((f) => [f.name, f]));
