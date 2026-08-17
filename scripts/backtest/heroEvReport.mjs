@@ -25,6 +25,7 @@ import { PBR_SHRINK_SWEEP, PBR_WARNING, PBR_SCOPE } from './poolBestResponse.mjs
 import { exploitationPremium } from './equilibriumPost.mjs';
 import { buildPositions, exploitationEfficiency } from './strategyPosition.mjs';
 import { composeOverallEv, renderOverallEvLines } from './overallEv.mjs';
+import { sampleAdmissibility } from './sampleAdmissibility.mjs';
 
 const CORPUS_CAVEAT =
   'HandHQ online cash, July 2009, numeric stakes (SRC-011). Measures advice against THAT ' +
@@ -161,6 +162,13 @@ const assessAdmissibility = (run, arms) => {
     });
   }
 
+  // WS-504 — does this sample describe the population the invocation asked for? The rules
+  // live in sampleAdmissibility.mjs because five other reports share this verdict shape and
+  // must inherit one answer rather than each re-deriving it.
+  const sample = sampleAdmissibility(run.replicationStamp ?? null, run.config ?? {});
+  blockers.push(...sample.blockers);
+  warnings.push(...sample.warnings);
+
   return {
     admissible: blockers.length === 0,
     blockers,
@@ -168,6 +176,7 @@ const assessAdmissibility = (run, arms) => {
     clusters,
     minClustersForCI: MIN_CLUSTERS_FOR_CI,
     complete: run.complete !== false,
+    sampleComposition: sample.sampleComposition,
   };
 };
 
@@ -963,6 +972,15 @@ export const renderHeroEvReport = (r) => {
     L.push(`    player supply: ${c.qualifyingPlayers} qualifying → ${c.plannedPlayers} planned → `
       + `${c.contributingPlayers} contributing (power lever is --max-players; --max-decisions is a ceiling)`);
     if (c.playerTaskErrors > 0) L.push(`    ! ${c.playerTaskErrors} player task(s) failed and were skipped`);
+  }
+  // WS-504 — WHICH corpus directories this sample actually came from. Printed unconditionally
+  // when known, not only on collapse: a reader who has to go looking for the composition is
+  // the reader who quoted `handhq-allsites-50NLH-1c560bcc` for months without noticing it was
+  // 300 of 300 Full Tilt files.
+  if (adm?.sampleComposition) {
+    L.push(`    realised corpus composition: ${JSON.stringify(adm.sampleComposition)}`
+      + ` [file selection: ${r.generatedFrom.config?.fileSelection ?? r.generatedFrom.replicationStamp?.fileSelection?.strategy ?? '—'}`
+      + `, player selection: ${r.generatedFrom.config?.playerSelection ?? '—'}]`);
   }
   // WS-435 — what the pre-flight gate predicted and decided, beside what the run delivered.
   if (r.preflight) {

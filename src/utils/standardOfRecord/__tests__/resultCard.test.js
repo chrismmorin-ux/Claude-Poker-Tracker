@@ -15,9 +15,12 @@ import {
 } from '../resultCard.js';
 import { buildFlipRegister, buildFragility, buildMargin } from '../fragility.js';
 import { buildComparisonCensus, censusSummary, contrastKey } from '../comparisonCensus.js';
-import { buildReplicationManifest, manifestProblems, knownDivergence, REQUIRED_CONSTANTS } from '../manifest.js';
+import {
+  buildReplicationManifest, manifestProblems, knownDivergence, REQUIRED_CONSTANTS,
+  MANIFEST_DEFAULTS,
+} from '../manifest.js';
 import { registerVersion } from '../faultRegister.js';
-import { StandardOfRecordError } from '../schemas.js';
+import { StandardOfRecordError, MANIFEST_SCHEMA } from '../schemas.js';
 
 const manifestInput = () => ({
   engineCommit: '89c1266aa0f1e2d3c4b5a69788990011223344556',
@@ -85,6 +88,52 @@ describe('buildReplicationManifest', () => {
     const input = manifestInput();
     delete input.constants[name];
     expect(() => buildReplicationManifest(input)).toThrow(new RegExp(`constants\\.${name} is missing`));
+  });
+
+  // ── WS-504: the builder may not disagree with the registry. ─────────────────────────────
+  //
+  // THE REGRESSION THESE LOCK. `fileSelection` shipped in schemas.js, in schema-baseline.json
+  // and in schemas.test.js — and the builder's hand-maintained destructure dropped it on the
+  // floor, so the Result Card that IS the claim under ADR-009 carried no record of how its
+  // sample was drawn. Nothing failed; the field simply was not there.
+  it('emits every field MANIFEST_SCHEMA registers — a registered field cannot be silently dropped', () => {
+    const m = buildReplicationManifest({ ...manifestInput(), fileSelection: { strategy: 'proportional' } });
+    for (const f of MANIFEST_SCHEMA) {
+      expect(Object.prototype.hasOwnProperty.call(m, f.name), `manifest.${f.name} was dropped by the builder`).toBe(true);
+    }
+  });
+
+  it('declares a default for every registered field, so adding one fails at authoring time', () => {
+    expect(Object.keys(MANIFEST_DEFAULTS).sort()).toEqual(MANIFEST_SCHEMA.map((f) => f.name).sort());
+  });
+
+  it('carries fileSelection through, and defaults it to null when the caller omits it', () => {
+    const sel = { strategy: 'prefix', version: 'strat-v1', capped: true, collapsed: true };
+    expect(buildReplicationManifest({ ...manifestInput(), fileSelection: sel }).fileSelection).toEqual(sel);
+    expect(buildReplicationManifest(manifestInput()).fileSelection).toBeNull();
+  });
+
+  // The reason the fix iterates the schema rather than spreading `{...input}`: unknown extra
+  // fields are deliberately allowed by checkAgainstSchema so a newer producer cannot break an
+  // older reader, and manifestProblems adds no key-set check — so a passthrough would let a
+  // typo into a published artifact with nothing anywhere to catch it.
+  it('does not admit an unregistered key — a typo must not reach a published artifact', () => {
+    const m = buildReplicationManifest({ ...manifestInput(), fileSelectoin: { strategy: 'prefix' } });
+    expect(m).not.toHaveProperty('fileSelectoin');
+  });
+
+  it('does not share a mutable default between two manifests built in one process', () => {
+    const a = buildReplicationManifest(manifestInput());
+    const b = buildReplicationManifest(manifestInput());
+    a.knownDivergences.push('x');
+    expect(b.knownDivergences).toEqual([]);
+  });
+
+  it('emits the ten pre-WS-504 fields in their original order, so no content hash moves', () => {
+    expect(Object.keys(buildReplicationManifest(manifestInput())).slice(0, 10)).toEqual([
+      'engineCommit', 'engineDirty', 'dealBookHash', 'fieldVersion', 'partition',
+      'seeds', 'unseededSources', 'constants', 'disclaimerRegisterVersion', 'knownDivergences',
+    ]);
   });
 
   it('WS-432 raised the constant floor — the refinement configuration is in the minimum set', () => {

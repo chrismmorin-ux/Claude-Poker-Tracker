@@ -50,44 +50,64 @@ export const REQUIRED_CONSTANTS = Object.freeze([
 ]);
 
 /**
+ * The value each registered field takes when the caller supplies nothing.
+ *
+ * BOUND TO `MANIFEST_SCHEMA` BY TEST — a field registered in schemas.js with no entry here
+ * fails at authoring time, which is the only moment anyone is looking.
+ *
+ * `undefined` is a DELIBERATE default for the required fields, not an oversight. See the note
+ * on `manifestProblems` below: the semantic checks are written against a manifest whose keys
+ * are all PRESENT, an omitted argument arriving as a present key holding `undefined`. Making
+ * these `null` instead would change which check fires and what it says.
+ */
+export const MANIFEST_DEFAULTS = Object.freeze({
+  engineCommit: undefined,
+  engineDirty: undefined,
+  dealBookHash: undefined,
+  fieldVersion: null,
+  partition: null,
+  seeds: undefined,
+  unseededSources: undefined,
+  constants: undefined,
+  disclaimerRegisterVersion: null,
+  knownDivergences: [],
+  // WS-504. HOW the cap drew this sample across the corpus directories.
+  fileSelection: null,
+});
+
+/**
  * Build a replication manifest.
  *
- * @param {Object} input
- * @param {string} input.engineCommit - git rev-parse HEAD
- * @param {boolean} input.engineDirty - uncommitted changes present at run time
- * @param {string} input.dealBookHash - content hash of the hand set
- * @param {string|null} input.fieldVersion
- * @param {string|null} input.partition - POOL/EVAL stamp + walk-forward prefix
- * @param {Object} input.seeds - every seed used, by name
- * @param {Array} input.unseededSources - randomness the run could not seed; [] claims determinism
- * @param {Object} input.constants - load-bearing constants, read from their definition sites
- * @param {string} input.disclaimerRegisterVersion - `registerVersion()` from faultRegister.js
- * @param {Array} [input.knownDivergences] - see below
+ * The field list lives in ONE place — `MANIFEST_SCHEMA` in schemas.js. Read it there; it
+ * carries each field's type, its `since` version, and the note explaining why it exists.
+ * Defaults for omitted fields are `MANIFEST_DEFAULTS` above.
+ *
+ * WHY THIS IS SCHEMA-DRIVEN AND NOT A HAND-WRITTEN DESTRUCTURE (WS-504). It used to name ten
+ * parameters and rebuild the object from them, so the producer carried a SECOND copy of the
+ * field list that nothing bound to the first. `fileSelection` was registered in
+ * `MANIFEST_FIELDS`, snapshotted into `schema-baseline.json` and asserted by `schemas.test.js`
+ * — and silently dropped here, so the Result Card that IS the claim under ADR-009 carried no
+ * record of how its sample was drawn. A registry whose producer can disagree with it is not a
+ * registry.
+ *
+ * WHY NOT A BARE `{...input}` PASSTHROUGH, which would also have fixed that. Unknown extra
+ * fields are deliberately allowed by `checkAgainstSchema` (schemas.js) so a newer producer
+ * cannot break an older reader, and `manifestProblems` adds no key-set check — so nothing
+ * anywhere would catch `fileSelectoin` on its way into a published artifact. Iterating the
+ * schema fixes the dropped-field defect without opening that one.
+ *
+ * @param {Object} input - keyed by the names in MANIFEST_SCHEMA
  */
-export const buildReplicationManifest = ({
-  engineCommit,
-  engineDirty,
-  dealBookHash,
-  fieldVersion = null,
-  partition = null,
-  seeds,
-  unseededSources,
-  constants,
-  disclaimerRegisterVersion = null,
-  knownDivergences = [],
-} = {}) => {
-  const manifest = {
-    engineCommit,
-    engineDirty,
-    dealBookHash,
-    fieldVersion,
-    partition,
-    seeds,
-    unseededSources,
-    constants,
-    disclaimerRegisterVersion,
-    knownDivergences,
-  };
+export const buildReplicationManifest = (input = {}) => {
+  const manifest = {};
+  for (const field of MANIFEST_SCHEMA) {
+    const supplied = input[field.name];
+    const fallback = MANIFEST_DEFAULTS[field.name];
+    // Cloned, so two manifests built in one process cannot share a mutable default.
+    manifest[field.name] = supplied !== undefined
+      ? supplied
+      : (Array.isArray(fallback) ? [...fallback] : fallback);
+  }
   const problems = manifestProblems(manifest);
   if (problems.length) {
     throw new StandardOfRecordError(
