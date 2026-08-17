@@ -377,19 +377,27 @@ if (isMain || has('--verify') || has('--json') || has('--untriaged') || has('--k
     }
     let bad = 0;
     for (const row of unmeasured) {
-      const k = row.sites[0];
-      const got = reach.get(k);
-      if (!got) {
-        console.error(`❌ ${row.labelId}: ${k} is not in the harvest at all.`);
+      // SUM ACROSS EVERY CLAIMED SITE, not just the first. A row may claim several constructs
+      // that are one artifact — the four handhqReferencePool tables are generated together from
+      // one corpus under one contract — and checking only `sites[0]` would let the reach of the
+      // other three drift with nothing watching, which is the exact hole this gate closes.
+      const missing = row.sites.filter((k) => !reach.has(k));
+      if (missing.length) {
+        console.error(`❌ ${row.labelId}: not in the harvest — ${missing.join(', ')}`);
         bad++;
         continue;
       }
+      const parts = row.sites.map((k) => reach.get(k));
+      const traced = parts.reduce((a, p) => a + p.readSites, 0);
       const want = row.impact.readSites;
-      const ok = got.readSites === want;
+      const ok = traced === want;
       if (!ok) bad++;
-      console.log(`${ok ? '✅' : '❌'} ${row.labelId}: row says ${want}, traced ${got.readSites}`
-        + `${got.viaGlob ? ' (reached via a registry glob — count is a floor)' : ''}`
-        + `${ok ? '' : `\n      ${got.sample.join(', ')}`}`);
+      const perSite = row.sites.length > 1
+        ? ` [${row.sites.map((k, i) => `${k.split('::')[1]}=${parts[i].readSites}`).join(' + ')}]`
+        : '';
+      console.log(`${ok ? '✅' : '❌'} ${row.labelId}: row says ${want}, traced ${traced}${perSite}`
+        + `${parts.some((p) => p.viaGlob) ? ' (reached via a registry glob — count is a floor)' : ''}`
+        + `${ok ? '' : `\n      ${parts.flatMap((p) => p.sample).join(', ')}`}`);
     }
     if (bad) {
       console.error(`\n❌ ${bad} row(s) disagree with the trace. One of them is wrong and the ROW `

@@ -109,8 +109,30 @@ export const EXCLUSION_REASONS = Object.freeze([
   'display-only', //         drives presentation, explicitly not a decision input
   'test-fixture', //         exists to be asserted against
   'not-a-label', //          keys are not labels (indices, ids, hand names)
+  'outside-engine-path', //  label-shaped, but no consumer reaches a strategy/EV parameter
   'not-yet-triaged', //      REQUIRES a ticket; aged out by the STALE EXCLUSION gate
 ]);
+
+/**
+ * `outside-engine-path` — added 2026-08-17, during the WS-445 triage, because the harvester
+ * PROMISED this reason and the closed set did not contain it.
+ *
+ * `harvestLabelConstructs.mjs:70-74` justifies its deliberately broad roots by saying the cost
+ * is "~20 constructs in `shapeLanguage`, `playerMatching`, `claimAdjudication` and
+ * `standardOfRecord` that are not engine-parameter paths; they become exclusions carrying a
+ * stated reason". No such reason existed. They are genuinely label-shaped — a feature label
+ * keyed to a numeric weight is exactly the harvested shape — so `not-a-label` would have been a
+ * FALSE statement about them, and `display-only` is false too where the weights drive matching.
+ *
+ * THE BOUNDARY, stated tightly so this does not become the escape hatch every exclusions list
+ * eventually grows. It means: the construct is label-shaped, and no consumer of it reaches a
+ * strategy, range, or EV parameter. Player identification, avatar rendering and range-shape
+ * descriptors qualify. "It is only a fallback", "it is legacy", and "it is low reach" do NOT —
+ * those are properties recorded by `liveness` and `readSites` on a ROW.
+ *
+ * It is reversible by construction: widen the engine into one of these areas and its constructs
+ * become ledger rows in the change that does so, exactly as ROOTS widens.
+ */
 
 export const isExclusionReason = (v) => EXCLUSION_REASONS.includes(v);
 
@@ -576,7 +598,17 @@ export const LABEL_LEDGER = Object.freeze([
     site: {
       file: 'src/utils/exploitEngine/handhqReferencePool.js', symbol: 'HANDHQ_OPENER_FACING_3BET',
     },
-    sites: ['src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_OPENER_FACING_3BET'],
+    // FOUR CONSTRUCTS, ONE ROW. They are generated together, from one corpus, under one
+    // contract ("hand-edits forbidden"), and their open question is identical. Splitting them
+    // into four rows would quadruple the row count without adding a single decision, and would
+    // let a reader think four different things had been checked.
+    sites: [
+      'src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_OPENER_FACING_3BET',
+      'src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD',
+      'src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_THREE_BET_SPREAD',
+      'src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_TO_CBET_SPREAD',
+      'src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_REFERENCE_META',
+    ],
     keySpace: ['stake', 'seatBucket'],
     foundation: 'mined-corpus',
     foundationStatus: 'generated',
@@ -586,8 +618,8 @@ export const LABEL_LEDGER = Object.freeze([
       + 'in the file by its own contract.',
     liveness: 'unconditional',
     impact: buildUnmeasuredReach({
-      readSites: 6,
-      cellCount: 12,
+      readSites: 17,
+      cellCount: 43,
       primaryPath: true,
       instrument: {
         what: 'No defect is suspected. The open question is TRANSFER, not provenance: the '
@@ -602,6 +634,29 @@ export const LABEL_LEDGER = Object.freeze([
       'Second counter-example, and a different KIND of strong row from ACTION_TAU_FRACTION: '
       + 'generated rather than fitted. Its foundation is sound and its transfer is not, and the '
       + 'ledger has to be able to say both at once.',
+      'Reach 17 = OPENER_FACING_3BET 6 + FOLD_TO_CBET_SPREAD 4 + THREE_BET_SPREAD 4 + '
+      + 'FOLD_VS_PREFLOP_RAISE_SPREAD 2 + REFERENCE_META 1, summed by traceLabelReaders.mjs '
+      + 'across all five claimed sites. Verified as a sum, so none of the four can drift '
+      + 'unwatched behind the one the row is named for.',
+      'THE FILE MODELS THE DISCIPLINE THE REST OF THE LEDGER IS ASKING FOR, in its own words: '
+      + '"A weakness rule judges ONE PLAYER, so the question \'is this player unusual\' has to '
+      + 'be asked against the distribution over players. The two means differ materially — 82.3% '
+      + 'hand-weighted against 75.8% player-weighted — and only the second has a spread '
+      + 'attached." Each table states its conditioning set, its player minimum, and what it may '
+      + 'NOT be used for.',
+      'It also corroborates a neighbouring row rather than asserting alone: the implied prior '
+      + 'weight from the fold-vs-preflop-raise spread, mean(1-mean)/sd^2 - 1, is 8.0 — arrived '
+      + 'at independently of the PER_STAT_PRIOR_WEIGHT.foldTo3Bet = 10 that WS-262 measured by '
+      + 'method of moments. Two methods, one answer, and the file says so.',
+      'A LIMIT THE ROW MUST CARRY: HANDHQ_FOLD_TO_CBET_SPREAD rests on ~19k players against '
+      + '~106k for foldTo3Bet, "a property of the gate rather than of the corpus" — clearing '
+      + 'n >= 30 flop c-bets faced is much harder than n >= 30 preflop opportunities. Its sd is '
+      + 'correspondingly less well determined and `players` must be quoted beside any bar '
+      + 'derived from it. One row, four tables, and NOT four equally solid tables.',
+      'THREE_BET_SPREAD adds a shape warning that a moments-only reading would miss: the '
+      + 'quantity is bounded at 0 and right-skewed with sd ~ mean, so mean - 1sd is 0.04% for '
+      + 'full-ring — below the smallest rate any finite sample can express. A symmetric bar is '
+      + 'the wrong instrument and preflopFoldQuantities.js moment-matches a Beta instead.',
     ],
   }),
 
@@ -1354,6 +1409,1536 @@ export const LABEL_LEDGER = Object.freeze([
       'It regularises a DIFFERENCE between two rates, which is the case where a bad prior is '
       + 'least visible: the trait either fires or it does not, and nothing reports how often it '
       + 'fires on noise.',
+    ],
+  }),
+
+  // ===========================================================================
+  // TRIAGE TRANCHE 3 (2026-08-17) — the exploit-scoring surface.
+  //
+  // A DIFFERENT KIND OF LABEL from tranche 1, and the distinction matters. Tranche 1 keyed on
+  // GAME STATE (bucket, position, street) — the axes POKER_THEORY §7.1 forbids as decision
+  // inputs. These key on RULE ID: a weakness the engine has already detected is looked up in a
+  // table to get its impact, its risk, its evidence bar and its recognizability.
+  //
+  // That is not automatically the §7.1 anti-pattern. A rule id is a genuine categorical, not a
+  // quantisation of a continuum, so there is no "compute it from equity instead" available.
+  // What makes them ledger rows is the OTHER half of the doctrine: they are unmeasured founder
+  // estimates that scale what hero is told to do, and 44 of them at a time.
+  // ===========================================================================
+
+  buildLabelEntry({
+    labelId: 'LBL-impact-map',
+    title: 'Rule-id -> exploit impact score, 44 cells, one read site',
+    site: { file: 'src/utils/exploitEngine/exploitScoringUtils.js', symbol: 'IMPACT_MAP' },
+    sites: ['src/utils/exploitEngine/exploitScoringUtils.js::IMPACT_MAP'],
+    keySpace: ['ruleId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'A one-line RULE is stated, which is more than most rows get and is still not a '
+      + 'measurement: "Impact lookup by rule ID. weakness=0.7, tendency=0.4, multi-stat +0.1, '
+      + 'board -0.1." That is a schema the 44 values were generated FROM, so the table is '
+      + 'reproducible from four constants — and the four constants have no source.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 44,
+      primaryPath: true,
+      instrument: {
+        what: 'Impact is a claim about EV per exploit, so the honest instrument is the '
+          + 'absolute-EV ledger itself: score each rule\'s recommended deviation on the corpus '
+          + 'and compare the realised ordering against this table\'s ordering. Rank correlation '
+          + 'is the statistic, not per-cell agreement — the scores are used to SORT.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'The generating rule is the useful finding: because 44 cells come from four constants, a '
+      + 'correction is a four-number change, not a 44-number one. That is a much cheaper fix '
+      + 'than the cell count suggests, and it is invisible unless someone reads the docblock.',
+      'Pairs with LBL-risk-map on the same key space and the same single read site '
+      + '(exploitScoringUtils.js:148-149) — they are consumed together and must be instrumented '
+      + 'together.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-risk-map',
+    title: 'Rule-id -> exploit risk score, the other half of the scoring pair',
+    site: { file: 'src/utils/exploitEngine/exploitScoringUtils.js', symbol: 'RISK_MAP' },
+    sites: ['src/utils/exploitEngine/exploitScoringUtils.js::RISK_MAP'],
+    keySpace: ['ruleId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Same shape of declaration as IMPACT_MAP and the same absence beneath it: "Risk '
+      + 'lookup by rule ID. bluff=0.6, value=0.2, trap=0.4." Three constants, no source.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 44,
+      primaryPath: true,
+      instrument: {
+        what: 'Risk is variance, which the corpus can answer directly: score each rule\'s '
+          + 'deviation and report the realised spread, not only the mean. Run it in the same '
+          + 'pass as LBL-impact-map — the two are read one line apart and combined into one '
+          + 'score, so measuring either alone leaves the combination unchecked.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'Three risk classes over 44 rules means the table asserts that every bluff-shaped exploit '
+      + 'carries the same risk as every other. That is a strong claim, cheaply falsifiable by '
+      + 'the spread of realised outcomes, and never tested.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-consequence-weights',
+    title: 'Rule-id -> evidence-threshold multiplier — how much proof an exploit must clear',
+    site: { file: 'src/utils/exploitEngine/exploitValidator.js', symbol: 'CONSEQUENCE_WEIGHTS' },
+    sites: ['src/utils/exploitEngine/exploitValidator.js::CONSEQUENCE_WEIGHTS'],
+    keySpace: ['ruleId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'The reasoning is stated and the numbers are not derived from it: "Consequence '
+      + 'weight multiplier for evidence thresholds. High-consequence exploits (bluff-raising, '
+      + 'assuming capped) need 2x evidence. Low-consequence exploits (value betting wider, '
+      + 'folding more) need 0.5x." Why some exploits need more evidence is argued; why the '
+      + 'factor is 2.0 rather than 1.5 or 4.0 is not.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 20,
+      primaryPath: true,
+      instrument: {
+        what: 'This is a DECISION THRESHOLD, so its error rates are simulable without any new '
+          + 'data: replay the corpus and measure how often each rule fires on a villain whose '
+          + 'true rate is population-normal (false positive) and fails to fire on a genuine '
+          + 'deviator (false negative), at 0.5x, 1x and 2x. The multiplier that matters is the '
+          + 'one where those two curves cross for a consequence of this size.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'CONSEQUENCE-WEIGHTED CONFIDENCE IS A NAMED REPO PRINCIPLE — the poker guardrail lists it '
+      + 'among the things not to simplify away — and this 20-cell table is where the principle '
+      + 'is actually parameterised. The principle is doctrine; the numbers implementing it are '
+      + 'unmeasured.',
+      'Being wrong here is asymmetric in a way EV alone does not capture: too low and hero acts '
+      + 'on noise, too high and the engine stays silent on a real read. The silent failure is '
+      + 'the one nobody reports.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-recognizability-map',
+    title: 'Rule-id -> how spottable the exploit is at a live table',
+    site: { file: 'src/utils/exploitEngine/briefingBuilder.js', symbol: 'RECOGNIZABILITY_MAP' },
+    sites: ['src/utils/exploitEngine/briefingBuilder.js::RECOGNIZABILITY_MAP'],
+    keySpace: ['ruleId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Scale declared, values not sourced: "Recognizability lookup — how easy is this '
+      + 'exploit to spot at the table. 1 = hard to spot, 5 = obvious trigger." Each entry also '
+      + 'carries a `trigger` phrase and a `time` ("instant"), which are the human-facing half.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 23,
+      primaryPath: false,
+      instrument: {
+        what: 'THE ONLY ROW IN THE LEDGER WHOSE TRUTH IS NOT IN THE CORPUS. Recognizability is a '
+          + 'fact about the founder at a table, not about the field, so no re-score can settle '
+          + 'it. The instrument is the prediction ledger: record whether the founder actually '
+          + 'spotted the trigger in-session and compare against the 1-5 score. That is the '
+          + 'predictionAudit capture that already ships and that nothing reads.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      '`primaryPath: false` — it feeds a briefing, not a decision. It is a row rather than a '
+      + '`display-only` exclusion because the score orders WHICH exploits the founder is shown, '
+      + 'and an ordering that puts unspottable reads first wastes the only channel that exists '
+      + 'at the table.',
+      'Its estimand is the founder, which makes it the one label in this ledger whose foundation '
+      + 'could be measured in a single session of honest self-report and never has been.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-gto-baselines',
+    title: 'Six stat baselines called GTO, holding round numbers with no solver behind them',
+    site: { file: 'src/utils/exploitEngine/briefingBuilder.js', symbol: 'GTO_BASELINES' },
+    sites: ['src/utils/exploitEngine/briefingBuilder.js::GTO_BASELINES'],
+    keySpace: ['stat'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. The inline comments restate the values as approximations '
+      + '("~22% VPIP at 9-max", "~17% PFR", "~43% fold to c-bet") with no solver run, no citation '
+      + 'and no sample. The NAME asserts a source the file does not have.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 6,
+      cellCount: 6,
+      primaryPath: false,
+      instrument: {
+        what: 'Two separable questions, and conflating them is the defect. If the intended '
+          + 'referent is EQUILIBRIUM, the instrument is a solver baseline and '
+          + 'skillAssessment/solverBaselines.js already exists to hold one. If the intended '
+          + 'referent is the FIELD, the corpus answers it by counting and the row should be '
+          + 'renamed, because a population mean is not a GTO baseline.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'POKER_THEORY records GTO as an IMPORTED reference class — something cited from a solver, '
+      + 'never invented — and this table is six invented numbers wearing that word. The naming '
+      + 'is the finding: it is shown to the founder as the standard their villain deviates from.',
+      'Read at six sites in briefingBuilder.js (137,145,153,161,169,207), all comparisons '
+      + 'against observed stats.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-equity-ladder',
+    title: 'The heads-up equity ladder — a derived threshold set with its generalisation stated',
+    site: { file: 'src/utils/exploitEngine/actionClassifier.js', symbol: 'EQ' },
+    sites: ['src/utils/exploitEngine/actionClassifier.js::EQ'],
+    keySpace: ['equityTier'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'WS-277, and unusually it states what the numbers MEAN rather than only what '
+      + 'they are: "Each entry is a target probability that hero ends up WINNING THE POT — read '
+      + 'that way, the ladder generalizes to k callers as target^(1/k) via '
+      + '`multiwayEquityThreshold`, and k=1 reproduces these exact numbers. POKER_THEORY §4.1 / '
+      + '§6.4." The generalisation is derived; the five anchor values are judgment.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 24,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'The thresholds classify an action given hero equity, so their consequence is '
+          + 'measurable by ablation: shift each anchor by +/-0.05 and re-score the paired '
+          + 'decision set. A threshold whose neighbourhood is flat needs no measurement; one '
+          + 'where advice flips is the row that has been ranked correctly by reach.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'TWENTY-FOUR READ SITES, second only to POPULATION_PRIORS in this ledger — and unlike that '
+      + 'table it comes with a stated semantics that makes the multiway extension a derivation '
+      + 'rather than another table. That is the pattern worth copying: define the quantity so '
+      + 'precisely that the generalisation falls out instead of needing its own constants.',
+      'The founder plays 9-handed live, where multiway is the common case, so the k-caller '
+      + 'generalisation is not an edge path here — it is the main one.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-range-boost-switch',
+    title: 'Rule-id -> positional range boost, manufactured from inline open-rate thresholds',
+    site: {
+      file: 'src/utils/exploitEngine/exploitScoringUtils.js', symbol: 'getRangeBoost',
+    },
+    sites: ['src/utils/exploitEngine/exploitScoringUtils.js::getRangeBoost#switch1'],
+    keySpace: ['ruleId', 'openRateBand'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE and no docblock. The constants are inline in the switch: '
+      + '`avgOpen > 20 ? 0.15 : avgOpen > 15 ? 0.08 : 0`, per rule id.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 16,
+      primaryPath: true,
+      instrument: {
+        what: 'Ablate the boost to zero and re-score, as a sub-arm of the LBL-impact-map pass — '
+          + 'it modifies the same score at exploitScoringUtils.js:144-148 and has no independent '
+          + 'meaning.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'BOTH ANTI-PATTERNS IN ONE EXPRESSION: a rule-id switch (categorical) whose arms are '
+      + 'threshold-as-label cut points on a continuous open rate, written inline with no name. '
+      + 'Nothing about `avgOpen > 20 ? 0.15 : avgOpen > 15 ? 0.08 : 0` is greppable, which is '
+      + 'why the harvest looks for AST shapes and not for tokens.',
+      'The `readSites: 1` figure is INDIRECT — traceLabelReaders can only follow the enclosing '
+      + 'binding for a switch, so it answers "how often is this function referenced", a weaker '
+      + 'question than for a named table. The row says so rather than letting the 1 read as '
+      + 'equivalent to a table\'s 1.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-bucket-raise-fraction',
+    title: 'Bucket -> raise-mass multiplier, inline, on top of an already-ledgered population rate',
+    site: {
+      file: 'src/utils/exploitEngine/gameTreeSizingHelpers.js', symbol: 'bucketRaiseFraction',
+    },
+    sites: ['src/utils/exploitEngine/gameTreeSizingHelpers.js::bucketRaiseFraction#ternary1'],
+    keySpace: ['bucket'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE for the multipliers. The one-line comment gives the shape '
+      + 'only — "Per-bucket raise fraction is small for most buckets except nuts" — over '
+      + '`bucket === \'nuts\' ? popRaiseRate * 2 : bucket === \'strong\' ? popRaiseRate : '
+      + 'bucket === \'air\' ? popRaiseRate * 0.2 ...`. The surrounding lines DO document their '
+      + 'fallbacks carefully (WS-482), so the omission is local rather than a house style.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 3,
+      primaryPath: true,
+      instrument: {
+        what: 'It multiplies POPULATION_PRIORS.raise, so it belongs in the same ablation arm as '
+          + 'LBL-population-priors rather than in one of its own: ablate the bucket multipliers '
+          + 'to 1.0 and re-score, which asks whether raise mass varies by bucket AT ALL beyond '
+          + 'the population rate.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'A SECOND INSTANCE OF THE COMPOSITION PATTERN LBL-texture-realization shows: an '
+      + 'unprovenanced multiplier applied on top of another table\'s number, so the two errors '
+      + 'multiply and neither file shows the product. Here the base (POPULATION_PRIORS) is '
+      + 'itself the least-provenanced, highest-reach table in the engine.',
+      'Indirect reach, same caveat as LBL-range-boost-switch.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-gto-open-width',
+    title: 'Position label -> assumed GTO open width, one read site',
+    site: { file: 'src/utils/exploitEngine/villainObservations.js', symbol: 'GTO_OPEN_WIDTH' },
+    sites: ['src/utils/exploitEngine/villainObservations.js::GTO_OPEN_WIDTH'],
+    keySpace: ['position'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. Four position-keyed widths with no solver citation, no '
+      + 'sample and no docblock — the same word "GTO" doing the same work it does in '
+      + 'GTO_BASELINES, in a different file.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 4,
+      primaryPath: true,
+      instrument: {
+        what: 'Same fork as LBL-gto-baselines and it should be resolved in the same decision: '
+          + 'either cite a solver for the equilibrium reading or count the corpus for the field '
+          + 'reading. Two files independently invented a "GTO" reference, which is an argument '
+          + 'for ONE imported reference class rather than two measurements.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'Found by the harvest, not by reading: nobody comparing GTO_BASELINES to GTO_OPEN_WIDTH '
+      + 'would have had reason to open both files. Two unsourced tables using the same borrowed '
+      + 'authority is exactly the duplication a ledger is supposed to surface.',
+    ],
+  }),
+
+  // ===========================================================================
+  // TRIAGE TRANCHE 4 (2026-08-17) — observation thresholds, emotional state, assumption gates.
+  //
+  // The tranche that found a SURVIVOR. WS-436 removed the six style labels as engine decision
+  // inputs and POKER_THEORY v2.4 records that the playerStats struct "no longer carries a style
+  // field at all". `tiltTransform.js::STYLE_MULTIPLIERS` still keys on Fish / Nit / LAG / TAG /
+  // Unknown. Nothing in the repo pointed at it, because nothing had an index of label-keyed
+  // tables — which is the argument for this ledger stated as a fact rather than as a rationale.
+  // ===========================================================================
+
+  buildLabelEntry({
+    labelId: 'LBL-tilt-style-multipliers',
+    title: 'The six style labels, still keying a numeric multiplier after WS-436 removed them',
+    site: { file: 'src/utils/emotionalState/tiltTransform.js', symbol: 'STYLE_MULTIPLIERS' },
+    sites: ['src/utils/emotionalState/tiltTransform.js::STYLE_MULTIPLIERS'],
+    keySpace: ['style'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE — no docblock at all, five values beside four other bare '
+      + 'coefficients (FEAR_COEFFICIENT 8, GREED_COEFFICIENT 6, FEAR_FOLD_CAP 0.25, '
+      + 'GREED_RAISE_CAP 0.20).',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'THE MEASUREMENT IS ALREADY DONE — this is the one row in the ledger whose '
+          + 'instrument has run and whose answer is on record. WS-436 measured the style channel '
+          + 'at ΔLL −0.00076 over 10,147 paired decisions (n.s.) and advice-parity at exactly '
+          + 'n=0. What remains is not a study but a check: confirm this consumer is on the same '
+          + 'channel, then delete it under the existing Result Card, or state precisely why tilt '
+          + 'is a different estimand from villain action.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE SURVIVOR. WS-436 deleted STYLE_PRIORS, STYLE_STEEPNESS_MULT, STYLE_RAISE_PARAMS, '
+      + 'STYLE_BET_CENTER, STYLE_FOLD_DEFAULTS and computeFoldCurveForStyle, and POKER_THEORY '
+      + 'v2.4 records that "the engine\'s playerStats struct no longer carries a style field at '
+      + 'all". This table keys on Fish / Nit / LAG / TAG / Unknown and is read three times.',
+      'It is a fair defence that tilt modelling is a DIFFERENT estimand from villain action, and '
+      + 'that WS-436\'s null does not automatically transfer. That defence is exactly what the '
+      + 'row asks someone to write down — it has never been made, because nobody knew the table '
+      + 'was here.',
+      'The 21.1% Unknown fallthrough measured in the archetype clustering work applies here too: '
+      + 'a fifth of villains take the Unknown multiplier, so a fifth of the time this table is '
+      + 'a constant wearing a label.',
+      'HOW IT WAS FOUND is the point: not by an audit, not by reading, but by an AST harvest of '
+      + 'label-keyed tables plus a requirement that every one be claimed. A survey looking for '
+      + '"style" would have found it; every survey that ran did not.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-observation-thresholds',
+    title: 'The 44-cell observation threshold block — 41 read sites behind a one-letter name',
+    site: { file: 'src/utils/exploitEngine/villainObservations.js', symbol: 'T' },
+    sites: ['src/utils/exploitEngine/villainObservations.js::T'],
+    keySpace: ['observationRule'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'A CLAIM OF GROUNDING WITH NO CITATION: "Observation detection thresholds — all '
+      + 'poker-theory-grounded. Centralizes magic numbers that were previously scattered through '
+      + '33 observation rules." Individual cells carry a derivation in a trailing comment '
+      + '("blindDefendMax: 25 — Below this % → over-folding blinds (MDF vs 2.5x open ~40%)"), so '
+      + 'SOME are derived; the docblock asserts it of ALL 44 and the file does not show that.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 41,
+      cellCount: 44,
+      primaryPath: true,
+      instrument: {
+        what: 'Split it before measuring it, because the two halves need different instruments. '
+          + 'The MDF-derived cells are checkable by re-deriving the arithmetic — no data needed. '
+          + 'The rest are detection thresholds and need the false-positive/false-negative '
+          + 'simulation described on LBL-consequence-weights. The first pass is a partition, and '
+          + 'it is the cheapest work in this ledger.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'SECOND-WIDEST REACH IN THE HARVEST after POPULATION_PRIORS: 41 read sites, 44 cells, '
+      + 'module-private, named `T`. It is unfindable by name and it decides when the engine '
+      + 'tells the founder anything at all about a villain.',
+      'Centralising the 33 rules\' magic numbers was the right move and it is why this row can '
+      + 'exist as one row. The residue is that centralisation without provenance produces a '
+      + 'single well-organised block of unsourced constants — tidier, equally unmeasured.',
+      'The blanket phrase "all poker-theory-grounded" is the specific thing to distrust: it is '
+      + 'true of the cells that show their derivation and unevidenced for the others, and a '
+      + 'reader has no way to tell which is which without opening all 44.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-weakness-to-delta',
+    title: 'Weakness id -> numeric adjustment deltas, with an explicit no-op default',
+    site: { file: 'src/utils/exploitEngine/villainProfileBuilder.js', symbol: 'WEAKNESS_TO_DELTA' },
+    sites: ['src/utils/exploitEngine/villainProfileBuilder.js::WEAKNESS_TO_DELTA'],
+    keySpace: ['weaknessId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Authored 2026-06-04 (WS-155 / SPR-105). The docblock states the DEFAULT '
+      + 'precisely, which is unusual and good: "Unlisted weakness ids contribute `delta: {}` — '
+      + 'they remain Adjustment entries with rationale text but no numeric contribution to '
+      + 'composition (informational reads, not numeric levers)." The nine listed deltas '
+      + '(sizing x1.2, and so on) carry per-entry poker rationale and no measurement.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 2,
+      cellCount: 9,
+      primaryPath: true,
+      instrument: {
+        what: 'These are the numeric levers a detected weakness pulls, so they are directly '
+          + 'scoreable on the absolute-EV ledger: score each weakness\'s deviation against the '
+          + 'no-op default the table already defines. The counterfactual is built in — unlisted '
+          + 'ids contribute nothing — so the arm needs no new control.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'The `delta: {}` default is a design worth naming: a weakness with no measured lever '
+      + 'produces RATIONALE and no number, rather than a small invented adjustment. That is the '
+      + 'unmeasured-tier discipline of this ledger, implemented in engine code two months before '
+      + 'the ledger existed.',
+      'It also makes the row cheap to resolve: the population of listed ids is nine, each with a '
+      + 'stated poker rationale, and the comparison arm is already the shipped behaviour for '
+      + 'every unlisted id.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-maturity-thresholds',
+    title: 'Observation counts that manufacture a villain-model maturity phase',
+    site: { file: 'src/utils/exploitEngine/villainProfileBuilder.js', symbol: 'MATURITY_THRESHOLDS' },
+    sites: ['src/utils/exploitEngine/villainProfileBuilder.js::MATURITY_THRESHOLDS'],
+    keySpace: ['maturityPhase'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. One line: "Maturity phase thresholds (total postflop '
+      + 'observations)", over coarse: 1, typed: 10, individual and deep.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 4,
+      primaryPath: true,
+      instrument: {
+        what: 'A sample-size threshold has an identifiable right answer: the n at which the '
+          + 'per-villain posterior beats the population prior out of sample. Measure the '
+          + 'crossover on the corpus per phase rather than choosing round numbers — the same '
+          + 'estimator that produced PER_STAT_PRIOR_WEIGHT answers this.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THRESHOLD-AS-LABEL again, third instance in this ledger after FOLD_RATE_THRESHOLDS and '
+      + 'the SPR bands. Here the manufactured phase decides how much the engine trusts a '
+      + 'per-villain read, so the label is upstream of every personalised number.',
+      '`typed: 10` sits suspiciously close to PRIOR_WEIGHT = 10, which WAS measured. If the two '
+      + 'are meant to be the same quantity that is a derivation worth writing down; if they are '
+      + 'not, the coincidence is worth ruling out.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-fear-greed-factor-weights',
+    title: 'Emotional-state factor weights — with stubbed factors carrying weight 0',
+    site: { file: 'src/utils/emotionalState/fearIndex.js', symbol: 'FEAR_FACTOR_WEIGHTS' },
+    sites: [
+      'src/utils/emotionalState/fearIndex.js::FEAR_FACTOR_WEIGHTS',
+      'src/utils/emotionalState/greedIndex.js::GREED_FACTOR_WEIGHTS',
+    ],
+    keySpace: ['factor'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Both tables declare their constraint and their staging: "Weight constants for '
+      + 'v1 fear aggregation. Sum of active weights <= 1.0. Stubbed factors have weight 0 in v1; '
+      + 'extending them requires updating this object + adding the factor\'s computation." The '
+      + 'normalisation and the staging are stated; the split between the active weights '
+      + '(0.6 / 0.2 / ...) is not sourced.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 12,
+      cellCount: 11,
+      primaryPath: true,
+      instrument: {
+        what: 'Fear and greed are asserted to shift hero\'s own decisions, so the falsifier is '
+          + 'in the hand history, not the corpus: does the index computed at decision time '
+          + 'predict the founder\'s realised deviation from the engine line? A weight vector '
+          + 'that predicts nothing is refuted regardless of how the weights were chosen.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'Two constructs, one row: same shape, same docblock, same author decision, mirrored across '
+      + 'fear and greed. Reach 12 = 6 + 6, summed across both sites.',
+      'THE WEIGHT-0 STUBS ARE THE HONEST PART AND THE RISKY PART AT ONCE. Declaring a factor at '
+      + 'weight 0 keeps the extension point visible, and it also means the shipped index is '
+      + 'effectively two factors wearing a six-factor schema. A reader of the object sees six '
+      + 'named influences; the computation has two.',
+      'This is the ledger\'s own INERTNESS question in miniature — the one prog-guide-authority '
+      + 'raises about a standard with zero instances. A declared factor that contributes nothing '
+      + 'passes every check and reads as capability.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-assumption-gate-thresholds',
+    title: 'Hero- and villain-side assumption gates — schema-cited, asymmetric by design',
+    site: { file: 'src/utils/assumptionEngine/assumptionTypes.js', symbol: 'VILLAIN_SIDE_THRESHOLDS' },
+    sites: [
+      'src/utils/assumptionEngine/assumptionTypes.js::VILLAIN_SIDE_THRESHOLDS',
+      'src/utils/assumptionEngine/assumptionTypes.js::HERO_SIDE_THRESHOLDS',
+    ],
+    keySpace: ['gateDimension'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Both cite a schema section and — rarely for this repo — their UNITS: '
+      + '"confidence — Bayesian posterior P(claim true | evidence); stability — composite '
+      + 'stability score [0, 1]; recognizability — recognizability score [0, 1]; '
+      + 'asymmetricPayoff — bb per 100 trigger firings (§1.5 unit correction); sharpe — mean / '
+      + 'sd floor". The hero-side set states WHY it differs: "Relaxed relative to villain-side '
+      + 'because self-observation has higher noise." Schema §7.1 + CC-6 resolution. The cut '
+      + 'points themselves (0.80 / 0.70 vs 0.70 / 0.60) are judgment.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 7,
+      cellCount: 11,
+      primaryPath: true,
+      instrument: {
+        what: 'A gate\'s error rates are its meaning: replay recorded assumptions and measure '
+          + 'how many that cleared 0.80 were later contradicted, and how many below it would '
+          + 'have held. The prediction ledger is the data source, and it is the same instrument '
+          + 'LBL-recognizability-map needs — one capture serves both.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'BEST-DOCUMENTED CONSTANTS IN THE TRANCHE, and still unmeasured — which is the distinction '
+      + 'the two-axis vocabulary exists to draw. Stating units and citing a schema is provenance '
+      + 'for the DEFINITION, never evidence for the VALUE.',
+      'The hero/villain asymmetry is a testable claim in its own right ("self-observation has '
+      + 'higher noise"), and it is measurable directly as the variance of hero-side against '
+      + 'villain-side estimates. If the noise ratio is not what the 0.10 relaxation assumes, the '
+      + 'gap is wrong even if both gates are individually reasonable.',
+      'Reach 7 = VILLAIN_SIDE 4 + HERO_SIDE 3, summed across both sites.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-calibration-ladder',
+    title: 'Calibration-gap cut points that decide when an assumption is retired',
+    site: { file: 'src/utils/assumptionEngine/assumptionTypes.js', symbol: 'CALIBRATION_LADDER' },
+    sites: ['src/utils/assumptionEngine/assumptionTypes.js::CALIBRATION_LADDER'],
+    keySpace: ['calibrationBand'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Cites its spec — "Calibration ladder thresholds (calibration.md §3.3)" — and '
+      + 'annotates each band with the action it triggers ("<= 0.20 — no action", "0.20-0.25 — '
+      + 'flagged"). The document defines the ladder; nothing measures the cut points.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 9,
+      cellCount: 5,
+      primaryPath: false,
+      instrument: {
+        what: 'It governs RETIREMENT, so its cost is asymmetric and measurable as such: sweep '
+          + 'the cut points over the recorded calibration history and count assumptions retired '
+          + 'that were later vindicated against assumptions kept that kept mis-calibrating. The '
+          + 'ladder is a policy and its regret is computable.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'ALL NINE READ SITES ARE IN `__backtest__/calibrationAccumulator.js`, which the harvester '
+      + 'does not treat as a test directory. So the reach figure is real but concentrated in one '
+      + 'measurement harness — the table is a knob on the instrument, not on the engine, which '
+      + 'is why `primaryPath` is false and why it still needs a row.',
+      'Same class as LBL-bucket-midpoint: a constant inside the measurement path. Those are the '
+      + 'ones that can bias every downstream conclusion while looking like tooling.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-dial-and-decay-defaults',
+    title: 'Assumption dial bounds and decay half-lives — one cash/tournament split with no evidence',
+    site: { file: 'src/utils/assumptionEngine/assumptionTypes.js', symbol: 'DIAL_DEFAULTS' },
+    sites: [
+      'src/utils/assumptionEngine/assumptionTypes.js::DIAL_DEFAULTS',
+      'src/utils/assumptionEngine/assumptionTypes.js::DEFAULT_DECAY_HALFLIFE_DAYS',
+    ],
+    keySpace: ['dialParameter', 'gameType'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'Schema pointers only, no derivation: "Dial defaults (schema §6.1)" over '
+      + 'dialFloor 0.3 / dialCeiling 0.9 / sigmoidSteepness 8, and "Decay half-life defaults '
+      + '(schema §1.2)" over cash: 30, tournament: 7. A schema section says a field exists; it '
+      + 'does not say the value is 30.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'A half-life is an empirical claim about how fast a read goes stale, and it is '
+          + 'directly estimable: fit the decay from the recorded history of assumptions that '
+          + 'were later re-observed. 30 days versus 7 is a 4x claim about cash and tournament '
+          + 'populations and the fit answers it.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'The cash/tournament split is a GAME-TYPE LABEL keying a numeric parameter — the §7.1 '
+      + 'shape on an axis nobody thinks of as a label. It is also plausible: tournament reads '
+      + 'genuinely stale faster because the structure moves. Plausible and unmeasured is exactly '
+      + 'what this ledger records rather than resolves.',
+      'Reach 3 = DECAY_HALFLIFE 2 + DIAL_DEFAULTS 1.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-stake-factor',
+    title: 'Stake-category label -> blend factor in [-1, +1]',
+    site: { file: 'src/utils/citedDecision/dialMath.js', symbol: 'stakeFactor' },
+    sites: ['src/utils/citedDecision/dialMath.js::stakeFactor#switch1'],
+    keySpace: ['stakeCategory'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Direction argued, magnitude unsourced: "Stake-context factor maps stake '
+      + 'category to [-1, +1]. Higher stakes -> negative factor (pulls blend down toward '
+      + 'balanced); cash -> neutral; tournament -> slightly negative (ICM considerations)." Why '
+      + 'high-stakes is -0.8 rather than -0.4 is not stated.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'The stake gradient is now MEASURABLE and was not when this was written: the full '
+          + 'corpus shows a monotone gradient across stakes (3-bet +57% across the range). Fit '
+          + 'the factor to that gradient instead of asserting it.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'A STAKE LABEL IS NOT A GAME METRIC, and this row is where that distinction has teeth: '
+      + 'three categories stand in for a measured gradient. The founder ruling is that games are '
+      + 'matched by METRIC VECTOR, not by stake level — the skill axis does not even run the '
+      + 'same direction online and live — so a three-valued stake label is the coarsest possible '
+      + 'proxy for the thing that actually varies.',
+      'Direction-only provenance is its own category of claim: the sign is defensible from ICM '
+      + 'and from field strength, the magnitude is a free parameter, and the code cannot tell '
+      + 'them apart.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-deviation-type-switch',
+    title: 'Deviation-type label -> recommended action override',
+    site: {
+      file: 'src/utils/citedDecision/citedDecisionProducer.js', symbol: 'deriveRecommendedAction',
+    },
+    sites: ['src/utils/citedDecision/citedDecisionProducer.js::deriveRecommendedAction#switch1'],
+    keySpace: ['deviationType'],
+    foundation: 'structural-computation',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE at the switch. The arms are LOGIC rather than constants — '
+      + '"Bluff-prune changes hero\'s range. If baseline was bet, recommended is check." — so '
+      + 'what the row records is a mapping from a label to a decision rule, not to a number.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 2,
+      cellCount: 3,
+      primaryPath: true,
+      instrument: {
+        what: 'Each arm is a stated implication, so the first instrument is a CONSISTENCY check '
+          + 'rather than a measurement: does each deviation type\'s override agree with the EV '
+          + 'ordering the engine computes for that spot? An override that contradicts the '
+          + 'engine\'s own numbers is a defect with no sample size attached.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'Foundation `structural-computation` rather than `founder-estimate` — the arms derive an '
+      + 'action from a stated definition of the deviation type and carry no fitted or estimated '
+      + 'number. That is the honest reading, and it is also why the instrument is a consistency '
+      + 'check: a derivation can be WRONG without being unmeasured.',
+      'Only the top-composite assumption drives the override ("Top-composite assumption drives '
+      + 'the primary deviation"), so this label switch decides the whole recommendation from one '
+      + 'ranked entry.',
+    ],
+  }),
+
+  // ===========================================================================
+  // TRIAGE TRANCHE 5 (2026-08-17) — generated equity artifacts and the study/drill surface.
+  //
+  // Two populations that the ledger's vocabulary separates cleanly and prose never did. The
+  // GENERATED artifacts (EQUITY_VS_OPEN, EQUITY_SKEW_DECOMPOSITION) are the best-founded large
+  // tables in the repo: a named generator, a stated trial count, a stated sampling error. The
+  // STUDY-PRIORITY frequencies are approximations by their own admission, and they rank what
+  // the founder is told to study — so being wrong costs attention rather than chips, which is
+  // a different currency and not a smaller one.
+  // ===========================================================================
+
+  buildLabelEntry({
+    labelId: 'LBL-equity-vs-open',
+    title: 'Position x hand-class preflop equity, 845 cells, Monte Carlo generated',
+    site: { file: 'src/utils/pokerCore/preflopEquityTable.js', symbol: 'EQUITY_VS_OPEN' },
+    sites: ['src/utils/pokerCore/preflopEquityTable.js::EQUITY_VS_OPEN'],
+    keySpace: ['position', 'handClass'],
+    foundation: 'structural-computation',
+    foundationStatus: 'generated',
+    provenance: 'Generator, trial count and error bar all stated: "Generated at 20000 Monte '
+      + 'Carlo trials per cell (sampling error ~+/-35 bp). The generator samples rather than '
+      + 'enumerates, so regenerating moves cells slightly; this committed file is the source of '
+      + 'truth that tests and live advice read." Units are declared too — "Equity in basis '
+      + 'points: EQUITY_VS_OPEN[heroPosition][handClassIndex]".',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 6,
+      cellCount: 845,
+      primaryPath: true,
+      instrument: {
+        what: 'Equity against a range is EXACTLY ENUMERABLE — 20,000 samples per cell is a '
+          + 'choice, not a limit. The instrument is to enumerate rather than sample and difference '
+          + 'against the committed table: any cell outside +/-35 bp is a generator defect, and '
+          + 'the exercise also removes the regeneration non-determinism the docblock concedes.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'LARGEST CELL COUNT IN THE LEDGER AT 845, and among the best-founded — which is why it '
+      + 'belongs in the ranking rather than in an exclusion. Cell count is not a defect signal; '
+      + 'the foundation column is.',
+      'The POSITION axis is the interesting part: 845 cells is 5 positions x 169 hand classes, '
+      + 'so equity here is conditioned on a POSITION LABEL. That is defensible — the label is a '
+      + 'proxy for the opener\'s range, which genuinely differs — and it is the §7.1 shape, so '
+      + 'the row records that the proxy has never been compared against conditioning on the '
+      + 'opener\'s actual estimated range.',
+      'Read across three subsystems: preflopFoldResolver.js:539, populationPriors.js:230,481, '
+      + 'plus research scripts — the widest cross-module spread of any generated table here.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-equity-skew-decomposition',
+    title: 'The 1,032-cell equity spectrum artifact — generated, versioned, and validated on read',
+    site: {
+      file: 'src/utils/pokerCore/data/equitySkewDecomposition.js',
+      symbol: 'EQUITY_SKEW_DECOMPOSITION',
+    },
+    sites: ['src/utils/pokerCore/data/equitySkewDecomposition.js::EQUITY_SKEW_DECOMPOSITION'],
+    keySpace: ['handClass'],
+    foundation: 'structural-computation',
+    foundationStatus: 'generated',
+    provenance: 'A generated artifact carrying its own manifest: `artifactVersion`, '
+      + '`generatedBy: scripts/research/spectrum.py`, `engineCommit`, `engineDirty`, '
+      + '`dealBookHashes`, `noiseFloorSigma`. The docblock defines each field it publishes — '
+      + '"split: the ORTHOGONAL transitive/intransitive projection. Shares sum to 1. '
+      + 'intransitivityMap: per class, the RMS cyclic edge against a random opponent hand, in '
+      + 'percentage points — equity no strength ladder can express." And it names its validator: '
+      + '"Read by src/utils/pokerCore/equityOperator.js, which validates it before use."',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 1032,
+      primaryPath: true,
+      instrument: {
+        what: 'No defect suspected — this is the strongest-provenance artifact in the harvest. '
+          + 'The open question is CONSUMPTION, not correctness: it quantifies intransitivity '
+          + '"no strength ladder can express" and has ONE reader. Measure whether acting on the '
+          + 'intransitivity map changes advice at all; a 1,032-cell artifact behind one read '
+          + 'site is either underused or decorative, and only a re-score distinguishes those.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE MODEL FOR EVERY OTHER GENERATED TABLE: it carries an engine commit, a dirty flag, '
+      + 'deal-book hashes and a noise floor — the same replication manifest a Result Card '
+      + 'carries. Nothing in the ledger asks for more than this.',
+      'One read site against 1,032 cells is the widest cells-per-reader ratio in the harvest by '
+      + 'an order of magnitude. Low reach is not low importance, but it IS a question worth '
+      + 'asking, and the row asks it rather than assuming either answer.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-archetype-bucket-multipliers',
+    title: 'Archetype label x bucket -> combo-weight multiplier, in the drill range builder',
+    site: {
+      file: 'src/utils/postflopDrillContent/archetypeRangeBuilder.js',
+      symbol: 'ARCHETYPE_BUCKET_MULTIPLIERS',
+    },
+    sites: ['src/utils/postflopDrillContent/archetypeRangeBuilder.js::ARCHETYPE_BUCKET_MULTIPLIERS'],
+    keySpace: ['archetype', 'bucket'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Scope is declared, values are not sourced: "Per-archetype x per-bucket '
+      + 'combo-weight multipliers. Declarative — no decision logic consumes these values except '
+      + 'via the lookup in this module." Per-entry poker rationale only ("Fish: sticky, '
+      + 'call-prone. Over-represents marginal + draw").',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 15,
+      primaryPath: true,
+      instrument: {
+        what: 'It crosses the two axes WS-436 and the bucket group each measured separately, so '
+          + 'it inherits both results and needs neither re-derived: check whether fish/reg/pro '
+          + 'separate on the drill corpus at all before pricing the multipliers. The archetype '
+          + 'clustering work already found k=2 with silhouette 0.343 and a 21.1% Unknown '
+          + 'fallthrough — that is the prior this table has to beat.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE STYLE AXIS AGAIN, under a different name, in a different subsystem — fish / reg / pro '
+      + 'instead of Fish / Nit / LAG / TAG. WS-436 removed the six labels from the engine and '
+      + 'display categorisation was greenfielded separately (WS-447); this table is a THIRD '
+      + 'instance of the axis, in drill content.',
+      'The "Declarative — no decision logic consumes these" scope note is the honest kind of '
+      + 'limit, and it is also what makes the row cheap: the blast radius is stated by the '
+      + 'author.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-group-call-rates',
+    title: 'Domination-group label -> call frequency, a declared v2 placeholder',
+    site: { file: 'src/utils/postflopDrillContent/drillModeEngine.js', symbol: 'GROUP_CALL_RATES' },
+    sites: ['src/utils/postflopDrillContent/drillModeEngine.js::GROUP_CALL_RATES'],
+    keySpace: ['dominationGroup'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Declares its reason for existing, its coarseness AND its replacement: '
+      + '"DOMINATION_GROUPS are finer-grained than the segmenter hand-types POP_CALLING_RATES is '
+      + 'keyed by — split groups like `overcardsAx`, `pairPlusFD`, `pairPlusOesd` don\'t have '
+      + 'direct entries. GROUP_CALL_RATES is a v2 prior table with coarse population-anchored '
+      + 'call frequencies per group. Depth-2 integration (LSW-D1) will replace these with '
+      + 'empirical fit from observed fold curves."',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 31,
+      primaryPath: true,
+      instrument: {
+        what: 'The instrument is NAMED IN THE FILE — LSW-D1, empirical fit from observed fold '
+          + 'curves — so this row does not need one invented. What it needs is for LSW-D1 to be '
+          + 'a tracked item rather than a sentence in a comment, which is precisely the '
+          + 'de-duplicating job the ledger does for REALIZATION_TABLE\'s three tickets.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'A MODEL EXAMPLE OF A GOOD PLACEHOLDER: it says it is a placeholder, says why the finer '
+      + 'grain forced it, and names its replacement. The only thing it lacks is a tracked ticket, '
+      + 'so the promise lives in a comment where nothing can age it out.',
+      'It exists because POP_CALLING_RATES (LBL-pop-calling-rates) is too coarse for these '
+      + 'groups — so an unmeasured table was extended by a second unmeasured table, and the two '
+      + 'rows now sit in one ranking where that relationship is visible.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-study-priority-frequencies',
+    title: 'The four study-priority frequency tables — approximations that rank what gets studied',
+    site: {
+      file: 'src/utils/postflopDrillContent/studyPriorityIndex.js', symbol: 'POSITION_PAIR_FREQ',
+    },
+    sites: [
+      'src/utils/postflopDrillContent/studyPriorityIndex.js::POSITION_PAIR_FREQ',
+      'src/utils/postflopDrillContent/studyPriorityIndex.js::VILLAIN_ACTION_FREQ',
+      'src/utils/postflopDrillContent/studyPriorityIndex.js::BOARD_CLASS_FREQ',
+      'src/utils/postflopDrillContent/studyPriorityIndex.js::POT_TYPE_FREQ',
+    ],
+    keySpace: ['positionPair', 'villainAction', 'boardClass', 'potType'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'They concede their own precision, which is why they are `declared-estimate` and '
+      + 'not `undeclared`: "Numbers are approximate — the shape matters more than any individual '
+      + 'cell", with the shape then argued ("BTN-vs-BB dominates because (a) BTN opens widest, '
+      + '(b) BB is forced to defend the most..."). VILLAIN_ACTION_FREQ states its own '
+      + 'conditioning limit: "Postflop street conditioning is an approximation — on turn/river '
+      + 'the same distribution applies with minor skew we ignore in v1." BOARD_CLASS_FREQ warns '
+      + 'that its categories OVERLAP and that the most-specific tag wins.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 6,
+      cellCount: 72,
+      primaryPath: false,
+      instrument: {
+        what: 'ALL FOUR ARE PURE FREQUENCY CLAIMS AND THE CORPUS ANSWERS THEM DIRECTLY — how '
+          + 'often each position pair, pot type, board class and villain action actually occurs. '
+          + 'This is the cheapest measurement in the entire ledger: four counts, no engine run, '
+          + 'no re-score, no paired arm. The only care needed is the overlapping board classes, '
+          + 'where the count must use the same most-specific-tag rule the code does.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'FOUR CONSTRUCTS, ONE ROW: they are the same estimand (occurrence frequency) from the same '
+      + 'author decision, combined into one Study Priority Index. Reach 6 = POSITION_PAIR 1 + '
+      + 'VILLAIN_ACTION 1 + BOARD_CLASS 2 + POT_TYPE 2.',
+      'THE CURRENCY IS ATTENTION, NOT CHIPS, and that is why `primaryPath` is false and why the '
+      + 'row still matters. These weights decide what the founder studies. Being wrong here does '
+      + 'not misprice a hand — it spends finite study time on the wrong spots, and no EV number '
+      + 'in this system would ever show it.',
+      'They are also the closest thing in the repo to an OCCUPANCY measure — the frequency with '
+      + 'which situations are actually lived through — which the vocabulary defines and stamps '
+      + 'with a Field. These four carry no Field stamp, so which population they describe is '
+      + 'unstated.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-flush-deltas',
+    title: 'Suit-configuration label -> equity delta in percentage points',
+    site: { file: 'src/utils/drillContent/frameworks.js', symbol: 'FLUSH_DELTAS' },
+    sites: ['src/utils/drillContent/frameworks.js::FLUSH_DELTAS'],
+    keySpace: ['suitConfiguration'],
+    foundation: 'structural-computation',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Derived, and the derivation is written out per cell — the most complete '
+      + 'reasoning attached to any small table in this ledger: "both_suited_shared: flush routes '
+      + 'are in DIFFERENT suits (JhTh vs AhKh is a card conflict); they don\'t collide on the '
+      + 'same board. Empirically the HIGHER-flush side loses ~1pp vs both-offsuit baseline (its '
+      + 'own flush gain is smaller than the damage from villain\'s flush) and the LOWER-flush '
+      + 'side gains ~1pp." The word "empirically" appears without a citation, so the row records '
+      + 'a derivation whose empirical anchor is not named.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 6,
+      primaryPath: false,
+      instrument: {
+        what: 'Six equity deltas over suit configurations are EXACTLY ENUMERABLE — no sampling, '
+          + 'no corpus, no re-score. Enumerate hero-vs-villain equity by suit configuration and '
+          + 'difference against the table. If it agrees, the row resolves to measured with the '
+          + 'enumeration as evidence; if not, the fix is arithmetic.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'PROBABLY THE CHEAPEST ROW IN THE LEDGER TO RESOLVE and one of the smallest: six cells, an '
+      + 'exact computation, and a stated expected answer to check against. It is here because '
+      + '"empirically ~1pp" is a measurement claim with no measurement attached, and the '
+      + 'difference between a derivation and a recollection of one is invisible in a comment.',
+    ],
+  }),
+
+  // ===========================================================================
+  // TRIAGE TRANCHE 6 (2026-08-17) — the measurement path, and the two defects it was hiding.
+  //
+  // The last tranche, and the one that justifies having harvested `scripts/backtest` at all.
+  // Constants inside the MEASUREMENT path are the ones that can bias every conclusion while
+  // looking like tooling — and putting them in the same index as the engine's constants is
+  // what made two of them collide visibly for the first time:
+  //
+  //   1. TWO tables price the same size buckets and DISAGREE on three of five cells.
+  //   2. ONE transcription of an engine constant is pinned by a test and its SIBLING is not,
+  //      in the same directory, under a documented rule that says pinning is required.
+  //
+  // Neither needed a measurement to find. Both needed an index.
+  // ===========================================================================
+
+  buildLabelEntry({
+    labelId: 'LBL-size-bucket-midpoint-holemap',
+    title: 'The SECOND size-bucket midpoint table — three of five cells disagree with the first',
+    site: { file: 'scripts/backtest/holeMap.mjs', symbol: 'SIZE_BUCKET_MIDPOINT' },
+    sites: ['scripts/backtest/holeMap.mjs::SIZE_BUCKET_MIDPOINT'],
+    keySpace: ['sizeBucket'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. One line: "Bucket label -> the representative '
+      + '`s = bet/pot` the row is priced at." Its counterpart at deviationMap.mjs:42 says '
+      + '"Representative bet-to-pot ratio for each size bucket" — the same estimand, in the same '
+      + 'directory, with different numbers.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'NO STUDY REQUIRED — this is a defect, not an open question. Reconcile the two '
+          + 'tables to one definition and one module, then decide what the representative point '
+          + 'of a bucket should be (the corpus can give the actual mean s within each bucket, '
+          + 'which is a better answer than either constant). The instrument is a corpus count '
+          + 'and a deletion.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE DISAGREEMENT, cell for cell — deviationMap.mjs:42 against holeMap.mjs:493:',
+      '  0-33:     0.20  vs  0.25    (25% apart)',
+      '  33-66:    0.50  vs  0.50    (agree)',
+      '  66-100:   0.80  vs  0.80    (agree)',
+      '  100-150:  1.25  vs  1.20',
+      '  150+:     2.00  vs  1.75    (14% apart)',
+      'BOTH ARE IN THE MEASUREMENT PATH, not the engine. deviationMap passes its copy to '
+      + '`deriveFloor`, setting the defensive floor every deviation cell is scored AGAINST; '
+      + 'holeMap prices its rows at its own copy. So two instruments that report on the same '
+      + 'system price the same bucket differently, and any comparison across them inherits the '
+      + 'gap silently.',
+      'THIS IS THE WS-291 MECHANISM EXACTLY — "nothing forced two numbers onto the same axis, so '
+      + 'a wrong number never had to meet a right one." Two modules, two constants, one estimand, '
+      + 'and no reason for anyone to open both files at once. The ledger is that forcing '
+      + 'function, and this is the first thing it caught by collision rather than by inspection.',
+      'Neither is obviously the right one. 150+ is an open-ended bucket, so its representative '
+      + 'point is a genuine modelling choice — which is an argument for measuring it, not for '
+      + 'picking a winner.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-holemap-curve-transcription',
+    title: 'An unpinned transcription of the engine fold curve, beside a pinned one',
+    site: { file: 'scripts/backtest/holeMap.mjs', symbol: 'POPULATION_CURVE' },
+    sites: ['scripts/backtest/holeMap.mjs::POPULATION_CURVE'],
+    keySpace: ['curveParameter'],
+    foundation: 'fitted-curve',
+    foundationStatus: 'measured-supported',
+    provenance: 'A TRANSCRIPTION, and it says so: "The shipped ENGINE curve, so its threshold '
+      + 'can sit on the same axis as the measured one." The five values match '
+      + 'villainModelData.js::POPULATION_CURVE today (maxDelta 0.95, steepness 1.0, steepnessUp '
+      + '6.5, steepnessDown 0.75, midpoint 0.35), so the foundation it inherits is the measured '
+      + 'one — for exactly as long as the two stay equal.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'NO STUDY REQUIRED. Add the equality test the repo already knows it needs — '
+          + '`expect(holeMap.POPULATION_CURVE).toEqual(villainModelData.POPULATION_CURVE)`. If '
+          + 'the harness loader makes a direct import impossible, that is the same constraint '
+          + 'rakeSensitivity worked around, and it solved it.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE RULE IS ALREADY WRITTEN DOWN IN THIS DIRECTORY, by the sibling that follows it. '
+      + 'rakeSensitivity.mjs:69 explains why its own copy exists ("loadable only through the '
+      + 'Vite loader, while this module must stay importable by '
+      + '`replicationStamp.collectConstants`") and then states the discipline outright: "a '
+      + 'transcription is legal only with an executable equality check against the definition '
+      + 'site." rakeSensitivity.test.js:73-79 enforces it byte for byte.',
+      'holeMapFreshness.test.js contains no such check. One transcription is pinned, its '
+      + 'neighbour is not, and the rule that distinguishes them lives in a docblock in a third '
+      + 'file. That is a governance gap, not a poker one, and it is what a ledger indexing '
+      + 'BOTH copies makes visible.',
+      'The failure mode is silent and delayed: re-fit the engine curve and this copy keeps the '
+      + 'old parameters, so the instrument measuring the engine is quietly measuring the '
+      + 'previous engine. Nothing would report it.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-rake-schedules',
+    title: 'The rake schedules — modelled, never observed, and reported as modelled',
+    site: { file: 'scripts/backtest/heroEvRunner.mjs', symbol: 'DEFAULT_RAKE_CONFIG' },
+    sites: [
+      'scripts/backtest/heroEvRunner.mjs::DEFAULT_RAKE_CONFIG',
+      'scripts/backtest/rakeSensitivity.mjs::ONLINE_2009_RAKE',
+      'scripts/backtest/rakeSensitivity.mjs::LIVE_DOUBLE_RAKE',
+      'scripts/backtest/rakeSensitivity.mjs::ZERO_RAKE',
+      'scripts/backtest/probeFoldBranchRake.mjs::LIVE_1_3',
+    ],
+    keySpace: ['rakeSchedule'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'The strongest declaration of an assumption anywhere in the harvest, and it is '
+      + 'worth quoting in full: "Modelled online 50NL rake. The corpus stores NO rake, so this '
+      + 'is an assumption about the games these hands came from, not a reading of them — and it '
+      + 'is reported as modelled wherever it appears. POKER_THEORY 11.3 defines the schedule '
+      + 'shape." LIVE_DOUBLE_RAKE states what its simplification omits and why: a literal live '
+      + 'schedule "would also need a bb-relative cap conversion... and a promo-drop term, both '
+      + 'of which would blur the doubling without changing the conclusion."',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 5,
+      cellCount: 12,
+      primaryPath: true,
+      instrument: {
+        what: 'The schedules are FACTS about real card rooms, not estimates to be fitted: the '
+          + 'founder\'s room publishes its rake, cap, and jackpot drop. Replacing the modelled '
+          + 'live schedule with the observed one is data entry, and it is the single cheapest '
+          + 'improvement to live-transferred EV in this ledger. The online 2009 schedule stays '
+          + 'modelled by necessity — that corpus really does store no rake.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'FIVE CONSTRUCTS, ONE ROW, because they are one assumption expressed at five points: the '
+      + 'runner default, the three sensitivity arms, and a probe. Reach 5 = 1 each.',
+      'RAKE IS WHERE LIVE-VS-ONLINE TRANSFER BITES HARDEST and this row is the honest record of '
+      + 'it. Live 1/2-1/3 rake is roughly double online 50NL by percentage and the cap binds '
+      + 'differently, which is why LIVE_DOUBLE_RAKE exists as a sensitivity arm at all. An EV '
+      + 'figure quoted from the online-rake arm is not the founder\'s EV.',
+      'LIVE_1_3 (pct 0.10, cap 6, jackpotDrop 2) is the closest thing in the repo to the '
+      + 'founder\'s actual schedule and it lives in a one-off probe script rather than in the '
+      + 'shared schedule table. Promoting it is part of the same data-entry fix.',
+      'The declaration discipline here is the model for the whole ledger: name the assumption, '
+      + 'name what it is NOT (a reading of the corpus), name what the simplification drops, and '
+      + 'report it as modelled at every use site.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-hero-seat-by-pos',
+    title: 'Position label -> the seat the backtest harness places hero in',
+    site: { file: 'scripts/backtest/entryMap.mjs', symbol: 'HERO_SEAT_BY_POS' },
+    sites: ['scripts/backtest/entryMap.mjs::HERO_SEAT_BY_POS'],
+    keySpace: ['position'],
+    foundation: 'structural-computation',
+    foundationStatus: 'declared-estimate',
+    provenance: 'A stated construction rather than an estimate: "The seat this map places hero '
+      + 'in for each position category, and its action index", sitting directly below the seat '
+      + 'table it derives from (seat 9 = BTN = LATE, seat 1 = SB, seat 2 = BB = "last to act '
+      + 'preflop"). EARLY: 3, MIDDLE: 5, LATE: 8, SB: 1, BB: 2.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 5,
+      primaryPath: true,
+      instrument: {
+        what: 'It collapses each position CATEGORY to one representative seat, so the question '
+          + 'is representativeness, not correctness: does scoring EARLY at seat 3 give the same '
+          + 'answer as averaging over seats 3 and 4? Score the categories at every constituent '
+          + 'seat once and report the spread. If it is material, every position-conditioned '
+          + 'measurement in the harness carries that bias.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'A MEASUREMENT-PATH CONSTANT of the same family as LBL-bucket-midpoint: it does not price '
+      + 'a hand, it decides what the instrument looks at. A representative-seat choice is '
+      + 'invisible in every result it produces.',
+      'It also closes a loop with LBL-positional-fold-to-3bet: the engine table keyed on '
+      + 'position matchups would be measured by a harness that itself collapses position to one '
+      + 'seat per category. Neither is wrong, and the composition needs stating.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-ladder-axes',
+    title: 'The study-ladder axis definitions, carrying an explicitly sign-critical field',
+    site: { file: 'scripts/backtest/ladderAxes.mjs', symbol: 'AXES' },
+    sites: ['scripts/backtest/ladderAxes.mjs::AXES'],
+    keySpace: ['ladderAxis'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'States its own most dangerous field and why it is stated centrally: '
+      + '"`studiedDirection` is what the ladder hypothesis says a player MOVES TOWARD as they '
+      + 'study. It is needed for the ordering test and is stated here rather than at the call '
+      + 'site, because getting the sign wrong would turn \'acquired the rung\' into \'has not '
+      + 'acquired it\' and the co-occurrence matrix would still look perfectly plausible."',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 3,
+      primaryPath: true,
+      instrument: {
+        what: 'Each `studiedDirection` is a falsifiable claim about how players change with '
+          + 'study, so the instrument is the ladder study itself run with the sign as a free '
+          + 'parameter: fit the direction from the data rather than asserting it, and compare. '
+          + 'An axis whose fitted direction opposes its declared one is a refuted rung.',
+        ticket: 'WS-320',
+      },
+    }),
+    notes: [
+      'THE DOCBLOCK DESCRIBES A SELF-CONCEALING FAILURE — a wrong sign produces a plausible '
+      + 'matrix — which is the same shape as the separability defect WS-320 hit, where a control '
+      + 'axis was printed but never applied and three of five verdicts were wrong. Recognising '
+      + 'the failure mode in prose did not prevent the neighbouring instance of it.',
+      'The instrument ticket is WS-320 rather than WS-445: the ladder study owns this axis set, '
+      + 'and the ledger\'s job here is to make sure the axis definitions are ranked alongside '
+      + 'everything else rather than living only inside that study.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-outcome-aware-boosts',
+    title: 'Showdown-outcome label -> range-update boost, three inline ternaries in one function',
+    site: { file: 'src/utils/rangeEngine/bayesianUpdater.js', symbol: 'altSuitBoost' },
+    sites: [
+      'src/utils/rangeEngine/bayesianUpdater.js::altSuitBoost#ternary1',
+      'src/utils/rangeEngine/bayesianUpdater.js::adjPairBoost#ternary1',
+      'src/utils/rangeEngine/bayesianUpdater.js::adjKickerBoost#ternary1',
+    ],
+    keySpace: ['showdownOutcome'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. Three lines under one comment, "Outcome-aware boost '
+      + 'levels": won 0.30 / lost 0.15 / else 0.25, won 0.25 / lost 0.10 / else 0.20, won 0.20 / '
+      + 'lost 0.08 / else 0.15. Nine constants, no docblock, no citation.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 4,
+      cellCount: 9,
+      primaryPath: true,
+      instrument: {
+        what: 'The claim is that a showdown you WON is stronger evidence about villain\'s range '
+          + 'than one you LOST — a 2x ratio at every level. That is a likelihood-ratio claim and '
+          + 'the corpus answers it: measure how much the observed hand actually narrows the '
+          + 'posterior conditional on outcome. If the ratio is 1, the outcome axis is a free '
+          + 'parameter doing nothing.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'A LABEL-KEYED BOOST INSIDE THE BAYESIAN UPDATER, which is where labels-as-inputs matters '
+      + 'most: this is the code that turns an observation into a range update, so a wrong '
+      + 'multiplier here propagates into every subsequent estimate about that villain.',
+      'The 2:1 won/lost ratio is consistent across all three boosts, which means it is ONE '
+      + 'author decision expressed nine times rather than nine independent judgments. That makes '
+      + 'the row cheaper to resolve and the underlying claim more load-bearing than it looks.',
+      'It is also the shape POKER_THEORY warns about from the other direction: a showdown '
+      + 'outcome is a draw from a distribution, not a measurement of villain\'s range, so '
+      + 'weighting evidence by whether hero won risks encoding results-orientation as a prior.',
+      'Reach 4 is INDIRECT — traced through the enclosing bindings, not the constructs.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-m-ratio-zones',
+    title: 'M-ratio cut points that manufacture a tournament pressure zone',
+    site: { file: 'src/constants/tournamentConstants.js', symbol: 'M_RATIO_ZONES' },
+    sites: ['src/constants/tournamentConstants.js::M_RATIO_ZONES'],
+    keySpace: ['mRatioZone'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Header says "M-RATIO ZONES (for color coding)"; the entries carry `min` '
+      + 'thresholds (GREEN 20, YELLOW 10, ...) beside `color` and `label`. The cut points are '
+      + 'the Harrington zone convention, which is a citable external source the file does not '
+      + 'cite.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 4,
+      cellCount: 8,
+      primaryPath: false,
+      instrument: {
+        what: 'M-ratio zones have a first-principles referent — the stack depth at which push/'
+          + 'fold becomes correct — and the ICM engine that already ships can compute it. '
+          + 'Compare the computed indifference points against the 20/10 convention rather than '
+          + 'inheriting the convention.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'IT IS A ROW RATHER THAN A `display-only` EXCLUSION on purpose, and the reasoning belongs '
+      + 'on the record: a cosmetic `label`/`color` field beside a threshold does not make the '
+      + 'threshold cosmetic. Today all four readers are in the constants file itself; the moment '
+      + 'a push/fold consumer reads a zone, this becomes a decision input, and `--verify` will '
+      + 'flag the reach change on the run after it happens.',
+      'The tournament push/fold and bubble consumers are deferred work, so this row is a '
+      + 'placeholder in the useful sense: it is already ranked when the consumer arrives.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-game-type-rake-defaults',
+    title: 'Game-type label -> buy-in, rebuy AND rake schedule, read by the rake resolver',
+    site: { file: 'src/constants/sessionConstants.js', symbol: 'GAME_TYPES' },
+    sites: ['src/constants/sessionConstants.js::GAME_TYPES'],
+    keySpace: ['gameType'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'The docblock enumerates the fields and sources none of them: "Poker game types '
+      + 'with default buy-in and rebuy amounts. Each game type includes: label: Display name; '
+      + 'buyInDefault: Default buy-in amount for this game; rebuyDefault: Default rebuy amount '
+      + 'for this game." It does not mention the `rake` sub-object at all, which is the field '
+      + 'that leaves the display layer.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 12,
+      cellCount: 14,
+      primaryPath: true,
+      instrument: {
+        what: 'The rake half is the same data-entry fix as LBL-rake-schedules and should happen '
+          + 'in one pass: the founder\'s rooms publish their schedules per stake. The buy-in and '
+          + 'rebuy defaults are UI convenience and need no measurement.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'IT LOOKS LIKE A SETTINGS TABLE AND IS PARTLY AN ENGINE INPUT, which is why it survived '
+      + 'the exclusion pass. Eleven of its twelve read sites are contexts and views; the twelfth '
+      + 'is `rakeResolver.js:117`, and rake enters every EV number the app produces.',
+      'THE TABLE MIXES TWO KINDS OF CONSTANT under one docblock — display defaults that can be '
+      + 'anything, and a rake schedule that is a fact about a real card room. Being wrong costs '
+      + 'nothing in one half and biases every EV figure in the other, and nothing in the file '
+      + 'distinguishes them.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-skill-signal-weights',
+    title: 'Self-coach signal weights and decay — spec-cited, and user-adjustable',
+    site: { file: 'src/utils/skillAssessment/composite.js', symbol: 'DEFAULT_WEIGHTS' },
+    sites: [
+      'src/utils/skillAssessment/composite.js::DEFAULT_WEIGHTS',
+      'src/utils/skillAssessment/shapeLanguage/temporalDecay.js::DEFAULT_DECAY_PROFILE',
+    ],
+    keySpace: ['signal'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'declared-estimate',
+    provenance: 'Spec-cited and not derived: "Default signal weights per SCF Gate 4 v1 spec '
+      + '§SCF-G4-SPINE" over W_leak 0.5 / W_drill 0.3 / W_recent / W_test. A spec section fixes '
+      + 'that the weights exist and what they are called; it is not evidence for 0.5.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 6,
+      cellCount: 6,
+      primaryPath: false,
+      instrument: {
+        what: 'Mastery is a PREDICTION — that a player scoring high on a concept plays it better '
+          + '— so the weights are scoreable by how well the composite predicts subsequent '
+          + 'performance on that concept. That is the same prediction-ledger instrument '
+          + 'LBL-recognizability-map and LBL-assumption-gate-thresholds need; three rows, one '
+          + 'capture.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'ONE OF ITS READERS IS `SignalWeightSliders.jsx`, so the founder can already move these '
+      + 'weights by hand. That is unusual and mostly good — it makes the defaults a starting '
+      + 'point rather than a hidden constant — and it also means the shipped default is the one '
+      + 'number that never gets examined, because anyone who cares has already moved it.',
+      'Mastery is a LEARNING STATE and never a user-facing rank, per the standing rule; the '
+      + 'weights feed the state, not a score shown to the founder as a grade.',
+      'Reach 6 = DEFAULT_WEIGHTS 4 + DEFAULT_DECAY_PROFILE 2.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-solver-baselines',
+    title: 'The 62-cell solver baseline table — the repo\'s only imported GTO reference',
+    site: { file: 'src/utils/skillAssessment/solverBaselines.js', symbol: 'BASELINES' },
+    sites: ['src/utils/skillAssessment/solverBaselines.js::BASELINES'],
+    keySpace: ['spotKey'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE for the values. The keys are richly specified spot '
+      + 'descriptors ("flop:dry:BUTTON:def:ip:bet:vsBet:pfa"), which is a strong conditioning '
+      + 'statement — and no solver, solve configuration, or citation is named for the '
+      + 'frequencies those keys map to.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 62,
+      primaryPath: true,
+      instrument: {
+        what: 'THIS ONE IS NOT MEASURED, IT IS CITED. A solver baseline is an IMPORTED reference '
+          + 'class — the correct instrument is to name the solver, the tree, the bet sizes and '
+          + 'the ranges each cell came from, per POKER_THEORY\'s rule that GTO is imported and '
+          + 'never invented. If no such run exists, the honest status is that these are '
+          + 'estimates named "baselines" and the fix is a solve, not a corpus count.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE THIRD "GTO" TABLE IN THE LEDGER, after LBL-gto-baselines and LBL-gto-open-width, and '
+      + 'by far the most carefully keyed. Three tables in three subsystems borrow the authority '
+      + 'of a solver and none of them cites one. That pattern is only visible from an index.',
+      'It is the reference every leak rule scores against (LBL-leak-rule-thresholds), so its '
+      + 'errors do not stay local: a wrong baseline manufactures a leak the founder then studies.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-leak-rule-thresholds',
+    title: 'The ten hero leak rules — per-rule detection thresholds, loaded by registry glob',
+    site: { file: 'src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js', symbol: 'rule' },
+    sites: [
+      'src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js::rule',
+      'src/utils/skillAssessment/leakRules/heroPf3betOverfold.js::rule',
+      'src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js::rule',
+      'src/utils/skillAssessment/leakRules/heroOopCbetOverfold.js::rule',
+      'src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js::rule',
+      'src/utils/skillAssessment/leakRules/heroFlopVsDonkMisresponse.js::rule',
+      'src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js::rule',
+      'src/utils/skillAssessment/leakRules/heroMultiwayBluffFrequency.js::rule',
+      'src/utils/skillAssessment/leakRules/heroBbDefenseWidth.js::rule',
+      'src/utils/skillAssessment/leakRules/_template.js::rule',
+    ],
+    keySpace: ['leakRule'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE for the thresholds. Each rule declares a uniform shape — '
+      + '`threshold: { deltaPP, minSampleSize, minSeverity }` — against a `relatedConceptId`, '
+      + 'with a `_template.js` fixing the contract. The shape is specified; the numbers are not '
+      + 'sourced.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 10,
+      cellCount: 29,
+      primaryPath: true,
+      instrument: {
+        what: 'Each rule fires when hero deviates from a solver baseline by `deltaPP` over '
+          + '`minSampleSize` hands, so its error rates are simulable exactly as '
+          + 'LBL-consequence-weights describes: how often does the rule fire on a hero playing '
+          + 'the baseline, and how often does it miss a real deviation of a given size? A '
+          + 'threshold that cannot clear its own false-positive rate at the founder\'s hand '
+          + 'volume is unusable however well chosen.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'TEN CONSTRUCTS PLUS A TEMPLATE, ONE ROW: identical shape, one registry, one instrument. '
+      + 'Reach 10 = one glob-load site each at heroLeakDetector.js:19.',
+      'THESE ARE THE CONSTRUCTS THE TRACE FIRST CALLED VESTIGIAL, and they are not — '
+      + '`heroLeakDetector.js:19` loads them with `import.meta.glob(\'./leakRules/*.js\', '
+      + '{ eager: true })`, which writes no symbol a static import scan can see. The count is a '
+      + 'FLOOR: reads through the namespace object cannot be attributed, so the true reach is '
+      + 'higher than 10.',
+      'They score hero against LBL-solver-baselines, which has no cited solver. A detection '
+      + 'threshold measured against an unsourced baseline is two unmeasured layers deep, and the '
+      + 'output is a leak the founder is told to work on.',
+      '_template.js is included deliberately rather than excluded as scaffolding: it fixes the '
+      + 'contract every rule copies, so a change there propagates to all ten.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-concept-registry',
+    title: 'The 52-concept registry — the unit every mastery and leak claim is keyed to',
+    site: { file: 'src/utils/skillAssessment/tierConceptMap.js', symbol: 'CONCEPT_REGISTRY' },
+    sites: ['src/utils/skillAssessment/tierConceptMap.js::CONCEPT_REGISTRY'],
+    keySpace: ['conceptId'],
+    foundation: 'founder-estimate',
+    foundationStatus: 'undeclared',
+    provenance: 'NO STATED PROVENANCE. The concept ids are self-describing and hierarchical '
+      + '("bb-defense-cluster", "bb-defense-vs-BUTTON", "blocker-effects-preflop", '
+      + '"capped-vs-uncapped-ranges") and nothing states how the partition was chosen or what '
+      + 'the numeric fields attached to each concept are grounded in.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 16,
+      cellCount: 52,
+      primaryPath: true,
+      instrument: {
+        what: 'The standing rule is that a concept should be a COHERENT SOLVER-BASELINE REGION — '
+          + 'so the partition is testable rather than a matter of taste: within a concept, spots '
+          + 'should share a baseline strategy, and across concepts they should not. Cluster the '
+          + 'solver baselines and compare the induced partition against these 52. A concept '
+          + 'spanning two regions is an umbrella that should split.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THIRD-WIDEST REACH IN THE LEDGER at 16 read sites, and structurally upstream of the whole '
+      + 'self-coach surface: mastery, leaks and drills are all keyed to these ids. A wrong '
+      + 'partition does not produce a wrong number, it produces numbers about the wrong thing.',
+      'The presence of both "bb-defense-cluster" and "bb-defense-vs-BUTTON" shows the hierarchy '
+      + 'is already doing the splitting the high-granularity rule asks for — which is evidence '
+      + 'the partition was thought about, and still not evidence that 52 is the right cut.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-action-prior-construction',
+    title: 'Action label -> prior grid construction — the SANCTIONED use of a label, recorded as such',
+    site: { file: 'src/utils/rangeEngine/populationPriors.js', symbol: 'buildActionPrior' },
+    sites: [
+      'src/utils/rangeEngine/populationPriors.js::buildActionPrior#switch1',
+      'src/utils/rangeEngine/populationPriors.js::openFoot#ternary1',
+    ],
+    keySpace: ['action', 'position'],
+    foundation: 'structural-computation',
+    foundationStatus: 'declared-estimate',
+    provenance: 'The one construct in this ledger whose docblock ANTICIPATES the objection and '
+      + 'answers it, in place: "Position-conditioned PRIORS are explicitly sanctioned by §7.2 '
+      + '(\'position labels can serve as priors in a Bayesian framework\') and follow the parent '
+      + 'threeBet pattern above. NO DECISION READS A LABEL." Individual arms distinguish derived '
+      + 'from chosen — "Top 3-5%: QQ+, AK heavy (2.3). Foot DERIVED — see THREE_BET_TOP_FRACTION" '
+      + '— while "Widen GTO charts ~20% for live 1/2" is a judgment.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 3,
+      cellCount: 22,
+      primaryPath: true,
+      instrument: {
+        what: 'Split derived from chosen and measure only the second. The feet that come from '
+          + 'THREE_BET_TOP_FRACTION are derivations and check by re-derivation; OPEN_WIDENING '
+          + 'and ISO_WIDENING are the free parameters, and they are claims about how much wider '
+          + 'than a GTO chart the live 1/2 field actually opens — countable on the corpus with '
+          + 'the transfer caveat stated.',
+        ticket: 'WS-445',
+      },
+    }),
+    notes: [
+      'THE ROW THAT SHOWS THE LEDGER IS NOT A BLACKLIST. A label keying a PRIOR is sanctioned by '
+      + 'POKER_THEORY §7.2; a label keying a DECISION is not. This construct is the sanctioned '
+      + 'case, it says so, and it still gets a row — because the row records the FOUNDATION of '
+      + 'the numbers, and OPEN_WIDENING is unmeasured whether or not its use is legitimate.',
+      'Recording sanctioned uses is what stops the ledger degrading into a list of accusations. '
+      + 'A reader who finds this construct by grepping for label switches needs to find the '
+      + '§7.2 answer attached, not re-open a settled question.',
+      'DEC-025 Amd 1 governs the subclass arms: carved from the parent, never built '
+      + 'independently, never normalised. The code follows it and says so.',
+      'Reach 3 is INDIRECT (enclosing bindings): buildActionPrior 1 + openFoot 2.',
     ],
   }),
 ]);

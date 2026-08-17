@@ -332,9 +332,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "954df1da72b5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-hero-seat-by-pos",
+    "since": "2026-08-17"
   },
   "scripts/backtest/fixtures/plumbingProof.card.js::plumbingProofCard": {
     "file": "scripts/backtest/fixtures/plumbingProof.card.js",
@@ -381,9 +380,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "468480059722",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-rake-schedules",
+    "since": "2026-08-17"
   },
   "scripts/backtest/holeMap.mjs::POPULATION_CURVE": {
     "file": "scripts/backtest/holeMap.mjs",
@@ -401,9 +399,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "0eaa29d846a0",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-holemap-curve-transcription",
+    "since": "2026-08-17"
   },
   "scripts/backtest/holeMap.mjs::SIZE_BUCKET_MIDPOINT": {
     "file": "scripts/backtest/holeMap.mjs",
@@ -421,9 +418,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "6a5bb7abbf8b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-size-bucket-midpoint-holemap",
+    "since": "2026-08-17"
   },
   "scripts/backtest/ladderAxes.mjs::AXES": {
     "file": "scripts/backtest/ladderAxes.mjs",
@@ -450,9 +446,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "5c98622850e2",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-ladder-axes",
+    "since": "2026-08-17"
   },
   "scripts/backtest/poolBestResponse.mjs::actionValues#switch1": {
     "file": "scripts/backtest/poolBestResponse.mjs",
@@ -470,9 +465,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "6632eeca615c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "scripts/backtest/probeFoldBranchRake.mjs::LIVE_1_3": {
     "file": "scripts/backtest/probeFoldBranchRake.mjs",
@@ -490,9 +484,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "3001c1cd0199",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-rake-schedules",
+    "since": "2026-08-17"
   },
   "scripts/backtest/rakeSensitivity.mjs::LIVE_DOUBLE_RAKE": {
     "file": "scripts/backtest/rakeSensitivity.mjs",
@@ -508,9 +501,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "468480059722",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-rake-schedules",
+    "since": "2026-08-17"
   },
   "scripts/backtest/rakeSensitivity.mjs::ONLINE_2009_RAKE": {
     "file": "scripts/backtest/rakeSensitivity.mjs",
@@ -526,9 +518,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "468480059722",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-rake-schedules",
+    "since": "2026-08-17"
   },
   "scripts/backtest/rakeSensitivity.mjs::ZERO_RAKE": {
     "file": "scripts/backtest/rakeSensitivity.mjs",
@@ -544,9 +535,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "468480059722",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-rake-schedules",
+    "since": "2026-08-17"
   },
   "scripts/backtest/runoutBenchmark.mjs::EMPTY_INDEX": {
     "file": "scripts/backtest/runoutBenchmark.mjs",
@@ -598,9 +588,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "954df1da72b5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/constants/gameConstants.js::LAYOUT": {
     "file": "src/constants/gameConstants.js",
@@ -688,9 +677,8 @@
     "cellCount": 14,
     "exported": true,
     "shapeDigest": "942e2ad3b4b1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-game-type-rake-defaults",
+    "since": "2026-08-17"
   },
   "src/constants/settingsConstants.js::DEFAULT_SETTINGS": {
     "file": "src/constants/settingsConstants.js",
@@ -742,9 +730,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "783bb4a40fad",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/constants/tournamentConstants.js::M_RATIO_ZONES": {
     "file": "src/constants/tournamentConstants.js",
@@ -766,9 +753,8 @@
     "cellCount": 8,
     "exported": true,
     "shapeDigest": "999e32decfbe",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-m-ratio-zones",
+    "since": "2026-08-17"
   },
   "src/constants/tournamentConstants.js::PAYOUT_PRESETS": {
     "file": "src/constants/tournamentConstants.js",
@@ -825,9 +811,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "f059acfeee01",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-calibration-ladder",
+    "since": "2026-08-17"
   },
   "src/utils/assumptionEngine/assumptionTypes.js::DEFAULT_DECAY_HALFLIFE_DAYS": {
     "file": "src/utils/assumptionEngine/assumptionTypes.js",
@@ -842,9 +827,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "7d184ceb9a98",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-dial-and-decay-defaults",
+    "since": "2026-08-17"
   },
   "src/utils/assumptionEngine/assumptionTypes.js::DIAL_DEFAULTS": {
     "file": "src/utils/assumptionEngine/assumptionTypes.js",
@@ -860,9 +844,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "b350e13a6f44",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-dial-and-decay-defaults",
+    "since": "2026-08-17"
   },
   "src/utils/assumptionEngine/assumptionTypes.js::HERO_SIDE_THRESHOLDS": {
     "file": "src/utils/assumptionEngine/assumptionTypes.js",
@@ -880,9 +863,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "4cc1e1935e93",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-assumption-gate-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/assumptionEngine/assumptionTypes.js::VILLAIN_SIDE_THRESHOLDS": {
     "file": "src/utils/assumptionEngine/assumptionTypes.js",
@@ -901,9 +883,8 @@
     "cellCount": 6,
     "exported": true,
     "shapeDigest": "fd6f8d60c1ab",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-assumption-gate-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/citedDecision/citedDecisionProducer.js::deriveRecommendedAction#switch1": {
     "file": "src/utils/citedDecision/citedDecisionProducer.js",
@@ -922,9 +903,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "d3d3a49cb6fc",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-deviation-type-switch",
+    "since": "2026-08-17"
   },
   "src/utils/citedDecision/dialMath.js::stakeFactor#switch1": {
     "file": "src/utils/citedDecision/dialMath.js",
@@ -940,9 +920,8 @@
     "cellCount": 5,
     "exported": false,
     "shapeDigest": "6e0d9b715f4f",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-stake-factor",
+    "since": "2026-08-17"
   },
   "src/utils/claimAdjudication/claimExtractor.js::NUMBER_WORDS": {
     "file": "src/utils/claimAdjudication/claimExtractor.js",
@@ -986,9 +965,8 @@
     "cellCount": 6,
     "exported": false,
     "shapeDigest": "140718dd651c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-flush-deltas",
+    "since": "2026-08-17"
   },
   "src/utils/emotionalState/fearIndex.js::FEAR_FACTOR_WEIGHTS": {
     "file": "src/utils/emotionalState/fearIndex.js",
@@ -1007,9 +985,8 @@
     "cellCount": 6,
     "exported": true,
     "shapeDigest": "fab0af92dd64",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-fear-greed-factor-weights",
+    "since": "2026-08-17"
   },
   "src/utils/emotionalState/greedIndex.js::GREED_FACTOR_WEIGHTS": {
     "file": "src/utils/emotionalState/greedIndex.js",
@@ -1027,9 +1004,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "0d0c82f85eb2",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-fear-greed-factor-weights",
+    "since": "2026-08-17"
   },
   "src/utils/emotionalState/tiltTransform.js::STYLE_MULTIPLIERS": {
     "file": "src/utils/emotionalState/tiltTransform.js",
@@ -1047,9 +1023,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "8ce569a534d0",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-tilt-style-multipliers",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/actionClassifier.js::EQ": {
     "file": "src/utils/exploitEngine/actionClassifier.js",
@@ -1067,9 +1042,8 @@
     "cellCount": 5,
     "exported": false,
     "shapeDigest": "a03f247aaa2b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-equity-ladder",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/bayesianConfidence.js::STAT_PRIORS": {
     "file": "src/utils/exploitEngine/bayesianConfidence.js",
@@ -1111,9 +1085,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "fa63ef0f01e3",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/briefingBuilder.js::GTO_BASELINES": {
     "file": "src/utils/exploitEngine/briefingBuilder.js",
@@ -1132,9 +1105,8 @@
     "cellCount": 6,
     "exported": false,
     "shapeDigest": "715bd2df97fa",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-gto-baselines",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/briefingBuilder.js::RECOGNIZABILITY_MAP": {
     "file": "src/utils/exploitEngine/briefingBuilder.js",
@@ -1175,9 +1147,8 @@
     "cellCount": 23,
     "exported": false,
     "shapeDigest": "98f659cc7efa",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-recognizability-map",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/exploitScoringUtils.js::getRangeBoost#switch1": {
     "file": "src/utils/exploitEngine/exploitScoringUtils.js",
@@ -1193,9 +1164,8 @@
     "cellCount": 16,
     "exported": false,
     "shapeDigest": "7187b7f031ee",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-range-boost-switch",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/exploitScoringUtils.js::IMPACT_MAP": {
     "file": "src/utils/exploitEngine/exploitScoringUtils.js",
@@ -1252,9 +1222,8 @@
     "cellCount": 44,
     "exported": true,
     "shapeDigest": "59550573fe52",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-impact-map",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/exploitScoringUtils.js::PRIORITY_ORDER": {
     "file": "src/utils/exploitEngine/exploitScoringUtils.js",
@@ -1270,9 +1239,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "3dfc8ff3297f",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/exploitScoringUtils.js::RISK_MAP": {
     "file": "src/utils/exploitEngine/exploitScoringUtils.js",
@@ -1329,9 +1297,8 @@
     "cellCount": 44,
     "exported": true,
     "shapeDigest": "59550573fe52",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-risk-map",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/exploitValidator.js::CONSEQUENCE_WEIGHTS": {
     "file": "src/utils/exploitEngine/exploitValidator.js",
@@ -1364,9 +1331,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "ca1aa43fe303",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-consequence-weights",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeConstants.js::BUCKET_EQUITY_ANCHORS": {
     "file": "src/utils/exploitEngine/gameTreeConstants.js",
@@ -1509,9 +1475,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "8a828bb0db2d",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-bucket-raise-fraction",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_TO_CBET_SPREAD": {
     "file": "src/utils/exploitEngine/handhqReferencePool.js",
@@ -1537,9 +1502,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "52cca312ab09",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-handhq-reference-pool",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD": {
     "file": "src/utils/exploitEngine/handhqReferencePool.js",
@@ -1565,9 +1529,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "52cca312ab09",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-handhq-reference-pool",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_OPENER_FACING_3BET": {
     "file": "src/utils/exploitEngine/handhqReferencePool.js",
@@ -1639,9 +1602,8 @@
     "cellCount": 4,
     "exported": true,
     "shapeDigest": "52b4d0693a33",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-handhq-reference-pool",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_THREE_BET_SPREAD": {
     "file": "src/utils/exploitEngine/handhqReferencePool.js",
@@ -1667,9 +1629,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "52cca312ab09",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-handhq-reference-pool",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/poolBaseline.js::PER_STAT_PRIOR_WEIGHT": {
     "file": "src/utils/exploitEngine/poolBaseline.js",
@@ -1782,9 +1743,8 @@
     "cellCount": 2,
     "exported": false,
     "shapeDigest": "8563ff914028",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/preflopAdvisor.js::PREFLOP_RAISE_SIZES": {
     "file": "src/utils/exploitEngine/preflopAdvisor.js",
@@ -1887,9 +1847,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "4ce5de205eec",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainModelData.js::FOLD_CURVE_STREET_MODS": {
     "file": "src/utils/exploitEngine/villainModelData.js",
@@ -2008,9 +1967,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "ece5704cebad",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-gto-open-width",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainObservations.js::HERO_CONTEXTS": {
     "file": "src/utils/exploitEngine/villainObservations.js",
@@ -2043,9 +2001,8 @@
     "cellCount": 15,
     "exported": true,
     "shapeDigest": "723e197099e0",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainObservations.js::T": {
     "file": "src/utils/exploitEngine/villainObservations.js",
@@ -2102,9 +2059,8 @@
     "cellCount": 44,
     "exported": false,
     "shapeDigest": "07c067e22497",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-observation-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainProfileBuilder.js::MATURITY_THRESHOLDS": {
     "file": "src/utils/exploitEngine/villainProfileBuilder.js",
@@ -2121,9 +2077,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "9dfe2e162ee1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-maturity-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainProfileBuilder.js::WEAKNESS_TO_DELTA": {
     "file": "src/utils/exploitEngine/villainProfileBuilder.js",
@@ -2153,9 +2108,8 @@
     "cellCount": 9,
     "exported": false,
     "shapeDigest": "d6be3aad292a",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-weakness-to-delta",
+    "since": "2026-08-17"
   },
   "src/utils/heroState/composeAdjustments.js::ACTION_CONSERVATISM_RANK": {
     "file": "src/utils/heroState/composeAdjustments.js",
@@ -2173,9 +2127,8 @@
     "cellCount": 5,
     "exported": false,
     "shapeDigest": "6632eeca615c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/identityAvatar/avatarMapping.js::AGE_DECADE_GRAY_SHIFT": {
     "file": "src/utils/identityAvatar/avatarMapping.js",
@@ -2210,9 +2163,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "5c264d2b2a24",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/playerMatching/scorePlayerMatch.js::RECOGNITION_WEIGHTS": {
     "file": "src/utils/playerMatching/scorePlayerMatch.js",
@@ -2234,9 +2186,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "5217933e534f",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/pokerCore/cardParser.js::getCardsForStreet#switch1": {
     "file": "src/utils/pokerCore/cardParser.js",
@@ -2308,9 +2259,8 @@
     "cellCount": 1032,
     "exported": true,
     "shapeDigest": "6d8cd6d1ed18",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-equity-skew-decomposition",
+    "since": "2026-08-17"
   },
   "src/utils/pokerCore/equityDecomposition.js::BUCKETS": {
     "file": "src/utils/pokerCore/equityDecomposition.js",
@@ -2375,9 +2325,8 @@
     "cellCount": 845,
     "exported": true,
     "shapeDigest": "954df1da72b5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-equity-vs-open",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/archetypeRangeBuilder.js::ARCHETYPE_BUCKET_MULTIPLIERS": {
     "file": "src/utils/postflopDrillContent/archetypeRangeBuilder.js",
@@ -2400,9 +2349,8 @@
     "cellCount": 15,
     "exported": true,
     "shapeDigest": "faa5f480a44b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-archetype-bucket-multipliers",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/drillModeEngine.js::GROUP_CALL_RATES": {
     "file": "src/utils/postflopDrillContent/drillModeEngine.js",
@@ -2446,9 +2394,8 @@
     "cellCount": 31,
     "exported": true,
     "shapeDigest": "99e0fc6217fd",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-group-call-rates",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/frameworks.js::desc#ternary1": {
     "file": "src/utils/postflopDrillContent/frameworks.js",
@@ -2464,9 +2411,8 @@
     "cellCount": 2,
     "exported": false,
     "shapeDigest": "13c7d1775572",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_3BP_WET_T96": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2532,9 +2478,8 @@
     "cellCount": 17,
     "exported": false,
     "shapeDigest": "4c4736a7647a",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_SB_SRP_MW_J85": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2593,9 +2538,8 @@
     "cellCount": 12,
     "exported": false,
     "shapeDigest": "d72c0a82be68",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_SRP_DRY_Q72R": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2661,9 +2605,8 @@
     "cellCount": 17,
     "exported": false,
     "shapeDigest": "d67842878bbf",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_CO_VS_BTN_BB_SRP_MW_OOP": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2718,9 +2661,8 @@
     "cellCount": 8,
     "exported": false,
     "shapeDigest": "400b3b435b29",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_SB_VS_BB_SRP_OOP_PAIRED": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2779,9 +2721,8 @@
     "cellCount": 9,
     "exported": false,
     "shapeDigest": "0f966332a6d5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_SB_VS_BTN_3BP_OOP_WET": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2842,9 +2783,8 @@
     "cellCount": 11,
     "exported": false,
     "shapeDigest": "5f340ac37436",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_UTG_FACING_SQUEEZE": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2890,9 +2830,8 @@
     "cellCount": 5,
     "exported": false,
     "shapeDigest": "a7e930fcc03a",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lines.js::LINE_UTG_VS_BTN_4BP_DEEP": {
     "file": "src/utils/postflopDrillContent/lines.js",
@@ -2947,9 +2886,8 @@
     "cellCount": 5,
     "exported": false,
     "shapeDigest": "191490a9cde7",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/lineSchema.js::expected#ternary1": {
     "file": "src/utils/postflopDrillContent/lineSchema.js",
@@ -2988,9 +2926,8 @@
     "cellCount": 10,
     "exported": true,
     "shapeDigest": "1f97db3176b6",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-study-priority-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/studyPriorityIndex.js::POSITION_PAIR_FREQ": {
     "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
@@ -3019,9 +2956,8 @@
     "cellCount": 31,
     "exported": true,
     "shapeDigest": "b90be413cc66",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-study-priority-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/studyPriorityIndex.js::POT_TYPE_FREQ": {
     "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
@@ -3041,9 +2977,8 @@
     "cellCount": 7,
     "exported": true,
     "shapeDigest": "7b6ef8f78836",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-study-priority-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/studyPriorityIndex.js::VILLAIN_ACTION_FREQ": {
     "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
@@ -3071,9 +3006,8 @@
     "cellCount": 24,
     "exported": true,
     "shapeDigest": "f881e52f9f2b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-study-priority-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/bayesianUpdater.js::adjKickerBoost#ternary1": {
     "file": "src/utils/rangeEngine/bayesianUpdater.js",
@@ -3088,9 +3022,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "976a2ec7b847",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-outcome-aware-boosts",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/bayesianUpdater.js::adjPairBoost#ternary1": {
     "file": "src/utils/rangeEngine/bayesianUpdater.js",
@@ -3105,9 +3038,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "976a2ec7b847",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-outcome-aware-boosts",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/bayesianUpdater.js::altSuitBoost#ternary1": {
     "file": "src/utils/rangeEngine/bayesianUpdater.js",
@@ -3122,9 +3054,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "976a2ec7b847",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-outcome-aware-boosts",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::buildActionPrior#switch1": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3147,9 +3078,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "3b469042ce0e",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-action-prior-construction",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::FACED_RAISE_FREQUENCIES": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3231,9 +3161,8 @@
     "cellCount": 2,
     "exported": false,
     "shapeDigest": "77fc43269f4a",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-action-prior-construction",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::SUBCLASS_SPLIT": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3365,9 +3294,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "511784d2abbb",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::CLOUD": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3397,9 +3325,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "511784d2abbb",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::COMB": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3429,9 +3356,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "511784d2abbb",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::FEATURE_SCALES": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3454,9 +3380,8 @@
     "cellCount": 10,
     "exported": false,
     "shapeDigest": "31cfed0b46c6",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::OVAL": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3486,9 +3411,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "511784d2abbb",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::TRIANGLE": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3518,9 +3442,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "511784d2abbb",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:outside-engine-path",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/composite.js::DEFAULT_WEIGHTS": {
     "file": "src/utils/skillAssessment/composite.js",
@@ -3537,9 +3460,8 @@
     "cellCount": 4,
     "exported": true,
     "shapeDigest": "f58016d81d88",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-skill-signal-weights",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/_template.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/_template.js",
@@ -3560,9 +3482,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "514536c7eb0c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroBbDefenseWidth.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroBbDefenseWidth.js",
@@ -3584,9 +3505,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroFlopVsDonkMisresponse.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroFlopVsDonkMisresponse.js",
@@ -3608,9 +3528,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js",
@@ -3632,9 +3551,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroMultiwayBluffFrequency.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroMultiwayBluffFrequency.js",
@@ -3657,9 +3575,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "c137833a5893",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js",
@@ -3681,9 +3598,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroOopCbetOverfold.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroOopCbetOverfold.js",
@@ -3705,9 +3621,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroPf3betOverfold.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroPf3betOverfold.js",
@@ -3729,9 +3644,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "f8b200d317ba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js",
@@ -3754,9 +3668,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "c137833a5893",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js::rule": {
     "file": "src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js",
@@ -3779,9 +3692,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "c137833a5893",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-leak-rule-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/shapeLanguage/temporalDecay.js::DEFAULT_DECAY_PROFILE": {
     "file": "src/utils/skillAssessment/shapeLanguage/temporalDecay.js",
@@ -3796,9 +3708,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "04efa82e566d",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-skill-signal-weights",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/solverBaselines.js::BASELINES": {
     "file": "src/utils/skillAssessment/solverBaselines.js",
@@ -3848,9 +3759,8 @@
     "cellCount": 62,
     "exported": false,
     "shapeDigest": "84d7fe809685",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-solver-baselines",
+    "since": "2026-08-17"
   },
   "src/utils/skillAssessment/tierConceptMap.js::CONCEPT_REGISTRY": {
     "file": "src/utils/skillAssessment/tierConceptMap.js",
@@ -3921,9 +3831,8 @@
     "cellCount": 52,
     "exported": true,
     "shapeDigest": "49ca0c272181",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-concept-registry",
+    "since": "2026-08-17"
   },
   "src/utils/spotResolver/boardShorthand.js::RANK_VALUE": {
     "file": "src/utils/spotResolver/boardShorthand.js",

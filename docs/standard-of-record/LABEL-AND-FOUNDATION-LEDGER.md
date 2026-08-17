@@ -24,10 +24,12 @@ What it can say today, precisely:
 - **145 constructs** over **506 files** are harvested and every one is claimed — by a ledger row
   or by a reasoned exclusion. `node scripts/standardOfRecord/check-label-ledger.mjs` is the
   blocking gate that keeps that true.
-- **27 rows are written.** **91 constructs are `EXCLUDED:not-yet-triaged`**, owned by WS-445 and
-  expiring 90 days from seeding. That backlog is the honest state, not a finished ledger.
-- **2 of 27 rows carry a Result Card.** Every other row states what would measure it and which
-  ticket would build that instrument.
+- **65 rows are written and the triage backlog is EMPTY.** Zero constructs remain
+  `not-yet-triaged`: every one of the 145 is either a ledger row or an exclusion carrying a
+  reason from the closed set, assigned after reading the construct at its definition site.
+- **2 of 65 rows carry a Result Card, and 62 name an instrument gap.** That ratio is the honest
+  state of the engine's label surface, and the blind-spot rule (`ledgerSelfCheck`) would *fail*
+  the ledger if it claimed otherwise.
 - **Every `readSites` figure is derived, not counted.** `traceLabelReaders.mjs` computes it from
   the AST and `check-label-ledger.sh` re-derives every unmeasured row on each run, so a row whose
   reach has changed fails the build. The counting rule lives in `reachOf`, in code — before it
@@ -36,12 +38,38 @@ What it can say today, precisely:
 What it **cannot** say: that the engine's label surface is understood. It says that the surface
 is now *enumerated*, that nothing can be added to it silently, and that the gaps are named.
 
-**What 27 rows already changed, stated plainly.** The single most depended-upon table in the
-engine is an eight-cell founder estimate with no provenance and 46 read sites
-(`POPULATION_PRIORS`). One exported table has zero readers and nobody knew
-(`FACED_RAISE_RATE`). Seven tables key on the same five hand-strength buckets and must be
-instrumented together or the measurement reads a seam. None of those three facts was discoverable
-before the rows existed, and none of them required new measurement to find — only an index.
+### What the triage found, none of it by measurement
+
+Every item below came from reading 145 constructs and putting them in one index. No new data was
+collected and no engine was run.
+
+1. **The engine's most depended-upon table has no provenance.** `POPULATION_PRIORS` — 46 read
+   sites, more than any other construct in the harvest — is an eight-cell founder estimate with
+   nothing stated about where it came from. It is also the *level* half of the split
+   `POPULATION_CURVE` describes, so the quality of the one measured curve is bounded by it.
+2. **Two tables in the measurement path price the same buckets differently.** `deviationMap` and
+   `holeMap` each hold a size-bucket midpoint table and they **disagree on three of five cells**
+   (`0-33`: 0.20 vs 0.25; `150+`: 2.00 vs 1.75). Both feed instruments that report on the same
+   system. This is the WS-291 mechanism caught by collision — nothing had ever forced the two
+   numbers onto one axis.
+3. **A transcription of an engine constant is unpinned, next to one that is pinned.**
+   `holeMap.js::POPULATION_CURVE` copies the engine's fold curve with no equality test, while
+   `rakeSensitivity.mjs` copies a constant, states the rule — *"a transcription is legal only
+   with an executable equality check against the definition site"* — and enforces it byte for
+   byte in a test. Re-fit the engine curve and the instrument silently measures the old one.
+4. **The style axis survived its own removal.** WS-436 deleted the six style labels as engine
+   inputs and POKER_THEORY v2.4 records that the playerStats struct "no longer carries a style
+   field at all". `tiltTransform.js::STYLE_MULTIPLIERS` still keys on Fish / Nit / LAG / TAG /
+   Unknown, and `archetypeRangeBuilder` keys on fish / reg / pro. Two survivors, two subsystems.
+5. **An exported table has zero readers.** `FACED_RAISE_RATE`. Found by the trace, not by
+   reading.
+6. **Three tables borrow the authority of a solver and none cites one.** `GTO_BASELINES`,
+   `GTO_OPEN_WIDTH`, and the 62-cell `solverBaselines.js::BASELINES` — in three subsystems.
+   POKER_THEORY treats GTO as an *imported* reference class, never an invented one.
+7. **Seven tables key on the same five hand-strength buckets** and must be ablated as a group;
+   moving one while the others survive measures a seam, not the axis.
+
+None of these is a measurement result. All of them are consequences of having an index.
 
 ---
 
@@ -136,72 +164,125 @@ doc-side mirror of the module-side impossibility in §3.
 | # | Label | Site | Foundation | Foundation status | Read sites | Cells | Primary path | Instrument ticket |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `LBL-population-priors` | `POPULATION_PRIORS` | founder-estimate | undeclared | 46 | 8 | yes | WS-445 |
-| 2 | `LBL-population-curve` | `POPULATION_CURVE` | fitted-curve | measured-supported | 13 | 5 | yes | WS-445 |
-| 3 | `LBL-fold-rate-thresholds` | `FOLD_RATE_THRESHOLDS` | founder-estimate | undeclared | 9 | 5 | yes | WS-445 |
-| 4 | `LBL-action-multipliers` | `ACTION_MULTIPLIERS` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
-| 5 | `LBL-preflop-raise-sizes` | `PREFLOP_RAISE_SIZES` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
-| 6 | `LBL-stat-priors` | `STAT_PRIORS` | founder-estimate | declared-estimate | 7 | 18 | yes | WS-445 |
-| 7 | `LBL-bucket-equity-anchors` | `BUCKET_EQUITY_ANCHORS` | founder-estimate | undeclared | 7 | 5 | yes | WS-445 |
-| 8 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 6 | 12 | yes | WS-445 |
-| 9 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 4 | 30 | yes | WS-407 |
-| 10 | `LBL-pop-betting-rates` | `POP_BETTING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
-| 11 | `LBL-pop-calling-rates` | `POP_CALLING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
-| 12 | `LBL-faced-raise-frequencies` | `FACED_RAISE_FREQUENCIES` | founder-estimate | undeclared | 4 | 15 | yes | WS-445 |
-| 13 | `LBL-subclass-split` | `SUBCLASS_SPLIT` | founder-estimate | undeclared | 1 | 25 | yes | WS-445 |
-| 14 | `LBL-texture-realization` | `TEXTURE_REALIZATION` | founder-estimate | undeclared | 3 | 5 | yes | WS-407 |
-| 15 | `LBL-default-continuation-rates` | `DEFAULT_CONTINUATION_RATES` | founder-estimate | undeclared | 3 | 4 | yes | WS-445 |
-| 16 | `LBL-positional-fold-to-3bet` | `POSITIONAL_FOLD_TO_3BET` | founder-estimate | undeclared | 2 | 10 | yes | WS-445 |
-| 17 | `LBL-no-raise-frequencies` | `NO_RAISE_FREQUENCIES` | founder-estimate | undeclared | 1 | 15 | yes | WS-445 |
-| 18 | `LBL-open-rate-prior` | `OPEN_RATE_PRIOR` | founder-estimate | declared-estimate | 2 | 2 | yes | WS-445 |
-| 19 | `LBL-per-stat-prior-weight` | `PER_STAT_PRIOR_WEIGHT` | mined-corpus | measured-supported | 1 | 6 | yes | WS-445 |
-| 20 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
-| 21 | `LBL-population-curve-raise` | `POPULATION_CURVE_RAISE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
-| 22 | `LBL-positional-fold-to-4bet` | `POSITIONAL_FOLD_TO_4BET` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
-| 23 | `LBL-outs-scaling` | `OUTS_SCALING` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
-| 24 | `LBL-faced-raise-rate` | `FACED_RAISE_RATE` | founder-estimate | undeclared | 0 | 5 | no | WS-445 |
+| 2 | `LBL-observation-thresholds` | `T` | founder-estimate | undeclared | 41 | 44 | yes | WS-445 |
+| 3 | `LBL-equity-ladder` | `EQ` | founder-estimate | declared-estimate | 24 | 5 | yes | WS-445 |
+| 4 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 17 | 43 | yes | WS-445 |
+| 5 | `LBL-concept-registry` | `CONCEPT_REGISTRY` | founder-estimate | undeclared | 16 | 52 | yes | WS-445 |
+| 6 | `LBL-equity-vs-open` | `EQUITY_VS_OPEN` | structural-computation | generated | 6 | 845 | yes | WS-445 |
+| 7 | `LBL-population-curve` | `POPULATION_CURVE` | fitted-curve | measured-supported | 13 | 5 | yes | WS-445 |
+| 8 | `LBL-game-type-rake-defaults` | `GAME_TYPES` | founder-estimate | undeclared | 12 | 14 | yes | WS-445 |
+| 9 | `LBL-fear-greed-factor-weights` | `FEAR_FACTOR_WEIGHTS` | founder-estimate | declared-estimate | 12 | 11 | yes | WS-445 |
+| 10 | `LBL-leak-rule-thresholds` | `rule` | founder-estimate | undeclared | 10 | 29 | yes | WS-445 |
+| 11 | `LBL-equity-skew-decomposition` | `EQUITY_SKEW_DECOMPOSITION` | structural-computation | generated | 1 | 1032 | yes | WS-445 |
+| 12 | `LBL-fold-rate-thresholds` | `FOLD_RATE_THRESHOLDS` | founder-estimate | undeclared | 9 | 5 | yes | WS-445 |
+| 13 | `LBL-solver-baselines` | `BASELINES` | founder-estimate | undeclared | 3 | 62 | yes | WS-445 |
+| 14 | `LBL-action-multipliers` | `ACTION_MULTIPLIERS` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
+| 15 | `LBL-preflop-raise-sizes` | `PREFLOP_RAISE_SIZES` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
+| 16 | `LBL-stat-priors` | `STAT_PRIORS` | founder-estimate | declared-estimate | 7 | 18 | yes | WS-445 |
+| 17 | `LBL-assumption-gate-thresholds` | `VILLAIN_SIDE_THRESHOLDS` | founder-estimate | declared-estimate | 7 | 11 | yes | WS-445 |
+| 18 | `LBL-bucket-equity-anchors` | `BUCKET_EQUITY_ANCHORS` | founder-estimate | undeclared | 7 | 5 | yes | WS-445 |
+| 19 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 4 | 30 | yes | WS-407 |
+| 20 | `LBL-pop-betting-rates` | `POP_BETTING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
+| 21 | `LBL-pop-calling-rates` | `POP_CALLING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
+| 22 | `LBL-rake-schedules` | `DEFAULT_RAKE_CONFIG` | founder-estimate | declared-estimate | 5 | 12 | yes | WS-445 |
+| 23 | `LBL-faced-raise-frequencies` | `FACED_RAISE_FREQUENCIES` | founder-estimate | undeclared | 4 | 15 | yes | WS-445 |
+| 24 | `LBL-impact-map` | `IMPACT_MAP` | founder-estimate | declared-estimate | 1 | 44 | yes | WS-445 |
+| 25 | `LBL-risk-map` | `RISK_MAP` | founder-estimate | declared-estimate | 1 | 44 | yes | WS-445 |
+| 26 | `LBL-action-prior-construction` | `buildActionPrior` | structural-computation | declared-estimate | 3 | 22 | yes | WS-445 |
+| 27 | `LBL-outcome-aware-boosts` | `altSuitBoost` | founder-estimate | undeclared | 4 | 9 | yes | WS-445 |
+| 28 | `LBL-archetype-bucket-multipliers` | `ARCHETYPE_BUCKET_MULTIPLIERS` | founder-estimate | declared-estimate | 3 | 15 | yes | WS-445 |
+| 29 | `LBL-group-call-rates` | `GROUP_CALL_RATES` | founder-estimate | declared-estimate | 1 | 31 | yes | WS-445 |
+| 30 | `LBL-dial-and-decay-defaults` | `DIAL_DEFAULTS` | founder-estimate | undeclared | 3 | 5 | yes | WS-445 |
+| 31 | `LBL-hero-seat-by-pos` | `HERO_SEAT_BY_POS` | structural-computation | declared-estimate | 3 | 5 | yes | WS-445 |
+| 32 | `LBL-subclass-split` | `SUBCLASS_SPLIT` | founder-estimate | undeclared | 1 | 25 | yes | WS-445 |
+| 33 | `LBL-texture-realization` | `TEXTURE_REALIZATION` | founder-estimate | undeclared | 3 | 5 | yes | WS-407 |
+| 34 | `LBL-tilt-style-multipliers` | `STYLE_MULTIPLIERS` | founder-estimate | undeclared | 3 | 5 | yes | WS-445 |
+| 35 | `LBL-default-continuation-rates` | `DEFAULT_CONTINUATION_RATES` | founder-estimate | undeclared | 3 | 4 | yes | WS-445 |
+| 36 | `LBL-maturity-thresholds` | `MATURITY_THRESHOLDS` | founder-estimate | undeclared | 3 | 4 | yes | WS-445 |
+| 37 | `LBL-ladder-axes` | `AXES` | founder-estimate | declared-estimate | 3 | 3 | yes | WS-320 |
+| 38 | `LBL-consequence-weights` | `CONSEQUENCE_WEIGHTS` | founder-estimate | declared-estimate | 1 | 20 | yes | WS-445 |
+| 39 | `LBL-positional-fold-to-3bet` | `POSITIONAL_FOLD_TO_3BET` | founder-estimate | undeclared | 2 | 10 | yes | WS-445 |
+| 40 | `LBL-weakness-to-delta` | `WEAKNESS_TO_DELTA` | founder-estimate | declared-estimate | 2 | 9 | yes | WS-445 |
+| 41 | `LBL-range-boost-switch` | `getRangeBoost` | founder-estimate | undeclared | 1 | 16 | yes | WS-445 |
+| 42 | `LBL-no-raise-frequencies` | `NO_RAISE_FREQUENCIES` | founder-estimate | undeclared | 1 | 15 | yes | WS-445 |
+| 43 | `LBL-deviation-type-switch` | `deriveRecommendedAction` | structural-computation | undeclared | 2 | 3 | yes | WS-445 |
+| 44 | `LBL-open-rate-prior` | `OPEN_RATE_PRIOR` | founder-estimate | declared-estimate | 2 | 2 | yes | WS-445 |
+| 45 | `LBL-per-stat-prior-weight` | `PER_STAT_PRIOR_WEIGHT` | mined-corpus | measured-supported | 1 | 6 | yes | WS-445 |
+| 46 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 47 | `LBL-holemap-curve-transcription` | `POPULATION_CURVE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
+| 48 | `LBL-population-curve-raise` | `POPULATION_CURVE_RAISE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
+| 49 | `LBL-positional-fold-to-4bet` | `POSITIONAL_FOLD_TO_4BET` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 50 | `LBL-size-bucket-midpoint-holemap` | `SIZE_BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 51 | `LBL-stake-factor` | `stakeFactor` | founder-estimate | declared-estimate | 1 | 5 | yes | WS-445 |
+| 52 | `LBL-gto-open-width` | `GTO_OPEN_WIDTH` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
+| 53 | `LBL-outs-scaling` | `OUTS_SCALING` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
+| 54 | `LBL-bucket-raise-fraction` | `bucketRaiseFraction` | founder-estimate | undeclared | 1 | 3 | yes | WS-445 |
+| 55 | `LBL-study-priority-frequencies` | `POSITION_PAIR_FREQ` | founder-estimate | declared-estimate | 6 | 72 | no | WS-445 |
+| 56 | `LBL-calibration-ladder` | `CALIBRATION_LADDER` | founder-estimate | declared-estimate | 9 | 5 | no | WS-445 |
+| 57 | `LBL-gto-baselines` | `GTO_BASELINES` | founder-estimate | undeclared | 6 | 6 | no | WS-445 |
+| 58 | `LBL-skill-signal-weights` | `DEFAULT_WEIGHTS` | founder-estimate | declared-estimate | 6 | 6 | no | WS-445 |
+| 59 | `LBL-m-ratio-zones` | `M_RATIO_ZONES` | founder-estimate | declared-estimate | 4 | 8 | no | WS-445 |
+| 60 | `LBL-flush-deltas` | `FLUSH_DELTAS` | structural-computation | declared-estimate | 3 | 6 | no | WS-445 |
+| 61 | `LBL-recognizability-map` | `RECOGNIZABILITY_MAP` | founder-estimate | declared-estimate | 1 | 23 | no | WS-445 |
+| 62 | `LBL-faced-raise-rate` | `FACED_RAISE_RATE` | founder-estimate | undeclared | 0 | 5 | no | WS-445 |
 
 <!-- LABEL-LEDGER-UNMEASURED:END -->
 
-**Row 1 is the finding the ledger was built to produce.** `POPULATION_PRIORS` has **46 read
-sites** — the widest reach of any construct in the harvest — and **no stated provenance**. An
-eight-cell founder estimate is the engine's single most depended-upon table, and nothing anywhere
-said so. It is also the *level* half of the split `POPULATION_CURVE` describes: the curve was
-allowed to import an online-mined **shape** precisely because the level stays in this table. The
-quality of the measured curve is therefore bounded by the quality of the unmeasured one.
+*Rows are referenced by `LBL-` id below, never by row number — the ranking re-sorts whenever a
+reach figure changes, and a prose paragraph pointing at "row 9" would rot silently.*
 
-**Read the bottom of this table as carefully as the top.** `LBL-outs-scaling` and
-`LBL-bucket-midpoint` rank last on reach — one read site each — and neither is unimportant.
-`BUCKET_MIDPOINT` sits inside the **measurement path**, not the engine:
-`scripts/backtest/deviationMap.mjs:61` passes it to `deriveFloor`, so it sets the defensive floor
-every deviation cell is scored *against*. A low reach rank means "it touches little code", never
-"it would not matter".
+**`LBL-population-priors` is the finding the ledger was built to produce.** `POPULATION_PRIORS`
+has **46 read sites** — the widest reach of any construct in the harvest — and **no stated
+provenance**. An eight-cell founder estimate is the engine's single most depended-upon table, and
+nothing anywhere said so. It is also the *level* half of the split `POPULATION_CURVE` describes:
+the curve was allowed to import an online-mined **shape** precisely because the level stays in
+this table. The quality of the measured curve is therefore bounded by the quality of the
+unmeasured one.
 
-**Row 24 was found by the instrument, not by reading.** `FACED_RAISE_RATE` is exported and has
-**zero** production readers anywhere in `src/` or `scripts/`. It is the only genuinely vestigial
-named table in the harvest — and the trace's *first* run also reported the ten `leakRules/*.js`
-rules as vestigial, which was false (`heroLeakDetector.js:19` loads them by `import.meta.glob`).
-That near-miss is why the row states a deletion **falsifier** rather than a recommendation:
-`vestigial` is the one value here that licenses destroying working code.
+**Read the bottom of this table as carefully as the top.** The lowest-reach rows have one read
+site each and none is unimportant. `LBL-bucket-midpoint` sits inside the **measurement path**,
+not the engine: `scripts/backtest/deviationMap.mjs:61` passes it to `deriveFloor`, so it sets the
+defensive floor every deviation cell is scored *against*. A low reach rank means "it touches
+little code", never "it would not matter".
 
-**Rows 8 and 19 are the counter-examples, and they fail differently.** `handhqReferencePool` has
-the best foundation in the repo — generated, regeneratable, hand-edits forbidden by its own
-contract — and its open question is **transfer, not provenance**: the corpus is online 2009 and
-the founder's game is live 9-handed 1/2–1/3, so any live claim resting on it is *transferred, not
-measured*. `PER_STAT_PRIOR_WEIGHT` states its estimator, its sample (12.9M hands), and the prior
-belief it refuted (a flat cap of 200, ~20× too confident) — but only `vpip` was validated and the
-other five carry the same weight by assumption. The ledger has to say both halves at once.
+**`LBL-faced-raise-rate` was found by the instrument, not by reading.** `FACED_RAISE_RATE` is
+exported and has **zero** production readers anywhere in `src/` or `scripts/`. It is the only
+genuinely vestigial named table in the harvest — and the trace's *first* run also reported the
+ten `leakRules/*.js` rules as vestigial, which was false (`heroLeakDetector.js:19` loads them by
+`import.meta.glob`). That near-miss is why the row states a deletion **falsifier** rather than a
+recommendation: `vestigial` is the one value here that licenses destroying working code.
 
-**Row 9 is the case for the ledger existing.** `REALIZATION_TABLE` already had **three**
-separately-filed instrument tickets — WS-404 (P=28), WS-407 (24), WS-498 (30) — filed by
-different analyses at different times, all in `prog-domain-correctness`, none referencing the
+**The counter-examples fail differently, and that is why both are here.**
+`LBL-handhq-reference-pool` has the best foundation in the repo — generated, regeneratable,
+hand-edits forbidden by its own contract — and its open question is **transfer, not provenance**:
+the corpus is online 2009 and the founder's game is live 9-handed 1/2–1/3, so any live claim
+resting on it is *transferred, not measured*. `LBL-per-stat-prior-weight` states its estimator,
+its sample (12.9M hands), and the prior belief it refuted (a flat cap of 200, ~20× too confident)
+— but only `vpip` was validated and the other five carry the same weight by assumption.
+`LBL-equity-skew-decomposition` carries a full replication manifest (engine commit, dirty flag,
+deal-book hashes, noise floor) and has **one** reader for 1,032 cells. The ledger has to say all
+of that without flattening it.
+
+**`LBL-realization-table` is the case for the ledger existing.** `REALIZATION_TABLE` already had
+**three** separately-filed instrument tickets — WS-404 (P=28), WS-407 (24), WS-498 (30) — filed
+by different analyses at different times, all in `prog-domain-correctness`, none referencing the
 others. One row collapses them. The ledger is a deduplicating index over work the queue is
 already doing blind, not merely an inventory.
 
-**The pattern no single row shows.** Rows 4, 7, 10, 11, 14, 15 and 23 are all founder estimates
-keyed on the *same five hand-strength buckets*, read on the primary path, and they are the input
-side of exactly the decomposition WS-436 measured on the output side. They must be instrumented
-as a **group**: ablating `POP_CALLING_RATES` while `BUCKET_EQUITY_ANCHORS` still keys on the same
+**The pattern no single row shows.** `LBL-pop-calling-rates`, `LBL-pop-betting-rates`,
+`LBL-bucket-equity-anchors`, `LBL-action-multipliers`, `LBL-outs-scaling`,
+`LBL-texture-realization` and `LBL-bucket-raise-fraction` are all founder estimates keyed on the
+*same five hand-strength buckets*, read on the primary path, and they are the input side of
+exactly the decomposition WS-436 measured on the output side. They must be instrumented as a
+**group**: ablating `POP_CALLING_RATES` while `BUCKET_EQUITY_ANCHORS` still keys on the same
 buckets measures a seam between two survivors, not the bucket axis.
+
+**Three rows need no study at all — they are defects with a fix.**
+`LBL-size-bucket-midpoint-holemap` (two measurement-path tables disagreeing on three of five
+cells), `LBL-holemap-curve-transcription` (an unpinned copy of an engine constant, beside a
+pinned one, under a rule the neighbouring file states explicitly), and `LBL-rake-schedules` (the
+live schedule is *modelled* when the founder's room publishes the real one — data entry, and the
+cheapest improvement to live-transferred EV in this ledger).
 
 ---
 
@@ -215,21 +296,40 @@ costs one reasoned line here, a false negative costs a row nobody ever writes.
 is how an exclusions list quietly becomes the register. `touch-floor.spec.js:80-82` points the
 same way with its stale-pin check: *pins may only shrink, never linger.*
 
-Current state: **91 of 145 constructs are `EXCLUDED:not-yet-triaged`, owned by WS-445.** Listing
-them is `node scripts/standardOfRecord/check-label-ledger.mjs --unledgered`; their reach is
-`node scripts/standardOfRecord/traceLabelReaders.mjs`, which sorts the backlog by how much
-depends on each one.
+Current state: **zero constructs are `not-yet-triaged`.** The seeded backlog was worked to empty
+on 2026-08-17 rather than aged out, so the expiry mechanism has not yet had to fire. It remains
+the guard for the next construct someone snapshots with `--update` and does not think about.
+`node scripts/standardOfRecord/check-label-ledger.mjs --unledgered` lists anything outstanding;
+`node scripts/standardOfRecord/traceLabelReaders.mjs` ranks it by how much depends on it.
 
-**28 constructs carry a real reason as of 2026-08-17**, each read at its definition site before
+**54 constructs carry a real reason as of 2026-08-17**, each read at its definition site before
 the reason was assigned. Grouped by why they are not label-shaped inputs:
 
 | Reason | n | What they are |
 |---|---|---|
-| `not-a-label` | 16 | The keys are not labels. Parse maps (`NUMBER_WORDS`, `MONTHS`, `RANK_VALUE`, `VILLAIN_NUMBER_TOKENS`), structural facts of the game (`HAND_CATEGORIES` ordinals, `PREFIX_LENGTH` and `getCardsForStreet` street→board-card-count, `LIMITS`), enum indices (`BUCKETS`, whose values are 0–9 for stacked-bar ordering), zero-value structs (`ZERO_RISK`, `EMPTY_INDEX`), determinism plumbing (`RNG_SALT` — per-site salts so "two sites can never silently share a stream"), disk budgeting (`atomStore`), and user-selected config presets (`PAYOUT_PRESETS`). |
-| `result-card-artifact` | 5 | Built Result Cards, not lookup tables — the four `buildResultCard(...)` calls in `emit-ws4*.mjs`, plus `WITHIN_CORPUS_DRIFT_2009`, which is a measurement record (`measuredBy: 'WS-353'`, `sourceId: 'SRC-012'`) embedded in the fault register. |
+| `not-a-label` | 30 | The keys are not labels. Parse maps (`NUMBER_WORDS`, `MONTHS`, `RANK_VALUE`, `VILLAIN_NUMBER_TOKENS`), structural facts of the game (`HAND_CATEGORIES` ordinals, street→board-card-count, `POSTED_BB`, `LIMITS`), enum indices (`BUCKETS` is 0–9 for stacked-bar ordering), sort ordinals (`PRIORITY_ORDER`, `ACTION_CONSERVATISM_RANK`), zero-value structs (`ZERO_RISK`, `EMPTY_INDEX`), determinism plumbing (`RNG_SALT`), disk budgeting (`atomStore`), user config (`PAYOUT_PRESETS`, `DEFAULT_SETTINGS`), and the eight `LINE_*` Line Mode walkthroughs, whose keys are node ids. |
+| `outside-engine-path` | 8 | Label-shaped, but no consumer reaches a strategy, range, or EV parameter: `playerMatching` recognition weights and the six `silhouettePrototypes` range-shape descriptors. |
+| `display-only` | 6 | `HERO_CONTEXTS` (labels + sortOrder for a panel), `AGE_DECADE_GRAY_SHIFT`, thought/evidence phrasing ternaries, and a street cutoff in a console-printing script. |
+| `result-card-artifact` | 5 | Built Result Cards, not lookup tables — the four `buildResultCard(...)` calls in `emit-ws4*.mjs`, plus `WITHIN_CORPUS_DRIFT_2009`, a measurement record (`measuredBy: 'WS-353'`, `sourceId: 'SRC-012'`) embedded in the fault register. |
 | `schema-or-version` | 3 | `SCHEMA_RULES`, `METRICS_SCHEMA_VERSIONS`, `SOR_SCHEMA_VERSIONS`. |
-| `display-only` | 2 | `AGE_DECADE_GRAY_SHIFT` (avatar hair rendering) and a street cutoff inside a console-printing script. |
 | `ui-geometry` | 1 | `LAYOUT` — the 1600×720 design canvas, read by `useCanvasFit` and `ScaledContainer`. |
+| `test-fixture` | 1 | `plumbingProofCard`. |
+
+**`outside-engine-path` was added to the closed set during this triage**, because the harvester
+*promised* it and it did not exist: `harvestLabelConstructs.mjs:70-74` justifies its broad roots
+by saying the cost is "~20 constructs in `shapeLanguage`, `playerMatching`, `claimAdjudication`
+and `standardOfRecord` that are not engine-parameter paths; they become exclusions carrying a
+stated reason." `not-a-label` would have been a false statement about them — a feature label
+keyed to a numeric weight is exactly the harvested shape. Its boundary is deliberately tight:
+*no consumer reaches a strategy, range, or EV parameter.* "It is only a fallback", "it is
+legacy", and "it is low reach" do **not** qualify — those are properties a **row** records in
+`liveness` and `readSites`.
+
+**One exclusion was assigned wrongly and corrected in the same session.** The eight `LINE_*`
+constructs were first marked `test-fixture`; they are shipped Line Mode study content ("curated
+branching hand walkthroughs"), not fixtures, and are now `not-a-label`. Recorded because a
+wrong reason is precisely the failure the reason vocabulary exists to prevent, and because an
+exclusions list that never shows a correction is not being checked.
 
 **Two that look excludable and are not, recorded here so the reasoning is not re-litigated.**
 `FOLD_RATE_THRESHOLDS` calls itself thresholds "for human-readable language", but its readers
