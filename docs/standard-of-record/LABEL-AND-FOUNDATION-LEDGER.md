@@ -24,13 +24,24 @@ What it can say today, precisely:
 - **145 constructs** over **506 files** are harvested and every one is claimed — by a ledger row
   or by a reasoned exclusion. `node scripts/standardOfRecord/check-label-ledger.mjs` is the
   blocking gate that keeps that true.
-- **6 rows are written.** **140 constructs are `EXCLUDED:not-yet-triaged`**, owned by WS-445 and
+- **27 rows are written.** **119 constructs are `EXCLUDED:not-yet-triaged`**, owned by WS-445 and
   expiring 90 days from seeding. That backlog is the honest state, not a finished ledger.
-- **2 of 6 rows carry a Result Card.** Every other row states what would measure it and which
+- **2 of 27 rows carry a Result Card.** Every other row states what would measure it and which
   ticket would build that instrument.
+- **Every `readSites` figure is derived, not counted.** `traceLabelReaders.mjs` computes it from
+  the AST and `check-label-ledger.sh` re-derives every unmeasured row on each run, so a row whose
+  reach has changed fails the build. The counting rule lives in `reachOf`, in code — before it
+  did, three hand-authored figures had been counted three different ways and one was wrong.
 
 What it **cannot** say: that the engine's label surface is understood. It says that the surface
 is now *enumerated*, that nothing can be added to it silently, and that the gaps are named.
+
+**What 27 rows already changed, stated plainly.** The single most depended-upon table in the
+engine is an eight-cell founder estimate with no provenance and 46 read sites
+(`POPULATION_PRIORS`). One exported table has zero readers and nobody knew
+(`FACED_RAISE_RATE`). Seven tables key on the same five hand-strength buckets and must be
+instrumented together or the measurement reads a seam. None of those three facts was discoverable
+before the rows existed, and none of them required new measurement to find — only an index.
 
 ---
 
@@ -124,29 +135,73 @@ doc-side mirror of the module-side impossibility in §3.
 
 | # | Label | Site | Foundation | Foundation status | Read sites | Cells | Primary path | Instrument ticket |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 6 | 12 | yes | WS-445 |
-| 2 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 4 | 30 | yes | WS-407 |
-| 3 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 1 | `LBL-population-priors` | `POPULATION_PRIORS` | founder-estimate | undeclared | 46 | 8 | yes | WS-445 |
+| 2 | `LBL-population-curve` | `POPULATION_CURVE` | fitted-curve | measured-supported | 13 | 5 | yes | WS-445 |
+| 3 | `LBL-fold-rate-thresholds` | `FOLD_RATE_THRESHOLDS` | founder-estimate | undeclared | 9 | 5 | yes | WS-445 |
+| 4 | `LBL-action-multipliers` | `ACTION_MULTIPLIERS` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
+| 5 | `LBL-preflop-raise-sizes` | `PREFLOP_RAISE_SIZES` | founder-estimate | undeclared | 7 | 20 | yes | WS-445 |
+| 6 | `LBL-stat-priors` | `STAT_PRIORS` | founder-estimate | declared-estimate | 7 | 18 | yes | WS-445 |
+| 7 | `LBL-bucket-equity-anchors` | `BUCKET_EQUITY_ANCHORS` | founder-estimate | undeclared | 7 | 5 | yes | WS-445 |
+| 8 | `LBL-handhq-reference-pool` | `HANDHQ_OPENER_FACING_3BET` | mined-corpus | generated | 6 | 12 | yes | WS-445 |
+| 9 | `LBL-realization-table` | `REALIZATION_TABLE` | founder-estimate | undeclared | 4 | 30 | yes | WS-407 |
+| 10 | `LBL-pop-betting-rates` | `POP_BETTING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
+| 11 | `LBL-pop-calling-rates` | `POP_CALLING_RATES` | founder-estimate | declared-estimate | 6 | 5 | yes | WS-445 |
+| 12 | `LBL-faced-raise-frequencies` | `FACED_RAISE_FREQUENCIES` | founder-estimate | undeclared | 4 | 15 | yes | WS-445 |
+| 13 | `LBL-subclass-split` | `SUBCLASS_SPLIT` | founder-estimate | undeclared | 1 | 25 | yes | WS-445 |
+| 14 | `LBL-texture-realization` | `TEXTURE_REALIZATION` | founder-estimate | undeclared | 3 | 5 | yes | WS-407 |
+| 15 | `LBL-default-continuation-rates` | `DEFAULT_CONTINUATION_RATES` | founder-estimate | undeclared | 3 | 4 | yes | WS-445 |
+| 16 | `LBL-positional-fold-to-3bet` | `POSITIONAL_FOLD_TO_3BET` | founder-estimate | undeclared | 2 | 10 | yes | WS-445 |
+| 17 | `LBL-no-raise-frequencies` | `NO_RAISE_FREQUENCIES` | founder-estimate | undeclared | 1 | 15 | yes | WS-445 |
+| 18 | `LBL-open-rate-prior` | `OPEN_RATE_PRIOR` | founder-estimate | declared-estimate | 2 | 2 | yes | WS-445 |
+| 19 | `LBL-per-stat-prior-weight` | `PER_STAT_PRIOR_WEIGHT` | mined-corpus | measured-supported | 1 | 6 | yes | WS-445 |
+| 20 | `LBL-bucket-midpoint` | `BUCKET_MIDPOINT` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 21 | `LBL-population-curve-raise` | `POPULATION_CURVE_RAISE` | fitted-curve | measured-supported | 1 | 5 | yes | WS-445 |
+| 22 | `LBL-positional-fold-to-4bet` | `POSITIONAL_FOLD_TO_4BET` | founder-estimate | undeclared | 1 | 5 | yes | WS-445 |
+| 23 | `LBL-outs-scaling` | `OUTS_SCALING` | founder-estimate | undeclared | 1 | 4 | yes | WS-445 |
+| 24 | `LBL-faced-raise-rate` | `FACED_RAISE_RATE` | founder-estimate | undeclared | 0 | 5 | no | WS-445 |
 
 <!-- LABEL-LEDGER-UNMEASURED:END -->
 
-**Read the bottom of this table as carefully as the top.** `LBL-bucket-midpoint` ranks last on
-reach — one read site, five cells — and it sits inside the **measurement path**, not the engine.
+**Row 1 is the finding the ledger was built to produce.** `POPULATION_PRIORS` has **46 read
+sites** — the widest reach of any construct in the harvest — and **no stated provenance**. An
+eight-cell founder estimate is the engine's single most depended-upon table, and nothing anywhere
+said so. It is also the *level* half of the split `POPULATION_CURVE` describes: the curve was
+allowed to import an online-mined **shape** precisely because the level stays in this table. The
+quality of the measured curve is therefore bounded by the quality of the unmeasured one.
+
+**Read the bottom of this table as carefully as the top.** `LBL-outs-scaling` and
+`LBL-bucket-midpoint` rank last on reach — one read site each — and neither is unimportant.
+`BUCKET_MIDPOINT` sits inside the **measurement path**, not the engine:
 `scripts/backtest/deviationMap.mjs:61` passes it to `deriveFloor`, so it sets the defensive floor
 every deviation cell is scored *against*. A low reach rank means "it touches little code", never
 "it would not matter".
 
-**Row 1 is a different shape of problem from rows 2 and 3.** `handhqReferencePool` has the best
-foundation in the repo — generated, regeneratable, hand-edits forbidden by its own contract. Its
-open question is **transfer, not provenance**: the corpus is online 2009 and the founder's game
-is live 9-handed 1/2–1/3, so any live claim resting on it is *transferred, not measured*. The
-ledger has to be able to say those two things at once about one row.
+**Row 24 was found by the instrument, not by reading.** `FACED_RAISE_RATE` is exported and has
+**zero** production readers anywhere in `src/` or `scripts/`. It is the only genuinely vestigial
+named table in the harvest — and the trace's *first* run also reported the ten `leakRules/*.js`
+rules as vestigial, which was false (`heroLeakDetector.js:19` loads them by `import.meta.glob`).
+That near-miss is why the row states a deletion **falsifier** rather than a recommendation:
+`vestigial` is the one value here that licenses destroying working code.
 
-**Row 2 is the case for the ledger existing.** `REALIZATION_TABLE` already had **three**
+**Rows 8 and 19 are the counter-examples, and they fail differently.** `handhqReferencePool` has
+the best foundation in the repo — generated, regeneratable, hand-edits forbidden by its own
+contract — and its open question is **transfer, not provenance**: the corpus is online 2009 and
+the founder's game is live 9-handed 1/2–1/3, so any live claim resting on it is *transferred, not
+measured*. `PER_STAT_PRIOR_WEIGHT` states its estimator, its sample (12.9M hands), and the prior
+belief it refuted (a flat cap of 200, ~20× too confident) — but only `vpip` was validated and the
+other five carry the same weight by assumption. The ledger has to say both halves at once.
+
+**Row 9 is the case for the ledger existing.** `REALIZATION_TABLE` already had **three**
 separately-filed instrument tickets — WS-404 (P=28), WS-407 (24), WS-498 (30) — filed by
 different analyses at different times, all in `prog-domain-correctness`, none referencing the
 others. One row collapses them. The ledger is a deduplicating index over work the queue is
 already doing blind, not merely an inventory.
+
+**The pattern no single row shows.** Rows 4, 7, 10, 11, 14, 15 and 23 are all founder estimates
+keyed on the *same five hand-strength buckets*, read on the primary path, and they are the input
+side of exactly the decomposition WS-436 measured on the output side. They must be instrumented
+as a **group**: ablating `POP_CALLING_RATES` while `BUCKET_EQUITY_ANCHORS` still keys on the same
+buckets measures a seam between two survivors, not the bucket axis.
 
 ---
 
@@ -160,8 +215,10 @@ costs one reasoned line here, a false negative costs a row nobody ever writes.
 is how an exclusions list quietly becomes the register. `touch-floor.spec.js:80-82` points the
 same way with its stale-pin check: *pins may only shrink, never linger.*
 
-Current state: **140 of 145 constructs are `EXCLUDED:not-yet-triaged`, owned by WS-445.** Listing
-them is `node scripts/standardOfRecord/check-label-ledger.mjs --unledgered`.
+Current state: **119 of 145 constructs are `EXCLUDED:not-yet-triaged`, owned by WS-445.** Listing
+them is `node scripts/standardOfRecord/check-label-ledger.mjs --unledgered`; their reach is
+`node scripts/standardOfRecord/traceLabelReaders.mjs`, which sorts the backlog by how much
+depends on each one.
 
 The known false positives are module-level Result Card builders in
 `scripts/backtest/emit-*-result-card.mjs` — five constructs that take the

@@ -1109,9 +1109,8 @@
     "cellCount": 18,
     "exported": true,
     "shapeDigest": "5c3ba6880099",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-stat-priors",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/briefingBuilder.js::buildEvidenceBreakdown#ternary1": {
     "file": "src/utils/exploitEngine/briefingBuilder.js",
@@ -1399,9 +1398,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "c223934774be",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-bucket-equity-anchors",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeConstants.js::POP_BETTING_RATES": {
     "file": "src/utils/exploitEngine/gameTreeConstants.js",
@@ -1419,9 +1417,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "c223934774be",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-pop-betting-rates",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeConstants.js::POP_CALLING_RATES": {
     "file": "src/utils/exploitEngine/gameTreeConstants.js",
@@ -1439,9 +1436,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "c223934774be",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-pop-calling-rates",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeConstants.js::REALIZATION_TABLE": {
     "file": "src/utils/exploitEngine/gameTreeConstants.js",
@@ -1488,9 +1484,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "acf10da0e4b1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-texture-realization",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeSampling.js::RNG_SALT": {
     "file": "src/utils/exploitEngine/gameTreeSampling.js",
@@ -1708,9 +1703,8 @@
     "cellCount": 6,
     "exported": true,
     "shapeDigest": "b8cbfaeaa1e2",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-per-stat-prior-weight",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/postflopNarrower.js::ACTION_MULTIPLIERS": {
     "file": "src/utils/exploitEngine/postflopNarrower.js",
@@ -1734,9 +1728,8 @@
     "cellCount": 20,
     "exported": true,
     "shapeDigest": "0b587c16da0c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-action-multipliers",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/postflopNarrower.js::ACTION_TAU_FRACTION": {
     "file": "src/utils/exploitEngine/postflopNarrower.js",
@@ -1770,9 +1763,8 @@
     "cellCount": 4,
     "exported": true,
     "shapeDigest": "0eb7b8cf0e7c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-default-continuation-rates",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/postflopNarrower.js::OUTS_SCALING": {
     "file": "src/utils/exploitEngine/postflopNarrower.js",
@@ -1789,9 +1781,8 @@
     "cellCount": 4,
     "exported": false,
     "shapeDigest": "0eb7b8cf0e7c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-outs-scaling",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/preflopAdvisor.js::postedLimped#ternary1": {
     "file": "src/utils/exploitEngine/preflopAdvisor.js",
@@ -1831,9 +1822,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "70ccb402f741",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-preflop-raise-sizes",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/preflopFoldResolver.js::POSITIONAL_FOLD_TO_3BET": {
     "file": "src/utils/exploitEngine/preflopFoldResolver.js",
@@ -1856,9 +1846,8 @@
     "cellCount": 10,
     "exported": true,
     "shapeDigest": "f577f8b2e3ce",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-positional-fold-to-3bet",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/preflopFoldResolver.js::POSITIONAL_FOLD_TO_4BET": {
     "file": "src/utils/exploitEngine/preflopFoldResolver.js",
@@ -1876,9 +1865,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "8c333620cf25",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-positional-fold-to-4bet",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/riskAnalysis.js::ZERO_RISK": {
     "file": "src/utils/exploitEngine/riskAnalysis.js",
@@ -1956,9 +1944,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "284c20f581e7",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-fold-rate-thresholds",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainModelData.js::POPULATION_CURVE": {
     "file": "src/utils/exploitEngine/villainModelData.js",
@@ -1976,9 +1963,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "0eaa29d846a0",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-population-curve",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainModelData.js::POPULATION_CURVE_RAISE": {
     "file": "src/utils/exploitEngine/villainModelData.js",
@@ -1996,9 +1982,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "0eaa29d846a0",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-population-curve-raise",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainModelData.js::POPULATION_PRIORS": {
     "file": "src/utils/exploitEngine/villainModelData.js",
@@ -2021,9 +2006,8 @@
     "cellCount": 8,
     "exported": true,
     "shapeDigest": "6cd25ead576b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-population-priors",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/villainObservations.js::GTO_OPEN_WIDTH": {
     "file": "src/utils/exploitEngine/villainObservations.js",
@@ -3209,9 +3193,8 @@
     "cellCount": 15,
     "exported": true,
     "shapeDigest": "57ae7482f0c6",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-faced-raise-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::FACED_RAISE_RATE": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3229,9 +3212,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "954df1da72b5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-faced-raise-rate",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::NO_RAISE_FREQUENCIES": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3254,9 +3236,8 @@
     "cellCount": 15,
     "exported": true,
     "shapeDigest": "36d27a1a76d1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-no-raise-frequencies",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/populationPriors.js::openFoot#ternary1": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3302,9 +3283,8 @@
     "cellCount": 25,
     "exported": true,
     "shapeDigest": "5aa972979704",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-subclass-split",
+    "since": "2026-08-17"
   },
   "src/utils/rangeEngine/traitDetector.js::OPEN_RATE_PRIOR": {
     "file": "src/utils/rangeEngine/traitDetector.js",
@@ -3319,9 +3299,8 @@
     "cellCount": 2,
     "exported": false,
     "shapeDigest": "438762a04c18",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "LBL-open-rate-prior",
+    "since": "2026-08-17"
   },
   "src/utils/reducerUtils.js::SCHEMA_RULES": {
     "file": "src/utils/reducerUtils.js",
