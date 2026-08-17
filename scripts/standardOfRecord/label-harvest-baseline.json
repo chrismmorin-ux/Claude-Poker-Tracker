@@ -15,9 +15,8 @@
     "cellCount": 5,
     "exported": true,
     "shapeDigest": "c232cfc85db2",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "scripts/backtest/atomStore.mjs::MEASURED_ATOM_BYTES": {
     "file": "scripts/backtest/atomStore.mjs",
@@ -35,9 +34,8 @@
     "cellCount": 3,
     "exported": true,
     "shapeDigest": "4aed47839298",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "scripts/backtest/deviationMap.mjs::BUCKET_MIDPOINT": {
     "file": "scripts/backtest/deviationMap.mjs",
@@ -70,9 +68,8 @@
     "cellCount": 1,
     "exported": false,
     "shapeDigest": "32d992fa40ae",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-17"
   },
   "scripts/backtest/emit-ws436-result-card.mjs::card": {
     "file": "scripts/backtest/emit-ws436-result-card.mjs",
@@ -127,9 +124,8 @@
     "cellCount": 13,
     "exported": false,
     "shapeDigest": "1b2259baaa64",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-17"
   },
   "scripts/backtest/emit-ws481-result-card.mjs::card": {
     "file": "scripts/backtest/emit-ws481-result-card.mjs",
@@ -233,9 +229,8 @@
     "cellCount": 34,
     "exported": false,
     "shapeDigest": "89941422dfba",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-17"
   },
   "scripts/backtest/emit-ws482-result-card.mjs::card": {
     "file": "scripts/backtest/emit-ws482-result-card.mjs",
@@ -318,9 +313,8 @@
     "cellCount": 20,
     "exported": false,
     "shapeDigest": "9f2fa8f06d5b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-17"
   },
   "scripts/backtest/entryMap.mjs::HERO_SEAT_BY_POS": {
     "file": "scripts/backtest/entryMap.mjs",
@@ -370,9 +364,8 @@
     "cellCount": 6,
     "exported": true,
     "shapeDigest": "e9fb58d888aa",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:test-fixture",
+    "since": "2026-08-17"
   },
   "scripts/backtest/heroEvRunner.mjs::DEFAULT_RAKE_CONFIG": {
     "file": "scripts/backtest/heroEvRunner.mjs",
@@ -570,9 +563,8 @@
     "cellCount": 2,
     "exported": false,
     "shapeDigest": "d06ee320ec49",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "scripts/backtest/show-ws481-flips.mjs::upto#ternary1": {
     "file": "scripts/backtest/show-ws481-flips.mjs",
@@ -587,9 +579,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "74853259d0f1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "scripts/backtest/strategyProfile.mjs::POSTED_BB": {
     "file": "scripts/backtest/strategyProfile.mjs",
@@ -650,9 +641,8 @@
     "cellCount": 25,
     "exported": true,
     "shapeDigest": "39fafa8b7d60",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:ui-geometry",
+    "since": "2026-08-17"
   },
   "src/constants/gameConstants.js::LIMITS": {
     "file": "src/constants/gameConstants.js",
@@ -669,9 +659,8 @@
     "cellCount": 4,
     "exported": true,
     "shapeDigest": "8b68bbe4d52b",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/constants/sessionConstants.js::GAME_TYPES": {
     "file": "src/constants/sessionConstants.js",
@@ -800,9 +789,8 @@
     "cellCount": 13,
     "exported": true,
     "shapeDigest": "bac44241cea5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/anchorLibrary/deriveAnchorBoardCondition.js::PREFIX_LENGTH": {
     "file": "src/utils/anchorLibrary/deriveAnchorBoardCondition.js",
@@ -818,9 +806,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "5c0fdfdcd30f",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/assumptionEngine/assumptionTypes.js::CALIBRATION_LADDER": {
     "file": "src/utils/assumptionEngine/assumptionTypes.js",
@@ -978,9 +965,8 @@
     "cellCount": 10,
     "exported": false,
     "shapeDigest": "5dfeafd4e2e4",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/drillContent/frameworks.js::FLUSH_DELTAS": {
     "file": "src/utils/drillContent/frameworks.js",
@@ -1506,9 +1492,8 @@
     "cellCount": 8,
     "exported": true,
     "shapeDigest": "c4dccaa51d23",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/gameTreeSizingHelpers.js::bucketRaiseFraction#ternary1": {
     "file": "src/utils/exploitEngine/gameTreeSizingHelpers.js",
@@ -1886,9 +1871,8 @@
     "cellCount": 6,
     "exported": false,
     "shapeDigest": "09ec4773f001",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/exploitEngine/thoughtCatalog.js::THOUGHT_CATALOG#ternary1": {
     "file": "src/utils/exploitEngine/thoughtCatalog.js",
@@ -2210,9 +2194,8 @@
     "cellCount": 6,
     "exported": false,
     "shapeDigest": "30eb482a1d50",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:display-only",
+    "since": "2026-08-17"
   },
   "src/utils/playerMatching/scorePlayerMatch.js::CONFIDENCE_THRESHOLDS": {
     "file": "src/utils/playerMatching/scorePlayerMatch.js",
@@ -2270,9 +2253,8 @@
     "cellCount": 6,
     "exported": false,
     "shapeDigest": "78f6a24b29b6",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/pokerCore/data/equitySkewDecomposition.js::EQUITY_SKEW_DECOMPOSITION": {
     "file": "src/utils/pokerCore/data/equitySkewDecomposition.js",
@@ -2351,9 +2333,8 @@
     "cellCount": 10,
     "exported": true,
     "shapeDigest": "dd0d18b85053",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/pokerCore/handEvaluator.js::HAND_CATEGORIES": {
     "file": "src/utils/pokerCore/handEvaluator.js",
@@ -2375,9 +2356,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "6d60729b9b45",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/pokerCore/preflopEquityTable.js::EQUITY_VS_OPEN": {
     "file": "src/utils/pokerCore/preflopEquityTable.js",
@@ -2984,9 +2964,8 @@
     "cellCount": 3,
     "exported": false,
     "shapeDigest": "74853259d0f1",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/postflopDrillContent/studyPriorityIndex.js::BOARD_CLASS_FREQ": {
     "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
@@ -3329,9 +3308,8 @@
     "cellCount": 2,
     "exported": true,
     "shapeDigest": "630eb4f91f0c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:schema-or-version",
+    "since": "2026-08-17"
   },
   "src/utils/sessionStats/sheetImport.js::MONTHS": {
     "file": "src/utils/sessionStats/sheetImport.js",
@@ -3356,9 +3334,8 @@
     "cellCount": 12,
     "exported": false,
     "shapeDigest": "6b6bac9cbc5e",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::BARBELL": {
     "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
@@ -3972,9 +3949,8 @@
     "cellCount": 13,
     "exported": false,
     "shapeDigest": "69e6cb20c15c",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   },
   "src/utils/standardOfRecord/faultRegister.js::WITHIN_CORPUS_DRIFT_2009": {
     "file": "src/utils/standardOfRecord/faultRegister.js",
@@ -4009,9 +3985,8 @@
     "cellCount": 13,
     "exported": true,
     "shapeDigest": "b28e75644a03",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:result-card-artifact",
+    "since": "2026-08-17"
   },
   "src/utils/standardOfRecord/metricsSchemas.js::METRICS_SCHEMA_VERSIONS": {
     "file": "src/utils/standardOfRecord/metricsSchemas.js",
@@ -4040,9 +4015,8 @@
     "cellCount": 16,
     "exported": true,
     "shapeDigest": "11208ca44bc5",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:schema-or-version",
+    "since": "2026-08-17"
   },
   "src/utils/standardOfRecord/schemas.js::SOR_SCHEMA_VERSIONS": {
     "file": "src/utils/standardOfRecord/schemas.js",
@@ -4064,9 +4038,8 @@
     "cellCount": 9,
     "exported": true,
     "shapeDigest": "cacb40a89f60",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:schema-or-version",
+    "since": "2026-08-17"
   },
   "src/utils/voiceCardEntry/grammar.js::VILLAIN_NUMBER_TOKENS": {
     "file": "src/utils/voiceCardEntry/grammar.js",
@@ -4106,8 +4079,7 @@
     "cellCount": 27,
     "exported": true,
     "shapeDigest": "69d2f7a5a719",
-    "ledger": "EXCLUDED:not-yet-triaged",
-    "since": "2026-08-17",
-    "ticket": "WS-445"
+    "ledger": "EXCLUDED:not-a-label",
+    "since": "2026-08-17"
   }
 }

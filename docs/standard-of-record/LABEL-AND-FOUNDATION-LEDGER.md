@@ -24,7 +24,7 @@ What it can say today, precisely:
 - **145 constructs** over **506 files** are harvested and every one is claimed — by a ledger row
   or by a reasoned exclusion. `node scripts/standardOfRecord/check-label-ledger.mjs` is the
   blocking gate that keeps that true.
-- **27 rows are written.** **119 constructs are `EXCLUDED:not-yet-triaged`**, owned by WS-445 and
+- **27 rows are written.** **91 constructs are `EXCLUDED:not-yet-triaged`**, owned by WS-445 and
   expiring 90 days from seeding. That backlog is the honest state, not a finished ledger.
 - **2 of 27 rows carry a Result Card.** Every other row states what would measure it and which
   ticket would build that instrument.
@@ -215,14 +215,28 @@ costs one reasoned line here, a false negative costs a row nobody ever writes.
 is how an exclusions list quietly becomes the register. `touch-floor.spec.js:80-82` points the
 same way with its stale-pin check: *pins may only shrink, never linger.*
 
-Current state: **119 of 145 constructs are `EXCLUDED:not-yet-triaged`, owned by WS-445.** Listing
+Current state: **91 of 145 constructs are `EXCLUDED:not-yet-triaged`, owned by WS-445.** Listing
 them is `node scripts/standardOfRecord/check-label-ledger.mjs --unledgered`; their reach is
 `node scripts/standardOfRecord/traceLabelReaders.mjs`, which sorts the backlog by how much
 depends on each one.
 
-The known false positives are module-level Result Card builders in
-`scripts/backtest/emit-*-result-card.mjs` — five constructs that take the
-`result-card-artifact` reason.
+**28 constructs carry a real reason as of 2026-08-17**, each read at its definition site before
+the reason was assigned. Grouped by why they are not label-shaped inputs:
+
+| Reason | n | What they are |
+|---|---|---|
+| `not-a-label` | 16 | The keys are not labels. Parse maps (`NUMBER_WORDS`, `MONTHS`, `RANK_VALUE`, `VILLAIN_NUMBER_TOKENS`), structural facts of the game (`HAND_CATEGORIES` ordinals, `PREFIX_LENGTH` and `getCardsForStreet` street→board-card-count, `LIMITS`), enum indices (`BUCKETS`, whose values are 0–9 for stacked-bar ordering), zero-value structs (`ZERO_RISK`, `EMPTY_INDEX`), determinism plumbing (`RNG_SALT` — per-site salts so "two sites can never silently share a stream"), disk budgeting (`atomStore`), and user-selected config presets (`PAYOUT_PRESETS`). |
+| `result-card-artifact` | 5 | Built Result Cards, not lookup tables — the four `buildResultCard(...)` calls in `emit-ws4*.mjs`, plus `WITHIN_CORPUS_DRIFT_2009`, which is a measurement record (`measuredBy: 'WS-353'`, `sourceId: 'SRC-012'`) embedded in the fault register. |
+| `schema-or-version` | 3 | `SCHEMA_RULES`, `METRICS_SCHEMA_VERSIONS`, `SOR_SCHEMA_VERSIONS`. |
+| `display-only` | 2 | `AGE_DECADE_GRAY_SHIFT` (avatar hair rendering) and a street cutoff inside a console-printing script. |
+| `ui-geometry` | 1 | `LAYOUT` — the 1600×720 design canvas, read by `useCanvasFit` and `ScaledContainer`. |
+
+**Two that look excludable and are not, recorded here so the reasoning is not re-litigated.**
+`FOLD_RATE_THRESHOLDS` calls itself thresholds "for human-readable language", but its readers
+include `villainProfileBuilder.js`, not only renderers — so it holds a row until that is checked.
+`M_RATIO_ZONES` is headed "for color coding" and still manufactures a zone from `min` cut points,
+which is the same threshold-as-label shape; a cosmetic `label`/`color` field beside a threshold
+does not make the threshold cosmetic.
 
 ---
 
