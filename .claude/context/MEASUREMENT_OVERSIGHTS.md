@@ -17,7 +17,7 @@ in prose with no mechanical enforcement.
 
 ---
 
-## MO-1 · Labels used as decision inputs when they are outputs — `DOCTRINE-ONLY`
+## MO-1 · Labels used as decision inputs when they are outputs — `GUARDED (partial)`
 
 **Ask:** does this code branch on a position label, a bucket label, or a style category, where
 equity / pot odds / SPR / players-remaining were available?
@@ -38,7 +38,39 @@ bucket-keyed machinery AP-RL-01 forbids, with 19 passing assertions and zero cal
 `scripts/`, or `ignition-poker-tracker/`. Open as FIND-042.
 
 **Falsifier:** a lint or test that fails on a new bucket-keyed branch introduced anywhere in
-`rangeEngine/` or `exploitEngine/`. None exists today.
+`rangeEngine/` or `exploitEngine/`. ~~None exists today.~~
+
+**PARTIALLY MET, 2026-08-16 (WS-445).** `scripts/standardOfRecord/check-label-ledger.mjs` is that
+check for the **table** form, and it is blocking — wired into `smart-test-runner.sh` as a
+pre-test gate and into `ci.yml` as its own step, in the commit that created it. A new
+label-keyed numeric table anywhere under `src/utils`, `src/constants` or `scripts/backtest` fails
+the build unless it is given a `LABEL_LEDGER` row naming its foundation, or a reasoned exclusion.
+`--update` cannot silence it: newly harvested constructs are written with `ledger: null`, and a
+null ledger is itself a violation, so re-snapshotting records that a construct exists without
+asserting that anyone thought about it.
+
+Scale of what prose had allowed: **145 label-shaped constructs across 506 files**, 42 of 128
+keyed tables module-private. The `comboMultiplier` / `adaptMultipliers` machinery cited above is
+now a harvested construct that must be claimed rather than an observation in a document.
+
+**Residue — why this is `(partial)` and not `GUARDED`:**
+
+1. **Threshold-as-label is not covered and is the largest hole.** `getSPRZone`
+   (`pokerCore/sprBands.js:49`) manufactures `micro`/`low`/`medium`/`high`/`deep` from
+   `SPR_BAND_EDGES = [2, 4, 8, 13]` with no string literal at the decision site. The harvest sees
+   every consumer of `micro` and none of its manufacture. This is the same objection §11.4
+   already recorded — *"a threshold label, the same anti-pattern in another costume"* — and it
+   remains open.
+2. **The control-flow form is harvested but not reach-checked.** 6 label-switches and 11
+   label-ternaries are enumerated and must be claimed, but nothing yet fails when a NEW READER of
+   an already-ledgered table appears. That is `REACH EXCEEDED`, specified and not yet shipped.
+3. **Runtime-assembled and storage-read labels are invisible in principle.** No AST answer
+   exists; measured today at zero JSON data imports in scope.
+4. **The gate proves a row EXISTS, not that it is honest.** `labelEntryProblems` and the
+   evidence bar do the rest, and a foundation invented rather than read is
+   `FAULT-constants-by-taste` wearing a new hat.
+
+Doctrine now has a home with teeth: `POKER_THEORY.md` §17, whose §17.4 binds the enumeration.
 
 ---
 

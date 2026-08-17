@@ -46,6 +46,20 @@ if ! node "$SCRIPT_DIR/check-engine-version-bump.mjs"; then
   echo "   Tests skipped — bump ENGINE_VERSION in src/constants/runtimeVersions.js."
   exit 1
 fi
+# WS-445: a label-shaped input — any discrete key standing between game state and a numeric
+# engine parameter — must appear in the Label & Foundation Ledger. exploitEngine/CLAUDE.md
+# forbade these in four documented forms and 49 families exist anyway, so prose was tried and
+# it did not work. Wired here on day one BECAUSE of FIND-086 above: a gate in no pipeline is a
+# comment with extra steps.
+if ! bash "$SCRIPT_DIR/check-label-ledger.sh"; then
+  echo ""
+  echo "❌ Pre-test gate failed: check-label-ledger.sh"
+  echo "   Tests skipped — fix the violation above and re-run."
+  echo "   (What needs a decision?  node scripts/standardOfRecord/check-label-ledger.mjs --unledgered)"
+  echo "   (Legitimate new construct? node scripts/standardOfRecord/check-label-ledger.mjs --update —"
+  echo "    note it records the construct, it does NOT decide anything about it.)"
+  exit 1
+fi
 
 # Run tests and capture output
 if [ -n "$PROJECT" ]; then

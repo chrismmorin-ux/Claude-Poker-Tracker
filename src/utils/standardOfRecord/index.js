@@ -215,3 +215,42 @@ export {
   proseMatchers,
   contaminationDisclosure,
 } from './faultRegister.js';
+
+// WS-445 — the Label & Foundation Ledger. Sibling to faultRegister.js above and shaped after
+// it deliberately: both are append-only registers whose rows may only be resolved with
+// recorded evidence plus a note stating what the resolution does NOT cover.
+//
+// Note the three impact constructors are the whole point of the module and are NOT
+// interchangeable. `buildUnmeasuredReach` mints no EV key at all, so an unmeasured row's
+// `absEvBB100` is `undefined` rather than `null` — there is no slot for a future relaxation to
+// fill. Reach for the constructor that matches the evidence you actually hold.
+export {
+  FOUNDATIONS,
+  FOUNDATION_STATUSES,
+  BOUND_METHODS,
+  EXCLUSION_REASONS,
+  LIVENESS,
+  LABEL_STATUSES,
+  LABEL_LEDGER,
+  LEDGER_EPOCH,
+  RESULT_CARD_ID_PATTERN,
+  LEDGER_VERSION_PATTERN,
+  isFoundation,
+  isFoundationStatus,
+  isBoundMethod,
+  isExclusionReason,
+  isLiveness,
+  isLedgerVersionShape,
+  buildMeasuredImpact,
+  buildBoundedImpact,
+  buildUnmeasuredReach,
+  impactProblems,
+  buildLabelEntry,
+  labelEntryProblems,
+  reachScore,
+  rankLabels,
+  ledgerSelfCheck,
+  canonicalLedgerBody,
+  ledgerVersion,
+  resolveLabel,
+} from './labelLedger.js';

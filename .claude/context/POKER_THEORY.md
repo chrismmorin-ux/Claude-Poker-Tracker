@@ -1,5 +1,5 @@
 ---
-version: '2.4'
+version: '2.5'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,9 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-08-16
+    version: '2.5'
+    change: "WS-445: added §17 — A LABEL IS A FOUNDATION CLAIM, AND IT SHIPS WITH ITS EVIDENCE TIER. §7.1 and exploitEngine/CLAUDE.md have forbidden label-shaped decision inputs in four separately documented forms, with worked examples, for months. Measured at HEAD 2026-08-16: a fresh-context survey found 49 label families and an AST harvest found 145 label-shaped constructs across 506 files, 42 of 128 keyed tables (33%) module-private. Prose was tried and did not work, so §17 ships as mechanism: `src/utils/standardOfRecord/labelLedger.js` (data), `docs/standard-of-record/LABEL-AND-FOUNDATION-LEDGER.md` (prose, bound to the module by an exact-order drift test), and `scripts/standardOfRecord/check-label-ledger.mjs` (blocking gate, wired into smart-test-runner.sh AND ci.yml in the same commit — FIND-086's lesson that a gate in no pipeline buys nothing). THE REFRAMING WS-436 FORCED: removing the six style labels cost nothing (ΔLL −0.00076 over 10,147 paired decisions, n.s.; advice-parity at exactly n=0 changed decisions) but the continuous full-resolution replacement was significantly WORSE (ΔLL −0.00691, t=−5.64) — so discretisation was never the defect, the same-source seed was. A label is therefore a claim about PROVENANCE, and §17 binds that the claim be stated and ranked. Three evidence tiers: MEASURED (a Result Card exists), BOUNDED (a bound whose method is from a closed set, rendered with a ≤/≥ glyph), UNMEASURED (NO EV figure, ranked by reach). The unmeasured guard is a SHAPE not a rule — buildUnmeasuredReach mints no EV key, so the field is undefined rather than null and there is no slot for a future relaxation to unlock. Five foundation statuses rather than two, because `measured-refuted` is a distinct fact from `undeclared`: FOLD_CURVE_STREET_MODS (villainModelData.js:412, read foldEquityCalculator.js:329) was measured, NOT supported (Brier flop 0.23668 → 0.23723) and still ships — a defensible call at ~5e-4, recorded in v2.3, but previously discoverable only by reading one docblock. Blind-spot rule inverted deliberately: a ledger with ZERO unmeasured rows or ZERO open instrument gaps FAILS its own self-check, because the naive direction rewards relabelling. Known limits stated in §17.3 rather than papered over: threshold-as-label (getSPRZone manufactures its zones from SPR_BAND_EDGES with no string literal at the decision site) is inherited and NOT closed; runtime-assembled and storage-read labels are invisible. Seed rows: REALIZATION_TABLE (30 cells, every showdown EV, no provenance — and already carrying THREE separately-filed instrument tickets, WS-404/407/498, none referencing the others), BUCKET_MIDPOINT (deviationMap.mjs:42, unprovenanced and inside the MEASUREMENT path where it sets the floor every deviation cell is scored against), FOLD_CURVE_STREET_MODS, plus ACTION_TAU_FRACTION and handhqReferencePool as strong-row counter-examples. 140 of 145 constructs remain EXCLUDED:not-yet-triaged, owned by WS-445, expiring at 90 days."
   - date: 2026-08-12
     version: '2.4'
     change: "WS-436: the six classifyStyle labels are no longer engine decision inputs anywhere — §7.4's hierarchy loses its style tier (now: decision model → continuous shrunk posteriors → population, two SEPARATE pipelines consumed mutually exclusively), and §11.1's fold-curve resolution loses FOLD_CURVE_PARAMS[style] (personalized || population; the fit regularises toward the measured population shape). Measured basis, 10,147 paired corpus decisions (online 2009 — transferred, not measured, for live): the style-conditioned Dirichlet seed carried ZERO villain-action information (ΔLL −0.00076 vs population, n.s.), and the continuous shrunk-posterior seed built to replace it was REFUTED as significantly worse (ΔLL −0.00691, t=−5.64) — the label was a lossy quantisation of stats computed from the SAME hands the model's buckets count, so any same-source seed double-counts; §7.4 now states that generalised rule. Deleted from code: STYLE_PRIORS, STYLE_STEEPNESS_MULT, STYLE_RAISE_PARAMS, STYLE_BET_CENTER, STYLE_FOLD_DEFAULTS, computeFoldCurveForStyle + per-style FOLD_CURVE_PARAMS (all founder estimates; the three depth-2 tables had been dormant their whole life behind a never-threaded sampleSize ramp). Replacements are continuous with exact n=0 population identities, asserted by test: villainFoldLevel (A1), aggFreq multiplicative raise-mass transfer, shrunk.cbet inverse-ratio bet-center transfer, and a mutually-exclusive villainFoldLevel tier-2 in the depth-2 model blend. The engine's playerStats struct no longer carries a style field at all. The clustering evidence (k=2, silhouette 0.343; 21.1% Unknown fallthrough; docs/research/player-archetypes-empirical-2026-07-26.md) stands as the partition refutation; display categorization is greenfielded separately (WS-447). Evidence: .claude/workstream/evidence/ws436-baseline.md §4a-4b."
@@ -2752,3 +2755,89 @@ this (it is a theorem); the locator is wrong. A valid locator must search the re
   against the shipped 169-cell grid on corpus data under the two-level split (POOL/EVAL **and**
   walk-forward, corpus-mined priors structurally excluded from the eval fold). **That test has not
   been run**, so the estimation claim in WS-337 is currently *unknown*, not *favourable*.
+
+---
+
+## 17. A Label Is a Foundation Claim, and It Ships With Its Evidence Tier (WS-445)
+
+Founder directive, 2026-08-08, mid-WS-436: *"we are going to need to look at each place where we
+use a label and the foundation of data and make sure its all in order and properly listed
+somewhere such that we can rank the estimated impact."*
+
+### 17.1 The label was never the problem — the foundation under it was
+
+§7.1 forbids position labels, bucket labels and style labels as decision inputs, and
+`exploitEngine/CLAUDE.md` documents the anti-pattern in four separate forms with worked
+examples. **A survey at HEAD on 2026-08-16 found 49 label families anyway, and an AST harvest
+found 145 label-shaped constructs across 506 files.** A rule that is only written down is not a
+control. That measurement is the entire argument for this section existing as mechanism rather
+than as more prose.
+
+WS-436's result is what reframes the problem. Removing the six style labels cost nothing —
+ΔLL −0.00076 over 10,147 paired decisions, n.s., and advice-parity at exactly n=0 changed
+decisions. But the continuous, full-resolution replacement built to take their place was
+**significantly worse** (ΔLL −0.00691, t=−5.64). Discretisation was not the defect. The defect
+was that the channel was seeded from the same observations the model's buckets already counted.
+
+**So a label is not primarily a resolution problem. It is a claim about where a number came
+from**, and the discipline this section binds is that the claim must be stated and ranked.
+
+### 17.2 Three tiers, and the one that carries no number
+
+Engine-improvement work is spoken of in **absolute EV** — bb/100, NET with GROSS beside it. But
+most of the label surface has never been measured, and forcing an EV figure onto an unmeasured
+row produces the failure WS-445's own ticket named: *a list of unmeasured guesses wearing EV
+units.*
+
+The ladder is therefore **MEASURED** (a Result Card exists), **BOUNDED** (an analytic bound whose
+method comes from a closed set, rendered with a `≤`/`≥` glyph so it never reads as an estimate),
+and **UNMEASURED** (no EV figure at all, ranked against other unmeasured rows by *reach*).
+
+The guard is a **shape, not a rule**: `buildUnmeasuredReach` mints no EV key, so the field is
+`undefined` rather than `null` — there is no slot to fill and nothing for a future relaxation to
+unlock.
+
+### 17.3 Two honest limits — do not let this section overclaim
+
+**The enumeration is bounded, not total.** The largest known hole is *threshold-as-label*:
+`getSPRZone` manufactures `micro`/`low`/`medium`/`high`/`deep` from `SPR_BAND_EDGES = [2,4,8,13]`
+with no string literal at the decision site, so the harvest sees every consumer of `micro` and
+none of its manufacture. `exploitEngine/CLAUDE.md` already named threshold-as-label as a fourth
+anti-pattern; this section does not close it. Labels assembled at runtime or read from storage
+are likewise invisible.
+
+**A ledger row is not a verdict on a table.** `FOLD_CURVE_STREET_MODS` is `measured-refuted` and
+still shipping, and that is a *defensible* call — the effect is ~5e-4, an order of magnitude
+below the population-curve correction, and tuning on a difference that small would be the
+error. What the ledger changes is that the decision was previously discoverable only by reading
+one docblock in one file.
+
+### 17.4 What this binds
+
+- Every discrete key standing between game state and a numeric engine parameter is a row in
+  `LABEL_LEDGER`. A label-shaped input absent from it fails `check-label-ledger.mjs` at merge —
+  the ledger is the closed enumeration of that surface, not a sample of it.
+- A row states its **foundation** — founder estimate, mined corpus, fitted curve, or structural
+  computation — and that foundation's measurement status. *"It is in the code and the tests are
+  green"* is not a foundation.
+- An **UNMEASURED** row carries no EV figure and cannot be given one. Unmeasured rows rank
+  against each other by **reach**, never against measured rows by number.
+- An UNMEASURED row **names the instrument that would measure it**, with a ticket. An entry with
+  no instrument is a complaint, not a ledger row — the same bar `falsifier` clears in the fault
+  register, and for the same reason: a surface nobody can settle re-emits at rank 1 forever.
+- A **BOUNDED** row names its method from a closed set and its direction. `≤ 0.9 bb/100` and
+  `0.9 bb/100` are different claims and are never rendered the same way.
+- A foundation **measured and NOT SUPPORTED** is a distinct status from one nobody measured, and
+  the ledger keeps them apart. Collapsing `measured-refuted` into "unmeasured" erases the
+  measurement; collapsing it into "measured" launders it.
+- Promotion up the evidence ladder **requires recorded evidence**, and so does resolution — with
+  a note stating what the resolution does *not* cover. A row does not become MEASURED because
+  someone re-read the docblock, and rows are append-only: a deleted construct moves to
+  `resolved` carrying its commit, and never disappears.
+- **Reach is counted, not claimed.** A row's read-site count is harvested from source.
+- **An empty improvement list is a blind spot, not a finish line.** A ledger with zero unmeasured
+  rows, or zero open instrument gaps, FAILS its own self-check. *A ledger with nothing left to
+  instrument is not a finished ledger; it is a ledger that stopped asking.*
+- Widening the engine widens the ledger. A new directory feeding an engine parameter joins
+  `ROOTS` in the change that creates it — a scope hole is to be recorded, never taken as an
+  exemption.

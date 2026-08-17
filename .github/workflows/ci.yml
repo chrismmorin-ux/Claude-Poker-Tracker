@@ -20,6 +20,11 @@ jobs:
       # SoR additive gate needs its own step here — it is not redundant with the local one.
       - name: SoR additive-schema gate
         run: bash scripts/check-sor-additive.sh
+      # WS-445, and here for the same FIND-086 reason as the step above: CI runs `npm test`
+      # directly, so the label-ledger gate needs its own step and is not redundant with the
+      # copy in smart-test-runner.sh.
+      - name: Label & Foundation Ledger gate
+        run: bash scripts/check-label-ledger.sh
       - run: npm test
       - name: Model Coherence scan (advisory — Phase 1)
         run: node scripts/coherence-scan.cjs

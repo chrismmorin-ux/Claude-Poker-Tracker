@@ -35,7 +35,33 @@ const walk = (dir) => {
     }
   }
 };
-ROOTS.forEach((r) => { try { walk(r); } catch { /* root absent in a partial checkout */ } });
+const missingRoots = [];
+ROOTS.forEach((r) => {
+  try { walk(r); } catch { missingRoots.push(r); }
+});
+
+/**
+ * ANTI-VACUITY (WS-445). Until this existed, a missing root was swallowed silently: rename the
+ * engine directories and the gate printed "✓ 0 files clean" and exited 0, defending nothing.
+ * A check that cannot fail is worse than no check, because it reports success.
+ *
+ * Same guard as `tests/playwright/touch-floor.spec.js:104` ("derived roster went vacuous") and
+ * the per-area floors in `scripts/standardOfRecord/harvestLabelConstructs.mjs`. The floor is
+ * deliberately far below the ~90 files these roots hold, so it catches a broken walk without
+ * becoming a ratchet on legitimate deletion.
+ */
+const FILE_FLOOR = 40;
+if (missingRoots.length || files.length < FILE_FLOOR) {
+  console.error('❌ check-required-equity-seam: VACUOUS SCAN — the gate stopped seeing things.');
+  if (missingRoots.length) {
+    console.error(`   Root(s) not found: ${missingRoots.join(', ')}`);
+    console.error('   A renamed or moved engine directory silently empties this gate.');
+  }
+  if (files.length < FILE_FLOOR) {
+    console.error(`   Only ${files.length} files scanned, floor is ${FILE_FLOOR}.`);
+  }
+  process.exit(1);
+}
 
 const violations = [];
 for (const f of files) {

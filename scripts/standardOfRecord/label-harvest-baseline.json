@@ -1,0 +1,4134 @@
+{
+  "scripts/backtest/atomStore.mjs::DISK_PREFLIGHT_DEFAULTS": {
+    "file": "scripts/backtest/atomStore.mjs",
+    "symbol": "DISK_PREFLIGHT_DEFAULTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bytesPerAtom",
+        "checkpointEveryAtoms",
+        "expectedAtoms",
+        "minFreeBytes",
+        "safetyFactor"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "c232cfc85db2",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/atomStore.mjs::MEASURED_ATOM_BYTES": {
+    "file": "scripts/backtest/atomStore.mjs",
+    "symbol": "MEASURED_ATOM_BYTES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "atomsPerHand",
+        "gz",
+        "onDisk",
+        "raw",
+        "source"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "4aed47839298",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/deviationMap.mjs::BUCKET_MIDPOINT": {
+    "file": "scripts/backtest/deviationMap.mjs",
+    "symbol": "BUCKET_MIDPOINT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "0-33",
+        "100-150",
+        "150+",
+        "33-66",
+        "66-100"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "6a5bb7abbf8b",
+    "ledger": "LBL-bucket-midpoint"
+  },
+  "scripts/backtest/emit-ws436-result-card.mjs::absoluteEV": {
+    "file": "scripts/backtest/emit-ws436-result-card.mjs",
+    "symbol": "absoluteEV",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "evDeltaOnMeasuredSet",
+        "statement"
+      ]
+    ],
+    "cellCount": 1,
+    "exported": false,
+    "shapeDigest": "32d992fa40ae",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/emit-ws436-result-card.mjs::card": {
+    "file": "scripts/backtest/emit-ws436-result-card.mjs",
+    "symbol": "card",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "admissibility",
+        "clusterUnit",
+        "estimand",
+        "manifest",
+        "match",
+        "metrics",
+        "resultCardId",
+        "treatment"
+      ],
+      [
+        "absoluteEV",
+        "advicePath",
+        "caveats",
+        "constants",
+        "dealBookHash",
+        "dealBookId",
+        "determinism",
+        "disclaimerRegisterVersion",
+        "engineCommit",
+        "engineDirty",
+        "fieldId",
+        "fieldVersion",
+        "kind",
+        "knownDivergences",
+        "partition",
+        "quotable",
+        "reasons",
+        "seeds",
+        "surfaceId",
+        "unseededSources",
+        "villainPrediction"
+      ],
+      [
+        "AGG_FREQ_PRIOR_MEAN",
+        "FEED",
+        "POP_BET_CENTER",
+        "PSEUDOCOUNT",
+        "REFINEMENT_BUDGET_MS",
+        "crossProcess",
+        "inProcess",
+        "liveness",
+        "probePairing"
+      ]
+    ],
+    "cellCount": 13,
+    "exported": false,
+    "shapeDigest": "1b2259baaa64",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/emit-ws481-result-card.mjs::card": {
+    "file": "scripts/backtest/emit-ws481-result-card.mjs",
+    "symbol": "card",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "admissibility",
+        "clusterUnit",
+        "estimand",
+        "manifest",
+        "match",
+        "metrics",
+        "resultCardId",
+        "treatment"
+      ],
+      [
+        "aggressionShift",
+        "axisDefinition",
+        "blindInstruments",
+        "caveats",
+        "constants",
+        "controlUnfedMustBeZero",
+        "dealBookHash",
+        "dealBookId",
+        "disclaimerRegisterVersion",
+        "engineCommit",
+        "engineDirty",
+        "fieldId",
+        "fieldVersion",
+        "instrumentBuilt",
+        "kind",
+        "knownDivergences",
+        "pairedAdviceDelta",
+        "partition",
+        "quotable",
+        "reach",
+        "reasons",
+        "seeds",
+        "surfaceId",
+        "trainingSideBefore",
+        "unseededSources"
+      ],
+      [
+        "FEED_AFTER",
+        "FEED_BEFORE",
+        "FOLD_CURVE_AXIS",
+        "MIN_DISTINCT_SIZES",
+        "MIN_FOLD_CURVE_OBS",
+        "REFINEMENT_BUDGET_MS",
+        "after",
+        "anchorCheck",
+        "basis",
+        "before",
+        "conditioned",
+        "coverage",
+        "delta",
+        "denominator",
+        "divergent",
+        "fed",
+        "formula",
+        "meanTvOnDivergent",
+        "n",
+        "note",
+        "numerator",
+        "omits",
+        "omitsNote",
+        "paired",
+        "passed",
+        "playersConsidered",
+        "playersWithFittedCurve",
+        "probePairing",
+        "sharedBy",
+        "signAsPredicted",
+        "signPrediction",
+        "unconditionedNote",
+        "unconditionedRate",
+        "what",
+        "worked"
+      ],
+      [
+        "after",
+        "before",
+        "conditional",
+        "consumerAgreesWithDefinition",
+        "decisionsServed",
+        "decisionsTotal",
+        "documented",
+        "k",
+        "n",
+        "note",
+        "rate",
+        "recomputedViaConsumer",
+        "recomputedViaDefinition",
+        "scenario",
+        "villainsInFeed",
+        "withFittedCurveAfter",
+        "withFittedCurveBefore"
+      ]
+    ],
+    "cellCount": 34,
+    "exported": false,
+    "shapeDigest": "89941422dfba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/emit-ws482-result-card.mjs::card": {
+    "file": "scripts/backtest/emit-ws482-result-card.mjs",
+    "symbol": "card",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "admissibility",
+        "clusterUnit",
+        "estimand",
+        "manifest",
+        "match",
+        "metrics",
+        "resultCardId",
+        "treatment"
+      ],
+      [
+        "adviceDelta",
+        "caveats",
+        "collateralFixes",
+        "constants",
+        "dealBookHash",
+        "dealBookId",
+        "disclaimerRegisterVersion",
+        "engineCommit",
+        "engineDirty",
+        "evDelta",
+        "fieldId",
+        "fieldVersion",
+        "kind",
+        "knownDivergences",
+        "partition",
+        "quotable",
+        "reachability",
+        "reasons",
+        "seeds",
+        "stagesRan",
+        "surfaceId",
+        "threading",
+        "unseededSources"
+      ],
+      [
+        "POPULATION_PRIORS_BET_FOLD",
+        "POPULATION_PRIORS_RAISE_FOLD",
+        "REFINEMENT_BUDGET_MS",
+        "REFINEMENT_BUDGET_MS_ADVICE_ARM",
+        "census",
+        "consequenceForTheTicket",
+        "control",
+        "deadParameters",
+        "divergent",
+        "evDump",
+        "evidence",
+        "from",
+        "instrument",
+        "liveConsumers",
+        "meanAbsDelta",
+        "moved",
+        "note",
+        "paired",
+        "parameter",
+        "probePairing",
+        "recommendations",
+        "scenarios",
+        "sitesLeftOnPrior",
+        "sitesThreaded",
+        "statement",
+        "to",
+        "topActionFlips",
+        "why"
+      ],
+      [
+        "description",
+        "divergent",
+        "note",
+        "paired",
+        "passed"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "9f2fa8f06d5b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/entryMap.mjs::HERO_SEAT_BY_POS": {
+    "file": "scripts/backtest/entryMap.mjs",
+    "symbol": "HERO_SEAT_BY_POS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "954df1da72b5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/fixtures/plumbingProof.card.js::plumbingProofCard": {
+    "file": "scripts/backtest/fixtures/plumbingProof.card.js",
+    "symbol": "plumbingProofCard",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cardId",
+        "domain",
+        "rationale",
+        "residual",
+        "rules",
+        "schemaVersion",
+        "title"
+      ],
+      [
+        "do",
+        "gameType",
+        "rationale",
+        "seats",
+        "stackDepthBB"
+      ],
+      [
+        "fold"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": true,
+    "shapeDigest": "e9fb58d888aa",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/heroEvRunner.mjs::DEFAULT_RAKE_CONFIG": {
+    "file": "scripts/backtest/heroEvRunner.mjs",
+    "symbol": "DEFAULT_RAKE_CONFIG",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cap",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "468480059722",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/holeMap.mjs::POPULATION_CURVE": {
+    "file": "scripts/backtest/holeMap.mjs",
+    "symbol": "POPULATION_CURVE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "maxDelta",
+        "midpoint",
+        "steepness",
+        "steepnessDown",
+        "steepnessUp"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "0eaa29d846a0",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/holeMap.mjs::SIZE_BUCKET_MIDPOINT": {
+    "file": "scripts/backtest/holeMap.mjs",
+    "symbol": "SIZE_BUCKET_MIDPOINT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "0-33",
+        "100-150",
+        "150+",
+        "33-66",
+        "66-100"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "6a5bb7abbf8b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/ladderAxes.mjs::AXES": {
+    "file": "scripts/backtest/ladderAxes.mjs",
+    "symbol": "AXES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cbetRate",
+        "flopBetFreq",
+        "flopBetFreqNonPfa",
+        "limpRate",
+        "threeBetRate"
+      ],
+      [
+        "conditioning",
+        "id",
+        "label",
+        "numerator",
+        "role",
+        "rung",
+        "studiedDirection"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "5c98622850e2",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/poolBestResponse.mjs::actionValues#switch1": {
+    "file": "scripts/backtest/poolBestResponse.mjs",
+    "symbol": "actionValues",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "fold",
+        "raise"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "6632eeca615c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/probeFoldBranchRake.mjs::LIVE_1_3": {
+    "file": "scripts/backtest/probeFoldBranchRake.mjs",
+    "symbol": "LIVE_1_3",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cap",
+        "dropThreshold",
+        "jackpotDrop",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "3001c1cd0199",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/rakeSensitivity.mjs::LIVE_DOUBLE_RAKE": {
+    "file": "scripts/backtest/rakeSensitivity.mjs",
+    "symbol": "LIVE_DOUBLE_RAKE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cap",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "468480059722",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/rakeSensitivity.mjs::ONLINE_2009_RAKE": {
+    "file": "scripts/backtest/rakeSensitivity.mjs",
+    "symbol": "ONLINE_2009_RAKE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cap",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "468480059722",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/rakeSensitivity.mjs::ZERO_RAKE": {
+    "file": "scripts/backtest/rakeSensitivity.mjs",
+    "symbol": "ZERO_RAKE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cap",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "468480059722",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/runoutBenchmark.mjs::EMPTY_INDEX": {
+    "file": "scripts/backtest/runoutBenchmark.mjs",
+    "symbol": "EMPTY_INDEX",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "n",
+        "prefix",
+        "scores",
+        "total"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "d06ee320ec49",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/show-ws481-flips.mjs::upto#ternary1": {
+    "file": "scripts/backtest/show-ws481-flips.mjs",
+    "symbol": "upto",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "flop",
+        "turn"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "74853259d0f1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "scripts/backtest/strategyProfile.mjs::POSTED_BB": {
+    "file": "scripts/backtest/strategyProfile.mjs",
+    "symbol": "POSTED_BB",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "954df1da72b5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/gameConstants.js::LAYOUT": {
+    "file": "src/constants/gameConstants.js",
+    "symbol": "LAYOUT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "ACTION_PANEL_TOP",
+        "ACTION_PANEL_WIDTH",
+        "BADGE_SIZE",
+        "CARD",
+        "CONTEXT_MENU_OFFSET_X",
+        "CONTEXT_MENU_OFFSET_Y",
+        "DEALER_BUTTON_SIZE",
+        "FELT_HEIGHT",
+        "FELT_WIDTH",
+        "SEAT_SIZE",
+        "TABLE_HEIGHT",
+        "TABLE_LABEL_BOTTOM",
+        "TABLE_LABEL_HEIGHT",
+        "TABLE_LABEL_WIDTH",
+        "TABLE_OFFSET_X",
+        "TABLE_OFFSET_Y",
+        "TABLE_WIDTH",
+        "TOGGLE_BUTTON_SIZE"
+      ],
+      [
+        "LARGE",
+        "MEDIUM",
+        "SMALL",
+        "TABLE"
+      ],
+      [
+        "height",
+        "width"
+      ]
+    ],
+    "cellCount": 25,
+    "exported": true,
+    "shapeDigest": "39fafa8b7d60",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/gameConstants.js::LIMITS": {
+    "file": "src/constants/gameConstants.js",
+    "symbol": "LIMITS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "MAX_COMMUNITY_CARDS",
+        "MAX_HOLE_CARDS",
+        "MAX_SHOWDOWN_SLOTS",
+        "NUM_SEATS"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": true,
+    "shapeDigest": "8b68bbe4d52b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/sessionConstants.js::GAME_TYPES": {
+    "file": "src/constants/sessionConstants.js",
+    "symbol": "GAME_TYPES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "ONE_THREE",
+        "ONE_TWO",
+        "TOURNAMENT",
+        "TWO_FIVE"
+      ],
+      [
+        "buyInDefault",
+        "label",
+        "rake",
+        "rebuyDefault"
+      ],
+      [
+        "cap",
+        "noFlopNoDrop",
+        "pct"
+      ]
+    ],
+    "cellCount": 14,
+    "exported": true,
+    "shapeDigest": "942e2ad3b4b1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/settingsConstants.js::DEFAULT_SETTINGS": {
+    "file": "src/constants/settingsConstants.js",
+    "symbol": "DEFAULT_SETTINGS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "anchorCalibration",
+        "autoBackupEnabled",
+        "backupFrequency",
+        "cardSize",
+        "customBetSizes",
+        "customGameTypes",
+        "customVenues",
+        "defaultGameType",
+        "defaultVenue",
+        "privacy",
+        "selfCoach",
+        "theme",
+        "voiceCardEntry",
+        "voiceReasoningNotes"
+      ],
+      [
+        "activationMode",
+        "confidenceThreshold",
+        "enabled",
+        "observationEnrollment",
+        "ownerTier",
+        "photoCaptureEnabled",
+        "position",
+        "postflop_bet",
+        "postflop_raise",
+        "preflop_open",
+        "preflop_raise",
+        "signalToggles",
+        "signalWeights"
+      ],
+      [
+        "W_drill",
+        "W_leak",
+        "W_recent",
+        "W_test",
+        "enableDrill",
+        "enableLeak",
+        "enableRecent",
+        "enableTest"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "783bb4a40fad",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/tournamentConstants.js::M_RATIO_ZONES": {
+    "file": "src/constants/tournamentConstants.js",
+    "symbol": "M_RATIO_ZONES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "GREEN",
+        "ORANGE",
+        "RED",
+        "YELLOW"
+      ],
+      [
+        "color",
+        "label",
+        "min"
+      ]
+    ],
+    "cellCount": 8,
+    "exported": true,
+    "shapeDigest": "999e32decfbe",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/constants/tournamentConstants.js::PAYOUT_PRESETS": {
+    "file": "src/constants/tournamentConstants.js",
+    "symbol": "PAYOUT_PRESETS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "satellite",
+        "standard9",
+        "topHeavy",
+        "winnerTakeAll"
+      ],
+      [
+        "label",
+        "percentages"
+      ]
+    ],
+    "cellCount": 13,
+    "exported": true,
+    "shapeDigest": "bac44241cea5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/anchorLibrary/deriveAnchorBoardCondition.js::PREFIX_LENGTH": {
+    "file": "src/utils/anchorLibrary/deriveAnchorBoardCondition.js",
+    "symbol": "PREFIX_LENGTH",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "flop",
+        "river",
+        "turn"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "5c0fdfdcd30f",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/assumptionEngine/assumptionTypes.js::CALIBRATION_LADDER": {
+    "file": "src/utils/assumptionEngine/assumptionTypes.js",
+    "symbol": "CALIBRATION_LADDER",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "conservativeCeilingTrigger",
+        "retirementConsecutiveSessions",
+        "retirementTrigger",
+        "targetZone",
+        "wellCalibratedGap"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "f059acfeee01",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/assumptionEngine/assumptionTypes.js::DEFAULT_DECAY_HALFLIFE_DAYS": {
+    "file": "src/utils/assumptionEngine/assumptionTypes.js",
+    "symbol": "DEFAULT_DECAY_HALFLIFE_DAYS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cash",
+        "tournament"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "7d184ceb9a98",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/assumptionEngine/assumptionTypes.js::DIAL_DEFAULTS": {
+    "file": "src/utils/assumptionEngine/assumptionTypes.js",
+    "symbol": "DIAL_DEFAULTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "dialCeiling",
+        "dialFloor",
+        "sigmoidSteepness"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "b350e13a6f44",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/assumptionEngine/assumptionTypes.js::HERO_SIDE_THRESHOLDS": {
+    "file": "src/utils/assumptionEngine/assumptionTypes.js",
+    "symbol": "HERO_SIDE_THRESHOLDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "asymmetricPayoff",
+        "confidence",
+        "recognizabilityDrill",
+        "sharpe",
+        "stability"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "4cc1e1935e93",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/assumptionEngine/assumptionTypes.js::VILLAIN_SIDE_THRESHOLDS": {
+    "file": "src/utils/assumptionEngine/assumptionTypes.js",
+    "symbol": "VILLAIN_SIDE_THRESHOLDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "asymmetricPayoff",
+        "confidence",
+        "recognizabilityDrill",
+        "recognizabilityLive",
+        "sharpe",
+        "stability"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": true,
+    "shapeDigest": "fd6f8d60c1ab",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/citedDecision/citedDecisionProducer.js::deriveRecommendedAction#switch1": {
+    "file": "src/utils/citedDecision/citedDecisionProducer.js",
+    "symbol": "deriveRecommendedAction",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "bluff-prune",
+        "line-change",
+        "range-bet",
+        "sizing-shift",
+        "spot-skip",
+        "value-expand"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "d3d3a49cb6fc",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/citedDecision/dialMath.js::stakeFactor#switch1": {
+    "file": "src/utils/citedDecision/dialMath.js",
+    "symbol": "stakeFactor",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "cash",
+        "high-stakes",
+        "tournament"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "6e0d9b715f4f",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/claimAdjudication/claimExtractor.js::NUMBER_WORDS": {
+    "file": "src/utils/claimAdjudication/claimExtractor.js",
+    "symbol": "NUMBER_WORDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "eight",
+        "five",
+        "four",
+        "nine",
+        "one",
+        "seven",
+        "six",
+        "ten",
+        "three",
+        "two"
+      ]
+    ],
+    "cellCount": 10,
+    "exported": false,
+    "shapeDigest": "5dfeafd4e2e4",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/drillContent/frameworks.js::FLUSH_DELTAS": {
+    "file": "src/utils/drillContent/frameworks.js",
+    "symbol": "FLUSH_DELTAS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "both_suited_shared",
+        "neither_suited",
+        "one_suited"
+      ],
+      [
+        "favored",
+        "other"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": false,
+    "shapeDigest": "140718dd651c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/emotionalState/fearIndex.js::FEAR_FACTOR_WEIGHTS": {
+    "file": "src/utils/emotionalState/fearIndex.js",
+    "symbol": "FEAR_FACTOR_WEIGHTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "drawCompletion",
+        "rangeCapping",
+        "rangePositionBottomShare",
+        "sessionStuckFear",
+        "sprDynamicFear",
+        "textureShift"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": true,
+    "shapeDigest": "fab0af92dd64",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/emotionalState/greedIndex.js::GREED_FACTOR_WEIGHTS": {
+    "file": "src/utils/emotionalState/greedIndex.js",
+    "symbol": "GREED_FACTOR_WEIGHTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "rangePositionTopShare",
+        "rangeUncapping",
+        "sessionHeaterGreed",
+        "sprDynamicGreed",
+        "textureShift"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "0d0c82f85eb2",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/emotionalState/tiltTransform.js::STYLE_MULTIPLIERS": {
+    "file": "src/utils/emotionalState/tiltTransform.js",
+    "symbol": "STYLE_MULTIPLIERS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "Fish",
+        "LAG",
+        "Nit",
+        "TAG",
+        "Unknown"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "8ce569a534d0",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/actionClassifier.js::EQ": {
+    "file": "src/utils/exploitEngine/actionClassifier.js",
+    "symbol": "EQ",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "AHEAD",
+        "BLUFF_CEILING",
+        "NUT_ADVANTAGE",
+        "THIN_VALUE",
+        "VALUE"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "a03f247aaa2b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/bayesianConfidence.js::STAT_PRIORS": {
+    "file": "src/utils/exploitEngine/bayesianConfidence.js",
+    "symbol": "STAT_PRIORS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "af",
+        "callFreq",
+        "cbet",
+        "foldTo3Bet",
+        "foldToCbet",
+        "limpFreq",
+        "pfr",
+        "threeBet",
+        "vpip"
+      ],
+      [
+        "alpha",
+        "beta"
+      ]
+    ],
+    "cellCount": 18,
+    "exported": true,
+    "shapeDigest": "5c3ba6880099",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/briefingBuilder.js::buildEvidenceBreakdown#ternary1": {
+    "file": "src/utils/exploitEngine/briefingBuilder.js",
+    "symbol": "buildEvidenceBreakdown",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "limp-call-station",
+        "limp-fold-exploitable"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "fa63ef0f01e3",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/briefingBuilder.js::GTO_BASELINES": {
+    "file": "src/utils/exploitEngine/briefingBuilder.js",
+    "symbol": "GTO_BASELINES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "af",
+        "cbet",
+        "foldToCbet",
+        "pfr",
+        "threeBet",
+        "vpip"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": false,
+    "shapeDigest": "715bd2df97fa",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/briefingBuilder.js::RECOGNIZABILITY_MAP": {
+    "file": "src/utils/exploitEngine/briefingBuilder.js",
+    "symbol": "RECOGNIZABILITY_MAP",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "3bet-high",
+        "3bet-low",
+        "af-low",
+        "bb-underdefends",
+        "btn-too-wide",
+        "capped-calling-range",
+        "cbet-high",
+        "ep-too-wide",
+        "high-fold-equity",
+        "limp-call-station",
+        "limp-fold-exploitable",
+        "limp-never-folds",
+        "limp-range-capped",
+        "limp-reraise-trap",
+        "pfr-low-vpip-high",
+        "range-cold-call-too-wide",
+        "range-never-3bets-position",
+        "range-open-wider-than-gto",
+        "range-showdown-mismatch",
+        "vpip-high",
+        "vpip-low",
+        "vpip-pfr-gap",
+        "wide-range-gives-up"
+      ],
+      [
+        "score",
+        "time",
+        "trigger"
+      ]
+    ],
+    "cellCount": 23,
+    "exported": false,
+    "shapeDigest": "98f659cc7efa",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/exploitScoringUtils.js::getRangeBoost#switch1": {
+    "file": "src/utils/exploitEngine/exploitScoringUtils.js",
+    "symbol": "getRangeBoost",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "3bet-low",
+        "pfr-low-vpip-high",
+        "vpip-high"
+      ]
+    ],
+    "cellCount": 16,
+    "exported": false,
+    "shapeDigest": "7187b7f031ee",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/exploitScoringUtils.js::IMPACT_MAP": {
+    "file": "src/utils/exploitEngine/exploitScoringUtils.js",
+    "symbol": "IMPACT_MAP",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "3bet-high",
+        "3bet-low",
+        "3bet-polarized",
+        "af-high",
+        "af-low",
+        "aggro-opener-high-cbet",
+        "bb-underdefends",
+        "btn-too-wide",
+        "calls-wide-aggro-postflop",
+        "capped-calling-range",
+        "cbet-high",
+        "cbet-low",
+        "continue-range-wide",
+        "ep-too-wide",
+        "high-fold-equity",
+        "limp-call-station",
+        "limp-fold-exploitable",
+        "limp-never-folds",
+        "limp-range-capped",
+        "limp-reraise-trap",
+        "limp-station",
+        "oop-aggro-ip-passive",
+        "opens-wide-never-3bets",
+        "paired-board-check",
+        "pfr-high",
+        "pfr-low-vpip-high",
+        "pips-wide-overall",
+        "pips-wide-pairs",
+        "range-cold-call-too-wide",
+        "range-limp-open-overlap",
+        "range-never-3bets-position",
+        "range-open-wider-than-gto",
+        "range-showdown-mismatch",
+        "tight-raises-most",
+        "tight-range-high-cbet",
+        "vpip-high",
+        "vpip-low",
+        "vpip-pfr-gap",
+        "wet-board-equity",
+        "wide-dry-capped",
+        "wide-passive-station",
+        "wide-range-3bet-light",
+        "wide-range-gives-up",
+        "wide-range-wide-cbet"
+      ]
+    ],
+    "cellCount": 44,
+    "exported": true,
+    "shapeDigest": "59550573fe52",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/exploitScoringUtils.js::PRIORITY_ORDER": {
+    "file": "src/utils/exploitEngine/exploitScoringUtils.js",
+    "symbol": "PRIORITY_ORDER",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "high",
+        "low",
+        "medium"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "3dfc8ff3297f",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/exploitScoringUtils.js::RISK_MAP": {
+    "file": "src/utils/exploitEngine/exploitScoringUtils.js",
+    "symbol": "RISK_MAP",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "3bet-high",
+        "3bet-low",
+        "3bet-polarized",
+        "af-high",
+        "af-low",
+        "aggro-opener-high-cbet",
+        "bb-underdefends",
+        "btn-too-wide",
+        "calls-wide-aggro-postflop",
+        "capped-calling-range",
+        "cbet-high",
+        "cbet-low",
+        "continue-range-wide",
+        "ep-too-wide",
+        "high-fold-equity",
+        "limp-call-station",
+        "limp-fold-exploitable",
+        "limp-never-folds",
+        "limp-range-capped",
+        "limp-reraise-trap",
+        "limp-station",
+        "oop-aggro-ip-passive",
+        "opens-wide-never-3bets",
+        "paired-board-check",
+        "pfr-high",
+        "pfr-low-vpip-high",
+        "pips-wide-overall",
+        "pips-wide-pairs",
+        "range-cold-call-too-wide",
+        "range-limp-open-overlap",
+        "range-never-3bets-position",
+        "range-open-wider-than-gto",
+        "range-showdown-mismatch",
+        "tight-raises-most",
+        "tight-range-high-cbet",
+        "vpip-high",
+        "vpip-low",
+        "vpip-pfr-gap",
+        "wet-board-equity",
+        "wide-dry-capped",
+        "wide-passive-station",
+        "wide-range-3bet-light",
+        "wide-range-gives-up",
+        "wide-range-wide-cbet"
+      ]
+    ],
+    "cellCount": 44,
+    "exported": true,
+    "shapeDigest": "59550573fe52",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/exploitValidator.js::CONSEQUENCE_WEIGHTS": {
+    "file": "src/utils/exploitEngine/exploitValidator.js",
+    "symbol": "CONSEQUENCE_WEIGHTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "3bet-polarized",
+        "af-low",
+        "aggro-opener-high-cbet",
+        "bb-underdefends",
+        "btn-too-wide",
+        "capped-calling-range",
+        "ep-too-wide",
+        "high-fold-equity",
+        "limp-call-station",
+        "limp-fold-exploitable",
+        "limp-never-folds",
+        "limp-range-capped",
+        "limp-reraise-trap",
+        "pips-wide-overall",
+        "range-cold-call-too-wide",
+        "range-open-wider-than-gto",
+        "vpip-high",
+        "vpip-low",
+        "wide-range-3bet-light",
+        "wide-range-gives-up"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "ca1aa43fe303",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeConstants.js::BUCKET_EQUITY_ANCHORS": {
+    "file": "src/utils/exploitEngine/gameTreeConstants.js",
+    "symbol": "BUCKET_EQUITY_ANCHORS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "air",
+        "draw",
+        "marginal",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "c223934774be",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeConstants.js::POP_BETTING_RATES": {
+    "file": "src/utils/exploitEngine/gameTreeConstants.js",
+    "symbol": "POP_BETTING_RATES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "air",
+        "draw",
+        "marginal",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "c223934774be",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeConstants.js::POP_CALLING_RATES": {
+    "file": "src/utils/exploitEngine/gameTreeConstants.js",
+    "symbol": "POP_CALLING_RATES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "air",
+        "draw",
+        "marginal",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "c223934774be",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeConstants.js::REALIZATION_TABLE": {
+    "file": "src/utils/exploitEngine/gameTreeConstants.js",
+    "symbol": "REALIZATION_TABLE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "flop",
+        "river",
+        "turn"
+      ],
+      [
+        "ip",
+        "oop"
+      ],
+      [
+        "deep",
+        "high",
+        "low",
+        "medium",
+        "micro"
+      ]
+    ],
+    "cellCount": 30,
+    "exported": true,
+    "shapeDigest": "9d181a2c1364",
+    "ledger": "LBL-realization-table"
+  },
+  "src/utils/exploitEngine/gameTreeConstants.js::TEXTURE_REALIZATION": {
+    "file": "src/utils/exploitEngine/gameTreeConstants.js",
+    "symbol": "TEXTURE_REALIZATION",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "dry",
+        "paired",
+        "wet"
+      ],
+      [
+        "ip",
+        "oop"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "acf10da0e4b1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeSampling.js::RNG_SALT": {
+    "file": "src/utils/exploitEngine/gameTreeSampling.js",
+    "symbol": "RNG_SALT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BET_CALL_DEPTH2",
+        "CALL_DEPTH2",
+        "COMBO_ROLLOUT",
+        "DEFAULT_EQUITY_MC",
+        "DEPTH3_FLOP_RIVER",
+        "DEPTH3_FLOP_TURN",
+        "DEPTH3_TURN_RIVER",
+        "RAISE_RESPONSE_DEPTH2"
+      ]
+    ],
+    "cellCount": 8,
+    "exported": true,
+    "shapeDigest": "c4dccaa51d23",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/gameTreeSizingHelpers.js::bucketRaiseFraction#ternary1": {
+    "file": "src/utils/exploitEngine/gameTreeSizingHelpers.js",
+    "symbol": "bucketRaiseFraction",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "air",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "8a828bb0db2d",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_TO_CBET_SPREAD": {
+    "file": "src/utils/exploitEngine/handhqReferencePool.js",
+    "symbol": "HANDHQ_FOLD_TO_CBET_SPREAD",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "conditioning",
+        "playerMinN",
+        "seatBuckets"
+      ],
+      [
+        "6max",
+        "full"
+      ],
+      [
+        "mean",
+        "players",
+        "sdBetween",
+        "segments"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "52cca312ab09",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD": {
+    "file": "src/utils/exploitEngine/handhqReferencePool.js",
+    "symbol": "HANDHQ_FOLD_VS_PREFLOP_RAISE_SPREAD",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "conditioning",
+        "playerMinN",
+        "seatBuckets"
+      ],
+      [
+        "6max",
+        "full"
+      ],
+      [
+        "mean",
+        "players",
+        "sdBetween",
+        "segments"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "52cca312ab09",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_OPENER_FACING_3BET": {
+    "file": "src/utils/exploitEngine/handhqReferencePool.js",
+    "symbol": "HANDHQ_OPENER_FACING_3BET",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "appStatField",
+        "conditioning",
+        "pooled",
+        "seatBuckets"
+      ],
+      [
+        "6max",
+        "call",
+        "fold",
+        "fourBet",
+        "full",
+        "n",
+        "residual"
+      ],
+      [
+        "call",
+        "fold",
+        "fourBet",
+        "n",
+        "residual"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "8a68ef24bc3b",
+    "ledger": "LBL-handhq-reference-pool"
+  },
+  "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_REFERENCE_META": {
+    "file": "src/utils/exploitEngine/handhqReferencePool.js",
+    "symbol": "HANDHQ_REFERENCE_META",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "corpus",
+        "excludedSeatBuckets",
+        "generator",
+        "minedCorpusHands",
+        "research",
+        "seatBucketDefinition",
+        "sourceId",
+        "statConditioning",
+        "totalHands",
+        "weighting"
+      ],
+      [
+        "6max",
+        "cbet",
+        "foldTo3Bet",
+        "foldToCbet",
+        "full",
+        "hu",
+        "pfr",
+        "short",
+        "threeBet",
+        "vpip"
+      ],
+      [
+        "hands",
+        "reason"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": true,
+    "shapeDigest": "52b4d0693a33",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/handhqReferencePool.js::HANDHQ_THREE_BET_SPREAD": {
+    "file": "src/utils/exploitEngine/handhqReferencePool.js",
+    "symbol": "HANDHQ_THREE_BET_SPREAD",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "conditioning",
+        "playerMinN",
+        "seatBuckets"
+      ],
+      [
+        "6max",
+        "full"
+      ],
+      [
+        "mean",
+        "players",
+        "sdBetween",
+        "segments"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "52cca312ab09",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/poolBaseline.js::PER_STAT_PRIOR_WEIGHT": {
+    "file": "src/utils/exploitEngine/poolBaseline.js",
+    "symbol": "PER_STAT_PRIOR_WEIGHT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cbet",
+        "foldTo3Bet",
+        "foldToCbet",
+        "pfr",
+        "threeBet",
+        "vpip"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": true,
+    "shapeDigest": "b8cbfaeaa1e2",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/postflopNarrower.js::ACTION_MULTIPLIERS": {
+    "file": "src/utils/exploitEngine/postflopNarrower.js",
+    "symbol": "ACTION_MULTIPLIERS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "raise"
+      ],
+      [
+        "air",
+        "draw",
+        "marginal",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": true,
+    "shapeDigest": "0b587c16da0c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/postflopNarrower.js::ACTION_TAU_FRACTION": {
+    "file": "src/utils/exploitEngine/postflopNarrower.js",
+    "symbol": "ACTION_TAU_FRACTION",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "raise"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": true,
+    "shapeDigest": "0eb7b8cf0e7c",
+    "ledger": "LBL-action-tau-fraction"
+  },
+  "src/utils/exploitEngine/postflopNarrower.js::DEFAULT_CONTINUATION_RATES": {
+    "file": "src/utils/exploitEngine/postflopNarrower.js",
+    "symbol": "DEFAULT_CONTINUATION_RATES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "raise"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": true,
+    "shapeDigest": "0eb7b8cf0e7c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/postflopNarrower.js::OUTS_SCALING": {
+    "file": "src/utils/exploitEngine/postflopNarrower.js",
+    "symbol": "OUTS_SCALING",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "raise"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "0eb7b8cf0e7c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/preflopAdvisor.js::postedLimped#ternary1": {
+    "file": "src/utils/exploitEngine/preflopAdvisor.js",
+    "symbol": "postedLimped",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "BB",
+        "SB"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "8563ff914028",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/preflopAdvisor.js::PREFLOP_RAISE_SIZES": {
+    "file": "src/utils/exploitEngine/preflopAdvisor.js",
+    "symbol": "PREFLOP_RAISE_SIZES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "fourbet_ip",
+        "fourbet_oop",
+        "iso_raise",
+        "open_ep",
+        "open_lp",
+        "open_sb",
+        "squeeze_ip",
+        "squeeze_oop",
+        "threebet_ip",
+        "threebet_oop"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "70ccb402f741",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/preflopFoldResolver.js::POSITIONAL_FOLD_TO_3BET": {
+    "file": "src/utils/exploitEngine/preflopFoldResolver.js",
+    "symbol": "POSITIONAL_FOLD_TO_3BET",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB_vs_EARLY",
+        "BB_vs_LATE",
+        "BB_vs_MIDDLE",
+        "BB_vs_SB",
+        "LATE_vs_EARLY",
+        "LATE_vs_MIDDLE",
+        "MIDDLE_vs_EARLY",
+        "SB_vs_EARLY",
+        "SB_vs_LATE",
+        "SB_vs_MIDDLE"
+      ]
+    ],
+    "cellCount": 10,
+    "exported": true,
+    "shapeDigest": "f577f8b2e3ce",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/preflopFoldResolver.js::POSITIONAL_FOLD_TO_4BET": {
+    "file": "src/utils/exploitEngine/preflopFoldResolver.js",
+    "symbol": "POSITIONAL_FOLD_TO_4BET",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "vs_BB",
+        "vs_EARLY",
+        "vs_LATE",
+        "vs_MIDDLE",
+        "vs_SB"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "8c333620cf25",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/riskAnalysis.js::ZERO_RISK": {
+    "file": "src/utils/exploitEngine/riskAnalysis.js",
+    "symbol": "ZERO_RISK",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bimodality",
+        "downsideEV",
+        "evStdDev",
+        "isHighRisk",
+        "maxLoss",
+        "riskScore",
+        "upsideEV"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": false,
+    "shapeDigest": "09ec4773f001",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/thoughtCatalog.js::THOUGHT_CATALOG#ternary1": {
+    "file": "src/utils/exploitEngine/thoughtCatalog.js",
+    "symbol": "THOUGHT_CATALOG",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "decreasing",
+        "increasing"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "4ce5de205eec",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainModelData.js::FOLD_CURVE_STREET_MODS": {
+    "file": "src/utils/exploitEngine/villainModelData.js",
+    "symbol": "FOLD_CURVE_STREET_MODS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "flop",
+        "river",
+        "turn"
+      ],
+      [
+        "maxDeltaMult",
+        "midpointMult",
+        "steepnessMult"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "f04d15aea5db",
+    "ledger": "LBL-fold-curve-street-mods"
+  },
+  "src/utils/exploitEngine/villainModelData.js::FOLD_RATE_THRESHOLDS": {
+    "file": "src/utils/exploitEngine/villainModelData.js",
+    "symbol": "FOLD_RATE_THRESHOLDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "high",
+        "low",
+        "normal",
+        "veryHigh",
+        "veryLow"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "284c20f581e7",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainModelData.js::POPULATION_CURVE": {
+    "file": "src/utils/exploitEngine/villainModelData.js",
+    "symbol": "POPULATION_CURVE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "maxDelta",
+        "midpoint",
+        "steepness",
+        "steepnessDown",
+        "steepnessUp"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "0eaa29d846a0",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainModelData.js::POPULATION_CURVE_RAISE": {
+    "file": "src/utils/exploitEngine/villainModelData.js",
+    "symbol": "POPULATION_CURVE_RAISE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "maxDelta",
+        "midpoint",
+        "steepness",
+        "steepnessDown",
+        "steepnessUp"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "0eaa29d846a0",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainModelData.js::POPULATION_PRIORS": {
+    "file": "src/utils/exploitEngine/villainModelData.js",
+    "symbol": "POPULATION_PRIORS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "none",
+        "raise"
+      ],
+      [
+        "bet",
+        "call",
+        "check",
+        "fold",
+        "raise"
+      ]
+    ],
+    "cellCount": 8,
+    "exported": true,
+    "shapeDigest": "6cd25ead576b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainObservations.js::GTO_OPEN_WIDTH": {
+    "file": "src/utils/exploitEngine/villainObservations.js",
+    "symbol": "GTO_OPEN_WIDTH",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BLINDS",
+        "EARLY",
+        "LATE",
+        "MIDDLE"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "ece5704cebad",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainObservations.js::HERO_CONTEXTS": {
+    "file": "src/utils/exploitEngine/villainObservations.js",
+    "symbol": "HERO_CONTEXTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "META",
+        "P1",
+        "P2",
+        "P3",
+        "P5",
+        "R1",
+        "R2",
+        "R3",
+        "T1",
+        "T2",
+        "T3"
+      ],
+      [
+        "label",
+        "sortOrder",
+        "street"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "723e197099e0",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainObservations.js::T": {
+    "file": "src/utils/exploitEngine/villainObservations.js",
+    "symbol": "T",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "aggroAfMin",
+        "aggroPfrMin",
+        "barrelPctMin",
+        "blindDefendMax",
+        "cbetFlopMin",
+        "cbetHighMin",
+        "cbetLowMax",
+        "checkRaiseMin",
+        "donkAirMin",
+        "donkValueMax",
+        "giveUpAsAggMin",
+        "limpCallMin",
+        "limpFoldMin",
+        "lpVpipMax",
+        "minBlindHands",
+        "minCbetOpps",
+        "minCbetOrCheck",
+        "minCheckFacedBet",
+        "minFacedCbet",
+        "minFacedPreflopRaise",
+        "minLimps",
+        "minLimpsForNever",
+        "minLpHands",
+        "minMetaHands",
+        "minModelEffectiveN",
+        "minPositionHands",
+        "minPostflopRaises",
+        "minTurnAgg",
+        "neverRaisesValueMin",
+        "openWidthMult",
+        "passiveAfMax",
+        "passiveVpipMin",
+        "positionSpreadMin",
+        "riverBetAirHigh",
+        "riverBetValueHigh",
+        "riverCallingWeakMin",
+        "riverFoldMin",
+        "sizingCorrMin",
+        "threeBetMax",
+        "turnBetAirHigh",
+        "turnBetValueHigh",
+        "turnFoldMin",
+        "turnGiveUpMin",
+        "vpipPfrGapMin"
+      ]
+    ],
+    "cellCount": 44,
+    "exported": false,
+    "shapeDigest": "07c067e22497",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainProfileBuilder.js::MATURITY_THRESHOLDS": {
+    "file": "src/utils/exploitEngine/villainProfileBuilder.js",
+    "symbol": "MATURITY_THRESHOLDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "coarse",
+        "deep",
+        "individual",
+        "typed"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": false,
+    "shapeDigest": "9dfe2e162ee1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/exploitEngine/villainProfileBuilder.js::WEAKNESS_TO_DELTA": {
+    "file": "src/utils/exploitEngine/villainProfileBuilder.js",
+    "symbol": "WEAKNESS_TO_DELTA",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "pf-overfolds-vs-preflop-raise",
+        "sit-cbets-wet-unprofitable",
+        "sit-checks-dry-underbet",
+        "sit-folds-to-pressure",
+        "sit-overcalls-river",
+        "sit-overvalues-medium",
+        "sit-slowplays-strong",
+        "sit-weak-showdowns"
+      ],
+      [
+        "delta",
+        "rationale"
+      ],
+      [
+        "bluffFreq",
+        "polarize",
+        "sizingMultiplier"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": false,
+    "shapeDigest": "d6be3aad292a",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/heroState/composeAdjustments.js::ACTION_CONSERVATISM_RANK": {
+    "file": "src/utils/heroState/composeAdjustments.js",
+    "symbol": "ACTION_CONSERVATISM_RANK",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "check",
+        "fold",
+        "raise"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "6632eeca615c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/identityAvatar/avatarMapping.js::AGE_DECADE_GRAY_SHIFT": {
+    "file": "src/utils/identityAvatar/avatarMapping.js",
+    "symbol": "AGE_DECADE_GRAY_SHIFT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "20s",
+        "30s",
+        "40s",
+        "50s",
+        "60s+",
+        "<20"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": false,
+    "shapeDigest": "30eb482a1d50",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/playerMatching/scorePlayerMatch.js::CONFIDENCE_THRESHOLDS": {
+    "file": "src/utils/playerMatching/scorePlayerMatch.js",
+    "symbol": "CONFIDENCE_THRESHOLDS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "partial",
+        "strong"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "5c264d2b2a24",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/playerMatching/scorePlayerMatch.js::RECOGNITION_WEIGHTS": {
+    "file": "src/utils/playerMatching/scorePlayerMatch.js",
+    "symbol": "RECOGNITION_WEIGHTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "age",
+        "ethnicity",
+        "hair",
+        "hat",
+        "jewelry",
+        "logo",
+        "name",
+        "skin",
+        "wardrobe"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "5217933e534f",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/pokerCore/cardParser.js::getCardsForStreet#switch1": {
+    "file": "src/utils/pokerCore/cardParser.js",
+    "symbol": "getCardsForStreet",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "flop",
+        "preflop",
+        "river",
+        "turn"
+      ]
+    ],
+    "cellCount": 6,
+    "exported": false,
+    "shapeDigest": "78f6a24b29b6",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/pokerCore/data/equitySkewDecomposition.js::EQUITY_SKEW_DECOMPOSITION": {
+    "file": "src/utils/pokerCore/data/equitySkewDecomposition.js",
+    "symbol": "EQUITY_SKEW_DECOMPOSITION",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "antisymmetryResidual",
+        "artifactVersion",
+        "boardsPerSeed",
+        "comboWeights",
+        "dealBookHashes",
+        "engineCommit",
+        "engineDirty",
+        "generatedBy",
+        "generatedFrom",
+        "intransitivityMap",
+        "intransitivityNoise",
+        "labels",
+        "noiseFloorSigma",
+        "pairingResidual",
+        "planeBasisA",
+        "planeBasisB",
+        "planeCumulativeEnergy",
+        "planeRadius",
+        "planeSigma",
+        "reconstruction",
+        "residualCumulativeEnergy",
+        "residualPlaneSigma",
+        "residualReconstruction",
+        "rotationBlockResidual",
+        "seeds",
+        "significantPlanes",
+        "significantResidualPlanes",
+        "sourceMatrices",
+        "split",
+        "strengthPotential"
+      ],
+      [
+        "comboFrequencyWeighted",
+        "unweighted"
+      ],
+      [
+        "intransitiveShare",
+        "residualNorm",
+        "skewNorm",
+        "transitiveNorm",
+        "transitiveShare"
+      ]
+    ],
+    "cellCount": 1032,
+    "exported": true,
+    "shapeDigest": "6d8cd6d1ed18",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/pokerCore/equityDecomposition.js::BUCKETS": {
+    "file": "src/utils/pokerCore/equityDecomposition.js",
+    "symbol": "BUCKETS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "FLUSH",
+        "FULL_HOUSE",
+        "HIGH_CARD",
+        "QUADS",
+        "SET",
+        "STRAIGHT",
+        "STRAIGHT_FLUSH",
+        "TOP_PAIR_OR_OVERPAIR",
+        "TWO_PAIR",
+        "WEAK_PAIR"
+      ]
+    ],
+    "cellCount": 10,
+    "exported": true,
+    "shapeDigest": "dd0d18b85053",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/pokerCore/handEvaluator.js::HAND_CATEGORIES": {
+    "file": "src/utils/pokerCore/handEvaluator.js",
+    "symbol": "HAND_CATEGORIES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "FLUSH",
+        "FOUR_OF_A_KIND",
+        "FULL_HOUSE",
+        "HIGH_CARD",
+        "PAIR",
+        "STRAIGHT",
+        "STRAIGHT_FLUSH",
+        "THREE_OF_A_KIND",
+        "TWO_PAIR"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "6d60729b9b45",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/pokerCore/preflopEquityTable.js::EQUITY_VS_OPEN": {
+    "file": "src/utils/pokerCore/preflopEquityTable.js",
+    "symbol": "EQUITY_VS_OPEN",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ]
+    ],
+    "cellCount": 845,
+    "exported": true,
+    "shapeDigest": "954df1da72b5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/archetypeRangeBuilder.js::ARCHETYPE_BUCKET_MULTIPLIERS": {
+    "file": "src/utils/postflopDrillContent/archetypeRangeBuilder.js",
+    "symbol": "ARCHETYPE_BUCKET_MULTIPLIERS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "fish",
+        "pro",
+        "reg"
+      ],
+      [
+        "air",
+        "draw",
+        "marginal",
+        "nuts",
+        "strong"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "faa5f480a44b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/drillModeEngine.js::GROUP_CALL_RATES": {
+    "file": "src/utils/postflopDrillContent/drillModeEngine.js",
+    "symbol": "GROUP_CALL_RATES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "air",
+        "backdoorCombo",
+        "backdoorFlush",
+        "backdoorStraight",
+        "bottomPair",
+        "comboDraw",
+        "gutshot",
+        "middlePair",
+        "nonNutFlushDraw",
+        "nonNutStraight",
+        "nutFlush",
+        "nutFlushDraw",
+        "nutStraight",
+        "oesd",
+        "overcardsAx",
+        "overcardsKx",
+        "overcardsOther",
+        "overcardsQxJx",
+        "overpair",
+        "pairPlusFD",
+        "pairPlusGutshot",
+        "pairPlusOesd",
+        "premium",
+        "secondFlush",
+        "set",
+        "tpStrong",
+        "tpWeak",
+        "trips",
+        "twoPair",
+        "weakFlush",
+        "weakPair"
+      ]
+    ],
+    "cellCount": 31,
+    "exported": true,
+    "shapeDigest": "99e0fc6217fd",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/frameworks.js::desc#ternary1": {
+    "file": "src/utils/postflopDrillContent/frameworks.js",
+    "symbol": "desc",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "capped",
+        "condensed",
+        "polarized"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "13c7d1775572",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_3BP_WET_T96": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_BTN_VS_BB_3BP_WET_T96",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "river_brick_v_calls",
+        "river_checkback",
+        "terminal_callcatch_win",
+        "terminal_called_cr_light",
+        "terminal_correct_checkback",
+        "terminal_correct_fold_cr",
+        "terminal_flop_overfold",
+        "terminal_flop_raise_folds_weak",
+        "terminal_river_overbet_spew",
+        "terminal_river_overfold_bluffcatch",
+        "turn_after_call",
+        "turn_brick_v_checkraises",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "decisionStrategy",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction",
+        "villainRangeContext",
+        "vs"
+      ],
+      [
+        "baseRangeId",
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt",
+        "size"
+      ]
+    ],
+    "cellCount": 17,
+    "exported": false,
+    "shapeDigest": "4c4736a7647a",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_SB_SRP_MW_J85": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_BTN_VS_BB_SB_SRP_MW_J85",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "river_after_mw_barrel",
+        "terminal_mw_gave_up_value",
+        "terminal_mw_overbet_folds_pairs",
+        "terminal_mw_overfold",
+        "terminal_mw_raise_spew",
+        "terminal_mw_value_bet",
+        "terminal_mw_wide_bluff_loses",
+        "turn_after_cbet",
+        "turn_after_checkback",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction"
+      ],
+      [
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt",
+        "size"
+      ]
+    ],
+    "cellCount": 12,
+    "exported": false,
+    "shapeDigest": "d72c0a82be68",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_BTN_VS_BB_SRP_DRY_Q72R": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_BTN_VS_BB_SRP_DRY_Q72R",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "river_after_barrel",
+        "river_after_flop_checkback",
+        "river_after_turn_checkback",
+        "terminal_bluff_catch_win",
+        "terminal_gave_up_value",
+        "terminal_overbet_river",
+        "terminal_overfold",
+        "terminal_overfold_river",
+        "terminal_river_raise_spew",
+        "terminal_thin_value_win",
+        "terminal_turn_spew",
+        "turn_brick",
+        "turn_checked_back",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "decisionStrategy",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction",
+        "villainRangeContext"
+      ],
+      [
+        "baseRangeId",
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt",
+        "size"
+      ]
+    ],
+    "cellCount": 17,
+    "exported": false,
+    "shapeDigest": "d67842878bbf",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_CO_VS_BTN_BB_SRP_MW_OOP": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_CO_VS_BTN_BB_SRP_MW_OOP",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "terminal_checkback_mw_oop_turn",
+        "terminal_checkback_oop_mw",
+        "terminal_overbet_mw_oop",
+        "terminal_thin_value_mw_oop",
+        "terminal_wide_cbet_oop_mw",
+        "turn_after_cbet",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction"
+      ],
+      [
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt"
+      ]
+    ],
+    "cellCount": 8,
+    "exported": false,
+    "shapeDigest": "400b3b435b29",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_SB_VS_BB_SRP_OOP_PAIRED": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_SB_VS_BB_SRP_OOP_PAIRED",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "river_after_barrel",
+        "terminal_checkback_paired",
+        "terminal_overbet_river_paired",
+        "terminal_oversized_paired",
+        "terminal_thin_value_paired",
+        "terminal_turn_check_paired",
+        "turn_brick",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "decisionStrategy",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction",
+        "villainRangeContext"
+      ],
+      [
+        "baseRangeId",
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": false,
+    "shapeDigest": "0f966332a6d5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_SB_VS_BTN_3BP_OOP_WET": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_SB_VS_BTN_3BP_OOP_WET",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "river_after_turn_call",
+        "terminal_bet_wet_aa",
+        "terminal_crying_call_wet",
+        "terminal_fold_river_wet",
+        "terminal_overfold_aa",
+        "terminal_raise_wet_aa",
+        "turn_after_check",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "decisionStrategy",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction",
+        "villainRangeContext",
+        "vs"
+      ],
+      [
+        "baseRangeId",
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt",
+        "size"
+      ]
+    ],
+    "cellCount": 11,
+    "exported": false,
+    "shapeDigest": "5f340ac37436",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_UTG_FACING_SQUEEZE": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_UTG_FACING_SQUEEZE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "hero",
+        "potType",
+        "pre_root",
+        "terminal_4bet_qq_squeeze",
+        "terminal_call_squeeze_caller_behind",
+        "terminal_overfold_qq",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "frameworks",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction"
+      ],
+      [
+        "branches",
+        "prompt"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "a7e930fcc03a",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lines.js::LINE_UTG_VS_BTN_4BP_DEEP": {
+    "file": "src/utils/postflopDrillContent/lines.js",
+    "symbol": "LINE_UTG_VS_BTN_4BP_DEEP",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "nodes",
+        "rootId",
+        "setup",
+        "summary",
+        "tags",
+        "title"
+      ],
+      [
+        "effStack",
+        "flop_root",
+        "hero",
+        "potType",
+        "terminal_bet_50_4bp",
+        "terminal_checkback_4bp",
+        "terminal_jam_4bp_correct",
+        "villains"
+      ],
+      [
+        "action",
+        "board",
+        "decision",
+        "decisionKind",
+        "decisionStrategy",
+        "frameworks",
+        "heroView",
+        "id",
+        "position",
+        "pot",
+        "sections",
+        "street",
+        "villainAction",
+        "villainRangeContext"
+      ],
+      [
+        "baseRangeId",
+        "branches",
+        "bucketCandidates",
+        "classLabel",
+        "combos",
+        "kind",
+        "prompt"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": false,
+    "shapeDigest": "191490a9cde7",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/lineSchema.js::expected#ternary1": {
+    "file": "src/utils/postflopDrillContent/lineSchema.js",
+    "symbol": "expected",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "flop",
+        "turn"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "74853259d0f1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/studyPriorityIndex.js::BOARD_CLASS_FREQ": {
+    "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
+    "symbol": "BOARD_CLASS_FREQ",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "dry",
+        "high-card",
+        "low",
+        "middling",
+        "paired",
+        "trips",
+        "unpaired-monotone",
+        "unpaired-rainbow",
+        "unpaired-twotone",
+        "wet"
+      ]
+    ],
+    "cellCount": 10,
+    "exported": true,
+    "shapeDigest": "1f97db3176b6",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/studyPriorityIndex.js::POSITION_PAIR_FREQ": {
+    "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
+    "symbol": "POSITION_PAIR_FREQ",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "BTN",
+        "CO",
+        "HJ",
+        "MP1",
+        "SB",
+        "UTG"
+      ],
+      [
+        "BB",
+        "BTN",
+        "CO",
+        "HJ",
+        "MP1",
+        "SB",
+        "UTG"
+      ]
+    ],
+    "cellCount": 31,
+    "exported": true,
+    "shapeDigest": "b90be413cc66",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/studyPriorityIndex.js::POT_TYPE_FREQ": {
+    "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
+    "symbol": "POT_TYPE_FREQ",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "3bp",
+        "3bp-3way",
+        "4bp",
+        "limped",
+        "srp",
+        "srp-3way",
+        "srp-4way"
+      ]
+    ],
+    "cellCount": 7,
+    "exported": true,
+    "shapeDigest": "7b6ef8f78836",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/postflopDrillContent/studyPriorityIndex.js::VILLAIN_ACTION_FREQ": {
+    "file": "src/utils/postflopDrillContent/studyPriorityIndex.js",
+    "symbol": "VILLAIN_ACTION_FREQ",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bet",
+        "call",
+        "cbet",
+        "check",
+        "checkraise",
+        "donk",
+        "fold",
+        "raise"
+      ],
+      [
+        "3bp",
+        "4bp",
+        "default",
+        "limped",
+        "srp"
+      ]
+    ],
+    "cellCount": 24,
+    "exported": true,
+    "shapeDigest": "f881e52f9f2b",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/bayesianUpdater.js::adjKickerBoost#ternary1": {
+    "file": "src/utils/rangeEngine/bayesianUpdater.js",
+    "symbol": "adjKickerBoost",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "lost",
+        "won"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "976a2ec7b847",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/bayesianUpdater.js::adjPairBoost#ternary1": {
+    "file": "src/utils/rangeEngine/bayesianUpdater.js",
+    "symbol": "adjPairBoost",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "lost",
+        "won"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "976a2ec7b847",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/bayesianUpdater.js::altSuitBoost#ternary1": {
+    "file": "src/utils/rangeEngine/bayesianUpdater.js",
+    "symbol": "altSuitBoost",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "lost",
+        "won"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": false,
+    "shapeDigest": "976a2ec7b847",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::buildActionPrior#switch1": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "buildActionPrior",
+    "kind": "label-switch",
+    "keyPaths": [
+      [
+        "cold3Bet",
+        "coldCall",
+        "fold",
+        "isoRaise",
+        "limp",
+        "limpReraise",
+        "open",
+        "openFirstIn",
+        "squeeze",
+        "threeBet"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "3b469042ce0e",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::FACED_RAISE_FREQUENCIES": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "FACED_RAISE_FREQUENCIES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ],
+      [
+        "coldCall",
+        "fold",
+        "threeBet"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "57ae7482f0c6",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::FACED_RAISE_RATE": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "FACED_RAISE_RATE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ]
+    ],
+    "cellCount": 5,
+    "exported": true,
+    "shapeDigest": "954df1da72b5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::NO_RAISE_FREQUENCIES": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "NO_RAISE_FREQUENCIES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ],
+      [
+        "fold",
+        "limp",
+        "open"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "36d27a1a76d1",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::openFoot#ternary1": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "openFoot",
+    "kind": "label-ternary",
+    "keyPaths": [
+      [
+        "open",
+        "openFirstIn"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "77fc43269f4a",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/populationPriors.js::SUBCLASS_SPLIT": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "SUBCLASS_SPLIT",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "open",
+        "threeBet"
+      ],
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ],
+      [
+        "cold3Bet",
+        "isoRaise",
+        "limpReraise",
+        "openFirstIn",
+        "squeeze"
+      ]
+    ],
+    "cellCount": 25,
+    "exported": true,
+    "shapeDigest": "5aa972979704",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/rangeEngine/traitDetector.js::OPEN_RATE_PRIOR": {
+    "file": "src/utils/rangeEngine/traitDetector.js",
+    "symbol": "OPEN_RATE_PRIOR",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "alpha",
+        "beta"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": false,
+    "shapeDigest": "438762a04c18",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/reducerUtils.js::SCHEMA_RULES": {
+    "file": "src/utils/reducerUtils.js",
+    "symbol": "SCHEMA_RULES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "array",
+        "boolean",
+        "object",
+        "optionalNumber",
+        "optionalString",
+        "seat",
+        "seatArray",
+        "street"
+      ],
+      [
+        "enum",
+        "items",
+        "max",
+        "min",
+        "required",
+        "type"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "630eb4f91f0c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/sessionStats/sheetImport.js::MONTHS": {
+    "file": "src/utils/sessionStats/sheetImport.js",
+    "symbol": "MONTHS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "apr",
+        "aug",
+        "dec",
+        "feb",
+        "jan",
+        "jul",
+        "jun",
+        "mar",
+        "may",
+        "nov",
+        "oct",
+        "sep"
+      ]
+    ],
+    "cellCount": 12,
+    "exported": false,
+    "shapeDigest": "6b6bac9cbc5e",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::BARBELL": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "BARBELL",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "displayName",
+        "id",
+        "morphology",
+        "targets",
+        "weights"
+      ],
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "511784d2abbb",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::CLOUD": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "CLOUD",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "displayName",
+        "id",
+        "morphology",
+        "targets",
+        "weights"
+      ],
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "511784d2abbb",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::COMB": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "COMB",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "displayName",
+        "id",
+        "morphology",
+        "targets",
+        "weights"
+      ],
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "511784d2abbb",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::FEATURE_SCALES": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "FEATURE_SCALES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 10,
+    "exported": false,
+    "shapeDigest": "31cfed0b46c6",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::OVAL": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "OVAL",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "displayName",
+        "id",
+        "morphology",
+        "targets",
+        "weights"
+      ],
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "511784d2abbb",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js::TRIANGLE": {
+    "file": "src/utils/shapeLanguage/shapeDescriptors/silhouettePrototypes.js",
+    "symbol": "TRIANGLE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "displayName",
+        "id",
+        "morphology",
+        "targets",
+        "weights"
+      ],
+      [
+        "bimodality",
+        "contiguity",
+        "diagonalDominance",
+        "entropy",
+        "premiumMassFraction",
+        "rangeWidthPct",
+        "rankSumMean",
+        "rankSumVariance",
+        "suitedAsymmetry",
+        "wedgeMonotonicity"
+      ]
+    ],
+    "cellCount": 20,
+    "exported": false,
+    "shapeDigest": "511784d2abbb",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/composite.js::DEFAULT_WEIGHTS": {
+    "file": "src/utils/skillAssessment/composite.js",
+    "symbol": "DEFAULT_WEIGHTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "W_drill",
+        "W_leak",
+        "W_recent",
+        "W_test"
+      ]
+    ],
+    "cellCount": 4,
+    "exported": true,
+    "shapeDigest": "f58016d81d88",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/_template.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/_template.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "514536c7eb0c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroBbDefenseWidth.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroBbDefenseWidth.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroFlopVsDonkMisresponse.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroFlopVsDonkMisresponse.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroIpCbetOverfold.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroMultiwayBluffFrequency.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroMultiwayBluffFrequency.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bucketType",
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "c137833a5893",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroOop3betUnderfold.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroOopCbetOverfold.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroOopCbetOverfold.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroPf3betOverfold.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroPf3betOverfold.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "f8b200d317ba",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroPfOpenOverfold.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bucketType",
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "c137833a5893",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js::rule": {
+    "file": "src/utils/skillAssessment/leakRules/heroTurnBarrelFrequency.js",
+    "symbol": "rule",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bucketType",
+        "id",
+        "label",
+        "relatedConceptId",
+        "threshold"
+      ],
+      [
+        "deltaPP",
+        "minSampleSize",
+        "minSeverity"
+      ]
+    ],
+    "cellCount": 3,
+    "exported": true,
+    "shapeDigest": "c137833a5893",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/shapeLanguage/temporalDecay.js::DEFAULT_DECAY_PROFILE": {
+    "file": "src/utils/skillAssessment/shapeLanguage/temporalDecay.js",
+    "symbol": "DEFAULT_DECAY_PROFILE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "halfLifeDays",
+        "minimumPseudoEvidence"
+      ]
+    ],
+    "cellCount": 2,
+    "exported": true,
+    "shapeDigest": "04efa82e566d",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/solverBaselines.js::BASELINES": {
+    "file": "src/utils/skillAssessment/solverBaselines.js",
+    "symbol": "BASELINES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "flop:cbet-decision:mw",
+        "flop:dry:BIG_BLIND:def:oop:bet:vsBet:pfc",
+        "flop:dry:BUTTON:def:ip:bet:vsBet:pfa",
+        "flop:dry:BUTTON:def:ip:bet:vsBet:pfc",
+        "flop:dry:LATE:def:ip:bet:vsBet:pfa",
+        "flop:dry:LATE:def:ip:bet:vsBet:pfc",
+        "flop:dry:SMALL_BLIND:def:oop:bet:vsBet:pfc",
+        "flop:medium:BIG_BLIND:def:oop:bet:vsBet:pfc",
+        "flop:medium:BUTTON:def:ip:bet:vsBet:pfa",
+        "flop:medium:BUTTON:def:ip:bet:vsBet:pfc",
+        "flop:medium:LATE:def:ip:bet:vsBet:pfa",
+        "flop:medium:LATE:def:ip:bet:vsBet:pfc",
+        "flop:medium:SMALL_BLIND:def:oop:bet:vsBet:pfc",
+        "flop:wet:BIG_BLIND:def:oop:bet:vsBet:pfc",
+        "flop:wet:BUTTON:def:ip:bet:vsBet:pfa",
+        "flop:wet:BUTTON:def:ip:bet:vsBet:pfc",
+        "flop:wet:LATE:def:ip:bet:vsBet:pfa",
+        "flop:wet:LATE:def:ip:bet:vsBet:pfc",
+        "flop:wet:SMALL_BLIND:def:oop:bet:vsBet:pfc",
+        "preflop:none:BIG_BLIND:def:oop:raise:vs3bet:na",
+        "preflop:none:BIG_BLIND:def:oop:raise:vsopen:na",
+        "preflop:none:BUTTON:agg:ip:raise:vs3bet:na",
+        "preflop:none:EARLY:agg:ip:raise:vs3bet:na",
+        "preflop:none:LATE:agg:ip:raise:vs3bet:na",
+        "preflop:none:MIDDLE:agg:ip:raise:vs3bet:na",
+        "preflop:none:SMALL_BLIND:def:oop:raise:vs3bet:na",
+        "preflop:rfi-decision:BUTTON",
+        "preflop:rfi-decision:EARLY",
+        "preflop:rfi-decision:LATE",
+        "preflop:rfi-decision:MIDDLE",
+        "turn:barrel-decision:hu"
+      ],
+      [
+        "baseline",
+        "confidence",
+        "lastValidatedAt",
+        "source"
+      ]
+    ],
+    "cellCount": 62,
+    "exported": false,
+    "shapeDigest": "84d7fe809685",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/skillAssessment/tierConceptMap.js::CONCEPT_REGISTRY": {
+    "file": "src/utils/skillAssessment/tierConceptMap.js",
+    "symbol": "CONCEPT_REGISTRY",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "bb-defense-cluster",
+        "bb-defense-vs-BUTTON",
+        "bb-defense-vs-EARLY",
+        "bb-defense-vs-LATE",
+        "bb-defense-vs-MIDDLE",
+        "bb-defense-vs-SMALL_BLIND",
+        "blocker-effects-preflop",
+        "board-texture",
+        "capped-vs-uncapped-ranges",
+        "cbet-defense-cluster",
+        "flop-vs-donk-defense-cluster",
+        "flop-vs-donk-defense-dry-BUTTON",
+        "flop-vs-donk-defense-dry-LATE",
+        "flop-vs-donk-defense-medium-BUTTON",
+        "flop-vs-donk-defense-medium-LATE",
+        "flop-vs-donk-defense-wet-BUTTON",
+        "flop-vs-donk-defense-wet-LATE",
+        "ip-cbet-defense-dry-BUTTON",
+        "ip-cbet-defense-dry-LATE",
+        "ip-cbet-defense-medium-BUTTON",
+        "ip-cbet-defense-medium-LATE",
+        "ip-cbet-defense-wet-BUTTON",
+        "ip-cbet-defense-wet-LATE",
+        "multiway-cbet-discipline-3way",
+        "multiway-cbet-discipline-4way-plus",
+        "multiway-cbet-discipline-cluster",
+        "multiway-field-size-scaling",
+        "oop-3bet-defense-BB",
+        "oop-3bet-defense-SB",
+        "oop-3bet-defense-cluster",
+        "oop-cbet-defense-cluster",
+        "oop-cbet-defense-dry-BB",
+        "oop-cbet-defense-dry-SB",
+        "oop-cbet-defense-medium-BB",
+        "oop-cbet-defense-medium-SB",
+        "oop-cbet-defense-wet-BB",
+        "oop-cbet-defense-wet-SB",
+        "pf-3bet-defense-BUTTON",
+        "pf-3bet-defense-EARLY",
+        "pf-3bet-defense-LATE",
+        "pf-3bet-defense-MIDDLE",
+        "pf-3bet-defense-cluster",
+        "pot-odds",
+        "range-vs-range-thinking",
+        "rfi-discipline-BUTTON",
+        "rfi-discipline-EARLY",
+        "rfi-discipline-LATE",
+        "rfi-discipline-MIDDLE",
+        "rfi-discipline-cluster",
+        "turn-barrel-discipline-bad-runout",
+        "turn-barrel-discipline-cluster",
+        "turn-barrel-discipline-good-runout"
+      ],
+      [
+        "children",
+        "kind",
+        "parent",
+        "tier"
+      ]
+    ],
+    "cellCount": 52,
+    "exported": true,
+    "shapeDigest": "49ca0c272181",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/spotResolver/boardShorthand.js::RANK_VALUE": {
+    "file": "src/utils/spotResolver/boardShorthand.js",
+    "symbol": "RANK_VALUE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "A",
+        "J",
+        "K",
+        "Q",
+        "T"
+      ]
+    ],
+    "cellCount": 13,
+    "exported": false,
+    "shapeDigest": "69e6cb20c15c",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/standardOfRecord/faultRegister.js::WITHIN_CORPUS_DRIFT_2009": {
+    "file": "src/utils/standardOfRecord/faultRegister.js",
+    "symbol": "WITHIN_CORPUS_DRIFT_2009",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cellIndex",
+        "cells",
+        "cellsWhoseIntervalExcludesZero",
+        "clusterUnit",
+        "doesNotLicense",
+        "handsScored",
+        "licenses",
+        "maxAbsDriftPP",
+        "maxAbsSlopePPPerDay",
+        "maxCellDenominator",
+        "maxDailyDispersion",
+        "measuredBy",
+        "medianAbsDriftPP",
+        "medianAbsSlopePPPerDay",
+        "medianDailyDispersion",
+        "minCellDenominator",
+        "sites",
+        "sourceId",
+        "span",
+        "spanDays",
+        "stakes",
+        "weekdayWeekendGapMaxPP"
+      ]
+    ],
+    "cellCount": 13,
+    "exported": true,
+    "shapeDigest": "b28e75644a03",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/standardOfRecord/metricsSchemas.js::METRICS_SCHEMA_VERSIONS": {
+    "file": "src/utils/standardOfRecord/metricsSchemas.js",
+    "symbol": "METRICS_SCHEMA_VERSIONS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "metrics.atoms-instrument",
+        "metrics.continuation-rate-threading",
+        "metrics.depth-ablation",
+        "metrics.deviation-map",
+        "metrics.fold-curve-axis",
+        "metrics.fold-curve-shape",
+        "metrics.hero-ev",
+        "metrics.layer-divergence",
+        "metrics.per-player-width",
+        "metrics.range-calibration",
+        "metrics.river-flip-replicate",
+        "metrics.shared.conditioned-rate",
+        "metrics.shared.divergence-pair",
+        "metrics.study-ladder",
+        "metrics.style-collapse",
+        "metrics.teachable-arms"
+      ]
+    ],
+    "cellCount": 16,
+    "exported": true,
+    "shapeDigest": "11208ca44bc5",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/standardOfRecord/schemas.js::SOR_SCHEMA_VERSIONS": {
+    "file": "src/utils/standardOfRecord/schemas.js",
+    "symbol": "SOR_SCHEMA_VERSIONS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "comparisonCensus",
+        "coverageCensus",
+        "dealBookManifest",
+        "decisionAtom",
+        "decisionRecord",
+        "faultEntry",
+        "fieldManifest",
+        "resultCard",
+        "strategyCard"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "cacb40a89f60",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  },
+  "src/utils/voiceCardEntry/grammar.js::VILLAIN_NUMBER_TOKENS": {
+    "file": "src/utils/voiceCardEntry/grammar.js",
+    "symbol": "VILLAIN_NUMBER_TOKENS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "1",
+        "10",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "ate",
+        "eight",
+        "five",
+        "for",
+        "fore",
+        "four",
+        "nine",
+        "one",
+        "seven",
+        "sicks",
+        "six",
+        "ten",
+        "three",
+        "to",
+        "too",
+        "tree",
+        "two"
+      ]
+    ],
+    "cellCount": 27,
+    "exported": true,
+    "shapeDigest": "69d2f7a5a719",
+    "ledger": "EXCLUDED:not-yet-triaged",
+    "since": "2026-08-17",
+    "ticket": "WS-445"
+  }
+}
