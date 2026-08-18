@@ -126,3 +126,6 @@ equity-matrix*.csv.meta.json
 
 # Runtime session pointer (ephemeral, per-machine)
 .claude/workstream/.current-session
+
+# villain-archetype scratch output (regenerable from scripts/villainArchetype/)
+.tmp-arch/
