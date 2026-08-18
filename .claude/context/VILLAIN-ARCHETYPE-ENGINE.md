@@ -307,6 +307,84 @@ For the population:
 
 ---
 
+## 6b. The inference layer — carrying a range so unshown hands still speak
+
+**Founder, 2026-08-18:** *"we can pretend we are sitting at the table with villain, and their
+actions and other people's actions narrow their range. By the time they fold, the range is
+narrowed or at showdown. we can backpropagate that."*
+
+This is the layer that converts a 4.70% card budget into something closer to full coverage,
+and 15 of the 34 catalogued rules are blocked on it. It is descriptive only — a model of what
+the villain held, never a recommendation about what to do to them.
+
+### 6b.1 Forward narrowing
+
+For each hand, carry a range for the villain from their first voluntary action:
+
+1. **Seed** from their own measured entry rule for that spot — the frequency fixes the range's
+   *width*, the archetype's composition fixes its shape. Not a population default: the point is
+   to use *this player's* rules.
+2. **Narrow at every subsequent action**, theirs and everyone else's, using the continuation
+   weights that already exist (`postflopNarrower.classifyComboFull`, `detectDraws`,
+   `softContinuationWeights`) — combos that would not have taken the observed action lose
+   weight; they are never hard-eliminated.
+3. **Terminate** at the fold, or at showdown where the range collapses to a point.
+
+Board cards are removed as dead cards, so narrowing respects combinatorics rather than
+hand-class labels.
+
+### 6b.2 Backpropagation — the part that adds information
+
+A showdown is a *constraint on the whole path*, not only on the final node. When a hand is
+revealed, every earlier decision in that hand becomes a labelled example: this exact holding
+took this action at this price. Those labelled examples are what rules get fitted to.
+
+The same applies to a fold in weaker form: the range at the fold node is the range that folded,
+and its composition is inferred rather than observed.
+
+**Synthetic data must never launder into observation.** Every derived holding carries its
+posterior weight and the fact that it is derived. A rule fitted on inferred hands reports its
+evidence tier separately from one fitted on shown hands, exactly as the label ledger separates
+`measured` from `bounded`.
+
+**The circularity is real and must be handled, not ignored.** Ranges are narrowed using the
+villain's rules, and the rules are then fitted to the narrowed ranges. Left alone this
+manufactures agreement. Two controls are mandatory:
+
+- **Held-out validation** — fit on inferred hands, score on *shown* hands the fitter never saw.
+  If inference-fitted rules do not predict revealed hands better than chance, the layer is
+  producing artefacts and must be reported as doing so.
+- **Seed sensitivity** — re-run the narrowing seeded from a population prior instead of the
+  villain's own rules. Conclusions surviving both seeds are robust; conclusions that flip are
+  reported as seed-dependent, never quietly kept.
+
+### 6b.3 Negative space — the absence as evidence
+
+**Founder:** *"he never turns over a winning flush when it hits ... he started with 13% of his
+range containing hearts and now there is nothing. The lack of winning means they either didn't
+have or they folded winning hands."*
+
+The inference is valid and needs one external number. For a villain whose entry range has a
+*measured width*, the number of flush combos that range contains on a given completing board is
+**computable from board combinatorics** — never from the model estimating the range
+(POKER_THEORY: base rate from board combinatorics, never the model's estimate). That yields an
+expected count of flush showdowns across all completing boards the villain saw.
+
+Two hypotheses survive an observed zero, and the base rate separates them:
+
+| Reading | Predicts |
+|---|---|
+| They never held the draws | entry-range composition genuinely lacks suited combos — testable against entry-spot showdowns |
+| They folded them earlier | draws entered and disappeared at a nameable node — testable by narrowing street by street |
+
+**The founder expects the opposite to dominate in this population — chasing, not folding — which
+makes this a two-sided test rather than a confirmation, and the engine must report which way it
+went.**
+
+Absence is only evidence when the expected count is large enough to notice. Every negative-space
+finding therefore reports the **expected count under the base rate** beside the observed zero, and
+says plainly when the expected count was too small to conclude anything.
+
 ## 7. Standing constraints inherited from the repo
 
 These are not negotiable by this engine and are listed so it cannot violate them innocently.
