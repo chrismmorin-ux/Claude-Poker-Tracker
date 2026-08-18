@@ -48,6 +48,55 @@ const POSTED = new Set(['postSmallBlind', 'postBigBlind', 'post', 'ante', 'strad
 const RANKS = '23456789TJQKA';
 const rankOf = (card) => RANKS.indexOf(String(card)[0].toUpperCase()) + 2;
 
+/**
+ * What THIS seat actually owes to continue, in big blinds — not the size of the bet.
+ *
+ * `decisionGeometry.facedBetChips` answers a different question: how big is the live bet.
+ * Two things make that the wrong number for a price:
+ *
+ *  1. IT COUNTS ONLY BET/RAISE. Limps are recorded as `call`, and the blinds are not in the
+ *     action sequence at all, so a seat facing two limps was reported as "nothing to call"
+ *     when it owed a full big blind. Two explainer agents independently flagged folds in
+ *     that state as inexplicable — the founder's strange-hand channel catching an instrument
+ *     error rather than player behaviour.
+ *  2. IT IGNORES WHAT THIS SEAT ALREADY PUT IN. A big blind facing a raise to 3bb owes 2bb,
+ *     not 3bb, so every blind's price was overstated.
+ *
+ * Commitments follow the corpus conventions documented in decisionGeometry:1 91-197 —
+ * BET/RAISE `amount` is TOTAL street commitment, CALL `amount` is the INCREMENT owed.
+ */
+const owedAt = (hand, order, street, seat, bb) => {
+  const g = hand.gameState || {};
+  const occupied = Object.keys(hand.seatPlayers || {}).map(Number).sort((a, b) => a - b);
+  const committed = {};
+
+  if (street === 'preflop' && occupied.length) {
+    // Blinds are forced and never appear as actions. Seed them from the button.
+    const bi = occupied.indexOf(Number(g.dealerButtonSeat));
+    if (bi >= 0) {
+      const order2 = [...occupied.slice(bi + 1), ...occupied.slice(0, bi + 1)];
+      const sbSeat = order2[0];
+      const bbSeat = order2[1];
+      if (sbSeat != null) committed[String(sbSeat)] = (g.blinds?.sb ?? bb / 2) / bb;
+      if (bbSeat != null) committed[String(bbSeat)] = (g.blinds?.bb ?? bb) / bb;
+    }
+  }
+
+  for (const e of [...(g.actionSequence || [])].sort((a, b) => a.order - b.order)) {
+    if (e.order >= order) break;
+    if (e.street !== street) continue;
+    const es = String(e.seat);
+    const amt = (e.amount ?? 0) / bb;
+    if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') {
+      committed[es] = amt;                          // total street commitment
+    } else if (e.action === PRIMITIVE_ACTIONS.CALL) {
+      committed[es] = (committed[es] || 0) + amt;   // increment owed
+    }
+  }
+  const highest = Math.max(0, ...Object.values(committed));
+  return Math.max(0, highest - (committed[String(seat)] || 0));
+};
+
 const boardFor = (community, street) => {
   const n = { preflop: 0, flop: 3, turn: 4, river: 5 }[street] ?? 0;
   return (community || []).slice(0, n);
@@ -124,7 +173,9 @@ export const labelDecisions = (hand, seat) => {
       const geo = decisionGeometryFull(hand, e.order, street, s);
       const board = boardFor(community, street);
       const texture = board.length >= 3 ? analyzeBoardFromStrings(board) : null;
-      const facingBB = geo?.facingBetBB ?? 0;
+      // What this seat OWES, not the size of the live bet. See `owedAt` — using the bet size
+      // reported "nothing to call" in limped pots and overstated every blind's price.
+      const facingBB = owedAt(hand, e.order, street, s, geo?.bb || (hand._backtest?.bb || 1));
       const potBB = geo?.potBB ?? null;
       // `potBB` INCLUDES the live bet (decisionGeometry exposes `enginePotChips` as the
       // pot MINUS it). So the pot won by calling is potBB, and the required equity is
@@ -137,9 +188,14 @@ export const labelDecisions = (hand, seat) => {
         street,
         order: e.order,
         // ---- the situation, as faced ----
-        facing: facingBB > 0
-          ? (street === 'preflop' ? (raisesThisStreet > 1 ? 'a 3-bet' : 'a raise') : 'a bet')
-          : 'no bet',
+        // WHAT is in front of me — keyed on the raise count, never on the amount owed.
+        // Owing money and facing aggression are different facts: preflop everyone owes the
+        // big blind, so keying `facing` on `owed > 0` labelled a LIMPED pot "facing a raise"
+        // and destroyed the first-in population entirely. `owed` carries the price; this
+        // carries the kind of action.
+        facing: street === 'preflop'
+          ? (raisesThisStreet === 0 ? 'no raise' : raisesThisStreet === 1 ? 'a raise' : 'a 3-bet')
+          : (facingBB > 0 ? 'a bet' : 'no bet'),
         toCallBB: +facingBB.toFixed(2),
         potBB: potBB == null ? null : +potBB.toFixed(2),
         betFractionOfPot: facingBB > 0 && potBB
