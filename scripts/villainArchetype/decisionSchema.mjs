@@ -31,7 +31,7 @@
 
 const yn = (v) => v == null ? '-' : (v ? 'yes' : 'no');
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 /**
  * Every field, in the order it appears in the table.
@@ -103,6 +103,15 @@ export const FIELDS = [
   { name: 'overcard_now', group: 'situation', get: d => yn(d.overcardArrived), describe: 'did a card higher than the board arrive' },
   { name: 'flush_card_now', group: 'situation', get: d => yn(d.flushCardArrived), describe: 'did the newest card bring a third card of one suit' },
   { name: 'pot_committed', group: 'situation', get: d => yn(d.potCommitted), describe: 'have I already put in a third of my stack' },
+
+  // ── the pot's history and within-street aggression ──
+  { name: 'pf_pot_type', group: 'situation', get: d => d.preflopPotType ?? '-', describe: 'was this a limped, single-raised, 3-bet or 4-bet pot' },
+  { name: 'barrels', group: 'situation', get: d => d.barrelsSoFar ?? '-', describe: 'consecutive streets the aggressor has bet' },
+  { name: 'i_bet_street', group: 'situation', get: d => yn(d.iBetThisStreet), describe: 'did I already bet on this street' },
+  { name: 'raised_over_me', group: 'situation', get: d => yn(d.raisedOverMyBet), describe: 'was my own bet raised' },
+  { name: 'callers_ahead', group: 'situation', get: d => d.callersAhead ?? '-', describe: 'opponents who already called the live bet' },
+  { name: 'facing_allin', group: 'situation', get: d => yn(d.facingAllIn), describe: 'is the bet I face an all-in' },
+  { name: 'call_is_allin', group: 'situation', get: d => yn(d.callingIsAllIn), describe: 'would calling put me all in' },
 
   // ── what I did ──
   { name: 'ACTION', group: 'action', get: d => d.action, describe: 'what I did' },

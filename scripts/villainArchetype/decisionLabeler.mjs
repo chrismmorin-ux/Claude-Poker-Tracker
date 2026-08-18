@@ -162,6 +162,32 @@ const isInPosition = (hand, street, seat, foldedBefore) => {
 
 const geoBB = (hand) => (hand._backtest?.bb || 1);
 
+/** How many opponents have already CALLED the live bet before this decision. */
+const countCallersAhead = (hand, order, street) => {
+  let seenBet = false, callers = 0;
+  for (const e of [...(hand.gameState?.actionSequence || [])].sort((a, b) => a.order - b.order)) {
+    if (e.order >= order) break;
+    if (e.street !== street) continue;
+    if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') { seenBet = true; callers = 0; }
+    else if (seenBet && e.action === PRIMITIVE_ACTIONS.CALL) callers++;
+  }
+  return callers;
+};
+
+/** Did the live bet put its bettor all in? */
+const isAllInBet = (hand, order, street) => {
+  const stacks = hand._backtest?.stackBeforeByOrder || {};
+  let last = null;
+  for (const e of [...(hand.gameState?.actionSequence || [])].sort((a, b) => a.order - b.order)) {
+    if (e.order >= order) break;
+    if (e.street !== street) continue;
+    if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') last = e;
+  }
+  if (!last) return null;
+  const st = stacks[last.order];
+  return st == null ? null : (last.amount ?? 0) >= st - 1e-6;
+};
+
 /** Did the newest board card pair the board? */
 const boardPairedOn = (prev, now) => {
   if (!prev.length || now.length <= prev.length) return null;
@@ -348,6 +374,8 @@ export const labelDecisions = (hand, seat) => {
    * bet, even when the price, board and position are identical — and until now those two
    * decisions were the same row.
    */
+  let pfRaises = 0;       // how many raises went in preflop — carried into every later street
+  let barrels = 0;        // consecutive streets the current aggressor has bet
   const streetLog = {};   // street -> { facedBet, iBet, iCalled, checkedThrough, aggressor }
   let curLog = { facedBet: false, iBet: false, iCalled: false, anyBet: false, aggressor: null };
   let prevLog = null;
@@ -356,6 +384,8 @@ export const labelDecisions = (hand, seat) => {
 
   for (const e of seq) {
     if (e.street !== street) {
+      if (street === 'preflop') pfRaises = raisesThisStreet;
+      barrels = curLog.anyBet ? barrels + 1 : 0;
       streetLog[street] = curLog;
       prevLog = curLog;
       prevBoard = boardFor(community, street);
@@ -398,6 +428,24 @@ export const labelDecisions = (hand, seat) => {
         // WHO is applying the pressure. A player reads a button raise differently from an
         // under-the-gun raise, and withholding it hides a condition the villain acts on.
         inPosition: isInPosition(hand, street, s, foldedSeats),
+        // ── the pot's HISTORY, carried forward. A flop in a 3-bet pot is a different spot
+        // from a flop in a limped pot, and `raisesFaced` resets every street so postflop
+        // rows had no memory of it at all.
+        preflopPotType: street === 'preflop' ? null
+          : (pfRaises === 0 ? 'limped pot' : pfRaises === 1 ? 'single-raised pot'
+            : pfRaises === 2 ? '3-bet pot' : '4-bet+ pot'),
+        barrelsSoFar: street === 'preflop' ? null : barrels,
+        // Within a street, "a bet" hid two opposite situations: someone bet into me, or
+        // someone RAISED the bet I just made. `iAmStreetAggressor` was computed and never
+        // surfaced, so those were the same row.
+        iBetThisStreet: streetAggressor === s,
+        raisedOverMyBet: facingBB > 0 && curLog.iBet,
+        // How many have already CALLED the live bet ahead of me — a squeeze/overcall spot is
+        // not the same decision as being first to answer.
+        callersAhead: countCallersAhead(hand, e.order, street),
+        facingAllIn: geo?.stackChips != null && lastAggressorSeat != null
+          ? isAllInBet(hand, e.order, street) : null,
+        callingIsAllIn: (myStackBB != null && facingBB >= myStackBB - 0.01),
         ...positionDetail(hand, street, s, foldedSeats, lastAggressorSeat),
         // ── derived binaries: the sequence, and what the board just did ──
         facedAggressionLastStreet: prevLog ? prevLog.facedBet : null,
