@@ -97,9 +97,180 @@ const owedAt = (hand, order, street, seat, bb) => {
   return Math.max(0, highest - (committed[String(seat)] || 0));
 };
 
+/**
+ * What this seat has already put in THIS HAND before the decision at `order`.
+ *
+ * Strictly backward-looking. Blinds are seeded because they are money the villain has
+ * committed and can see, and they never appear as actions.
+ */
+const investedSoFar = (hand, order, seat, bb) => {
+  const g = hand.gameState || {};
+  const occupied = Object.keys(hand.seatPlayers || {}).map(Number).sort((a, b) => a - b);
+  const s = String(seat);
+  let total = 0;
+
+  const bi = occupied.indexOf(Number(g.dealerButtonSeat));
+  if (bi >= 0) {
+    const ring = [...occupied.slice(bi + 1), ...occupied.slice(0, bi + 1)];
+    if (String(ring[0]) === s) total += (g.blinds?.sb ?? bb / 2) / bb;
+    if (String(ring[1]) === s) total += (g.blinds?.bb ?? bb) / bb;
+  }
+
+  const perStreet = {};
+  for (const e of [...(g.actionSequence || [])].sort((a, b) => a.order - b.order)) {
+    if (e.order >= order) break;
+    if (String(e.seat) !== s) continue;
+    const amt = (e.amount ?? 0) / bb;
+    if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') {
+      // total street commitment — replaces this street's prior contribution
+      total += Math.max(0, amt - (perStreet[e.street] || 0));
+      perStreet[e.street] = amt;
+    } else if (e.action === PRIMITIVE_ACTIONS.CALL) {
+      total += amt;                                   // increment owed
+      perStreet[e.street] = (perStreet[e.street] || 0) + amt;
+    }
+  }
+  return +total.toFixed(2);
+};
+
+/**
+ * Am I last to act on this street among the players still in the hand?
+ *
+ * FOUNDER, 2026-08-18: "CO v BTN and SB v BB both have wildly different ranges, but postflop
+ * they are just in position or out of position. otherwise the correlation is going to look
+ * like a spiral."
+ *
+ * Exactly right, and it is a feature-selection rule rather than an extra column. Six position
+ * labels applied postflop fragment the data six ways chasing structure that is really one
+ * binary wearing six names. Preflop the labels are real — the blinds have money in and the
+ * button acts last — so both features exist and each is used only where it means something.
+ *
+ * Postflop order runs SB first and BTN last, which is the reverse of who has already paid.
+ */
+const isInPosition = (hand, street, seat, foldedBefore) => {
+  if (street === 'preflop') return null;
+  const g = hand.gameState || {};
+  const occupied = Object.keys(hand.seatPlayers || {}).map(Number).sort((a, b) => a - b);
+  const bi = occupied.indexOf(Number(g.dealerButtonSeat));
+  if (bi < 0) return null;
+  // Postflop action order: first seat after the button, ... , button last.
+  const order = [...occupied.slice(bi + 1), ...occupied.slice(0, bi + 1)];
+  const live = order.filter(x => !foldedBefore.has(String(x)));
+  if (!live.length) return null;
+  return String(live[live.length - 1]) === String(seat);
+};
+
+const geoBB = (hand) => (hand._backtest?.bb || 1);
+
+/** Did the newest board card pair the board? */
+const boardPairedOn = (prev, now) => {
+  if (!prev.length || now.length <= prev.length) return null;
+  const fresh = now.slice(prev.length).map(rankOf);
+  const before = prev.map(rankOf);
+  return fresh.some(r => before.includes(r));
+};
+
+/** Did a card arrive higher than everything that was already out? */
+const overcardOn = (prev, now) => {
+  if (!prev.length || now.length <= prev.length) return null;
+  const top = Math.max(...prev.map(rankOf));
+  return now.slice(prev.length).map(rankOf).some(r => r > top);
+};
+
+/** Did the newest card bring a third (or more) card of one suit? */
+const flushCardOn = (prev, now) => {
+  if (!prev.length || now.length <= prev.length) return null;
+  const suit = (c) => String(c).slice(1);
+  const before = {}; for (const c of prev) before[suit(c)] = (before[suit(c)] || 0) + 1;
+  const beforeMax = Math.max(0, ...Object.values(before));
+  const after = {}; for (const c of now) after[suit(c)] = (after[suit(c)] || 0) + 1;
+  const afterMax = Math.max(0, ...Object.values(after));
+  return afterMax >= 3 && afterMax > beforeMax;
+};
+
+/**
+ * OVER-ENUMERATE POSITION — the founder's un-aggregation instruction, 2026-08-18:
+ * "we can overenumerate the description of the position for the agent. this is how to
+ * unaggregate."
+ *
+ * One label answers one question. A player uses several at once, and which one governs a
+ * given rule is exactly what we do not know in advance — so every framing is offered and the
+ * correlation picks. `CO` and `one off the button` and `three players still behind me` are
+ * the same fact wearing different clothes, and different rules key on different clothes.
+ *
+ * The one that matters most is rarely the seat NAME: it is usually the relationship to the
+ * player applying pressure. Acting after the aggressor is a different decision from acting
+ * before them even when the seat label is identical.
+ */
+const actionOrder = (hand, street) => {
+  const g = hand.gameState || {};
+  const occupied = Object.keys(hand.seatPlayers || {}).map(Number).sort((a, b) => a - b);
+  const bi = occupied.indexOf(Number(g.dealerButtonSeat));
+  if (bi < 0) return occupied.map(String);
+  const postflop = [...occupied.slice(bi + 1), ...occupied.slice(0, bi + 1)];  // SB..BTN
+  if (street !== 'preflop') return postflop.map(String);
+  // Preflop the blinds act last: UTG is two after the SB.
+  return [...postflop.slice(2), ...postflop.slice(0, 2)].map(String);
+};
+
+const positionDetail = (hand, street, seat, foldedSeats, aggressorSeat) => {
+  const g = hand.gameState || {};
+  const occupied = Object.keys(hand.seatPlayers || {}).map(Number).sort((a, b) => a - b);
+  const order = actionOrder(hand, street);
+  const s = String(seat);
+  const idx = order.indexOf(s);
+  const live = order.filter(x => !foldedSeats.has(x) || x === s);
+  const liveIdx = live.indexOf(s);
+
+  // Distance from the button, counting backwards: BTN=0, CO=1, HJ=2 ...
+  const bi = occupied.indexOf(Number(g.dealerButtonSeat));
+  const ring = bi >= 0 ? [...occupied.slice(bi + 1), ...occupied.slice(0, bi + 1)] : occupied;
+  const ringIdx = ring.map(String).indexOf(s);
+  const offButton = ringIdx < 0 ? null : (ring.length - 1 - ringIdx);
+
+  return {
+    seatsToActAfterMe: liveIdx < 0 ? null : Math.max(0, live.length - 1 - liveIdx),
+    seatsActedBeforeMe: liveIdx < 0 ? null : liveIdx,
+    offButton,
+    isBlind: offButton != null && (offButton === ring.length - 1 || offButton === ring.length - 2),
+    isLate: offButton != null && offButton <= 1,
+    actsAfterAggressor: aggressorSeat == null || idx < 0 ? null
+      : idx > order.indexOf(String(aggressorSeat)),
+    blindVsBlind: live.length === 2 && live.every(x => {
+      const i = ring.map(String).indexOf(x);
+      return i === 0 || i === 1;
+    }),
+  };
+};
+
 const boardFor = (community, street) => {
   const n = { preflop: 0, flop: 3, turn: 4, river: 5 }[street] ?? 0;
   return (community || []).slice(0, n);
+};
+
+/**
+ * Where this seat sits relative to the button.
+ *
+ * Added because a ruleset cannot express "the big blind behaves differently" without the
+ * feature, and the founder named that split directly. Position appears here as a DESCRIPTION
+ * of the situation — who acts when, and who has already posted — never as a causal input to
+ * a decision model (POKER_THEORY §7.1). A rule may condition on it for the same reason a
+ * player does: it says how much money is already yours and how many people act after you.
+ */
+export const positionOf = (seat, button, occupiedSeats) => {
+  const ring = [...occupiedSeats].map(Number).sort((a, b) => a - b);
+  const bi = ring.indexOf(Number(button));
+  if (bi < 0) return 'unknown';
+  const order = [...ring.slice(bi + 1), ...ring.slice(0, bi + 1)];  // SB, BB, ... , BTN
+  const i = order.indexOf(Number(seat));
+  if (i < 0) return 'unknown';
+  const n = order.length;
+  if (i === 0) return 'SB';
+  if (i === 1) return 'BB';
+  if (i === n - 1) return 'BTN';
+  if (i === n - 2) return 'CO';
+  if (i === n - 3) return 'HJ';
+  return 'EP';
 };
 
 /**
@@ -154,18 +325,45 @@ export const labelDecisions = (hand, seat) => {
   const community = hand?.gameState?.communityCards || [];
   const shown = hand?.gameState?.showdownCards?.[s] || null;
 
+  const occupied = Object.keys(hand.seatPlayers || {});
+  const position = positionOf(s, hand?.gameState?.dealerButtonSeat, occupied);
+
   const out = [];
   let street = 'preflop';
   let raisesThisStreet = 0;
   let entrantsPF = 0;
   let aggressorPF = null;
   let streetAggressor = null;
+  let lastAggressorSeat = null;   // who made the bet/raise currently standing
+  const foldedSeats = new Set();
+
+  /**
+   * WHAT HAPPENED ON THE STREET BEFORE THIS ONE.
+   *
+   * FOUNDER, 2026-08-18: "'faced aggression last street' is inferable from the data. But its
+   * also a binary thing that is likely correlated to villain's ruleset."
+   *
+   * These are the sequence facts a per-node view structurally cannot hold. A player who
+   * called a bet and now faces another is in a different decision from one seeing a first
+   * bet, even when the price, board and position are identical — and until now those two
+   * decisions were the same row.
+   */
+  const streetLog = {};   // street -> { facedBet, iBet, iCalled, checkedThrough, aggressor }
+  let curLog = { facedBet: false, iBet: false, iCalled: false, anyBet: false, aggressor: null };
+  let prevLog = null;
+  let prevBoard = [];
+  let handAggressor = null;   // last player to bet/raise anywhere in the hand
 
   for (const e of seq) {
     if (e.street !== street) {
+      streetLog[street] = curLog;
+      prevLog = curLog;
+      prevBoard = boardFor(community, street);
+      curLog = { facedBet: false, iBet: false, iCalled: false, anyBet: false, aggressor: null };
       street = e.street;
       raisesThisStreet = 0;
       streetAggressor = null;
+      lastAggressorSeat = null;
     }
     const es = String(e.seat);
 
@@ -176,6 +374,14 @@ export const labelDecisions = (hand, seat) => {
       // What this seat OWES, not the size of the live bet. See `owedAt` — using the bet size
       // reported "nothing to call" in limped pots and overstated every blind's price.
       const facingBB = owedAt(hand, e.order, street, s, geo?.bb || (hand._backtest?.bb || 1));
+      const bbUnit = geo?.bb || (hand._backtest?.bb || 1);
+      // Everything the villain can see about the money, not only his own price.
+      const myStackBB = geo?.stackChips != null ? geo.stackChips / bbUnit : null;
+      // NOT `_backtest.committedBySeat` — that is the FINAL total for the hand, so using it
+      // here would feed the inducer the future. It produced "invested 21.7bb" against a
+      // 20.7bb stack, which is what exposed it. Computed strictly from actions before this
+      // decision, blinds included.
+      const investedBB = investedSoFar(hand, e.order, s, bbUnit);
       const potBB = geo?.potBB ?? null;
       // `potBB` INCLUDES the live bet (decisionGeometry exposes `enginePotChips` as the
       // pot MINUS it). So the pot won by calling is potBB, and the required equity is
@@ -187,6 +393,30 @@ export const labelDecisions = (hand, seat) => {
         handId: hand.handId,
         street,
         order: e.order,
+        position,
+        seatsDealt: occupied.length,
+        // WHO is applying the pressure. A player reads a button raise differently from an
+        // under-the-gun raise, and withholding it hides a condition the villain acts on.
+        inPosition: isInPosition(hand, street, s, foldedSeats),
+        ...positionDetail(hand, street, s, foldedSeats, lastAggressorSeat),
+        // ── derived binaries: the sequence, and what the board just did ──
+        facedAggressionLastStreet: prevLog ? prevLog.facedBet : null,
+        iBetLastStreet: prevLog ? prevLog.iBet : null,
+        iCalledLastStreet: prevLog ? prevLog.iCalled : null,
+        lastStreetCheckedThrough: prevLog ? !prevLog.anyBet : null,
+        iHaveInitiative: handAggressor == null ? null : handAggressor === s,
+        facingSameAggressorAgain: !!(prevLog && prevLog.aggressor && lastAggressorSeat
+          && prevLog.aggressor === lastAggressorSeat),
+        multiway: geo?.liveOpponents == null ? null : geo.liveOpponents >= 2,
+        boardPairedThisCard: boardPairedOn(prevBoard, boardFor(community, street)),
+        overcardArrived: overcardOn(prevBoard, boardFor(community, street)),
+        flushCardArrived: flushCardOn(prevBoard, boardFor(community, street)),
+        potCommitted: (myStackBB != null && investedBB != null && (myStackBB + investedBB) > 0)
+          ? (investedBB / (myStackBB + investedBB)) >= 0.33 : null,
+        aggressorPosition: lastAggressorSeat
+          ? positionOf(lastAggressorSeat, hand?.gameState?.dealerButtonSeat, occupied) : null,
+        myStackBB: myStackBB == null ? null : +myStackBB.toFixed(1),
+        investedBB: investedBB == null ? null : +investedBB.toFixed(2),
         // ---- the situation, as faced ----
         // WHAT is in front of me — keyed on the raise count, never on the amount owed.
         // Owing money and facing aggression are different facts: preflop everyone owes the
@@ -231,6 +461,12 @@ export const labelDecisions = (hand, seat) => {
       });
     }
 
+    if (es === s) {
+      if (e.action === PRIMITIVE_ACTIONS.CALL) curLog.iCalled = true;
+      if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') curLog.iBet = true;
+      if (owedAt(hand, e.order, street, s, geoBB(hand)) > 0) curLog.facedBet = true;
+    }
+    if (e.action === PRIMITIVE_ACTIONS.FOLD) foldedSeats.add(es);
     if (street === 'preflop' && !POSTED.has(e.action)
         && (e.action === PRIMITIVE_ACTIONS.CALL || e.action === PRIMITIVE_ACTIONS.RAISE)) {
       entrantsPF++;
@@ -238,6 +474,10 @@ export const labelDecisions = (hand, seat) => {
     if (e.action === PRIMITIVE_ACTIONS.RAISE || e.action === 'bet') {
       raisesThisStreet++;
       streetAggressor = es;
+      lastAggressorSeat = es;
+      handAggressor = es;
+      curLog.anyBet = true;
+      curLog.aggressor = es;
       if (street === 'preflop') aggressorPF = es;
     }
   }
