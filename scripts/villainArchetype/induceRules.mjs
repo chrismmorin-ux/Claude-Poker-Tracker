@@ -84,11 +84,25 @@ const BANDS = {
   hand: () => null,
 };
 
-/** Street-aware: the six position labels preflop, the binary postflop. */
-const STREET_SCOPED = {
-  seat_pos: (row) => row.street === 'preflop' ? row.seat_pos : null,
-  in_pos: (row) => row.street === 'preflop' ? null : row.in_pos,
-};
+/**
+ * Street-aware: the six position labels preflop, the binary postflop.
+ *
+ * EVERY positional re-encoding must be guarded, not only `seat_pos`. Guarding one and
+ * leaving `off_button`, `to_act_after`, `is_blind` and friends unguarded reopens the exact
+ * six-way postflop fragmentation the guard exists to stop — and `to_act_after == 0` was
+ * measured to be a PERFECT duplicate of `in_pos == yes` postflop (0 mismatches in 384 rows),
+ * so the synonym walked straight past the door.
+ *
+ * The redundancy itself is deliberate — the founder asked for position to be
+ * over-enumerated so correlation can choose the framing. Redundant is fine. Redundant AND
+ * unguarded is the bug.
+ */
+const PREFLOP_ONLY = ['seat_pos', 'off_button', 'to_act_after', 'acted_before',
+  'is_blind', 'is_late', 'blind_v_blind', 'limpers', 'first_in'];
+const STREET_SCOPED = Object.fromEntries([
+  ...PREFLOP_ONLY.map(f => [f, (row) => row.street === 'preflop' ? row[f] : null]),
+  ['in_pos', (row) => row.street === 'preflop' ? null : row.in_pos],
+]);
 
 const FEATURES = Object.fromEntries(
   SITUATION_FIELDS.map((name) => [name, (d) => {
@@ -183,9 +197,13 @@ const buildTree = (pool, depth, used) => {
     const small = [...groups.entries()].filter(([, sub]) => sub.length < MIN_RULE)
       .flatMap(([, sub]) => sub);
     const branches = big.map(([v, sub]) => [v, sub]);
-    // ALWAYS keep the remainder. Dropping it silently cost 2.7% of coverage, and a ruleset
-    // that quietly omits decisions is exactly the thing this measurement exists to prevent.
-    if (small.length) branches.push(['everything else', small]);
+    // The remainder must be KEPT (dropping it cost 2.7% of coverage once) but it must also
+    // respect MIN_RULE like every other branch. Pushing it unconditionally was an escape
+    // hatch around the floor: 24 of 56 rules landed below it, including single-observation
+    // leaves printed as "I ALWAYS bet" with the same authority as a 176-decision rule —
+    // precisely the memorisation MIN_RULE exists to prevent.
+    if (small.length >= MIN_RULE) branches.push(['everything else', small]);
+    else if (small.length) continue;      // this split would strand decisions; reject it
     const gain = infoGain(pool, branches.map(b => b[1]));
     if (gain > 0.01 && (!best || gain > best.gain)) best = { fname, branches, gain };
   }

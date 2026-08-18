@@ -423,8 +423,15 @@ export const labelDecisions = (hand, seat) => {
         // big blind, so keying `facing` on `owed > 0` labelled a LIMPED pot "facing a raise"
         // and destroyed the first-in population entirely. `owed` carries the price; this
         // carries the kind of action.
+        // Raise DEPTH, not a binary. Collapsing every raise count >= 2 into "a 3-bet" put
+        // 3-bets, 4-bets and 5-bets in one bucket, and facing a 4-bet is usually a
+        // shove-or-fold decision rather than a defend decision. Measured: the old label
+        // covered raises_in of 2, 3 and 4.
         facing: street === 'preflop'
-          ? (raisesThisStreet === 0 ? 'no raise' : raisesThisStreet === 1 ? 'a raise' : 'a 3-bet')
+          ? (raisesThisStreet === 0 ? 'no raise'
+            : raisesThisStreet === 1 ? 'a raise'
+              : raisesThisStreet === 2 ? 'a 3-bet'
+                : raisesThisStreet === 3 ? 'a 4-bet' : 'a 5-bet or beyond')
           : (facingBB > 0 ? 'a bet' : 'no bet'),
         toCallBB: +facingBB.toFixed(2),
         potBB: potBB == null ? null : +potBB.toFixed(2),
@@ -440,12 +447,23 @@ export const labelDecisions = (hand, seat) => {
         iAmPreflopAggressor: aggressorPF === s,
         iAmStreetAggressor: streetAggressor === s,
         firstIn: street === 'preflop' && raisesThisStreet === 0 && entrantsPF === 0,
-        limpersAhead: street === 'preflop' && raisesThisStreet === 0 ? entrantsPF : 0,
+        // NULL, not 0, when the field does not apply. Forcing 0 made "nobody limped, I am
+        // first in" (734 decisions) indistinguishable from "facing a raise" (588) in that
+        // column. It was masked only because `facing` always won the root split first.
+        limpersAhead: street === 'preflop' && raisesThisStreet === 0 ? entrantsPF : null,
         boardTexture: texture ? {
-          paired: !!texture.paired,
+          // `analyzeBoardTexture` returns isPaired / isTrips / straightPossible — reading
+          // `texture.paired` and `texture.straighty` silently returned undefined, so PAIRED
+          // NEVER FIRED ONCE in 1,937 rows and the straight-possible branch was dead code.
+          // Every paired board in the dataset was labelled as unpaired.
+          paired: !!texture.isPaired,
+          trips: !!texture.isTrips,
           monotone: !!texture.monotone,
           twoTone: !!texture.twoTone,
-          connected: !!(texture.connected || texture.straighty),
+          flushDraw: !!texture.flushDraw,
+          connected: (texture.connected || 0) > 0,
+          straightPossible: !!texture.straightPossible,
+          broadwayCount: texture.highCardCount ?? null,
           highCard: board.length ? RANKS[Math.max(...board.map(rankOf)) - 2] : null,
         } : null,
         // ---- what they did ----

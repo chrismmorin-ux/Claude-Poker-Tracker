@@ -31,7 +31,7 @@
 
 const yn = (v) => v == null ? '-' : (v ? 'yes' : 'no');
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 7;
 
 /**
  * Every field, in the order it appears in the table.
@@ -49,7 +49,7 @@ export const FIELDS = [
   { name: 'facing', group: 'situation', get: d => d.facing, describe: 'what action stands in front of me' },
   { name: 'aggressor', group: 'situation', get: d => d.aggressorPosition ?? '-', describe: 'who bet or raised into me' },
   { name: 'raises_in', group: 'situation', get: d => d.raisesFaced, describe: 'raises already in this street' },
-  { name: 'limpers', group: 'situation', get: d => d.limpersAhead, describe: 'limpers ahead of me' },
+  { name: 'limpers', group: 'situation', get: d => d.limpersAhead ?? '-', describe: 'limpers ahead of me (blank when a raise is already in)' },
   { name: 'opps_live', group: 'situation', get: d => d.opponentsLive ?? '-', describe: 'opponents still in the hand' },
   { name: 'closes', group: 'situation', get: d => d.closesAction == null ? '-' : (d.closesAction ? 'yes' : 'no'), describe: 'does my decision close the action' },
   { name: 'in_pos', group: 'situation', get: d => d.inPosition == null ? '-' : (d.inPosition ? 'yes' : 'no'), describe: 'do I act last on this street (postflop only)' },
@@ -77,12 +77,16 @@ export const FIELDS = [
 
   // ── the board and my role ──
   { name: 'board', group: 'situation', get: d => !d.boardTexture ? '-'
-    : [d.boardTexture.paired && 'paired', d.boardTexture.monotone && 'mono',
-       d.boardTexture.twoTone && 'twotone', d.boardTexture.connected && 'connected']
+    : [d.boardTexture.trips && 'trips', d.boardTexture.paired && 'paired',
+       d.boardTexture.monotone && 'mono', d.boardTexture.twoTone && 'twotone',
+       d.boardTexture.connected && 'connected']
       .filter(Boolean).join('+') || 'dry', describe: 'board texture' },
+  { name: 'flush_draw', group: 'situation', get: d => yn(d.boardTexture?.flushDraw), describe: 'three to a suit is out' },
+  { name: 'straight_poss', group: 'situation', get: d => yn(d.boardTexture?.straightPossible), describe: 'three cards inside a five-rank window' },
+  { name: 'broadways', group: 'situation', get: d => d.boardTexture?.broadwayCount ?? '-', describe: 'how many board cards are ten or higher' },
   { name: 'high_card', group: 'situation', get: d => d.boardTexture?.highCard ?? '-', describe: 'highest board card' },
   { name: 'i_raised_pf', group: 'situation', get: d => d.iAmPreflopAggressor ? 'yes' : 'no', describe: 'was I the preflop raiser' },
-  { name: 'first_in', group: 'situation', get: d => d.firstIn ? 'yes' : 'no', describe: 'nobody had entered when I acted' },
+  { name: 'first_in', group: 'situation', get: d => d.street === 'preflop' ? (d.firstIn ? 'yes' : 'no') : '-', describe: 'nobody had entered when I acted (preflop only)' },
 
   // ── derived binaries (founder 2026-08-18: inferable, and likely correlated) ──
   // These are the SEQUENCE facts a per-node view cannot hold. A player who called a bet and
