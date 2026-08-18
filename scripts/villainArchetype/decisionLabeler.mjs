@@ -38,6 +38,7 @@
 
 import { PRIMITIVE_ACTIONS } from '../../src/constants/primitiveActions.js';
 import { bestFiveFromSeven, handCategory } from '../../src/utils/pokerCore/handEvaluator.js';
+import { parseAndEncode } from '../../src/utils/pokerCore/cardParser.js';
 import { analyzeBoardFromStrings } from '../../src/utils/pokerCore/boardTexture.js';
 import { decisionGeometryFull } from '../backtest/decisionGeometry.mjs';
 
@@ -60,8 +61,12 @@ export const classifyMadeHand = (hole, board) => {
   if (!hole || hole.length < 2 || !board || board.length < 3) return null;
   let category = null;
   try {
-    const best = bestFiveFromSeven([...hole, ...board]);
-    category = handCategory(typeof best === 'number' ? best : best.score);
+    // `bestFiveFromSeven` takes ENCODED CARD INTEGERS, not card strings. Passing strings
+    // silently scores garbage — it reported "Flush" for 7h6h on 2d 5c 8s, which is 8-high.
+    // Caught by a known-answer anchor, not by reading the code, and it would have been
+    // fabricated evidence in every explanation built on this field.
+    const encoded = [...hole, ...board].map(parseAndEncode);
+    category = encoded.some(c => c < 0) ? null : handCategory(bestFiveFromSeven(encoded));
   } catch { category = null; }
 
   const boardRanks = board.map(rankOf).sort((a, b) => b - a);

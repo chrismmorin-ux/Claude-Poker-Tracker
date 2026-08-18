@@ -1,131 +1,109 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
 
+!.claude/workstream/state/findings-feedback-manifest.json
+!docs/design/audits/**/*.png
+!docs/design/evidence/**/*.jpg
+!docs/design/evidence/**/*.png
+!public/*.png
+!tests/playwright/**/*.png
+# /kit-upgrade sidecars — upstream's version of a file we've customized, written
+# ── CWOS (managed block — ADR-058) ──────────────────────────────────────
+# alongside it for hand review. Working artifacts, never part of the tree.
+# Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
+# automatically from your queue/findings/sprints/programs files, so it
+# Backtest harness output artifacts (scripts/backtest/run.mjs --out, mined tables)
 # Build outputs
-dist/
-build/
-
-# Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.test-out.log
-*.test-out.log
-full-test.log
-*-test.log
-
-# Editor directories
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
 # Cache
-.eslintcache
-.cache/
-
-# Test coverage reports
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
-tmp/
-
 # Claude Code local/session files
-.claude/settings.local.json
+# Dependencies
+# devshot output (scripts/devshot.mjs)
+# Editor directories
+# Equity-operator research intermediates (WS-337). The 169x169 matrix is ~540KB and is
+# Ignition poker tracker — build artifacts and deps only
+# is calibration data, not cache — it stays tracked.
+# Local env files
+# Logs
+# never needs to be in version control. findings-feedback-manifest.json
+# OS files
+# Personal notes
+# Playwright snapshot baselines ARE tracked (visual regression source-of-truth)
+# Playwright test artifacts (per-run output; not the baselines)
+# Python bytecode (scripts/backtest/*.py)
+# regenerable byte-for-byte from a seed; only its DECOMPOSITION is committed, in
+# Runtime session pointer (ephemeral, per-machine)
+# Screenshots (debug artifacts)
+# src/utils/pokerCore/data/equitySkewDecomposition.js
+# Temporary files
+# Test coverage reports
+# The event log is machine-local by design (ADR-057/ADR-058).
+# Transient sprint-composition scratch written by /next; not state of record.
+# villain-archetype scratch output (regenerable from scripts/villainArchetype/)
+# wholesale on every event and cannot merge across machines. It rebuilds
+# Workstream state JSON is a per-node rebuildable cache: it is rewritten
+*.kit-update
+*.png
+*.pyc
+*.swo
+*.swp
+*.temp
+*.test-out.log
+*.tmp
+*-test.log
+.cache/
+.claude/.coherence-cache/
 .claude/.last-edit.json
 .claude/.test-state.json
-.claude/scheduled_tasks.lock
-.claude/.coherence-cache/
+.claude/.tmp-*.json
+.claude/.tmp-sprint.json
 .claude/coherence-report.json
-nul
-
-# Screenshots (debug artifacts)
-screenshots/
-*.png
-!public/*.png
-# Audit evidence is tracked content, not debug output (LSW surface audits, etc.)
-!docs/design/audits/**/*.png
-!docs/design/evidence/**/*.png
-!docs/design/evidence/**/*.jpg
-# Playwright snapshot baselines ARE tracked (visual regression source-of-truth)
-!tests/playwright/**/*.png
-audit-*.png
-verify-*.png
-.local-model-backups/
 .claude/logs/*.log
-.playwright-mcp/
-# Playwright test artifacts (per-run output; not the baselines)
-tests/playwright/.test-results/
-playwright-report/
-test-results/
-.firebase
-
-# Ignition poker tracker — build artifacts and deps only
-ignition-poker-tracker/node_modules/
-ignition-poker-tracker/dist/
-
-# Personal notes
-docs/chris-notes
-.playwright-verify/
-
-.cwos-snapshots/
-
-# Python bytecode (scripts/backtest/*.py)
-__pycache__/
-*.pyc
-
-# Backtest harness output artifacts (scripts/backtest/run.mjs --out, mined tables)
-out/
-
-# /kit-upgrade sidecars — upstream's version of a file we've customized, written
-# alongside it for hand review. Working artifacts, never part of the tree.
-*.kit-update
-
-# ── CWOS (managed block — ADR-058) ──────────────────────────────────────
-# Workstream state JSON is a per-node rebuildable cache: it is rewritten
-# wholesale on every event and cannot merge across machines. It rebuilds
-# automatically from your queue/findings/sprints/programs files, so it
-# never needs to be in version control. findings-feedback-manifest.json
-# is calibration data, not cache — it stays tracked.
-.claude/workstream/state/*.json
-!.claude/workstream/state/findings-feedback-manifest.json
-.claude/workstream/state/*.lock
-# The event log is machine-local by design (ADR-057/ADR-058).
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+.claude/workstream/.current-session
 .claude/workstream/events/
+.claude/workstream/state/*.json
+.claude/workstream/state/*.lock
 .claude/workstream/telemetry/
 .claude/workstream/tmp/
-.claude/.tmp-*.json
 .cwos-snapshots/
-
-# Transient sprint-composition scratch written by /next; not state of record.
-.claude/.tmp-sprint.json
-
-# Equity-operator research intermediates (WS-337). The 169x169 matrix is ~540KB and is
-# regenerable byte-for-byte from a seed; only its DECOMPOSITION is committed, in
-# src/utils/pokerCore/data/equitySkewDecomposition.js
+.devshots/
+.DS_Store
+.env
+.env.development.local
+.env.local
+.env.production.local
+.env.test.local
+.eslintcache
+.firebase
+.idea/
+.local-model-backups/
+.playwright-mcp/
+.playwright-verify/
+.pnp
+.pnp.js
+.test-out.log
+.tmp-arch/
+.vscode/
+__pycache__/
+audit-*.png
+build/
+coverage/
+dist/
+docs/chris-notes
 equity-matrix*.csv
 equity-matrix*.csv.meta.json
-
-# devshot output (scripts/devshot.mjs)
-.devshots/
-
-# Runtime session pointer (ephemeral, per-machine)
-.claude/workstream/.current-session
-
-# villain-archetype scratch output (regenerable from scripts/villainArchetype/)
-.tmp-arch/
+full-test.log
+ignition-poker-tracker/dist/
+ignition-poker-tracker/node_modules/
+node_modules/
+npm-debug.log*
+nul
+out/
+playwright-report/
+screenshots/
+test-results/
+tests/playwright/.test-results/
+Thumbs.db
+tmp/
+verify-*.png
+yarn-debug.log*
+yarn-error.log*
