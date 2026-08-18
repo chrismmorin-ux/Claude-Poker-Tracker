@@ -15,13 +15,18 @@ import {
   FACED_RAISE_FREQUENCIES,
   NO_RAISE_ACTIONS,
   FACED_RAISE_ACTIONS,
+  FACED_3BET_ACTIONS,
+  FOUR_BET_FREQUENCIES,
+  FACED_3BET_FREQUENCIES_BY_ROLE,
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,
+  FACED_3BET_SUBCLASSES,
   SUBCLASS_SPLIT,
   SUBCLASS_PRIOR_WEIGHT,
   PRIOR_WEIGHT,
 } from './populationPriors.js';
 import { RANGE_ACTIONS, RANGE_POSITIONS } from './rangeProfile.js';
+import { SCENARIOS, PRIOR_ROLES } from './lineTaxonomy.js';
 import { decodeIndex, rangeIndex } from '../pokerCore/rangeMatrix.js';
 import { logger } from '../errorHandler.js';
 
@@ -55,7 +60,23 @@ export const updateProfileFromActions = (profile, extractions) => {
 
     profile.opportunities[position].total++;
 
-    if (ext.facedRaise) {
+    // WS-521: route on SCENARIO, not on the `facedRaise` boolean. A boolean can
+    // separate two trees and cannot separate three — `facedRaise` is true for
+    // BOTH the one-raise and the two-raise scenarios, so keying on it would
+    // count every 4-bet decision into the faced-raise denominator and shrink
+    // every coldCall/threeBet rate by a decision that was never in that tree.
+    // `scenario` falls back to the boolean for any extraction that predates it.
+    const scenario = ext.scenario
+      || (ext.facedRaise ? SCENARIOS.FACED_RAISE : SCENARIOS.NO_RAISE);
+
+    if (scenario === SCENARIOS.FACED_3BET) {
+      profile.opportunities[position].faced3Bet++;
+      // The conditioning set. Decisions predating `priorRole` fall back to the
+      // role the measured prior actually describes, which is what the old code
+      // implicitly assumed for all of them.
+      const byRole = profile.opportunities[position].faced3BetByRole;
+      if (byRole) byRole[ext.priorRole || PRIOR_ROLES.OPENER]++;
+    } else if (scenario === SCENARIOS.FACED_RAISE) {
       profile.opportunities[position].facedRaise++;
     } else {
       profile.opportunities[position].noRaiseFaced++;
@@ -87,9 +108,20 @@ export const updateProfileFromActions = (profile, extractions) => {
       pos
     );
 
+    // --- Facing-3-bet scenario: fold / call4 / fourBet (WS-521 / WS-270) ---
+    updateScenarioRanges(
+      profile.ranges[pos],
+      counts,
+      FACED_3BET_ACTIONS,
+      faced3BetPopFreqs(opp, pos),
+      opp.faced3Bet,
+      pos
+    );
+
     // --- Derived subclasses, apportioned out of their parent's grid ---
     updateSubclassRanges(profile.ranges[pos], counts, 'open', NO_RAISE_SUBCLASSES, pos);
     updateSubclassRanges(profile.ranges[pos], counts, 'threeBet', FACED_RAISE_SUBCLASSES, pos);
+    updateSubclassRanges(profile.ranges[pos], counts, 'fourBet', FACED_3BET_SUBCLASSES, pos);
   }
 
   // 3. Apply showdown anchors and count showdowns.
@@ -139,6 +171,46 @@ export const updateProfileFromActions = (profile, extractions) => {
   }
 
   return profile;
+};
+
+/**
+ * The population frequencies to price the facing-3-bet tree against, for THIS villain.
+ *
+ * WHY THIS IS NOT JUST `FOUR_BET_FREQUENCIES[pos]`. That table is measured on
+ * OPENERS ONLY — `populationPriors.js` says so in its own conditional #2 — and was
+ * being applied across `opportunities.faced3Bet`, the whole tree. Measured on 28,699
+ * corpus hands, cold seats are the PLURALITY of that tree (47.2%) and fold 94.55%
+ * where the applied prior says 43.37%. Pricing a cold seat's fold at the opener rate
+ * buys fold equity that is not there, and inflated fold equity makes the engine
+ * RECKLESS rather than timid (POKER_THEORY §13.3) — the same failure direction WS-371
+ * documented for the street above.
+ *
+ * The blend is over the villain's OWN realised composition, not a fixed constant: a
+ * villain who only ever reaches this tree cold should be priced as a cold seat. With no
+ * observations yet the weights fall back to the corpus composition, so a fresh profile
+ * is priced as the pool rather than as an opener.
+ *
+ * Fold is not read from the table here — `updateScenarioRanges` derives it as the
+ * scenario complement — but it is kept in the blend so the row stays a distribution.
+ */
+export const faced3BetPopFreqs = (opp, pos) => {
+  const byRole = opp?.faced3BetByRole;
+  const roles = [PRIOR_ROLES.OPENER, PRIOR_ROLES.COLD, PRIOR_ROLES.PASSIVE];
+  const observed = roles.reduce((sum, r) => sum + (byRole?.[r] || 0), 0);
+
+  // Corpus composition (FACED_3BET_ROLE_COUNTS n's) — the honest prior on the mix
+  // itself, used until this villain has shown one.
+  const weights = observed > 0
+    ? roles.map(r => (byRole[r] || 0) / observed)
+    : [2779 / 6531, 3083 / 6531, 669 / 6531];
+
+  const blended = {};
+  for (const action of FACED_3BET_ACTIONS) {
+    blended[action] = roles.reduce(
+      (sum, r, i) => sum + weights[i] * FACED_3BET_FREQUENCIES_BY_ROLE[r][action], 0
+    );
+  }
+  return blended;
 };
 
 /**

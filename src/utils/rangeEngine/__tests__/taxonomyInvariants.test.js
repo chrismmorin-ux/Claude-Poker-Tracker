@@ -65,9 +65,22 @@ const foldHand = () => makeHand({ ...HERO, actions: [
 ]});
 const limpHand = () => makeHand({ ...HERO, actions: [{ seat: 9, action: 'call' }] });
 
+/** WS-521: hero opens, villain 3-bets, hero responds. Two decision points. */
+const openThen4BetHand = () => makeHand({ ...HERO, actions: [
+  { seat: 9, action: 'raise' }, { seat: 4, action: 'raise' }, { seat: 9, action: 'raise' },
+]});
+const openThenFoldTo3BetHand = () => makeHand({ ...HERO, actions: [
+  { seat: 9, action: 'raise' }, { seat: 4, action: 'raise' }, { seat: 9, action: 'fold' },
+]});
+const openThenCall3BetHand = () => makeHand({ ...HERO, actions: [
+  { seat: 9, action: 'raise' }, { seat: 4, action: 'raise' }, { seat: 9, action: 'call' },
+]});
+
 const build = (hands) => buildRangeProfile(1, hands, 'user-1');
 
 const repeat = (fn, n) => Array.from({ length: n }, fn);
+
+const mass = (grid) => grid.reduce((a, b) => a + b, 0);
 
 /**
  * Independent reimplementation of the PRE-taxonomy classification rule:
@@ -169,8 +182,12 @@ describe('sum invariant', () => {
     }
   });
 
-  it('subclass counts never exceed their parent, even with a 4-bet residual', () => {
-    // Seat 9 cold-4bets: parent threeBet, subAction null (WS-270 residual).
+  it('the 4-bet residual is GONE — its own tree claims it (WS-521 / WS-270)', () => {
+    // This assertion is the inverse of the one it replaces. Before the third
+    // tree, seat 9's cold 4-bet landed in the `threeBet` PARENT with
+    // `subAction: null`, and this test pinned that residual at exactly 1.
+    // POKER_THEORY §2.5.3 described it as "WS-270's slice, left with the
+    // parent" and it is what made `totalShare < 1`. The slice is now claimed.
     const fourBet = makeHand({ ...HERO, actions: [
       { seat: 4, action: 'raise' }, { seat: 5, action: 'raise' }, { seat: 9, action: 'raise' },
     ]});
@@ -180,9 +197,83 @@ describe('sum invariant', () => {
       const sum = subs.reduce((t, s) => t + counts[s], 0);
       expect(sum).toBeLessThanOrEqual(counts[parent]);
     }
-    // The residual is exactly the unmodelled 4-bet.
+
+    // It is counted in the fourBet tree, fully subclassed …
+    expect(counts.fourBet).toBe(1);
+    expect(counts.cold4Bet).toBe(1);
+    const fourBetSubs = PARENT_SUBCLASSES.fourBet.reduce((t, s) => t + counts[s], 0);
+    expect(counts.fourBet - fourBetSubs).toBe(0);
+
+    // … and threeBet no longer carries an unexplained remainder.
     const threeBetSubs = PARENT_SUBCLASSES.threeBet.reduce((t, s) => t + counts[s], 0);
-    expect(counts.threeBet - threeBetSubs).toBe(1);
+    expect(counts.threeBet - threeBetSubs).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The third tree is LIVE, not merely declared (WS-521 / WS-270)
+// ---------------------------------------------------------------------------
+
+describe('facing-3-bet tree reaches the model', () => {
+  // Declaring parents and grids is not the same as UPDATING them. The suite was
+  // fully green with `bayesianUpdater` still routing on the `facedRaise`
+  // BOOLEAN — which counted every 4-bet decision into the faced-raise
+  // denominator and never touched the new grids at all. Green tests are exactly
+  // how a shipped-but-inert capability hides, so these assert the wiring
+  // directly rather than the shape around it.
+
+  it('the opener\'s response is counted, and in the RIGHT denominator', () => {
+    const opp = build(repeat(openThen4BetHand, 6)).opportunities.LATE;
+
+    // Six hands, two decision points each: the open, then the 4-bet.
+    expect(opp.noRaiseFaced).toBe(6);
+    expect(opp.faced3Bet).toBe(6);
+    // The decisive assertion. Before the scenario routing these six landed here,
+    // silently shrinking every coldCall and threeBet rate at this position.
+    expect(opp.facedRaise).toBe(0);
+  });
+
+  it('fourBet and call4 grids carry real mass once observed', () => {
+    const ranges = build([
+      ...repeat(openThen4BetHand, 8),
+      ...repeat(openThenCall3BetHand, 8),
+    ]).ranges.LATE;
+
+    expect(mass(ranges.fourBet)).toBeGreaterThan(0);
+    expect(mass(ranges.call4)).toBeGreaterThan(0);
+    expect(mass(ranges.fourBetAfterOpen)).toBeGreaterThan(0);
+  });
+
+  it('the 4-bet range is TIGHTER than the 3-bet range', () => {
+    // Doctrine, not decoration: each escalation of the preflop tree roughly
+    // halves the value range (FOUR_BET_TOP_FRACTION is ~half THREE_BET_TOP_FRACTION).
+    const ranges = build([
+      ...repeat(openThen4BetHand, 10),
+      ...repeat(cold3BetHand, 10),
+    ]).ranges.LATE;
+
+    expect(mass(ranges.fourBet)).toBeLessThan(mass(ranges.threeBet));
+  });
+
+  it('folding to a 3-bet is recorded — the observation WS-521 was filed for', () => {
+    const withFold = build(repeat(openThenFoldTo3BetHand, 7));
+    const withoutFold = build(repeat(openHand, 7));
+
+    // The opener who folds to a 3-bet used to produce exactly one record
+    // (`open`) and its response was emitted nowhere.
+    expect(withFold.opportunities.LATE.faced3Bet).toBe(7);
+    expect(withoutFold.opportunities.LATE.faced3Bet).toBe(0);
+  });
+
+  it('a v4 profile deserializes with the new tree empty, not broken', () => {
+    const profile = build(repeat(openThen4BetHand, 4));
+    const round = deserializeProfile(serializeProfile(profile));
+
+    for (const pos of RANGE_POSITIONS) {
+      expect(round.ranges[pos].fourBet).toBeDefined();
+      expect(round.ranges[pos].call4).toBeDefined();
+    }
+    expect(mass(round.ranges.LATE.fourBet)).toBeCloseTo(mass(profile.ranges.LATE.fourBet), 10);
   });
 });
 

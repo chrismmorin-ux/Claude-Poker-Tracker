@@ -16,8 +16,8 @@ import { SUBCLASS_PARENT } from '../lineTaxonomy';
 // ---------------------------------------------------------------------------
 
 describe('PROFILE_VERSION', () => {
-  it('equals 4 (v4: derived line-taxonomy subclasses, WS-256)', () => {
-    expect(PROFILE_VERSION).toBe(4);
+  it('equals 5 (v5: the facing-3-bet tree, WS-521 / WS-270)', () => {
+    expect(PROFILE_VERSION).toBe(5);
   });
 });
 
@@ -26,8 +26,16 @@ describe('RANGE_ACTIONS', () => {
     expect(RANGE_ACTIONS).toEqual([...RANGE_PARENT_ACTIONS, ...RANGE_SUBCLASS_ACTIONS]);
   });
 
-  it('retains exactly the 5 pre-taxonomy parents', () => {
-    expect(RANGE_PARENT_ACTIONS).toEqual(['fold', 'limp', 'open', 'coldCall', 'threeBet']);
+  it('retains the 5 pre-taxonomy parents, in order, ahead of the third tree', () => {
+    // The original five keep their identity and their position — WS-521 ADDS a
+    // scenario, it does not reshuffle the two that existed.
+    expect(RANGE_PARENT_ACTIONS.slice(0, 5))
+      .toEqual(['fold', 'limp', 'open', 'coldCall', 'threeBet']);
+  });
+
+  it('carries the facing-3-bet parents (WS-521 / WS-270)', () => {
+    expect(RANGE_PARENT_ACTIONS).toContain('call4');
+    expect(RANGE_PARENT_ACTIONS).toContain('fourBet');
   });
 
   it('contains fold', () => {

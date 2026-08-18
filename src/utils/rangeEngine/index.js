@@ -10,7 +10,9 @@ import { extractAllSubActions } from './subActionExtractor.js';
 import { updateProfileFromActions, updateSubActionCounts } from './bayesianUpdater.js';
 import { normalizeAllPositions } from './crossRangeConstraints.js';
 import { rangeWidth } from '../pokerCore/rangeMatrix.js';
-import { NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS } from './populationPriors.js';
+import {
+  NO_RAISE_ACTIONS, FACED_RAISE_ACTIONS, FACED_3BET_ACTIONS,
+} from './populationPriors.js';
 import { PARENT_SUBCLASSES } from './lineTaxonomy.js';
 import { detectTraits } from './traitDetector.js';
 import { computeAllPips, computePipConfidence } from './pipCalculator.js';
@@ -68,11 +70,58 @@ export const getRangeWidthSummary = (profile) => {
       facedRaise[action] = rangeWidth(profile.ranges[pos][action]);
     }
 
+    // WS-521: the third tree, reported alongside the two that existed.
+    const faced3Bet = {};
+    for (const action of FACED_3BET_ACTIONS) {
+      if (action === 'fold') continue;
+      faced3Bet[action] = rangeWidth(profile.ranges[pos][action]);
+    }
+
     // Observed frequencies (from raw counts)
     // Fold is stored as one combined count — derive per-scenario
     const counts = profile.actionCounts[pos];
     const noRaiseTotal = opp.noRaiseFaced || 0;
     const facedRaiseTotal = opp.facedRaise || 0;
+    const faced3BetTotal = opp.faced3Bet || 0;
+
+    const faced3BetFoldCount = Math.max(
+      0, faced3BetTotal - (counts.call4 || 0) - (counts.fourBet || 0)
+    );
+
+    const faced3BetFreqs = {};
+    for (const action of FACED_3BET_ACTIONS) {
+      if (faced3BetTotal === 0) { faced3BetFreqs[action] = null; continue; }
+      const c = action === 'fold' ? faced3BetFoldCount : (counts[action] || 0);
+      faced3BetFreqs[action] = Math.round((c / faced3BetTotal) * 100);
+    }
+
+    /**
+     * The composition of the facing-3-bet tree, reported BESIDE its pooled rate.
+     *
+     * `faced3BetFreqs` above pools three conditioning sets that measure 42.97% /
+     * 94.55% / 68.16% fold on corpus. The pooled number is therefore a statement
+     * about this villain's MIX as much as their tendency, and quoting it without
+     * the mix is the WS-371 error. It is kept — several callers want the marginal
+     * — and the mix now travels with it so the reader can see what was averaged.
+     */
+    const faced3BetRoleMix = { ...(opp.faced3BetByRole || { opener: 0, cold: 0, passive: 0 }) };
+
+    /**
+     * Which scenario's opportunity count a parent's subclass percentages divide by.
+     *
+     * This was a two-way ternary (`parent === 'open' ? noRaiseTotal : facedRaiseTotal`),
+     * which is correct for exactly two trees and silently wrong for three — every
+     * `fourBet` subclass would have reported its share of the FACED-RAISE
+     * denominator, a percentage of a population it was never part of.
+     */
+    const scenarioTotalForParent = {
+      limp: noRaiseTotal,
+      open: noRaiseTotal,
+      coldCall: facedRaiseTotal,
+      threeBet: facedRaiseTotal,
+      call4: faced3BetTotal,
+      fourBet: faced3BetTotal,
+    };
 
     const noRaiseFoldCount = Math.max(0, noRaiseTotal - (counts.limp || 0) - (counts.open || 0));
     const facedRaiseFoldCount = Math.max(0, facedRaiseTotal - (counts.coldCall || 0) - (counts.threeBet || 0));
@@ -97,7 +146,7 @@ export const getRangeWidthSummary = (profile) => {
     // rather than on posterior width, which never reaches 0 (prior mass).
     const subclasses = {};
     for (const [parent, subs] of Object.entries(PARENT_SUBCLASSES)) {
-      const scenarioTotal = parent === 'open' ? noRaiseTotal : facedRaiseTotal;
+      const scenarioTotal = scenarioTotalForParent[parent] ?? 0;
       for (const sub of subs) {
         subclasses[sub] = {
           parent,
@@ -111,11 +160,15 @@ export const getRangeWidthSummary = (profile) => {
     summary[pos] = {
       noRaise,
       facedRaise,
+      faced3Bet,
+      faced3BetRoleMix,
       noRaiseFreqs,
       facedRaiseFreqs,
+      faced3BetFreqs,
       subclasses,
       noRaiseHands: noRaiseTotal,
       facedRaiseHands: facedRaiseTotal,
+      faced3BetHands: faced3BetTotal,
       hands: opp.total,
     };
   }

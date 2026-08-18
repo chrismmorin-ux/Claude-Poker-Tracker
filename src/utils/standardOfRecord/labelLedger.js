@@ -1247,6 +1247,127 @@ export const LABEL_LEDGER = Object.freeze([
   }),
 
   buildLabelEntry({
+    labelId: 'LBL-four-bet-frequencies',
+    title: 'Position -> fold/call4/fourBet frequencies when facing a 3-bet — the one MEASURED row in this file',
+    site: {
+      file: 'src/utils/rangeEngine/populationPriors.js', symbol: 'FOUR_BET_FREQUENCIES',
+    },
+    sites: ['src/utils/rangeEngine/populationPriors.js::FOUR_BET_FREQUENCIES'],
+    keySpace: ['position', 'action'],
+    foundation: 'mined-corpus',
+    foundationStatus: 'generated',
+    provenance: 'WS-521 / WS-270, the third preflop tree. Derived from '
+      + 'exploitEngine/handhqReferencePool.js HANDHQ_OPENER_FACING_3BET, `full` seat bucket '
+      + '(n = 398,577 — the 9-handed bucket), renormalised over fold/call/fourBet after '
+      + 'excluding that row\'s declared `residual` of 2,897: fold 171605/395680 = 0.4337, '
+      + 'call4 176091/395680 = 0.4450, fourBet 47984/395680 = 0.1213. It is the ONLY frequency '
+      + 'table in populationPriors.js with a measured foundation — NO_RAISE_FREQUENCIES and '
+      + 'FACED_RAISE_FREQUENCIES are both founder-estimate/undeclared (rows above). '
+      + 'TRANSCRIBED, NOT READ: the source is generated and this table is a hand-copied '
+      + 'renormalisation of it, because rangeEngine importing from exploitEngine would be an '
+      + 'upward dependency across the analysis/exploit boundary. The transcription is pinned by '
+      + 'populationPriors.test.js "matches the MEASURED HandHQ row it is derived from", which '
+      + 'recomputes all three quotients from the raw counts — so a regeneration that moves the '
+      + 'source fails the suite rather than drifting silently.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 15,
+      primaryPath: true,
+      instrument: {
+        what: 'TWO open questions, and they are different in kind. (1) TRANSFER, shared with '
+          + 'every SRC-011 row: the corpus is online 2009 and the founder game is live 9-handed '
+          + '1/2-1/3, so a live reading off this table is transferred, not measured — the '
+          + 'FAULT-population-mismatch falsifier applies unchanged. (2) CONDITIONING SET, and '
+          + 'this one is specific to this row: HANDHQ_OPENER_FACING_3BET conditions on "this '
+          + 'seat RAISED preflop, then faced a 3-bet", so it measures the fourBetAfterOpen '
+          + 'situation. The cold4Bet subset — a seat reaching this tree with no prior voluntary '
+          + 'action — is a different population and is NOT measured by it. CLOSED 2026-08-18 by '
+          + 'the one-pass corpus job this entry called for: FACED_3BET_FREQUENCIES_BY_ROLE (row '
+          + 'below) measures all three roles, and bayesianUpdater no longer applies this row '
+          + 'across the whole tree. What remains open here is (1) transfer only.',
+        ticket: 'WS-521',
+      },
+    }),
+    notes: [
+      'DELIBERATELY FLAT ACROSS POSITIONS, and asserted so by test. The source has seat buckets '
+      + '(6max/full), not positions, so a positional gradient here would be invented and would '
+      + 'then read as measured because it sits beside numbers that are. Position enters through '
+      + 'the per-position prior GRIDS instead. WS-264 pass-2 position trees are the path to '
+      + 'measuring the gradient.',
+      'The 15 cells are 3 distinct values repeated across 5 positions — cell count overstates '
+      + 'the independent quantities, which is 3.',
+      'ONE read site — bayesianUpdater.js:110, the third updateScenarioRanges call. Narrower '
+      + 'than its 3-bet sibling by construction: threeBetTopFraction READS '
+      + 'FACED_RAISE_FREQUENCIES to scale the 3-bet foot per position, whereas '
+      + 'FOUR_BET_TOP_FRACTION deliberately does not scale, because this table is flat across '
+      + 'positions and a scaling would read a gradient it does not claim to have. index.js '
+      + 'consumes FACED_3BET_ACTIONS, not these numbers.',
+    ],
+  }),
+
+  buildLabelEntry({
+    labelId: 'LBL-faced-3bet-role-frequencies',
+    title: 'Prior role -> fold/call4/fourBet when facing a 3-bet — the conditioning set the pooled row hid',
+    site: {
+      file: 'src/utils/rangeEngine/populationPriors.js', symbol: 'FACED_3BET_FREQUENCIES_BY_ROLE',
+    },
+    sites: [
+      'src/utils/rangeEngine/populationPriors.js::FACED_3BET_FREQUENCIES_BY_ROLE',
+      'src/utils/rangeEngine/populationPriors.js::FACED_3BET_ROLE_COUNTS',
+    ],
+    keySpace: ['priorRole', 'action'],
+    foundation: 'mined-corpus',
+    foundationStatus: 'measured-supported',
+    provenance: 'WS-521 follow-up, 2026-08-18. MEASURED by corpus replay over 28,699 hands / 48 '
+      + 'stratified files of the HandHQ 50NLH slice (FTP 14 / PS 34), classified by '
+      + 'lineTaxonomy.priorRoleOf — sequence state only, never a hand or position label. Raw '
+      + 'k/n retained in FACED_3BET_ROLE_COUNTS so no cell can be quoted without its '
+      + 'denominator: opener n=2779 (fold 1194, call4 1250, fourBet 335); cold n=3083 (fold '
+      + '2915, call4 120, fourBet 48); passive n=669 (fold 456, call4 200, fourBet 13). '
+      + 'THE DEFECT IT CLOSES: bayesianUpdater applied FOUR_BET_FREQUENCIES — measured on '
+      + 'OPENERS, and saying so in its own docblock — across opportunities.faced3Bet, the whole '
+      + 'tree. Cold is the PLURALITY of that tree (3083/6531 = 47.2%) and folds 94.55% where '
+      + 'the applied prior said 43.37%: 51.2pp on the modal action, with the 4-bet rate off by '
+      + '~7.7x. That is the WS-371 mechanism (P(fold | faced any raise) 82.3% vs P(fold | I '
+      + 'opened and got 3-bet) 48.4%) reproduced one tree deeper, inside the tree built to fix '
+      + 'it. VALIDATION: the opener row reproduces the independently mined '
+      + 'HANDHQ_OPENER_FACING_3BET table — different pipeline, different sample, no shared code '
+      + '— to under 0.5pp on ALL THREE actions (0.4297/0.4498/0.1205 vs 0.4337/0.4450/0.1213). '
+      + 'A table landing on an answer it was not fitted to is evidence the CLASSIFIER is right, '
+      + 'which is what licenses trusting the cold and passive rows that have no such reference.',
+    liveness: 'unconditional',
+    impact: buildUnmeasuredReach({
+      readSites: 1,
+      cellCount: 9,
+      primaryPath: true,
+      instrument: {
+        what: 'TRANSFER, shared with every SRC-011 row and NOT closed here: online 2009 vs a '
+          + 'live 9-handed 1/2-1/3 game, so a live reading is transferred, not measured. Two '
+          + 'row-specific gaps remain. (a) `passive` is thin at n=669 and is the row most likely '
+          + 'to move on a larger draw. (b) The rows are flat across POSITION for the same reason '
+          + 'FOUR_BET_FREQUENCIES is, but position is measurable here where it was not in the '
+          + 'mined source — the replay carries position on every decision, so the positional '
+          + 'split is a re-run of the same one-pass job, not new instrumentation.',
+        ticket: 'WS-521',
+      },
+    }),
+    notes: [
+      'The role is a CONDITIONING SET, not a subclass: it partitions the decision population, '
+      + 'not the hand grid. That is why it lives on the decision record beside raisesFaced '
+      + 'rather than in SUBCLASS_ACTIONS, and why it needed no new prior grids.',
+      'Applied as a blend over the VILLAIN OWN realised role mix (bayesianUpdater '
+      + 'faced3BetPopFreqs), not as a fixed constant — a villain who only ever reaches this '
+      + 'tree cold is priced as a cold seat. With no observations the weights fall back to the '
+      + 'corpus mix, so a fresh profile is priced as the pool rather than as an opener.',
+      'Pinned by populationPriors.test.js: every row sums to 1.0, every row recomputes from its '
+      + 'raw k/n, the opener row is held within 1pp of the mined table at EVERY position, and a '
+      + 'guard asserts the three rows are NOT interchangeable — so a future change that collapses '
+      + 'them back into one table fails the suite rather than drifting silently.',
+    ],
+  }),
+
+  buildLabelEntry({
     labelId: 'LBL-faced-raise-frequencies',
     title: 'Position -> fold/coldCall/3bet frequencies when facing a raise',
     site: {

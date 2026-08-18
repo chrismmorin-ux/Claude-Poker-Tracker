@@ -24,20 +24,24 @@ A player can play the same hand different ways. AA can be limped (trap), opened,
 The discriminator is mechanical rather than a hand-kept list: a grid that is *identically* zero is structural, and passes through untouched. Note that `BB.limpReraise` is **not** structural by this test — its grid is a non-zero *shape*, and what empties it is `SUBCLASS_SPLIT.threeBet.BB.limpReraise = 0` applied downstream in `updateSubclassRanges`. Two different mechanisms; do not conflate them.
 
 ### 3. Cross-Range Constraint: Per-Scenario Normalization
-The two decision trees are normalized independently:
+The three decision trees are normalized independently:
 - **No raise faced**: `P(limp|h) + P(open|h) ≤ 1.0` per cell (fold is the complement)
 - **Facing a raise**: `P(coldCall|h) + P(threeBet|h) ≤ 1.0` per cell (fold is the complement)
+- **Facing a 3-bet**: `P(call4|h) + P(fourBet|h) ≤ 1.0` per cell (fold is the complement)
 
-The two scenarios are independent — a player's open range tells you nothing about their cold-call range. Fold is not stored as a grid; it is derived within each scenario. This is enforced in `crossRangeConstraints.js`.
+The scenarios are independent — a player's open range tells you nothing about their cold-call range, and neither tells you about their 4-bet range. Fold is not stored as a grid; it is derived within each scenario. This is enforced in `crossRangeConstraints.js`.
 
 Normalization runs in **two passes**. Pass A normalizes the retained parents exactly as above. Pass B enforces **containment** — per cell, every subclass ≤ its parent and `Σ subclasses ≤ parent` — scaling *only* subclass grids. This subsumes the sibling-headroom rule rather than restating it: Pass A has already established `sibling + parent ≤ 1.0`, so `Σ subclasses ≤ parent` yields `sibling + Σ subclasses ≤ 1.0` for free. Parents are held fixed, which is what keeps `open` / `threeBet` / `coldCall` / `limp` bit-identical to their pre-taxonomy values.
 
-### 4. Two Independent Decision Trees + Derived Subclasses
-Preflop has two fundamentally different situations:
-- **No raise faced**: fold / limp / open raise
-- **Facing a raise**: fold / cold-call / 3-bet
+### 4. Three Independent Decision Trees + Derived Subclasses
+Preflop has three fundamentally different situations, **selected by the raise count already in the sequence** — not by a boolean, which can only separate two:
+- **0 raises — no raise faced**: fold / limp / open raise
+- **1 raise — facing a raise**: fold / cold-call / 3-bet
+- **2+ raises — facing a 3-bet**: fold / call4 / 4-bet  *(WS-521 / WS-270)*
 
-These are separate decision trees with separate frequency tracking. A player's open range tells you NOTHING about their cold-call range. See `subActionExtractor.js`.
+These are separate decision trees with separate frequency tracking and separate opportunity counters. A player's open range tells you NOTHING about their cold-call range. See `subActionExtractor.js`.
+
+**A seat that cold-calls a 3-bet is `call4`, not `coldCall`** — the price and the opposing range make it a different decision, and `sequenceUtils.wouldBeColdCall` (a street-generic affordance predicate that cannot count raises) deliberately diverges from the taxonomy here.
 
 Since WS-256 each raise parent carries **derived subclasses**, classified in `lineTaxonomy.js` from sequence state (never hand labels, never position labels):
 
@@ -45,6 +49,7 @@ Since WS-256 each raise parent carries **derived subclasses**, classified in `li
 |--------|-----------|
 | `open` | `openFirstIn` (nobody entered) · `isoRaise` (over ≥1 limper) |
 | `threeBet` | `cold3Bet` (no callers between) · `squeeze` (≥1 caller between) · `limpReraise` (limped earlier this hand) |
+| `fourBet` | `cold4Bet` (no prior voluntary action) · `fourBetAfterOpen` (this seat raised earlier) |
 
 **Parents keep their pre-taxonomy meaning exactly** — every existing consumer of `open` / `threeBet` is unaffected. Full doctrine and range-shape expectations: [`POKER_THEORY.md §2.5`](../../../.claude/context/POKER_THEORY.md), ratified in DEC-025.
 
@@ -53,7 +58,9 @@ Three rules bind here:
 2. **One hand can yield several decision points** (§2.5.4). A limp-reraise emits BOTH `limp` and `limpReraise` — the limp emission is load-bearing, since dropping it would make the limp range read as capped and invert §5.8's trap doctrine.
 3. **`blind3Bet` is deliberately NOT a class.** Posted money is already carried by the position dimension, so a no-callers-between 3-bet from SB/BB *is* the blind case; the wider/merged shape lives in the `SB`/`BB` `cold3Bet` prior. Straddler 3-bets are the documented residual.
 
-**Not modelled**: facing a 3-bet (the 4-bet tree) is a *third* scenario that does not exist yet. A raise over two or more prior raises counts in the `threeBet` parent with `subAction: null`. Tracked at high priority as **WS-270**.
+**Modelled since WS-521 / WS-270**: facing a 3-bet is the third scenario above. A raise over two or more prior raises is now the `fourBet` parent — it no longer counts in `threeBet` with `subAction: null`, so §2.5.3's `totalShare < 1` residual is claimed. `FOUR_BET_FREQUENCIES` is the **only measured** frequency table in `populationPriors.js`; read POKER_THEORY §2.5.5 for the two conditionals it carries before quoting it.
+
+**Still not modelled**: `overCall` (calling behind an existing caller). It was deferred *with* WS-270 in POKER_THEORY §2.5.5's previous text and is named in no ticket.
 
 ### 5. BB Has No Voluntary No-Raise Scenario
 When BB checks without facing a raise, this is not a voluntary action — it's a forced option. BB is excluded from the no-raise decision tree: `NO_RAISE_FREQUENCIES.BB` is all zeros, and `actionExtractor.js` returns null for BB checks with no raise faced. This is correct poker theory — do not attempt to "fix" it.

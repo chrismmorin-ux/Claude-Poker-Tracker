@@ -3063,9 +3063,13 @@
     "kind": "label-switch",
     "keyPaths": [
       [
+        "call4",
         "cold3Bet",
+        "cold4Bet",
         "coldCall",
         "fold",
+        "fourBet",
+        "fourBetAfterOpen",
         "isoRaise",
         "limp",
         "limpReraise",
@@ -3075,11 +3079,56 @@
         "threeBet"
       ]
     ],
-    "cellCount": 20,
+    "cellCount": 28,
     "exported": false,
-    "shapeDigest": "3b469042ce0e",
+    "shapeDigest": "37b7aa61d397",
     "ledger": "LBL-action-prior-construction",
     "since": "2026-08-17"
+  },
+  "src/utils/rangeEngine/populationPriors.js::FACED_3BET_FREQUENCIES_BY_ROLE": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "FACED_3BET_FREQUENCIES_BY_ROLE",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cold",
+        "opener",
+        "passive"
+      ],
+      [
+        "call4",
+        "fold",
+        "fourBet"
+      ]
+    ],
+    "cellCount": 9,
+    "exported": true,
+    "shapeDigest": "b25eb92e4600",
+    "ledger": "LBL-faced-3bet-role-frequencies",
+    "ticket": "WS-521"
+  },
+  "src/utils/rangeEngine/populationPriors.js::FACED_3BET_ROLE_COUNTS": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "FACED_3BET_ROLE_COUNTS",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "cold",
+        "opener",
+        "passive"
+      ],
+      [
+        "call4",
+        "fold",
+        "fourBet",
+        "n"
+      ]
+    ],
+    "cellCount": 12,
+    "exported": true,
+    "shapeDigest": "3da3f6682d5b",
+    "ledger": "LBL-faced-3bet-role-frequencies",
+    "ticket": "WS-521"
   },
   "src/utils/rangeEngine/populationPriors.js::FACED_RAISE_FREQUENCIES": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3123,6 +3172,31 @@
     "shapeDigest": "954df1da72b5",
     "ledger": "LBL-faced-raise-rate",
     "since": "2026-08-17"
+  },
+  "src/utils/rangeEngine/populationPriors.js::FOUR_BET_FREQUENCIES": {
+    "file": "src/utils/rangeEngine/populationPriors.js",
+    "symbol": "FOUR_BET_FREQUENCIES",
+    "kind": "keyed-numeric-table",
+    "keyPaths": [
+      [
+        "BB",
+        "EARLY",
+        "LATE",
+        "MIDDLE",
+        "SB"
+      ],
+      [
+        "call4",
+        "fold",
+        "fourBet"
+      ]
+    ],
+    "cellCount": 15,
+    "exported": true,
+    "shapeDigest": "02a3d868d802",
+    "ledger": "LBL-four-bet-frequencies",
+    "since": "2026-08-17",
+    "ticket": "WS-521"
   },
   "src/utils/rangeEngine/populationPriors.js::NO_RAISE_FREQUENCIES": {
     "file": "src/utils/rangeEngine/populationPriors.js",
@@ -3170,6 +3244,7 @@
     "kind": "keyed-numeric-table",
     "keyPaths": [
       [
+        "fourBet",
         "open",
         "threeBet"
       ],
@@ -3182,15 +3257,17 @@
       ],
       [
         "cold3Bet",
+        "cold4Bet",
+        "fourBetAfterOpen",
         "isoRaise",
         "limpReraise",
         "openFirstIn",
         "squeeze"
       ]
     ],
-    "cellCount": 25,
+    "cellCount": 35,
     "exported": true,
-    "shapeDigest": "5aa972979704",
+    "shapeDigest": "3471156bfc2e",
     "ledger": "LBL-subclass-split",
     "since": "2026-08-17"
   },
@@ -3918,12 +3995,13 @@
         "metrics.shared.divergence-pair",
         "metrics.study-ladder",
         "metrics.style-collapse",
-        "metrics.teachable-arms"
+        "metrics.teachable-arms",
+        "metrics.villain-model-card"
       ]
     ],
-    "cellCount": 16,
+    "cellCount": 17,
     "exported": true,
-    "shapeDigest": "11208ca44bc5",
+    "shapeDigest": "7c45d0693e7c",
     "ledger": "EXCLUDED:schema-or-version",
     "since": "2026-08-17"
   },

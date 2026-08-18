@@ -15,7 +15,7 @@ import { findPlayerSeat } from '../tendencyCalculations.js';
 import { ACTIONS } from '../../constants/gameConstants.js';
 import { parseCard } from '../pokerCore/cardParser.js';
 import { rangeIndex } from '../pokerCore/rangeMatrix.js';
-import { derivePreflopDecisions } from './lineTaxonomy.js';
+import { derivePreflopDecisions, SCENARIOS } from './lineTaxonomy.js';
 
 /**
  * Resolve the seat's showdown hand index, if the hand recorded one.
@@ -99,6 +99,8 @@ export const extractPreflopDecisions = (playerId, hand) => {
       rangeAction: 'fold',
       subAction: null,
       facedRaise: false,
+      scenario: SCENARIOS.NO_RAISE,
+      raisesFaced: 0,
       isPrimaryDecision: true,
       showdownIndex,
       showdownOutcome,
@@ -117,6 +119,13 @@ export const extractPreflopDecisions = (playerId, hand) => {
     rangeAction: d.parentAction,
     subAction: d.subAction,
     facedRaise: d.facedRaise,
+    // WS-521: which of the THREE trees this decision belongs to. `facedRaise`
+    // is retained but can no longer select the scenario — it is true for both
+    // the one-raise and the two-raise trees.
+    scenario: d.scenario,
+    raisesFaced: d.raisesFaced,
+    // The conditioning set inside the facing-3-bet tree; null elsewhere.
+    priorRole: d.priorRole ?? null,
     isPrimaryDecision: i === 0,
     showdownIndex,
     showdownOutcome,

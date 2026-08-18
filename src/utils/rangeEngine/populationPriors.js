@@ -62,12 +62,107 @@ export const FACED_RAISE_FREQUENCIES = {
   BB:     { fold: 0.48, coldCall: 0.40, threeBet: 0.12 },
 };
 
+/**
+ * Action frequencies when FACING A 3-BET — the third tree (WS-521 / WS-270).
+ * fold + call4 + fourBet = 1.0 per position.
+ *
+ * PROVENANCE: MEASURED, and the only frequency table in this file that is.
+ * Derived from `exploitEngine/handhqReferencePool.js` HANDHQ_OPENER_FACING_3BET,
+ * `full` seat bucket (n = 398,577; the 9-handed bucket, closest to the founder's
+ * game), renormalised over fold/call/fourBet after excluding the declared
+ * `residual` of 2,897 — opens that faced a 3-bet and resolved with no recorded
+ * decision (opener already all-in, or a truncated hand):
+ *
+ *     fold 171605/395680 = 0.4337   call 176091/395680 = 0.4450
+ *     fourBet 47984/395680 = 0.1213
+ *
+ * TWO CONDITIONALS THIS TABLE CARRIES, both load-bearing:
+ *
+ * 1. ONLINE 2009. The founder's game is live 9-handed 1/2-1/3, a distinct
+ *    population. Any live reading taken from these numbers is TRANSFERRED, not
+ *    measured, and must be reported that way (DISCLAIMER-AND-FAULT-REGISTER §1).
+ *
+ * 2. The conditioning set is "this seat RAISED preflop, then faced a 3-bet" —
+ *    i.e. it measures the `fourBetAfterOpen` situation. A seat that reaches this
+ *    tree COLD (no prior voluntary action, the `cold4Bet` subclass) is a
+ *    different conditioning set and is NOT measured here. It is expected to fold
+ *    more and 4-bet more polar, for the same no-money-invested reason §2.5.2
+ *    gives for cold3Bet. Do not read the cold subset off this row.
+ *
+ * NOT PER POSITION, deliberately. The source has seat buckets (6max/full), not
+ * positions, so a positional gradient here would be invented and would then look
+ * measured because it sits beside numbers that are. Position still enters the
+ * model through the per-position prior GRIDS below. Measuring the positional
+ * split is WS-264's pass-2 position-tree path.
+ */
+/**
+ * The facing-3-bet tree SPLIT BY PRIOR ROLE — the conditioning set FOUR_BET_FREQUENCIES
+ * names in its own conditional #2 and which nothing acted on until now.
+ *
+ * PROVENANCE: MEASURED. Corpus replay over 28,699 hands / 48 stratified files
+ * (FTP 14 / PS 34) of the HandHQ 50NLH slice, classified by `lineTaxonomy.priorRoleOf`
+ * — sequence state only. Raw k/n, so every cell carries its own denominator:
+ *
+ *   opener   n=2779   fold 1194  call4 1250  fourBet 335
+ *   cold     n=3083   fold 2915  call4  120  fourBet  48
+ *   passive  n= 669   fold  456  call4  200  fourBet  13
+ *
+ * THE DEFECT THIS CLOSES. `bayesianUpdater` applied FOUR_BET_FREQUENCIES — measured on
+ * OPENERS — across `opportunities.faced3Bet`, the WHOLE tree. Cold is the PLURALITY of
+ * that tree (3,083 of 6,531 = 47.2%) and folds 94.55% where the applied prior says
+ * 43.37%: a 51.2pp error on the modal action, and a 4-bet rate off by ~7.7x. This is the
+ * WS-371 mechanism (P(fold | faced any raise) 82.3% vs P(fold | I opened and got 3-bet)
+ * 48.4%) reproduced one tree deeper, in the tree built to fix it.
+ *
+ * VALIDATION, and the reason this table is trusted. The `opener` row reproduces the
+ * INDEPENDENTLY mined HANDHQ_OPENER_FACING_3BET table — a different pipeline, a different
+ * sample, sharing no code — to within 0.5pp on ALL THREE actions:
+ *
+ *     measured here   fold 0.4297  call4 0.4498  fourBet 0.1205   (n = 2,779)
+ *     mined reference fold 0.4337  call4 0.4450  fourBet 0.1213   (n = 398,577)
+ *
+ * A table that lands on an independently derived answer it was not fitted to is evidence
+ * the CLASSIFIER is right, not just the arithmetic. The cold and passive rows come from
+ * the same replay and the same classifier.
+ *
+ * CONDITIONALS THIS TABLE CARRIES:
+ * 1. ONLINE 2009, 50NLH. The founder's game is live 9-handed 1/2-1/3. Every reading is
+ *    TRANSFERRED, not measured (DISCLAIMER-AND-FAULT-REGISTER §1).
+ * 2. `passive` is the thinnest row (n=669) and is the seat that limped or called and then
+ *    faced a 3-bet. It is NOT a blend of the other two — it folds far more than an opener
+ *    and far less than a cold seat, which is what makes merging all three indefensible.
+ * 3. Flat across positions, for the same reason FOUR_BET_FREQUENCIES is: measuring the
+ *    positional split is WS-264's pass-2 path, and an invented gradient would read as
+ *    measured beside numbers that are.
+ */
+export const FACED_3BET_FREQUENCIES_BY_ROLE = {
+  opener:  { fold: 0.4297, call4: 0.4498, fourBet: 0.1205 },
+  cold:    { fold: 0.9455, call4: 0.0389, fourBet: 0.0156 },
+  passive: { fold: 0.6816, call4: 0.2990, fourBet: 0.0194 },
+};
+
+/** The raw counts behind the table above, kept so a cell can never be quoted without its n. */
+export const FACED_3BET_ROLE_COUNTS = {
+  opener:  { fold: 1194, call4: 1250, fourBet: 335, n: 2779 },
+  cold:    { fold: 2915, call4: 120, fourBet: 48, n: 3083 },
+  passive: { fold: 456, call4: 200, fourBet: 13, n: 669 },
+};
+
+export const FOUR_BET_FREQUENCIES = {
+  EARLY:  { fold: 0.4337, call4: 0.4450, fourBet: 0.1213 },
+  MIDDLE: { fold: 0.4337, call4: 0.4450, fourBet: 0.1213 },
+  LATE:   { fold: 0.4337, call4: 0.4450, fourBet: 0.1213 },
+  SB:     { fold: 0.4337, call4: 0.4450, fourBet: 0.1213 },
+  BB:     { fold: 0.4337, call4: 0.4450, fourBet: 0.1213 },
+};
+
 /** Pseudocount strength — how many "virtual observations" the prior represents */
 export const PRIOR_WEIGHT = 10;
 
 /** Action groupings by scenario */
 export const NO_RAISE_ACTIONS = ['fold', 'limp', 'open'];
 export const FACED_RAISE_ACTIONS = ['fold', 'coldCall', 'threeBet'];
+export const FACED_3BET_ACTIONS = ['fold', 'call4', 'fourBet'];
 
 // =============================================================================
 // DERIVED LINE SUBCLASSES (POKER_THEORY §2.5 / DEC-025)
@@ -117,11 +212,32 @@ export const SUBCLASS_SPLIT = {
     // Inert: BB has no voluntary no-raise scenario, so the open parent is 0.
     BB:     { openFirstIn: 0.70, isoRaise: 0.30 },
   },
+  /**
+   * FOUNDER ESTIMATE — same trust class as the two above, NOT measured. The
+   * HandHQ row that seeds FOUR_BET_FREQUENCIES conditions on "this seat raised
+   * then faced a 3-bet", so it speaks only to `fourBetAfterOpen` and carries no
+   * read on this split.
+   *
+   * Shape reasoning, from who acts when rather than from position as a cause
+   * (§7.2) — the same derivation as `squeeze`: reaching this tree COLD requires
+   * an open AND a 3-bet to already be in front of you, which can only happen to
+   * a seat that has not yet acted. Late positions and the blinds have the most
+   * seats ahead of them, so their share of cold 4-bets is highest; from EARLY
+   * almost every 4-bet is the seat defending its own open.
+   */
+  fourBet: {
+    EARLY:  { cold4Bet: 0.10, fourBetAfterOpen: 0.90 },
+    MIDDLE: { cold4Bet: 0.20, fourBetAfterOpen: 0.80 },
+    LATE:   { cold4Bet: 0.35, fourBetAfterOpen: 0.65 },
+    SB:     { cold4Bet: 0.45, fourBetAfterOpen: 0.55 },
+    BB:     { cold4Bet: 0.50, fourBetAfterOpen: 0.50 },
+  },
 };
 
 /** Subclass groupings per scenario, for normalization and iteration. */
 export const NO_RAISE_SUBCLASSES = ['openFirstIn', 'isoRaise'];
 export const FACED_RAISE_SUBCLASSES = ['cold3Bet', 'squeeze', 'limpReraise'];
+export const FACED_3BET_SUBCLASSES = ['cold4Bet', 'fourBetAfterOpen'];
 
 // =============================================================================
 // RANGE CONSTRUCTION HELPERS
@@ -532,6 +648,24 @@ const LIMP_MID = 1 - 272 / TOTAL_COMBOS;       // old 0.55
 const LIMP_HI = 1 - 58 / TOTAL_COMBOS;         // old 0.70
 const FOLD_ZERO = 1 - 18 / TOTAL_COMBOS;       // old 1/1.2 = 0.8333, where the fold ramp hit 0
 
+// ---- The 4-bet tree (WS-521 / WS-270) --------------------------------------
+// Derived the same way as everything above: from the combo count of the hand
+// set the doctrine names, never a transported decimal.
+//
+// CALL4 band — flatting a 3-bet. Bounded ABOVE by the region that mostly
+// 4-bets (QQ+ and AK, 34 combos — the same set §2.3 names for the 3-bet value
+// core, which is what a 4-bet is now being made against) and BELOW at 400
+// combos. 400 rather than COLD_CALL_LO's 956 because the price is worse and the
+// opposing range is far stronger: the hands that profitably continue against an
+// open do not all continue against a 3-bet. Both feet are the shape a live pool
+// shows, not a solver's.
+const CALL4_LO = 1 - 400 / TOTAL_COMBOS;
+const CALL4_HI = 1 - 34 / TOTAL_COMBOS;
+// The bluff tail a 4-bet after an open carries — suited wheel aces and suited
+// broadways, whose value is blocking the 3-bettor's own value combos.
+const FOUR_BET_TAIL_LO = 1 - 684 / TOTAL_COMBOS;
+const FOUR_BET_TAIL_HI = 1 - 162 / TOTAL_COMBOS;
+
 /**
  * The 3-bet value core, as a fraction of the field. DERIVED, not transported — the old
  * threshold is the defect this ticket exists for.
@@ -553,6 +687,28 @@ const FOLD_ZERO = 1 - 18 / TOTAL_COMBOS;       // old 1/1.2 = 0.8333, where the 
  * hand set the doctrine names, which is why AK had to fall off the bottom of it.
  */
 export const THREE_BET_TOP_FRACTION = 0.05;
+
+/**
+ * The 4-bet value core, as a fraction of the field. Derived by the SAME two
+ * routes THREE_BET_TOP_FRACTION uses, so the two are comparable rather than
+ * independently guessed.
+ *
+ *  1. The hand set the live pool 4-bets for value is KK+ and AKs — a 4-bet is
+ *     made against a range that is already QQ+/AK, so AKo and QQ are no longer
+ *     comfortably ahead of it. KK+ is 12 combos, AKs is 4: 16/1326 = 1.207% of
+ *     the field.
+ *  2. A linear ramp over the top f has combo-weighted mean f/2, so f = 0.024
+ *     gives a range width of 1.21%.
+ *
+ * Roughly half THREE_BET_TOP_FRACTION, which is the right relationship: each
+ * escalation of the preflop tree cuts the value range about in half.
+ *
+ * NOT position-scaled, unlike the 3-bet foot. `threeBetTopFraction` scales by the
+ * declared per-position 3-bet propensity; FOUR_BET_FREQUENCIES is flat across
+ * positions BY DESIGN (the measured source has seat buckets, not positions), so a
+ * scaling here would be reading a gradient that the table does not claim to have.
+ */
+export const FOUR_BET_TOP_FRACTION = 0.024;
 
 /**
  * Position scaling for the 3-bet foot.
@@ -640,6 +796,7 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
   const baseChart = getBaseChart(position);
 
   const threeBetFoot = 1 - threeBetTopFraction(position);
+  const fourBetFoot = 1 - FOUR_BET_TOP_FRACTION;
   // Solved per position, because the target is a fraction of THIS chart's width.
   const pct = strengthPercentiles(position);
   const chartWidth = comboWeightedMean(baseChart);
@@ -762,6 +919,51 @@ const buildActionPrior = (position, action, lambda = PRIOR_SUPPORT_LAMBDA) => {
           range[i] = 0.4;
         } else if (strength >= LIMP_MID && strength < LIMP_HI) {
           range[i] = 0.15;
+        }
+        break;
+      }
+      // ---- The 4-bet tree (WS-521 / WS-270, POKER_THEORY §2.5) ------------
+      // Facing a 3-bet is a THIRD scenario, normalized independently of the
+      // other two. Its shapes follow the same doctrine logic §2.5.2 uses for
+      // the 3-bet classes, escalated one level: the opposing range is already
+      // QQ+/AK, so every continuing range tightens.
+      case 'fourBet': {
+        // The parent aggregate. Value core is KK+/AKs — see FOUR_BET_TOP_FRACTION.
+        range[i] = ramp(strength, fourBetFoot, 1.0);
+        break;
+      }
+      case 'cold4Bet': {
+        // Strongest and most polar of the two. NOTHING invested and players may
+        // still act behind, so re-raising a 3-bet cold is the narrowest value
+        // statement the preflop tree contains — the 4-bet analogue of §2.5.2's
+        // cold3Bet reasoning. No bluff tail: with no money in and a 3-bettor
+        // already representing premiums, the live pool does not fire this light.
+        range[i] = ramp(strength, fourBetFoot, 1.0);
+        break;
+      }
+      case 'fourBetAfterOpen': {
+        // WIDER and more merged than a cold 4-bet. This seat already opened, so
+        // it is defending a range it has represented rather than making a fresh
+        // value claim, and it is getting a better price on the re-raise. The
+        // bluff tail is real here and is BLOCKER-motivated: suited wheel aces
+        // and suited broadways remove the 3-bettor's own value combos.
+        range[i] = ramp(strength, fourBetFoot, 1.0);
+        if (range[i] === 0
+            && suitedAt(i) && strength > FOUR_BET_TAIL_LO && strength < FOUR_BET_TAIL_HI) {
+          range[i] = 0.12;
+        }
+        break;
+      }
+      case 'call4': {
+        // Flatting a 3-bet. Tighter than coldCall in both directions: the price
+        // is worse and the opposing range is stronger, so the speculative bottom
+        // falls away. Premiums keep a real share — flatting KK/AA to keep the
+        // 4-bet range from being purely value is a live-pool habit, not just a
+        // solver one, and §2.5.2's mixing rule forbids zeroing them out.
+        if (strength > CALL4_LO && strength < CALL4_HI) {
+          range[i] = inChart ? 0.5 : 0.2;
+        } else if (strength >= CALL4_HI) {
+          range[i] = 0.25;
         }
         break;
       }

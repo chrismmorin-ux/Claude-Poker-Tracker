@@ -5,6 +5,8 @@ import {
   SUBCLASS_ACTIONS,
   SUBCLASS_PARENT,
   PARENT_SUBCLASSES,
+  SCENARIOS,
+  PRIOR_ROLES,
 } from '../lineTaxonomy';
 import { wouldBeSqueeze, wouldBeColdCall } from '../../sequenceUtils';
 
@@ -184,20 +186,66 @@ describe('limp-reraise', () => {
 // The unmodelled 4-bet tree (WS-270)
 // ---------------------------------------------------------------------------
 
-describe('facing a 3-bet (WS-270 residual)', () => {
-  it('a 4-bet counts in the threeBet PARENT with no subclass', () => {
-    // Seat 4 opens, seat 6 three-bets, seat 4... is a limp-free re-raiser.
-    // Use a fresh seat 7 cold-4betting to isolate the parent-only path.
+describe('facing a 3-bet — the third tree (WS-521 / WS-270)', () => {
+  // This block previously asserted the RESIDUAL: 4-bets counted in the `threeBet`
+  // parent with `subAction: null`, and calls of a 3-bet counted as `coldCall`.
+  // POKER_THEORY §2.5.3 named that residual "WS-270's slice, left with the parent".
+  // The third tree now claims it, so those two assertions are inverted here.
+
+  it('a cold 4-bet is the fourBet parent, subclass cold4Bet', () => {
     const s = seq([[4, 'raise'], [6, 'raise'], [7, 'raise']]);
     const [d] = derivePreflopDecisions(s, 7);
-    expect(d.parentAction).toBe(PARENT_ACTIONS.THREE_BET);
-    expect(d.subAction).toBeNull();
+    expect(d.parentAction).toBe(PARENT_ACTIONS.FOUR_BET);
+    expect(d.subAction).toBe(SUBCLASS_ACTIONS.COLD_4BET);
+    expect(d.scenario).toBe(SCENARIOS.FACED_3BET);
+    expect(d.raisesFaced).toBe(2);
   });
 
-  it('calling a 3-bet still counts in the coldCall parent', () => {
+  it('calling a 3-bet is call4, not coldCall', () => {
     const s = seq([[4, 'raise'], [6, 'raise'], [7, 'call']]);
     const [d] = derivePreflopDecisions(s, 7);
-    expect(d.parentAction).toBe(PARENT_ACTIONS.COLD_CALL);
+    expect(d.parentAction).toBe(PARENT_ACTIONS.CALL4);
+    expect(d.scenario).toBe(SCENARIOS.FACED_3BET);
+  });
+
+  // ── The defect WS-521 was filed for ──────────────────────────────────────
+  // Before the fix these three produced exactly ONE record (`open`), because the
+  // second emission was guarded on `if (seatLimped)`. The opener's response to a
+  // 3-bet was emitted nowhere and subActionExtractor has no notion of `open`.
+
+  it('opener who 4-bets emits BOTH open and fourBet/fourBetAfterOpen', () => {
+    const s = seq([[9, 'raise'], [4, 'raise'], [9, 'raise']]);
+    expect(tags(s, 9)).toEqual([
+      `${PARENT_ACTIONS.OPEN}/${SUBCLASS_ACTIONS.OPEN_FIRST_IN}`,
+      `${PARENT_ACTIONS.FOUR_BET}/${SUBCLASS_ACTIONS.FOUR_BET_AFTER_OPEN}`,
+    ]);
+  });
+
+  it('opener who folds to a 3-bet emits a second, fold decision', () => {
+    const s = seq([[9, 'raise'], [4, 'raise'], [9, 'fold']]);
+    const d = derivePreflopDecisions(s, 9);
+    expect(d).toHaveLength(2);
+    expect(d[0].parentAction).toBe(PARENT_ACTIONS.OPEN);
+    expect(d[1].parentAction).toBe(PARENT_ACTIONS.FOLD);
+    expect(d[1].scenario).toBe(SCENARIOS.FACED_3BET);
+  });
+
+  it('opener who calls a 3-bet emits open then call4', () => {
+    const s = seq([[9, 'raise'], [4, 'raise'], [9, 'call']]);
+    const d = derivePreflopDecisions(s, 9);
+    expect(d.map(x => x.parentAction)).toEqual([
+      PARENT_ACTIONS.OPEN,
+      PARENT_ACTIONS.CALL4,
+    ]);
+  });
+
+  it('a seat that limped then 4-bets is a documented residual — parent only', () => {
+    // Prior investment but no prior aggression: neither cold nor after-open.
+    const s = seq([[9, 'call'], [4, 'raise'], [6, 'raise'], [9, 'raise']]);
+    const d = derivePreflopDecisions(s, 9);
+    const last = d[d.length - 1];
+    expect(last.parentAction).toBe(PARENT_ACTIONS.FOUR_BET);
+    expect(last.subAction).toBeNull();
   });
 });
 
@@ -243,11 +291,15 @@ describe('parity with sequenceUtils live predicates', () => {
     expect(derived).toBe(wouldBeSqueeze(before, String(hero)));
   });
 
+  // `wouldBeColdCall` is a street-generic AFFORDANCE predicate: "this seat has not
+  // acted on this street and there is a bet level to call". It does not count raises
+  // and cannot distinguish calling an open from calling a 3-bet. Parity therefore
+  // holds only inside the one-raise tree; the two-raise case is asserted separately
+  // below as a DELIBERATE divergence, not left as an untested gap.
   const coldCallCases = [
     { name: 'call facing a raise', pairs: [[4, 'raise'], [6, 'call']], hero: 6 },
     { name: 'call with no raise (limp)', pairs: [[6, 'call']], hero: 6 },
     { name: 'call behind a limper, no raise', pairs: [[4, 'call'], [6, 'call']], hero: 6 },
-    { name: 'call facing a 3-bet', pairs: [[4, 'raise'], [5, 'raise'], [6, 'call']], hero: 6 },
   ];
 
   it.each(coldCallCases)('coldCall derivation matches wouldBeColdCall — $name', ({ pairs, hero }) => {
@@ -258,6 +310,21 @@ describe('parity with sequenceUtils live predicates', () => {
       .some(d => d.parentAction === PARENT_ACTIONS.COLD_CALL);
 
     expect(derived).toBe(wouldBeColdCall(before, String(hero), 'preflop'));
+  });
+
+  it('call facing a 3-bet DIVERGES from wouldBeColdCall — by design', () => {
+    const full = seq([[4, 'raise'], [5, 'raise'], [6, 'call']]);
+    const before = truncateBefore(full, 6, 'call');
+
+    // The affordance predicate still says "yes, that is a cold call" …
+    expect(wouldBeColdCall(before, '6', 'preflop')).toBe(true);
+
+    // … but the taxonomy puts it in the third tree, because the price, the SPR and
+    // the opposing range facing a 3-bet are a different decision from calling an
+    // open. Lumping them is precisely what §2.5 exists to prevent.
+    const d = derivePreflopDecisions(full, 6);
+    expect(d.some(x => x.parentAction === PARENT_ACTIONS.COLD_CALL)).toBe(false);
+    expect(d.some(x => x.parentAction === PARENT_ACTIONS.CALL4)).toBe(true);
   });
 });
 
@@ -287,5 +354,67 @@ describe('guards', () => {
       { order: 2, seat: '5', action: 'call', street: 'preflop' },
     ];
     expect(tags(shuffled, 6)).toEqual([`${PARENT_ACTIONS.THREE_BET}/${SUBCLASS_ACTIONS.SQUEEZE}`]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The conditioning set inside the third tree (WS-521 follow-up)
+// ---------------------------------------------------------------------------
+
+describe('priorRole — the conditioning set the measured prior actually describes', () => {
+  /** The role attached to a seat's facing-3-bet decision, or undefined if it has none. */
+  const roleAt = (sequence, seat) =>
+    derivePreflopDecisions(sequence, seat)
+      .filter(d => d.scenario === SCENARIOS.FACED_3BET)
+      .map(d => d.priorRole)[0];
+
+  it('the OPENER who faces a 3-bet is the role FOUR_BET_FREQUENCIES was measured on', () => {
+    // 6 opens, 8 3-bets, 6 must now act facing two raises.
+    const s = seq([[6, 'raise'], [8, 'raise'], [6, 'fold']]);
+    expect(roleAt(s, 6)).toBe(PRIOR_ROLES.OPENER);
+  });
+
+  it('a seat entering COLD over an open and a 3-bet is a different population', () => {
+    const s = seq([[6, 'raise'], [8, 'raise'], [9, 'fold']]);
+    expect(roleAt(s, 9)).toBe(PRIOR_ROLES.COLD);
+  });
+
+  it('a seat that LIMPED then faces a 3-bet is neither — investment without aggression', () => {
+    const s = seq([[6, 'call'], [8, 'raise'], [9, 'raise'], [6, 'fold']]);
+    expect(roleAt(s, 6)).toBe(PRIOR_ROLES.PASSIVE);
+  });
+
+  it('a seat that COLD-CALLED then faces a 3-bet is passive, not cold', () => {
+    const s = seq([[6, 'raise'], [7, 'call'], [9, 'raise'], [7, 'fold']]);
+    expect(roleAt(s, 7)).toBe(PRIOR_ROLES.PASSIVE);
+  });
+
+  it('the role is carried by EVERY branch, not just the 4-bet one — the defect it closes', () => {
+    // fold / call / raise from the same opener spot must all be conditioned.
+    for (const act of ['fold', 'call', 'raise']) {
+      const s = seq([[6, 'raise'], [8, 'raise'], [6, act]]);
+      expect(roleAt(s, 6)).toBe(PRIOR_ROLES.OPENER);
+    }
+  });
+
+  it('is NULL outside the third tree — the distinction does not exist there', () => {
+    const s = seq([[6, 'raise'], [8, 'call']]);
+    for (const d of derivePreflopDecisions(s, 8)) {
+      expect(d.scenario).not.toBe(SCENARIOS.FACED_3BET);
+      expect(d.priorRole).toBeNull();
+    }
+  });
+
+  it('role and 4-bet SUBCLASS agree by construction — they read one fact', () => {
+    const openerRaises = seq([[6, 'raise'], [8, 'raise'], [6, 'raise']]);
+    const coldRaises = seq([[6, 'raise'], [8, 'raise'], [9, 'raise']]);
+
+    const opener = derivePreflopDecisions(openerRaises, 6).find(d => d.parentAction === PARENT_ACTIONS.FOUR_BET);
+    expect(opener.priorRole).toBe(PRIOR_ROLES.OPENER);
+    expect(opener.subAction).toBe(SUBCLASS_ACTIONS.FOUR_BET_AFTER_OPEN);
+
+    const cold = derivePreflopDecisions(coldRaises, 9).find(d => d.parentAction === PARENT_ACTIONS.FOUR_BET);
+    expect(cold.priorRole).toBe(PRIOR_ROLES.COLD);
+    expect(cold.subAction).toBe(SUBCLASS_ACTIONS.COLD_4BET);
   });
 });

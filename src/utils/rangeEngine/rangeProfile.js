@@ -24,13 +24,26 @@ const GRID_SIZE = 169;
  * corpus data, under POOL/EVAL *and* walk-forward) has not been run. A stored coordinate would
  * commit a schema to an answer nobody has measured. Revisit only after that score exists.
  */
-export const PROFILE_VERSION = 4;
+/**
+ * v5 (WS-521 / WS-270): the facing-3-bet tree. Adds the `call4` and `fourBet`
+ * parents, the `cold4Bet` / `fourBetAfterOpen` subclasses, and a third
+ * opportunity counter. v4 profiles deserialize cleanly — the new grids are
+ * created empty and the new counters start at 0, which is exactly the state a
+ * player with no observed 4-bet decisions should be in.
+ */
+export const PROFILE_VERSION = 5;
 
 /**
  * Retained parent aggregates. These keep their pre-taxonomy semantics exactly —
  * every existing consumer reads these and is unaffected by the subclass split.
+ *
+ * `call4` / `fourBet` are the third tree's parents. They are NOT subclasses of
+ * `threeBet`: a seat facing a 3-bet chooses among fold / call4 / fourBet, and
+ * only a scenario can carry that normalization (POKER_THEORY §2.5).
  */
-export const RANGE_PARENT_ACTIONS = ['fold', 'limp', 'open', 'coldCall', 'threeBet'];
+export const RANGE_PARENT_ACTIONS = [
+  'fold', 'limp', 'open', 'coldCall', 'threeBet', 'call4', 'fourBet',
+];
 
 /**
  * Derived subclasses (POKER_THEORY §2.5 / DEC-025). Each sums into one parent;
@@ -42,6 +55,8 @@ export const RANGE_SUBCLASS_ACTIONS = [
   'cold3Bet',
   'squeeze',
   'limpReraise',
+  'cold4Bet',
+  'fourBetAfterOpen',
 ];
 
 export const RANGE_ACTIONS = [...RANGE_PARENT_ACTIONS, ...RANGE_SUBCLASS_ACTIONS];
@@ -65,7 +80,13 @@ export const createEmptyProfile = (playerId, userId) => {
     for (const action of RANGE_ACTIONS) {
       actionCounts[pos][action] = 0;
     }
-    opportunities[pos] = { noRaiseFaced: 0, facedRaise: 0, total: 0, showdownsSeen: 0 };
+    opportunities[pos] = {
+      noRaiseFaced: 0, facedRaise: 0, faced3Bet: 0, total: 0, showdownsSeen: 0,
+      // WS-521 follow-up: the facing-3-bet tree split by PRIOR ROLE. `faced3Bet`
+      // stays the total (nothing downstream of it moves); these are its parts,
+      // and they exist because the measured prior only describes `opener`.
+      faced3BetByRole: { opener: 0, cold: 0, passive: 0 },
+    };
     ranges[pos] = {};
     for (const action of RANGE_ACTIONS) {
       ranges[pos][action] = new Float64Array(GRID_SIZE);

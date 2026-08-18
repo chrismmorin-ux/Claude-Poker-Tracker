@@ -36,6 +36,37 @@
  * footer string changes.
  */
 
+// v128 (2026-08-17, WS-521 / WS-270): FACING A 3-BET IS A THIRD DECISION TREE. Preflop line
+// classification is now selected by the RAISE COUNT in the sequence (0 / 1 / 2+) rather than by
+// the `facedRaise` boolean, which can separate two trees and not three. New parents `call4` and
+// `fourBet` with subclasses `cold4Bet` / `fourBetAfterOpen`; PROFILE_VERSION 4 → 5.
+//
+// This changes measured aggregates, deliberately. MEASURED on 28,699 corpus hands (48
+// stratified files, FTP 14 / PS 34) against an independent reimplementation of the old
+// emission rule — 6,531 decisions now land in the third tree, decomposing exactly as:
+//
+//   3,445  emitted NOWHERE before      <- the defect; equals the total decision-point delta
+//   2,915  were `fold`, same name      <- move from the facedRaise to the faced3Bet denominator
+//     120  were `coldCall`             -> now `call4`
+//      51  were `threeBet`             -> now `fourBet` (POKER_THEORY 2.5.3's residual)
+//
+// Note the shape: only 171 records change PARENT NAME. The large reclassification is the
+// folds, which keep their name and change which opportunity count they divide by. So
+// `opportunities.facedRaise` is the aggregate that moves most — and routing on the
+// `facedRaise` BOOLEAN instead of the scenario would have left all 6,531 in that denominator.
+// Hands that never reach a second raise are bit-identical (asserted, taxonomyInvariants).
+//
+// The defect it closes: `lineTaxonomy` emitted a second decision only under `if (seatLimped)`,
+// so a seat that OPENED, faced a 3-bet, and then folded / called / 4-bet produced exactly one
+// record. `subActionExtractor` has no notion of `open`, so the response was captured nowhere.
+// `FOUR_BET_FREQUENCIES` is the only MEASURED frequency table in populationPriors.js
+// (HANDHQ_OPENER_FACING_3BET, `full` bucket, n=398,577) — online 2009, so transferred not
+// measured for the founder's live game, and its conditioning set is the after-open case only.
+//
+// NOTE for the next bumper: the v126 reservation recorded below is DISCHARGED. The
+// ws-481-482-foldcurve branch merged as 4013fe96 (an ancestor of HEAD, 0 commits ahead) without
+// renumbering, and mainline resolved that collision by taking v127. v128 was free.
+//
 // v127 (2026-08-16, WS-320 review): names the engine era that arrived with merge 27e4ea39,
 // "integrate/orphans-20260807 — 78 commits of recovered orphan-branch work". That merge landed
 // real algorithm change on BOTH parents and no bump followed it, so every predictionAudit
@@ -76,5 +107,5 @@
 // DEC-022 guard; CR fallback fold aligned to MODEL_CONFIDENCE_THRESHOLD +
 // POPULATION_PRIORS.raise.fold) and WS-315 blocker tie-break in the final ranking
 // (blockerScore.excess breaks EV ties within 1% of pot).
-export const ENGINE_VERSION = 'v127';
+export const ENGINE_VERSION = 'v128';
 export const APP_VERSION = 'v123';

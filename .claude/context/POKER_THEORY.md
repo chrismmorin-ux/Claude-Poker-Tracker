@@ -1,5 +1,5 @@
 ---
-version: '2.5'
+version: '2.7'
 last_verified: 2026-07-22
 verified_by: cwos-domain-correctness-sweep-2026-07-22
 verification_protocol: "/pulse run domain-correctness baseline"
@@ -8,6 +8,12 @@ next_review: 2026-09-18
 governing_program: prog-domain-correctness
 governance_yaml: .claude/workstream/programs/prog-domain-correctness.yaml
 changelog:
+  - date: 2026-08-18
+    version: '2.7'
+    change: "WS-521 follow-up: §2.5.5a THE PRIOR ROLE. v2.6 recorded that FOUR_BET_FREQUENCIES conditions on 'this seat RAISED then faced a 3-bet' and that the cold subset is NOT measured by it — then applied it across opportunities.faced3Bet, the whole tree. MEASURED on 28,699 corpus hands / 48 stratified files: opener n=2779 fold 42.97%, cold n=3083 fold 94.55%, passive n=669 fold 68.16%. COLD IS THE PLURALITY (47.2%) and is the row the applied prior described worst — 51.2pp on the modal action, 4-bet rate off ~7.7x. Pricing a cold fold at the opener rate buys fold equity that is not there, and inflated fold equity makes the engine RECKLESS not timid (§13.3). This is the WS-371 mechanism (82.3% vs 48.4% from conditioning set alone) reproduced one tree deeper, inside the tree built to fix it. VALIDATION: the opener row reproduces the independently mined HANDHQ_OPENER_FACING_3BET table — different pipeline, different sample, no shared code — to under 0.5pp on ALL THREE actions, which is what licenses the cold and passive rows that have no independent reference. FIX: lineTaxonomy emits `priorRole` on every facing-3-bet decision (sequence state only, never a label input); the 4-bet SUBCLASS classifier now reads the same fact so the two cannot drift; opportunities carry faced3BetByRole; bayesianUpdater prices the tree with a blend over the villain's OWN realised role mix, falling back to the corpus mix when unobserved. The role is a CONDITIONING SET, not a subclass — it partitions the decision population, not the hand grid, so no new prior grids were needed. New MEASURED table FACED_3BET_FREQUENCIES_BY_ROLE + raw FACED_3BET_ROLE_COUNTS, ledger row LBL-faced-3bet-role-frequencies; the LBL-four-bet-frequencies instrument gap for conditioning set is now CLOSED, transfer remains open. Regression guard asserts the three rows are NOT interchangeable, so a future collapse back to one table fails the suite."
+  - date: 2026-08-17
+    version: '2.6'
+    change: "WS-521 / WS-270: §2.5.5 STOPS BEING A DEFERRAL. Facing a 3-bet is now the third preflop decision tree — `fold | call4 | fourBet`, with subclasses `cold4Bet` (no prior voluntary action) and `fourBetAfterOpen` (this seat raised earlier). THE DEFECT IT CLOSES: `lineTaxonomy.js` emitted a second decision only under `if (seatLimped)`, so a seat that OPENED, faced a 3-bet, and then folded / called / 4-bet produced exactly ONE record (`open`) and its response was emitted nowhere — `subActionExtractor.js` has no notion of `open`, so the most common aggressive preflop trajectory was invisible to the range model. A missing observation produces no symptom, which is why it survived. MEASURED on 28,699 corpus hands over 48 stratified files (FTP 14 / PS 34), against an independent reimplementation of the pre-fix emission rule sharing no code with the implementation. 6,531 decisions now land in the third tree; by what the OLD rule called them: 3,445 emitted NOWHERE (the defect — equal to the total decision-point delta, +1.903%, ~1 per 8.3 hands), 2,915 were `fold` and keep that name while moving to a different denominator, 120 were `coldCall` (now `call4`), 51 were `threeBet` (now `fourBet` — §2.5.3's residual). By new class: fold 4,565 / call4 1,570 / fourBetAfterOpen 335 / cold4Bet 48 / unsubclassed 13. NOTE THE SHAPE: only 171 records change parent NAME, so the aggregate that actually moves is `opportunities.facedRaise` — which is exactly what routing on the boolean would have got wrong for all 6,531. WHY A TREE AND NOT A FOURTH `threeBet` SUBCLASS — WS-270's own text carried both readings (`:40` 'a third independent tree' vs `:56` 'shrinkage toward the parent threeBet posterior') and nothing in the code decided between them, a ~3x effort fork. Founder ruled THIRD TREE 2026-08-17: a subclass can only claim the 4-bet RAISE branch (the `subAction: null` residual §2.5.3 called 'WS-270's slice, left with the parent') and would still emit nothing for the opener who FOLDS or CALLS, which is the actual defect. THE TREE IS SELECTED BY RAISE COUNT (0 / 1 / 2+), not by the `facedRaise` boolean — a boolean separates two trees and cannot separate three, and keying on it counted every 4-bet decision into the faced-raise denominator. THREE MEASURED AGGREGATES MOVE, deliberately: `threeBet` no longer contains 4-bets (so `totalShare < 1`'s dominant term is claimed), `coldCall` no longer contains calls of a 3-bet, and `opportunities.facedRaise` no longer counts facing-3-bet decisions. Hands that never reach a second raise are bit-identical, asserted against an independent legacy control. `FOUR_BET_FREQUENCIES` is the ONLY MEASURED frequency table in `populationPriors.js` (HANDHQ_OPENER_FACING_3BET, `full` seat bucket, n=398,577, renormalised over the declared residual: fold 0.4337 / call4 0.4450 / fourBet 0.1213) — and it carries TWO conditionals: online 2009 so a live reading is transferred not measured, and its conditioning set is 'this seat raised then faced a 3-bet', so the `cold4Bet` subset is NOT measured by it. Deliberately flat across positions and asserted so by test, because the source has seat buckets not positions and an invented gradient would read as measured beside numbers that are. PROFILE_VERSION 4→5, ENGINE_VERSION v128, ledger row LBL-four-bet-frequencies. `overCall` — deferred with WS-270 in this section's previous text as a trailing clause and named in no ticket — is now filed as WS-522."
   - date: 2026-08-16
     version: '2.5'
     change: "WS-445: added §17 — A LABEL IS A FOUNDATION CLAIM, AND IT SHIPS WITH ITS EVIDENCE TIER. §7.1 and exploitEngine/CLAUDE.md have forbidden label-shaped decision inputs in four separately documented forms, with worked examples, for months. Measured at HEAD 2026-08-16: a fresh-context survey found 49 label families and an AST harvest found 145 label-shaped constructs across 506 files, 42 of 128 keyed tables (33%) module-private. Prose was tried and did not work, so §17 ships as mechanism: `src/utils/standardOfRecord/labelLedger.js` (data), `docs/standard-of-record/LABEL-AND-FOUNDATION-LEDGER.md` (prose, bound to the module by an exact-order drift test), and `scripts/standardOfRecord/check-label-ledger.mjs` (blocking gate, wired into smart-test-runner.sh AND ci.yml in the same commit — FIND-086's lesson that a gate in no pipeline buys nothing). THE REFRAMING WS-436 FORCED: removing the six style labels cost nothing (ΔLL −0.00076 over 10,147 paired decisions, n.s.; advice-parity at exactly n=0 changed decisions) but the continuous full-resolution replacement was significantly WORSE (ΔLL −0.00691, t=−5.64) — so discretisation was never the defect, the same-source seed was. A label is therefore a claim about PROVENANCE, and §17 binds that the claim be stated and ranked. Three evidence tiers: MEASURED (a Result Card exists), BOUNDED (a bound whose method is from a closed set, rendered with a ≤/≥ glyph), UNMEASURED (NO EV figure, ranked by reach). The unmeasured guard is a SHAPE not a rule — buildUnmeasuredReach mints no EV key, so the field is undefined rather than null and there is no slot for a future relaxation to unlock. Five foundation statuses rather than two, because `measured-refuted` is a distinct fact from `undeclared`: FOLD_CURVE_STREET_MODS (villainModelData.js:412, read foldEquityCalculator.js:329) was measured, NOT supported (Brier flop 0.23668 → 0.23723) and still ships — a defensible call at ~5e-4, recorded in v2.3, but previously discoverable only by reading one docblock. Blind-spot rule inverted deliberately: a ledger with ZERO unmeasured rows or ZERO open instrument gaps FAILS its own self-check, because the naive direction rewards relabelling. Known limits stated in §17.3 rather than papered over: threshold-as-label (getSPRZone manufactures its zones from SPR_BAND_EDGES with no string literal at the decision site) is inherited and NOT closed; runtime-assembled and storage-read labels are invisible. Seed rows: REALIZATION_TABLE (30 cells, every showdown EV, no provenance — and already carrying THREE separately-filed instrument tickets, WS-404/407/498, none referencing the others), BUCKET_MIDPOINT (deviationMap.mjs:42, unprovenanced and inside the MEASUREMENT path where it sets the floor every deviation cell is scored against), FOLD_CURVE_STREET_MODS, plus ACTION_TAU_FRACTION and handhqReferencePool as strong-row counter-examples. 140 of 145 constructs remain EXCLUDED:not-yet-triaged, owned by WS-445, expiring at 90 days."
@@ -273,7 +279,7 @@ ranges[sub][h] = ranges[parent][h] · share_sub(h) · totalShare      totalShare
 
 `prior_sub(h)` is the doctrine prior used **as-is**. `getPopulationPrior` returns a per-hand *propensity* — the same semantics every grid in this engine carries — not a distribution over hands. Normalizing it by its own total would divide each cell by the range's breadth, penalizing wide ranges everywhere; that made the deliberately uncapped `limpReraise` range *less* likely at AA than the narrow `squeeze` range, inverting §2.5.2.
 
-`totalShare < 1` exactly when some parent observations carry no subclass — the unmodelled 4-bet tree (§2.5.5). That residual is not a fudge factor; it is WS-270's slice, left with the parent.
+`totalShare < 1` exactly when some parent observations carry no subclass. **This used to be dominated by the unmodelled 4-bet tree; since WS-521 that tree is its own scenario and claims its own observations (§2.5.5), so `threeBet`'s residual is now only the genuinely unsubclassed cases.** The `fourBet` parent has a residual of its own — the seat that limped or called before 4-betting, which is neither `cold4Bet` nor `fourBetAfterOpen`.
 
 This mirrors the `poolBaseline.js` hierarchical philosophy (§6.5a): a thin subclass reproduces its parent's behavior, and only accumulating evidence pulls it away.
 
@@ -298,9 +304,68 @@ Consequence that must be preserved: the limp-reraise hand **stays counted in the
 
 Limp-call and limp-fold remain in the **sub-action tree** (`subActionExtractor.js`), not the facing-raise tree: there *is* prior investment, so they are not cold calls, and folding them into `coldCall` would corrupt its definition.
 
-#### 2.5.5 What is NOT yet modeled
+#### 2.5.5 The facing-3-bet tree (WS-521 / WS-270)
 
-**Facing a 3-bet is a third decision tree and does not exist yet.** A 4-bet is currently invisible to the range classes, exactly as limp-reraise was before this section. This matters out of proportion to its frequency: 4-bet pots are large before the flop is dealt and SPR is low, so a misread has no later street on which to be recovered, and whether a villain's 4-bet range is polarized or pure QQ+/AK value is the difference between stacking off and folding — paid at maximum pot size. Tracked at high priority as **WS-270**; `overCall` (calling behind an existing caller) is deferred with it.
+*This section previously read "What is NOT yet modeled" and stated that facing a 3-bet was a third decision tree that did not exist. It exists.*
+
+**Why it mattered out of proportion to its frequency, and still does:** 4-bet pots are large before the flop is dealt and SPR is low, so a misread has no later street on which to be recovered. Whether a villain's 4-bet range is polarized or pure value is the difference between stacking off and folding — paid at maximum pot size.
+
+**The tree is selected by the raise count already in the sequence**, which is the one quantity that separates all three scenarios. A boolean `facedRaise` can separate two and cannot separate three.
+
+| Raises before the seat acts | Scenario | Actions |
+|---|---|---|
+| 0 | no raise faced | `fold \| limp \| open` |
+| 1 | facing a raise | `fold \| coldCall \| threeBet` |
+| **2+** | **facing a 3-bet** | **`fold \| call4 \| fourBet`** |
+
+**Sequence-state conditions**
+
+| Tag | Condition |
+|---|---|
+| `call4` | call facing two or more raises |
+| `cold4Bet` | raise facing 2+; seat has **no prior voluntary action** — a backraise |
+| `fourBetAfterOpen` | raise facing 2+; seat **raised earlier** this hand |
+
+A seat that limped or called and then 4-bets has prior investment but no prior aggression. It is neither class and stays a documented residual on the parent (`subAction: null`).
+
+**Expected range shape** (live-population doctrine, not GTO):
+
+| Class | Shape | Why |
+|---|---|---|
+| `cold4Bet` | **Narrowest in the whole preflop tree.** No bluff tail. | Nothing invested, players may still act behind, and the 3-bettor already represents premiums. The 4-bet analogue of §2.5.2's cold3Bet reasoning, escalated one level. |
+| `fourBetAfterOpen` | **Wider and merged**, with a real blocker-motivated bluff tail. | This seat already opened, so it defends a range it has represented rather than making a fresh value claim, and gets a better price. Suited wheel aces and suited broadways remove the 3-bettor's own value combos. |
+| `call4` | **Tighter than `coldCall` at both ends.** | Worse price, far stronger opposing range: the speculative bottom of a cold-calling range does not continue against a 3-bet. Premiums keep a real share — flatting to protect the 4-bet range is a live habit too, and §2 forbids zeroing them. |
+
+**`FOUR_BET_FREQUENCIES` is the only MEASURED frequency table in `populationPriors.js`** — from `HANDHQ_OPENER_FACING_3BET` (`full` seat bucket, n = 398,577): fold 0.4337 / call4 0.4450 / fourBet 0.1213. Two conditionals travel with it and must be quoted alongside it:
+
+1. **Online 2009.** The founder's game is live 9-handed 1/2–1/3. Any live reading is *transferred, not measured*.
+2. **The conditioning set is "this seat raised, then faced a 3-bet"** — it measures `fourBetAfterOpen`'s situation. The `cold4Bet` subset is **not** measured by it and is expected to fold more and 4-bet more polar.
+
+##### 2.5.5a The prior role — the conditioning set inside the tree (2026-08-18)
+
+Conditional 2 above was recorded and then **not acted on**: `bayesianUpdater` applied `FOUR_BET_FREQUENCIES` — an opener-measured table — across `opportunities.faced3Bet`, the *whole* tree. Measured on 28,699 corpus hands (48 stratified files), the three populations are not close, and **the one the prior described worst is the largest**:
+
+| Prior role | What the seat had done | n | fold | call4 | fourBet |
+|---|---|---|---|---|---|
+| `opener` | raised earlier | 2,779 | 42.97% | 44.98% | 12.05% |
+| `cold` | **nothing voluntary yet** | **3,083** | **94.55%** | 3.89% | 1.56% |
+| `passive` | limped or called earlier | 669 | 68.16% | 29.90% | 1.94% |
+
+Cold is **47.2% of the tree** and folds 94.55% where the applied prior said 43.37% — **51.2pp on the modal action**, with the 4-bet rate off by ~7.7×. Pricing a cold seat's fold at the opener rate buys fold equity that is not there, and inflated fold equity makes the engine **reckless rather than timid** (§13.3).
+
+This is the **WS-371 mechanism reproduced one tree deeper** — `P(fold | faced any raise)` 82.3% vs `P(fold | I opened and got 3-bet)` 48.4%, the same 30-pp-class gap arising purely from the conditioning set — occurring *inside the tree built to fix it*. Two different questions shared one denominator again.
+
+**Why the `opener` row is trusted, and with it the other two.** It reproduces the independently mined `HANDHQ_OPENER_FACING_3BET` table — different pipeline, different sample, no shared code — to **under 0.5pp on all three actions** (0.4297/0.4498/0.1205 vs 0.4337/0.4450/0.1213). A table that lands on an answer it was not fitted to is evidence the *classifier* is right, not merely the arithmetic. `cold` and `passive` come from the same classifier and have no independent reference of their own.
+
+**The role is a conditioning set, not a subclass.** It partitions the decision *population*, not the hand *grid*, which is why it rides on the decision record beside `raisesFaced` rather than joining `SUBCLASS_ACTIONS`, and why it required no new prior grids. Applied as a blend over each villain's **own realised role mix**, falling back to the corpus mix when unobserved — so a fresh profile is priced as the pool, and a villain seen only in cold spots is priced as a cold seat rather than as an opener.
+
+**`passive` is not a blend of the other two** (68.16% sits between 42.97% and 94.55% but is its own measured population, and is the thinnest row at n=669). Merging any pair is indefensible; merging all three is what was happening.
+
+It is deliberately **not per position**: the source has seat buckets, not positions, so a positional gradient here would be invented and would look measured beside numbers that are. Position enters through the prior grids. WS-264's pass-2 position trees are the path to measuring it.
+
+**Consequence for `threeBet`.** §2.5.3's `totalShare < 1` residual was described as "WS-270's slice, left with the parent". The tree now claims it, so `threeBet` no longer contains 4-bets. Hands that never reach a second raise are bit-identical.
+
+**Still not modelled:** `overCall` — calling behind an existing caller. It is the call-side analogue of the `cold3Bet` / `squeeze` split this section already accepts on the raise side, so the taxonomy currently splits one branch of the faced-raise node and not the other. It rode invisibly in this section's previous text as a trailing clause of the WS-270 paragraph and was named in no ticket; now tracked as **WS-522**.
 
 ---
 

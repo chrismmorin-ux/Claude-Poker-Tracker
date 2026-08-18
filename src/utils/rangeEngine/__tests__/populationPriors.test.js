@@ -7,8 +7,14 @@ import {
   FACED_RAISE_ACTIONS,
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,
+  FACED_3BET_ACTIONS,
+  FACED_3BET_SUBCLASSES,
+  FOUR_BET_FREQUENCIES,
+  FACED_3BET_FREQUENCIES_BY_ROLE,
+  FACED_3BET_ROLE_COUNTS,
   SUBCLASS_SPLIT,
   THREE_BET_TOP_FRACTION,
+  FOUR_BET_TOP_FRACTION,
 } from '../populationPriors';
 import { RANGE_POSITIONS } from '../rangeProfile';
 import {
@@ -189,8 +195,8 @@ describe('prior support (WS-302)', () => {
   // Every prior grid the engine can build, so a new `case` in buildActionPrior that
   // forgets the guarantee fails here rather than in production.
   const ALL_ACTIONS = [
-    ...NO_RAISE_ACTIONS, ...FACED_RAISE_ACTIONS,
-    ...NO_RAISE_SUBCLASSES, ...FACED_RAISE_SUBCLASSES,
+    ...NO_RAISE_ACTIONS, ...FACED_RAISE_ACTIONS, ...FACED_3BET_ACTIONS,
+    ...NO_RAISE_SUBCLASSES, ...FACED_RAISE_SUBCLASSES, ...FACED_3BET_SUBCLASSES,
   ].filter((a, i, xs) => xs.indexOf(a) === i);
 
   // A grid that is IDENTICALLY zero describes a scenario that cannot occur, not a range
@@ -489,5 +495,155 @@ describe('prior support preserves each action\'s SHAPE (WS-302)', () => {
       expect(at(p, 'AJs'), pos).toBeGreaterThan(at(p, 'AA'));
       expect(at(p, 'AJs'), pos).toBeGreaterThan(at(p, '32o'));
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The facing-3-bet tree (WS-521 / WS-270)
+// ---------------------------------------------------------------------------
+
+describe('facing-3-bet tree', () => {
+  const mass = (grid) => grid.reduce((a, b) => a + b, 0);
+  const cell = (grid, label) => grid[HAND_LABELS.indexOf(label)];
+
+  it('FOUR_BET_FREQUENCIES sums to 1.0 per position', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const f = FOUR_BET_FREQUENCIES[pos];
+      const total = FACED_3BET_ACTIONS.reduce((t, a) => t + f[a], 0);
+      expect(total, pos).toBeCloseTo(1.0, 10);
+    }
+  });
+
+  it('matches the MEASURED HandHQ row it is derived from', () => {
+    // handhqReferencePool HANDHQ_OPENER_FACING_3BET, `full` bucket, renormalised
+    // over fold/call/fourBet after excluding the declared residual:
+    //   fold 171605/395680  call 176091/395680  fourBet 47984/395680
+    const f = FOUR_BET_FREQUENCIES.LATE;
+    expect(f.fold).toBeCloseTo(171605 / 395680, 3);
+    expect(f.call4).toBeCloseTo(176091 / 395680, 3);
+    expect(f.fourBet).toBeCloseTo(47984 / 395680, 3);
+  });
+
+  it('is FLAT across positions — the source has seat buckets, not positions', () => {
+    // Guards against someone "improving" this into an invented gradient that
+    // would then read as measured because it sits beside measured numbers.
+    const ref = FOUR_BET_FREQUENCIES.EARLY;
+    for (const pos of RANGE_POSITIONS) {
+      expect(FOUR_BET_FREQUENCIES[pos], pos).toEqual(ref);
+    }
+  });
+
+  it('SUBCLASS_SPLIT.fourBet sums to 1.0 and covers exactly its subclasses', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const split = SUBCLASS_SPLIT.fourBet[pos];
+      expect(Object.keys(split).sort(), pos).toEqual([...FACED_3BET_SUBCLASSES].sort());
+      const total = Object.values(split).reduce((a, b) => a + b, 0);
+      expect(total, pos).toBeCloseTo(1.0, 10);
+    }
+  });
+
+  it('the 4-bet value core is about half the 3-bet value core', () => {
+    // Each escalation of the preflop tree roughly halves the value range.
+    // Asserted rather than described — this repo has three recorded instances
+    // of a comment claiming what the values contradicted.
+    expect(FOUR_BET_TOP_FRACTION).toBeLessThan(THREE_BET_TOP_FRACTION);
+    expect(FOUR_BET_TOP_FRACTION / THREE_BET_TOP_FRACTION).toBeGreaterThan(0.3);
+    expect(FOUR_BET_TOP_FRACTION / THREE_BET_TOP_FRACTION).toBeLessThan(0.7);
+  });
+
+  it('DOCTRINE ORDERING: 4-bet tighter than 3-bet, cold tighter than after-open', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const fourBet = mass(getPopulationPrior(pos, 'fourBet'));
+      const threeBet = mass(getPopulationPrior(pos, 'threeBet'));
+      const cold4 = mass(getPopulationPrior(pos, 'cold4Bet'));
+      const after = mass(getPopulationPrior(pos, 'fourBetAfterOpen'));
+
+      // Escalating the tree narrows the value claim.
+      expect(fourBet, `${pos} fourBet vs threeBet`).toBeLessThan(threeBet);
+      // §2.5.5: cold4Bet has no bluff tail, fourBetAfterOpen has a real one.
+      expect(cold4, `${pos} cold4Bet vs fourBetAfterOpen`).toBeLessThan(after);
+    }
+  });
+
+  it('call4 is TIGHTER than coldCall — worse price, stronger opposing range', () => {
+    for (const pos of RANGE_POSITIONS) {
+      expect(mass(getPopulationPrior(pos, 'call4')), pos)
+        .toBeLessThan(mass(getPopulationPrior(pos, 'coldCall')));
+    }
+  });
+
+  it('call4 is HUMPED — medium-strong hands flat, junk is gone', () => {
+    for (const pos of RANGE_POSITIONS) {
+      const p = getPopulationPrior(pos, 'call4');
+      expect(cell(p, 'JJ'), pos).toBeGreaterThan(cell(p, '32o'));
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The conditioning set the pooled prior was hiding (WS-521 follow-up)
+// ---------------------------------------------------------------------------
+
+describe('FACED_3BET_FREQUENCIES_BY_ROLE — three populations, not one', () => {
+  const ROLES = ['opener', 'cold', 'passive'];
+
+  it('every role row is a distribution over the three branches', () => {
+    for (const role of ROLES) {
+      const row = FACED_3BET_FREQUENCIES_BY_ROLE[role];
+      expect(Object.keys(row).sort()).toEqual([...FACED_3BET_ACTIONS].sort());
+      const total = FACED_3BET_ACTIONS.reduce((s, a) => s + row[a], 0);
+      expect(total).toBeCloseTo(1.0, 3);
+    }
+  });
+
+  it('each row matches the raw k/n it was derived from — no cell without its denominator', () => {
+    for (const role of ROLES) {
+      const { n, ...k } = FACED_3BET_ROLE_COUNTS[role];
+      expect(FACED_3BET_ACTIONS.reduce((s, a) => s + k[a], 0)).toBe(n);
+      for (const a of FACED_3BET_ACTIONS) {
+        expect(FACED_3BET_FREQUENCIES_BY_ROLE[role][a]).toBeCloseTo(k[a] / n, 3);
+      }
+    }
+  });
+
+  /**
+   * THE VALIDATION. The `opener` row was measured by corpus replay; FOUR_BET_FREQUENCIES
+   * was mined from HANDHQ_OPENER_FACING_3BET through a different pipeline on a different
+   * sample. They describe the same conditioning set, so they must agree — and they do, to
+   * under a point on all three actions. This is what licenses trusting the other two rows,
+   * which have no independent reference to check against.
+   */
+  it('the opener row reproduces the independently mined table to within 1pp', () => {
+    // Asserted at EVERY position, not a chosen one: the mined table is flat by
+    // design, so a positional gradient appearing here would be an invention.
+    for (const pos of RANGE_POSITIONS) {
+      const mined = FOUR_BET_FREQUENCIES[pos];
+      for (const a of FACED_3BET_ACTIONS) {
+        expect(Math.abs(FACED_3BET_FREQUENCIES_BY_ROLE.opener[a] - mined[a])).toBeLessThan(0.01);
+      }
+    }
+  });
+
+  /**
+   * THE REGRESSION GUARD. If these rows were interchangeable, applying the opener table to
+   * the whole tree would have been harmless and none of this work would be needed. They are
+   * not: cold folds ~52pp more than opener and 4-bets ~8x less. A future change that
+   * collapses them back into one table fails here.
+   */
+  it('the roles are NOT interchangeable — cold folds vastly more and 4-bets vastly less', () => {
+    const { opener, cold, passive } = FACED_3BET_FREQUENCIES_BY_ROLE;
+
+    expect(cold.fold - opener.fold).toBeGreaterThan(0.4);
+    expect(opener.fourBet / cold.fourBet).toBeGreaterThan(5);
+
+    // Passive sits BETWEEN the two and is its own population — not a blend artefact.
+    expect(passive.fold).toBeGreaterThan(opener.fold);
+    expect(passive.fold).toBeLessThan(cold.fold);
+  });
+
+  it('cold is the PLURALITY of the tree — the row the old prior described worst', () => {
+    const n = (r) => FACED_3BET_ROLE_COUNTS[r].n;
+    expect(n('cold')).toBeGreaterThan(n('opener'));
+    expect(n('cold')).toBeGreaterThan(n('passive'));
   });
 });

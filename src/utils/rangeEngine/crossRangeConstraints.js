@@ -18,8 +18,10 @@ import { clamp } from '../mathUtils.js';
 import {
   NO_RAISE_ACTIONS,
   FACED_RAISE_ACTIONS,
+  FACED_3BET_ACTIONS,
   NO_RAISE_SUBCLASSES,
   FACED_RAISE_SUBCLASSES,
+  FACED_3BET_SUBCLASSES,
 } from './populationPriors.js';
 
 const GRID_SIZE = 169;
@@ -61,8 +63,14 @@ const normalizeScenario = (ranges, actions) => {
  *
  *   every subclass <= parent      and      Σ subclasses <= parent
  *
- * The sum may fall short of the parent, and legitimately does: the residual is
- * the unmodelled 4-bet tree (`subAction: null`), which WS-270 will claim.
+ * The sum may fall short of the parent, and legitimately does — any decision
+ * carrying `subAction: null` leaves its parent's weight unclaimed.
+ *
+ * The 4-bet tree used to be that residual and is NO LONGER (WS-521 / WS-270):
+ * it is its own scenario with its own parents, so `threeBet`'s remainder is now
+ * only the genuinely unsubclassed cases. What remains for `fourBet` is the seat
+ * that limped or called before 4-betting — prior investment, no prior
+ * aggression — which is neither `cold4Bet` nor `fourBetAfterOpen`.
  *
  * This subsumes the sibling-headroom rule rather than restating it. Pass A has
  * already established `sibling + parent <= 1.0`, so `Σ subclasses <= parent`
@@ -116,13 +124,18 @@ const constrainSubclassesToParent = (ranges, parent, subclasses) => {
  * @param {Object} ranges - ranges[action] = Float64Array(169)
  */
 export const normalizeAcrossActions = (ranges) => {
-  // Pass A — parents, unchanged behavior.
+  // Pass A — parents, unchanged behavior. The three scenarios normalize
+  // INDEPENDENTLY: a player's cold-call range tells you nothing about their
+  // 4-bet range, so `P(call4|h) + P(fourBet|h) <= 1.0` is its own constraint
+  // and shares no mass with the other two trees (rangeEngine/CLAUDE.md §3).
   normalizeScenario(ranges, NO_RAISE_ACTIONS);
   normalizeScenario(ranges, FACED_RAISE_ACTIONS);
+  normalizeScenario(ranges, FACED_3BET_ACTIONS);
 
   // Pass B — derived subclasses contained by their parent, parents held fixed.
   constrainSubclassesToParent(ranges, 'open', NO_RAISE_SUBCLASSES);
   constrainSubclassesToParent(ranges, 'threeBet', FACED_RAISE_SUBCLASSES);
+  constrainSubclassesToParent(ranges, 'fourBet', FACED_3BET_SUBCLASSES);
 };
 
 /**
