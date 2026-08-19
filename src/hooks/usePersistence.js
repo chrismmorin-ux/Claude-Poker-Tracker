@@ -13,6 +13,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { initDB, saveHand, loadLatestHand, GUEST_USER_ID, createPersistenceLogger } from '../utils/persistence/index';
 import { reportPersistenceFailure, reportPersistenceHealthy } from '../utils/persistenceHealth';
+import { logErrorObject } from '../utils/errorLog';
+import { ERROR_CODES } from '../utils/errorHandler';
 import { sanitizePredictionAudit } from '../utils/persistence/predictionAuditWriter';
 import { reconstructPredictionAudit } from '../utils/predictionAudit/reconstruct';
 import { GAME_ACTIONS } from '../reducers/gameReducer';
@@ -181,8 +183,25 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
       clearTimeout(saveTimerRef.current);
     }
 
-    // Capture data for save closure
-    pendingSaveRef.current = async () => {
+    // Capture data for save closure.
+    //
+    // WS-556: `saveThis` exists so the closure can null the ref ONLY IF IT STILL OWNS IT.
+    // Previously the closure ended with an unconditional `pendingSaveRef.current = null`,
+    // and the ref is shared across effect runs. That produced a second, silent loss path
+    // independent of the swallowed catch:
+    //
+    //   1. state A changes  -> pendingSaveRef = saveA, timer_A(1500)
+    //   2. state B changes before 1500 -> cleanup clears timer_A and calls saveA()
+    //                                     (starts, then awaits), new effect sets
+    //                                     pendingSaveRef = saveB and timer_B(1500)
+    //   3. saveA's awaits resolve, saveA finishes and nulls the ref -- clobbering saveB
+    //   4. timer_B fires: `pendingSaveRef.current?.()` is now null, so NOTHING RUNS
+    //
+    // State B is never written, with no error and no log line, until some later state
+    // change happens to save it. If B was the last action of the hand, the hand's final
+    // state is simply gone. Found by writing the backgrounding test below, which could
+    // not observe a pending write because the older closure had already erased it.
+    const saveThis = async () => {
       try {
         // PMC Phase 5a (WS-177) + Phase 5a-2 (WS-178): attach predictionAudit
         // field at hand-save time. Q1 ratified — post-hoc reconstruction from
@@ -210,20 +229,75 @@ export const usePersistence = (gameState, cardState, playerState, dispatchGame, 
         lastSnapshotRef.current = snapshot;
         const handId = await saveHand(handData, userId);
         setLastSavedAt(new Date());
+        // A write that works clears a prior write/init failure. Without this the
+        // indicator would stick on red after a transient quota blip that has since
+        // resolved, and an alarm that never clears stops being read.
+        reportPersistenceHealthy('hands');
         log(`Auto-saved hand ${handId} for user ${userId}`);
       } catch (error) {
+        // WS-556. This catch used to end at logError — i.e. console.error and nothing
+        // else. It is the ONLY production saveHand call site, so every hand recorded
+        // live passed through a failure path that told the founder nothing, and nobody
+        // reads a console on a phone at a table.
+        //
+        // The channel to say it on already existed and was only ever wired to INIT
+        // failures: reportPersistenceFailure lights HealthIndicator, which is mounted
+        // app-root (PokerTracker.jsx) and whose HIGHEST-priority fault is already
+        // 'Not saving — data at risk'. That indicator was designed for exactly this
+        // case and could not fire for the most common way saving fails.
+        //
+        // logErrorObject additionally puts it in the exportable on-device error log
+        // (Settings → Error Log), so a failure survives the session it happened in.
         logError('Auto-save failed:', error);
+        reportPersistenceFailure('hands', error);
+        logErrorObject(error, ERROR_CODES.SAVE_FAILED, {
+          view: 'auto-save',
+          subsystem: 'hands',
+          userId,
+        });
       }
-      pendingSaveRef.current = null;
+      // Only clear the ref if this closure is still the pending one (see above).
+      if (pendingSaveRef.current === saveThis) {
+        pendingSaveRef.current = null;
+      }
     };
+    pendingSaveRef.current = saveThis;
 
     // Set new debounced save
     saveTimerRef.current = setTimeout(() => {
       pendingSaveRef.current?.();
     }, DEBOUNCE_DELAY);
 
+    // WS-556: flush the pending write when the page is BACKGROUNDED, not only when
+    // React unmounts.
+    //
+    // Unmount is a React lifecycle event. Locking the phone, switching apps, or the
+    // OS evicting a backgrounded tab are not — the component never unmounts, the
+    // cleanup never runs, and up to DEBOUNCE_DELAY (1.5s) of the most recent action
+    // is discarded with no error at all, because the closure that would have caught
+    // one never executed. On the target device (Galaxy S22, used one-handed at a live
+    // table) this is the most likely way the F1 class actually fires.
+    //
+    // 'visibilitychange' → hidden is the reliable signal on mobile; 'pagehide' covers
+    // bfcache/navigation. Deliberately NOT 'beforeunload', which mobile browsers fire
+    // unreliably and which blocks bfcache.
+    const flushNow = () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      pendingSaveRef.current?.();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flushNow();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flushNow);
+
     // Cleanup: flush pending save on unmount or dependency change
     return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flushNow);
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;

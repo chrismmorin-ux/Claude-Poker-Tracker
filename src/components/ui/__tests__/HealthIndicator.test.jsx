@@ -27,6 +27,9 @@ vi.mock('../../../utils/errorLog', () => ({
 
 vi.mock('../../../utils/persistenceHealth', () => ({
   getPersistenceFailureCount: () => mockSaveFailures,
+  // WS-556: the indicator now subscribes so a WRITE failure surfaces immediately
+  // instead of waiting out the 60s poll. The mock returns a no-op unsubscribe.
+  subscribePersistenceHealth: () => () => {},
 }));
 
 import { HealthIndicator } from '../HealthIndicator';

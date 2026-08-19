@@ -88,6 +88,11 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     absentSeats,
     actionSequence,
     reviewTag,
+    // WS-563: exposed so a destructive action can SNAPSHOT it. It was previously
+    // consumed only internally by potInfo, which meant no caller could capture it —
+    // and the Reset Hand undo therefore restored a hand without the founder's manual
+    // pot correction while reporting "Hand restored".
+    potOverride,
     seatStacks,
     handNumber,
     // Dispatch
@@ -102,6 +107,7 @@ export const GameProvider = ({ gameState, dispatchGame, blinds, children }) => {
     recordPrimitiveAction,
     recordStraddle,
   }), [
+    potOverride,
     currentStreet,
     dealerButtonSeat,
     mySeat,

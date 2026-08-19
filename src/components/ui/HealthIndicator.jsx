@@ -3,7 +3,7 @@ import { AlertTriangle, WifiOff, Database } from 'lucide-react';
 import { useSyncBridge, useUI } from '../../contexts';
 import { SCREEN } from '../../constants/uiConstants';
 import { getErrorCountForBuild } from '../../utils/errorLog';
-import { getPersistenceFailureCount } from '../../utils/persistenceHealth';
+import { getPersistenceFailureCount, subscribePersistenceHealth } from '../../utils/persistenceHealth';
 
 /**
  * HealthIndicator — operator health signal, mounted at app-root so it is visible
@@ -50,6 +50,16 @@ export const HealthIndicator = () => {
     const id = setTimeout(() => setSaveFailures(getPersistenceFailureCount()), FIRST_CHECK_MS);
     return () => clearTimeout(id);
   }, []);
+
+  // WS-556: since usePersistence now reports WRITE failures (not just init ones),
+  // waiting on the 60s poll is no longer acceptable. An auto-save that fails mid-hand
+  // must light this immediately — a minute at a live table is several decisions, and
+  // the founder keeps playing on the assumption the hand is recorded. Polling above
+  // stays as the backstop for anything that changes without notifying.
+  useEffect(() => subscribePersistenceHealth(() => {
+    setSaveFailures(getPersistenceFailureCount());
+    setErrorCount(getErrorCountForBuild());
+  }), []);
 
   const syncFault = Boolean(syncError) || versionMismatch;
   const extOffline = !isExtensionConnected && lastSyncTime != null; // synced before, now offline

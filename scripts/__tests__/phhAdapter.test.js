@@ -191,23 +191,61 @@ describe('toAppHand — golden case (hand 26262271782)', () => {
     const preflop = buildTimeline(hand).filter(e => e.street === 'preflop');
     const tagFor = (seat) => derivePreflopDecisions(preflop, seat);
 
+    // WS-521 widened the record: `scenario` names which of the THREE trees the
+    // decision belongs to, and `raisesFaced` is the count it was derived from.
+    // `facedRaise` is retained but can no longer select the tree — it is true for
+    // both the one-raise and the two-raise scenarios. Asserted in full rather than
+    // with toMatchObject, because a golden case that stops pinning the whole record
+    // stops being a golden case.
+    //
+    // No decision in this hand reaches a second raise, so every `scenario` below is
+    // noRaise or facedRaise and the parent tags are unchanged from WS-256.
+    //
+    // `priorRole` is the third field WS-521 added (lineTaxonomy.js:317) and is the
+    // conditioning set the decision belongs to. It is deliberately null outside the
+    // facing-3-bet tree, "where the distinction does not exist" — and since nothing in
+    // this hand faces a 3-bet, it is null on every record. It is pinned rather than
+    // omitted because a golden case that stops pinning the whole record stops being a
+    // golden case: an omitted field is exactly how this test came to pass on a shape it
+    // no longer described.
+
     // CO raises with only a fold in front — an open, first in.
     expect(tagFor(8)).toEqual([
-      { parentAction: 'open', subAction: 'openFirstIn', facedRaise: false },
+      {
+        parentAction: 'open', subAction: 'openFirstIn', facedRaise: false,
+        scenario: 'noRaise', raisesFaced: 0,
+        priorRole: null,
+      },
     ]);
     // BTN and BB both continue against that raise without re-raising.
     expect(tagFor(9)).toEqual([
-      { parentAction: 'coldCall', subAction: null, facedRaise: true },
+      {
+        parentAction: 'coldCall', subAction: null, facedRaise: true,
+        scenario: 'facedRaise', raisesFaced: 1,
+        priorRole: null,
+      },
     ]);
     expect(tagFor(2)).toEqual([
-      { parentAction: 'coldCall', subAction: null, facedRaise: true },
+      {
+        parentAction: 'coldCall', subAction: null, facedRaise: true,
+        scenario: 'facedRaise', raisesFaced: 1,
+        priorRole: null,
+      },
     ]);
     // HJ folds with no raise faced; SB folds facing one.
     expect(tagFor(7)).toEqual([
-      { parentAction: 'fold', subAction: null, facedRaise: false },
+      {
+        parentAction: 'fold', subAction: null, facedRaise: false,
+        scenario: 'noRaise', raisesFaced: 0,
+        priorRole: null,
+      },
     ]);
     expect(tagFor(1)).toEqual([
-      { parentAction: 'fold', subAction: null, facedRaise: true },
+      {
+        parentAction: 'fold', subAction: null, facedRaise: true,
+        scenario: 'facedRaise', raisesFaced: 1,
+        priorRole: null,
+      },
     ]);
   });
 

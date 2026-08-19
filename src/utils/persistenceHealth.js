@@ -26,6 +26,15 @@ import { logger, ERROR_CODES } from './errorHandler';
 // subsystem id → { subsystem, message, at }
 const failures = new Map();
 
+// WS-556: change listeners, so a write failure surfaces without waiting out a poll.
+const listeners = new Set();
+const notify = () => {
+  // A throwing listener must never break the save path that reported the failure.
+  listeners.forEach((fn) => {
+    try { fn(); } catch { /* listener errors are not the writer's problem */ }
+  });
+};
+
 /**
  * Record that a persistence subsystem failed to initialise.
  *
@@ -47,6 +56,7 @@ export const reportPersistenceFailure = (subsystem, error) => {
     view: 'persistence-init',
     subsystem,
   });
+  notify();
 };
 
 /**
@@ -57,7 +67,26 @@ export const reportPersistenceFailure = (subsystem, error) => {
  * @param {string} subsystem
  */
 export const reportPersistenceHealthy = (subsystem) => {
-  failures.delete(subsystem);
+  const had = failures.delete(subsystem);
+  if (had) notify();
+};
+
+/**
+ * Subscribe to health changes.
+ *
+ * WS-556: HealthIndicator polled on a 60s interval, which was fine when this module
+ * only ever reported INIT failures — those land during boot, and the indicator's 3s
+ * post-mount re-read catches them. It is not fine for WRITE failures. A hand that
+ * fails to save mid-session could leave "Not saving — data at risk" unshown for a
+ * full minute, and a minute at a live table is several decisions and possibly the
+ * next hand. Polling stays as the backstop; this makes the common case immediate.
+ *
+ * @param {Function} listener - called with no arguments whenever health changes
+ * @returns {Function} unsubscribe
+ */
+export const subscribePersistenceHealth = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 };
 
 /** @returns {Array<{subsystem: string, message: string, at: number}>} */
@@ -67,4 +96,4 @@ export const getPersistenceFailures = () => Array.from(failures.values());
 export const getPersistenceFailureCount = () => failures.size;
 
 /** Test seam. */
-export const __resetPersistenceHealth = () => failures.clear();
+export const __resetPersistenceHealth = () => { failures.clear(); listeners.clear(); };
