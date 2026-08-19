@@ -80,10 +80,10 @@ export const CommandStrip = ({
   // WS-182: recordPrimitiveAction (primitive-string passthrough) is no longer
   // used here — every recording funnels through recordSeatAction (intent-based)
   // from useGameHandlers below.
-  const { potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, reviewTag, dispatchGame } = useGame();
+  const { potInfo, blinds, actionSequence, smallBlindSeat, bigBlindSeat, currentStreet, dealerButtonSeat, absentSeats, reviewTag, potOverride, dispatchGame } = useGame();
   const { settings, updateSetting } = useSettings();
   const { selectedPlayers, setSelectedPlayers, showCardSelector, cardSelectorType, highlightedBoardIndex, setCardSelectorType, setHighlightedCardIndex, closeCardSelector } = useUI();
-  const { communityCards, holeCards, holeCardsVisible, dispatchCard } = useCard();
+  const { communityCards, holeCards, holeCardsVisible, allPlayerCards, dispatchCard } = useCard();
   const { getSeatPlayerName } = usePlayer();
   // WS-470/WS-471: liveHandNumber gates wrong-hand advice; isComputing drives the
   // in-flight affordance the Online panel already has (surface parity, FIND-132).
@@ -329,14 +329,22 @@ export const CommandStrip = ({
 
     // RT-37: Snapshot state for undo toast
     if (hadActions) {
+      // WS-563: the snapshot must cover EVERY field the action clears, or Undo restores a
+      // PARTIAL hand and still reports "Hand restored". Cleared but previously uncaptured:
+      // potOverride and reviewTag (gameReducer RESET_HAND :266 / NEXT_HAND :276) and
+      // allPlayerCards (cardReducer RESET_CARDS :183). allPlayerCards is every villain card
+      // recorded that hand — the read data this product exists to collect.
       nextHandUndoRef.current = {
         actionSequence: [...actionSequence],
         dealerButtonSeat,
         communityCards: [...communityCards],
         holeCards: [...holeCards],
+        allPlayerCards: { ...allPlayerCards },
         currentStreet,
         handCount: currentSession?.handCount || 0,
         absentSeats: [...absentSeats],
+        potOverride,
+        reviewTag,
       };
     }
 
@@ -356,10 +364,13 @@ export const CommandStrip = ({
               dealerButtonSeat: snapshot.dealerButtonSeat,
               currentStreet: snapshot.currentStreet,
               absentSeats: snapshot.absentSeats,
+              potOverride: snapshot.potOverride,
+              reviewTag: snapshot.reviewTag,
             }});
             dispatchCard({ type: CARD_ACTIONS.HYDRATE_STATE, payload: {
               communityCards: snapshot.communityCards,
               holeCards: snapshot.holeCards,
+              allPlayerCards: snapshot.allPlayerCards,
             }});
             setHandCount(snapshot.handCount);
             nextHandUndoRef.current = null;
@@ -371,7 +382,7 @@ export const CommandStrip = ({
       showInfo(`Hand #${handNumber + 1} started`);
     }
     scheduleAutoSelect();
-  }, [currentSession, nextHand, actionSequence, dealerButtonSeat, communityCards, holeCards, currentStreet, absentSeats, addToast, showInfo, dispatchGame, dispatchCard, setHandCount, scheduleAutoSelect]);
+  }, [currentSession, nextHand, actionSequence, dealerButtonSeat, communityCards, holeCards, allPlayerCards, currentStreet, absentSeats, potOverride, reviewTag, addToast, showInfo, dispatchGame, dispatchCard, setHandCount, scheduleAutoSelect]);
 
   const handleResetHand = useCallback(() => {
     orbitUndoPointRef.current = null;
@@ -380,13 +391,21 @@ export const CommandStrip = ({
     // AUDIT-2026-04-21-TV F1: snapshot state for undo toast, replacing window.confirm
     // Mirrors the Next Hand pattern; mid-hand-chris explicitly forbids modal interrupts.
     if (hadActions) {
+      // WS-563: the snapshot must cover EVERY field the action clears, or Undo restores a
+      // PARTIAL hand and still reports "Hand restored". Cleared but previously uncaptured:
+      // potOverride and reviewTag (gameReducer RESET_HAND :266 / NEXT_HAND :276) and
+      // allPlayerCards (cardReducer RESET_CARDS :183). allPlayerCards is every villain card
+      // recorded that hand — the read data this product exists to collect.
       resetHandUndoRef.current = {
         actionSequence: [...actionSequence],
         dealerButtonSeat,
         communityCards: [...communityCards],
         holeCards: [...holeCards],
+        allPlayerCards: { ...allPlayerCards },
         currentStreet,
         absentSeats: [...absentSeats],
+        potOverride,
+        reviewTag,
       };
     }
 
@@ -406,10 +425,13 @@ export const CommandStrip = ({
               dealerButtonSeat: snapshot.dealerButtonSeat,
               currentStreet: snapshot.currentStreet,
               absentSeats: snapshot.absentSeats,
+              potOverride: snapshot.potOverride,
+              reviewTag: snapshot.reviewTag,
             }});
             dispatchCard({ type: CARD_ACTIONS.HYDRATE_STATE, payload: {
               communityCards: snapshot.communityCards,
               holeCards: snapshot.holeCards,
+              allPlayerCards: snapshot.allPlayerCards,
             }});
             resetHandUndoRef.current = null;
             showInfo('Hand restored');
@@ -420,7 +442,7 @@ export const CommandStrip = ({
       showInfo('Hand reset');
     }
     scheduleAutoSelect();
-  }, [resetHand, actionSequence, dealerButtonSeat, communityCards, holeCards, currentStreet, absentSeats, addToast, showInfo, dispatchGame, dispatchCard, scheduleAutoSelect]);
+  }, [resetHand, actionSequence, dealerButtonSeat, communityCards, holeCards, allPlayerCards, currentStreet, absentSeats, potOverride, reviewTag, addToast, showInfo, dispatchGame, dispatchCard, scheduleAutoSelect]);
 
   const handleClearStreet = useCallback(() => {
     clearStreetActions();

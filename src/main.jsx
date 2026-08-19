@@ -22,6 +22,11 @@ if (import.meta.env.DEV) {
   // WS-168 — MW equity solver-alignment validation harness:
   // window.__validateMWEquity('BTN' | 'UTG', opts) / window.__validateMWEquity.help()
   import('./__dev__/mwEquityValidation/index.js')
+  // WS-565 — has a hand already been silently lost? Read-only IndexedDB audit.
+  // window.__handLossAudit() — see also scripts/diagnostics/hand-loss-audit.console.js,
+  // which is the same audit as a standalone paste for a PRODUCTION build, where this
+  // DEV-only block does not run and the founder's real data actually lives.
+  import('./utils/persistence/handLossAudit')
 }
 
 // PWA update listener — reload when a new service worker takes control

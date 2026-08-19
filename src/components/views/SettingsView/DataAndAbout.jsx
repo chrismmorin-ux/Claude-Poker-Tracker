@@ -36,6 +36,11 @@ const ANSWER_FRESH_MS = 150_000;
 export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSettings, showWarning, showSuccess, showError, addToast, userId }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [seedLoading, setSeedLoading] = useState(null); // tracks which button is loading
+  // WS-565 — hand-loss audit. NOT dev-gated: the founder plays on the phone, which runs
+  // the production build, and a console paste is not reachable there. A defect you can
+  // only check for on a machine that holds no data is a defect you cannot check for.
+  const [auditRunning, setAuditRunning] = useState(false);
+  const [auditResult, setAuditResult] = useState(null);
   const [simCount, setSimCount] = useState(10);
   const [simTotal, setSimTotal] = useState(() => getSimState()?.handCount || 0);
   // W4-A4-F12: collapse state for the dev-tools sub-panel. Session-scoped.
@@ -69,6 +74,26 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
+
+  const handleHandLossAudit = useCallback(async () => {
+    setAuditRunning(true);
+    setAuditResult(null);
+    try {
+      const { handLossAudit } = await import('../../../utils/persistence/handLossAudit');
+      const r = await handLossAudit({ json: true });
+      setAuditResult(r);
+      if (r.suspectSessions.length) {
+        showError?.(`${r.suspectSessions.length} session(s) are missing hands that were counted`);
+      } else {
+        showSuccess?.(`No hand loss found — ${r.totalActual} hand(s) across ${r.sessionCount} session(s)`);
+      }
+    } catch (err) {
+      logger.error('DataAndAbout', err);
+      showError?.(`Audit failed: ${err.message}`);
+    } finally {
+      setAuditRunning(false);
+    }
+  }, [showSuccess, showError]);
 
   const handleSeed = useCallback(async (type) => {
     setSeedLoading(type);
@@ -374,6 +399,53 @@ export const DataAndAbout = ({ settings, updateSetting, resetSettings, restoreSe
           >
             Reset to Defaults
           </button>
+        )}
+      </div>
+
+      {/* WS-565 — Check for lost hands. Ships in PRODUCTION on purpose: hand rows are
+          written by usePersistence.js:211 while the per-session counter is written by a
+          separate debounced save (sessionReducer.js:163 -> useSessionPersistence.js:162).
+          Two independent write paths, so a silently failed hand write leaves the counter
+          high and the row missing, and the difference is visible here. Read-only. */}
+      <div className="pt-3 border-t border-gray-700">
+        <div className="text-sm font-bold text-gray-300 mb-1">Check for lost hands</div>
+        <p className="text-xs text-gray-400 mb-2">
+          Compares the hands actually saved against the number each session counted. Reads only —
+          nothing is changed. Run this on the device you play on.
+        </p>
+        <button
+          onClick={handleHandLossAudit}
+          disabled={auditRunning}
+          className="px-4 min-h-[44px] bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg text-sm font-medium disabled:opacity-50"
+        >
+          {auditRunning ? 'Checking...' : 'Check for lost hands'}
+        </button>
+        {auditResult && (
+          <div className="mt-3 text-xs" role="status" aria-live="polite">
+            <div className="text-gray-400">
+              Database v{auditResult.dbVersion} · {auditResult.sessionCount} session(s) ·{' '}
+              {auditResult.totalActual} hand(s) saved vs {auditResult.totalRecorded} counted
+            </div>
+            {auditResult.suspectSessions.length === 0 ? (
+              <div className="mt-1 text-green-400">
+                No missing hands found on this device.
+              </div>
+            ) : (
+              <div className="mt-1">
+                <div className="text-red-400 font-medium">
+                  {auditResult.suspectSessions.length} session(s) are missing hands that were counted:
+                </div>
+                <ul className="mt-1 text-gray-300 list-disc list-inside">
+                  {auditResult.suspectSessions.slice(0, 8).map((r) => (
+                    <li key={r.sessionId}>
+                      {r.venue || `Session ${r.sessionId}`} — counted {r.recorded}, saved {r.actual}{' '}
+                      ({r.gap} missing)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
