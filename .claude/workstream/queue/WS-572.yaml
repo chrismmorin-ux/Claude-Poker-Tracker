@@ -1,0 +1,80 @@
+id: "WS-572"
+title: "A code fix never re-opens the compute job it invalidated — the already-ran fingerprint omits the engine commit"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: ses-20260819-1712-647c7955
+claimed_at: "2026-08-19T19:38:24.683Z"
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 86
+priority_label: "P1"
+category: "infrastructure"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  TWO DEFECTS IN THE COMPUTE SUPPLY CHAIN, found 2026-08-19 while reading the review debt.
+  Both are in kit/scripts/cwos-fleet-compute.js. Together they are why cm-node1 reports
+  RUNWAY EMPTY while a KNOWN-WRONG Result Card sits unreplaced in the inbox.
+
+  ── DEFECT 1: the already-ran fingerprint is blind to the code ──
+  cwos-fleet-compute.js:549 decides a job "already ran" from
+      stepsFingerprint(materializeSteps(item.compute_job, nodePath), item.compute_job.inputs)
+  — the command steps and their inputs, and NOTHING ELSE. The engine commit is absent, so a
+  fix to the analysis code does not re-key the job, and the job stays permanently ineligible.
+  The same blindness sits at :302 in the feed path ("this exact work already ran").
+
+  MEASURED INSTANCE, and it is the reason this ticket exists. WS-320 produced
+  RC-study-ladder-d908f09d, whose verdicts were WRONG: separability.mjs decided `separates`
+  on z >= 3 against the binomial null while merely INTERPOLATING the control axis into the
+  reason string. threeBetRate shipped `separates` at chi2/df = 5.569 against a control of
+  9.363 — an axis LESS dispersed between players than its own control. Fixed 2026-08-16 in
+  commit a60d4084 ("the control axis was printed, never applied — three of five WS-320
+  verdicts were wrong"), which introduced the `not-beyond-control` verdict.
+
+  Three days later the corrected code has never run. The card in
+  C:\Users\chris\fleet\inbox\ws-320-48bd185e7587\out\ is still the standing answer and is
+  still wrong, because the fingerprint says the work is done.
+
+  ── DEFECT 2: the in-flight filter is disabled by a missing argument ──
+  cwos-fleet-compute.js:536 declares `runwayFor(ranked, already, status)`; the single call
+  site at :579 passes `runwayFor(ranked, already)`. `status` is undefined inside, so both
+  in-flight guards are dead:
+      if (status && status.running) inFlight.add(...)
+      for (const q of (status && status.queued) || []) inFlight.add(...)
+  `status` is already in scope at :579 (it is panel()'s first parameter), so the fix is the
+  third argument. The function's own docblock states what the dead code was for: without it
+  the panel read "3 ready item(s) waiting" while the top one was the job in flight —
+  "reassuring and wrong, which is the failure mode this panel exists to prevent."
+
+  ── WHY THIS IS NOT A ONE-LINE TICKET ──
+  Adding the engine commit to the fingerprint makes EVERY past job re-eligible on the next
+  commit, which would re-run the whole history. The fingerprint must key on the code the job
+  ACTUALLY DEPENDS ON — the transitive module set its steps import — not on HEAD. That is
+  the design question this item has to answer, and answering it is the deliverable.
+accept_criteria: |
+  - A compute job becomes eligible again when code it depends on changes, and does NOT
+    become eligible when unrelated code changes. Demonstrated on WS-320 specifically:
+    a60d4084 must re-open it.
+  - The dependency set is derived, not hand-listed per job.
+  - runwayFor receives `status`; a job that is running or queued is excluded from RUNWAY.
+    Covered by a test that fails on the two-argument call.
+  - The panel's REVIEWS count stops double-counting: one finished run files one review item.
+    (WS-497/WS-505 are one run; WS-502/WS-512 are one crash.)
+effort: "S"
+runs_on: "any"
+files_involved:
+  - "kit/scripts/cwos-fleet-compute.js"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-497"
+  - "WS-320"
+sprint_id: null
+decision_flags: []
+source:
+  kind: "session-finding"
+  detail: "found 2026-08-19 reading the fleet-compute review debt during /next"
+created_at: "2026-08-19T17:30:00.000Z"

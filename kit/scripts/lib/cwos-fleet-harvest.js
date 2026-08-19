@@ -34,8 +34,50 @@ function readJson(f) {
 }
 
 /**
+ * Identity of a RESULT, as opposed to identity of a JOB.
+ *
+ * WS-572. Two jobs can produce byte-identical artifacts, and on 2026-08-16 two did:
+ * ws-320-48bd185e7587 and ws-320-f6c3e820c448 both emitted `study-ladder.json` at sha
+ * 6a1f1d425db8, and each filed its own review item (WS-497 and WS-505). The panel then
+ * reported six finished runs waiting to be read when there were four distinct results, in the
+ * one place whose entire job is to be an honest count of unread work.
+ *
+ * The card hash is deliberately excluded from the key: it stamps the engine commit, so two
+ * identical analyses run at different commits carry different card hashes while their DATA is
+ * the same. Keying on the data is what collapses them.
+ */
+function contentKeyOf(manifest) {
+  const files = (Array.isArray(manifest.files) ? manifest.files : [])
+    .filter((f) => !/\.card\.json$/.test(String(f.rel || '')))
+    .map((f) => `${f.rel}:${f.sha256}`)
+    .sort();
+  return files.length ? files.join('|') : null;
+}
+
+/**
+ * Content keys of results already filed, mapped to the review item that filed them. Read from
+ * the harvest markers, so it survives a queue rewrite and needs no separate index.
+ */
+function harvestedContentKeys(inboxDir) {
+  const seen = new Map();
+  let entries = [];
+  try { entries = fs.readdirSync(inboxDir, { withFileTypes: true }); } catch { return seen; }
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    const dir = path.join(inboxDir, e.name);
+    const marker = readJson(path.join(dir, HARVEST_MARKER));
+    if (!marker || !marker.review_item) continue;
+    const manifest = readJson(path.join(dir, 'manifest.json'));
+    if (!manifest) continue;
+    const key = contentKeyOf(manifest);
+    if (key && !seen.has(key)) seen.set(key, { reviewId: marker.review_item, jobId: marker.job_id || e.name });
+  }
+  return seen;
+}
+
+/**
  * Artifact sets in the inbox that are complete and not yet harvested.
- * @returns {Array<{jobId, dir, manifest, wsId}>}
+ * @returns {Array<{jobId, dir, manifest, wsId, contentKey}>}
  */
 function pendingSets(inboxDir) {
   let entries = [];
@@ -62,6 +104,7 @@ function pendingSets(inboxDir) {
       dir,
       manifest,
       wsId: m[1].toUpperCase(),
+      contentKey: contentKeyOf(manifest),
     });
   }
   return out;
@@ -287,4 +330,7 @@ function markHarvested(set, reviewId, now) {
   } catch { /* the item is already filed; a missing marker only risks a duplicate next run */ }
 }
 
-module.exports = { HARVEST_MARKER, pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor };
+module.exports = {
+  HARVEST_MARKER, pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor,
+  contentKeyOf, harvestedContentKeys,
+};

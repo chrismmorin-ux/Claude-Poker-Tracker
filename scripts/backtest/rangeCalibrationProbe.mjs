@@ -39,7 +39,7 @@ import { parseAndEncode, encodeCard, cardRank } from '../../src/utils/pokerCore/
 import { comboStrengthPercentile } from '../../src/utils/pokerCore/handEvaluator.js';
 import { getRangePositionCategory } from '../../src/utils/positionUtils.js';
 import { TAU_FRACTION } from '../../src/utils/pokerCore/softWeights.js';
-import { indexEvalPlayers } from './runner.mjs';
+import { indexEvalPlayers, streamEvalPlayerBatches } from './runner.mjs';
 import { GROUPS, fnv1a32 } from './partition.mjs';
 // WS-321. The admissibility bars are IMPORTED, not restated. A second copy of
 // `MIN_PLAYERS_FOR_QUOTE = 30` living here would agree with the canonical one right up until
@@ -55,22 +55,56 @@ const USER_ID = 'backtest';
 // Exported for tests (WS-293): the calibration arithmetic is pinned against the REAL
 // accumulator rather than a re-implementation in the test file. A test that rebuilds `push`
 // passes just as happily when `push` is the thing that broke.
+/**
+ * Neumaier compensated summation — the running sums here are ORDER-INDEPENDENT.
+ *
+ * ── WHY (WS-512) ──
+ * Sharding the eval pool by player hash changes the order decisions are accumulated in. With
+ * plain `+=` that moved every deltaLog figure in its last bits: measured 2026-08-19 on a
+ * 12-file slice, sharded and unsharded runs agreed on all 884 players, all 8,173 decisions,
+ * every integer count and every verdict — and disagreed on 99 floating-point figures at a max
+ * RELATIVE difference of 5.4e-14 (~242 x double epsilon, the signature of summing ~8k terms
+ * in a different order).
+ *
+ * Nothing could flip on 5e-14. It was still order-dependence in an instrument whose
+ * replication stamp claims true bit-reproducibility ("this probe uses NO randomness at all"),
+ * and a claim that is true only up to accumulation order is not the claim being made. The
+ * defect is removed rather than disclosed: with compensation the low-order bits carry their
+ * own error term, so the sum is the same however the terms are ordered.
+ *
+ * Neumaier rather than classic Kahan because it stays correct when the incoming term is
+ * LARGER than the running total — which happens here on the first few decisions, when the
+ * total is near zero and each log term is order 1.
+ */
+const addTo = (s, key, x) => {
+  const sum = s[key];
+  const t = sum + x;
+  // The compensation lives in a parallel `<key>$c` field so every existing reader of the
+  // plain field keeps working; `total()` is what closes the two back together.
+  s[`${key}$c`] += Math.abs(sum) >= Math.abs(x) ? ((sum - t) + x) : ((x - t) + sum);
+  s[key] = t;
+};
+
+/** The compensated value of one accumulator field. Always read sums through this. */
+export const total = (s, key) => s[key] + (s[`${key}$c`] || 0);
+
 export const mkStat = () => ({
   n: 0, covered: 0, retainedSum: 0, sumLogP: 0, sumLogU: 0,
   nPos: 0, sumLogPpos: 0, sumLogUpos: 0,
+  retainedSum$c: 0, sumLogP$c: 0, sumLogU$c: 0, sumLogPpos$c: 0, sumLogUpos$c: 0,
 });
 
 export const push = (s, { covered, retained, p, u }) => {
   s.n++;
-  s.retainedSum += retained;
-  if (covered) { s.covered++; s.nPos++; s.sumLogPpos += Math.log(p); s.sumLogUpos += Math.log(u); }
-  s.sumLogP += Math.log(Math.max(p, 1e-9));
-  s.sumLogU += Math.log(u);
+  addTo(s, 'retainedSum', retained);
+  if (covered) { s.covered++; s.nPos++; addTo(s, 'sumLogPpos', Math.log(p)); addTo(s, 'sumLogUpos', Math.log(u)); }
+  addTo(s, 'sumLogP', Math.log(Math.max(p, 1e-9)));
+  addTo(s, 'sumLogU', Math.log(u));
 };
 
 export const summarize = (s) => {
   if (!s || !s.n) return null;
-  const retained = s.retainedSum / s.n;
+  const retained = total(s, 'retainedSum') / s.n;
   const coverage = s.covered / s.n;
   return {
     n: s.n,
@@ -79,8 +113,10 @@ export const summarize = (s) => {
     // >1 means the narrowing keeps the true hand more often than eliminating at random
     // would; ~1 means the eliminations are effectively arbitrary.
     coverageLift: retained > 0 ? coverage / retained : null,
-    deltaLogVsUniform: (s.sumLogP - s.sumLogU) / s.n,
-    deltaLogGivenCovered: s.nPos ? (s.sumLogPpos - s.sumLogUpos) / s.nPos : null,
+    deltaLogVsUniform: (total(s, 'sumLogP') - total(s, 'sumLogU')) / s.n,
+    deltaLogGivenCovered: s.nPos
+      ? (total(s, 'sumLogPpos') - total(s, 'sumLogUpos')) / s.nPos
+      : null,
   };
 };
 
@@ -219,7 +255,9 @@ export const coverageSelectionBounds = (coverage, revealRate) => {
  * @param {Object} bySlice - { [key]: mkSel() bucket }
  */
 export const selectionComposition = (bySlice) => {
-  const entries = Object.entries(bySlice || {});
+  // Sorted for the same reason mapSummary is (WS-512): these slices are lazily created, so
+  // insertion order tracks which slice was seen first, which sharding changes.
+  const entries = Object.entries(bySlice || {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const totRevealed = entries.reduce((s, [, v]) => s + v.revealed, 0);
   const totScoreable = entries.reduce((s, [, v]) => s + (v.opportunities - v.refused), 0);
   if (!totRevealed || !totScoreable) return {};
@@ -403,13 +441,19 @@ export const runRangeCalibrationProbe = async ({
   files, poolPct = 50, maxPlayers = Infinity, maxHandsPerPlayer = Infinity,
   tauSweep = null, floorSweep = null, supportSweep = null,
   actionTauSweep = null, depthTauSweep = null, strengthQuintiles = false,
+  // WS-512. Splits the eval pool into `shards` player-hash groups and scores them one group
+  // at a time, so peak memory is O(players/shards x hands-per-player) instead of O(all eval
+  // players x all their hands). The whole pool is still scored — this buys memory with IO
+  // (one corpus pass per shard), it does not reduce the sample.
+  //
+  // The unsharded default is unchanged so all 13 other callers behave exactly as before.
+  shards = 1,
   log = () => {},
 }) => {
-  const { byPlayer, handsRead } = await indexEvalPlayers({
-    files, poolPct, maxPlayers, maxHandsPerPlayer,
-    onProgress: ({ handsRead: h, players }) => log(`read ${h} hands, ${players} players`),
-  });
-  log(`indexed ${byPlayer.size} players from ${handsRead} hands`);
+  // Accumulators live OUTSIDE the shard loop: every shard adds into the same stats, so a
+  // sharded run and an unsharded run produce the same numbers. Only residency differs.
+  let handsRead = 0;
+  let playersIndexed = 0;
 
   const acting = { all: mkStat(), byStreet: {}, byAction: {}, byStrength: {}, bySite: {} };
   // WS-292: acting-seat calibration keyed by player, so the per-player width the follow-up
@@ -519,7 +563,21 @@ export const runRangeCalibrationProbe = async ({
   let playersFailedAccumulate = 0;
   let firstFailure = null;
 
-  for (const [pid, hands] of byPlayer) {
+  // One shard resident at a time. The batch Map is dropped when the generator advances, which
+  // is the entire mechanism — holding a reference to it here would restore the OOM.
+  for await (const batch of streamEvalPlayerBatches({
+    files, poolPct, maxPlayers, maxHandsPerPlayer, shards,
+    onProgress: ({ handsRead: h, players, shard, shards: n }) =>
+      log(`shard ${shard + 1}/${n}: read ${h} hands, ${players} players`),
+  })) {
+    // Each shard re-reads the whole corpus, so hands are counted once (they are the same
+    // hands), while players accumulate across shards.
+    handsRead = Math.max(handsRead, batch.handsRead);
+    playersIndexed += batch.byPlayer.size;
+    log(`shard ${batch.shard + 1}/${batch.shards}: indexed ${batch.byPlayer.size} players `
+      + `(${playersIndexed} so far) from ${batch.handsRead} hands`);
+
+  for (const [pid, hands] of batch.byPlayer) {
     let profile;
     try { profile = buildRangeProfile(pid, hands, USER_ID); } catch (err) {
       playersFailedProfile++;
@@ -741,9 +799,18 @@ export const runRangeCalibrationProbe = async ({
       if (!firstFailure) firstFailure = `accumulateDecisions: ${err?.message || String(err)}`;
     }
   }
+  }   // end shard
 
+  // WS-512: keys sorted, not insertion-ordered. These buckets are created lazily on FIRST
+  // ENCOUNTER, so sharding the eval pool changed which action or street appeared first and
+  // the emitted JSON's key order changed with it. Measured 2026-08-19: 17 objects re-ordered
+  // between a 1-shard and a 5-shard run whose every value was bit-identical. The Result Card
+  // was unaffected (same sha256 at 1, 5 and 7 shards) because it serializes canonically, but
+  // a raw report whose bytes depend on scheduling is not reproducible in the sense this
+  // harness claims, and sorting costs nothing.
   const mapSummary = (o) => Object.fromEntries(
-    Object.entries(o).map(([k, v]) => [k, summarize(v)]).filter(([, v]) => v),
+    Object.entries(o).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => [k, summarize(v)]).filter(([, v]) => v),
   );
 
   // WS-311: summarize + guard the table-size strata BEFORE returning. Guard failure throws
@@ -777,7 +844,8 @@ export const runRangeCalibrationProbe = async ({
   }
 
   const mapSelection = (o) => Object.fromEntries(
-    Object.entries(o).map(([k, v]) => [k, summarizeSelection(v)]).filter(([, v]) => v),
+    Object.entries(o).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => [k, summarizeSelection(v)]).filter(([, v]) => v),
   );
 
   return {
@@ -807,8 +875,11 @@ export const runRangeCalibrationProbe = async ({
       decisions,
       revealedActing,
       revealedVillain,
-      players: byPlayer.size,
+      players: playersIndexed,
       handsRead,
+      // WS-512: how the pool was resident, so a sharded result is never mistaken for a
+      // smaller one. `shards: 1` is the historical single-pass behaviour.
+      shards,
       // WS-293: the health of the scan itself. `playersFailed` > 0 with `decisions` low means
       // the run collapsed rather than found nothing.
       playersFailedProfile,

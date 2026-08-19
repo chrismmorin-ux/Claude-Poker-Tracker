@@ -116,8 +116,26 @@ function validateComputeJob(job) {
  *
  * Only fields that can change the OUTPUT are included. `maxJobHours` is a timeout bound and
  * `artifacts` is a collection list; neither can alter what the run produces.
+ *
+ * ── `codeDigest`, WS-572: THE ANALYSIS CODE IS ALSO AN INPUT ──
+ * The three fields above are the COMMAND. They say nothing about the code the command runs,
+ * so fixing a bug in that code did not re-open the job it invalidated. WS-320 shipped three
+ * wrong verdicts, was fixed in a60d4084, and the corrected instrument had still never run
+ * three days later while cm-node1 sat IDLE.
+ *
+ * The workaround tried at the time is the reason this parameter exists rather than a
+ * convention. Commit 9361286b added a comment INSIDE the `compute_job:` block and stated in
+ * its message that this re-keyed the job. It did not: the fingerprint is computed from the
+ * PARSED steps and inputs, and a YAML comment does not survive parsing. Measured 2026-08-19 —
+ * the fingerprint is `12a9c73eaaef` before that commit, after it, and at HEAD. A confident
+ * commit message, a believed fix, and three days of silence.
+ *
+ * Pass `null`/omit and the key is byte-identical to the pre-WS-572 one. That degradation is
+ * deliberate: see the NULL IS LOAD-BEARING note in cwos-code-digest.js. Callers must pass it
+ * on BOTH sides or NEITHER — an asymmetric key silently re-runs finished work, which has
+ * already happened twice on this function (see above).
  */
-function stepsFingerprint(steps, inputs) {
+function stepsFingerprint(steps, inputs, codeDigest = null) {
   const material = (Array.isArray(steps) ? steps : []).map((s) => ({
     name: s.name || null,
     cmd: s.cmd || null,
@@ -125,7 +143,11 @@ function stepsFingerprint(steps, inputs) {
     env: s.env || null,
     expectFiles: Array.isArray(s.expectFiles) ? s.expectFiles.slice().sort() : [],
   }));
-  const canonical = JSON.stringify({ steps: material, inputs: inputs || null });
+  const shape = { steps: material, inputs: inputs || null };
+  // Absent key, not a null value: `{steps, inputs}` must serialize exactly as it did before
+  // WS-572 so that legacy prints and new prints agree whenever the digest is unavailable.
+  if (codeDigest) shape.codeDigest = codeDigest;
+  const canonical = JSON.stringify(shape);
   return require('crypto').createHash('sha256').update(canonical).digest('hex').slice(0, 12);
 }
 

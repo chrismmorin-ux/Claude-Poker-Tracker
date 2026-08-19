@@ -3,8 +3,8 @@ title: "Review the WS-320 run — RC-study-ladder-d908f09d admissible, 1 warning
 legacy_id: ""
 type: task
 status: backlog
-claimed_by: null
-claimed_at: null
+claimed_by: ses-20260819-1712-647c7955
+claimed_at: "2026-08-19T19:38:24.683Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -70,6 +70,63 @@ description: |
        run. Between-player SD ≈ 11.6pp — real variation beyond what each player's own n
        explains.
 
+
+  ────────────────────────────────────────────────────────────────────────────
+  REVIEWED 2026-08-19 (SPR-191). THE CARD IS SUPERSEDED. One verdict was wrong.
+  ────────────────────────────────────────────────────────────────────────────
+
+  RC-study-ladder-d908f09d was produced by the PRE-a60d4084 verdict path, which decided
+  `separates` on z >= 3 against the BINOMIAL null while merely interpolating the control axis
+  into the reason string. Fixed 2026-08-16 in a60d4084; the corrected code has never run.
+
+  a60d4084 changed the VERDICT PATH ONLY — `separabilityVerdict`, the per-axis control map
+  (`CONTROL_FOR`), and reporting. It did not change how chi2/df, z, df or split-half are
+  computed, so the statistics recorded in this card remain valid and the corrected verdicts
+  can be read off them directly. Recomputed 2026-08-19 against the fixed code:
+
+    axis          control              shipped     CORRECTED            ratio   z(diff)  splitHalf
+    limpRate      flopBetFreq          separates   separates            8.493   9246.7   0.864
+    threeBetRate  flopBetFreq          separates   NOT-BEYOND-CONTROL   0.595   -474.7   0.436
+    cbetRate      flopBetFreqNonPfa    separates   separates            1.111     78.8   0.672
+
+  WHAT ACTUALLY CHANGED, and it is the answer to WS-320's question:
+
+  - LIMPING IS THE REAL AXIS. 8.5x the control's between-player dispersion, SD ~14.7pp,
+    split-half reliability 0.864. Nothing marginal about it.
+  - 3-BET RATE EARNS NO CHANNEL AT THIS CONDITIONING. It is LESS dispersed between players
+    than the control axis is — ratio 0.595, z(diff) -474.7 — so the heterogeneity it does
+    carry against the binomial null is no more than players differ generally. Split-half
+    reliability 0.436 says the same thing from the other direction. This is `not-beyond-
+    control`, NOT `does-not-separate`: it forbids building a channel on the AGGREGATE,
+    UNCONDITIONAL 3-bet rate and says nothing against the trait existing in sub-channels.
+    It licenses deleting nothing.
+  - C-BET RATE SURVIVES, but only against the DISJOINT control. Scored against `flopBetFreq`
+    it is 1.034x — indistinguishable — and that comparison is invalid anyway, because every
+    c-bet IS a flop bet, so the "control" contains the candidate. Against `flopBetFreqNonPfa`
+    (flop bets by non-preflop-aggressors, which a c-bet cannot come from) it is 1.111x at
+    z(diff) 78.8. Real, and much smaller than limping.
+
+  ON THE OTHER TWO OF "three of five verdicts were wrong": the two CONTROL axes were passed
+  through the candidate verdict path and compared against themselves, returning `separates` on
+  a ratio of exactly 1.000. Tautologies occupying verdict slots, which read as corroboration.
+
+  WHY A RE-RUN IS STILL REQUIRED, despite the answer being known. Under ADR-009 a comparative
+  claim resolves to a REGISTERED Result Card. The recomputation above is an analysis of a
+  superseded card, not a card. The re-run produces the admissible artefact; it should not
+  change these numbers, and if it does, that is itself the finding.
+
+  The re-run was BLOCKED and is now unblocked — see WS-572. The job could not be re-submitted
+  because the dedupe fingerprint omitted the engine code, and the workaround applied at the
+  time (commit 9361286b, a comment inside the `compute_job:` block) could not work: the
+  fingerprint hashes the PARSED steps and YAML comments do not survive parsing. Measured
+  2026-08-19 — identical fingerprint before it, after it, and at HEAD.
+
+  STANDING LIMIT, unchanged by any of this: the corpus is online 2009 50NL (SRC-012) and the
+  founder's game is live 9-handed 1/2-1/3 (SRC-014). Limping in particular behaves differently
+  live. The live half of the accept criterion is UNMET, not answered.
+
+  DUPLICATE: WS-505 is this same run harvested a second time (job ws-320-f6c3e820c448,
+  byte-identical `study-ladder.json` at sha 6a1f1d425db8). Closed with this one.
 accept_criteria: |
   - The artifacts above are read and the finding is recorded where it belongs
     (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.

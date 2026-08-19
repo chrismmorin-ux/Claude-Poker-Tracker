@@ -80,7 +80,7 @@ import { derivePreflopDecisions } from '../../src/utils/rangeEngine/lineTaxonomy
 import { PRIMITIVE_ACTIONS } from '../../src/constants/primitiveActions.js';
 
 import { iterAppHands } from './phhAdapter.mjs';
-import { partitionOf, GROUPS, DEFAULT_POOL_PCT } from './partition.mjs';
+import { partitionOf, GROUPS, DEFAULT_POOL_PCT, fnv1a32 } from './partition.mjs';
 import { LeakageGuard, LeakageError } from './leakageGuard.mjs';
 import { HIERARCHY_VARIANTS, hierarchyOptionsFor } from './hierarchyVariants.mjs';
 
@@ -525,6 +525,118 @@ export const scorePlayer = ({
  * propensities in its importance weights are never fitted on the players it scores.
  * Same partition function, opposite side.
  */
+/**
+ * Which shard a player belongs to. Salted so shard membership is INDEPENDENT of the
+ * POOL/EVAL partition — both hash the same pseudonym, and an unsalted shard key would
+ * correlate the two, quietly making some shards all-POOL.
+ *
+ * Deterministic in the same sense `partitionOf` is: a player lands in the same shard on every
+ * machine and every run, so a sharded pass is as reproducible as an unsharded one.
+ */
+export const shardOf = (playerId, shards) =>
+  (shards <= 1 ? 0 : fnv1a32(`shard:${playerId}`) % shards);
+
+/**
+ * Stream the corpus one PLAYER SHARD at a time.
+ *
+ * ── WHY THIS EXISTS (WS-512 / WS-293) ──
+ * `indexEvalPlayers` materialised every hand of every eval player into one Map before a
+ * single decision was scored, and `maxPlayers`/`maxHandsPerPlayer` — its only two memory
+ * controls — both default to Infinity. The WS-293 compute job passed neither, so on
+ * cm-node1's 27-directory corpus the peak was O(all eval players x all their hands) and the
+ * run died on `JavaScript heap out of memory`, twice, retries exhausted.
+ *
+ * MEASURED 2026-08-17 on G16: bounded to 1,300 players it indexed 1,070,493 hands at a 3.16
+ * GB peak; the unbounded cm-node1 run died at the 12 GB ceiling on ~250k hands. A quarter the
+ * hands, four times the memory. **Peak tracks PLAYER COUNT, not hands read.**
+ *
+ * RAISING THE CEILING CANNOT WORK: cm-node1 has 15.8 GB total and ~10.1 GB free, so 12288 is
+ * already above what the OS can hand over. There is no larger number to pick.
+ *
+ * ── WHY SHARD BY PLAYER HASH RATHER THAN BY DISCOVERY ORDER ──
+ * Which players exist is only learned by reading the corpus, so "first N players" cannot be
+ * known before the pass that would need it. A hash assigns every player to a shard WITHOUT
+ * reading anything, so shard k retains only its own players and the rest are dropped as they
+ * stream past. Peak becomes O(players/shards x hands-per-player).
+ *
+ * The trade is IO for memory: `shards` full corpus passes instead of one. That is the right
+ * trade here and it is not a reduction in scope — every eval player is still indexed and
+ * still scored, just not all at the same instant. NOTHING IS SHRUNK. Callers that reduced
+ * `maxPlayers` to survive were shrinking the pool; this does not.
+ *
+ * Consumers must finish with a batch before pulling the next: the yielded Map is released
+ * between shards, and holding a reference to it defeats the entire mechanism.
+ *
+ * @yields {{shard, shards, byPlayer, handsRead, skipStats, playersSoFar}}
+ */
+export const streamEvalPlayerBatches = async function* ({
+  files,
+  poolPct = DEFAULT_POOL_PCT,
+  maxPlayers = Infinity,
+  maxHandsPerPlayer = Infinity,
+  onProgress = null,
+  group = GROUPS.EVAL,
+  keyBySite = false,
+  shards = 1,
+}) {
+  const nShards = Number.isInteger(shards) && shards > 0 ? shards : 1;
+  let playersSoFar = 0;
+
+  for (let shard = 0; shard < nShards; shard++) {
+    const byPlayer = new Map();
+    const skipStats = {};
+    let handsRead = 0;
+
+    for (const file of files) {
+      for await (const hand of iterAppHands(file.path, { site: file.site, stakeLabel: file.stakeLabel }, skipStats)) {
+        handsRead++;
+        for (const pid of Object.values(hand.seatPlayers)) {
+          if (partitionOf(pid, poolPct) !== group) continue;
+          // Sharded on the PSEUDONYM, never on the site-qualified key: `keyBySite` splits one
+          // pseudonym into two players, and hashing the composite would scatter them across
+          // shards. Hashing the pseudonym keeps a player whole within one shard either way.
+          if (shardOf(pid, nShards) !== shard) continue;
+          const key = keyBySite ? `${file.site}:${pid}` : pid;
+          let bucket = byPlayer.get(key);
+          if (!bucket) {
+            // `maxPlayers` stays a GLOBAL cap across shards rather than a per-shard one, so
+            // sharding never changes which players a capped run scores — only how many are
+            // resident at once. A per-shard cap would silently multiply the cap by `shards`.
+            if (playersSoFar + byPlayer.size >= maxPlayers) continue;
+            bucket = [];
+            byPlayer.set(key, bucket);
+          }
+          if (bucket.length < maxHandsPerPlayer) bucket.push(hand);
+        }
+        if (onProgress && handsRead % 25000 === 0) {
+          onProgress({ handsRead, players: byPlayer.size, shard, shards: nShards });
+        }
+      }
+    }
+
+    playersSoFar += byPlayer.size;
+    yield { shard, shards: nShards, byPlayer, handsRead, skipStats, playersSoFar };
+  }
+};
+
+/**
+ * Stream corpus files and index hands by player, keeping one partition group.
+ *
+ * Defaults to EVAL — the scored half. The other half is dropped at ingest, because
+ * holding hands that will never be used only costs memory. Caps are first-class
+ * because the per-player cost is quadratic: every checkpoint rebuilds the profile
+ * over the whole prefix.
+ *
+ * `group` exists for WS-287: the hero-EV instrument needs a behaviour policy
+ * (what the field actually does at a node) mined from the POOL half, so that the
+ * propensities in its importance weights are never fitted on the players it scores.
+ * Same partition function, opposite side.
+ *
+ * WS-512: this is now the single-shard case of `streamEvalPlayerBatches`, so there is exactly
+ * one ingest implementation and the sharded and unsharded paths cannot drift. It holds every
+ * player in memory at once BY DESIGN — that is what its callers ask for. A caller whose
+ * corpus does not fit wants the generator, not a smaller `maxPlayers`.
+ */
 export const indexEvalPlayers = async ({
   files,
   poolPct = DEFAULT_POOL_PCT,
@@ -541,29 +653,14 @@ export const indexEvalPlayers = async ({
   // (villain-side runner) keep their historical identity scheme until they opt in.
   keyBySite = false,
 }) => {
-  const byPlayer = new Map();
-  const skipStats = {};
-  let handsRead = 0;
-
-  for (const file of files) {
-    for await (const hand of iterAppHands(file.path, { site: file.site, stakeLabel: file.stakeLabel }, skipStats)) {
-      handsRead++;
-      for (const pid of Object.values(hand.seatPlayers)) {
-        if (partitionOf(pid, poolPct) !== group) continue;
-        const key = keyBySite ? `${file.site}:${pid}` : pid;
-        let bucket = byPlayer.get(key);
-        if (!bucket) {
-          if (byPlayer.size >= maxPlayers) continue;
-          bucket = [];
-          byPlayer.set(key, bucket);
-        }
-        if (bucket.length < maxHandsPerPlayer) bucket.push(hand);
-      }
-      if (onProgress && handsRead % 25000 === 0) onProgress({ handsRead, players: byPlayer.size });
-    }
+  for await (const batch of streamEvalPlayerBatches({
+    files, poolPct, maxPlayers, maxHandsPerPlayer, onProgress, group, keyBySite, shards: 1,
+  })) {
+    return { byPlayer: batch.byPlayer, skipStats: batch.skipStats, handsRead: batch.handsRead };
   }
-
-  return { byPlayer, skipStats, handsRead };
+  // Unreachable with shards: 1 — the generator always yields exactly once — but an empty
+  // return here is the honest shape rather than `undefined` destructured at 14 call sites.
+  return { byPlayer: new Map(), skipStats: {}, handsRead: 0 };
 };
 
 // =============================================================================

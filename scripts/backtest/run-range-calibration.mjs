@@ -227,6 +227,11 @@ const main = async () => {
       actionTauSweep: list(args['action-tau-sweep'])?.map(Number) ?? null,
       depthTauSweep: list(args['depth-tau-sweep'])?.map(Number) ?? null,
       strengthQuintiles: Boolean(args['strength-quintiles']),
+      // WS-512. Peak memory tracks PLAYER COUNT, not hands read: the unbounded cm-node1 run
+      // died at the 12 GB ceiling on ~250k hands while a 1,300-player run held 3.16 GB across
+      // 1.07M. Sharding scores the same whole pool with 1/shards of it resident, at the cost
+      // of one corpus pass per shard. Default 1 keeps every existing invocation identical.
+      shards: int(args.shards, 1),
       log: (m) => console.log(`  ${m}`),
     });
 

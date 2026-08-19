@@ -82,18 +82,40 @@ runs_on: "node1"        # long unattended compute
 # defect to fix (stream per-player state rather than holding every player in memory) — see
 # the failure item the harvester filed. Do not respond to a second OOM by shrinking the run.
 compute_job:
-  maxJobHours: 12
+  # 12 corpus passes instead of 1. The bound is raised to match, not because a pass is
+  # slow, but because 12 of them are.
+  maxJobHours: 20
   steps:
     - name: range-calibration-full-corpus
       cmd: node
       args:
         - "scripts/backtest/run-range-calibration.mjs"
+        # WS-512 FIX. The whole eval pool is still scored; it is scored 12 players-groups at a
+        # time so peak memory is O(players/12 x hands-per-player) instead of O(all of them).
+        #
+        # WHY 12, from the one measurement rather than from taste. G16, 2026-08-17: 1,300
+        # players held a 3.16 GB peak over 1,070,493 hands, so ~2.3 MB per resident player
+        # above a ~0.2 GB baseline. cm-node1 has ~10.1 GB free; budgeting 8 GB leaves room for
+        # ~3,400 players, and the eval half of the corpus is roughly 29,900 of its 59,717
+        # pseudonyms. 12 shards puts ~2,490 players resident at ~5.9 GB — inside the budget
+        # with margin, at the cost of 12 corpus passes.
+        #
+        # Sharding does NOT change the answer: sharded and unsharded runs are byte-identical
+        # in both the report and the Result Card, verified at 1, 5 and 7 shards on 2026-08-19.
+        # That required two fixes of their own — compensated summation, and sorted keys on the
+        # lazily-created buckets — because without them the low bits and the key order tracked
+        # accumulation order.
+        - "--shards"
+        - "12"
         - "--out"
         - "out/range-calibration.json"
         - "--card"
         - "out/range-calibration.card.json"
       env:
-        NODE_OPTIONS: "--max-old-space-size=12288"
+        # Was 12288, which cm-node1 cannot supply: 15.8 GB total, ~10.1 GB free. A ceiling
+        # above available memory is not a ceiling. This one is real, and with 12 shards the
+        # run should not approach it.
+        NODE_OPTIONS: "--max-old-space-size=8192"
       expectFiles:
         - "out/range-calibration.json"
         - "out/range-calibration.card.json"

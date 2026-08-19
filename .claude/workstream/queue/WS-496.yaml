@@ -3,8 +3,8 @@ title: "Review the WS-295 run — 6× UNDERPOWERED — the run answered NOTHING,
 legacy_id: ""
 type: task
 status: backlog
-claimed_by: null
-claimed_at: null
+claimed_by: ses-20260819-1712-647c7955
+claimed_at: "2026-08-19T19:38:24.683Z"
 started_at: null
 completed_at: null
 completion_commit: null
@@ -60,6 +60,73 @@ description: |
   shape test reported informativeClusters = 0. Even with working noise injection, the
   scenario set is too small for the rho CIs to exclude anything. Both need fixing.
 
+
+  ────────────────────────────────────────────────────────────────────────────
+  DIAGNOSED 2026-08-19 (SPR-191). NEITHER CANDIDATE MECHANISM IS CORRECT.
+  ────────────────────────────────────────────────────────────────────────────
+
+  The two candidates recorded above were (a) a wiring bug stopping the seed reaching the
+  estimator's RNG, and (b) the 8 scenarios being evaluated by enumeration rather than Monte
+  Carlo. The answer is a third thing, and it is a DESIGN PROPERTY rather than a fault:
+
+    src/utils/exploitEngine/gameTreeSampling.js:113  `boardDerivedRng(cards, salt = 0)`
+
+  The runout sampler is seeded ENTIRELY FROM THE BOARD CARDS plus a fixed per-stream salt.
+  It touches `Math.random` nowhere. Introduced deliberately — gameTreeEquity.js:417 records
+  that `miniRolloutEquity` "drew turn and river with raw `Math.random()`" and that this was
+  removed so that "DETERMINISM COMES FREE", and gameTreeSampling.js:134 `RNG_SALT` names the
+  independent streams so two sites cannot silently share one.
+
+  So the probe's `freeze(seed)` — which overrides the global `Math.random` — cannot reach the
+  sampler at all. That is why 200 distinct seeds produced noiseSd = 0.0e+0 on all 8 nodes in
+  BOTH arms, meanArgmaxStability = 1.0, and every reported curse at 1e-13 to 1e-15.
+
+  Where each candidate stands:
+  - (a) is right about the SYMPTOM and wrong about the CAUSE. The seed genuinely never
+    reaches the sampler, but not because the probe is miswired — because the engine was
+    deliberately made independent of any global seed. Nothing is broken.
+  - (b) is FALSE for the 5 flop scenarios, which do sample (stratified turn cards, each with
+    stratified rivers — gameTreeEquity.js:566). It is TRUE for the 3 turn scenarios:
+    "Turn: one card to come. Enumerate every river unless a budget asks for a sample."
+    (gameTreeEquity.js:553). All 8 boards are flop or turn; none is a river.
+
+  WHAT THIS MEANS FOR THE ESTIMAND. E[max_a EVhat(a)] - max_a E[EVhat(a)] is induced by
+  variation in the estimator. Re-running the same board through a board-seeded engine is not a
+  replicate — it is the SAME COMPUTATION. The probe as written could not have produced an
+  answer at any replicate count, and more replicates remains the one response guaranteed not
+  to help. This is NOT evidence that the curse is zero: it is evidence that this instrument
+  never measured it.
+
+  THE CURSE IS STILL REAL AND STILL UNMEASURED. Determinism given a board removes SAMPLING
+  noise; it does not remove ESTIMATION ERROR. The engine's EV is still an estimate, its error
+  is simply a fixed function of the board rather than a fresh draw. Jensen's inequality does
+  not care which. Picking the argmax of a noisy estimate still overstates the value realised.
+
+  TWO WAYS TO BUILD A REAL REPLICATE — a founder decision, both listed with their cost, and
+  NEITHER of them is "accept the null".
+
+  OPTION 1 — expose the salt (surgical, ~S).
+    `boardDerivedRng` already takes a `salt` and `RNG_SALT` already enumerates the streams.
+    Thread an optional `rngSalt` through `evaluateGameTree` into the sampler, and sweep IT
+    instead of `Math.random`. That gives genuine independent sampling streams on the SAME
+    board — exactly the replicate structure the probe assumes it has.
+    Cost: a new optional parameter on the engine's main entry point, defaulting to 0 so every
+    existing caller stays bit-identical. Measures sampling-induced optimism only.
+    Limit worth stating: it cannot see error that is CONSTANT for a board, and some of the
+    engine's error will be exactly that.
+
+  OPTION 2 — make the BOARD the replicate (complete, ~M).
+    Draw N boards from the corpus's own board distribution and treat each as one replicate.
+    The engine's error on each is then a real draw from the population it will actually meet.
+    Cost: more compute, and the estimand becomes population-averaged rather than per-node —
+    which is arguably the figure worth having, since the founder never faces one fixed board
+    repeatedly. Requires a board sampler wired to the Deal Book.
+    This is the one that answers the question as asked.
+
+  RECOMMENDATION: build BOTH, Option 1 first because it is cheap and its result bounds
+  Option 2's from below. Do NOT re-run the current probe at any replicate count.
+
+  BLOCKED ON: founder choice between the two, or approval to build both.
 accept_criteria: |
   - The artifacts above are read and the finding is recorded where it belongs
     (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.

@@ -42,7 +42,8 @@ const { spawnSync } = require('child_process');
 
 const { materializeSpec, readQueueItem, normalizeRunsOn, validateComputeJob,
         stepsFingerprint, materializeSteps } = require('./lib/cwos-compute-job');
-const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor, HARVEST_MARKER } = require('./lib/cwos-fleet-harvest');
+const { pendingSets, extractHighlights, buildReviewItem, markHarvested, headlineFor, HARVEST_MARKER,
+        harvestedContentKeys } = require('./lib/cwos-fleet-harvest');
 
 // ------------------------------------------------------------------ config
 
@@ -169,6 +170,37 @@ function doneJobIds() {
   return { ok: true, ids, prints };
 }
 
+/**
+ * The candidate side of the WS-572 code digest.
+ *
+ * Runs ON THE COMPUTE NODE, exactly like `done-summary.cjs` computes the historical side —
+ * same machine, same working tree, same function, so the import closure both sides see is
+ * identical and only the commit differs. Computing it from the local G16 checkout instead
+ * would silently diverge whenever the two repos are not in step, and an asymmetric dedupe key
+ * re-runs finished work rather than erroring.
+ *
+ * Returns null on every failure path. Null means "no digest", and `stepsFingerprint` then
+ * reproduces the pre-WS-572 key — which is what the historical side also produces when it
+ * cannot establish one. Degrading together is the property that matters.
+ */
+const digestCache = new Map();
+function codeDigestFor(wsId, commit) {
+  if (!wsId || !commit) return null;
+  const key = `${wsId}@${commit}`;
+  if (digestCache.has(key)) return digestCache.get(key);
+  const script = onTarget()
+    ? path.join(REPO_ROOT, 'scripts', 'fleet', 'code-digest.cjs')
+    : `${REMOTE_REPO}\\scripts\\fleet\\code-digest.cjs`;
+  const r = onTarget()
+    ? run(process.execPath, [script, commit, wsId])
+    : run('ssh', [TARGET, `${quote(REMOTE_NODE)} ${quote(script)} ${quote(commit)} ${quote(wsId)}`]);
+  const line = r.ok
+    ? r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^[0-9a-f]{12}$/.test(l))[0] || null
+    : null;
+  digestCache.set(key, line);
+  return line;
+}
+
 /** HEAD of the repo on the compute node — the commit a worktree can actually be cut from. */
 function computeHead() {
   if (onTarget()) {
@@ -182,6 +214,28 @@ function computeHead() {
 }
 
 // ------------------------------------------------------------------ ranking
+
+/**
+ * Ids in an item's `blocked_by` that are not yet done.
+ *
+ * A blocker is cleared only by an explicit `status: done`. Anything else — backlog, active,
+ * a blocker whose YAML is missing entirely — counts as unmet, because the failure modes are
+ * asymmetric: refusing to submit costs a 2-hour wait for the next feeder tick, while
+ * submitting on a bad assumption costs hours of the fleet's only unattended compute and
+ * returns a number someone may quote.
+ */
+function blockersNotDone(item) {
+  const ids = Array.isArray(item.blocked_by) ? item.blocked_by : [];
+  const unmet = [];
+  for (const raw of ids) {
+    const id = String(raw || '').trim();
+    if (!id) continue;
+    const blocker = readQueueItem(QUEUE_DIR, id);
+    if (!blocker) { unmet.push(`${id} (not found)`); continue; }
+    if (String(blocker.status || '').trim() !== 'done') unmet.push(`${id} (${blocker.status || 'no status'})`);
+  }
+  return unmet;
+}
 
 /**
  * Node1 candidates in the SAME order `/next` shows the founder.
@@ -262,13 +316,25 @@ function feed({ dryRun }) {
   for (const cand of ranked.ready) {
     const candItem = readQueueItem(QUEUE_DIR, cand.id);
     if (!candItem) { skipped.push(`${cand.id}: yaml unreadable`); continue; }
+    // A hard `blocked_by` must stop a SUBMISSION, not merely damp a ranking. The ranker
+    // applies soft-block damping and still reports compute_ready:true, which is right for
+    // composing a sprint a human will read and wrong for a dispatcher that acts unattended.
+    // Found 2026-08-17: WS-503 declared blocked_by:[WS-504] and the dry-run still picked it,
+    // so the 2-hourly autonomous feeder would have spent 4-5 h on cm-node1 producing a
+    // knowingly-confounded result. Compute is the scarce resource here; a blocked job that
+    // runs anyway costs more than one that never starts.
+    const unmet = blockersNotDone(candItem);
+    if (unmet.length) { skipped.push(`${cand.id}: blocked_by unmet — ${unmet.join(', ')}`); continue; }
     const built = materializeSpec({ item: candItem, commit, repoPath: REMOTE_REPO, nodePath });
     if (!built.ok) { skipped.push(`${cand.id}: ${built.problems.join('; ')}`); continue; }
     // Dedupe on the FINGERPRINT of the work, not on the job id. Both sides are fingerprinted
     // at read time by one shared function, so the comparison stays symmetric even if that
     // function changes later. Two earlier keying schemes each silently invalidated history
     // and re-ran finished work; this one cannot.
-    if (already.ok && already.prints.has(stepsFingerprint(built.spec.steps, built.spec.inputs))) {
+    const candPrint = stepsFingerprint(
+      built.spec.steps, built.spec.inputs, codeDigestFor(cand.id, commit),
+    );
+    if (already.ok && already.prints.has(candPrint)) {
       skipped.push(`${cand.id}: this exact work already ran`);
       continue;
     }
@@ -354,8 +420,20 @@ function harvest({ dryRun }) {
     if (res.ok) filed.push(res.entry); else skipped.push(`${t.id}: ${res.reason}`);
   }
 
+  // WS-572: a result already filed under another job id does not get a second review item.
+  // Two runs of the identical WS-320 spec returned byte-identical artifacts and filed WS-497
+  // and WS-505 separately, so the panel claimed six unread runs against four real results.
+  // The marker is still written, which is what stops the duplicate resurfacing every harvest.
+  const alreadyFiled = harvestedContentKeys(INBOX_DIR);
+
   for (const set of sets) {
     if (set.nonQueue) { skipped.push(`${set.jobId}: not a queue-driven job (no WS id in the job id)`); continue; }
+    const dup = set.contentKey ? alreadyFiled.get(set.contentKey) : null;
+    if (dup) {
+      skipped.push(`${set.jobId}: identical result already filed as ${dup.reviewId} (from ${dup.jobId})`);
+      if (!dryRun) markHarvested(set, dup.reviewId, now);
+      continue;
+    }
     const highlights = extractHighlights(set.dir, set.manifest);
     const source = set.wsId ? (readQueueItem(QUEUE_DIR, set.wsId) || null) : null;
 
@@ -398,15 +476,20 @@ function doneOutcomes() {
   for (const line of r.stdout.split('\n')) {
     const l = line.trim();
     if (!l || /^\*\*|post-quantum|store now|upgraded/.test(l)) continue;
-    const [id, wsId, jobHash, outcome] = l.split('|');
-    if (id) out.push({ id, wsId: wsId || null, jobHash: jobHash || null, outcome: outcome || '' });
+    const [id, wsId, jobHash, outcome, detailB64] = l.split('|');
+    // WS-547: `detail` is what the runner itself said went wrong. Base64 on the wire so a
+    // Windows path or a newline in it cannot split the record.
+    let recordDetail = '';
+    try { recordDetail = detailB64 ? Buffer.from(detailB64, 'base64').toString('utf8').trim() : ''; }
+    catch { recordDetail = ''; }
+    if (id) out.push({ id, wsId: wsId || null, jobHash: jobHash || null, outcome: outcome || '', recordDetail });
   }
   return out;
 }
 
 /** File a review item for a job that did NOT succeed, and mark it so it files once. */
 function fileFailureItem(t, now) {
-  const detail = failureDetail(t.id);
+  const detail = failureDetail(t.id, t.recordDetail || '');
   const alloc = run(process.execPath, [path.join(__dirname, 'cwos-next.js'), 'allocate-ws-id'], { cwd: REPO_ROOT });
   let reviewId = null;
   try { reviewId = JSON.parse(alloc.stdout.slice(alloc.stdout.indexOf('{'))).ws_id; } catch { /* below */ }
@@ -468,7 +551,7 @@ function fileFailureItem(t, now) {
 }
 
 /** Pull the actual error out of the job's step log — a failure with no cause is not a report. */
-function failureDetail(jobId) {
+function failureDetail(jobId, recordDetail = '') {
   const ps = `Get-Content '${REMOTE_LOGS}\\${jobId}.0.log' -ErrorAction SilentlyContinue | Select-String -Pattern 'FATAL ERROR|Error:|ENOENT|out of memory' | Select-Object -First 3`;
   const r = onTarget()
     ? run('powershell', ['-NoProfile', '-Command', ps])
@@ -476,10 +559,28 @@ function failureDetail(jobId) {
   const lines = (r.stdout || '').split('\n').map((l) => l.trim())
     .filter((l) => l && !/^\*\*|post-quantum|store now|upgraded/.test(l)).slice(0, 3);
   const oom = lines.some((l) => /out of memory|heap limit/i.test(l));
-  return {
-    headline: oom ? 'JavaScript heap out of memory' : (lines[0] ? lines[0].slice(0, 90) : 'no error captured in the step log'),
-    lines,
-  };
+
+  // ── WS-547: THE STEP LOG IS NOT THE ONLY PLACE A FAILURE IS RECORDED ──
+  // This used to grep `<jobId>.0.log` and nothing else, so a job that died BEFORE its first
+  // step ran — which writes no step log — was filed as "no error captured in the step log".
+  // ws-503-17172f8726ce failed twice that way while the runner's terminal record carried
+  // `detail: "existing worktree at C:\\cj\\ws-503-17172f8726ce is 6f4cf7db…, expected
+  // 32d968a4…"`, the exact and complete cause. The item that got filed said the failure was
+  // undiagnosable, so nobody went looking, and the job stayed dead through another cycle.
+  //
+  // Order of preference: OOM is promoted because it is the one cause whose signature lives in
+  // the log and not in the record; otherwise the RUNNER'S OWN VERDICT outranks a grepped log
+  // line, because it is a deliberate statement rather than a pattern that happened to match.
+  const headline = oom
+    ? 'JavaScript heap out of memory'
+    : (recordDetail ? recordDetail.split('\n')[0].slice(0, 120)
+      : (lines[0] ? lines[0].slice(0, 90)
+        : 'the runner recorded no detail and the step log has no error — the job died before its first step'));
+
+  // The record's detail is surfaced in the body even when a log line won the headline, so the
+  // two accounts can be read against each other rather than one silently replacing the other.
+  const body = recordDetail && !lines.includes(recordDetail) ? [`runner: ${recordDetail}`, ...lines] : lines;
+  return { headline, lines: body };
 }
 
 // ------------------------------------------------------------------ output
@@ -512,11 +613,18 @@ function runwayFor(ranked, already, status) {
   for (const q of (status && status.queued) || []) inFlight.add(wsIdOfJob(q));
 
   const nodePath = onTarget() ? process.execPath : REMOTE_NODE;
+  // One HEAD lookup for the whole panel — codeDigestFor caches per (item, commit), so the
+  // cost here is one remote call per genuinely-ready item, not one per candidate.
+  const commit = ranked.ready.length ? computeHead() : null;
   return ranked.ready.filter((c) => {
     if (inFlight.has(c.id)) return false;
     const item = readQueueItem(QUEUE_DIR, c.id);
     if (!item || !item.compute_job) return false;
-    const fp = stepsFingerprint(materializeSteps(item.compute_job, nodePath), item.compute_job.inputs);
+    const fp = stepsFingerprint(
+      materializeSteps(item.compute_job, nodePath),
+      item.compute_job.inputs,
+      codeDigestFor(c.id, commit),
+    );
     return !(already.ok && already.prints.has(fp));
   });
 }
@@ -545,7 +653,11 @@ function panel(status, ranked, already) {
     return L.join('\n');
   }
 
-  const runway = runwayFor(ranked, already);
+  // `status` is the third argument, and omitting it (as this call did until WS-572) leaves
+  // `status` undefined inside, so BOTH in-flight guards evaluate to false and the filter the
+  // function exists for is dead. The panel then reports the running job as runway behind
+  // itself — the reassuring-but-wrong reading named in runwayFor's own docblock.
+  const runway = runwayFor(ranked, already, status);
   const needSpec = ranked.ok ? ranked.unready.filter((c) => !c.compute_note) : [];
   const blocked = ranked.ok ? ranked.unready.filter((c) => c.compute_note) : [];
   const reviews = reviewDebt();

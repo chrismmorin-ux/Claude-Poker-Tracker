@@ -19,7 +19,24 @@ const os = require('os');
 const path = require('path');
 
 // Same fingerprint function the feeder uses on a candidate — that symmetry IS the dedupe.
-const { stepsFingerprint } = require(path.join(__dirname, '..', '..', 'kit', 'scripts', 'lib', 'cwos-compute-job.js'));
+const REPO_ROOT = path.join(__dirname, '..', '..');
+const { stepsFingerprint } = require(path.join(REPO_ROOT, 'kit', 'scripts', 'lib', 'cwos-compute-job.js'));
+// WS-572: the code the job ran is part of its identity. The candidate side computes this
+// through scripts/fleet/code-digest.cjs, on this same machine and this same working tree, so
+// both sides see the same import closure and differ only in the commit they price it at.
+const { codeDigest } = require(path.join(REPO_ROOT, 'kit', 'scripts', 'lib', 'cwos-code-digest.js'));
+
+// One ls-tree per distinct commit, not per job: eleven terminal records share a handful of
+// commits, and this runs on every feed tick.
+const digestCache = new Map();
+function digestFor(steps, commit) {
+  if (!commit || !Array.isArray(steps)) return null;
+  const key = commit + '|' + JSON.stringify(steps.map((s) => s.args || []));
+  if (!digestCache.has(key)) {
+    digestCache.set(key, codeDigest({ steps, repoRoot: REPO_ROOT, commit }));
+  }
+  return digestCache.get(key);
+}
 
 const DONE = process.argv[2]
   || path.join(process.env.USERPROFILE || os.homedir(), 'fleet', 'compute', 'done');
@@ -50,7 +67,16 @@ for (const f of files) {
   process.stdout.write([
     f.replace(/\.json$/, ''),
     src.ws_id || '',
-    stepsFingerprint(j.steps, j.inputs),
+    stepsFingerprint(j.steps, j.inputs, digestFor(j.steps, j.commit)),
     j.outcome || '',
+    // WS-547: the runner's OWN verdict on why the job ended, base64 so a detail carrying a
+    // pipe, a newline or a Windows path cannot corrupt the record separator.
+    //
+    // Without this the harvester had only the step log to go on, and a job that dies BEFORE
+    // any step starts writes no step log at all. ws-503-17172f8726ce died in the runner's
+    // `ensureWorktree` and was filed as "no error captured in the step log" while THIS field
+    // held the exact cause. A failure that looks undiagnosable is worse than a loud one: it
+    // reads as bad luck, and nobody goes looking for a mechanism behind bad luck.
+    Buffer.from(String(j.detail || ''), 'utf8').toString('base64'),
   ].join('|') + '\n');
 }
