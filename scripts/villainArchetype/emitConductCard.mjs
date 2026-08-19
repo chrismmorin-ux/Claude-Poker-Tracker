@@ -185,10 +185,23 @@ export const emitConductCard = async ({
     // separator found" from being read as "no separator exists".
     separatorSearch: {
       arity: 1,
-      correction: 'bonferroni over features testable at the leaf',
+      correction: 'bonferroni, one family of m observable features plus the card test',
+      /**
+       * MEASURED FROM THE RUN, not typed. The family size is the number of hypotheses the
+       * verdict was actually chosen among, and it moved on 2026-08-19 when the card test was
+       * brought inside the same correction as the features it competes with. Before that the
+       * features were corrected and the card test was not, so a separator at raw p=0.012 could
+       * lose to a card test at p=0.032 and the leaf would be published as "only his cards
+       * resolve it" - the one verdict that says more corpus cannot help.
+       */
+      familySize: (() => {
+        const sizes = ordered.map((r) => r.mix?.family).filter((x) => Number.isFinite(x));
+        if (!sizes.length) return null;
+        return { min: Math.min(...sizes), max: Math.max(...sizes), leaves: sizes.length };
+      })(),
       alpha: induction.alpha,
       combinationsSearched: false,
-      note: 'Single features only. A disjunction of three conditions refuted one of these verdicts at corrected p=0.024 on 2026-08-18; every mix here is provisional until the search covers combinations.',
+      note: 'Single features only, each leaf corrected over its own family of testable features plus the card test. A disjunction of three conditions refuted one of these verdicts at corrected p=0.024 on 2026-08-18, so every mix here is provisional until the search covers combinations. Separately, on 2026-08-19 analysts given single leaves blind found observable separators in two spots this arity-1 search had labelled needs-cards.',
     },
     induction,
     gates,
