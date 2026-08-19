@@ -155,7 +155,19 @@ Each was found by an agent reading data or by a gate, never by reasoning:
    thin value. The doc says the pieces exist and *"have simply never been joined"* — still true.
 6. **Range capping and telegraphing** — derivable from his own action sequence.
 
-## Uncommitted
+## Committed — but read the commit titles carefully
 
-Everything above is **uncommitted**: 11 modified files, 18 untracked, including every new module
-and all three known-answer checks. Commit before doing anything destructive.
+All of it is committed. **The history is mislabelled and you should not be surprised by it:**
+
+- `6ebc1f39` is titled **"WS-573: file the two backtest-integrity defects HomeBase declined"** and
+  contains **30 files of villain-archetype work**. A concurrent session in this repo committed
+  while this session had those files staged, and consumed the index. Content verified intact —
+  schema v12, the `positionOf` ordering fix, `computeBoardPercentileTable`, `rangeInference`.
+  Not rewritten: amending another session's commit is destructive and it may already be built on.
+- `bef79a14` is the real tail — three stale known-answer expectations that named enum values the
+  nut-end refactor deleted.
+
+`git log --oneline --follow scripts/villainArchetype/` is the honest way to find this work.
+
+**The lesson, since it will recur:** this repo runs concurrent sessions, and the git index is
+shared state between them. Stage and commit in one motion, or commit from a worktree.
