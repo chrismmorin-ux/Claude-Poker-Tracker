@@ -23,6 +23,7 @@
 import { discoverCorpusFiles, selectCorpusFiles, resolveCorpusRoot } from '../backtest/corpusFiles.mjs';
 import { iterAppHands } from '../backtest/phhAdapter.mjs';
 import { labelDecisions } from './decisionLabeler.mjs';
+import { resolveHandOutcome } from '../backtest/handOutcome.mjs';
 
 /**
  * @param {Object}  opts
@@ -61,6 +62,32 @@ export const loadVillain = async ({ maxFiles = 2000, villain = null, rank = 1 } 
       const seat = Object.entries(h.seatPlayers || {}).find(([, p]) => p === pid)?.[0];
       if (!seat) continue;
       const ds = labelDecisions(h, seat);
+      /**
+       * THE REALIZED OUTCOME, attached here because this is the only place that holds both
+       * the hand and its decisions. Derived - the corpus records no pot award, but the award
+       * follows from the action sequence, the board and whatever was shown, which is exactly
+       * what `handOutcome` reconstructs (side pots, uncalled returns and all).
+       *
+       * It NEVER guesses: an underivable hand comes back `{resolved:false, reason}` and every
+       * outcome column on its rows stays blank rather than being filled with a plausible
+       * number. A blank is a fact about the record; an estimate would be a fact about us.
+       *
+       * Every column it feeds is in the `outcome` group, so the induction cannot condition on
+       * it - conditioning a rule on how the hand turned out is fitting the future, and the
+       * gate that holds `cards` and `made_hand` out enumerates the group dynamically, so it
+       * covers these the moment they exist.
+       */
+      const outcome = resolveHandOutcome(h);
+      for (const d of ds) {
+        d.outcome = outcome.resolved
+          ? {
+            net: outcome.netBySeat?.[seat] ?? null,
+            won: Array.isArray(outcome.winners) ? outcome.winners.map(String).includes(String(seat)) : null,
+            potBB: outcome.potBB ?? null,
+            wentToShowdown: !!outcome.wentToShowdown,
+          }
+          : { unresolved: outcome.reason };
+      }
       fileOfHand.set(h, f.path);
       handsOfVillain.push({ h, seat });
       decisions.push(...ds);

@@ -224,6 +224,15 @@ footer code{font-size:12.5px}
   .act{grid-template-columns:66px 1fr 38px 54px; }
   .act-kn{display:none}
 }
+.census{display:flex;width:100%;height:2.2rem;border-radius:3px;overflow:hidden;margin:1.1rem 0 .4rem}
+.census .cs{display:flex;align-items:center;justify-content:center;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.cs-detectable{background:#1f5f3f;color:#dff3e6}
+.cs-partial{background:#7a5c17;color:#f6ecd0}
+.cs-blind{background:#6e2020;color:#f7dcdc}
+ul.caps{list-style:none;padding:0;margin:.6rem 0;display:grid;gap:.3rem}
+ul.caps li{padding:.32rem .5rem;border-left:3px solid transparent;font-size:.85rem}
+ul.caps li.cap-have{border-left-color:#2f7a52}
+ul.caps li.cap-miss{border-left-color:#8a2a2a}
 </style>
 
 <div class="wrap">
@@ -259,9 +268,9 @@ footer code{font-size:12.5px}
 <section data-section="scoring">
   <h2 class="sec">How to read the score</h2>
   <div class="col">
-    <p>Coverage is <strong>100%</strong> — but that is true by construction, not an achievement. Every decision falls into some leaf, so coverage can never be anything else. It is not evidence.</p>
+    <p>Coverage is <strong>{{COVERAGE}}%</strong> &#8212; but that is true by construction, not an achievement. Every decision falls into some leaf, so coverage can never be anything else. It is not evidence.</p>
     <p>What carries information is <strong>rule count</strong>. {{RULES}} rules reproduce {{DECISIONS}} decisions at {{ACCURACY}}% accuracy; that ratio is the compression, and compression is the claim. Accuracy on its own is also not evidence — a rule that says "when the price is bad, he folds" is right nine times in ten because folding is what mostly happens.</p>
-    <p>So the honest read is: <em>eighteen statements reproduce this player</em>. The rest of this page is about where those eighteen stop working.</p>
+    <p>So the honest read is: <em>{{RULES}} statements reproduce this player</em>. The rest of this page is about where those {{RULES}} stop working.</p>
   </div>
 </section>
 
@@ -287,10 +296,8 @@ footer code{font-size:12.5px}
   <h2 class="sec">What it does not explain</h2>
   <p class="sec-sub">This is the part that matters. Coverage of 100% hides two kinds of failure, and both are reported here as content rather than as a footnote.</p>
   <div class="col">
-    <h3>Two rules are unresolved — {{UNRESN}} decisions</h3>
-    <p>One is marked <strong>needs more hands</strong>: something he can see genuinely separates his choices, and every way of cutting it lands below the sample floor. That is a sampling limit, and more of his hands would close it.</p>
-    <p>The other is marked <strong>needs his cards</strong>: nothing observable separates the choices, but the hands he happened to show <em>do</em>. No amount of extra corpus fixes this one — it needs the range-inference layer, which does not exist yet.</p>
-    {{THINBLOCK}}
+    {{UNRESBLOCK}}
+{{THINBLOCK}}
   </div>
 </section>
 
@@ -351,6 +358,22 @@ footer code{font-size:12.5px}
   </div>
 </section>
 
+
+<section data-section="terminal">
+  <h2 class="sec">What his folds prove</h2>
+  <p class="sec-sub">Cards are visible on a small, survivor-filtered slice of his decisions. The action that ENDS a hand is visible on all of them &#8212; and it is a statement about what he did not hold. When the draw completes and he folds to a bet, he does not have it. Not probably: the combinations are enumerable and they are gone.</p>
+  {{TERMINAL}}
+  <div class="col">
+    <p>These three are deliberately never pooled, because they are different kinds of claim. An <strong>exclusion</strong> is a fact about the fold and assumes nothing about him. A <strong>prior</strong> is a read about him, only as good as the showdowns behind it, which is why its count travels with it. The <strong>contrast</strong> assumes nothing at all &#8212; it is two frequencies split on an event that happened on the table, which makes it the cleanest evidence on this page.</p>
+  </div>
+</section>
+
+<section data-section="detectability">
+  <h2 class="sec">What this instrument could not have found</h2>
+  <p class="sec-sub">Every other measurement here asks what he did. This one asks what the machinery is blind to, and it is the only question whose answer does not depend on him at all. A dossier that reports no timing tell, no tilt and no opponent-specific adjustment reads as a description of a stable player &#8212; and would read exactly the same if the record simply had no timestamps, no session marks and no opponent ids. Those are opposite in meaning and identical on the page.</p>
+  {{DETECTABILITY}}
+</section>
+
 <section data-section="mechanisms">
   <h2 class="sec">What is actually happening in each spot</h2>
   <p class="sec-sub">A frequency is not an explanation. Each mechanism below was written by an analyst given that one spot&#8217;s decisions and nothing else &#8212; no summary, no framing, no access to the rest of this page &#8212; so it can disagree with the ruleset rather than restate it.</p>
@@ -377,8 +400,8 @@ footer code{font-size:12.5px}
 </section>
 
 <footer data-section="provenance">
-  <p>Generated from <code>.tmp-arch/profiles-fixed/SO0OmHLLvkJp.json</code> and <code>.tmp-arch/range-charts.json</code>. Every figure on this page is read from those files at build time.</p>
-  <p>Procedure: <code>VILLAIN=&lt;id&gt; node scripts/villainArchetype/profileVillain.mjs</code> · schema v9 · full local corpus, 1,756 files.</p>
+  <p>Generated from <code>{{PROFILEPATH}}</code> and <code>{{CHARTPATH}}</code>. Every figure on this page is read from those files at build time.</p>
+  <p>Procedure: <code>VILLAIN={{PID}} node scripts/villainArchetype/profileVillain.mjs</code> &#183; decision schema v{{SCHEMA}} &#183; {{CORPUSFILES}} corpus file(s) contributed his hands.</p>
 </footer>
 
 </div>

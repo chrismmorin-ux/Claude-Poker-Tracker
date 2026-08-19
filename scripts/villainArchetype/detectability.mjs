@@ -62,9 +62,21 @@ export const CAPABILITIES = {
       + 'across all of them and a flat aggregate can hide a player he targets' },
   'opponent-stats': { columns: [], absent: true,
     why: 'requires opponent identity first, then their own measured frequencies' },
-  'hand-outcome': { columns: [], absent: true,
-    why: 'nothing records who won the pot or how much; every EV, leak and payoff question is '
-      + 'therefore unanswerable from this record' },
+  /**
+   * WAS DECLARED ABSENT, AND WAS NOT. This entry read "nothing records who won the pot or how
+   * much; every EV, leak and payoff question is therefore unanswerable from this record", and
+   * on that sentence 43 of 128 behaviours - a third of the register - were written off as
+   * unreachable, with the fix filed as a corpus-extraction project.
+   *
+   * It was never tested. `handOutcome.mjs` had already shipped, the adapter was already
+   * emitting the debit side for it, and measured against villain 1 it resolves 2,703 of 2,704
+   * hands with a zero-sum residual of 0.0000 bb. The claim was true of the raw file and false
+   * of the pipeline, and nothing in either place forced those two statements to meet.
+   *
+   * Left as a live column check rather than flipped to a hardcoded `present`, so that if the
+   * wiring ever breaks the behaviours go blind again in the run that broke them.
+   */
+  'hand-outcome': { columns: ['won', 'net_bb', 'final_pot_bb'] },
   'hand-ordering': { columns: ['hand'], ordered: true,
     why: 'hand ids exist and sort, so before/after comparisons are possible in principle' },
   'session-boundary': { columns: [], absent: true,

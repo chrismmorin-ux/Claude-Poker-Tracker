@@ -228,6 +228,9 @@ const explainerBlock = !explainers || !explainers.length
  * a page that reads clean while its instrument has named faults is the more misleading artifact.
  */
 const FAULTS = [
+  ['A capability was declared absent in prose, and was not', 'The detectability census carried <code>hand-outcome</code> as ABSENT with the reason "nothing records who won the pot or how much", and on that one untested sentence 43 of 128 behaviours were written off as unreachable and the fix was filed as a corpus-extraction project. It was true of the raw file and false of the pipeline: <code>handOutcome.mjs</code> had already shipped and the adapter was already emitting the debit side for it. Measured, it resolves 2,703 of villain 1&#8217;s 2,704 hands with a zero-sum residual of 0.0000bb. Wiring it moved the census from 60 blind to 25.', 'confirmed, fixed'],
+  ['The procedure ran its own copy of the one loader', '<code>loadVillain.mjs</code> exists because the same twelve-line load was re-typed in four scripts and one copy carried a 4GB OOM. <code>profileVillain</code> &#8212; the procedure &#8212; still held its own copy, so the module governed every script except the one that matters. Two consequences: the outcome attachment landed in a function the profile never called, and every named run scanned the corpus twice, ranking players it then discarded.', 'confirmed, fixed'],
+  ['Four gates passed on an empty set', 'The first outcome gates reported pass with "0 of 0 hands" while the thing they check had never run. A gate that clears a population of zero is not a gate; it is a green light with no circuit behind it. Each now requires its population to be non-empty, and a separate gate names the attachment itself. Found here only because the census scores a present-but-always-null column as absent.', 'confirmed, fixed'],
   ['`acted_before` and `to_act_after` are seat-order, not action-state', 'Both count players by where they SIT, while the legend describes who has yet to act. A small blind who checks, gets bet into, and acts again reads `acted_before = 0`. Measured: 166 decisions on villain 1 and 466 on villain 2 are "first to act" while facing a bet, and ~6.7% of rows disagree with `closes`. One root cause, two mislabelled columns.', 'confirmed'],
   ['`faced_agg_prev` fires where no aggression happened', 'The flag reads "I put money in last street", not "I faced a bet or raise" — 38 rows on villain 1 sit in limped pots, which contain no preflop raise. On flop rows it effectively encodes "am I the big blind" rather than anything about aggression.', 'confirmed'],
   ['`callers_ahead` ignores limpers', 'Zero on 385 villain-1 and 894 villain-2 rows that have limpers ahead. Limpers have called the big blind; a reader treating this as "opponents already in" sees a heads-up-shaped spot that is not one.', 'confirmed'],
@@ -304,11 +307,167 @@ const strengthBlock = strengthRows
   : '<p class="missing" data-empty="strength">No hand-strength distribution was computed for '
     + 'this villain.</p>';
 
+
+/**
+ * THE TERMINAL-ACTION INFERENCE - what he did NOT hold, read off the action that ended the hand.
+ *
+ * FOUNDER, 2026-08-19: *"villain folds when a flush draw actually hits and is facing a bet. HE
+ * DOES NOT HAVE THE NUT FLUSH ... we just nailed his behavior without needing to see his cards."*
+ *
+ * This section exists because the layer that computes it was ALREADY RUNNING AND BEING THROWN
+ * AWAY. annotate() was called on every profile run and bound to a local that nothing read, so
+ * the pass was paid for and the answer discarded - the exact shape of a capability that ships
+ * inert. A renderer is what stops that recurring: an unread field is invisible, and an empty
+ * section on a published page is not.
+ *
+ * The three quantities are NEVER pooled, because they are different kinds of claim. An exclusion
+ * is a fact about the fold. A prior is a read about him. The contrast assumes nothing at all.
+ */
+const inf = prof.inference;
+const terminalBlock = !inf
+  ? '<p class="missing" data-empty="terminal">This profile predates the terminal-action inference '
+    + 'layer. Re-run the procedure to populate it.</p>'
+  : (() => {
+    const exRows = (inf.exclusions || []).map((e) => '<tr>'
+      + '<th scope="row">' + esc(e.street) + '</th>'
+      + '<td class="num dim">' + e.n + '</td>'
+      + '<td class="num dim">' + e.exact + '</td>'
+      + '<td class="num">' + pct(e.meanExcluded) + '%</td>'
+      + '<td class="num">' + pct(e.meanSurviving) + '%</td>'
+      + '</tr>').join('');
+    const exTable = exRows
+      ? '<div class="scroll"><table class="strength"><thead><tr><th>Street</th>'
+        + '<th>Folds facing a bet</th><th>of which exact</th><th>Range excluded</th>'
+        + '<th>Range surviving</th></tr></thead><tbody>' + exRows + '</tbody></table></div>'
+      : '<p class="dim">He never folded facing a bet on a board this instrument could read.</p>';
+
+    const prRows = Object.entries(inf.prior || {}).map(([act, v]) => '<tr>'
+      + '<th scope="row">I ' + esc(act) + '</th>'
+      + '<td class="num dim">' + v.n + '</td>'
+      + '<td class="num">' + pct(v.value) + '%</td>'
+      + '<td class="num">' + pct(v.draw) + '%</td>'
+      + '<td class="num">' + pct(v.air) + '%</td>'
+      + '</tr>').join('');
+    const prTable = prRows
+      ? '<div class="scroll"><table class="strength"><thead><tr><th>When he</th>'
+        + '<th>Hands shown</th><th>Top pair+</th><th>On a draw</th><th>Air</th>'
+        + '</tr></thead><tbody>' + prRows + '</tbody></table></div>'
+      : '<p class="dim">No action of his cleared the showdown floor, so no prior is stated at '
+        + 'all. Stated properly, or not stated.</p>';
+
+    const c = inf.contrast || {};
+    const cRow = (label, v) => (v ? '<tr>'
+      + '<th scope="row">' + label + '</th>'
+      + '<td class="num dim">' + v.n + '</td>'
+      + '<td class="num">' + pct(v.aggression) + '%</td>'
+      + '<td class="num dim">' + (v.aggressionCI
+        ? pct(v.aggressionCI[0], 0) + EN + pct(v.aggressionCI[1], 0) : '') + '</td>'
+      + '<td class="num">' + pct(v.passive) + '%</td>'
+      + '<td class="num">' + pct(v.fold) + '%</td>'
+      + '</tr>' : '');
+    const cRows = cRow('The draw got there', c.completed) + cRow('The draw bricked', c.missed);
+    const swing = (c.completed && c.missed)
+      ? (() => {
+        const d = c.missed.aggression - c.completed.aggression;
+        const a = c.completed.aggressionCI; const b = c.missed.aggressionCI;
+        // Overlapping intervals mean the gap is not separated at this sample. Say so, in the
+        // sentence, rather than quoting the point estimate as though it were the finding.
+        const separated = a && b && (b[0] > a[1] || a[0] > b[1]);
+        const direction = d > 0 ? 'bricks' : 'gets there';
+        return '<p>' + (Math.abs(d) < 0.02
+          ? 'He does not measurably change gear on the card that resolves the draw.'
+          : separated
+            ? 'He is <strong>' + pct(Math.abs(d)) + ' points ' + (d > 0 ? 'more' : 'less')
+              + '</strong> aggressive when the draw <strong>' + direction + '</strong> than when '
+              + 'it does not, and the two intervals do not overlap. No range model and no shown '
+              + 'card was needed for that ' + EM + ' it is two frequencies split on an event that '
+              + 'happened on the table.'
+            : 'The point estimates differ by ' + pct(Math.abs(d)) + ' points in the direction of '
+              + 'more aggression when the draw <strong>' + direction + '</strong>, but the two '
+              + 'intervals OVERLAP, so this sample does not separate them. It is a direction to '
+              + 'test on more hands, not a measured difference, and it is reported here rather '
+              + 'than quoted as a finding.') + '</p>';
+      })()
+      : '<p class="dim">One side of the contrast is empty, so no comparison is stated.</p>';
+    const cTable = cRows
+      ? '<div class="scroll"><table class="strength"><thead><tr><th>On the card that resolved it</th>'
+        + '<th>Decisions</th><th>He bets or raises</th><th>95% interval</th>'
+        + '<th>He calls or checks</th><th>He folds</th>'
+        + '</tr></thead><tbody>' + cRows + '</tbody></table></div>' + swing
+      : '<p class="dim">No decision in the record followed a street where a draw was live.</p>';
+
+    return '<h3>What a fold proves</h3>'
+      + '<p>He folded facing a bet on <strong class="num">' + inf.excludedDecisions + '</strong> '
+      + 'decisions. Nobody folds the effective nuts to a single bet, so those combinations leave '
+      + 'his range at that node ' + EM + ' not probably, enumerably. And the exclusion compounds: '
+      + 'one made on the turn still binds on the river.</p>'
+      + exTable
+      + '<h3>What a bet of his implies</h3>'
+      + '<p>Soft, and labelled soft. His own showdowns say what an action of his has meant, and '
+      + 'the count that rests on is carried with it so you can discount it. Applied to '
+      + '<strong class="num">' + inf.impliedDecisions + '</strong> of his bets and raises.</p>'
+      + prTable
+      + '<h3>The contrast that assumes nothing</h3>'
+      + cTable;
+  })();
+
+/**
+ * THE DETECTABILITY CENSUS - what this instrument is blind to, independent of the villain.
+ *
+ * The only question on this page whose answer does not depend on the subject at all, and the
+ * one that decides how everything else here should be read. A dossier reporting no timing tell,
+ * no tilt and no opponent-specific adjustment describes a stable, unexploitable player - and
+ * reads IDENTICALLY when the record simply has no timestamps, no session marks and no opponent
+ * ids. Those are opposite in meaning and indistinguishable on a page that omits this section.
+ */
+const det = prof.detectability;
+const detectabilityBlock = !det
+  ? '<p class="missing" data-empty="detectability">This profile predates the detectability '
+    + 'census. Re-run the procedure to populate it.</p>'
+  : (() => {
+    const share = (k) => pct(det.counts[k] / det.total, 0);
+    const bar = '<div class="census">'
+      + '<div class="cs cs-detectable" style="width:' + share('detectable') + '%"><span>'
+      + det.counts.detectable + ' detectable</span></div>'
+      + '<div class="cs cs-partial" style="width:' + share('partial') + '%"><span>'
+      + det.counts.partial + ' partial</span></div>'
+      + '<div class="cs cs-blind" style="width:' + share('blind') + '%"><span>'
+      + det.counts.blind + ' BLIND</span></div>'
+      + '</div>';
+    const costRows = (det.cost || []).map((c) => '<tr>'
+      + '<th scope="row"><code>' + esc(c.capability) + '</code></th>'
+      + '<td class="num">' + c.behaviours + '</td>'
+      + '<td>' + esc(c.why) + '</td>'
+      + '<td class="dim">' + esc((c.examples || []).slice(0, 2).join('; ')) + '</td>'
+      + '</tr>').join('');
+    const caps = (det.capabilities || []).map((c) => '<li class="'
+      + (c.present ? 'cap-have' : 'cap-miss') + '"><code>' + esc(c.name) + '</code>'
+      + (c.present ? '' : ' <span class="dim">' + esc(c.why || '') + '</span>') + '</li>').join('');
+    const top = (det.cost || [])[0];
+    return '<p>Of <strong class="num">' + det.total + '</strong> enumerated behaviours a villain '
+      + 'could have, this instrument could have FOUND <strong>' + share('detectable') + '%</strong>. '
+      + '<strong>' + share('blind') + '%</strong> could not have been found even if he did them '
+      + 'every hand. So a zero on this page is three different facts ' + EM + ' observed-zero, '
+      + 'unexamined, or dropped ' + EM + ' and this section refuses to collapse them.</p>'
+      + bar
+      + (top ? '<p class="flag">The largest single cause is <code>' + esc(top.capability) + '</code>, '
+        + 'which accounts for ' + top.behaviours + ' of the ' + det.counts.blind + ' blind '
+        + 'behaviours. Its absence is a property of the record, not of him.</p>' : '')
+      + '<div class="scroll"><table class="faults"><thead><tr><th>Missing capability</th>'
+      + '<th>Behaviours lost</th><th>Why</th><th>For example</th></tr></thead><tbody>'
+      + costRows + '</tbody></table></div>'
+      + '<h3>What the record does and does not carry</h3>'
+      + '<ul class="caps">' + caps + '</ul>';
+  })();
+
 const subs = {
   HANDS: prof.hands.toLocaleString(),
   DECISIONS: prof.decisions.toLocaleString(),
   RULES: String(prof.rules.length),
   ACCURACY: pct(prof.accuracy),
+  // Read, not asserted. The template said a flat "100%" and "eighteen statements" while the
+  // page beside it reported 25 rules - a number the page itself contradicted.
+  COVERAGE: pct(prof.coverage),
   CARDPCT: pct(shownTotal / prof.decisions),
   BLINDPCT: pct(1 - shownTotal / prof.decisions),
   SHOWNTOTAL: String(shownTotal),
@@ -325,6 +484,31 @@ const subs = {
   // "0 rule is too thin ... its interval is wider than 30 points" the moment the all-in fix
   // tightened the last one. A page that states a number it also contradicts is worse than one
   // that omits the section.
+  /**
+   * Written FROM the counts. The template used to state "Two rules are unresolved" and then
+   * describe one of each kind; when the correction to the card test removed the needs-cards
+   * verdict entirely, the page would have gone on describing a rule it no longer contained.
+   */
+  UNRESBLOCK: (() => {
+    const hidden = unresolvedRules.filter((r) => r.verdict === 'hidden-cond');
+    const cards = unresolvedRules.filter((r) => r.verdict === 'needs-cards');
+    const k = unresolvedRules.length;
+    if (!k) {
+      return '<h3>Every rule resolved</h3><p>No rule came back needing more hands or needing his cards. That is a statement about this ruleset, not a claim that nothing is hidden &#8212; the search that produced it is described under the instrument checks.</p>';
+    }
+    const head = '<h3>' + (k === 1 ? 'One rule is unresolved' : k + ' rules are unresolved')
+      + ' &#8212; ' + unresolvedN.toLocaleString() + ' decisions</h3>';
+    const parts = [];
+    if (hidden.length) {
+      parts.push('<p>' + (hidden.length === 1 ? 'One is' : hidden.length + ' are')
+        + ' marked <strong>needs more hands</strong>: something he can see genuinely separates his choices, and every way of cutting it lands below the sample floor. That is a sampling limit, and more of his hands would close it.</p>');
+    }
+    if (cards.length) {
+      parts.push('<p>' + (cards.length === 1 ? 'One is' : cards.length + ' are')
+        + ' marked <strong>needs his cards</strong>: nothing observable separated the choices while the hands he happened to show did. Read that verdict carefully. It is the one conclusion on this page that says more corpus cannot help, and until this run it was reached by a test held to a threshold dozens of times easier than the observable features it was competing against. Both sides are now corrected together, and analysts given these leaves blind found visible separators in two of the spots that previously carried it.</p>');
+    }
+    return head + parts.join('');
+  })(),
   THINBLOCK: thin.length === 0
     ? '<h3>No rule is too thin to trust</h3>'
       + '<p>Every one of the ' + prof.rules.length + ' rules has a 95% interval narrower than 30 '
@@ -347,6 +531,18 @@ const subs = {
   FAULTS: faultRows,
   CHARACTER: characterBlock,
   STRENGTH: strengthBlock,
+  TERMINAL: terminalBlock,
+  DETECTABILITY: detectabilityBlock,
+  /**
+   * PROVENANCE, READ rather than typed. The footer used to name a hardcoded profile path and
+   * "schema v9" while the runs producing the page were on v12 - a page whose own account of
+   * where it came from was wrong by three schema versions. Every other figure here is read
+   * from the record; there was no reason this one was not.
+   */
+  PROFILEPATH: esc(process.env.PROFILE),
+  CHARTPATH: esc(process.env.CHARTS),
+  SCHEMA: String(prof.schema),
+  CORPUSFILES: String(prof.sourcePaths ? prof.sourcePaths.length : 0),
 };
 
 /**
@@ -388,7 +584,7 @@ const encodePage = (page) => {
  * Changing the shape means editing this list and bumping the version, which is a deliberate act
  * that shows up in a diff. That is the whole point.
  */
-const DOSSIER_SHAPE_VERSION = 3;
+const DOSSIER_SHAPE_VERSION = 4;
 const SECTIONS = [
   { id: 'masthead', required: true, minChars: 400, holds: 'who he is, and the caveat that binds every number below' },
   { id: 'vitals', required: true, minChars: 120, holds: 'hands, decisions, rules, accuracy, cards seen' },
@@ -402,6 +598,8 @@ const SECTIONS = [
   { id: 'mechanisms', required: true, minChars: 200, holds: 'WHY he does it, per spot, written without sight of the ruleset' },
   { id: 'faults', required: true, minChars: 400, holds: 'known defects in the instrument behind the page' },
   { id: 'blindness', required: true, minChars: 300, holds: 'what we cannot see, and why the shown hands are not a sample' },
+  { id: 'terminal', required: true, minChars: 500, holds: 'what a fold PROVES, what a bet implies, and the draw contrast - the channel that works on every hand rather than the 7-9% that show down' },
+  { id: 'detectability', required: true, minChars: 500, holds: 'the census of behaviours this instrument could not have found even if he had them' },
   { id: 'gates', required: true, minChars: 300, holds: 'the known-answer checks the run had to pass' },
   { id: 'provenance', required: true, minChars: 100, holds: 'the files and command this page was built from' },
 ];

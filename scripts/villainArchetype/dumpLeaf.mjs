@@ -16,6 +16,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { loadVillain } from './loadVillain.mjs';
 import { induce } from './induceCore.mjs';
+import { enrichDecisions } from './enrichDecisions.mjs';
 import { toRow, renderTable, legend, header, SCHEMA_VERSION } from './decisionSchema.mjs';
 
 const MAX_FILES = Number(process.env.MAX_FILES || 120);
@@ -37,6 +38,20 @@ const tableSizes = (pool) => {
   return [...m.entries()].sort((a, b) => a[0] - b[0])
     .map(([k, v]) => `${k}-handed ${(100 * v / pool.length).toFixed(0)}%`).join(', ');
 };
+
+/**
+ * ENRICH BEFORE INDUCING, or these are not the dossier’s leaves.
+ *
+ * This step was missing, and the effect was not cosmetic. The inducer splits on the `str_*`
+ * columns, so without them it produced a DIFFERENT ruleset from the one the profile emits -
+ * measured on villain 2, four of the nine rules needing an explanation had no leaf here with
+ * the same population, and two pairs of distinct rules collided onto one file.
+ *
+ * These files are the briefs an explainer agent is given, and `buildDossier` matches the
+ * answer back to a rule by its condition string. A mismatched dump therefore lets the
+ * "nothing unexplained may ship" gate be satisfied by an explanation of another spot.
+ */
+enrichDecisions(decisions);
 
 const { rules } = induce(decisions);
 mkdirSync(OUT, { recursive: true });

@@ -31,7 +31,7 @@
 
 const yn = (v) => v == null ? '-' : (v ? 'yes' : 'no');
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 /**
  * Every field, in the order it appears in the table.
@@ -203,6 +203,25 @@ export const FIELDS = [
   { name: 'made_hand', group: 'outcome', get: d => d.handClass
     ? ([d.handClass.pairClass, d.handClass.kicker && d.handClass.kicker + 'kick'].filter(Boolean).join('/') || d.handClass.category)
     : '-', describe: 'what I actually held, when shown' },
+
+  // ── HOW THE HAND ACTUALLY ENDED (v13) ──
+  //
+  // Derived by `handOutcome.mjs`, which the census wrongly reported as unavailable: the raw
+  // PHH file records no pot award, but the award is DERIVABLE from the action sequence, the
+  // board and the shown cards, and 99.96% of one villain's hands resolve with a zero-sum
+  // residual of 0.0000 bb. The false half of that claim cost 43 of 128 behaviours.
+  //
+  // These are `outcome` and therefore never conditionable. They exist so a behaviour can be
+  // SCORED against what the chips did - "does he fold too much on the turn" is a frequency
+  // question until it is paired with what folding earned him, and then it is a leak.
+  //
+  // Blank means the outcome was not derivable for that hand, never that it was zero. The
+  // census counts a column that is present and always null as ABSENT, so a break here shows
+  // up as lost detectability in the run that broke it rather than as a silent zero.
+  { name: 'won', group: 'outcome', get: d => (d.outcome && d.outcome.won != null ? yn(d.outcome.won) : '-'), describe: 'did I take any of the pot' },
+  { name: 'net_bb', group: 'outcome', get: d => (d.outcome && d.outcome.net != null ? +d.outcome.net.toFixed(2) : '-'), describe: 'my realized net for the whole hand, in big blinds' },
+  { name: 'final_pot_bb', group: 'outcome', get: d => (d.outcome && d.outcome.potBB != null ? +Number(d.outcome.potBB).toFixed(2) : '-'), describe: 'the pot this hand finally played for' },
+  { name: 'showdown', group: 'outcome', get: d => (d.outcome && d.outcome.unresolved == null ? yn(d.outcome.wentToShowdown) : '-'), describe: 'did the hand reach a contested showdown' },
 ];
 
 /** The fields a rule may condition on. Anything else is either the answer or the future. */

@@ -34,13 +34,11 @@
  * confidence interval is for.
  */
 
-import { writeFileSync, mkdirSync } from 'node:fs';
-import { discoverCorpusFiles, selectCorpusFiles, resolveCorpusRoot } from '../backtest/corpusFiles.mjs';
-import { iterAppHands } from '../backtest/phhAdapter.mjs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { loadVillain } from './loadVillain.mjs';
 import { labelDecisions } from './decisionLabeler.mjs';
-import { strengthAt } from './handStrength.mjs';
-import { annotate } from './rangeInference.mjs';
-import { fillToWidth } from './buildRangeCharts.mjs';
+import { enrichDecisions } from './enrichDecisions.mjs';
+import { measureCapabilities, scoreBehaviours, CAPABILITIES } from './detectability.mjs';
 import { toRow, header, SCHEMA_VERSION, SITUATION_FIELDS, FIELDS } from './decisionSchema.mjs';
 
 const MAX_FILES = Number(process.env.MAX_FILES || 120);
@@ -49,148 +47,30 @@ const RANK = Number(process.env.RANK || 1);          // 1 = most hands, 2 = next
 const OUT = process.env.OUT || '.tmp-arch/profiles';
 
 // ─── 1. LOAD ─────────────────────────────────────────────────────────────────
-const root = resolveCorpusRoot();
-const { files } = selectCorpusFiles(await discoverCorpusFiles({ root }), { maxFiles: MAX_FILES });
+/**
+ * ONE LOADER. Two passes, and pass 1 is skipped entirely when the villain is named - which is
+ * every run that matters. Memory is O(his hands), not O(corpus), so MAX_FILES makes a run
+ * quick and never makes it possible.
+ *
+ * This used to be an inline copy of `loadVillain`, and the copy is what the module exists to
+ * delete: the OOM it was written to fix recurred verbatim in a second script for exactly that
+ * reason. The copy also never skipped the ranking pass, so every named run scanned the corpus
+ * twice to rank players it then discarded.
+ *
+ * The loader is also where the realized hand outcome is attached, so switching to it is what
+ * puts `won` / `net_bb` / `final_pot_bb` / `showdown` on these rows at all.
+ */
+const { pid, files, decisions, handsOfVillain, fileOfHand } = await loadVillain({
+  maxFiles: MAX_FILES, villain: TARGET, rank: RANK,
+});
 
 /**
- * TWO PASSES, BECAUSE RETAINING THE CORPUS IS WHAT CAPPED THE SAMPLE.
- *
- * This used to hold every parsed hand in `handsById` so it could rank villains by hand count
- * and only then pick one. That is fine at MAX_FILES=120 and fatal at the full corpus: the run
- * died with `Ineffective mark-compacts near heap limit` at ~4GB, having read 1,756 files to
- * build a list of which it needed 69.
- *
- * The cost of that was not a crash, it was a SILENT CEILING ON EVIDENCE. Every figure in this
- * profile was computed on a 6.8% slice, and the ladder question - does he really open the
- * button wider than under the gun - is decided by n and nothing else. An instrument that
- * cannot read the whole corpus answers "we cannot tell" for a reason that has nothing to do
- * with the villain.
- *
- * Pass 1 counts and retains NOTHING. Pass 2 re-reads and retains only the hands the chosen
- * villain actually sat in. Memory is now O(his hands), not O(corpus), so MAX_FILES exists to
- * make a run quick, never to make it possible. Re-parsing costs a second scan and buys the
- * whole corpus, which is the trade every time.
+ * ENRICHMENT, shared with `dumpLeaf` so the leaves a reader is handed are the leaves this
+ * profile induced. It fills the assumed arm of hand strength from his measured entry widths,
+ * back-propagates what each new card did to his range, and runs the terminal-action
+ * inference. See `enrichDecisions.mjs` for why it is a module rather than a block here.
  */
-const counts = new Map();
-for (const f of files) {
-  for await (const h of iterAppHands(f.path)) {
-    for (const p of Object.values(h.seatPlayers || {})) counts.set(p, (counts.get(p) || 0) + 1);
-  }
-}
-const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-const pid = TARGET || ranked[RANK - 1][0];
-
-// WHICH FILE each hand came from. Needed because the card's provenance must describe the hands
-// the card CONTAINS, not the slice that was scanned: villain 1's hands are all PokerStars while
-// the scan also covered Full Tilt, and stamping the scan's sites would put a site on his card
-// that he never played on.
-const fileOfHand = new Map();
-const decisions = [];
-const handsOfVillain = [];
-for (const f of files) {
-  for await (const h of iterAppHands(f.path)) {
-    const seat = Object.entries(h.seatPlayers || {}).find(([, p]) => p === pid)?.[0];
-    if (!seat) continue;
-    fileOfHand.set(h, f.path);
-    handsOfVillain.push({ h, seat });
-    decisions.push(...labelDecisions(h, seat));
-  }
-}
-
-/**
- * THE ASSUMED HALF OF HAND STRENGTH, filled in once his widths are known.
- *
- * The labeller already computed the EXACT arm - big blind in a limped pot, where his range is
- * every hand and the answer needs nothing but the board. This arm needs his MEASURED entry
- * widths, which only exist after a full pass over his hands, so it necessarily happens here and
- * not there.
- *
- * The widths are measured from his own decisions; only the ORDERING that fills them is a
- * convention, and every row it touches is stamped `assumed` so the two can never be pooled by
- * accident. Filling before induction is the point: the founder's instruction was that the
- * strength buckets be fed to whoever is looking for the rules, and that means the inducer and
- * the leaf dumps both see them, not a separate report nobody joins back.
- */
-const entryWidth = (() => {
-  const bucket = new Map();
-  const add = (key, hit) => {
-    if (!bucket.has(key)) bucket.set(key, { k: 0, n: 0 });
-    const b = bucket.get(key); b.n++; if (hit) b.k++;
-  };
-  for (const d of decisions) {
-    if (d.street !== 'preflop') continue;
-    if (d.firstIn === true && d.canRaise) add(`open-${d.position}@${d.seatsDealt}`, d.action === 'raise');
-    else if (d.raisesFaced === 1) add('vs-raise', d.action === 'call' || d.action === 'raise');
-    else if (d.raisesFaced === 0 && (d.limpersAhead ?? 0) > 0) add('iso', d.action !== 'fold');
-  }
-  const eqKey = (pos) => (pos === 'SB' ? 'SB' : pos === 'BB' ? 'BB'
-    : (pos === 'BTN' || pos === 'CO') ? 'LATE' : pos === 'HJ' ? 'MIDDLE' : 'EARLY');
-  return (d) => {
-    const key = d.iAmLastPreflopAggressor ? `open-${d.position}@${d.seatsDealt}` : 'vs-raise';
-    const b = bucket.get(key) || bucket.get('vs-raise');
-    if (!b || b.n < 25 || !b.k) return null;
-    return { cells: fillToWidth(b.k / b.n, eqKey(d.position)).cells, basis: 'assumed' };
-  };
-})();
-
-let strengthFilled = 0;
-for (const d of decisions) {
-  if (d.strength) continue;
-  const s = strengthAt(d, entryWidth);
-  if (s) { d.strength = s; strengthFilled++; }
-}
-
-/**
- * BACK-PROPAGATION: what the new card DID to his range, not just what his range is.
- *
- * FOUNDER, 2026-08-19: *"nut changing turns and rivers when draws being made being a completely
- * different situation"*, and *"back propogated"*.
- *
- * A strength distribution read one street at a time cannot see the event that matters. A turn
- * that completes the flush does not merely change his range - it changes it ASYMMETRICALLY, and
- * whether he was the one drawing decides whether that card is worth a barrel or a shutdown. The
- * quantity is the DELTA, and it only exists once the same hand's streets are joined.
- *
- * Deltas are computed against the previous street OF THE SAME HAND, never against a pooled
- * average - two decisions on different boards have no shared baseline to difference.
- */
-const byHandStreet = new Map();
-for (const d of decisions) {
-  if (!d.strength) continue;
-  if (!byHandStreet.has(d.handId)) byHandStreet.set(d.handId, []);
-  byHandStreet.get(d.handId).push(d);
-}
-const STREET_ORDER = { flop: 0, turn: 1, river: 2 };
-let deltasFilled = 0;
-for (const rows of byHandStreet.values()) {
-  rows.sort((a, b) => (STREET_ORDER[a.street] ?? 9) - (STREET_ORDER[b.street] ?? 9) || a.order - b.order);
-  let prev = null;
-  for (const d of rows) {
-    if (prev && prev.street !== d.street && prev.strength.basis === d.strength.basis) {
-      d.strengthDelta = {
-        pct: +(d.strength.pctMean - prev.strength.pctMean).toFixed(2),
-        value: +(d.strength.value - prev.strength.value).toFixed(4),
-        draw: +(d.strength.realDraw - prev.strength.realDraw).toFixed(4),
-        // A card that removes far more draw than it adds value is a BRICK for his range; one
-        // that converts draw into value is a card that got there. The sign is the story.
-        completed: (prev.strength.realDraw - d.strength.realDraw) > 0.05
-          && (d.strength.value - prev.strength.value) > 0.02,
-      };
-      deltasFilled++;
-    }
-    if (prev === null || prev.street !== d.street) prev = d;
-  }
-}
-
-/**
- * INFERENCE FROM THE TERMINAL ACTION — run after strength and the street deltas exist.
- *
- * A hand that ends without a showdown still says what he did NOT have. This is the only channel
- * that works on every hand rather than on the 7-9% that reach a showdown, and it is why 43
- * behaviours that the detectability census reports as blind for want of an outcome are partly
- * reachable anyway.
- */
-const inference = annotate(decisions);
+const { inference } = enrichDecisions(decisions);
 
 console.log(`PROFILE — villain ${pid}`);
 console.log(`${handsOfVillain.length} hands · ${decisions.length} decisions · schema v${SCHEMA_VERSION}`);
@@ -439,6 +319,57 @@ gate('no outcome field is conditionable',
   outcomeNames.every(n => !SITUATION_FIELDS.includes(n)),
   outcomeNames.join(', ') + ' held out');
 
+// ── THE REALIZED OUTCOME (v13) ──
+//
+// Derived rather than recorded, so nothing in the corpus can contradict it. That is precisely
+// why it needs known answers: a wrong derivation is wrong silently, and every leak figure built
+// on it would inherit the error with no symptom at all.
+const outcomeRows = decisions.filter(d => d.outcome);
+const resolvedShare = decisions.length ? decisions.filter(d => d.outcome && d.outcome.unresolved == null).length / decisions.length : 0;
+// The realized outcome is DERIVED, so a low rate means the derivation broke, not that the
+// corpus is thin. Measured at 99.96% of hands on villain 1; the floor is set well below that
+// so a genuinely awkward villain passes and a broken attachment does not.
+gate('the realized outcome is attached', resolvedShare > 0.9,
+  `${(100 * resolvedShare).toFixed(2)}% of decisions carry a resolved outcome`);
+const resolvedRows = outcomeRows.filter(d => d.outcome.unresolved == null);
+
+// The net result is a fact about the HAND, so every decision inside one hand must carry the
+// same value. A per-decision net would mean the attachment is keyed wrong.
+const netByHand = new Map();
+let netDisagreements = 0;
+for (const d of resolvedRows) {
+  if (d.outcome.net == null) continue;
+  if (!netByHand.has(d.handId)) netByHand.set(d.handId, d.outcome.net);
+  else if (Math.abs(netByHand.get(d.handId) - d.outcome.net) > 1e-9) netDisagreements++;
+}
+gate('one hand has one realized result', netByHand.size > 0 && netDisagreements === 0,
+  `${netDisagreements} decisions disagreed with their own hand\u2019s net over ${netByHand.size} hands`);
+
+// A seat that folded cannot be awarded the pot. This is a rule of poker, not an inference, so
+// a single violation means the seat mapping between the outcome and the decision is wrong -
+// the exact failure that would silently credit one player with another player\u2019s winnings.
+const lastByHand = new Map();
+for (const d of resolvedRows) lastByHand.set(d.handId, d);
+const foldedButWon = [...lastByHand.values()].filter(d => d.action === 'fold' && d.outcome.won === true);
+gate('a hand he folded is never a hand he won', lastByHand.size > 0 && foldedButWon.length === 0,
+  `${foldedButWon.length} of ${lastByHand.size} hands ended in his fold and credited him the pot`);
+
+// A hand he folded costs him what he had already put in, so his net must be at most zero. The
+// one exception the game allows is a blind he folded having posted nothing extra, which is
+// still not positive. A positive net on a fold means the award is landing on the wrong seat.
+const foldedAndProfited = [...lastByHand.values()]
+  .filter(d => d.action === 'fold' && d.outcome.net != null && d.outcome.net > 1e-9);
+gate('folding never shows a profit', resolvedRows.length > 0 && foldedAndProfited.length === 0,
+  `${foldedAndProfited.length} folded hands reported a positive net`);
+
+// Not a pass/fail on the rate itself - a corpus can legitimately contain underivable hands.
+// What is gated is that they are NAMED: an unresolved hand must carry a reason, because the
+// alternative is a blank that reads as a zero.
+const unnamed = outcomeRows.filter(d => d.outcome.unresolved === true || d.outcome.unresolved === '');
+const unresolvedHands = new Set(outcomeRows.filter(d => d.outcome.unresolved != null).map(d => d.handId));
+gate('an underivable outcome is named, never blank', outcomeRows.length > 0 && unnamed.length === 0,
+  `${unresolvedHands.size} hand(s) unresolved of ${netByHand.size + unresolvedHands.size}, each with a reason`);
+
 // Money committed must count raises, not only calls — the bug that hid a 25bb bluff.
 const moneyIn = (ds) => ds.filter(d => d.street !== 'preflop')
   .reduce((s, d) => s + (d.action === 'call' ? (d.toCallBB || 0)
@@ -466,6 +397,51 @@ const safe = pid.replace(/[^A-Za-z0-9]/g, '').slice(0, 12);
 const rows = decisions.map(toRow);
 writeFileSync(`${OUT}/${safe}.tsv`,
   [header().join('\t'), ...rows.map(r => header().map(c => r[c]).join('\t'))].join('\n'));
+
+/**
+ * THE DETECTABILITY CENSUS - what this instrument could NOT have found, had he done it.
+ *
+ * Run HERE rather than as a separate CLI pass because a census computed from a different run's
+ * rows is a census of a different instrument. It reads the header and the rows just written, so
+ * a capability counts as present only if its columns exist AND carry values in THIS villain's
+ * data - the distinction that caught `suit_max` present-and-always-null for a whole run.
+ *
+ * It is emitted onto the profile for the same reason every other figure is: the dossier must
+ * READ it, never re-derive it. A page reporting "47% blind" while the record says something else
+ * is exactly the drift the shape schema exists to stop.
+ */
+const censusHeader = header();
+const censusRows = rows.map((r) => censusHeader.map((c) => r[c]));
+const capabilities = measureCapabilities(censusRows, censusHeader);
+const scoredBehaviours = scoreBehaviours(
+  JSON.parse(readFileSync(new URL('./behaviourRegistry.json', import.meta.url), 'utf8')).behaviours,
+  capabilities,
+);
+const censusCounts = { detectable: 0, partial: 0, blind: 0 };
+for (const b of scoredBehaviours) censusCounts[b.verdict]++;
+const blindnessCost = (() => {
+  const per = new Map();
+  for (const b of scoredBehaviours) {
+    if (b.verdict !== 'blind') continue;
+    for (const c of b.missing) {
+      if (!per.has(c)) per.set(c, { capability: c, behaviours: 0, why: CAPABILITIES[c]?.why || '', examples: [] });
+      const e = per.get(c);
+      e.behaviours++;
+      if (e.examples.length < 4) e.examples.push(b.name);
+    }
+  }
+  return [...per.values()].sort((a, b) => b.behaviours - a.behaviours);
+})();
+const detectability = {
+  total: scoredBehaviours.length,
+  counts: censusCounts,
+  capabilities: [...capabilities].map(([name, v]) => ({ name, present: v.present, why: v.why || null })),
+  cost: blindnessCost,
+};
+console.log('\nDETECTABILITY - ' + censusCounts.detectable + ' detectable, ' + censusCounts.partial
+  + ' partial, ' + censusCounts.blind + ' BLIND of ' + scoredBehaviours.length + ' behaviours');
+for (const c of blindnessCost.slice(0, 3)) console.log('  ' + String(c.behaviours).padStart(3) + '  ' + c.capability);
+
 
 // ─── 4. INDUCE, as MIXES with intervals ──────────────────────────────────────
 /**
@@ -617,6 +593,60 @@ writeFileSync(`${OUT}/${safe}.json`, JSON.stringify({
   tableSizes: [...decisions.reduce((m, d) => m.set(d.seatsDealt, (m.get(d.seatsDealt) || 0) + 1),
     new Map())].sort((a, b) => a[0] - b[0]).map(([seats, n]) => ({ seats, n, share: n / decisions.length })),
   gates: [...gates, ...postGates], coverage, accuracy,
+  /**
+   * WHAT THE INSTRUMENT COULD NOT HAVE FOUND. Carried on the record, not recomputed by the
+   * renderer, so the page and the run cannot disagree about how blind this profile is.
+   */
+  detectability,
+  /**
+   * INFERENCE FROM THE TERMINAL ACTION - the channel that works on every hand.
+   *
+   * This was computed on every run since the layer landed and then DISCARDED: the annotate()
+   * result was bound to a local that nothing read, so a capability that exists, runs, and costs
+   * a full pass over the decisions contributed nothing to any artifact. Emitting it is the fix;
+   * the dossier section that consumes it is what keeps it from going inert again.
+   *
+   * Three quantities, three different kinds of claim, kept separate on purpose:
+   *   exclusions - HARD. He folded facing a bet, so the nut classes are gone from his range.
+   *   prior      - SOFT. What his own showdowns say a bet of his means, carried with its n.
+   *   contrast   - MODEL-FREE. His aggression when a draw completed vs when it bricked.
+   */
+  inference: {
+    excludedDecisions: inference.excluded,
+    impliedDecisions: inference.implied,
+    prior: inference.prior,
+    /**
+     * The contrast, with an interval on the aggression rate of each arm. Stamped here rather
+     * than in the renderer for the same reason every other figure is: one place computes it,
+     * one place reads it, and the page cannot disagree with the run.
+     */
+    contrast: (() => {
+      const arm = (a) => (a ? { ...a, aggressionCI: wilson(a.aggressionK, a.n) } : null);
+      return { completed: arm(inference.contrast.completed), missed: arm(inference.contrast.missed) };
+    })(),
+    /**
+     * The fold exclusions aggregated by street. A fold on the turn excludes a share of his range
+     * that the river fold then compounds, so the streets are never pooled.
+     */
+    exclusions: (() => {
+      const g = new Map();
+      for (const d of decisions) {
+        if (!d.excluded) continue;
+        if (!g.has(d.street)) g.set(d.street, { street: d.street, n: 0, excluded: 0, exact: 0 });
+        const a = g.get(d.street);
+        a.n++; a.excluded += d.excluded.excludedShare;
+        if (d.excluded.basis === 'exact') a.exact++;
+      }
+      const ORDER = { flop: 0, turn: 1, river: 2 };
+      return [...g.values()]
+        .sort((x, y) => (ORDER[x.street] ?? 9) - (ORDER[y.street] ?? 9))
+        .map((a) => ({
+          street: a.street, n: a.n, exact: a.exact,
+          meanExcluded: +(a.excluded / a.n).toFixed(4),
+          meanSurviving: +(1 - a.excluded / a.n).toFixed(4),
+        }));
+    })(),
+  },
   rules: rules.map(r => {
     const [lo, hi] = wilson(r.k, r.n);
     return { n: r.n, k: r.k, action: r.action, kind: r.kind, verdict: r.verdict,

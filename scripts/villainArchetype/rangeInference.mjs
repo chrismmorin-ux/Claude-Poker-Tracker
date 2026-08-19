@@ -11,10 +11,14 @@
  * A FOLD IS EVIDENCE. That is the whole idea, and the schema had no way to hold it.
  * ─────────────────────────────────────────────────────────────────────────────────────────
  *
- * Cards are visible on 7-9% of decisions and survivor-filtered even there, so 43 of the 128
- * enumerated behaviours came back BLIND for want of an outcome. But a hand that ends without a
- * showdown is not information-free: the terminal action is a statement about what he did NOT
- * hold, and unlike a showdown it is available on EVERY hand.
+ * Cards are visible on 7-9% of decisions and survivor-filtered even there. But a hand that ends
+ * without a showdown is not information-free: the terminal action is a statement about what he
+ * did NOT hold, and unlike a showdown it is available on EVERY hand.
+ *
+ * (This docstring used to justify itself by "43 of the 128 behaviours came back BLIND for want of
+ * an outcome". That premise was FALSE - the outcome was derivable all along and is now wired in,
+ * moving the census from 60 blind to 25. The layer stands on its own merit regardless: it works
+ * on every hand, where a showdown works on one in fourteen.)
  *
  * When the flush completes and he folds to a bet, he does not hold the flush. Not "probably" -
  * the combos are enumerable and they are excluded. The same logic runs in reverse on a bet: if
@@ -123,8 +127,17 @@ export const drawCompletionContrast = (decisions) => {
     bucket.n++;
     if (bucket[d.action] !== undefined) bucket[d.action]++;
   }
+  /**
+   * COUNTS TRAVEL WITH RATES. The renderer cannot put an interval on 33.3% unless it knows
+   * that is 4 of 12, and a 33.3% quoted beside a 20.0% measured on 65 invites a comparison
+   * the sample does not support. Emitting k alongside the rate is what makes the interval
+   * derivable downstream instead of dropped.
+   */
   const rate = (c) => (c.n ? {
     n: c.n,
+    aggressionK: c.bet + c.raise,
+    foldK: c.fold,
+    passiveK: c.call + c.check,
     aggression: +((c.bet + c.raise) / c.n).toFixed(3),
     fold: +(c.fold / c.n).toFixed(3),
     passive: +((c.call + c.check) / c.n).toFixed(3),
