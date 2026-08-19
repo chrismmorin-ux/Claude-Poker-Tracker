@@ -27,7 +27,8 @@ const check = (name, hole, boardStr, want) => {
   const ok = Object.entries(want).every(([k, v]) => got[k] === v);
   if (!ok) failed++;
   console.log(`  ${ok ? 'pass' : 'FAIL'}  ${name.padEnd(46)} `
-    + `made=${got.made} draw=${got.draw} blocker=${got.blocker}`);
+    + `made=${got.made} draw=${got.draw}${got.nut ? ' [NUT]' : ''}`
+    + `${got.blocker ? ' BLOCKER' : ''} hit=${got.hitQuality}`);
 };
 
 console.log('made classes — a pair is named by WHICH board card it hit');
@@ -47,8 +48,11 @@ check('K3 with a flush draw is still bottom pair', 'K♥3♥', 'A♥7♥3♦', {
 check('...and carries the flush draw on the same row', 'K♥3♥', 'A♥7♥3♦', { draw: 'flush-draw' });
 
 console.log('\nflush draws — the nut draw is a different hand from the third-nut draw');
-check('AhKh on Qh7h2d is the NUT flush draw', 'A♥K♥', 'Q♥7♥2♦', { draw: 'flush-draw-nut' });
-check('KhJh on Qh7h2d is a non-nut flush draw', 'K♥J♥', 'Q♥7♥2♦', { draw: 'flush-draw' });
+// NUT-NESS IS A COMPOSING FIELD, not a name. It was baked into the draw label
+// (`flush-draw-nut`) until the label proved unable to express a nut-ended OPEN-ENDER, which is
+// a different hand from a nut flush draw and needs the same flag.
+check('AhKh on Qh7h2d is the NUT flush draw', 'A♥K♥', 'Q♥7♥2♦', { draw: 'flush-draw', nut: true });
+check('KhJh on Qh7h2d is a non-nut flush draw', 'K♥J♥', 'Q♥7♥2♦', { draw: 'flush-draw', nut: false });
 // One of the suit plus two on board is THREE, with two to come — a backdoor flush draw, and
 // the classifier was right where the first version of this expectation was not.
 check('one of the suit + two on board = backdoor', 'A♥K♦', 'Q♥7♥2♦', { draw: 'backdoor-flush' });
@@ -60,8 +64,13 @@ check('disconnected and unsuited really is nothing', 'K♥7♦', 'Q♠4♣2♦',
 console.log('\nstraight draws — open-ender, double gutshot, gutshot');
 check('JT on 9-8-2 is an open-ender', 'J♠T♦', '9♥8♣2♦', { draw: 'oesd' });
 check('T7 on 9-8-2 is an open-ender', 'T♠7♦', '9♥8♣2♦', { draw: 'oesd' });
-check('J9 on Q-8-2 is a gutshot', 'J♠9♦', 'Q♥8♣2♦', { draw: 'gutshot-nut-end' });
-check('T8 on J-7-2 needs the 9 only', 'T♠8♦', 'J♥7♣2♦', { draw: 'gutshot-nut-end' });
+check('J9 on Q-8-2 is a gutshot to the NUT end', 'J♠9♦', 'Q♥8♣2♦', { draw: 'gutshot', nut: true });
+// THE DOMINATED END. 98 on Q-J-2 makes 8-9-T-J-Q when the ten lands, and anyone holding A-K has
+// Broadway. The first implementation compared his out to his OWN other outs and called this the
+// nut end - inverting the read, since the nut end is a call to a big bet and this is a fold.
+check('98 on Q-J-2 draws to the DOMINATED end', '9♠8♦', 'Q♥J♣2♦', { draw: 'gutshot', nut: false });
+check('65 on 9-8-2 is dominated by any J-T', '6♠5♦', '9♥8♣2♦', { nut: false });
+check('76 on 9-8-2 has a nut end (the five)', '7♠6♦', '9♥8♣2♦', { draw: 'oesd', nut: true });
 
 console.log('\nbackdoor equity — the reason a hand continues with nothing yet');
 check('two hearts, one on board, two to come', 'K♥4♥', 'A♥7♣2♦', { draw: 'backdoor-flush' });
