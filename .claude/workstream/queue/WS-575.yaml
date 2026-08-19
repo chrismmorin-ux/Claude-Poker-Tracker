@@ -1,0 +1,91 @@
+id: "WS-575"
+title: "Completing depth-2 pushes hero to raise 98% of the time — the truncation was MASKING an aggression bias, not causing one"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 95
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  Found while testing the founder's objection that a better simulation must never score worse
+  than a naive one (WS-574). It is the more serious half of that investigation, and it is the
+  opposite of what "just let depth-2 finish" predicted.
+
+  ── MEASURED, 100 boards, PAIRED (same boards, same salts, only the clock changed) ──
+  `scripts/backtest/run-optimism-boards.mjs --boards 100 --arm depth-2plus --budget {2000,20000}`
+
+      budget    raise share   call+fold share
+      2000            84.5%             15.5%     <- shipped, 38% runout coverage
+      20000           98.0%              2.0%     <- full coverage
+
+  Two-proportion z = 4.78 unpaired, therefore conservative — the runs share their board draw.
+
+  For reference, from exploitEngine/CLAUDE.md: a 91.9% raise frequency facing aggression against
+  a pool at 12.5% is the DOCUMENTED PATHOLOGY that WS-402/WS-403 diagnosed and fixed, bringing
+  depth-1 from 90.0% to 82.3%. Completing depth-2 lands at 98.0% — worse than the defect that
+  work existed to remove.
+
+  ── THE FINDING, STATED PLAINLY ──
+  The incomplete evaluation was DAMPING a severe aggression bias in depth-2's deeper branches.
+  Running the better simulation properly does not merely improve it; it EXPOSES a defect the
+  truncation was hiding. That is exactly why the founder's rule matters: settling for the naive
+  model because it scores better would have left this bias undiscovered indefinitely.
+
+  ── SUPPORTING DECOMPOSITION ──
+  The optimizer's curse looked like it got worse at full coverage (18.40 -> 25.90). It did not,
+  in the way that matters. `curse === argmaxFlipRate x meanGapOnFlip` is an IDENTITY in
+  `heldOutOptimism` — an agreeing node contributes exactly zero, since its two directions are
+  `A[a*] - B[a*]` and `B[a*] - A[a*]`. Decomposed:
+
+      budget    flipRate   meanGapOnFlip   aggregate curse
+      2000         0.400            46.0            18.40
+      20000        0.210           123.3            25.90
+
+  So full coverage made the DECISION more stable — 0.210 beats depth-1's own 0.247, which is the
+  founder's principle holding on that axis — while making the disagreement, when it happens,
+  ~2.7x more extreme. Two effects with opposite signs that the aggregate was hiding. The
+  estimator now reports both.
+
+  A ~123-chip one-way disagreement on a 100 pot is not a perturbation; on those boards the
+  engine holds two very different opinions about the same spot.
+
+  ── WHERE TO LOOK ──
+  WS-402/WS-403 traced the depth-1 version of this to INFLATED FOLD EQUITY: a population
+  marginal standing where a conditional belonged, a curve evaluated on the wrong denominator,
+  and a continue-probability ceiling doing compensation work. Inflated fold equity makes the
+  engine RECKLESS, not timid, because every villain hand wrongly folded is a hand the bluff gets
+  paid by. The deep branches (`gameTreeDepth2.js`) were not part of that fix. That is the first
+  place to look, and it is a hypothesis, not a conclusion.
+accept_criteria: |
+  - The mechanism driving raise share to 98% at full coverage is identified with file:line, and
+    demonstrated by a measurement that moves when the mechanism is changed.
+  - Raise share at FULL depth-2 coverage is brought to a defensible level, justified against the
+    pool's realised fold-to-raise behaviour rather than against taste.
+  - The fix is verified paired on the same 100-board sweep, and `meanGapOnFlip` is reported
+    alongside `argmaxFlipRate` so a change that trades one for the other cannot read as a win.
+  - The founder's invariant is stated as a test: at full coverage depth-2 must be >= depth-1 on
+    BOTH flip rate and raise-share sanity, not one at the cost of the other.
+effort: "L"
+runs_on: "any"
+files_involved:
+  - "src/utils/exploitEngine/gameTreeDepth2.js"
+  - "src/utils/exploitEngine/foldEquityCalculator.js"
+  - "scripts/backtest/run-optimism-boards.mjs"
+blocked_by:
+  - "WS-574"
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "founder-objection"
+  detail: "surfaced 2026-08-19 while testing whether depth-2's curse falls once it is allowed to finish"
+created_at: "2026-08-19T23:35:00.000Z"

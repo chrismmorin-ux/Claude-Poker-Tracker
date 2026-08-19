@@ -1,0 +1,91 @@
+id: "WS-574"
+title: "Depth-2 has never once finished: 38% runout coverage, 2 of 6 stages never run — because WS-334's fast path was never wired"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+completion_commit: null
+priority_score: 93
+priority_label: "P0"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  FOUNDER OBJECTION THAT FOUND THIS, 2026-08-19: "It feels like there is something wrong that a
+  better simulation of the poker game yields poorer results. Better simulation should ALWAYS be
+  better than or equal to a more naive simulation. Otherwise we're going to settle into local
+  min/max's and never evaluate complex strategy."
+
+  Correct, and the measurement that looked like a counterexample was invalid. The WS-496 board
+  sweep compared depth-1 (which runs to completion) against depth-2plus (which does not).
+
+  ── MEASURED, `scripts/backtest/probe-depth2-coverage.mjs`, 40 boards, 2026-08-19 ──
+  At the SHIPPED `refinementBudgetMs: 2000`:
+
+      mean weightConsumed   0.380     the fraction of runout probability actually averaged over
+      stages completed      0 of 40   every stage that ran bailed PARTIAL, on every board
+      full-coverage share   0.000     not one stage ever saw its whole runout distribution
+      stages never run      2 of 6    gated out entirely, 40/40 boards
+
+  Coverage recovers monotonically with the clock, so the constraint is the budget and nothing
+  else:
+
+      budget    meanWeightConsumed   partialShare
+      2000                   0.380          0.387     <- shipped
+      4000                   0.638          0.272
+      8000                   0.936          0.087
+      20000                  1.000          0.000
+
+  This is a PRODUCTION defect, not a probe artifact. `refinementBudgetMs` defaults to 2000 at
+  gameTreeEvaluator.js:960 and NO caller in src/ overrides it.
+
+  ── WHY THE BUDGET IS SMALL: A SHIPPED-BUT-INERT CAPABILITY ──
+  WS-334 built a two-phase design precisely so refinement could take longer without the founder
+  waiting: `onFastResult` hands back the depth-1 answer immediately, then the refined answer
+  replaces it. **`onFastResult` has ZERO callers in src/.** `useActionAdvisor.js:59` awaits the
+  whole evaluation and calls `setAdvice(result)` once.
+
+  So the clock is a hard table-latency floor, and it was set where it is BECAUSE the fast path
+  is inert. The truncation is downstream of an unwired capability.
+
+  ── WHY TRUNCATION IS WORSE THAN "FEWER SAMPLES" ──
+  `stratifiedSample` walks its four card categories in order. Bailing early drops whole strata,
+  so a truncated stage is not a noisy estimate of the full average — it is an estimate of a
+  BIASED SUBSAMPLE. The engine's own rules already name this failure mode: "a variance-reduction
+  scheme has a minimum sample size below which it becomes a bias-introduction scheme, and it
+  will not tell you when you cross it" (exploitEngine/CLAUDE.md, WS-334).
+
+  Note the budget was tuned for ALLOCATION fairness between stages (refinementWork.js records
+  the measured first-come-first-served failure where one stage took 82% of the budget). Nobody
+  asked whether the TOTAL was enough to finish. It is not.
+accept_criteria: |
+  - `onFastResult` is wired in `useActionAdvisor` so the depth-1 answer renders immediately and
+    the refined answer replaces it. Asserted by a test that fails on the current single-setAdvice
+    shape — a capability with no production caller is how this defect was created.
+  - `refinementBudgetMs` default is raised to a value where `probe-depth2-coverage.mjs` reports
+    meanWeightConsumed >= 0.99 and zero gated stages. Measured today that is ~12000-20000.
+  - The budget is chosen from the coverage curve, not guessed, and the chosen value is recorded
+    with the curve that justified it.
+  - Table latency to FIRST advice is unchanged (the fast path covers it) and is measured, not
+    assumed.
+effort: "M"
+runs_on: "g16"
+files_involved:
+  - "src/hooks/useActionAdvisor.js"
+  - "src/utils/exploitEngine/gameTreeEvaluator.js"
+  - "scripts/backtest/probe-depth2-coverage.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables:
+  - "WS-575"
+sprint_id: null
+decision_flags:
+  - "Latency: what is the acceptable time-to-REFINED advice at the table, given first advice is instant?"
+source:
+  kind: "founder-objection"
+  detail: "founder challenged the WS-496 depth-1 vs depth-2 result 2026-08-19; investigation found the comparison invalid"
+created_at: "2026-08-19T23:30:00.000Z"

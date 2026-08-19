@@ -131,6 +131,14 @@ const main = async () => {
     console.error(`--arm must be one of ${Object.keys(ARMS).join(', ')}`);
     process.exit(2);
   }
+  // WS-496 follow-up. `--budget` overrides the arm's refinement clock so the curse can be read
+  // AS A FUNCTION OF the clock. Measured 2026-08-19 with probe-depth2-coverage.mjs: at the
+  // shipped 2000ms every depth-2 stage bails PARTIAL at a mean weightConsumed of 0.380 and two
+  // stages never run at all; at 20000ms every stage completes at 1.000. So the shipped arm has
+  // never once evaluated its own tree, and "depth-2 is worse" may be a statement about the
+  // clock rather than about depth.
+  const budgetOverride = args.budget === undefined ? null : Number.parseInt(args.budget, 10);
+  const refinementBudgetMs = budgetOverride ?? ARMS[armId];
   const out = String(args.out ?? '');
 
   const loader = await openLoader(process.cwd());
@@ -169,7 +177,7 @@ const main = async () => {
             playerStats: { vpip: 22, pfr: 18, af: 2.5, cbet: 60 },
             villainModel: null,
             trials: 200,
-            refinementBudgetMs: ARMS[armId],
+            refinementBudgetMs,
             rngSalt,
           });
           return Object.fromEntries(
@@ -196,7 +204,7 @@ const main = async () => {
         requestedBoards: N,
         street,
         arm: armId,
-        refinementBudgetMs: ARMS[armId],
+        refinementBudgetMs,
         saltA: SALT_A,
         saltB: SALT_B,
         boardSeed: 0xB0A2D5,

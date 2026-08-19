@@ -415,6 +415,7 @@ export const heldOutOptimism = (pairs) => {
   };
 
   const gaps = [];
+  const flipGaps = [];
   const picks = {};
   let nActions = 0;
   let flips = 0;
@@ -432,11 +433,15 @@ export const heldOutOptimism = (pairs) => {
     picks[ba.action] = (picks[ba.action] || 0) + 1;
     // How often the two independent draws disagree about which action is best. This is the
     // decision-relevant number: a curse that never changes the pick costs nothing at the table.
-    if (ab.action !== ba.action) flips++;
+    if (ab.action !== ba.action) {
+      flips++;
+      flipGaps.push(ab.stated - ab.heldOut, ba.stated - ba.heldOut);
+    }
   }
 
   if (!gaps.length) return null;
   const { mean, sd } = meanSd(gaps);
+  const flipStats = flipGaps.length ? meanSd(flipGaps) : { mean: null, sd: null };
   return {
     nodes: comparable,
     draws: gaps.length,
@@ -451,6 +456,22 @@ export const heldOutOptimism = (pairs) => {
     // The share of nodes where two independent estimates disagree on the best action. When
     // this is 0 the curse is entirely a reporting error: the decision was never at risk.
     argmaxFlipRate: comparable ? flips / comparable : null,
+    // ── FREQUENCY x SEVERITY, because `curse` alone conflates them and they MOVE IN OPPOSITE
+    //    DIRECTIONS (WS-496 follow-up, 2026-08-19) ──
+    // An AGREEING node contributes EXACTLY ZERO to `curse`, by construction and not
+    // approximately: when bestA === bestB the two directions are `A[a*] - B[a*]` and
+    // `B[a*] - A[a*]`, which sum to zero. So the whole curse is carried by the flipping nodes,
+    // and `curse === argmaxFlipRate x meanGapOnFlip` up to the pair/draw bookkeeping.
+    //
+    // Reporting only the aggregate hid the finding. Measured on 100 boards, depth-2plus, when
+    // the refinement clock was raised from the shipped 2000ms (38% runout coverage) to 20000ms
+    // (full coverage): flip rate FELL 0.400 -> 0.210 while the gap on a flip ROSE 46.0 -> 123.3
+    // chips on a 100 pot. The aggregate moved 18.4 -> 25.9 and looked like a simple regression;
+    // it is two effects with opposite signs. A run that improves one and worsens the other must
+    // not be summarised by their product.
+    flips,
+    meanGapOnFlip: flipStats.mean,
+    sdGapOnFlip: flipStats.sd,
     pickShare: Object.fromEntries(
       Object.entries(picks).map(([a, n]) => [a, n / gaps.length]),
     ),
