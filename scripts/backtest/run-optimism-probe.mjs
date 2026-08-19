@@ -19,8 +19,25 @@
  * THE CLOCK IS FROZEN, on purpose. `Date.now` is pinned so the refinement budget never trips
  * and the full depth-2/3 tree runs on every replicate. Otherwise the bailout point moves with
  * machine load and the measured spread would be a mixture of estimator noise and scheduling
- * noise, with no way to attribute it. `Math.random` is seeded PER REPLICATE — that is the
- * only thing allowed to vary.
+ * noise, with no way to attribute it.
+ *
+ * ── WS-496: THE REPLICATE IS `rngSalt`, NOT `Math.random` ──
+ * This probe used to sweep 200 seeds by overriding the global `Math.random`. It produced
+ * noiseSd = 0.0e+0 on all 8 nodes in BOTH arms, meanArgmaxStability = 1.0, and a reported
+ * curse of 1e-13 to 1e-15 — floating-point dust. Six UNDERPOWERED verdicts, and not one of
+ * them was a sample-size complaint.
+ *
+ * The engine's runout sampler is `boardDerivedRng(cards, salt)`, seeded from the BOARD CARDS.
+ * It reads `Math.random` nowhere, deliberately — determinism was made free in WS-355/WS-393 so
+ * a flip caused by the sampler could never be mistaken for one caused by a code change. So the
+ * 200 seeds were 200 IDENTICAL COMPUTATIONS. The estimand is induced by estimator variation;
+ * with no variation it is zero by construction, and the run could not have answered at any
+ * replicate count. More replicates was the one response guaranteed not to help.
+ *
+ * `rngSalt` (WS-496) is XORed into every stream salt inside one evaluation, so sweeping it
+ * gives genuinely independent SAMPLING draws of the same node. `Math.random` is still pinned,
+ * but only so that anything else that might reach for it cannot add unattributed noise — it is
+ * no longer the varying input.
  *
  * USAGE
  *   node scripts/backtest/run-optimism-probe.mjs --replicates 12 --out out/optimism.json
@@ -58,8 +75,15 @@ const mulberry32 = (seed) => () => {
 const FROZEN_NOW = 1_700_000_000_000;
 const realNow = Date.now;
 const realRandom = Math.random;
-const freeze = (seed) => {
-  const rng = mulberry32(seed);
+/**
+ * Pin the ambient nondeterminism. NOT the replicate — see the WS-496 note in the header.
+ *
+ * `Math.random` is still pinned to a fixed stream so that any code path which does reach for it
+ * contributes the SAME draw on every replicate, leaving `rngSalt` as the only varying input.
+ * Pinning it to a per-replicate seed is exactly what made this probe measure nothing.
+ */
+const freeze = () => {
+  const rng = mulberry32(0x5eed);
   Math.random = () => rng();
   Date.now = () => FROZEN_NOW;
 };
@@ -137,7 +161,13 @@ const main = async () => {
         replicates: R,
         arms: ARMS,
         frozenNow: FROZEN_NOW,
-        rngSeeds: Array.from({ length: R }, (_, i) => 1000 + i),
+        // WS-496: the replicate axis. Non-zero and mutually distinct — 0 is the engine's
+        // historical stream, so including it would make one replicate special.
+        rngSalts: Array.from({ length: R }, (_, i) => 0x9e37 + i * 0x2545),
+        replicateAxis: 'rngSalt',
+        // Retained so an artifact from before 2026-08-19 is still identifiable as the broken
+        // design rather than looking like a run that merely found nothing.
+        rngSeeds: null,
         trials: 200,
         scenarios: SCENARIOS.map((s) => s.name),
         generator: 'mulberry32',
@@ -192,9 +222,9 @@ const main = async () => {
         const replicates = [];
         const t0 = realNow();
         for (let r = 0; r < R; r++) {
-          // A DIFFERENT seed per replicate — this is the only varying input. Same seed list
+          // A DIFFERENT rngSalt per replicate — this is the only varying input. Same salt list
           // across arms and scenarios so the arms are paired draw-for-draw.
-          freeze(out.config.rngSeeds[r]);
+          freeze();
           let result = null;
           try {
             // eslint-disable-next-line no-await-in-loop -- the engine call is the whole cost
@@ -211,6 +241,7 @@ const main = async () => {
               contextHints: { isIP: true, texture: 'unknown', posCategory: 'LATE' },
               trials: 200,
               refinementBudgetMs: arm.refinementBudgetMs,
+              rngSalt: out.config.rngSalts[r],
             });
           } catch (err) {
             restore();

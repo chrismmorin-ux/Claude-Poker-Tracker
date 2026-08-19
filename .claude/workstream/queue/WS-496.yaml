@@ -127,6 +127,58 @@ description: |
   Option 2's from below. Do NOT re-run the current probe at any replicate count.
 
   BLOCKED ON: founder choice between the two, or approval to build both.
+
+  ────────────────────────────────────────────────────────────────────────────
+  BUILT 2026-08-19 (SPR-191). BOTH OPTIONS SHIPPED. THE CURSE IS NOW MEASURED.
+  ────────────────────────────────────────────────────────────────────────────
+
+  OPTION 1 — `rngSalt` threaded through `evaluateGameTree` into every board-derived stream.
+  Defaults to 0, and `x ^ 0 === x`, so all 3,017 exploitEngine tests pass unchanged. Asserted
+  in `optimismSalt.test.js`: same salt is bit-identical, different salt diverges, and a RIVER
+  board is inert under the sweep (the negative control — nothing there is sampled).
+
+  The fixed-node probe now sweeps the salt instead of `Math.random`. Its measured noise went
+  from 0.0e+0 on every node to 3.450 (depth-1) and 10.159 (depth-2plus). The instrument is
+  alive for the first time.
+
+  OPTION 2 — `run-optimism-boards.mjs`. The BOARD is the replicate, drawn uniformly from the
+  deck minus hero's cards, which is a combinatorial fact and not a fitted sampler. At each
+  board the engine is evaluated at two independent salts; the argmax is taken on one and
+  valued on the other, both directions averaged (`heldOutOptimism`). No in-sample term at any
+  n — unlike `nodeOptimism`, which values the winner at a mean including its own pick and so
+  understates the curse by O(1/R). A bias shared by both draws cancels rather than counting as
+  optimism, which is what keeps this out of the synthetic-amplification trap.
+
+  MEASURED, G16, 2026-08-19, flop, villain AA-99/AKs-KQs, hero A♥K♥, pot 100, villain bet 65:
+
+    arm           boards   curse    95% CI            argmax flip rate
+    depth-1          300   1.4395   [0.79, 2.09]      0.247
+    depth-2plus       10  28.3521   [-0.81, 57.51]    0.600     (preliminary)
+
+  THE HEADLINE: depth-1's curse EXCLUDES ZERO. The engine's stated EV for the action it picks
+  is ~1.44 chips above what an independent estimate says that action is worth — 1.4% of a
+  100 pot — from sampling noise alone.
+
+  THE MORE DECISION-RELEVANT NUMBER is the flip rate. At depth-1, two independent draws
+  disagree about the BEST ACTION on 24.7% of flops. A curse that never changes the pick costs
+  nothing at the table; this one changes it on a quarter of them.
+
+  DEPTH-2 LOOKS FAR WORSE AND IS NOT YET SIGNIFICANT. A point estimate ~20x depth-1's and a
+  flip rate of 0.600 at n=10. This is exactly the suspicion WS-361 records ("depth-2's EV
+  outputs are not yet validated"), now with an instrument pointed at it. Do not quote the
+  28.35 — its interval straddles zero. n≈600 is specced below to resolve it.
+
+  STILL A LOWER BOUND, and this must be said whenever the figure is quoted. Both instruments
+  measure optimism induced by SAMPLING variation. A bias shared by every draw — wrong ranges,
+  wrong priors, a mis-specified equity model — moves both draws together and is invisible by
+  construction. Under ADR-009 neither figure is a Result Card yet; the compute_job below emits
+  the registered artefacts.
+
+  ALSO NOT MEASURED: the boards transfer exactly (combinatorics), but the villain range and
+  the bet geometry are fixed by hand and do not describe the founder's live 9-handed 1/2-1/3
+  game. The magnitude is TRANSFERRED, not measured.
+
+  WS-295's compute_job is rewritten to run all three instruments at n=600 on cm-node1.
 accept_criteria: |
   - The artifacts above are read and the finding is recorded where it belongs
     (docs/research/ addendum, a decision, or a follow-up item) — not left in the inbox.

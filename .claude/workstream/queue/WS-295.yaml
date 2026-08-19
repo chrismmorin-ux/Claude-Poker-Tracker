@@ -88,21 +88,69 @@ runs_on: "node1"        # long unattended compute
 # `any`-machine code work, not compute. This job buys the size half, which is real and which
 # the corpus arm cannot produce — do not mark WS-295 done on it.
 compute_job:
-  maxJobHours: 6
+  # ── REWRITTEN 2026-08-19 (WS-496). THE PREVIOUS SPEC COULD NOT HAVE ANSWERED. ──
+  # It swept 200 `Math.random` seeds. The engine's runout sampler is `boardDerivedRng(cards,
+  # salt)`, seeded from the BOARD, and reads `Math.random` nowhere — deliberately, so a flip
+  # caused by the sampler could never be mistaken for one caused by a code change. So the 200
+  # seeds were 200 IDENTICAL COMPUTATIONS: noiseSd = 0.0e+0 on all 8 nodes in both arms, and a
+  # reported curse of 1e-13. Six UNDERPOWERED verdicts, none of them a sample-size complaint.
+  #
+  # `rngSalt` (WS-496) is now the replicate axis, and both instruments below use it.
+  maxJobHours: 12
   steps:
-    - name: optimism-size-synthetic-replicates
+    # ── 1. THE FIXED NODES — shape, per node. Answers "where is the engine optimistic". ──
+    - name: optimism-shape-fixed-nodes
       cmd: node
       args:
         - "scripts/backtest/run-optimism-probe.mjs"
         - "--replicates"
-        - "200"
+        - "60"
         - "--out"
         - "out/optimism-size.json"
       expectFiles:
         - "out/optimism-size.json"
       maxAttempts: 2
+    # ── 2. THE BOARD POPULATION — size, averaged. Answers "how much, in general". ──
+    # Held-out: argmax on one salt, valued on the other, both directions. No in-sample term,
+    # and a bias shared by both draws cancels rather than counting as optimism.
+    #
+    # MEASURED ON G16 2026-08-19, so these are not guesses. depth-1, 300 boards, 38s:
+    #   curse 1.4395 chips on a 100 pot, 95% CI [0.79, 2.09] — EXCLUDES ZERO
+    #   argmax flip rate 0.247 — sampling noise alone changes the pick on a quarter of flops
+    # depth-2plus, 10 boards, 31s (preliminary, interval straddles zero at that n):
+    #   curse 28.35, flip rate 0.600 — a point estimate ~20x depth-1's
+    # 600 boards is chosen to halve the depth-1 interval and to put the depth-2 arm's own
+    # interval clear of zero if the preliminary point estimate holds.
+    - name: optimism-size-boards-depth1
+      cmd: node
+      args:
+        - "scripts/backtest/run-optimism-boards.mjs"
+        - "--boards"
+        - "600"
+        - "--arm"
+        - "depth-1"
+        - "--out"
+        - "out/optimism-boards-depth1.json"
+      expectFiles:
+        - "out/optimism-boards-depth1.json"
+      maxAttempts: 2
+    - name: optimism-size-boards-depth2
+      cmd: node
+      args:
+        - "scripts/backtest/run-optimism-boards.mjs"
+        - "--boards"
+        - "600"
+        - "--arm"
+        - "depth-2plus"
+        - "--out"
+        - "out/optimism-boards-depth2.json"
+      expectFiles:
+        - "out/optimism-boards-depth2.json"
+      maxAttempts: 2
   artifacts:
     - "out/optimism-size.json"
+    - "out/optimism-boards-depth1.json"
+    - "out/optimism-boards-depth2.json"
 files_involved:
   - "scripts/backtest/heroEvRunner.mjs"
   - "scripts/backtest/ipsEstimator.mjs"

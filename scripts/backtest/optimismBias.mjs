@@ -371,3 +371,88 @@ export const shapeReport = (nodes) => {
     vsNActions: build('nActions', 'positive'),
   };
 };
+
+/**
+ * The optimizer's curse from TWO INDEPENDENT ESTIMATES of the same node (WS-496, Option 2).
+ *
+ * ── WHY THIS EXISTS ALONGSIDE `nodeOptimism` ──
+ * `nodeOptimism` values the winning action at the MEAN over replicates, and that mean includes
+ * the very replicate that chose it. The contamination is O(1/R) and shrinks as R grows, but it
+ * shrinks the measured curse toward zero — the direction that flatters the engine. With R = 6
+ * it is a sixth of the estimate.
+ *
+ * Here the choice and the valuation come from disjoint draws, so there is no in-sample term at
+ * any R: pick the argmax on estimate A, then read what estimate B says that action is worth.
+ * The expected gap is exactly the optimism, and it is unbiased by construction rather than
+ * asymptotically.
+ *
+ * ── AND WHY IT IS NOT SYNTHETIC AMPLIFICATION ──
+ * Resampling a model against itself shrinks the interval around a fixed bias and reports
+ * confidence that was never earned. This is the endorsed shape instead — HELD OUT BOTH WAYS.
+ * Every pair is scored in both directions and the two are averaged, so no draw is privileged
+ * as "the estimate" against the other as "the truth", and a bias present in BOTH draws
+ * correctly cancels to zero rather than being counted as optimism.
+ *
+ * A bias shared by every draw is INVISIBLE here, exactly as it is to `nodeOptimism`. That is a
+ * property of the estimand, not a defect of the instrument: this measures the curse induced by
+ * variation, so every figure remains a LOWER BOUND on the total.
+ *
+ * @param {Array<{a: Object, b: Object}>} pairs - per node, two independent {action: ev} maps
+ * @returns {Object|null} the decomposition, or null when no pair carries two shared actions
+ */
+export const heldOutOptimism = (pairs) => {
+  if (!Array.isArray(pairs) || pairs.length === 0) return null;
+
+  const oneWay = (chooseOn, valueOn) => {
+    // Intersection, for the reason `nodeOptimism` states: an action present in only one draw
+    // could win the max there with nothing to be scored against.
+    const acts = Object.keys(chooseOn)
+      .filter((k) => Number.isFinite(chooseOn[k]) && Number.isFinite(valueOn[k]));
+    if (acts.length < 2) return null;
+    let best = acts[0];
+    for (const a of acts) if (chooseOn[a] > chooseOn[best]) best = a;
+    return { stated: chooseOn[best], heldOut: valueOn[best], action: best, nActions: acts.length };
+  };
+
+  const gaps = [];
+  const picks = {};
+  let nActions = 0;
+  let flips = 0;
+  let comparable = 0;
+
+  for (const { a, b } of pairs) {
+    const ab = oneWay(a, b);
+    const ba = oneWay(b, a);
+    if (!ab || !ba) continue;
+    comparable++;
+    nActions = Math.max(nActions, ab.nActions);
+    // Both directions, averaged — see the note above on why neither draw is the truth.
+    gaps.push(ab.stated - ab.heldOut, ba.stated - ba.heldOut);
+    picks[ab.action] = (picks[ab.action] || 0) + 1;
+    picks[ba.action] = (picks[ba.action] || 0) + 1;
+    // How often the two independent draws disagree about which action is best. This is the
+    // decision-relevant number: a curse that never changes the pick costs nothing at the table.
+    if (ab.action !== ba.action) flips++;
+  }
+
+  if (!gaps.length) return null;
+  const { mean, sd } = meanSd(gaps);
+  return {
+    nodes: comparable,
+    draws: gaps.length,
+    nActions,
+    // THE HEADLINE. Positive means the engine's stated EV for the action it picks exceeds what
+    // an independent estimate of that same action says it is worth.
+    curse: mean,
+    curseSd: sd,
+    // Standard error of the mean, so the interval can be read without re-deriving it. Pairs
+    // contribute two correlated draws, so n is the PAIR count, not the draw count.
+    curseSe: comparable > 1 ? sd / Math.sqrt(comparable) : null,
+    // The share of nodes where two independent estimates disagree on the best action. When
+    // this is 0 the curse is entirely a reporting error: the decision was never at risk.
+    argmaxFlipRate: comparable ? flips / comparable : null,
+    pickShare: Object.fromEntries(
+      Object.entries(picks).map(([a, n]) => [a, n / gaps.length]),
+    ),
+  };
+};
