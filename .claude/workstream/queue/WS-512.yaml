@@ -1,0 +1,97 @@
+id: "WS-512"
+title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
+legacy_id: ""
+type: bug
+status: done
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: "2026-08-19T21:57:24.750Z"
+completion_commit: db4c7e96
+priority_score: 26
+priority_label: "P1"
+category: "domain-correctness"
+capability: "core"
+program: "domain-correctness"
+finding_id: ""
+description: |
+  A compute job on cm-node1 reached a terminal state WITHOUT succeeding. It produced no
+  artifacts, so it landed in no inbox — nothing else would ever have surfaced it, and the
+  machine went idle having achieved nothing.
+
+  JOB       : ws-293-be8d4ac3b24b
+  SOURCE    : WS-293 — Range calibration as a standing metric — score inferred ranges against revealed hands, every run
+  OUTCOME   : failed
+  DETAIL    : JavaScript heap out of memory
+    FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of
+    memory
+    FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of
+
+  Retries are already exhausted at the runner level (maxAttempts), so re-submitting the
+  identical spec will fail identically. The spec or the code has to change first — which
+  also re-keys the job hash and lets the feeder pick it up again.
+
+  ── CAUSE IDENTIFIED 2026-08-17. It is not the heap cap, and it cannot be fixed by one. ──
+  scripts/backtest/runner.mjs:544-561, `indexEvalPlayers`. It materialises EVERY FULL HAND
+  OBJECT for EVERY eval-partition player into one Map before a single decision is scored:
+
+      let bucket = byPlayer.get(key);
+      if (!bucket) { if (byPlayer.size >= maxPlayers) continue; bucket = []; byPlayer.set(key, bucket); }
+      if (bucket.length < maxHandsPerPlayer) bucket.push(hand);      // <- whole hand retained
+
+  `maxPlayers` and `maxHandsPerPlayer` are the ONLY two memory controls in the design, and
+  the WS-293 compute_job passes NEITHER, so both default to Infinity. Peak memory is then
+  O(all eval players x all their hands) — on cm-node1's 27-directory corpus that is roughly
+  half of ~59,717 pseudonyms (the count runner.mjs:541 cites for this corpus), against the
+  1,300 the recorded baseline held.
+
+  MEASURED CONTRAST, on G16 (15.7 GB — within 0.1 GB of cm-node1's 15.8, so the machines are
+  not the variable). Bounded run, `--stakes 50NLH --max-players 1300`, 2026-08-17:
+
+      indexed 1300 players from 1,070,493 hands — peak working set 3.16 GB, 16 min
+
+  The progress log pins `1300 players` at every checkpoint from 275k hands to 1.05M while
+  hands-read climbs past a million. That is the whole finding in one line: **memory tracks
+  PLAYER COUNT, not hands read.** The unbounded cm-node1 run died at the 12 GB ceiling on
+  ~250k hands — a quarter the hands, four times the memory — because `maxPlayers: Infinity`
+  let the Map keep a bucket for every eval-partition pseudonym it ever saw.
+
+  (Honest limit on this measurement: the run was killed after indexing completed, so 3.16 GB
+  is the peak through the memory-critical indexing phase, not through final scoring. It is
+  the phase that OOMs, and 1,070,493 hands matches out/behavior-policy.json's recorded
+  handsRead exactly, so the corpus pass was complete.)
+
+  WHY RAISING THE CEILING CANNOT WORK: cm-node1 has 15.8 GB total and ~10.1 GB free, so 12288
+  is already above what the OS can actually hand over. There is no larger number available.
+
+  THE FIX, and it is the one this ticket's own compute_job comment already pre-committed to
+  ("stream per-player state rather than holding every player in memory"): batch the eval
+  players. The per-player OUTPUT is small — {playerId, subgroup, nTrain, nTest, widths} — it
+  is only the raw retained hands that are large, and a player's hands are needed together
+  only within that player's own train/test split. So process players in chunks of N,
+  retaining the summaries and releasing the hands between chunks. Peak becomes
+  O(N x hands-per-player) and the WHOLE pool is still scored. Nothing is shrunk.
+
+  SCOPE CORRECTION: this is not effort S. It touches the shared `indexEvalPlayers` that the
+  villain-side runner also uses, so it needs a seam (a batched iterator) rather than an edit
+  in place. Re-estimated M. Filed as effort M below rather than left at the harvester's
+  default S, because an S label is what would make someone try to fix it by editing the cap.
+accept_criteria: |
+  - The cause is identified and fixed in the code or the compute_job block, not worked
+    around by shrinking the run until it fits.
+  - WS-293 either runs to completion or its blocker is stated explicitly.
+  - The batched path is shown to score the SAME players as an unbatched run on a corpus
+    small enough for both to complete — batching must not change a number.
+effort: "M"
+runs_on: "any"
+files_involved: []
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags: []
+source:
+  kind: "fleet-compute"
+  detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-293-be8d4ac3b24b"
+created_at: "2026-08-16T18:52:54.923Z"
+closed_by_event: ev-1787176645257-5c71f94c3058

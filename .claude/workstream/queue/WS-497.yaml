@@ -2,12 +2,12 @@ id: "WS-497"
 title: "Review the WS-320 run — RC-study-ladder-d908f09d admissible, 1 warning(s)"
 legacy_id: ""
 type: task
-status: backlog
-claimed_by: ses-20260819-1712-647c7955
-claimed_at: "2026-08-19T19:38:24.683Z"
+status: done
+claimed_by: null
+claimed_at: null
 started_at: null
-completed_at: null
-completion_commit: null
+completed_at: "2026-08-19T21:57:24.750Z"
+completion_commit: db4c7e96
 priority_score: 28
 priority_label: "P0"
 category: "domain-correctness"
@@ -146,3 +146,4 @@ source:
   kind: "fleet-compute"
   detail: "auto-filed by cwos-fleet-compute harvest from job ws-320-48bd185e7587"
 created_at: "2026-08-16T15:59:22.110Z"
+closed_by_event: ev-1787176646079-a0c3be07f895

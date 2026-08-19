@@ -2,7 +2,7 @@ id: "WS-502"
 title: "WS-293 FAILED on cm-node1 — JavaScript heap out of memory"
 legacy_id: ""
 type: bug
-status: backlog
+status: dismissed
 claimed_by: null
 claimed_at: null
 started_at: null
@@ -46,3 +46,7 @@ source:
   kind: "fleet-compute"
   detail: "auto-filed by cwos-fleet-compute harvest — failed job ws-293-eba55a589dfd"
 created_at: "2026-08-16T16:21:52.506Z"
+dismissed_at: "2026-08-19"
+dismiss_reason: "Duplicate harvest of the same WS-293 heap OOM. WS-512 carries the full diagnosis (indexEvalPlayers holding every eval player at once, memory tracking player count not hands) and the fix shipped in commit ca89f9e2 as a sharded ingest. Harvester dedupe added in WS-572."
+superseded_by: "WS-512"
+transitioned_by_event: "ev-1787176731865-30d83b7827e7"
