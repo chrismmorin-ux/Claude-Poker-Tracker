@@ -151,9 +151,19 @@ description: |
 
   MEASURED, G16, 2026-08-19, flop, villain AA-99/AKs-KQs, hero A♥K♥, pot 100, villain bet 65:
 
-    arm           boards   curse    95% CI            argmax flip rate
-    depth-1          300   1.4395   [0.79, 2.09]      0.247
-    depth-2plus       10  28.3521   [-0.81, 57.51]    0.600     (preliminary)
+    arm           boards   curse     95% CI              argmax flip rate
+    depth-1          300    1.4395   [0.79, 2.09]        0.247
+    depth-2plus      300   13.9846   [10.20, 17.77]      0.353
+
+  DEPTH-2 RESOLVED, 2026-08-19, SAME 300 BOARDS (board seed 0xB0A2D5, so the arms are paired
+  board-for-board). Its interval EXCLUDES ZERO. The preliminary n=10 figure of 28.35 recorded
+  earlier in this ticket was 2.0x too high and is RETRACTED — this is why it was marked
+  not-quotable rather than reported as a result.
+
+  THE ARMS SEPARATE. Difference 12.5451 +/- 1.9583, z = 6.41 (unpaired, therefore conservative
+  — the runs share their board draw, so a paired test would be tighter), 95% CI on the
+  difference [8.71, 16.38]. The two arms' intervals do not overlap. depth-2plus is 9.71x
+  depth-1 on this quantity.
 
   THE HEADLINE: depth-1's curse EXCLUDES ZERO. The engine's stated EV for the action it picks
   is ~1.44 chips above what an independent estimate says that action is worth — 1.4% of a
@@ -163,10 +173,23 @@ description: |
   disagree about the BEST ACTION on 24.7% of flops. A curse that never changes the pick costs
   nothing at the table; this one changes it on a quarter of them.
 
-  DEPTH-2 LOOKS FAR WORSE AND IS NOT YET SIGNIFICANT. A point estimate ~20x depth-1's and a
-  flip rate of 0.600 at n=10. This is exactly the suspicion WS-361 records ("depth-2's EV
-  outputs are not yet validated"), now with an instrument pointed at it. Do not quote the
-  28.35 — its interval straddles zero. n≈600 is specced below to resolve it.
+  WHAT THE DEPTH-2 RESULT DOES AND DOES NOT SAY. It says depth-2plus's STATED EV for the action
+  it picks overstates an independent estimate of that same action by ~14 chips on a 100 pot —
+  14% of the pot. It does NOT say depth-2's advice is worse than depth-1's. The curse is a
+  measure of OVERSTATEMENT, not of accuracy, and a deeper tree samples more quantities, so some
+  of the gap is mechanical rather than a defect. depth-2 could be simultaneously more accurate
+  and more optimistic.
+
+  What it does mean, concretely: any consumer reading a depth-2 EV as a NUMBER — a Result Card,
+  a threshold comparison, an improvement ledger entry — is reading a figure biased high by
+  about 14% of pot, and that bias is now measured rather than suspected. This is the WS-361
+  concern ("depth-2's EV outputs are not yet validated") with an instrument finally pointed at
+  it, and it argues for a bias correction on depth-2's reported EV, not for avoiding depth-2.
+
+  The flip rate is the decision-relevant half and it also rose: 0.353 vs depth-1's 0.247. On a
+  third of flops, two independent draws of the SAME depth-2 evaluation disagree about which
+  action is best. A curse that never changes the pick costs nothing at the table; this one
+  changes it more often than depth-1 does.
 
   STILL A LOWER BOUND, and this must be said whenever the figure is quoted. Both instruments
   measure optimism induced by SAMPLING variation. A bias shared by every draw — wrong ranges,
