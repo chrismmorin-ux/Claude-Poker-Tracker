@@ -353,6 +353,52 @@ export const classifyVillainCombo = (card1, card2, board, table = null) => {
  * @param {number[]} board - 3, 4, or 5 encoded board cards
  * @returns {number | null} Percentile in [0, 100] or null
  */
+/**
+ * The canonical strength percentile for EVERY combo on a board, computed once.
+ *
+ * `comboStrengthPercentile` answers for one combo and re-enumerates the whole 1,081-combo
+ * universe to do it, so asking it about a whole range costs that enumeration 1,326 times. This
+ * returns the same number for every combo from a single pass, with the same definition:
+ * `(worse + 0.5 * tied) / (total - 1)`, ties splitting the difference.
+ *
+ * It exists because POKER_THEORY 15.2 is explicit that the percentile axis and the EV axis are
+ * both already in the repo and "the pieces have simply never been joined" - and the reason they
+ * had not is that joining them naively is O(n^2) enumerations per decision. This is the join
+ * made affordable, not a second definition of strength. Any divergence from
+ * `comboStrengthPercentile` is a bug in this function.
+ */
+export const computeBoardPercentileTable = (board) => {
+  const table = new Map();
+  if (!Array.isArray(board) || board.length < 3 || board.length > 5) return table;
+  const boardSet = new Set(board);
+  const entries = [];
+  for (let a = 0; a < 52; a++) {
+    if (boardSet.has(a)) continue;
+    for (let b = a + 1; b < 52; b++) {
+      if (boardSet.has(b)) continue;
+      entries.push({ key: comboKey(a, b), score: bestFiveFromSeven([a, b, ...board]) });
+    }
+  }
+  const total = entries.length;
+  if (total <= 1) return table;
+  entries.sort((x, y) => x.score - y.score);          // ascending: worse first
+
+  // Walk tie groups. Within a group every combo has the same number strictly worse than it and
+  // the same number tied, so each gets the identical percentile - matching the single-combo
+  // function, which excludes the combo itself from its own denominator.
+  let i = 0;
+  while (i < total) {
+    let j = i;
+    while (j < total && entries[j].score === entries[i].score) j++;
+    const worse = i;
+    const tiedOthers = (j - i) - 1;
+    const pct = (100 * (worse + 0.5 * tiedOthers)) / (total - 1);
+    for (let k = i; k < j; k++) table.set(entries[k].key, pct);
+    i = j;
+  }
+  return table;
+};
+
 export const comboStrengthPercentile = (card1, card2, board) => {
   if (!Array.isArray(board) || board.length < 3 || board.length > 5) return null;
   if (board.includes(card1) || board.includes(card2)) return null;

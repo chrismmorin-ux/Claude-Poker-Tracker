@@ -62,13 +62,13 @@ for (const f of files) {
       }
 
       // --- tn-give-up-when-called: c-bet flop, got called, then what? ---
-      const cbet = (byStreet.flop || []).find(d => d.iAmPreflopAggressor && d.facing === 'no bet' && d.action === 'bet');
+      const cbet = (byStreet.flop || []).find(d => d.iAmLastPreflopAggressor && d.facing === 'no bet' && d.action === 'bet');
       if (cbet) {
         bump(pid, 'cbet-flop', true);
         const turnAsAgg = (byStreet.turn || []).find(d => d.facing === 'no bet');
         if (turnAsAgg) bump(pid, 'barrel-turn-after-cbet', turnAsAgg.action === 'bet');
       }
-      const flopCheckAsAgg = (byStreet.flop || []).find(d => d.iAmPreflopAggressor && d.facing === 'no bet');
+      const flopCheckAsAgg = (byStreet.flop || []).find(d => d.iAmLastPreflopAggressor && d.facing === 'no bet');
       if (flopCheckAsAgg) bump(pid, 'cbet-opportunity', flopCheckAsAgg.action === 'bet');
     }
   }

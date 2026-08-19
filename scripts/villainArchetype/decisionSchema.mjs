@@ -31,13 +31,16 @@
 
 const yn = (v) => v == null ? '-' : (v ? 'yes' : 'no');
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 12;
 
 /**
  * Every field, in the order it appears in the table.
  * `group` decides who may use it. `blank` is what is printed when the field does not apply,
  * so a row is never ragged — the founder's "each action is identical in its schema".
  */
+/** A 0-1 share as whole percent, or '-' when the row has no strength distribution. */
+const pctOf = (x) => (x == null ? '-' : Math.round(100 * x));
+
 export const FIELDS = [
   // ── identity ──
   { name: 'hand', group: 'id', get: d => d.handId, describe: 'which hand this decision came from' },
@@ -58,9 +61,12 @@ export const FIELDS = [
   // The same fact in several framings, because which framing governs a rule is exactly what
   // we do not know in advance. The seat NAME is rarely the one that matters; the relationship
   // to the player applying pressure usually is.
-  { name: 'off_button', group: 'situation', get: d => d.offButton ?? '-', describe: 'seats from the button (0 = button)' },
-  { name: 'to_act_after', group: 'situation', get: d => d.seatsToActAfterMe ?? '-', describe: 'live players still to act behind me' },
-  { name: 'acted_before', group: 'situation', get: d => d.seatsActedBeforeMe ?? '-', describe: 'live players who acted before me' },
+  { name: 'off_button', group: 'situation', get: d => d.offButton ?? '-', describe: 'seats from the button (0 = button) — populated for the blinds too; pair with is_blind' },
+  // NOT the same fact as `closes`, and they legitimately disagree on ~2% of rows: a player behind
+  // who has already CALLED owes nothing at the current price, so this reads 0, while a raise from
+  // me would still reopen the action, so `closes` reads no. That gap IS the squeeze/overcall spot.
+  { name: 'to_act_after', group: 'situation', get: d => d.seatsToActAfterMe ?? '-', describe: 'opponents who still OWE a decision at the current price (not: who sits behind me)' },
+  { name: 'acted_before', group: 'situation', get: d => d.seatsActedBeforeMe ?? '-', describe: 'live opponents who have already acted and owe nothing at the current price' },
   { name: 'is_blind', group: 'situation', get: d => yn(d.isBlind), describe: 'am I in a blind' },
   { name: 'is_late', group: 'situation', get: d => yn(d.isLate), describe: 'am I on the button or cutoff' },
   { name: 'after_aggr', group: 'situation', get: d => yn(d.actsAfterAggressor), describe: 'do I act after the player applying pressure' },
@@ -70,7 +76,15 @@ export const FIELDS = [
   { name: 'to_call_bb', group: 'situation', get: d => d.toCallBB, describe: 'what it costs me to continue' },
   { name: 'pot_bb', group: 'situation', get: d => d.potBB ?? '-', describe: 'the pot including the live bet' },
   { name: 'price_pct', group: 'situation', get: d => d.potOddsNeeded == null ? '-' : Math.round(d.potOddsNeeded * 100), describe: 'equity I need to call' },
-  { name: 'bet_x_pot', group: 'situation', get: d => d.betFractionOfPot ?? '-', describe: 'the bet as a fraction of the pot before it' },
+  // WHAT HE BET AT ME, which is not what I owe. Until v10 the schema carried only my price:
+  // `bet_x_pot` computed `toCall/(pot-toCall)` and was algebraically identical to `price_pct`
+  // (verified, zero exceptions in 2,829 rows), so two columns held one fact and the aggressor's
+  // sizing - the single most informative thing about the action in front of me - was absent.
+  { name: 'bet_x_pot', group: 'situation', get: d => d.betFractionOfPot ?? '-', describe: 'the bet facing me as a fraction of the pot BEFORE it (his sizing, not my price)' },
+  { name: 'bet_bb', group: 'situation', get: d => d.aggressorBetBB ?? '-', describe: 'how much he actually bet or raised, in big blinds (the increment, not the raise-to)' },
+  { name: 'bet_to_bb', group: 'situation', get: d => d.aggressorToBB ?? '-', describe: 'his CUMULATIVE amount for this street — what I must match to continue' },
+  { name: 'pot_before_bet', group: 'situation', get: d => d.potBeforeBetBB ?? '-', describe: 'the pot he bet into' },
+  { name: 'in_street_bb', group: 'situation', get: d => d.investedThisStreetBB ?? '-', describe: 'what I have already put in on THIS street (his bet minus this is what I owe)' },
   { name: 'stack_bb', group: 'situation', get: d => d.myStackBB ?? '-', describe: 'my stack' },
   { name: 'invested_bb', group: 'situation', get: d => d.investedBB ?? '-', describe: 'what I already put in this hand' },
   { name: 'spr', group: 'situation', get: d => d.spr == null ? '-' : +d.spr.toFixed(1), describe: 'stack to pot ratio' },
@@ -81,11 +95,71 @@ export const FIELDS = [
        d.boardTexture.monotone && 'mono', d.boardTexture.twoTone && 'twotone',
        d.boardTexture.connected && 'connected']
       .filter(Boolean).join('+') || 'dry', describe: 'board texture' },
-  { name: 'flush_draw', group: 'situation', get: d => yn(d.boardTexture?.flushDraw), describe: 'three to a suit is out' },
+  // THE BOARD'S SUITEDNESS AS A COUNT, because the boolean was a trap.
+  // `flush_draw` is `maxSuitFreq >= 3` - three to a suit ON THE BOARD. It is `no` on every
+  // TWO-TONE flop, which is precisely where a villain holding two of that suit HAS a flush
+  // draw. The single most common draw in the game had no representation in the schema at all,
+  // so every rule about drawing hands was blind to it. The count is kept instead of a second
+  // boolean: 2 = a hand can hold a flush draw, 3 = one card completes it, 4+ = it is there.
+  { name: 'flush_draw', group: 'situation', get: d => yn(d.boardTexture?.flushDraw), describe: 'THREE to a suit is on the BOARD (not: he holds a draw)' },
+  { name: 'suit_max', group: 'situation', get: d => d.boardTexture?.maxSuitFreq ?? '-', describe: 'most cards of one suit on the board - 2 means he can hold a flush draw' },
   { name: 'straight_poss', group: 'situation', get: d => yn(d.boardTexture?.straightPossible), describe: 'three cards inside a five-rank window' },
   { name: 'broadways', group: 'situation', get: d => d.boardTexture?.broadwayCount ?? '-', describe: 'how many board cards are ten or higher' },
   { name: 'high_card', group: 'situation', get: d => d.boardTexture?.highCard ?? '-', describe: 'highest board card' },
-  { name: 'i_raised_pf', group: 'situation', get: d => d.iAmPreflopAggressor ? 'yes' : 'no', describe: 'was I the preflop raiser' },
+  /**
+   * WHAT HIS RANGE CAN MAKE, AND WHAT IT CAN BECOME — over-enumerated on purpose.
+   *
+   * FOUNDER, 2026-08-19: *"The agents should be able to clearly see the full picture for each
+   * position and spot, thrust upon them, overenumerated, back propagated, forced to be precisely
+   * labeled. that is the only way we get the organic correlations by the AI that we're looking
+   * for is if we give it the right info."*
+   *
+   * These are not his cards. They are the DISTRIBUTION his range takes on the board in front of
+   * him — arithmetic over (range x board), both fixed before he acts, which is why a rule may
+   * condition on them where it may never condition on `cards`.
+   *
+   * `str_pct_*` is the CANONICAL axis (POKER_THEORY 15.1): rank within this board's own combo
+   * universe, normalised so it compares across boards even though the underlying order does not.
+   * Everything after it is the readable label layer, because a percentile cannot say "flush
+   * draw" — it ranks CURRENT showdown strength, so a naked nut-flush draw sits near the bottom
+   * of it while being one of the best hands to hold. Draws are a second axis, not a rival.
+   */
+  { name: 'str_basis', group: 'situation', get: d => d.strength?.basis ?? '-', describe: 'exact (his range is every hand) or assumed (composition filled by equity ordering)' },
+  { name: 'str_pct_mean', group: 'situation', get: d => d.strength?.pctMean ?? '-', describe: 'CANONICAL AXIS: mean board-normalised strength percentile of his range' },
+  { name: 'str_pct_med', group: 'situation', get: d => d.strength?.pctMedian ?? '-', describe: 'median percentile — where the middle of his range sits on this board' },
+  { name: 'str_pct_top10', group: 'situation', get: d => d.strength?.pctTop10 ?? '-', describe: 'the percentile his top decile reaches' },
+
+  { name: 'str_value', group: 'situation', get: d => pctOf(d.strength?.value), describe: '% of his range making TOP PAIR or better' },
+  { name: 'str_anypair', group: 'situation', get: d => pctOf(d.strength?.anyPair), describe: '% making ANY pair — bottom pair is a made hand and beats a naked draw at showdown' },
+  { name: 'str_air', group: 'situation', get: d => pctOf(d.strength?.air), describe: '% with no pair, no draw and no backdoor' },
+  { name: 'str_2pair_up', group: 'situation', get: d => pctOf(d.strength?.made['set-or-two-pair']), describe: '% making two pair or a set' },
+  { name: 'str_toppair', group: 'situation', get: d => pctOf(d.strength?.made['top-pair']), describe: '% making exactly top pair' },
+  { name: 'str_midpair', group: 'situation', get: d => pctOf(d.strength?.made['middle-pair']), describe: '% making middle pair' },
+  { name: 'str_botpair', group: 'situation', get: d => pctOf(d.strength?.made['bottom-pair']), describe: '% making bottom pair' },
+  { name: 'str_overpair', group: 'situation', get: d => pctOf(d.strength?.made['overpair']), describe: '% holding an overpair' },
+
+  { name: 'str_draw', group: 'situation', get: d => pctOf(d.strength?.realDraw), describe: '% on a live draw — flush, open-ender, double gutshot or gutshot' },
+  { name: 'str_fd', group: 'situation', get: d => pctOf(d.strength?.draw['flush-draw']), describe: '% on a flush draw' },
+  { name: 'str_oesd', group: 'situation', get: d => pctOf(d.strength?.draw.oesd), describe: '% on an open-ended straight draw' },
+  { name: 'str_dblgut', group: 'situation', get: d => pctOf(d.strength?.draw['double-gutshot']), describe: '% on a double gutshot — same 8 outs, disguised' },
+  { name: 'str_gutshot', group: 'situation', get: d => pctOf(d.strength?.draw.gutshot), describe: '% on a gutshot' },
+  { name: 'str_bdfd', group: 'situation', get: d => pctOf(d.strength?.draw['backdoor-flush']), describe: '% on a BACKDOOR flush draw — why a hand continues with nothing yet' },
+  { name: 'str_runner', group: 'situation', get: d => pctOf(d.strength?.draw['runner-straight']), describe: '% on a runner-runner straight' },
+  { name: 'str_nutdraw', group: 'situation', get: d => pctOf(d.strength?.nutDraw), describe: '% drawing to the BEST hand of its type — the nut end, not the idiot end' },
+
+  { name: 'str_hit_clean', group: 'situation', get: d => pctOf(d.strength?.drawClean), describe: '% whose draw completes to a hand nothing on this board beats' },
+  { name: 'str_hit_vuln', group: 'situation', get: d => pctOf(d.strength?.drawVulnerable), describe: '% whose draw completes INTO a better possible hand — a straight when a flush also lands' },
+  { name: 'str_cooler', group: 'situation', get: d => pctOf(d.strength?.cooler), describe: '% holding the REDRAW — a set when the flush completes, full house over the nut flush' },
+  { name: 'str_blocker', group: 'situation', get: d => pctOf(d.strength?.blocker), describe: '% holding the ace of a three-flush board — blocks the nuts, and can bluff as if holding it' },
+
+  // ── BACK-PROPAGATED: what the new card DID to his range ──
+  { name: 'str_d_pct', group: 'situation', get: d => d.strengthDelta?.pct ?? '-', describe: 'change in his mean strength percentile since the previous street' },
+  { name: 'str_d_value', group: 'situation', get: d => d.strengthDelta ? Math.round(100 * d.strengthDelta.value) : '-', describe: 'change in his top-pair-or-better share — a positive number means the card got there for him' },
+  { name: 'str_d_draw', group: 'situation', get: d => d.strengthDelta ? Math.round(100 * d.strengthDelta.draw) : '-', describe: 'change in his live-draw share — strongly negative means his draws either hit or died' },
+  { name: 'draw_completed', group: 'situation', get: d => d.strengthDelta ? (d.strengthDelta.completed ? 'yes' : 'no') : '-', describe: 'the new card turned draw into value in HIS range — the nut-changing card' },
+
+  { name: 'i_last_agg_pf', group: 'situation', get: d => d.iAmLastPreflopAggressor ? 'yes' : 'no', describe: 'was I the LAST preflop aggressor (not: did I raise preflop)' },
+  { name: 'my_bet_raised_prev', group: 'situation', get: d => yn(d.myBetWasRaisedLastStreet), describe: 'my bet was raised last street and I called - my range is capped by that' },
   { name: 'first_in', group: 'situation', get: d => d.street === 'preflop' ? (d.firstIn ? 'yes' : 'no') : '-', describe: 'nobody had entered when I acted (preflop only)' },
 
   // ── derived binaries (founder 2026-08-18: inferable, and likely correlated) ──
@@ -112,10 +186,17 @@ export const FIELDS = [
   { name: 'callers_ahead', group: 'situation', get: d => d.callersAhead ?? '-', describe: 'opponents who already called the live bet' },
   { name: 'facing_allin', group: 'situation', get: d => yn(d.facingAllIn), describe: 'is the bet I face an all-in' },
   { name: 'call_is_allin', group: 'situation', get: d => yn(d.callingIsAllIn), describe: 'would calling put me all in' },
+  // Whether raising is LEGAL here. Added v9 after an agent reading one leaf cold pointed out
+  // that a mix was being computed over rows where one of its own actions did not exist — he
+  // "declined to raise" in 9 spots where raising was impossible, which flattered the call
+  // share. It is a situation field, not a filter, because he could see it and the induction
+  // should be free to condition on it while keeping every decision covered.
+  { name: 'can_raise', group: 'situation', get: d => yn(d.canRaise), describe: 'is raising even available to me' },
 
   // ── what I did ──
   { name: 'ACTION', group: 'action', get: d => d.action, describe: 'what I did' },
-  { name: 'my_size_x_pot', group: 'action', get: d => d.raiseToFractionOfPot ?? '-', describe: 'my bet or raise as a fraction of the pot' },
+  { name: 'my_raise_to_bb', group: 'action', get: d => d.myRaiseToBB ?? '-', describe: 'the total I raised TO on this street, in big blinds' },
+  { name: 'my_bet_x_pot', group: 'action', get: d => d.myBetOverPotBefore ?? '-', describe: 'what my bet COST me, over the pot before it - the fraction a player means' },
 
   // ── after the fact — NEVER a rule condition ──
   { name: 'cards', group: 'outcome', get: d => d.handKnown ? d.holeCards.join('') : '-', describe: 'only if the hand reached showdown' },
@@ -141,8 +222,13 @@ export const header = () => FIELDS.map(f => f.name);
 /** A fixed-width table. Every row identical, so a difference between rows is visible. */
 export const renderTable = (rows, { max = Infinity } = {}) => {
   const cols = header();
+  // EVERY row sets the width, not the first 500. A value longer than its column shifts every
+  // field to its right, and sampling the head meant a long value further down - `board` reading
+  // "trips+paired+twotone+connected" (30 chars in a 24-wide column), or `facing` reading
+  // "a 5-bet or beyond" - silently corrupted that row for any reader. Measured: 21 such rows for
+  // villain 1 and 73 for villain 2. Scanning all rows costs one pass and removes the failure.
   const widths = cols.map(c => Math.max(c.length,
-    ...rows.slice(0, 500).map(r => String(r[c] ?? '-').length)));
+    ...rows.map(r => String(r[c] ?? '-').length)));
   const line = (vals) => vals.map((v, i) => String(v).padEnd(widths[i])).join('  ');
   const out = [line(cols), widths.map(w => '-'.repeat(w)).join('  ')];
   for (const r of rows.slice(0, max)) out.push(line(cols.map(c => r[c] ?? '-')));

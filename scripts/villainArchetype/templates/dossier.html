@@ -1,0 +1,384 @@
+<title>{{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ink:#0F1417; --ink-2:#3A464C; --dim:#68757C;
+  --ground:#F1F4F5; --surface:#FFFFFF; --line:#D9E0E2; --line-2:#E9EDEE;
+  --measured:#14606B; --measured-soft:#CFE3E5;
+  --assumed:#9AA4A9; --assumed-soft:#E3E7E8;
+  --refuted:#A33A2A; --refuted-soft:#F3DCD7;
+  --shadow:0 1px 2px rgba(15,20,23,.05), 0 8px 24px -18px rgba(15,20,23,.35);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E7EDEF; --ink-2:#B3C0C4; --dim:#87959B;
+    --ground:#0D1315; --surface:#151D20; --line:#273438; --line-2:#1D272A;
+    --measured:#57B6C1; --measured-soft:#173A3F;
+    --assumed:#7C888D; --assumed-soft:#232D31;
+    --refuted:#E08063; --refuted-soft:#3B211B;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E7EDEF; --ink-2:#B3C0C4; --dim:#87959B;
+  --ground:#0D1315; --surface:#151D20; --line:#273438; --line-2:#1D272A;
+  --measured:#57B6C1; --measured-soft:#173A3F;
+  --assumed:#7C888D; --assumed-soft:#232D31;
+  --refuted:#E08063; --refuted-soft:#3B211B;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"Source Sans 3",ui-sans-serif,system-ui,sans-serif;
+  font-size:17px; line-height:1.6; margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+.dim{color:var(--dim)}
+.wrap{max-width:1000px; margin:0 auto; padding:0 28px 120px}
+.col{max-width:64ch}
+
+/* ── masthead ─────────────────────────────────────────── */
+.mast{border-bottom:1px solid var(--line); margin-bottom:56px; padding:64px 0 40px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--measured); margin:0 0 20px
+}
+h1{
+  font-family:Spectral,Georgia,serif; font-weight:600; font-size:clamp(38px,6vw,62px);
+  line-height:1.04; letter-spacing:-.02em; margin:0 0 8px; text-wrap:balance
+}
+.pid{
+  font-family:"IBM Plex Mono",monospace; font-size:15px; color:var(--dim);
+  word-break:break-all; margin:0 0 28px
+}
+.standfirst{
+  font-family:Spectral,Georgia,serif; font-size:21px; line-height:1.5;
+  color:var(--ink-2); max-width:58ch; margin:0
+}
+
+/* ── warning slab ─────────────────────────────────────── */
+.caveat{
+  background:var(--refuted-soft); border-left:3px solid var(--refuted);
+  padding:22px 26px; margin:36px 0 0; border-radius:2px
+}
+.caveat h2{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--refuted); margin:0 0 10px; font-weight:500
+}
+.caveat p{margin:0 0 10px; max-width:62ch}
+.caveat p:last-child{margin-bottom:0}
+
+/* ── vitals ───────────────────────────────────────────── */
+.vitals{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--line); border:1px solid var(--line);
+  margin:48px 0; border-radius:3px; overflow:hidden
+}
+.vital{background:var(--surface); padding:20px 22px}
+.vital .v{
+  font-family:"IBM Plex Mono",monospace; font-size:29px; font-weight:500;
+  letter-spacing:-.02em; display:block; line-height:1.1
+}
+.vital .k{font-size:13px; color:var(--dim); display:block; margin-top:6px; line-height:1.35}
+
+/* ── sections ─────────────────────────────────────────── */
+section{margin:0 0 76px; scroll-margin-top:20px}
+h2.sec{
+  font-family:Spectral,Georgia,serif; font-size:31px; font-weight:600;
+  letter-spacing:-.015em; margin:0 0 6px; text-wrap:balance
+}
+.sec-sub{color:var(--dim); margin:0 0 30px; max-width:60ch}
+h3{font-family:Spectral,Georgia,serif; font-size:21px; font-weight:600; margin:44px 0 12px}
+p{margin:0 0 16px}
+a{color:var(--measured)}
+code{
+  font-family:"IBM Plex Mono",monospace; font-size:.88em;
+  background:var(--assumed-soft); padding:1px 5px; border-radius:2px
+}
+
+/* ── ladder ───────────────────────────────────────────── */
+.scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; font-size:15px}
+th,td{text-align:left; padding:9px 14px 9px 0; border-bottom:1px solid var(--line-2); vertical-align:middle}
+thead th{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--dim); font-weight:500; border-bottom:1px solid var(--line)
+}
+.ladder th[scope=row]{white-space:nowrap; font-weight:400}
+.ladder .seat{font-weight:600; display:inline-block; min-width:44px}
+.ladder .tsize{color:var(--dim); font-size:13px}
+.whisker{min-width:280px}
+.track{position:relative; height:16px; background:var(--assumed-soft); border-radius:2px}
+.ci{position:absolute; top:5px; height:6px; background:var(--measured-soft); border-radius:3px}
+.pt{position:absolute; top:2px; width:2px; height:12px; background:var(--measured)}
+.ci-text{font-size:12px; color:var(--dim); margin-left:2px; display:inline-block; margin-top:3px}
+
+/* ── rules ────────────────────────────────────────────── */
+.rules{display:grid; gap:14px}
+.rule{
+  background:var(--surface); border:1px solid var(--line); border-radius:3px;
+  padding:18px 20px; box-shadow:var(--shadow)
+}
+.rule.v-hidden-cond{border-left:3px solid var(--refuted)}
+.rule.v-needs-cards{border-left:3px solid var(--refuted)}
+.rule header{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap}
+.rule .n{
+  font-size:13px; color:var(--dim); background:var(--assumed-soft);
+  padding:2px 8px; border-radius:2px
+}
+.rule .n::after{content:" decisions"; font-family:"Source Sans 3",sans-serif}
+.badge{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em;
+  text-transform:uppercase; padding:3px 8px; border-radius:2px
+}
+.b-mix{background:var(--assumed-soft); color:var(--dim)}
+.b-hidden-cond,.b-needs-cards{background:var(--refuted-soft); color:var(--refuted)}
+.b-thin{background:var(--refuted-soft); color:var(--refuted)}
+.cond{
+  font-family:Spectral,Georgia,serif; font-size:18px; line-height:1.45;
+  margin:0 0 14px; color:var(--ink)
+}
+.cond .and{color:var(--dim); font-style:italic}
+.cond .always{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--refuted); background:var(--refuted-soft);
+  padding:2px 6px; border-radius:2px; margin-left:4px; white-space:nowrap}
+.acts{display:grid; gap:5px; margin-bottom:12px}
+.act{display:grid; grid-template-columns:78px 1fr 42px 60px 62px; gap:10px; align-items:center; font-size:13.5px}
+.act-name{font-weight:600}
+.act-bar{height:9px; background:var(--assumed-soft); border-radius:2px; overflow:hidden}
+.act-fill{height:100%; background:var(--measured); border-radius:2px}
+.act-pct{text-align:right}
+.act-ci,.act-kn{font-size:12px; text-align:right}
+.verdict{font-size:14px; color:var(--ink-2); margin:0}
+.sep{font-size:13.5px; color:var(--refuted); margin:8px 0 0}
+.sep code{background:var(--refuted-soft); color:var(--refuted)}
+
+/* ── range grids ──────────────────────────────────────── */
+.grids{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:34px; margin-top:28px}
+.grid-fig{margin:0}
+.grid-fig h4{font-family:Spectral,Georgia,serif; font-size:18px; font-weight:600; margin:0 0 4px}
+.measured{font-size:14px; margin:0 0 14px; color:var(--ink-2)}
+.grid{
+  display:grid; grid-template-columns:repeat(13,1fr); gap:2px;
+  aspect-ratio:1; max-width:340px
+}
+.grid i{display:block; border-radius:1px; aspect-ratio:1}
+.grid .out{background:var(--assumed-soft)}
+.grid .edge{background:var(--measured-soft)}
+.grid .in{background:var(--measured); opacity:.55}
+.grid .confirm{background:var(--measured); box-shadow:inset 0 0 0 1.5px var(--ink)}
+.grid .refute{background:var(--refuted); box-shadow:inset 0 0 0 1.5px var(--ink)}
+.grid-note{font-size:13.5px; color:var(--ink-2); margin:14px 0 0; max-width:44ch}
+.flag{color:var(--refuted); font-weight:600}
+.legend{
+  display:flex; flex-wrap:wrap; gap:16px; margin:24px 0 0; padding:16px 0 0;
+  border-top:1px solid var(--line-2); font-size:13px; color:var(--dim)
+}
+.legend span{display:flex; align-items:center; gap:7px}
+.legend i{width:13px; height:13px; border-radius:1px; display:block; flex:none}
+
+/* ── gates ────────────────────────────────────────────── */
+.gates td.gate-ok{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--measured); width:56px
+}
+.gates th[scope=row]{font-weight:400}
+.gates td.dim{font-size:13.5px}
+
+.mech{border-left:2px solid var(--measured); padding:2px 0 2px 18px; margin:0 0 26px}
+.mech h4{font-family:Spectral,Georgia,serif; font-size:18px; font-weight:600; margin:0 0 8px}
+.mech h4 .n{font-size:12px; color:var(--dim); background:var(--assumed-soft); padding:2px 7px; border-radius:2px; margin-left:6px}
+.mech h4 .n::after{content:" decisions"; font-family:"Source Sans 3",sans-serif}
+.mech-body{margin:0 0 10px; max-width:66ch}
+.ev{margin:0 0 10px; padding-left:18px; font-size:14.5px; color:var(--ink-2)}
+.ev li{margin-bottom:4px}
+.amb{font-size:14px; color:var(--refuted); margin:0; max-width:66ch}
+.missing{color:var(--refuted); font-style:italic}
+.char{max-width:66ch}
+.char p{margin:0 0 14px}
+.char .lede{font-family:Spectral,Georgia,serif; font-size:20px; line-height:1.5; color:var(--ink)}
+.char .tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; background:var(--measured-soft);
+  color:var(--measured); padding:3px 9px; border-radius:2px; margin:0 6px 6px 0}
+.faults th[scope=row]{font-weight:600; width:30%}
+.faults td{font-size:14px}
+.st{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:2px; white-space:nowrap}
+.st-confirmed{background:var(--refuted-soft); color:var(--refuted)}
+.st-unverified{background:var(--assumed-soft); color:var(--dim)}
+.st-exact{background:var(--measured-soft); color:var(--measured)}
+.st-assumed{background:var(--assumed-soft); color:var(--dim)}
+.strength th[scope=row]{font-weight:600; text-transform:capitalize}
+footer{
+  border-top:1px solid var(--line); padding-top:26px; margin-top:20px;
+  font-size:13.5px; color:var(--dim)
+}
+footer code{font-size:12.5px}
+@media (max-width:640px){
+  .wrap{padding:0 18px 80px}
+  .act{grid-template-columns:66px 1fr 38px 54px; }
+  .act-kn{display:none}
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast" data-section="masthead">
+  <p class="eyebrow">Villain dossier · descriptive model</p>
+  <h1>{{TITLE}}</h1>
+  <p class="pid">{{PID}} &nbsp;&#183;&nbsp; HandHQ corpus, 50NL, July 2009 &nbsp;&#183;&nbsp; {{TABLESIZES}}</p>
+  <p class="standfirst">{{RULES}} rules induced from {{DECISIONS}} decisions across {{HANDS}} hands — written as he would say them, scored by how much they compress, and reported with everything they fail to explain.</p>
+
+  <div class="caveat">
+    <h2>Read this before quoting any number here</h2>
+    <p><strong>Table sizes he actually played: {{TABLESIZES}}.</strong> {{FORMATLINE}} The founder's game is live nine-handed 1/2&#8211;1/3, so these rates are <em>transferred, not measured</em> &#8212; they cross a format gap as well as a population gap.</p>
+    <p><strong>The corpus is online and fifteen years old.</strong> A 2009 online 50NL pool is a different population from a live room today.</p>
+    <p><strong>His cards are visible on {{CARDPCT}}% of decisions.</strong> On the other {{BLINDPCT}}% we know what he did and nothing about what he held.</p>
+  </div>
+</header>
+
+<div class="vitals" data-section="vitals">
+  <div class="vital"><span class="v">{{HANDS}}</span><span class="k">hands observed</span></div>
+  <div class="vital"><span class="v">{{DECISIONS}}</span><span class="k">decisions labelled</span></div>
+  <div class="vital"><span class="v">{{RULES}}</span><span class="k">rules describe all of them</span></div>
+  <div class="vital"><span class="v">{{ACCURACY}}%</span><span class="k">in-sample accuracy</span></div>
+  <div class="vital"><span class="v">{{SHOWNTOTAL}}</span><span class="k">decisions with cards shown</span></div>
+</div>
+
+<section data-section="character">
+  <h2 class="sec">What kind of player this is</h2>
+  <p class="sec-sub">Written from his record alone, before any table below. If you read nothing else, read this.</p>
+  {{CHARACTER}}
+</section>
+
+<section data-section="scoring">
+  <h2 class="sec">How to read the score</h2>
+  <div class="col">
+    <p>Coverage is <strong>100%</strong> — but that is true by construction, not an achievement. Every decision falls into some leaf, so coverage can never be anything else. It is not evidence.</p>
+    <p>What carries information is <strong>rule count</strong>. {{RULES}} rules reproduce {{DECISIONS}} decisions at {{ACCURACY}}% accuracy; that ratio is the compression, and compression is the claim. Accuracy on its own is also not evidence — a rule that says "when the price is bad, he folds" is right nine times in ten because folding is what mostly happens.</p>
+    <p>So the honest read is: <em>eighteen statements reproduce this player</em>. The rest of this page is about where those eighteen stop working.</p>
+  </div>
+</section>
+
+<section data-section="ruleset">
+  <h2 class="sec">The ruleset, in his own voice</h2>
+  <p class="sec-sub">Each rule carries the number of decisions it covers, the split between his choices, and a 95% confidence interval on each. A rule is not a prediction — it is a description of a spot and what he does in it.</p>
+  <div class="rules">
+    {{RULECARDS}}
+  </div>
+</section>
+
+<section data-section="strength">
+  <h2 class="sec">What his range can make</h2>
+  <p class="sec-sub">A frequency on its own cannot be read. Betting 16% is what a nit does with a narrow value range and what a maniac does with half his hands, and the two need opposite responses. This is what his range actually makes on the boards he faced &#8212; so every frequency above has a ceiling to be read against.</p>
+  {{STRENGTH}}
+  <div class="col">
+    <p><strong>Exact</strong> rows are the big blind in a limped pot: continuing was free, so his range genuinely is all 1,326 hands and these numbers depend on nothing but the board. <strong>Assumed</strong> rows use his measured entry width with composition filled by an equity ordering. They are never pooled.</p>
+    <p>Where he bets less often than he can hold top pair or better, he is <em>checking value</em>. Where he bets more often than value and draws combined, the excess is bluff by arithmetic &#8212; no card has to be shown for that to follow.</p>
+  </div>
+</section>
+
+<section data-section="unresolved">
+  <h2 class="sec">What it does not explain</h2>
+  <p class="sec-sub">This is the part that matters. Coverage of 100% hides two kinds of failure, and both are reported here as content rather than as a footnote.</p>
+  <div class="col">
+    <h3>Two rules are unresolved — {{UNRESN}} decisions</h3>
+    <p>One is marked <strong>needs more hands</strong>: something he can see genuinely separates his choices, and every way of cutting it lands below the sample floor. That is a sampling limit, and more of his hands would close it.</p>
+    <p>The other is marked <strong>needs his cards</strong>: nothing observable separates the choices, but the hands he happened to show <em>do</em>. No amount of extra corpus fixes this one — it needs the range-inference layer, which does not exist yet.</p>
+    {{THINBLOCK}}
+  </div>
+</section>
+
+<section data-section="ladder">
+  <h2 class="sec">The opening ladder</h2>
+  <p class="sec-sub">How often he raises when nobody has entered the pot, by seat and table size. The bar behind each figure is its 95% confidence interval — where the true rate plausibly sits.</p>
+  <div class="scroll">
+    <table class="ladder">
+      <thead><tr><th>Seat</th><th>Opens</th><th>k/n</th><th>95% confidence interval</th></tr></thead>
+      <tbody>{{LADDER}}</tbody>
+    </table>
+  </div>
+  <div class="col">
+    <h3>The ladder is real; its steps are not individually established</h3>
+    <p>Pooled across table sizes he opens tightest under the gun and widest on the button, and that ordering is what poker theory expects. But almost every interval above overlaps its neighbour. The direction is supported; no single step from one seat to the next is separately established at this sample size.</p>
+    <h3>Reading the ladder</h3>
+    <p>Overlapping intervals mean the step between two neighbouring seats is not separately established, even when the ordering across the whole ladder is. Where two rows share a seat name at different table sizes, they are different spots &#8212; a different field sits behind him &#8212; and they are listed separately for that reason.</p>
+  </div>
+</section>
+
+<section data-section="ranges">
+  <h2 class="sec">His ranges</h2>
+  <p class="sec-sub">Two different claims sit on every grid below, and they have completely different evidence behind them.</p>
+  <div class="col">
+    <p><strong>Width is measured.</strong> It comes from every decision he took in the spot, cards or no cards. A player who enters 12.5% of pots refutes an 8% range outright, with no card ever shown.</p>
+    <p><strong>Composition is assumed.</strong> The only hard constraints are the hands he actually turned face up. Everything else is filled in by imposing a strength ordering — hand classes sorted by equity against an opening range — until the measured width is reached. That ordering is our convention. It is not an observation about him.</p>
+    <p>Which is why each grid carries its own falsifier: any hand he <em>showed</em> that the ordering puts outside the range refutes the ordering for that spot. That happened on <strong>{{REFUTED}} of {{CHARTCOUNT}}</strong> grids.</p>
+  </div>
+
+  <div class="grids">{{GRIDS}}</div>
+
+  <div class="legend">
+    <span><i class="in"></i> assumed in range</span>
+    <span><i class="edge"></i> at the boundary</span>
+    <span><i class="confirm"></i> confirmed — he showed it</span>
+    <span><i class="refute"></i> shown, but the ordering excluded it</span>
+    <span><i class="out"></i> assumed out</span>
+  </div>
+
+  <h3>Every entry type measured</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Entry</th><th>Rate</th><th>k/n</th><th>95% CI</th><th>Shown</th><th>Assumed ordering</th></tr></thead>
+      <tbody>{{CHARTTABLE}}</tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>The refutations are the most informative rows. A hand he was caught holding that the assumed strength ordering places outside the range is a hand he demonstrably plays and our ordering excludes &#8212; which refutes the ordering for that spot, not the width.</p>
+  </div>
+</section>
+
+<section data-section="blindness">
+  <h2 class="sec">What we still cannot see</h2>
+  <div class="col">
+    <p>His cards are known on {{SHOWNTOTAL}} of {{DECISIONS}} decisions — <strong>{{CARDPCT}}%</strong>. On the remaining {{BLINDPCT}}% we know the situation and the action and nothing about the holding.</p>
+    <p>Worse, the {{CARDPCT}}% is not a random sample. A hand reaches showdown by <em>continuing</em>, so strong hands are over-represented among the ones we see. That cuts one way and it is useful: seeing him turn over aces tells us almost nothing, because the filter produces that anyway. Seeing a small pair or a suited connector survive that filter is evidence running <em>against</em> the bias — which is exactly why the refutations above are load-bearing and the confirmations mostly are not.</p>
+    <p>The shown hands are a floor on how wide his ranges are. They are never the range.</p>
+  </div>
+</section>
+
+<section data-section="mechanisms">
+  <h2 class="sec">What is actually happening in each spot</h2>
+  <p class="sec-sub">A frequency is not an explanation. Each mechanism below was written by an analyst given that one spot&#8217;s decisions and nothing else &#8212; no summary, no framing, no access to the rest of this page &#8212; so it can disagree with the ruleset rather than restate it.</p>
+  {{EXPLAINERS}}
+</section>
+
+<section data-section="faults">
+  <h2 class="sec">Known faults in the instrument</h2>
+  <p class="sec-sub">Defects in the machinery behind this page, published with the numbers rather than after them. A page that reads clean while its instrument has named faults is the more misleading artifact.</p>
+  <div class="scroll">
+    <table class="faults">
+      <thead><tr><th>Fault</th><th>What it does</th><th>Status</th></tr></thead>
+      <tbody>{{FAULTS}}</tbody>
+    </table>
+  </div>
+</section>
+
+<section data-section="gates">
+  <h2 class="sec">Instrument checks</h2>
+  <p class="sec-sub">{{GATECOUNT}} known-answer checks run before a single rule is induced. Each corresponds to a measurement bug that actually shipped; a failure stops the run rather than printing a warning nobody reads.</p>
+  <div class="scroll">
+    <table class="gates"><tbody>{{GATES}}</tbody></table>
+  </div>
+</section>
+
+<footer data-section="provenance">
+  <p>Generated from <code>.tmp-arch/profiles-fixed/SO0OmHLLvkJp.json</code> and <code>.tmp-arch/range-charts.json</code>. Every figure on this page is read from those files at build time.</p>
+  <p>Procedure: <code>VILLAIN=&lt;id&gt; node scripts/villainArchetype/profileVillain.mjs</code> · schema v9 · full local corpus, 1,756 files.</p>
+</footer>
+
+</div>

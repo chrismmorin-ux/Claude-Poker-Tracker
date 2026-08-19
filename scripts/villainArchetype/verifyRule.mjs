@@ -61,7 +61,7 @@ export const PROPOSED = [
     prose: 'When I get a free option in the big blind, I check, and I fold to the first bet '
       + 'whatever the board looks like.',
     source: 'explainer batch-06',
-    when: (d) => d.street === 'flop' && !d.iAmPreflopAggressor && d.facing === 'a bet',
+    when: (d) => d.street === 'flop' && !d.iAmLastPreflopAggressor && d.facing === 'a bet',
     then: (d) => d.action === 'fold',
     bands: {
       texture: (d) => !d.boardTexture ? null
@@ -101,8 +101,10 @@ export const PROPOSED = [
     // raiseToFractionOfPot and called the rule false — but the pot varies between spots, so a
     // FIXED bb sizing necessarily produces a varying pot fraction. Testing the wrong unit
     // refutes a true rule.
-    describeSizes: (pool) => pool.map(d => (d.potBB != null && d.raiseToFractionOfPot != null)
-      ? d.raiseToFractionOfPot * d.potBB : null).filter(x => x != null),
+    // `myRaiseToBB` is already the total in big blinds - the old form multiplied an
+    // ambiguous ratio back out by the pot to recover it, which only worked because the ratio's
+    // denominator happened to be that same pot. Naming the quantity removed the round trip.
+    describeSizes: (pool) => pool.map(d => d.myRaiseToBB ?? null).filter(x => x != null),
     sizeUnit: 'bb',
   },
   {

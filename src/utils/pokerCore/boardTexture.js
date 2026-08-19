@@ -86,6 +86,10 @@ export const analyzeBoardTexture = (boardCards) => {
   return {
     isPaired,
     isTrips,
+    // Exposed as a COUNT as well as the >=3 boolean: a two-tone board (2) is where a hand
+    // can hold a flush draw, and the boolean reads `false` there, which hid the most common
+    // draw in the game from every consumer.
+    maxSuitFreq,
     flushDraw,
     flushComplete,
     monotone,

@@ -83,14 +83,14 @@ export const CONTEXTS = [
     id: 'cbet-flop',
     question: 'I raised preflop and the flop is checked to me. Do I bet?',
     firstPerson: (p) => `I c-bet the flop ${pct(p)} of the time when I raised preflop`,
-    applies: (d) => d.street === 'flop' && d.iAmPreflopAggressor && d.facing === 'no bet',
+    applies: (d) => d.street === 'flop' && d.iAmLastPreflopAggressor && d.facing === 'no bet',
     fired: (d) => d.action === 'bet',
   },
   {
     id: 'bet-when-checked-to',
     question: 'It is checked to me and I did not raise preflop. Do I bet?',
     firstPerson: (p) => `I bet ${pct(p)} of the pots that get checked to me without my having raised`,
-    applies: (d) => d.street !== 'preflop' && !d.iAmPreflopAggressor && d.facing === 'no bet',
+    applies: (d) => d.street !== 'preflop' && !d.iAmLastPreflopAggressor && d.facing === 'no bet',
     fired: (d) => d.action === 'bet',
   },
   {

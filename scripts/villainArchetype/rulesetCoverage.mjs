@@ -85,14 +85,14 @@ export const RULESET = [
   {
     id: 'R6', kind: 'predict',
     prose: 'If I raised before the flop and it is checked to me, I bet.',
-    when: (d) => d.street === 'flop' && d.iAmPreflopAggressor && d.facing === 'no bet',
+    when: (d) => d.street === 'flop' && d.iAmLastPreflopAggressor && d.facing === 'no bet',
     predict: () => 'bet',
     origin: 'explainer batches 02/03/04 — every batch that saw the spot',
   },
   {
     id: 'R7', kind: 'frequency',
     prose: 'I bet the flop, and when I am called I give up on the turn about half the time.',
-    when: (d) => d.street === 'turn' && d.iAmPreflopAggressor && d.facing === 'no bet',
+    when: (d) => d.street === 'turn' && d.iAmLastPreflopAggressor && d.facing === 'no bet',
     rate: (d) => d.action === 'bet',
     origin: 'catalogue rule tn-give-up-when-called, SUPPORTED (67.7% -> 45.8%)',
   },
@@ -100,7 +100,7 @@ export const RULESET = [
     id: 'R8', kind: 'frequency',
     prose: 'If I did not raise before the flop, I fold to the first bet I face — and the '
       + 'cheaper it is, the more likely I am to stay.',
-    when: (d) => d.street !== 'preflop' && !d.iAmPreflopAggressor && d.facing === 'a bet',
+    when: (d) => d.street !== 'preflop' && !d.iAmLastPreflopAggressor && d.facing === 'a bet',
     rate: (d) => d.action === 'fold',
     split: (d) => d.potOddsNeeded == null ? null
       : d.potOddsNeeded < 0.28 ? 'cheap (<28%)' : 'standard or worse (>=28%)',

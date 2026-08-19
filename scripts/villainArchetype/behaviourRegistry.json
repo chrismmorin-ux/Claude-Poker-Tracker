@@ -1,0 +1,1030 @@
+{
+  "version": 1,
+  "generated": "greenfield enumeration, uncontaminated by the instrument's schema",
+  "behaviours": [
+    {
+      "name": "opens too wide from early position",
+      "means": "Raises first-in from UTG/UTG+1 with hands that should be folded at 9-handed.",
+      "signature": "Partition all first-in opportunities (no prior voluntary action) by seat; compute open% for the three earliest seats. Compare to a reference open% for that seat and to his own late-position open%. The tell is an early-position open% that is high in absolute terms, not merely relative — e.g. >18% UTG at 9-handed. Confirmation comes from showdowns of early opens revealing weak offsuit broadways and small suited connectors.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "population-baseline", "showdown-cards"]
+    },
+    {
+      "name": "position-invariant opening range",
+      "means": "Opens roughly the same percentage of hands from every seat, ignoring how many players act behind.",
+      "signature": "Compute open% per seat over first-in opportunities and regress open% on players-left-to-act. A correct player shows a steep monotone gradient (roughly 3-4x from UTG to BTN). Flat or near-flat slope, with overlapping confidence intervals across seats, is the signature. Distinct from 'too wide' or 'too tight' — the shape is the finding, not the level.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position"]
+    },
+    {
+      "name": "under-opens the button",
+      "means": "Fails to attack the blinds with a wide steal range from the most profitable seat.",
+      "signature": "Button first-in open% compared against cutoff and hijack open% and against a steal reference. Signature is BTN open% under ~30% at 9-handed, and especially BTN open% not appreciably above CO open%. Cross-check: his fold-first-in% on BTN when both blinds are tight players.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "population-baseline"]
+    },
+    {
+      "name": "open-limps first in",
+      "means": "Enters the pot by calling one big blind rather than raising, from any seat, with no prior caller.",
+      "signature": "Count actions where he is first voluntary actor and the action is call-one-bb. Rate = limps / first-in opportunities. Any nonzero rate is a signature at 9-handed cash; segment by seat to distinguish a systematic limper from an occasional small-pair limp. Also compute the composition of what follows: how often he folds to an iso-raise.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position"]
+    },
+    {
+      "name": "over-limps behind limpers",
+      "means": "Calls one big blind after one or more limpers with hands that should raise or fold.",
+      "signature": "Rate of call-one-bb given at least one prior limper and no raise, over all such opportunities. Compare to his iso-raise rate in the identical spot. The exploitable form is a high over-limp rate paired with a near-zero iso-raise rate, meaning his continuing range in a limped pot is entirely uncapped-downward and never contains a raise.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "players-count"]
+    },
+    {
+      "name": "limp-reraises only with premiums",
+      "means": "His open-limp is either a trap with a monster or a weak hand, and the raise branch is exclusively the monster.",
+      "signature": "Among hands where he open-limped and then faced a raise, compute the reraise rate and, critically, the showdown composition of the reraise branch. Signature is a low reraise rate (2-8%) whose showdowns are AA/KK/AK only, i.e. zero variance in the branch. Frequency alone flags the pattern; composition needs showdowns.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "position", "showdown-cards"]
+    },
+    {
+      "name": "never raises a strong hand preflop from the blinds",
+      "means": "Flats premium holdings out of position instead of 3-betting, keeping his flatting range uncapped upward.",
+      "signature": "Showdown composition of his BB/SB flat-call range versus his 3-bet range. If AA/KK/QQ/AK appear at material frequency in the flat branch, the flatting range is not capped. Frequency proxy without cards: unusually high fold-to-c-bet paired with a small but very strong check-raise branch.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "position", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "fixed open size regardless of position or limpers",
+      "means": "Uses the same raise size (e.g. always 3bb) everywhere, failing to size up with limpers dead in the pot or from early seats.",
+      "signature": "Distribution of open size in bb, conditioned on seat and number of limpers. Signature is near-zero variance: the same modal size with the count of limpers explaining none of it. Correct play shows size increasing roughly one bb per limper.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "players-count"]
+    },
+    {
+      "name": "open size correlates with hand strength",
+      "means": "Raises bigger with strong hands and smaller with speculative ones, leaking his range through the sizing.",
+      "signature": "Join open size to eventual showdown strength or to postflop outcome. Compute mean equity/strength of the showdown range by size bucket within a single seat (to hold position constant). Signature is a monotone relationship between size and strength. Without showdowns, a weaker proxy: bigger-size opens win at showdown at a materially higher rate.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "showdown-cards", "hand-outcome"]
+    },
+    {
+      "name": "min-raises as the standard open",
+      "means": "Opens to 2bb everywhere, giving the blinds an irresistible price and building a bloated multiway pot.",
+      "signature": "Modal open size = 2bb across seats, combined with an elevated count of players seeing the flop per raised pot he opened. Compare average players-to-flop on his opens versus other players' opens at the same table.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "bet-size", "players-count", "population-baseline"]
+    },
+    {
+      "name": "never 3-bets light",
+      "means": "His 3-betting range is exclusively value, so a 3-bet from him is fully readable.",
+      "signature": "3-bet% over facing-an-open opportunities, segmented by seat. Signature is <4% overall combined with a near-100% win rate when the 3-bet is called and goes to showdown. The confirming evidence is a showdown composition containing no suited-connector or suited-ace bluffs.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "position", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "3-bets too frequently",
+      "means": "Reraises preflop at a rate his postflop game cannot support, producing a range too weak to hold up to 4-bets or postflop pressure.",
+      "signature": "3-bet% over facing-open opportunities above ~12%, cross-referenced with fold-to-4-bet%. The exploitable combination is high 3-bet with high fold-to-4-bet, or high 3-bet with high fold-to-c-bet when the 3-bet is called.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "street-sequence", "population-baseline"]
+    },
+    {
+      "name": "3-bet sizing too small out of position",
+      "means": "Uses the same 3-bet size in and out of position, giving OOP 3-bets a price that guarantees he plays a bloated pot OOP.",
+      "signature": "3-bet size as a multiple of the open, split by whether he will be in or out of position postflop. Correct play shows a materially larger multiple OOP (roughly 4x vs 3x). Signature is equal means with overlapping distributions.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size"]
+    },
+    {
+      "name": "over-folds the big blind to small opens",
+      "means": "Folds the big blind at a rate that is unprofitable given the price he is being laid.",
+      "signature": "Fold% in BB facing a raise, bucketed by the pot odds he is offered (open size, number of callers, presence of dead limper money). Signature is fold% that fails to decrease as the offered price improves — e.g. folding >65% facing a 2.2bb open with a limper already in. The comparison is fold% against required-equity implied by the price.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "pot-size", "players-count"]
+    },
+    {
+      "name": "over-defends the big blind with unplayable hands",
+      "means": "Calls almost any raise from the BB, then surrenders postflop.",
+      "signature": "BB fold-to-raise% below ~35% combined with fold-to-flop-c-bet above ~60% in single-raised BB-defence pots. The joint statistic is the tell; either alone is not. Also: his BB-defence pots ending on the flop as a fraction of BB-defence pots.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "street-sequence"]
+    },
+    {
+      "name": "small blind flat-calls instead of 3-betting or folding",
+      "means": "Constructs a flatting range from the worst seat at the table, where only raise-or-fold is defensible with a live BB behind.",
+      "signature": "SB action distribution facing an open: fraction that is call, versus 3-bet, versus fold. Signature is a call fraction materially above zero (>15% of SB defences). Compare with his BB call fraction to confirm he isn't distinguishing the two blinds at all.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position"]
+    },
+    {
+      "name": "never squeezes",
+      "means": "Faces an open plus one or more cold-callers and never raises, leaving dead money uncollected.",
+      "signature": "Raise% in squeeze spots (open + at least one caller, action to him) compared to his 3-bet% in heads-up-facing-open spots. Signature is squeeze% at or below his ordinary 3-bet%, when it should be different in composition and often higher in aggression given the dead money.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "players-count"]
+    },
+    {
+      "name": "squeezes with a size that prices in the caller",
+      "means": "Squeezes to the same multiple he would use heads-up, giving the cold-caller odds to continue.",
+      "signature": "Squeeze size as a multiple of the open, compared to his heads-up 3-bet multiple, and to the number of callers. Correct sizing scales with callers; signature is a flat multiple. Cross-check with how often the cold-caller continues against his squeeze.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "players-count"]
+    },
+    {
+      "name": "cold-calls opens with dominated broadways",
+      "means": "Flats KJo, QTo, AT-type hands multiway where they are reverse-implied-odds disasters.",
+      "signature": "Showdown composition of his cold-call range in non-blind seats. Frequency proxy: elevated cold-call% from middle positions combined with a poor showdown win rate in single-raised pots where the board contains an ace or a king. Genuinely needs cards to name the specific holdings.",
+      "needsCards": "yes",
+      "category": "preflop",
+      "requires": ["action", "position", "board-cards", "showdown-cards", "hand-outcome"]
+    },
+    {
+      "name": "sets a mine without implied odds",
+      "means": "Calls raises with small pairs at stack depths or prices where set-mining cannot pay.",
+      "signature": "Frequency of preflop calls where effective stack in bb is below ~15x the call amount, paired with showdown evidence of small pairs. Without cards: his call rate facing raises should decrease as effective stacks shorten; signature is a flat call rate versus effective stack depth.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "bet-size", "stack-depth", "showdown-cards"]
+    },
+    {
+      "name": "4-bet range is capped at AA/KK",
+      "means": "Only the very top of his range ever puts in a fourth bet, so a 4-bet from him is a one-hand read.",
+      "signature": "4-bet% over facing-3-bet opportunities (signature <3%), and the showdown composition of the 4-bet branch. The stronger frequency-only tell is his all-in-or-fold behaviour facing a 5-bet: never folding is consistent with a range containing only AA/KK.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "showdown-cards"]
+    },
+    {
+      "name": "over-folds to 4-bets after 3-betting",
+      "means": "3-bets at a normal frequency but abandons almost all of it to a 4-bet, making 4-bet bluffs free against him.",
+      "signature": "Fold-to-4-bet% over the 3-bet-then-faced-4-bet population. Signature is >65%. Combine with his 3-bet% to identify whether the 3-bet range was wide (exploitable) or narrow (near-defensible).",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action"]
+    },
+    {
+      "name": "no adjustment to effective stack depth",
+      "means": "Plays the same ranges and sizes at 40bb as at 250bb, ignoring how stack depth changes hand values and SPR.",
+      "signature": "Condition every preflop frequency (VPIP, PFR, 3-bet%, call-vs-3-bet%) on effective stack depth bucketed into e.g. <50bb / 50-120bb / >120bb, and test for a difference. Signature is statistically indistinguishable frequencies across buckets. Also: speculative-hand continuation should rise with depth and premium-pair stack-off should fall.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "bet-size", "stack-depth"]
+    },
+    {
+      "name": "ignores the short stack when sizing and continuing",
+      "means": "Fails to account for a covering-or-covered short stack yet to act, or already in the pot.",
+      "signature": "Compare his open size and his continuation frequency in pots containing a stack under 40bb versus pots where all stacks are deep. Signature is no difference. Confirming detail: rate at which he opens small into a short stack who then shoves profitably.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "stack-depth"]
+    },
+    {
+      "name": "no opponent-specific preflop adjustment",
+      "means": "Uses identical frequencies regardless of who opened or who is left to act.",
+      "signature": "Compute his 3-bet% conditioned on the opener's own open% (a nit vs a maniac), and his steal% conditioned on the blinds' fold-to-steal%. A player who adjusts shows a correlation; the signature is zero correlation across a sufficient sample of distinct opponents. Requires opponent identity to persist across hands.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "opponent-identity", "opponent-stats"]
+    },
+    {
+      "name": "isolates limpers too rarely",
+      "means": "Overcalls limped pots rather than raising to punish the limper's capped, weak range.",
+      "signature": "Given at least one limper ahead and action to him in position, distribution over raise / call / fold. Signature is a raise fraction well below the fraction that his own postflop continuation rates would justify. Compare his iso-raise% to the limpers' fold-to-iso%.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "players-count"]
+    },
+    {
+      "name": "loose-passive overall shape",
+      "means": "Enters many pots but almost never as the aggressor.",
+      "signature": "VPIP over hands dealt versus PFR over hands dealt. Signature is a large gap (e.g. VPIP 45%, PFR 8%), i.e. the ratio PFR/VPIP below ~0.35. Purely frequency-based.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action"]
+    },
+    {
+      "name": "nit — plays far too few hands",
+      "means": "Folds his way to a tiny, transparent range, forfeiting blinds and antes.",
+      "signature": "VPIP under ~14% at 9-handed with PFR tracking it closely. Corroborate with a very high fold-to-steal% in the blinds and a low WTSD combined with a very high W$SD.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "hand-outcome"]
+    },
+    {
+      "name": "blind-vs-blind play mirrors non-blind play",
+      "means": "Does not widen materially when only the big blind is behind him in the small blind.",
+      "signature": "SB open% and SB 3-bet% in blind-vs-blind spots (all others folded) compared to his BTN open%. Correct play has SB-vs-BB opens near or above BTN width; signature is SB open% below BTN open%.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position"]
+    },
+    {
+      "name": "loosens materially when a straddle is on",
+      "means": "The presence of a straddle changes his entry rate more than the changed effective depth justifies.",
+      "signature": "VPIP and PFR conditioned on straddle-present versus straddle-absent, holding seat constant. Signature is a large VPIP increase without the accompanying tightening that shallower effective stacks (in straddle-units) should produce.",
+      "needsCards": "no",
+      "category": "preflop",
+      "requires": ["action", "position", "bet-size", "stack-depth"]
+    },
+    {
+      "name": "calls 4-bets with hands that should shove or fold",
+      "means": "Constructs a flat-call range facing a 4-bet at depths where the SPR guarantees a bad postflop spot.",
+      "signature": "Action distribution facing a 4-bet: fold / call / 5-bet, bucketed by resulting SPR. Signature is a nonzero call fraction where SPR after the call is below ~2. Confirmation from showdowns of what he called with.",
+      "needsCards": "only-for-confirmation",
+      "category": "preflop",
+      "requires": ["action", "pot-size", "stack-depth", "showdown-cards"]
+    },
+    {
+      "name": "c-bets every flop",
+      "means": "Continuation-bets as preflop aggressor at a rate near 100%, making his flop bet uninformative and his checks strong.",
+      "signature": "Flop c-bet% over heads-up single-raised pots where he was preflop aggressor and action checked to him. Signature above ~80%. Paired signature: when he does check flop, his showdown win rate in that branch is abnormally high or abnormally low, indicating the check is a distinct polarized set.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "players-count", "hand-outcome"]
+    },
+    {
+      "name": "c-bets far too rarely",
+      "means": "Checks back most flops as preflop aggressor, surrendering the initiative and the range advantage.",
+      "signature": "Flop c-bet% below ~40% heads-up in position. Cross-check that this is not board-selective by computing c-bet% within texture strata; a uniformly low rate across textures is the signature.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "position", "street-sequence", "players-count", "board-cards", "population-baseline"]
+    },
+    {
+      "name": "texture-blind c-betting",
+      "means": "C-bet frequency does not vary with board texture, so he bets the same on A72 rainbow as on 987 two-tone.",
+      "signature": "Stratify flops into texture classes (ace-high dry, king-high dry, low connected, monotone, paired, two-broadway) and compute c-bet% within each. Signature is overlapping intervals across classes. This is the single most direct texture test and needs no hole cards.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "board-cards"]
+    },
+    {
+      "name": "c-bet frequency ignores the number of opponents",
+      "means": "Bets multiway at the same rate as heads-up, where the combined continuing range is far stronger.",
+      "signature": "C-bet% conditioned on players-to-flop (2, 3, 4+). Correct play falls sharply with each additional opponent. Signature is a flat curve. Also compute his fold-to-raise% in multiway c-bet pots.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "players-count"]
+    },
+    {
+      "name": "one-and-done — never fires a second barrel",
+      "means": "Bets the flop then checks the turn whenever called, so calling one bet beats him.",
+      "signature": "Turn barrel% over the population of hands where he c-bet flop and was called and action checked to him or he acts first. Signature below ~35%. Sharper version: his turn barrel% conditioned on the turn card being a blank versus a scare card — if both are low, it is a global give-up rather than card selection.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "board-cards", "population-baseline"]
+    },
+    {
+      "name": "never triple barrels",
+      "means": "The river bet is value-only; a river bet from him is never a bluff.",
+      "signature": "River bet% given flop-and-turn barrel and being called on both, plus the showdown outcome distribution of that branch. Signature is a very low river bet rate whose showdowns show near-100% wins. Frequency alone is suggestive; showdowns confirm the composition.",
+      "needsCards": "only-for-confirmation",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "barrels irrespective of turn card",
+      "means": "Fires the turn without regard to whether the card improved his perceived range or the caller's.",
+      "signature": "Turn barrel% conditioned on turn-card class relative to the flop: overcard to the flop, board-pairing, flush-completing, straight-completing, blank. Correct play shows a large spread. Signature is a flat profile across classes.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "board-cards"]
+    },
+    {
+      "name": "gives up the moment he is called",
+      "means": "Any call from an opponent terminates his aggression on all subsequent streets.",
+      "signature": "Compare his aggression frequency on street N+1 conditioned on being called on street N versus his baseline aggression on street N+1. Signature is a large negative delta on every street, not just one. This is the general form of 'one-and-done' measured across all street pairs.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence"]
+    },
+    {
+      "name": "donk-bets into the preflop aggressor",
+      "means": "Leads out on the flop out of position against the player who raised preflop.",
+      "signature": "Rate of leading on the flop as preflop caller out of position, over all such opportunities. Any material rate (>8%) is notable at 9-handed live. Segment by texture — donking is defensible on some low connected boards and not others.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "position", "street-sequence", "board-cards"]
+    },
+    {
+      "name": "donk-bets only with strong made hands",
+      "means": "His lead is fully polarised toward value, so the lead reads as a hand.",
+      "signature": "Showdown composition of the donk-lead branch, plus his fold-to-raise% after donking. A donk range that is all value shows near-zero fold-to-raise. Frequency-only proxy: extremely low fold-to-raise after donking plus a high showdown win rate in that branch.",
+      "needsCards": "only-for-confirmation",
+      "category": "aggression",
+      "requires": ["action", "position", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "never probes the turn after the c-bet is checked back",
+      "means": "Fails to attack the capped range revealed by a checked-back flop.",
+      "signature": "Turn bet% as out-of-position caller after flop checked through, over all such opportunities. Signature below ~25%. Compare against how often his opponent's checked-back range actually contains showdown-worthy hands (measurable from that opponent's checked-back showdowns).",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "position", "street-sequence", "opponent-stats"]
+    },
+    {
+      "name": "delayed c-bet absent",
+      "means": "Having checked the flop as preflop aggressor, he also checks the turn, giving free cards to everything.",
+      "signature": "Turn bet% given he was preflop aggressor, checked flop, and the flop checked through. Signature below ~30%. Contrast with his flop c-bet% — a player with high c-bet and low delayed c-bet is simply not thinking beyond the first street.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence"]
+    },
+    {
+      "name": "does not stab at checked-through pots",
+      "means": "Passes up bets in pots where no one has shown strength on prior streets.",
+      "signature": "Bet% on turn or river given the immediately preceding street checked through by all players, over all such opportunities where he acts. Signature is a rate materially below his general betting rate in the same street.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence"]
+    },
+    {
+      "name": "aggression exists only in position",
+      "means": "Bets and raises freely with the button but plays a purely check-call game out of position.",
+      "signature": "Aggression frequency (bets+raises / total postflop actions) computed separately for in-position and out-of-position hands. Signature is a large gap (e.g. 40% IP vs 12% OOP). Correct play has a gap but a smaller one, and the OOP figure should not collapse to near-zero.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "position"]
+    },
+    {
+      "name": "fires whenever the board pairs",
+      "means": "Treats a paired board as an automatic bluffing opportunity regardless of whether it favours his range.",
+      "signature": "Bet% on the turn/river conditioned on the card pairing the board, compared to blank turns, and compared across whether the pairing card is high or low. Signature is a spike on all pairing cards with no differentiation by which card paired.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action", "street-sequence", "board-cards"]
+    },
+    {
+      "name": "bluffs into calling stations",
+      "means": "Continues to bluff opponents whose measured fold rate makes bluffing negative-EV.",
+      "signature": "His bluff frequency (bets not reaching a winning showdown) conditioned on the specific opponent's measured fold-to-bet%. Signature is no correlation, or worse, a positive one. Requires persistent opponent identity and enough showdowns to classify bets as bluffs.",
+      "needsCards": "only-for-confirmation",
+      "category": "aggression",
+      "requires": ["action", "opponent-identity", "opponent-stats", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "raise-or-fold with no calling range postflop",
+      "means": "Never flat-calls a postflop bet, splitting into raise and fold only.",
+      "signature": "Action distribution facing a postflop bet: fold / call / raise. Signature is a call fraction close to zero. Rare, and the mirror image of the station; it makes his continuing range perfectly readable.",
+      "needsCards": "no",
+      "category": "aggression",
+      "requires": ["action"]
+    },
+    {
+      "name": "folds to c-bets far too often",
+      "means": "Surrenders to the first bet at a rate that makes any c-bet automatically profitable.",
+      "signature": "Fold-to-flop-c-bet% over the population where he called preflop and faced a c-bet, segmented by bet size as a fraction of pot. Signature above ~60% at half-pot sizings. The comparison that matters: fold% versus the fold% required to make a bluff break even at that size.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "bet-size", "pot-size"]
+    },
+    {
+      "name": "calling station — never folds postflop",
+      "means": "Continues against bets with any piece of the board, ignoring price and range.",
+      "signature": "Fold-to-bet% below ~30% on every street simultaneously, combined with a high WTSD and a low W$SD. The joint pattern separates a station from a good bluff-catcher, whose fold rate rises sharply with bet size.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "bet-size", "pot-size", "hand-outcome"]
+    },
+    {
+      "name": "never check-raises the flop",
+      "means": "Has no raising range from out of position on the flop, so the c-bettor pays no tax for betting.",
+      "signature": "Check-raise% over the population where he checked out of position and faced a bet. Signature under ~3%. Cross-check: his opponent's c-bet% against him specifically, which should be elevated if this leak is being exploited.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence", "opponent-identity", "opponent-stats"]
+    },
+    {
+      "name": "check-raises only with the nuts",
+      "means": "The check-raise range is pure value, so the raise is a fold-everything signal.",
+      "signature": "Showdown composition of the check-raise branch plus its win rate. Frequency-only proxy: check-raise% is low AND his fold-to-3-bet-on-the-flop is near zero AND the pot goes to showdown rarely because opponents fold. Requires opponents to actually call sometimes to see composition.",
+      "needsCards": "only-for-confirmation",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "check-raises too often as a bluff",
+      "means": "Uses the check-raise as a default attack, at a rate his continuing range cannot support.",
+      "signature": "Check-raise% above ~14% combined with fold-to-reraise% above ~55% after check-raising. The pairing of the two is the exploit; the frequency alone could be a strong player on the right boards.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence"]
+    },
+    {
+      "name": "floats the flop and abandons the turn",
+      "means": "Calls a flop c-bet in position intending to take the pot away, then folds or checks through the turn instead.",
+      "signature": "Among hands where he called a flop c-bet in position, compute the distribution of his turn action when the opponent checks: bet / check. Signature is a low bet rate. Combine with fold-to-turn-barrel% in the same population — a high fold rate there means the float was never a plan.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence"]
+    },
+    {
+      "name": "never floats",
+      "means": "In position facing a c-bet he only continues with made hands, so his flop call is always a real hand.",
+      "signature": "Showdown composition of his flop-call-in-position branch, or the frequency proxy: an unusually high W$SD after calling a flop c-bet, plus a very low rate of him betting a turn that checks to him. Both together indicate a call range containing no air.",
+      "needsCards": "only-for-confirmation",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "fold frequency does not respond to bet size",
+      "means": "Calls at the same rate against a quarter-pot bet as against a pot-sized bet, ignoring the price.",
+      "signature": "Bucket every bet he faced by size/pot (0-33%, 33-60%, 60-100%, >100%) and compute fold% per bucket. Correct play shows a strongly increasing curve. Signature is a flat or weakly sloped curve. This is one of the most powerful purely-frequency tests available.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "bet-size", "pot-size"]
+    },
+    {
+      "name": "over-folds to overbets",
+      "means": "Treats a bet larger than the pot as a signal of strength rather than as a polarised size to be defended against.",
+      "signature": "Fold% in the >100%-pot bucket compared to the fold% required to make a pure bluff indifferent at that size (which is lower than at smaller sizes, not higher). Signature is fold% >70% at overbet sizes. Directly comparable to the price.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "bet-size", "pot-size"]
+    },
+    {
+      "name": "calls flop, folds turn",
+      "means": "A systematic pattern of one-street defence that makes a two-barrel bluff automatically profitable against him.",
+      "signature": "Conditional fold-to-turn-bet% restricted to hands where he called the flop bet. Signature above ~55%. The correct comparison is against his unconditional fold-to-turn-bet%; if the conditional is higher, the flop call range was mostly floats and weak pairs he intends to abandon.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "street-sequence"]
+    },
+    {
+      "name": "calls two streets then folds the river",
+      "means": "Invests through the turn and then surrenders to the river bet, the most expensive possible fold pattern.",
+      "signature": "Fold-to-river-bet% conditioned on having called both flop and turn. Signature above ~45%. Compare against the pot odds he is being laid on the river — by then the pot is large and the required defence is high.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "bet-size", "pot-size"]
+    },
+    {
+      "name": "never folds top pair",
+      "means": "Once he flops top pair he cannot release it regardless of action, sizing, or runout.",
+      "signature": "Requires either showdowns or an inference chain. Direct: among showdowns where he called a river bet, the frequency with which the holding is exactly one pair with the top card. Frequency proxy: his fold-to-river-bet% conditioned on the board containing no completed obvious draw and his having called flop and turn — an abnormally low figure with a poor W$SD.",
+      "needsCards": "yes",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "board-cards", "showdown-cards", "hand-outcome"]
+    },
+    {
+      "name": "bluff-catches without regard to the bettor's bluff frequency",
+      "means": "Calls river bets based only on his own hand strength, ignoring how often that specific opponent bluffs.",
+      "signature": "His river call% conditioned on the specific opponent's measured river bluff rate. Signature is zero correlation across opponents with materially different measured bluff rates. Needs persistent opponent identity plus enough showdowns to estimate each opponent's bluff rate.",
+      "needsCards": "only-for-confirmation",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "opponent-identity", "opponent-stats", "showdown-cards"]
+    },
+    {
+      "name": "check-calls where check-raising is correct",
+      "means": "Has strong hands and draws in his check-call range that should be raised for value or protection.",
+      "signature": "Showdown composition of the check-call branch versus the check-raise branch on the same street and texture. Signature is sets, two pair and strong draws appearing at material frequency in check-call. Frequency proxy: an abnormally high W$SD after check-calling flop and turn.",
+      "needsCards": "only-for-confirmation",
+      "category": "defence",
+      "requires": ["action", "position", "street-sequence", "board-cards", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "does not defend at all against small bets",
+      "means": "Applies a fixed fold rate that is far too high against 25-33% pot sizings.",
+      "signature": "Fold% in the 0-33% bucket specifically, compared to the ~25-30% ceiling that the price implies. Signature above 50% in that bucket. This is a separable finding from general over-folding because small-bet defence has a distinct correct answer.",
+      "needsCards": "no",
+      "category": "defence",
+      "requires": ["action", "bet-size", "pot-size"]
+    },
+    {
+      "name": "raises the river only with the nuts",
+      "means": "His river raise range contains no bluffs, so a river raise is a fold from everyone.",
+      "signature": "River raise% over facing-river-bet opportunities, plus the outcome distribution of that branch. Signature is a very low rate with near-100% pot-winning. Also: how often he is called and loses, which should be nonzero for a balanced player.",
+      "needsCards": "only-for-confirmation",
+      "category": "defence",
+      "requires": ["action", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "fixed bet size on every street and every board",
+      "means": "Uses one sizing (e.g. half pot) universally, so size carries no information but also achieves no purpose.",
+      "signature": "Distribution of bet size as a fraction of pot, per street. Signature is a single sharp mode with tiny variance across textures, streets, and opponent counts. Purely a distribution-shape test.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "board-cards", "players-count"]
+    },
+    {
+      "name": "bets bigger with stronger hands",
+      "means": "Sizing is a direct function of hand strength, the classic amateur tell.",
+      "signature": "Join size-bucket to showdown strength within a fixed street and texture stratum, and compute mean showdown strength (or win rate) per bucket. Signature is a monotone increase. Frequency-only proxy: opponents' fold rate to his large bets is high and his large bets rarely reach showdown as losses.",
+      "needsCards": "only-for-confirmation",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "board-cards", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "bets smaller with bluffs",
+      "means": "Reduces size when he has nothing, hoping to buy the pot cheaply, which makes his small bets the ones to attack.",
+      "signature": "The mirror of the above measured on the small end: showdown composition of his sub-40%-pot bets. Signature is that branch containing disproportionately many missed draws and no-pair holdings. Frequency proxy: his fold-to-raise% after a small bet is much higher than after a large bet.",
+      "needsCards": "only-for-confirmation",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "showdown-cards"]
+    },
+    {
+      "name": "min-bets postflop",
+      "means": "Bets one big blind or the table minimum into meaningful pots.",
+      "signature": "Count of bets whose size/pot ratio is under ~15%, over all bets. Any material rate is the signature; segment by street to see whether it is a river-specific blocking bet (defensible) or a global habit (not).",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size"]
+    },
+    {
+      "name": "never overbets",
+      "means": "Caps his maximum size at pot, forfeiting the leverage available on rivers where his range is nutted.",
+      "signature": "Maximum observed size/pot ratio and the fraction of bets exceeding 100% pot. Signature is a hard ceiling at 1.0 across thousands of bets, especially on rivers where the board strongly favours his range.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "board-cards"]
+    },
+    {
+      "name": "overbets without polarisation",
+      "means": "Uses overbets with a merged range, betting large with medium-strength hands that only get called by better.",
+      "signature": "Showdown composition of the >100%-pot branch: a polarised overbetter shows nuts and air; the signature here is a mass of middling holdings. Frequency proxy: he is called at a high rate on his overbets and loses more than he wins in that branch.",
+      "needsCards": "only-for-confirmation",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "fails to charge draws on wet boards",
+      "means": "Sizes small on textures where the opponent's continuing range is draw-heavy, giving correct odds to chase.",
+      "signature": "Mean size/pot conditioned on flop texture wetness (count of flush and straight draws available). Correct play sizes larger on wet boards. Signature is a flat or inverted relationship. This is measurable entirely from the board and the sizes.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "board-cards"]
+    },
+    {
+      "name": "river sizing not scaled to pot",
+      "means": "Bets a habitual absolute amount on the river regardless of how large the pot has grown.",
+      "signature": "Regress river bet amount in bb on pot size in bb. Correct play shows a strong proportional relationship; signature is a weak slope with a large intercept — i.e. he bets 'about 30' whether the pot is 60 or 300.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size"]
+    },
+    {
+      "name": "no geometric sizing across streets",
+      "means": "Sizes each street independently, so he cannot get stacks in by the river when he wants to.",
+      "signature": "Compute, for hands where he bet all three streets, the SPR remaining at the river versus the SPR at the flop. Signature is a large residual stack behind on the river in hands he clearly wanted to play for stacks, or repeated all-in-on-river-for-a-tiny-fraction-of-pot patterns.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "stack-depth", "street-sequence"]
+    },
+    {
+      "name": "sizing changes systematically by street in a readable way",
+      "means": "Small flop, big river with value; big flop, give up with bluffs — a per-street signature rather than a per-hand one.",
+      "signature": "Sequence-level analysis: cluster his (flop size, turn size, river size) triples and check whether cluster membership predicts showdown outcome. Signature is a small number of clusters with sharply different win rates.",
+      "needsCards": "only-for-confirmation",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "bet size does not vary with number of opponents",
+      "means": "Bets the same fraction of pot into four players as into one.",
+      "signature": "Mean size/pot conditioned on players-still-in. Correct play sizes larger multiway. Signature is no difference across opponent counts.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size", "pot-size", "players-count"]
+    },
+    {
+      "name": "raise sizing is always a min-raise",
+      "means": "When he raises postflop he uses the minimum legal increment, giving the bettor a price to continue with anything.",
+      "signature": "Distribution of postflop raise size expressed as a multiple of the bet faced. Signature is a mode at 2x. Cross-check with the opponent's continue rate against his raises.",
+      "needsCards": "no",
+      "category": "sizing",
+      "requires": ["action", "bet-size"]
+    },
+    {
+      "name": "semi-bluffs draws aggressively",
+      "means": "Raises and barrels with flush and straight draws rather than calling with them — a strength, but a pattern to know.",
+      "signature": "Among his flop raises on two-tone or connected boards, the fraction whose showdowns reveal a draw, or the fraction that end with him betting a completing turn and checking a bricking turn. Frequency proxy: his turn bet% conditioned on the turn completing a draw that was live on the flop when he raised.",
+      "needsCards": "only-for-confirmation",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "never semi-bluffs — always calls with draws",
+      "means": "Plays every draw passively, so his raising range is pure value and his calling range is draw-heavy.",
+      "signature": "His raise% on draw-heavy flops compared to his raise% on dry flops. Signature is that draw-heavy boards produce no raise-rate increase. Corroborate with showdowns: raise branch shows made hands only, call branch shows the draws.",
+      "needsCards": "only-for-confirmation",
+      "category": "draws",
+      "requires": ["action", "board-cards", "showdown-cards"]
+    },
+    {
+      "name": "chases draws without the odds",
+      "means": "Calls bets with draws at prices where the immediate and implied odds do not justify it.",
+      "signature": "For each call he makes on a board where a draw is live, compute the price offered and the implied odds available given remaining stacks; compare against the draw's completion probability. Requires hole cards to know he had the draw — the strong proxy without cards is his call% conditioned on board wetness rising even as bet size rises past the break-even for the biggest available draw.",
+      "needsCards": "yes",
+      "category": "draws",
+      "requires": ["action", "bet-size", "pot-size", "stack-depth", "board-cards", "hole-cards"]
+    },
+    {
+      "name": "folds draws that are getting a correct price",
+      "means": "Over-folds on wet boards to large bets, releasing equity that should continue.",
+      "signature": "Fold% on two-tone/connected flops facing bets in the 60-100% pot bucket, compared to his fold% on dry flops facing the same sizes. Correct play folds less on wet boards (more combos have equity). Signature is equal or higher folding on wet boards.",
+      "needsCards": "no",
+      "category": "draws",
+      "requires": ["action", "bet-size", "pot-size", "board-cards"]
+    },
+    {
+      "name": "draws to dominated ends",
+      "means": "Chases the low end of straights and non-nut flushes for stacks.",
+      "signature": "Showdown holdings on completed-straight and completed-flush boards where he lost: fraction that are the idiot end of a straight or a sub-nut flush. Genuinely needs cards — no frequency signature separates the nut flush from the eight-high flush.",
+      "needsCards": "yes",
+      "category": "draws",
+      "requires": ["action", "board-cards", "showdown-cards", "hand-outcome"]
+    },
+    {
+      "name": "bets whenever the draw completes, whether or not he has it",
+      "means": "Uses the completing card as an automatic bluffing trigger.",
+      "signature": "Turn/river bet% conditioned on the card completing a flush or an obvious straight, compared to blank cards, combined with the showdown composition of that betting branch. High bet rate plus a showdown composition that frequently lacks the completed hand is the exploitable form; high bet rate with the hand is just good play.",
+      "needsCards": "only-for-confirmation",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "transparently gives up when the draw misses",
+      "means": "Bets the flop and turn with a draw and checks the river the moment it bricks.",
+      "signature": "River check% conditioned on (a) having bet the previous two streets and (b) the river bricking every draw that was live. Signature is a check rate far above his baseline river bet rate in that population. This is measurable from board and actions alone.",
+      "needsCards": "no",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence"]
+    },
+    {
+      "name": "overvalues backdoor equity",
+      "means": "Continues on the flop with runner-runner equity as if it were a real draw.",
+      "signature": "Continue% on flops where he has neither pair nor a made draw but a backdoor exists — requires cards. Frequency proxy: an elevated flop-call rate on boards of his own suit-connected texture combined with a high turn fold rate when the backdoor fails to pick up.",
+      "needsCards": "yes",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence", "hole-cards"]
+    },
+    {
+      "name": "raises with draws at a rate that reveals them by street",
+      "means": "Draw-raises the flop but never the turn, so a turn raise is always a made hand.",
+      "signature": "Raise% by street conditioned on the presence of live draws. Signature is a large flop raise rate on wet boards and a near-zero turn raise rate on the same boards, with the turn raise branch showing a near-perfect win rate.",
+      "needsCards": "only-for-confirmation",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "pays off when his draw completes into a bigger one",
+      "means": "Calls or raises with a completed non-nut draw against a line that can only be the nuts.",
+      "signature": "Showdowns on completed-draw boards where he put in significant river money with a second-best flush or straight. Needs cards. Weak proxy: his river call% on flush-completing rivers is not lower than on blank rivers, when it should be.",
+      "needsCards": "yes",
+      "category": "draws",
+      "requires": ["action", "board-cards", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "overvalues top pair top kicker",
+      "means": "Plays TPTK for stacks on textures and against lines where it is routinely beaten.",
+      "signature": "Showdowns where he committed a large fraction of stack with exactly one pair on a board where sets, two pair or straights are heavily represented. Frequency proxy: stack-off rate (all-in or >60% of stack committed postflop) is high relative to his rate of showing down hands better than one pair.",
+      "needsCards": "yes",
+      "category": "handstrength",
+      "requires": ["action", "board-cards", "stack-depth", "showdown-cards"]
+    },
+    {
+      "name": "overvalues overpairs on connected boards",
+      "means": "Cannot distinguish JJ on 762 rainbow from JJ on 987 two-tone.",
+      "signature": "Stack-off rate conditioned on flop texture, restricted to hands he entered with a preflop 3-bet or premium-consistent line. Correct play shows a large drop in commitment on connected/wet boards. Signature is no drop. Cards confirm the specific holding.",
+      "needsCards": "only-for-confirmation",
+      "category": "handstrength",
+      "requires": ["action", "board-cards", "stack-depth", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "cannot fold second pair",
+      "means": "Calls all three streets with a middling pair irrespective of the price or the line.",
+      "signature": "Fraction of his river calls that show down a pair below top pair, and the win rate of that subset. Frequency proxy: an abnormally high WTSD combined with a W$SD below ~48%.",
+      "needsCards": "only-for-confirmation",
+      "category": "handstrength",
+      "requires": ["action", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "slowplays strong hands into disaster",
+      "means": "Checks or calls with sets and two pair on draw-heavy boards, letting equity in cheaply.",
+      "signature": "Among showdowns where he held a set or better on the flop, the fraction where he took a non-aggressive flop action. Cross-reference with board wetness. Frequency proxy: an unusually high rate of him check-calling flop then check-raising or leading the river on completed boards.",
+      "needsCards": "yes",
+      "category": "handstrength",
+      "requires": ["action", "board-cards", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "never raises the turn for value",
+      "means": "Flats with hands strong enough to raise, forfeiting a street of value and letting draws in.",
+      "signature": "Turn raise% over facing-turn-bet opportunities. Signature under ~4% combined with a high W$SD in the turn-call branch — he has the hands, he just does not raise them.",
+      "needsCards": "no",
+      "category": "handstrength",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "no thin value betting on the river",
+      "means": "Only bets the river with hands that beat almost everything, leaving money uncollected with medium-strength holdings.",
+      "signature": "The strength distribution of his river-betting range at showdown, and his river check-back rate in position after two streets of checking. Signature is a river bet range whose worst member is still very strong, plus a high check-back rate. Frequency proxy: his river bets are called and win at a rate near 100%.",
+      "needsCards": "only-for-confirmation",
+      "category": "handstrength",
+      "requires": ["action", "position", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "checks back clear value on the river",
+      "means": "Fails to bet a hand that beats the opponent's calling range, out of fear of a raise.",
+      "signature": "River check-back rate in position, conditioned on the board and the prior line, versus the strength he shows down after checking back. Signature is a mass of strong holdings in the check-back branch. Needs showdown information to identify which check-backs were mistakes.",
+      "needsCards": "yes",
+      "category": "handstrength",
+      "requires": ["action", "position", "street-sequence", "board-cards", "showdown-cards"]
+    },
+    {
+      "name": "pays off river raises",
+      "means": "Calls a river raise with a hand that beats nothing in a raising range.",
+      "signature": "Call% facing a river raise, over all such opportunities, and the win rate of that branch. Signature is a call rate above ~40% with a win rate under ~25%. Purely frequency plus outcome.",
+      "needsCards": "no",
+      "category": "handstrength",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "underplays flopped monsters preflop-and-postflop consistently",
+      "means": "A general pattern of taking the passive line with the top of his range, so his aggressive lines are actually weaker than his passive ones.",
+      "signature": "Compare the showdown win rate of his check-call lines against his bet-bet lines on the same street. Signature is check-call winning more often than bet-bet, which inverts the normal relationship. This is a strong purely-outcome-based test.",
+      "needsCards": "no",
+      "category": "handstrength",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "commits with one pair at deep stacks",
+      "means": "Does not adjust hand-strength requirements upward as SPR rises.",
+      "signature": "Stack-off rate conditioned on flop SPR bucketed (<2, 2-5, >5). Correct play requires stronger hands at higher SPR. Signature is a flat stack-off rate across SPR buckets, or a stack-off rate that fails to fall.",
+      "needsCards": "no",
+      "category": "handstrength",
+      "requires": ["action", "pot-size", "stack-depth"]
+    },
+    {
+      "name": "cannot fold to an obvious nut-representing line",
+      "means": "Calls down against sequences that only the nuts can produce, because he evaluates only his own hand.",
+      "signature": "Restrict to hands where the opponent's line was check-raise turn and bet river, or triple-barrel with an overbet river. His fold% in that population compared to his overall river fold%. Signature is no increase.",
+      "needsCards": "no",
+      "category": "handstrength",
+      "requires": ["action", "street-sequence", "bet-size", "pot-size"]
+    },
+    {
+      "name": "overvalues ace-high and weak aces",
+      "means": "Calls down with unimproved ace-high and stacks off with weak top pairs.",
+      "signature": "Showdown holdings in his river-call branch: fraction that are ace-high with no pair. Frequency proxy: his continue rate on ace-high flops is much higher than on king-high flops even where his preflop range should contain similar numbers of each.",
+      "needsCards": "yes",
+      "category": "handstrength",
+      "requires": ["action", "board-cards", "street-sequence", "showdown-cards"]
+    },
+    {
+      "name": "ignores kicker dominance",
+      "means": "Plays A5o the same as AKo when the board comes ace-high.",
+      "signature": "Requires cards. Direct: among ace-high-board showdowns where he lost with top pair, the kicker distribution. Frequency proxy is weak — the closest is a high commitment rate on ace-high boards combined with a poor W$SD on them.",
+      "needsCards": "yes",
+      "category": "handstrength",
+      "requires": ["action", "board-cards", "showdown-cards", "hand-outcome"]
+    },
+    {
+      "name": "bluffs with blockers to the calling range",
+      "means": "Selects bluffs that remove combinations from the opponent's continuing range — a competence marker.",
+      "signature": "Among his identified river bluffs (bets that lose or take the pot down with weak showdowns), the frequency with which the holding contains a card blocking the obvious nut combinations (e.g. the ace of the flush suit on a completed flush board). Needs cards; frequency alone cannot see blockers.",
+      "needsCards": "yes",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "hole-cards", "hand-outcome"]
+    },
+    {
+      "name": "bluffs with the wrong blockers",
+      "means": "Chooses bluffing hands that block the opponent's folding range instead of his calling range.",
+      "signature": "The complement of the above: bluff holdings that contain cards from the folding range (e.g. bluffing with a busted low card on a board where his opponent's continuing range is all overpairs). Needs cards.",
+      "needsCards": "yes",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "hole-cards", "hand-outcome"]
+    },
+    {
+      "name": "bluff-catches without blocker consideration",
+      "means": "Chooses which bluff-catcher to call with by pair rank rather than by what it blocks.",
+      "signature": "Among his river calls with equal-strength bluff-catchers, the fraction holding relevant blockers versus the fraction that do not, compared against what an indifferent selection would produce. Needs cards.",
+      "needsCards": "yes",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "showdown-cards"]
+    },
+    {
+      "name": "board-texture-blind across the whole game",
+      "means": "None of his postflop frequencies vary with the board, at any street.",
+      "signature": "The umbrella test: for every postflop frequency (bet%, fold%, raise%, size), compute the between-texture variance and compare to within-texture noise. Signature is that texture explains essentially none of the variance in any of them. This is the global version of the per-street texture tests and needs no cards.",
+      "needsCards": "no",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "bet-size", "pot-size"]
+    },
+    {
+      "name": "ignores range advantage on ace-high flops",
+      "means": "Does not bet more often as the preflop raiser on boards that hugely favour the raising range, nor fold more as the caller.",
+      "signature": "C-bet% on ace-high dry flops compared to his c-bet% on low connected flops when he was the preflop raiser. Correct play shows a large gap. Signature is no gap. Mirror test on the defence side: his fold-to-c-bet% on ace-high boards as the caller.",
+      "needsCards": "no",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "street-sequence"]
+    },
+    {
+      "name": "fails to attack low and paired boards",
+      "means": "Does not increase aggression on textures where neither range connects and folds are cheap to buy.",
+      "signature": "Bet% on paired low flops (e.g. 772, 553) compared to his overall flop bet%. Signature is no increase, or a decrease. Cross-check with the opponents' measured fold rate on those boards, which is typically very high.",
+      "needsCards": "no",
+      "category": "blockers",
+      "requires": ["action", "board-cards", "opponent-stats"]
+    },
+    {
+      "name": "does not recognise when his own range is capped",
+      "means": "Continues to bet or call as if he could have the nuts in lines where he demonstrably cannot.",
+      "signature": "Identify lines where his prior actions exclude the top of the range (e.g. he flatted preflop from the blinds and checked a flop that smashes only the raiser). Then measure his continue% against big bets in those lines. Signature is a continue% indistinguishable from his uncapped lines.",
+      "needsCards": "no",
+      "category": "blockers",
+      "requires": ["action", "position", "street-sequence", "board-cards", "bet-size"]
+    },
+    {
+      "name": "caps his own range by checking the flop",
+      "means": "Never has a strong hand in the check-flop branch, so opponents can attack it with impunity.",
+      "signature": "Showdown strength distribution of the checked-flop branch versus the bet-flop branch. Signature is a check branch containing no sets, two pairs or overpairs. Frequency proxy: his fold-to-turn-bet% after checking the flop is very high, and his check-raise rate on later streets in that branch is near zero.",
+      "needsCards": "only-for-confirmation",
+      "category": "sequencing",
+      "requires": ["action", "position", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "never has strong hands in the check-call line",
+      "means": "Check-calling is always a bluff-catch, so his check-call range is perfectly readable as weak.",
+      "signature": "The win rate and strength composition of the check-call-check-call sequence at showdown, compared to his check-call-then-raise sequence. Signature is that the pure check-call line almost never wins a large pot.",
+      "needsCards": "only-for-confirmation",
+      "category": "sequencing",
+      "requires": ["action", "street-sequence", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "timing tells — long tank before a bluff",
+      "means": "Time taken to act correlates with hand class, leaking information independent of the action itself.",
+      "signature": "Requires a timestamp on each decision. Regress decision latency on eventual showdown class within a fixed action type (e.g. among all river bets). Signature is a bimodal or monotone latency-strength relationship. Without timing data this behaviour is entirely invisible — an important instrument-coverage question.",
+      "needsCards": "only-for-confirmation",
+      "category": "sequencing",
+      "requires": ["action", "timestamp", "showdown-cards"]
+    },
+    {
+      "name": "instant checks signal give-up",
+      "means": "The fast check is always a hand with no plan, the slow check sometimes a trap.",
+      "signature": "Latency distribution on checks, joined to whether he continues on the next street. Signature is that short-latency checks are followed by folds at a much higher rate. Requires per-action timing.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "timestamp", "street-sequence"]
+    },
+    {
+      "name": "tilts after losing a large pot",
+      "means": "Frequencies shift measurably in the hands following a big loss — more entries, more aggression, worse folds.",
+      "signature": "Segment his hands by 'within N hands of losing a pot exceeding X bb' versus baseline, and compare VPIP, PFR, 3-bet%, and fold-to-bet% between segments. Signature is a significant shift. Requires the record to preserve hand ordering and pot outcomes, not just per-hand independence.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "pot-size", "hand-outcome", "hand-ordering"]
+    },
+    {
+      "name": "session drift — loosens as the session lengthens",
+      "means": "Play degrades with time at the table through fatigue, boredom, or being stuck.",
+      "signature": "Regress VPIP and aggression on hands-elapsed-within-session, and separately on session net result to date. Signature is a positive slope on hands-elapsed. Requires session boundaries in the record.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "hand-ordering", "session-boundary", "hand-outcome"]
+    },
+    {
+      "name": "plays differently when stuck versus when winning",
+      "means": "Net session result changes his risk appetite independently of the cards.",
+      "signature": "Bucket his hands by running session P/L (down >X, flat, up >X) and compare frequencies. Signature is a material difference. Distinguishable from ordinary tilt because it depends on cumulative result, not on the most recent hand.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "hand-ordering", "session-boundary", "hand-outcome"]
+    },
+    {
+      "name": "multi-tabling or autopilot uniformity",
+      "means": "Plays a fixed script with no situational deviation and near-constant decision latency.",
+      "signature": "Very low variance in decision latency across all decision types, combined with the texture-blindness and size-blindness signatures appearing together. The joint occurrence is the identifier; each alone has other causes.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "timestamp", "board-cards", "bet-size"]
+    },
+    {
+      "name": "adapts after being caught bluffing",
+      "means": "Shows a bluff, then tightens; shows a nutted hand, then bluffs more.",
+      "signature": "Compare his aggression frequency in the K hands following a showdown where he was caught bluffing, versus his baseline. Signature is a significant negative delta with recovery over time. Requires hand ordering plus showdown visibility.",
+      "needsCards": "only-for-confirmation",
+      "category": "sequencing",
+      "requires": ["action", "hand-ordering", "hand-outcome", "showdown-cards"]
+    },
+    {
+      "name": "does not adapt at all",
+      "means": "Frequencies are stationary across the entire history regardless of results, opponents, or being exploited.",
+      "signature": "Test every headline frequency for stationarity over time using a changepoint or rolling-window comparison. Signature is no detectable changepoint over a long history. The null-finding version of the adaptation tests, and worth stating explicitly because a static opponent is the most exploitable kind.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "hand-ordering"]
+    },
+    {
+      "name": "targets a specific opponent for revenge",
+      "means": "Frequencies against one particular player diverge from his baseline after a prior confrontation.",
+      "signature": "Pairwise frequencies: his 3-bet%, c-bet% and call-down rate against each opponent, compared to his global figures, and tracked before versus after a large pot between them. Signature is a large per-opponent deviation that appears at a specific point in time.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "opponent-identity", "hand-ordering", "pot-size", "hand-outcome"]
+    },
+    {
+      "name": "loosens dramatically in his last orbit before leaving",
+      "means": "Plays a gambling final orbit to get even or to book a win before racking up.",
+      "signature": "VPIP and aggression in the final N hands of each session versus his session baseline. Signature is a spike in the tail. Requires session end markers.",
+      "needsCards": "no",
+      "category": "sequencing",
+      "requires": ["action", "hand-ordering", "session-boundary"]
+    },
+    {
+      "name": "shows down far too often",
+      "means": "Reaches the river and pays to see a hand at a rate that guarantees he pays off bluffs and value alike.",
+      "signature": "WTSD (went to showdown / saw flop) above ~34% combined with W$SD below ~50%. The pair is the finding; a high WTSD with a high W$SD is a different, less exploitable player.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "almost never reaches showdown",
+      "means": "Folds before the river so consistently that river aggression against him is free.",
+      "signature": "WTSD below ~22% combined with a high fold-to-river-bet%. Cross-check that this is not simply a tight preflop range by conditioning on hands where he saw the turn.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "wins a low share of the showdowns he reaches",
+      "means": "The composition of his showdown range is too weak for the price he paid to get there.",
+      "signature": "W$SD (pots won at showdown / showdowns reached). Signature under ~48%. Interpretation depends on WTSD: low W$SD with high WTSD is a station; low W$SD with low WTSD is a player getting outdrawn or misreading strength.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "value bets the river too thin and gets raised",
+      "means": "Bets marginal hands into ranges that only continue with better, then cannot fold to the raise.",
+      "signature": "Among his river bets, the rate at which he is raised, and his call rate and win rate facing that raise. Signature is an elevated raised-rate combined with a call rate above ~40% and a win rate under ~25% in that branch.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "never bluffs the river",
+      "means": "Every river bet is value, so folding all bluff-catchers against him is exactly correct.",
+      "signature": "The win rate of his river-bet-and-called branch. A balanced player loses that branch a meaningful fraction of the time; the signature is a win rate near 100% over a large sample. Purely outcome-based, no cards required.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "hand-outcome"]
+    },
+    {
+      "name": "bluffs the river too often",
+      "means": "River betting frequency exceeds what his value range can support at his chosen sizes.",
+      "signature": "River bet% over facing-check or first-to-act opportunities, combined with the loss rate of the bet-and-called branch. Signature is a bet% above ~50% with a called-branch win rate below ~40%. The size he uses sets the threshold, so bet% must be evaluated per size bucket.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "bet-size", "pot-size", "hand-outcome"]
+    },
+    {
+      "name": "voluntarily shows cards when not required",
+      "means": "Reveals holdings after winning uncalled or when mucking, handing out free information.",
+      "signature": "Count of hands where his cards became known without a called showdown. Requires the record to distinguish 'shown voluntarily' from 'shown at showdown' — a data-capture question as much as a behavioural one.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "hole-cards", "hand-outcome"]
+    },
+    {
+      "name": "checks the river back with the intention of never calling",
+      "means": "Takes a passive river line with a hand he then folds to any bet if checked to and then bet into — an incoherent plan.",
+      "signature": "Restricted to out-of-position spots: his fold% facing a river bet after he checked, conditioned on having called the turn. Signature is a very high fold rate, meaning his river check was a fold in disguise and the opponent can bet 100%.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "position", "street-sequence"]
+    },
+    {
+      "name": "calls river bets that beat only bluffs against a player who never bluffs",
+      "means": "Applies a global bluff-catching threshold rather than an opponent-specific one on the most expensive street.",
+      "signature": "His river call% against opponents whose measured river-bet-and-called win rate is near 100%, compared to his river call% against opponents with a measurable bluff rate. Signature is no difference. Requires per-opponent history plus showdown outcomes.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "street-sequence", "opponent-identity", "opponent-stats", "hand-outcome"]
+    },
+    {
+      "name": "showdown range shows no bluffs in any losing line",
+      "means": "Across all streets, every hand of his that reaches showdown having bet is a genuine hand — total absence of a bluffing range.",
+      "signature": "Across all streets, the fraction of his bets-that-reached-showdown that lost. Signature is a fraction near zero on every street simultaneously. This is the aggregate form and is the single cleanest frequency-only evidence of a value-only strategy.",
+      "needsCards": "no",
+      "category": "showdown",
+      "requires": ["action", "hand-outcome", "showdown-cards"]
+    }
+  ]
+}

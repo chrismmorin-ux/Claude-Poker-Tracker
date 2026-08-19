@@ -1,0 +1,84 @@
+id: "WS-573"
+title: "Two backtest-integrity defects: a vacuous rehydration hash check, and a hero-EV CI whose own header says its independence assumption is false"
+legacy_id: ""
+type: bug
+status: backlog
+claimed_by: null
+claimed_at: null
+started_at: null
+completed_at: null
+priority_score: 70
+priority_label: "P2"
+category: "correctness"
+capability: "core"
+program: "infrastructure"
+finding_id: ""
+description: |
+  Filed from HomeBase 2026-08-19. Both defects were logged as CWOS friction from
+  this repo and reached the fleet friction inbox, where the `backtest` component
+  crossed the recurrence threshold and auto-promoted to HomeBase WS-662.
+
+  That promotion was declined and the component closed, because neither defect is
+  a CWOS kit defect — both are backtest-integrity defects belonging to this repo.
+  This item is the other half of that decline: the defects are real and were
+  measured, so they are filed here rather than dropped. HomeBase cannot fix them
+  (DEC-054) and will not carry them.
+
+  ── DEFECT 1: the rehydration hash check was vacuous ──
+
+  Logged verbatim from this repo:
+
+  > The first version of my rehydration hash check was vacuous — it compared
+  > descriptor.contentHash against arm.descriptor.contentHash, both copied off the
+  > same card field, so a card mutated in transit passed.
+
+  Both sides of the comparison were read from the same source field, so the check
+  could only ever compare a value to itself. It could not fail. A card mutated
+  anywhere in transit would rehydrate and pass validation.
+
+  The friction event records this as "the first version", so a corrected version
+  may already exist. Verify before rewriting — and if it was fixed, the thing
+  worth keeping is a test that fails when the two sides of the comparison are
+  wired to the same field again, since that is the mistake that will recur.
+
+  ── DEFECT 2: the hero-EV confidence intervals are too narrow, and the code says so ──
+
+  > Every CI the hero-EV harness produces is too narrow — ipsEstimator's own header
+  > records that the cluster bootstrap's independence assumption is false by
+  > construction at 2.91 EVAL players per hand.
+
+  This is the more serious of the two. The cluster bootstrap treats resampled units
+  as independent; at 2.91 EVAL players per hand they are not, because multiple
+  players in the same hand share that hand's realized cards and action. Positively
+  correlated units inside a resampling cluster shrink the estimated variance, so
+  every interval the harness reports is narrower than the truth.
+
+  The consequence is not a cosmetic error bar. Any comparison gated on
+  "intervals do not overlap" is gated on intervals that are too narrow, which means
+  the harness will call differences significant that are not. Strategy-arm results
+  accepted on that basis were accepted on a stated-false assumption.
+
+  What makes it worth ranking rather than filing away: `ipsEstimator`'s own header
+  already records that the assumption is false by construction. This is not an
+  unknown that needs discovering — it is a known defect that the code documents and
+  the pipeline consumes anyway. The gap is between what the module says about
+  itself and what its callers are entitled to assume.
+acceptance:
+  - "The rehydration hash check compares against an independently-derived hash, not a second read of the same field — and a regression test fails if the two sides are ever wired to the same source again"
+  - "The hero-EV harness either accounts for within-hand correlation (block/hierarchical bootstrap over hands rather than players), or refuses to emit a CI at all"
+  - "If a CI is still emitted under the false independence assumption, every consumer that gates on non-overlap is changed to stop doing so, and the limitation travels with the output rather than living only in ipsEstimator's header"
+  - "Any strategy-arm conclusion previously accepted on a non-overlap test is re-checked against corrected intervals, or explicitly marked as unverified"
+files_involved:
+  - "scripts/backtest/ipsEstimator.mjs"
+  - "scripts/backtest/heroEvRunner.mjs"
+  - "scripts/backtest/atomStore.mjs"
+blocked_by: []
+blocked_by_legacy: []
+enables: []
+sprint_id: null
+decision_flags:
+  - "Defect 2 has two honest fixes with different costs: correct the bootstrap, or stop emitting a CI. Emitting a known-wrong interval is the one option that should be off the table."
+source:
+  kind: "friction-declined-from-hub"
+  detail: "2026-08-19 — HomeBase declined friction component 'backtest' (2 events, WS-662 dismissed) as not-kit; defects couriered here per DEC-054"
+created_at: "2026-08-19T00:00:00.000Z"
